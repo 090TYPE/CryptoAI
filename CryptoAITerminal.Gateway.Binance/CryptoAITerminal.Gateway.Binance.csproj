@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Binance.Net" Version="12.11.3" />
+<PackageReference Include="Microsoft.Extensions.Options" Version="10.0.5" />
+    <PackageReference Include="NEST" Version="7.17.5" />
+    <PackageReference Include="System.Reactive" Version="6.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CryptoAITerminal.Core\CryptoAITerminal.Core.csproj" />
+  </ItemGroup>
+
+</Project>

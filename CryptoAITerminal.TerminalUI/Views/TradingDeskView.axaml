@@ -1,0 +1,1479 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.TradingDeskView"
+             x:DataType="vm:MainWindowViewModel">
+  <StackPanel Spacing="16">
+    <Border Classes="TradingHero">
+      <Grid ColumnDefinitions="2.15*,1.05*,1.22*,1.18*,1.22*,1.55*" ColumnSpacing="14">
+        <Border Grid.Column="0" Classes="TradingHeaderCard">
+          <Grid ColumnDefinitions="72,*,Auto" ColumnSpacing="16" RowDefinitions="Auto,Auto">
+            <Border Grid.RowSpan="2"
+                    Grid.Column="0"
+                    Background="{Binding SelectedMarket.LogoBackground}"
+                    BorderBrush="#243647"
+                    BorderThickness="1"
+                    CornerRadius="18"
+                    Width="64"
+                    Height="64"
+                    VerticalAlignment="Center">
+              <TextBlock Text="{Binding SelectedMarket.LogoText}"
+                         Foreground="{Binding SelectedMarket.LogoForeground}"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         FontSize="30"
+                         FontWeight="Bold" />
+            </Border>
+            <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+              <TextBlock Classes="Overline" Text="Active Symbol" />
+              <ComboBox ItemsSource="{Binding Markets}"
+                        SelectedItem="{Binding SelectedMarket}"
+                        DisplayMemberBinding="{Binding DisplaySymbol}"
+                        MinWidth="210"
+                        HorizontalAlignment="Left">
+              </ComboBox>
+              <TextBlock Text="{Binding ActiveTradingTitle}" Foreground="#9BAFC5" />
+            </StackPanel>
+            <Border Grid.RowSpan="2" Grid.Column="2" Classes="StarGlyph">
+              <TextBlock Text="*" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" Foreground="#9BAFC5" />
+            </Border>
+          </Grid>
+        </Border>
+
+        <Border Grid.Column="1" Classes="TradingHeaderCard">
+          <StackPanel Spacing="12">
+            <TextBlock Classes="Overline" Text="Venue" />
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+              <Button Grid.Column="0"
+                      Content="CEX"
+                      Classes="GhostButton"
+                      Command="{Binding SelectTradingVenueCommand}"
+                      CommandParameter="CEX"
+                      Background="{Binding CexVenueBackground}"
+                      Foreground="{Binding CexVenueForeground}" />
+              <Button Grid.Column="1"
+                      Content="DEX"
+                      Classes="GhostButton"
+                      Command="{Binding SelectTradingVenueCommand}"
+                      CommandParameter="DEX"
+                      Background="{Binding DexVenueBackground}"
+                      Foreground="{Binding DexVenueForeground}" />
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="2" Classes="TradingHeaderCard">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="Overline" Text="Quote Currency" />
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+              <Border Width="28" Height="28" Background="#133A3B" CornerRadius="14" VerticalAlignment="Center">
+                <TextBlock Text="Q" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#21E6C1" FontWeight="Bold" />
+              </Border>
+              <ComboBox Grid.Column="1"
+                        ItemsSource="{Binding WalletVM.GlobalQuoteAssetOptions}"
+                        SelectedItem="{Binding WalletVM.GlobalQuoteAssetSymbol}" />
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="3" Classes="TradingHeaderCard">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="Overline" Text="Global Sizing" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBlock Text="% of Equity" VerticalAlignment="Center" />
+              <Border Grid.Column="1" Classes="StatusPill">
+                <TextBlock Text="{Binding WalletVM.GlobalPositionSizingPercent, StringFormat={}{0:0.00}%}" />
+              </Border>
+            </Grid>
+            <TextBlock Text="{Binding TradeNotionalLabel}" Foreground="#9BAFC5" />
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="4" Classes="TradingHeaderCard">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="Overline" Text="Risk Mode" />
+            <Border Background="#2B1D13" BorderBrush="#D69A2A" BorderThickness="1" CornerRadius="10" Padding="12,8">
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                <TextBlock Text="RM" VerticalAlignment="Center" Foreground="#F4B860" FontWeight="Bold" />
+                <TextBlock Grid.Column="1" Text="{Binding RiskModeLabel}" Foreground="#F4B860" FontWeight="Bold" />
+              </Grid>
+            </Border>
+            <TextBlock Text="{Binding RiskModeSummaryLabel}" Foreground="#9BAFC5" />
+            <TextBlock Text="{Binding GlobalRiskSummary}" Foreground="#9BAFC5" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="5" Classes="TradingHeaderCard">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="Overline" Text="Account Equity" />
+            <TextBlock Classes="Metric" FontSize="24" Text="{Binding AccountEquityLabel}" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBlock Text="24h PnL" Foreground="#9BAFC5" />
+              <TextBlock Grid.Column="1" Text="{Binding SessionPnlLabel}" Foreground="{Binding SessionPnlBrush}" FontWeight="SemiBold" />
+            </Grid>
+            <TextBlock Text="{Binding SessionPnlPercentLabel}" Foreground="{Binding SessionPnlBrush}" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+
+    <Border Classes="GuardStripCard" IsVisible="{Binding IsCexTradingMode}">
+      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+        <Border Classes="GuardChip"
+                Background="#10251F"
+                BorderBrush="{Binding TradingGuardStatusBrush}">
+          <TextBlock Text="{Binding TradingGuardStatusLabel}"
+                     Foreground="{Binding TradingGuardStatusBrush}"
+                     FontWeight="Bold" />
+        </Border>
+        <StackPanel Grid.Column="1" Spacing="4">
+          <TextBlock Text="{Binding TradingGuardSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding TradingGuardDetail}" Foreground="#8FA3B8" TextWrapping="Wrap" />
+        </StackPanel>
+        <Border Grid.Column="2" Classes="InfoBand" MinWidth="180">
+          <StackPanel Spacing="2">
+            <TextBlock Classes="Overline" Text="Wallet Route" />
+            <TextBlock Text="{Binding WalletVM.RouteReadinessLabel}"
+                       Foreground="{Binding WalletVM.RouteReadinessBrush}"
+                       FontWeight="Bold" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+
+    <Border Classes="GuardStripCard" IsVisible="{Binding IsDexTradingMode}">
+      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+        <Border Classes="GuardChip"
+                Background="#10251F"
+                BorderBrush="{Binding DexTradingVM.DexGuardStatusBrush}">
+          <TextBlock Text="{Binding DexTradingVM.DexGuardStatusLabel}"
+                     Foreground="{Binding DexTradingVM.DexGuardStatusBrush}"
+                     FontWeight="Bold" />
+        </Border>
+        <StackPanel Grid.Column="1" Spacing="4">
+          <TextBlock Text="{Binding DexTradingVM.DexGuardSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding DexTradingVM.DexGuardDetail}" Foreground="#8FA3B8" TextWrapping="Wrap" />
+        </StackPanel>
+        <Border Grid.Column="2" Classes="InfoBand" MinWidth="180">
+          <StackPanel Spacing="2">
+            <TextBlock Classes="Overline" Text="Wallet Route" />
+            <TextBlock Text="{Binding WalletVM.RouteReadinessLabel}"
+                       Foreground="{Binding WalletVM.RouteReadinessBrush}"
+                       FontWeight="Bold" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+
+    <Grid ColumnDefinitions="296,*,356" ColumnSpacing="16" IsVisible="{Binding IsCexTradingMode}">
+      <Border Grid.Column="0" Classes="SectionPanel">
+        <StackPanel Spacing="14">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBlock Classes="H2" Text="Order Entry" />
+            <Border Grid.Column="1" Classes="TopIconChip">
+              <TextBlock Text="OT" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" FontWeight="Bold" />
+            </Border>
+          </Grid>
+
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="0">
+            <Button Grid.Column="0"
+                    Content="BUY"
+                    Classes="TradeSideButton"
+                    Command="{Binding SelectOrderSideCommand}"
+                    CommandParameter="BUY"
+                    Background="{Binding BuySideBackground}"
+                    Foreground="{Binding BuySideForeground}"
+                    CornerRadius="10,0,0,10" />
+            <Button Grid.Column="1"
+                    Content="SELL"
+                    Classes="TradeSideButton"
+                    Command="{Binding SelectOrderSideCommand}"
+                    CommandParameter="SELL"
+                    Background="{Binding SellSideBackground}"
+                    Foreground="{Binding SellSideForeground}"
+                    CornerRadius="0,10,10,0" />
+          </Grid>
+
+          <StackPanel Spacing="6">
+            <TextBlock Classes="Overline" Text="Order Type" />
+            <ComboBox ItemsSource="{Binding OrderTypeOptions}" SelectedItem="{Binding SelectedOrderType}" />
+          </StackPanel>
+
+          <StackPanel Spacing="6">
+            <TextBlock Classes="Overline" Text="Trading Profile" />
+            <ComboBox ItemsSource="{Binding TradingProfileOptions}"
+                      SelectedItem="{Binding SelectedTradingProfile}" />
+            <TextBlock Text="{Binding TradingProfileSummary}"
+                       Foreground="#8FA3B8"
+                       TextWrapping="Wrap" />
+          </StackPanel>
+
+          <StackPanel Spacing="8"
+                      IsVisible="{Binding IsScalpProfile}">
+            <TextBlock Classes="Overline" Text="Scalp Presets" />
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+              <Button Grid.Column="0"
+                      Content="Tight"
+                      Classes="GhostButton"
+                      Command="{Binding ApplyScalpPresetCommand}"
+                      CommandParameter="Tight" />
+              <Button Grid.Column="1"
+                      Content="Standard"
+                      Classes="GhostButton"
+                      Command="{Binding ApplyScalpPresetCommand}"
+                      CommandParameter="Standard" />
+              <Button Grid.Column="2"
+                      Content="Aggro"
+                      Classes="GhostButton"
+                      Command="{Binding ApplyScalpPresetCommand}"
+                      CommandParameter="Aggro" />
+            </Grid>
+            <TextBlock Text="{Binding ScalpPresetTargetLabel}"
+                       Foreground="#8FA3B8"
+                       TextWrapping="Wrap" />
+          </StackPanel>
+
+          <StackPanel Spacing="8">
+            <StackPanel Spacing="6">
+              <TextBlock Classes="Overline" Text="Market Mode" />
+              <ComboBox ItemsSource="{Binding AvailableCexMarketModes}"
+                        SelectedItem="{Binding SelectedCexMarketMode}" />
+            </StackPanel>
+
+            <StackPanel Spacing="6" IsVisible="{Binding IsManualFuturesMode}">
+              <TextBlock Classes="Overline" Text="Exchange" />
+              <ComboBox ItemsSource="{Binding FuturesExchangeOptions}"
+                        SelectedItem="{Binding SelectedFuturesExchange}"
+                        HorizontalAlignment="Stretch" />
+            </StackPanel>
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="8"
+                  IsVisible="{Binding IsManualFuturesMode}">
+              <StackPanel Grid.Column="0" Spacing="6">
+                <TextBlock Classes="Overline" Text="Leverage" />
+                <NumericUpDown Value="{Binding ManualFuturesLeverage}"
+                               Increment="1"
+                               Minimum="1"
+                               HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Center" />
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="6">
+                <TextBlock Classes="Overline" Text="Margin" />
+                <ComboBox ItemsSource="{Binding AvailableFuturesMarginModes}"
+                          SelectedItem="{Binding ManualFuturesMarginMode}" />
+              </StackPanel>
+            </Grid>
+          </StackPanel>
+
+          <StackPanel Spacing="4"
+                      IsVisible="{Binding IsManualFuturesMode}">
+            <TextBlock Text="{Binding CexMarketModeSummary}"
+                       Foreground="#8FA3B8"
+                       TextWrapping="Wrap" />
+            <TextBlock Text="{Binding FuturesPrivateApiStatusLabel}"
+                       Foreground="{Binding FuturesPrivateApiStatusBrush}"
+                       TextWrapping="Wrap" />
+          </StackPanel>
+
+          <Border Classes="TicketMetricCard"
+                  IsVisible="{Binding IsManualFuturesMode}">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="Overline" Text="Futures Telemetry" />
+              <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+                  <TextBlock Classes="Overline" Text="Mark" />
+                  <TextBlock Text="{Binding CurrentFuturesMarkPriceLabel}" FontWeight="Bold" />
+                </StackPanel>
+                <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
+                  <TextBlock Classes="Overline" Text="Liq" />
+                  <TextBlock Text="{Binding CurrentFuturesLiquidationLabel}" FontWeight="Bold" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2">
+                  <TextBlock Classes="Overline" Text="Margin" />
+                  <TextBlock Text="{Binding CurrentFuturesEstimatedMarginLabel}" FontWeight="Bold" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
+                  <TextBlock Classes="Overline" Text="ROE" />
+                  <TextBlock Text="{Binding CurrentFuturesRoeLabel}" FontWeight="Bold" />
+                </StackPanel>
+                <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Spacing="2">
+                  <TextBlock Classes="Overline" Text="Exchange uPnL" />
+                  <TextBlock Text="{Binding ExchangeUnrealizedPnlLabel}"
+                             FontWeight="Bold"
+                             TextWrapping="Wrap" />
+                </StackPanel>
+              </Grid>
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                <Button Grid.Column="0"
+                        Content="Close"
+                        Classes="GhostButton"
+                        Command="{Binding ClosePositionCommand}"
+                        IsEnabled="{Binding CanExecuteCexClose}"
+                        ToolTip.Tip="{Binding CexCloseBlockedReason}" />
+                <Button Grid.Column="1"
+                        Content="Reverse"
+                        Classes="GhostButton"
+                        Command="{Binding ReversePositionCommand}"
+                        IsEnabled="{Binding CanExecuteCexReverse}"
+                        ToolTip.Tip="{Binding CexReverseBlockedReason}" />
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4">
+                  <TextBlock Classes="Overline" Text="Take Profit" />
+                  <NumericUpDown Value="{Binding TakeProfitPrice}"
+                                 Increment="1"
+                                 Minimum="0"
+                                 FormatString="0.00"
+                                 HorizontalContentAlignment="Center" />
+                </StackPanel>
+                <Button Grid.Row="0"
+                        Grid.Column="1"
+                        Content="Arm TP"
+                        Classes="GhostButton"
+                        Command="{Binding ArmTakeProfitCommand}"
+                        IsEnabled="{Binding CanExecuteCexTakeProfit}"
+                        ToolTip.Tip="{Binding CexTakeProfitBlockedReason}"
+                        VerticalAlignment="Bottom" />
+                <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4">
+                  <TextBlock Classes="Overline" Text="Stop Loss" />
+                  <NumericUpDown Value="{Binding StopLossPrice}"
+                                 Increment="1"
+                                 Minimum="0"
+                                 FormatString="0.00"
+                                 HorizontalContentAlignment="Center" />
+                </StackPanel>
+                <Button Grid.Row="1"
+                        Grid.Column="1"
+                        Content="Arm SL"
+                        Classes="GhostButton"
+                        Command="{Binding ArmStopLossCommand}"
+                        IsEnabled="{Binding CanExecuteCexStopLoss}"
+                        ToolTip.Tip="{Binding CexStopLossBlockedReason}"
+                        VerticalAlignment="Bottom" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <StackPanel Spacing="6" IsVisible="{Binding IsLimitOrderType}">
+            <TextBlock Classes="Overline" Text="Price (USDT)" />
+            <Grid ColumnDefinitions="56,*,56" ColumnSpacing="8">
+              <Button Grid.Column="0" Content="-" Classes="GhostButton" Command="{Binding DecreaseLimitPriceCommand}" />
+              <Border Grid.Column="1" Classes="OrderFieldCard">
+                <TextBlock Text="{Binding LimitPrice, StringFormat={}{0:N2}}"
+                           FontSize="28"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+              </Border>
+              <Button Grid.Column="2" Content="+" Classes="GhostButton" Command="{Binding IncreaseLimitPriceCommand}" />
+            </Grid>
+            <TextBlock Text="{Binding TradeNotionalLabel}" Foreground="#8FA3B8" />
+          </StackPanel>
+
+          <StackPanel Spacing="6">
+            <TextBlock Classes="Overline" Text="Quantity (ETH)" />
+            <Grid ColumnDefinitions="56,*,56" ColumnSpacing="8">
+              <Button Grid.Column="0" Content="-" Classes="GhostButton" IsEnabled="False" />
+              <NumericUpDown Grid.Column="1"
+                             Value="{Binding TradeQuantity}"
+                             Increment="0.0001"
+                             FormatString="0.0000"
+                             Minimum="0"
+                             HorizontalContentAlignment="Center" />
+              <Button Grid.Column="2" Content="+" Classes="GhostButton" IsEnabled="False" />
+            </Grid>
+            <TextBlock Text="{Binding PrimaryOrderButtonHint}" Foreground="#8FA3B8" />
+          </StackPanel>
+
+          <Slider Minimum="10"
+                  Maximum="100"
+                  Value="{Binding WalletVM.GlobalPositionSizingPercent}"
+                  TickFrequency="25"
+                  IsSnapToTickEnabled="False"
+                  Classes="TradeSlider" />
+
+          <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="6">
+            <TextBlock Grid.Column="0" Text="10%" Foreground="#6E8196" FontSize="11" />
+            <TextBlock Grid.Column="1" Text="25%" Foreground="#6E8196" FontSize="11" HorizontalAlignment="Center" />
+            <TextBlock Grid.Column="2" Text="50%" Foreground="#6E8196" FontSize="11" HorizontalAlignment="Center" />
+            <TextBlock Grid.Column="3" Text="75%" Foreground="#6E8196" FontSize="11" HorizontalAlignment="Center" />
+            <TextBlock Grid.Column="4" Text="100%" Foreground="#6E8196" FontSize="11" HorizontalAlignment="Right" />
+          </Grid>
+
+          <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
+            <Button Grid.Column="0" Content="25%" Classes="GhostButton" Command="{Binding SelectTradeAllocationCommand}" CommandParameter="25" />
+            <Button Grid.Column="1" Content="50%" Classes="GhostButton" Command="{Binding SelectTradeAllocationCommand}" CommandParameter="50" />
+            <Button Grid.Column="2" Content="75%" Classes="GhostButton" Command="{Binding SelectTradeAllocationCommand}" CommandParameter="75" />
+            <Button Grid.Column="3" Content="100%" Classes="GhostButton" Command="{Binding SelectTradeAllocationCommand}" CommandParameter="100" />
+          </Grid>
+
+          <StackPanel Spacing="6">
+            <TextBlock Classes="Overline" Text="Slippage Tolerance" />
+            <Grid ColumnDefinitions="56,*,56,Auto" ColumnSpacing="8">
+              <Button Grid.Column="0" Content="-" Classes="GhostButton" IsEnabled="False" />
+              <NumericUpDown Grid.Column="1"
+                             Value="{Binding SlippageTolerancePercent}"
+                             Increment="0.05"
+                             FormatString="0.00"
+                             Minimum="0"
+                             HorizontalContentAlignment="Center" />
+              <Button Grid.Column="2" Content="+" Classes="GhostButton" IsEnabled="False" />
+              <TextBlock Grid.Column="3" Text="%" VerticalAlignment="Center" Foreground="#9BAFC5" />
+            </Grid>
+          </StackPanel>
+
+          <Border Classes="TicketMetricCard">
+            <StackPanel Spacing="6">
+              <TextBlock Classes="Overline" Text="Estimated Fees" />
+              <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+                <TextBlock Grid.Row="0" Text="Trading Fee (0.10%)" Foreground="#8FA3B8" />
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding EstimatedTradingFeeLabel}" />
+                <TextBlock Grid.Row="1" Text="Network / Gas" Foreground="#8FA3B8" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding EstimatedNetworkFeeLabel}" />
+                <TextBlock Grid.Row="2" Text="Total Estimated" FontWeight="SemiBold" />
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding EstimatedTotalCostLabel}" FontWeight="SemiBold" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Button Command="{Binding PlacePrimaryOrderCommand}" Classes="PrimaryTradeButton" Height="60"
+                  IsEnabled="{Binding CanPlacePrimaryOrder}"
+                  ToolTip.Tip="{Binding PrimaryOrderBlockedReason}">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+              <StackPanel Spacing="2">
+                <TextBlock Text="{Binding PrimaryOrderButtonText}" Foreground="#051018" FontWeight="Bold" HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding PrimaryOrderButtonHint}" Foreground="#0B3E37" Classes="SecondaryCopy" HorizontalAlignment="Center" />
+              </StackPanel>
+              <TextBlock Grid.Column="1" Text="->" Foreground="#051018" FontSize="22" VerticalAlignment="Center" />
+            </Grid>
+          </Button>
+
+          <Border Classes="InfoBand" IsVisible="{Binding !CanPlacePrimaryOrder}">
+            <TextBlock Text="{Binding PrimaryOrderBlockedReason}"
+                       Foreground="#F4B860"
+                       TextWrapping="Wrap" />
+          </Border>
+
+          <Border Classes="ExecutionGuardCard">
+            <StackPanel Spacing="10">
+              <TextBlock Text="{Binding TradingGuardSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding TradingGuardDetail}" Foreground="#8FA3B8" TextWrapping="Wrap" />
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                <TextBlock Text="OK" VerticalAlignment="Center" Foreground="#7DE9BB" FontWeight="Bold" />
+                <TextBlock Grid.Column="1" Text="Execution Guard" FontWeight="SemiBold" />
+                <Border Grid.Column="2" Background="#11382D" BorderBrush="#245642" BorderThickness="1" CornerRadius="999" Padding="10,4">
+                  <TextBlock Text="ALL CHECKS PASSED" Foreground="#7DE9BB" FontSize="11" FontWeight="SemiBold" />
+                </Border>
+              </Grid>
+              <WrapPanel ItemWidth="62">
+                <TextBlock Text="? Liquidity" Foreground="#9BAFC5" Margin="0,0,10,0" />
+                <TextBlock Text="? Slippage" Foreground="#9BAFC5" Margin="0,0,10,0" />
+                <TextBlock Text="? Exposure" Foreground="#9BAFC5" Margin="0,0,10,0" />
+                <TextBlock Text="? Risk Limits" Foreground="#9BAFC5" />
+              </WrapPanel>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Border>
+
+      <Grid Grid.Column="1" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="16">
+        <Border Grid.Row="0" Classes="Panel">
+          <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12">
+            <Border Grid.Column="0" Classes="TicketMetricCard">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="Overline" Text="Symbol" />
+                <TextBlock Text="{Binding SelectedTradingSymbol}" FontWeight="Bold" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Classes="TicketMetricCard">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="Overline" Text="Position" />
+                <TextBlock Text="{Binding PositionStatusLabel}" FontWeight="Bold" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Classes="TicketMetricCard">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="Overline" Text="Entry" />
+                <TextBlock Text="{Binding EntryPriceLabel}" FontWeight="Bold" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="3" Classes="TicketMetricCard">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="Overline" Text="Session PnL" />
+                <TextBlock Text="{Binding SessionPnlLabel}" FontWeight="Bold" Foreground="{Binding SessionPnlBrush}" />
+              </StackPanel>
+            </Border>
+          </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Classes="Panel">
+          <StackPanel Spacing="10">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
+              <TextBlock Classes="H2" Text="Price Chart" />
+              <TextBlock Grid.Column="1"
+                         Text="{Binding TradingChartHeader}"
+                         Foreground="#9BAFC5"
+                         VerticalAlignment="Center"
+                         TextTrimming="CharacterEllipsis" />
+              <TextBlock Grid.Column="2"
+                         Text="{Binding FeedStatusLabel}"
+                         Foreground="#9BAFC5"
+                         VerticalAlignment="Center" />
+              <Border Grid.Column="3" Classes="StatusPill">
+                <TextBlock Text="{Binding ChartRangeLabel}" />
+              </Border>
+            </Grid>
+
+            <Grid ColumnDefinitions="1.25*,1*,1*,1*,1*" ColumnSpacing="10">
+              <Border Grid.Column="0" Classes="TicketMetricCard,ChartMetricCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Last Price" />
+                  <TextBlock Text="{Binding CurrentTradePrice, StringFormat={}{0:N2} USDT}" FontWeight="Bold" FontSize="17" Foreground="#21E6C1" />
+                  <TextBlock Text="{Binding TradingChartHeader}" Classes="MicroCopy" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Classes="TicketMetricCard,ChartMetricCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Spread" />
+                  <TextBlock Text="{Binding SpreadLabel}" FontWeight="Bold" FontSize="16" />
+                  <TextBlock Text="{Binding SpreadPercentLabel}" Classes="MicroCopy" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Classes="TicketMetricCard,ChartMetricCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="High" />
+                  <TextBlock Text="{Binding ChartHighLabel}" FontWeight="Bold" FontSize="16" Foreground="#4FF1C9" />
+                  <TextBlock Text="Current timeframe" Classes="MicroCopy" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="3" Classes="TicketMetricCard,ChartMetricCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Low" />
+                  <TextBlock Text="{Binding ChartLowLabel}" FontWeight="Bold" FontSize="16" Foreground="#FF7B7B" />
+                  <TextBlock Text="Current timeframe" Classes="MicroCopy" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="4" Classes="TicketMetricCard,ChartMetricCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Volume" />
+                  <TextBlock Text="{Binding ChartVolumeLabel}" FontWeight="Bold" FontSize="16" />
+                  <TextBlock Text="Last candle" Classes="MicroCopy" />
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,*,Auto" ColumnSpacing="8">
+              <Button Grid.Column="0" Content="1M" Classes="GhostButton,ChartToolbarButton" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1M" Background="{Binding Timeframe1MBackground}" Foreground="{Binding Timeframe1MForeground}" />
+              <Button Grid.Column="1" Content="5M" Classes="GhostButton,ChartToolbarButton" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="5M" Background="{Binding Timeframe5MBackground}" Foreground="{Binding Timeframe5MForeground}" />
+              <Button Grid.Column="2" Content="15M" Classes="GhostButton,ChartToolbarButton" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="15M" Background="{Binding Timeframe15MBackground}" Foreground="{Binding Timeframe15MForeground}" />
+              <Button Grid.Column="3" Content="1H" Classes="GhostButton,ChartToolbarButton" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1H" Background="{Binding Timeframe1HBackground}" Foreground="{Binding Timeframe1HForeground}" />
+              <Button Grid.Column="4" Content="4H" Classes="GhostButton,ChartToolbarButton" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="4H" Background="{Binding Timeframe4HBackground}" Foreground="{Binding Timeframe4HForeground}" />
+              <Button Grid.Column="5" Content="1D" Classes="GhostButton,ChartToolbarButton" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1D" Background="{Binding Timeframe1DBackground}" Foreground="{Binding Timeframe1DForeground}" />
+              <Button Grid.Column="6" Content="1W" Classes="GhostButton,ChartToolbarButton" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1W" Background="{Binding Timeframe1WBackground}" Foreground="{Binding Timeframe1WForeground}" />
+              <TextBlock Grid.Column="8" Text="{Binding ChartInteractionHint}" Foreground="#7E92A7" VerticalAlignment="Center" TextAlignment="Right" />
+            </Grid>
+
+            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*" ColumnSpacing="8">
+              <Button Grid.Column="0" Content="CURSOR" Classes="GhostButton,ChartToolbarButton" Command="{Binding SelectChartToolCommand}" CommandParameter="Cursor" Background="{Binding ChartCursorBackground}" Foreground="{Binding ChartCursorForeground}" />
+              <Button Grid.Column="1" Content="TREND" Classes="GhostButton,ChartToolbarButton" Command="{Binding SelectChartToolCommand}" CommandParameter="Trend" Background="{Binding ChartTrendBackground}" Foreground="{Binding ChartTrendForeground}" />
+              <Button Grid.Column="2" Content="H-LINE" Classes="GhostButton,ChartToolbarButton" Command="{Binding SelectChartToolCommand}" CommandParameter="Horizontal" Background="{Binding ChartHorizontalBackground}" Foreground="{Binding ChartHorizontalForeground}" />
+              <Button Grid.Column="3" Content="RECT" Classes="GhostButton,ChartToolbarButton" Command="{Binding SelectChartToolCommand}" CommandParameter="Rectangle" Background="{Binding ChartRectangleBackground}" Foreground="{Binding ChartRectangleForeground}" />
+              <Button Grid.Column="4" Content="CHANNEL" Classes="GhostButton,ChartToolbarButton" Command="{Binding SelectChartToolCommand}" CommandParameter="Channel" Background="{Binding ChartChannelBackground}" Foreground="{Binding ChartChannelForeground}" />
+              <Button Grid.Column="5" Content="ERASE" Classes="GhostButton,ChartToolbarButton" Command="{Binding SelectChartToolCommand}" CommandParameter="Erase" Background="{Binding ChartEraseBackground}" Foreground="{Binding ChartEraseForeground}" />
+              <Button Grid.Column="6" Content="RESET" Classes="GhostButton,ChartToolbarButton" Command="{Binding ResetChartViewCommand}" />
+              <Button Grid.Column="7" Content="CLEAR" Classes="GhostButton,ChartToolbarButton" Command="{Binding ClearChartDrawingsCommand}" />
+            </Grid>
+
+            <Border Classes="SoftPanel,ChartCanvasHost" Padding="8">
+              <ctrl:CexCandlestickChart Height="320"
+                                        Candles="{Binding ActiveTradingCandles}"
+                                        ToolMode="{Binding SelectedChartTool}"
+                                        PersistenceKey="{Binding SelectedTradingSymbol}"
+                                        ClearDrawingsVersion="{Binding ChartClearDrawingsVersion}"
+                                        ResetViewVersion="{Binding ChartResetViewVersion}" />
+            </Border>
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2" Classes="Panel">
+          <StackPanel Spacing="12">
+            <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="10">
+              <TextBlock Classes="H2" Text="Positions &amp; Orders" />
+              <TextBlock Grid.Column="1" Text="Position Summary" Foreground="#9BAFC5" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="3" Text="{Binding FeedStatusLabel}" Foreground="#9BAFC5" VerticalAlignment="Center" />
+              <Border Grid.Column="4" Classes="StatusPill">
+                <TextBlock Text="All" />
+              </Border>
+              <Border Grid.Column="5" Classes="TopIconChip">
+                <TextBlock Text="вљІ" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" />
+              </Border>
+            </Grid>
+
+            <TabControl SelectedIndex="{Binding SelectedTradingBottomTabIndex}" Classes="DeskTabs">
+              <TabItem Header="Orders">
+                <StackPanel Margin="0,12,0,0" Spacing="10">
+                  <Grid ColumnDefinitions="0.8*,0.9*,0.7*,0.7*,0.8*,0.6*,0.6*,0.6*,0.5*,0.7*" ColumnSpacing="10">
+                    <TextBlock Text="ID" Foreground="#8FA3B8" FontWeight="Bold" />
+                    <TextBlock Grid.Column="1" Text="SYMBOL" Foreground="#8FA3B8" FontWeight="Bold" />
+                    <TextBlock Grid.Column="2" Text="SIDE" Foreground="#8FA3B8" FontWeight="Bold" />
+                    <TextBlock Grid.Column="3" Text="TYPE" Foreground="#8FA3B8" FontWeight="Bold" />
+                    <TextBlock Grid.Column="4" Text="PRICE" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="5" Text="QTY" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="6" Text="FILLED" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="7" Text="STATUS" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Center" />
+                    <TextBlock Grid.Column="8" Text="TIF" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Center" />
+                    <TextBlock Grid.Column="9" Text="CREATED" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                  </Grid>
+                  <ScrollViewer MaxHeight="236">
+                    <ItemsControl ItemsSource="{Binding WorkingOrders}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:WorkingOrderViewModel">
+                          <Border Classes="TableRowCard" Margin="0,0,0,8">
+                            <Grid ColumnDefinitions="0.8*,0.9*,0.7*,0.7*,0.8*,0.6*,0.6*,0.6*,0.5*,0.7*" ColumnSpacing="10">
+                              <TextBlock Text="{Binding IdLabel}" />
+                              <TextBlock Grid.Column="1" Text="{Binding Symbol}" />
+                              <TextBlock Grid.Column="2" Text="{Binding SideLabel}" Foreground="{Binding SideBrush}" FontWeight="Bold" />
+                              <TextBlock Grid.Column="3" Text="{Binding TypeLabel}" Foreground="#C4D0DE" />
+                              <TextBlock Grid.Column="4" Text="{Binding TriggerLabel}" HorizontalAlignment="Right" />
+                              <TextBlock Grid.Column="5" Text="{Binding QuantityLabel}" HorizontalAlignment="Right" />
+                              <TextBlock Grid.Column="6" Text="{Binding FilledLabel}" HorizontalAlignment="Right" />
+                              <Border Grid.Column="7" Background="#102842" BorderBrush="#204E81" BorderThickness="1" CornerRadius="8" Padding="8,2" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding StatusLabel}" Foreground="{Binding StatusBrush}" FontSize="11" FontWeight="SemiBold" />
+                              </Border>
+                              <TextBlock Grid.Column="8" Text="{Binding TimeInForce}" HorizontalAlignment="Center" />
+                              <TextBlock Grid.Column="9" Text="{Binding CreatedLabel}" HorizontalAlignment="Right" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                  <TextBlock Text="View All Orders" HorizontalAlignment="Center" Foreground="#8FB9DE" />
+                  <TextBlock Text="No working orders yet. Arm a limit, TP or SL to populate the blotter."
+                             Foreground="#6E8196"
+                             IsVisible="{Binding ShowWorkingOrdersPlaceholder}" />
+                </StackPanel>
+              </TabItem>
+
+              <TabItem Header="Fills">
+                <StackPanel Margin="0,12,0,0" Spacing="10">
+                  <Grid ColumnDefinitions="0.7*,0.9*,0.8*,0.6*,0.8*,0.7*" ColumnSpacing="10">
+                    <TextBlock Text="SIDE" Foreground="#8FA3B8" FontWeight="Bold" />
+                    <TextBlock Grid.Column="1" Text="SYMBOL" Foreground="#8FA3B8" FontWeight="Bold" />
+                    <TextBlock Grid.Column="2" Text="PRICE" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="3" Text="QTY" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="4" Text="STATUS" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="5" Text="TIME" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                  </Grid>
+                  <ScrollViewer MaxHeight="236">
+                    <ItemsControl ItemsSource="{Binding RecentFills}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:TradeFillViewModel">
+                          <Border Classes="TableRowCard" Margin="0,0,0,8">
+                            <Grid ColumnDefinitions="0.7*,0.9*,0.8*,0.6*,0.8*,0.7*" ColumnSpacing="10">
+                              <TextBlock Text="{Binding SideLabel}" Foreground="{Binding SideBrush}" FontWeight="Bold" />
+                              <TextBlock Grid.Column="1" Text="{Binding Symbol}" />
+                              <TextBlock Grid.Column="2" Text="{Binding PriceLabel}" HorizontalAlignment="Right" />
+                              <TextBlock Grid.Column="3" Text="{Binding QuantityLabel}" HorizontalAlignment="Right" />
+                              <TextBlock Grid.Column="4" Text="{Binding Status}" HorizontalAlignment="Right" Foreground="{Binding StatusBrush}" />
+                              <TextBlock Grid.Column="5" Text="{Binding TimeLabel}" HorizontalAlignment="Right" Foreground="#8FA3B8" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                  <TextBlock Text="No fills yet. Execution tape will appear here after the first order."
+                             Foreground="#6E8196"
+                             IsVisible="{Binding ShowRecentFillsPlaceholder}" />
+                </StackPanel>
+              </TabItem>
+
+              <TabItem Header="Positions">
+                <StackPanel Margin="0,12,0,0" Spacing="10">
+                  <Grid ColumnDefinitions="0.9*,0.7*,0.8*,0.8*,0.9*,0.7*,0.7*,0.6*" ColumnSpacing="10">
+                    <TextBlock Text="SYMBOL" Foreground="#8FA3B8" FontWeight="Bold" />
+                    <TextBlock Grid.Column="1" Text="SIZE" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="2" Text="ENTRY PRICE" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="3" Text="MARK PRICE" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="4" Text="UNREALIZED PNL" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="5" Text="PNL %" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="6" Text="MARGIN" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="7" Text="ROE" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                  </Grid>
+                  <ScrollViewer MaxHeight="236">
+                    <ItemsControl ItemsSource="{Binding PositionRows}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PositionRowViewModel">
+                          <Border Classes="TableRowCard" Margin="0,0,0,8">
+                            <Grid ColumnDefinitions="0.9*,0.7*,0.8*,0.8*,0.9*,0.7*,0.7*,0.6*" ColumnSpacing="10">
+                              <TextBlock Text="{Binding Symbol}" />
+                              <TextBlock Grid.Column="1" Text="{Binding SizeLabel}" HorizontalAlignment="Right" />
+                              <TextBlock Grid.Column="2" Text="{Binding EntryPriceLabel}" HorizontalAlignment="Right" />
+                              <TextBlock Grid.Column="3" Text="{Binding MarkPriceLabel}" HorizontalAlignment="Right" />
+                              <TextBlock Grid.Column="4" Text="{Binding UnrealizedPnlLabel}" HorizontalAlignment="Right" Foreground="{Binding UnrealizedPnlBrush}" />
+                              <TextBlock Grid.Column="5" Text="{Binding PnlPercentLabel}" HorizontalAlignment="Right" Foreground="{Binding UnrealizedPnlBrush}" />
+                              <TextBlock Grid.Column="6" Text="{Binding MarginLabel}" HorizontalAlignment="Right" />
+                              <TextBlock Grid.Column="7" Text="{Binding RoeLabel}" HorizontalAlignment="Right" Foreground="{Binding UnrealizedPnlBrush}" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                  <TextBlock Text="No open positions. Use the ticket to open the first trade."
+                             Foreground="#6E8196"
+                             IsVisible="{Binding ShowPositionRowsPlaceholder}" />
+                </StackPanel>
+              </TabItem>
+
+              <TabItem Header="Signals">
+                <StackPanel Margin="0,12,0,0" Spacing="10">
+                  <Grid ColumnDefinitions="0.9*,1.2*,0.7*,0.7*,0.7*,0.7*" ColumnSpacing="10">
+                    <TextBlock Text="SYMBOL" Foreground="#8FA3B8" FontWeight="Bold" />
+                    <TextBlock Grid.Column="1" Text="SETUP" Foreground="#8FA3B8" FontWeight="Bold" />
+                    <TextBlock Grid.Column="2" Text="ENTRY" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="3" Text="TARGET" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="4" Text="STOP" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="5" Text="STATUS" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                  </Grid>
+                  <ScrollViewer MaxHeight="236">
+                    <ItemsControl ItemsSource="{Binding SignalRows}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:SignalRowViewModel">
+                          <Border Classes="TableRowCard" Margin="0,0,0,8">
+                            <Grid ColumnDefinitions="0.9*,1.2*,0.7*,0.7*,0.7*,0.7*" ColumnSpacing="10">
+                              <TextBlock Text="{Binding Symbol}" FontWeight="Bold" />
+                              <TextBlock Grid.Column="1" Text="{Binding Setup}" Foreground="#9BAFC5" />
+                              <TextBlock Grid.Column="2" Text="{Binding Entry}" HorizontalAlignment="Right" />
+                              <TextBlock Grid.Column="3" Text="{Binding Target}" HorizontalAlignment="Right" Foreground="#3DDC84" />
+                              <TextBlock Grid.Column="4" Text="{Binding Stop}" HorizontalAlignment="Right" Foreground="#FF6B6B" />
+                              <TextBlock Grid.Column="5" Text="{Binding Status}" HorizontalAlignment="Right" Foreground="{Binding StatusBrush}" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                  <TextBlock Text="Signals are waiting for stronger market structure before activating."
+                             Foreground="#6E8196"
+                             IsVisible="{Binding ShowSignalRowsPlaceholder}" />
+                </StackPanel>
+              </TabItem>
+            </TabControl>
+
+            <Border Height="1" Background="#1A2B39" Margin="0,4,0,0" />
+
+            <Grid ColumnDefinitions="0.9*,0.7*,0.8*,0.8*,0.9*,0.7*,0.7*,0.6*" ColumnSpacing="10">
+              <TextBlock Text="SYMBOL" Foreground="#8FA3B8" FontWeight="Bold" />
+              <TextBlock Grid.Column="1" Text="SIZE" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="2" Text="ENTRY PRICE" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="3" Text="MARK PRICE" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="4" Text="UNREALIZED PNL" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="5" Text="PNL %" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="6" Text="MARGIN" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="7" Text="ROE" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+            </Grid>
+            <ItemsControl ItemsSource="{Binding PositionRows}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:PositionRowViewModel">
+                  <Border Classes="TableRowCard" Margin="0,0,0,8">
+                    <Grid ColumnDefinitions="0.9*,0.7*,0.8*,0.8*,0.9*,0.7*,0.7*,0.6*" ColumnSpacing="10">
+                      <TextBlock Text="{Binding Symbol}" />
+                      <TextBlock Grid.Column="1" Text="{Binding SizeLabel}" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="2" Text="{Binding EntryPriceLabel}" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="3" Text="{Binding MarkPriceLabel}" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="4" Text="{Binding UnrealizedPnlLabel}" HorizontalAlignment="Right" Foreground="{Binding UnrealizedPnlBrush}" />
+                      <TextBlock Grid.Column="5" Text="{Binding PnlPercentLabel}" HorizontalAlignment="Right" Foreground="{Binding UnrealizedPnlBrush}" />
+                      <TextBlock Grid.Column="6" Text="{Binding MarginLabel}" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="7" Text="{Binding RoeLabel}" HorizontalAlignment="Right" Foreground="{Binding UnrealizedPnlBrush}" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+              <TextBlock Text="Total Unrealized PnL" Foreground="#9BAFC5" />
+              <TextBlock Grid.Column="1" Text="{Binding UnrealizedPnlLabel}" Foreground="{Binding SessionPnlBrush}" FontWeight="SemiBold" />
+            </Grid>
+            <TextBlock Text="View All Positions" HorizontalAlignment="Center" Foreground="#8FB9DE" />
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Row="3" Classes="Panel">
+          <StackPanel Spacing="10">
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+              <TextBlock Classes="H2" Text="Recent Activity" />
+              <TextBlock Grid.Column="1" Text="Order ID" Foreground="#8FA3B8" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="2" Text="Status" Foreground="#8FA3B8" VerticalAlignment="Center" />
+            </Grid>
+            <ItemsControl ItemsSource="{Binding RecentActivityFeed}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:ActivityFeedRowViewModel">
+                  <Border Classes="TableRowCard" Margin="0,0,0,8">
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="12">
+                      <TextBlock Text="{Binding TimeLabel}" Foreground="#6E8196" />
+                      <TextBlock Grid.Column="1" Text="{Binding Message}" TextWrapping="Wrap" />
+                      <TextBlock Grid.Column="2" Text="?" Foreground="#8FA3B8" />
+                      <Border Grid.Column="3" Background="#0F1A24" BorderBrush="#223241" BorderThickness="1" CornerRadius="999" Padding="10,4">
+                        <TextBlock Text="{Binding Status}" Foreground="{Binding StatusBrush}" FontWeight="SemiBold" />
+                      </Border>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Text="Recent actions, routed orders and state changes will appear here."
+                       Foreground="#6E8196"
+                       IsVisible="{Binding ShowRecentActivityPlaceholder}" />
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <StackPanel Grid.Column="2" Spacing="14">
+        <Border Classes="SectionPanel">
+          <StackPanel Spacing="14">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+              <Border Classes="TopIconChip">
+                <TextBlock Text="OB" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" FontWeight="Bold" />
+              </Border>
+              <StackPanel Grid.Column="1" Spacing="2">
+                <TextBlock Classes="H2" Text="Order Book" />
+                <TextBlock Text="Visible buy and sell requests by level"
+                           Classes="SecondaryCopy" />
+              </StackPanel>
+              <Border Grid.Column="2" Classes="StatusPill">
+                <TextBlock Text="{Binding FeedStatusLabel}" />
+              </Border>
+            </Grid>
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+              <Border Grid.Column="0" Classes="TicketMetricCard,OrderBookSideCard">
+                <StackPanel Spacing="10">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBlock Text="BUY" Foreground="#42F5B1" FontWeight="Bold" />
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding BidDepthLabel, StringFormat=Total {0}}"
+                               Foreground="#8FA3B8" />
+                  </Grid>
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBlock Text="Price" Foreground="#6E8196" FontSize="11" />
+                    <TextBlock Grid.Column="1" Text="Size" Foreground="#6E8196" FontSize="11" HorizontalAlignment="Right" />
+                  </Grid>
+                  <ScrollViewer MaxHeight="244" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding SelectedMarket.BidLevels}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
+                          <Button Classes="OrderBookRowButton,OrderBookBidRow"
+                                  Padding="0"
+                                  Command="{Binding $parent[UserControl].DataContext.SelectBidPriceCommand}"
+                                  CommandParameter="{Binding Price}">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                              <TextBlock Text="{Binding Price, StringFormat={}{0:N2}}"
+                                         Foreground="#42F5B1"
+                                         FontWeight="SemiBold" />
+                              <TextBlock Grid.Column="1"
+                                         Text="{Binding Quantity, StringFormat={}{0:N4}}"
+                                         HorizontalAlignment="Right" />
+                            </Grid>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </StackPanel>
+              </Border>
+
+              <Border Grid.Column="1" Classes="TicketMetricCard,OrderBookSideCard">
+                <StackPanel Spacing="10">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBlock Text="SELL" Foreground="#FF857B" FontWeight="Bold" />
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding AskDepthLabel, StringFormat=Total {0}}"
+                               Foreground="#8FA3B8" />
+                  </Grid>
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBlock Text="Price" Foreground="#6E8196" FontSize="11" />
+                    <TextBlock Grid.Column="1" Text="Size" Foreground="#6E8196" FontSize="11" HorizontalAlignment="Right" />
+                  </Grid>
+                  <ScrollViewer MaxHeight="244" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding SelectedMarket.AskLevels}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
+                          <Button Classes="OrderBookRowButton,OrderBookAskRow"
+                                  Padding="0"
+                                  Command="{Binding $parent[UserControl].DataContext.SelectAskPriceCommand}"
+                                  CommandParameter="{Binding Price}">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                              <TextBlock Text="{Binding Price, StringFormat={}{0:N2}}"
+                                         Foreground="#FF857B"
+                                         FontWeight="SemiBold" />
+                              <TextBlock Grid.Column="1"
+                                         Text="{Binding Quantity, StringFormat={}{0:N4}}"
+                                         HorizontalAlignment="Right" />
+                            </Grid>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+              <Border Grid.Column="0" Classes="TicketMetricCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Best Bid" />
+                  <TextBlock Text="{Binding SelectedMarket.BestBid, StringFormat={}{0:N2}}"
+                             Foreground="#42F5B1"
+                             FontWeight="Bold" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Classes="TicketMetricCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Spread" />
+                  <TextBlock Text="{Binding SpreadLabel}" FontWeight="Bold" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Classes="TicketMetricCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Best Ask" />
+                  <TextBlock Text="{Binding SelectedMarket.BestAsk, StringFormat={}{0:N2}}"
+                             Foreground="#FF857B"
+                             FontWeight="Bold" />
+                </StackPanel>
+              </Border>
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="SectionPanel">
+          <StackPanel Spacing="14">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+              <Border Classes="TopIconChip">
+                <TextBlock Text="ST" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" FontWeight="Bold" />
+              </Border>
+              <TextBlock Grid.Column="1" Classes="H2" Text="Setup Pulse" />
+              <Border Grid.Column="2" Classes="TopIconChip">
+                <TextBlock Text="RR" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" FontWeight="Bold" />
+              </Border>
+              <Border Grid.Column="3" Classes="TopIconChip">
+                <TextBlock Text="LV" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" FontWeight="Bold" />
+              </Border>
+            </Grid>
+
+            <Border Classes="AIPanelCard">
+              <StackPanel Spacing="14">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Classes="Overline" Text="Trade Setup" />
+                  <TextBlock Grid.Column="1" Text="{Binding AiUpdatedLabel, StringFormat=Updated: {0}}" Foreground="#8FA3B8" />
+                </Grid>
+
+                <Grid ColumnDefinitions="108,*" ColumnSpacing="16">
+                  <Border Grid.Column="0" Classes="ConfidenceRing">
+                    <StackPanel Spacing="4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding AiConfidenceLabel}" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center" />
+                      <TextBlock Text="CONFIDENCE" Classes="MicroCopy" HorizontalAlignment="Center" />
+                    </StackPanel>
+                  </Border>
+                  <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding AiOutlookLabel}" FontSize="22" FontWeight="Bold" Foreground="{Binding AiOutlookBrush}" />
+                    <TextBlock Text="{Binding TradeIdeaTitle}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding TradeIdeaSummary}" Foreground="#8FA3B8" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Grid>
+
+                <Border Classes="TicketMetricCard">
+                  <StackPanel Spacing="8">
+                    <TextBlock Classes="Overline" Text="Key Levels (USDT)" />
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8">
+                      <TextBlock Grid.Row="0" Text="Resistance R2" Foreground="#9BAFC5" />
+                      <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AiTakeProfitTwoDisplay}" />
+                      <TextBlock Grid.Row="1" Text="Resistance R1" Foreground="#9BAFC5" />
+                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AiTakeProfitOneDisplay}" />
+                      <TextBlock Grid.Row="2" Text="Current Price" Foreground="#21E6C1" />
+                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CurrentTradePrice, StringFormat={}{0:N2}}" Foreground="#21E6C1" FontWeight="Bold" />
+                      <TextBlock Grid.Row="3" Text="Support S1" Foreground="#9BAFC5" />
+                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AiStopLossDisplay}" />
+                      <TextBlock Grid.Row="4" Text="Support S2" Foreground="#9BAFC5" />
+                      <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SuggestedStopLabel}" />
+                    </Grid>
+                  </StackPanel>
+                </Border>
+
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                  <Border Grid.Column="0" Classes="TicketMetricCard">
+                    <StackPanel Spacing="4">
+                      <TextBlock Classes="Overline" Text="Direction" />
+                      <TextBlock Text="{Binding AiDirectionLabel}" FontWeight="Bold" Foreground="{Binding AiDirectionBrush}" />
+                    </StackPanel>
+                  </Border>
+                  <Border Grid.Column="1" Classes="TicketMetricCard">
+                    <StackPanel Spacing="4">
+                      <TextBlock Classes="Overline" Text="Timeframe" />
+                      <TextBlock Text="{Binding SelectedTradeTimeframe}" FontWeight="Bold" />
+                    </StackPanel>
+                  </Border>
+                  <Border Grid.Column="2" Classes="TicketMetricCard">
+                    <StackPanel Spacing="4">
+                      <TextBlock Classes="Overline" Text="Valid For" />
+                      <TextBlock Text="{Binding AiValidityLabel}" FontWeight="Bold" />
+                    </StackPanel>
+                  </Border>
+                </Grid>
+
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
+                  <TextBlock Grid.Row="0" Text="Entry" Foreground="#9BAFC5" />
+                  <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AiEntryRangeLabel}" />
+                  <TextBlock Grid.Row="1" Text="Stop Loss" Foreground="#9BAFC5" />
+                  <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AiStopLossDisplay}" Foreground="#FF6B6B" />
+                  <TextBlock Grid.Row="2" Text="Take Profit 1" Foreground="#9BAFC5" />
+                  <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AiTakeProfitOneDisplay}" Foreground="#3DDC84" />
+                  <TextBlock Grid.Row="3" Text="Take Profit 2" Foreground="#9BAFC5" />
+                  <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AiTakeProfitTwoDisplay}" Foreground="#3DDC84" />
+                </Grid>
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                  <Border Grid.Column="0" Classes="TicketMetricCard">
+                    <StackPanel Spacing="4">
+                      <TextBlock Classes="Overline" Text="Risk / Reward" />
+                      <TextBlock Text="{Binding AiRiskRewardLabel}" FontSize="20" FontWeight="Bold" />
+                    </StackPanel>
+                  </Border>
+                  <Border Grid.Column="1" Classes="TicketMetricCard">
+                    <StackPanel Spacing="4">
+                      <TextBlock Classes="Overline" Text="Position Size" />
+                      <TextBlock Text="{Binding AiPositionSizeLabel}" FontWeight="Bold" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+                </Grid>
+
+                <Border Classes="WarningCard">
+                  <StackPanel Spacing="8">
+                    <TextBlock Classes="Overline" Text="Warnings" />
+                    <TextBlock Text="{Binding AiWarningPrimary}" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding AiWarningSecondary}" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding AiWarningTertiary}" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
+
+                <Grid ColumnDefinitions="*,46" ColumnSpacing="10">
+                  <TextBox Grid.Column="0" Classes="BotPromptBox" PlaceholderText="Review setup notes..." />
+                  <Button Grid.Column="1" Content="GO" Classes="PrimaryTradeButton" Padding="0" />
+                </Grid>
+
+                <TextBlock Text="Setup notes are informational only and should be confirmed against your execution plan."
+                           Classes="MicroCopy" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="ToastCard">
+          <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+            <Border Width="26" Height="26" Background="#12382E" CornerRadius="13" VerticalAlignment="Center">
+              <TextBlock Text="OK" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#3DDC84" FontSize="10" FontWeight="Bold" />
+            </Border>
+            <StackPanel Grid.Column="1" Spacing="2">
+              <TextBlock Text="Order Placed" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding PrimaryOrderButtonHint}" Foreground="#9BAFC5" />
+            </StackPanel>
+            <TextBlock Grid.Column="2" Text="X" Foreground="#9BAFC5" VerticalAlignment="Center" />
+          </Grid>
+        </Border>
+      </StackPanel>
+    </Grid>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         DEX TRADING  —  3-column layout matching CEX desk
+         Col 0 (296px): Order ticket
+         Col 1 (*):     Chart + positions/blotter
+         Col 2 (356px): Token browser / market panel
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <Grid ColumnDefinitions="296,*,356" ColumnSpacing="16" IsVisible="{Binding IsDexTradingMode}">
+
+      <!-- ── COL 0: DEX Ticket ──────────────────────────────────────────────── -->
+      <Border Grid.Column="0" Classes="SectionPanel">
+        <StackPanel Spacing="14">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBlock Classes="H2" Text="DEX Ticket" />
+            <Border Grid.Column="1" Classes="GuardChip"
+                    Background="#10251F"
+                    BorderBrush="{Binding DexTradingVM.DexGuardStatusBrush}">
+              <TextBlock Text="{Binding DexTradingVM.DexGuardStatusLabel}"
+                         Foreground="{Binding DexTradingVM.DexGuardStatusBrush}"
+                         FontWeight="Bold" FontSize="10" />
+            </Border>
+          </Grid>
+
+          <!-- Route guard detail -->
+          <Border Classes="GuardStripCard">
+            <StackPanel Spacing="3">
+              <TextBlock Text="{Binding DexTradingVM.DexGuardSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding DexTradingVM.DexGuardDetail}" Foreground="#8FA3B8" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+
+          <!-- BUY / SELL side toggle -->
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="0">
+            <Button Grid.Column="0" Content="BUY"
+                    Classes="TradeSideButton"
+                    Background="#0D2B1A" Foreground="#3DDC84"
+                    CornerRadius="10,0,0,10"
+                    IsEnabled="{Binding DexTradingVM.CanBuySelectedTokenLive}"
+                    Command="{Binding DexTradingVM.BuyCommand}"
+                    Height="40" />
+            <Button Grid.Column="1" Content="SELL"
+                    Classes="TradeSideButton"
+                    Background="#2B0D0D" Foreground="#FF6B6B"
+                    CornerRadius="0,10,10,0"
+                    IsEnabled="{Binding DexTradingVM.CanSellSelectedTokenLive}"
+                    Command="{Binding DexTradingVM.SellCommand}"
+                    Height="40" />
+          </Grid>
+
+          <!-- Quote asset -->
+          <StackPanel Spacing="6">
+            <TextBlock Classes="Overline" Text="Quote Asset" />
+            <ComboBox ItemsSource="{Binding DexTradingVM.QuoteAssetOptions}"
+                      SelectedItem="{Binding DexTradingVM.SelectedQuoteAssetSymbol}" />
+          </StackPanel>
+
+          <!-- Buy amount -->
+          <StackPanel Spacing="6" IsEnabled="{Binding DexTradingVM.CanTradeSelectedToken}">
+            <TextBlock Classes="Overline" Text="{Binding DexTradingVM.BuyAmountLabel}" />
+            <NumericUpDown Value="{Binding DexTradingVM.BuyAmountBnb}"
+                           Increment="0.001" FormatString="0.0000" Minimum="0" />
+            <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="6">
+              <Button Grid.Column="0" Content="25%" Classes="GhostButton" Command="{Binding DexTradingVM.ApplyBuyBalancePresetCommand}" CommandParameter="25" />
+              <Button Grid.Column="1" Content="50%" Classes="GhostButton" Command="{Binding DexTradingVM.ApplyBuyBalancePresetCommand}" CommandParameter="50" />
+              <Button Grid.Column="2" Content="75%" Classes="GhostButton" Command="{Binding DexTradingVM.ApplyBuyBalancePresetCommand}" CommandParameter="75" />
+              <Button Grid.Column="3" Content="MAX" Classes="GhostButton" Command="{Binding DexTradingVM.ApplyBuyBalancePresetCommand}" CommandParameter="100" />
+            </Grid>
+          </StackPanel>
+
+          <!-- Sell amount -->
+          <StackPanel Spacing="6" IsEnabled="{Binding DexTradingVM.CanTradeSelectedToken}">
+            <TextBlock Classes="Overline" Text="Sell Tokens" />
+            <NumericUpDown Value="{Binding DexTradingVM.SellAmountTokens}"
+                           Increment="1" FormatString="0.########" Minimum="0" />
+            <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="6">
+              <Button Grid.Column="0" Content="25%" Classes="GhostButton" Command="{Binding DexTradingVM.ApplySellBalancePresetCommand}" CommandParameter="25" />
+              <Button Grid.Column="1" Content="50%" Classes="GhostButton" Command="{Binding DexTradingVM.ApplySellBalancePresetCommand}" CommandParameter="50" />
+              <Button Grid.Column="2" Content="75%" Classes="GhostButton" Command="{Binding DexTradingVM.ApplySellBalancePresetCommand}" CommandParameter="75" />
+              <Button Grid.Column="3" Content="MAX" Classes="GhostButton" Command="{Binding DexTradingVM.ApplySellBalancePresetCommand}" CommandParameter="100" />
+            </Grid>
+          </StackPanel>
+
+          <!-- Balances -->
+          <Border Classes="TicketMetricCard">
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="Overline" Text="Token Balance" />
+                <TextBlock Text="{Binding DexTradingVM.TokenBalanceLabel}" FontWeight="SemiBold" Foreground="#21E6C1" />
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="4">
+                <TextBlock Classes="Overline" Text="Quote Balance" />
+                <TextBlock Text="{Binding DexTradingVM.SpendableQuoteBalanceLabel}" FontWeight="SemiBold" />
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <!-- Main execute buttons -->
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+            <Button Grid.Column="0" Content="BUY TOKEN" Classes="BuyButton" Height="46"
+                    Command="{Binding DexTradingVM.BuyCommand}"
+                    IsEnabled="{Binding DexTradingVM.CanBuySelectedTokenLive}"
+                    ToolTip.Tip="{Binding DexTradingVM.ManualBuyBlockedReason}" />
+            <Button Grid.Column="1" Content="SELL TOKEN" Classes="SellButton" Height="46"
+                    Command="{Binding DexTradingVM.SellCommand}"
+                    IsEnabled="{Binding DexTradingVM.CanSellSelectedTokenLive}"
+                    ToolTip.Tip="{Binding DexTradingVM.ManualSellBlockedReason}" />
+          </Grid>
+
+          <Border Classes="InfoBand" IsVisible="{Binding !DexTradingVM.CanBuySelectedTokenLive}">
+            <TextBlock Text="{Binding DexTradingVM.ManualBuyBlockedReason}" Foreground="#F4B860" TextWrapping="Wrap" />
+          </Border>
+
+          <!-- Session info -->
+          <StackPanel Spacing="4">
+            <TextBlock Text="{Binding DexTradingVM.WalletTradeStatus}" Foreground="#8FA3B8" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding DexTradingVM.WalletSessionSummary}" Foreground="#14E0C1" TextWrapping="Wrap" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- ── COL 1: Chart + Blotter ─────────────────────────────────────────── -->
+      <Grid Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="16">
+
+        <!-- Chart panel -->
+        <Border Grid.Row="0" Classes="SectionPanel">
+          <StackPanel Spacing="10">
+
+            <!-- Chart metrics header (CEX style) -->
+            <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="8">
+              <Border Classes="TicketMetricCard,ChartMetricCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Price USD" />
+                  <TextBlock Text="{Binding DexTradingVM.SelectedToken.PriceUsd, StringFormat=\$ {0:N6}}"
+                             FontWeight="Bold" FontSize="18" />
+                  <TextBlock Text="{Binding DexTradingVM.ChartChangePctLabel}"
+                             Foreground="{Binding DexTradingVM.ChartChangePctBrush}"
+                             Classes="MicroCopy" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Classes="TicketMetricCard,ChartMetricCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Liquidity" />
+                  <TextBlock Text="{Binding DexTradingVM.DexLiquidityLabel}" FontWeight="Bold" FontSize="16" />
+                  <TextBlock Text="Pool depth" Classes="MicroCopy" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Classes="TicketMetricCard,ChartMetricCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="High" />
+                  <TextBlock Text="{Binding DexTradingVM.ChartHighLabel}" FontWeight="Bold" FontSize="16" Foreground="#4FF1C9" />
+                  <TextBlock Text="Chart range" Classes="MicroCopy" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="3" Classes="TicketMetricCard,ChartMetricCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Low" />
+                  <TextBlock Text="{Binding DexTradingVM.ChartLowLabel}" FontWeight="Bold" FontSize="16" Foreground="#FF7B7B" />
+                  <TextBlock Text="Chart range" Classes="MicroCopy" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="4" Classes="TicketMetricCard,ChartMetricCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Volume 24h" />
+                  <TextBlock Text="{Binding DexTradingVM.DexVolume24hLabel}" FontWeight="Bold" FontSize="16" />
+                  <TextBlock Text="DEX pair" Classes="MicroCopy" />
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <!-- Timeframe selector (CEX style) -->
+            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto" ColumnSpacing="8">
+              <Button Grid.Column="0" Content="15M" Classes="GhostButton,ChartToolbarButton"
+                      Command="{Binding DexTradingVM.SelectChartRangeCommand}" CommandParameter="15M"
+                      Background="{Binding DexTradingVM.DexTimeframe15MBackground}"
+                      Foreground="{Binding DexTradingVM.DexTimeframe15MForeground}" />
+              <Button Grid.Column="1" Content="1H"  Classes="GhostButton,ChartToolbarButton"
+                      Command="{Binding DexTradingVM.SelectChartRangeCommand}" CommandParameter="1H"
+                      Background="{Binding DexTradingVM.DexTimeframe1HBackground}"
+                      Foreground="{Binding DexTradingVM.DexTimeframe1HForeground}" />
+              <Button Grid.Column="2" Content="4H"  Classes="GhostButton,ChartToolbarButton"
+                      Command="{Binding DexTradingVM.SelectChartRangeCommand}" CommandParameter="4H"
+                      Background="{Binding DexTradingVM.DexTimeframe4HBackground}"
+                      Foreground="{Binding DexTradingVM.DexTimeframe4HForeground}" />
+              <Button Grid.Column="3" Content="1D"  Classes="GhostButton,ChartToolbarButton"
+                      Command="{Binding DexTradingVM.SelectChartRangeCommand}" CommandParameter="1D"
+                      Background="{Binding DexTradingVM.DexTimeframe1DBackground}"
+                      Foreground="{Binding DexTradingVM.DexTimeframe1DForeground}" />
+              <Button Grid.Column="4" Content="1W"  Classes="GhostButton,ChartToolbarButton"
+                      Command="{Binding DexTradingVM.SelectChartRangeCommand}" CommandParameter="1W"
+                      Background="{Binding DexTradingVM.DexTimeframe1WBackground}"
+                      Foreground="{Binding DexTradingVM.DexTimeframe1WForeground}" />
+              <TextBlock Grid.Column="6" Text="{Binding DexTradingVM.ChartSource}"
+                         Foreground="#7E92A7" VerticalAlignment="Center" TextAlignment="Right" />
+            </Grid>
+
+            <!-- Candlestick chart (same host styling as CEX) -->
+            <Border Classes="SoftPanel,ChartCanvasHost" Padding="8">
+              <ctrl:DexPriceChart Height="320"
+                                  Candles="{Binding DexTradingVM.ChartCandles}"
+                                  ShowVwap="True" />
+            </Border>
+
+            <!-- Chart status bar -->
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBlock Text="{Binding DexTradingVM.ChartStatusMessage}"
+                         Foreground="#7E92A7" TextWrapping="Wrap" />
+              <TextBlock Grid.Column="1" Text="{Binding DexTradingVM.StatusMessage}"
+                         Foreground="#14E0C1" TextWrapping="Wrap" TextAlignment="Right" />
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <!-- Blotter / positions panel -->
+        <Border Grid.Row="1" Classes="Panel">
+          <StackPanel Spacing="12">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+              <TextBlock Classes="H2" Text="DEX Positions &amp; History" />
+              <TextBlock Grid.Column="1" Text="{Binding DexTradingVM.ChartTelemetry}"
+                         Foreground="#9BAFC5" VerticalAlignment="Center" />
+            </Grid>
+
+            <TabControl Classes="DeskTabs">
+              <!-- Trade History tab -->
+              <TabItem Header="Trades">
+                <StackPanel Margin="0,12,0,0" Spacing="10">
+                  <Grid ColumnDefinitions="0.6*,1.2*,0.7*,0.8*,0.6*,0.7*" ColumnSpacing="10">
+                    <TextBlock Text="SIDE"   Foreground="#8FA3B8" FontWeight="Bold" />
+                    <TextBlock Grid.Column="1" Text="SYMBOL" Foreground="#8FA3B8" FontWeight="Bold" />
+                    <TextBlock Grid.Column="2" Text="AMOUNT" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="3" Text="PRICE"  Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="4" Text="STATUS" Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Center" />
+                    <TextBlock Grid.Column="5" Text="TIME"   Foreground="#8FA3B8" FontWeight="Bold" HorizontalAlignment="Right" />
+                  </Grid>
+                  <ScrollViewer MaxHeight="200">
+                    <ItemsControl ItemsSource="{Binding DexTradingVM.RecentDexTrades}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:DexTradeRecordViewModel">
+                          <Border Classes="TableRowCard" Margin="0,0,0,8">
+                            <Grid ColumnDefinitions="0.6*,1.2*,0.7*,0.8*,0.6*,0.7*" ColumnSpacing="10">
+                              <TextBlock Text="{Binding SideLabel}" Foreground="{Binding SideBrush}" FontWeight="Bold" />
+                              <TextBlock Grid.Column="1" Text="{Binding Symbol}" />
+                              <TextBlock Grid.Column="2" Text="{Binding AmountLabel}" HorizontalAlignment="Right" />
+                              <TextBlock Grid.Column="3" Text="{Binding PriceLabel}"  HorizontalAlignment="Right" />
+                              <Border Grid.Column="4" Background="#102842" BorderBrush="#204E81" BorderThickness="1"
+                                      CornerRadius="8" Padding="8,2" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding StatusLabel}" Foreground="{Binding StatusBrush}" FontSize="11" FontWeight="SemiBold" />
+                              </Border>
+                              <TextBlock Grid.Column="5" Text="{Binding TimeLabel}" HorizontalAlignment="Right" Foreground="#8FA3B8" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                  <TextBlock Text="No trades yet. Execute a buy or sell to populate the blotter."
+                             Foreground="#6E8196"
+                             IsVisible="{Binding DexTradingVM.ShowDexTradesPlaceholder}" />
+                </StackPanel>
+              </TabItem>
+
+              <!-- Wallet info tab -->
+              <TabItem Header="Wallet">
+                <StackPanel Margin="0,12,0,0" Spacing="10">
+                  <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Border Classes="TicketMetricCard">
+                      <StackPanel Spacing="4">
+                        <TextBlock Classes="Overline" Text="Quote Mode" />
+                        <TextBlock Text="{Binding DexTradingVM.QuoteAssetModeLabel}"
+                                   Foreground="{Binding DexTradingVM.QuoteAssetModeBrush}"
+                                   FontWeight="Bold" />
+                        <TextBlock Text="{Binding DexTradingVM.QuoteAssetSummary}" Foreground="#8FA3B8" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Classes="TicketMetricCard">
+                      <StackPanel Spacing="4">
+                        <TextBlock Classes="Overline" Text="Spendable Balance" />
+                        <TextBlock Text="{Binding DexTradingVM.SpendableQuoteBalanceLabel}"
+                                   FontWeight="Bold" Foreground="#21E6C1" />
+                        <TextBlock Text="{Binding DexTradingVM.QuoteAssetBalanceLabel}" Foreground="#8FA3B8" />
+                      </StackPanel>
+                    </Border>
+                  </Grid>
+                  <TextBlock Text="{Binding DexTradingVM.BuyAvailabilityMessage}"
+                             Foreground="{Binding DexTradingVM.BuyAvailabilityBrush}"
+                             TextWrapping="Wrap" />
+                </StackPanel>
+              </TabItem>
+
+              <!-- Chart diagnostics tab -->
+              <TabItem Header="Chart Info">
+                <StackPanel Margin="0,12,0,0" Spacing="8">
+                  <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                    <Border Classes="TicketMetricCard">
+                      <StackPanel Spacing="4">
+                        <TextBlock Classes="Overline" Text="Range Start" />
+                        <TextBlock Text="{Binding DexTradingVM.ChartStartLabel}" FontWeight="SemiBold" />
+                      </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Classes="TicketMetricCard">
+                      <StackPanel Spacing="4">
+                        <TextBlock Classes="Overline" Text="Range End" />
+                        <TextBlock Text="{Binding DexTradingVM.ChartEndLabel}" FontWeight="SemiBold" />
+                      </StackPanel>
+                    </Border>
+                    <Border Grid.Column="2" Classes="TicketMetricCard">
+                      <StackPanel Spacing="4">
+                        <TextBlock Classes="Overline" Text="Change" />
+                        <TextBlock Text="{Binding DexTradingVM.ChartChangePctLabel}"
+                                   Foreground="{Binding DexTradingVM.ChartChangePctBrush}"
+                                   FontWeight="Bold" />
+                      </StackPanel>
+                    </Border>
+                  </Grid>
+                  <TextBlock Text="{Binding DexTradingVM.ChartDiagnostics}" Foreground="#8FA3B8" TextWrapping="Wrap" />
+                </StackPanel>
+              </TabItem>
+            </TabControl>
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <!-- ── COL 2: Token Browser ────────────────────────────────────────────── -->
+      <Border Grid.Column="2" Classes="SectionPanel">
+        <StackPanel Spacing="12">
+          <TextBlock Classes="H2" Text="DEX Market" />
+
+          <!-- Search -->
+          <TextBox Text="{Binding DexTradingVM.SearchText}"
+                   PlaceholderText="Search by symbol, name or address" />
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+            <Button Grid.Column="0" Content="SEARCH"  Classes="GhostButton" Command="{Binding DexTradingVM.SearchCommand}" />
+            <Button Grid.Column="1" Content="REFRESH" Classes="GhostButton" Command="{Binding DexTradingVM.RefreshCommand}" />
+          </Grid>
+
+          <!-- Selected token quick info -->
+          <Border Classes="GuardStripCard" IsVisible="{Binding DexTradingVM.HasSelectedToken}">
+            <StackPanel Spacing="4">
+              <TextBlock Text="{Binding DexTradingVM.SelectedTokenTitle}"
+                         FontWeight="Bold" FontSize="14" />
+              <TextBlock Text="{Binding DexTradingVM.SelectedTokenSubtitle}"
+                         Foreground="#8FA3B8" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+
+          <!-- Price / Liquidity quick cards -->
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="8" IsVisible="{Binding DexTradingVM.HasSelectedToken}">
+            <Border Classes="TicketMetricCard">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="Overline" Text="Price USD" />
+                <TextBlock Text="{Binding DexTradingVM.SelectedToken.PriceUsd, StringFormat=\$ {0:N6}}"
+                           FontSize="15" FontWeight="Bold" Foreground="#21E6C1" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Classes="TicketMetricCard">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="Overline" Text="Liquidity" />
+                <TextBlock Text="{Binding DexTradingVM.DexLiquidityLabel}"
+                           FontSize="15" FontWeight="Bold" />
+              </StackPanel>
+            </Border>
+          </Grid>
+
+          <!-- Token list -->
+          <ScrollViewer MaxHeight="520">
+            <ListBox ItemsSource="{Binding DexTradingVM.Tokens}"
+                     SelectedItem="{Binding DexTradingVM.SelectedToken}">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:DexTokenItemViewModel">
+                  <Border Classes="TableRowCard" Margin="0,0,0,8">
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="4">
+                      <TextBlock Grid.Row="0" Text="{Binding DisplayName}" FontWeight="Bold" />
+                      <TextBlock Grid.Row="0" Grid.Column="1"
+                                 Text="{Binding PriceUsd, StringFormat=\$ {0:N6}}"
+                                 Foreground="#21E6C1" />
+                      <TextBlock Grid.Row="1" Text="{Binding PairLabel}" Foreground="#8FA3B8" />
+                      <TextBlock Grid.Row="1" Grid.Column="1"
+                                 Text="{Binding Volume24h, StringFormat=Vol \$ {0:N0}}"
+                                 Foreground="#8FA3B8" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </ScrollViewer>
+        </StackPanel>
+      </Border>
+
+    </Grid>
+  </StackPanel>
+</UserControl>
+
+

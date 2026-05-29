@@ -1,0 +1,1206 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Styles.Resources>
+    <!-- Цвета фона -->
+    <SolidColorBrush x:Key="AppBg" Color="#081018" />
+    <SolidColorBrush x:Key="AppBg2" Color="#0D1722" />
+    <!-- Уровни поверхностей -->
+    <SolidColorBrush x:Key="Surface1" Color="#0E151E" />
+    <SolidColorBrush x:Key="Surface2" Color="#111924" />
+    <SolidColorBrush x:Key="Surface3" Color="#171F29" />
+    <!-- Бордеры -->
+    <SolidColorBrush x:Key="PanelStroke" Color="#2A3645" />
+    <SolidColorBrush x:Key="PanelStrokeBright" Color="#35516A" />
+    <SolidColorBrush x:Key="PanelStrokeSubtle" Color="#1E2B38" />
+    <!-- Текст -->
+    <SolidColorBrush x:Key="TextPrimary" Color="#F4F7FB" />
+    <SolidColorBrush x:Key="TextMuted" Color="#8FA3B8" />
+    <SolidColorBrush x:Key="TextSoft" Color="#6E8196" />
+    <!-- Акценты -->
+    <SolidColorBrush x:Key="Accent" Color="#21E6C1" />
+    <SolidColorBrush x:Key="AccentSoft" Color="#173D3D" />
+    <SolidColorBrush x:Key="AccentBlue" Color="#5BC0FF" />
+    <!-- Статус -->
+    <SolidColorBrush x:Key="Positive" Color="#3DDC84" />
+    <SolidColorBrush x:Key="Negative" Color="#FF6B6B" />
+    <SolidColorBrush x:Key="Warning" Color="#F4B860" />
+
+    <!-- Устаревшие алиасы (обратная совместимость) -->
+    <SolidColorBrush x:Key="PanelBg" Color="#161E29" />
+    <SolidColorBrush x:Key="PanelBgAlt" Color="#0F1620" />
+  </Styles.Resources>
+
+  <!-- ============================================================
+       WINDOW
+  ============================================================ -->
+  <Style Selector="Window">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#071018" Offset="0" />
+        <GradientStop Color="#0E1622" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, Inter, Arial" />
+  </Style>
+
+  <Style Selector="TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+
+  <!-- ============================================================
+       ПАНЕЛИ — 5 семантических уровней
+       Surface0  = самый тёмный, для sink-областей (chart bg, log)
+       Surface1  = базовая карточка
+       Surface2  = приподнятая карточка
+       Surface3  = hero / выделенная секция
+       SurfaceChrome = chrome-элементы (TopBar, Sidebar)
+  ============================================================ -->
+
+  <Style Selector="Border.Surface0">
+    <Setter Property="Background" Value="#091018" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStrokeSubtle}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="10" />
+  </Style>
+
+  <Style Selector="Border.Surface1">
+    <Setter Property="Background" Value="{DynamicResource Surface1}" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStroke}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="14" />
+  </Style>
+
+  <Style Selector="Border.Surface2">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#171F29" Offset="0" />
+        <GradientStop Color="#121922" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStroke}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="18" />
+    <Setter Property="BoxShadow">
+      <BoxShadows>0 18 48 0 #33040A12</BoxShadows>
+    </Setter>
+  </Style>
+
+  <Style Selector="Border.Surface3">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#11242C" Offset="0" />
+        <GradientStop Color="#171E30" Offset="0.55" />
+        <GradientStop Color="#111824" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="CornerRadius" Value="22" />
+    <Setter Property="BorderBrush" Value="#2F4C58" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="22" />
+    <Setter Property="BoxShadow">
+      <BoxShadows>0 24 54 0 #44050A14</BoxShadows>
+    </Setter>
+  </Style>
+
+  <Style Selector="Border.SurfaceChrome">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#08111A" Offset="0" />
+        <GradientStop Color="#0A121D" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="CornerRadius" Value="22" />
+    <Setter Property="BorderBrush" Value="#1E2B38" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BoxShadow">
+      <BoxShadows>0 18 44 0 #2A02070E</BoxShadows>
+    </Setter>
+  </Style>
+
+  <!-- Алиасы для обратной совместимости с существующими View-файлами -->
+  <Style Selector="Border.Panel">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#171F29" Offset="0" />
+        <GradientStop Color="#121922" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStroke}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="18" />
+    <Setter Property="BoxShadow">
+      <BoxShadows>0 18 48 0 #33040A12</BoxShadows>
+    </Setter>
+  </Style>
+
+  <Style Selector="Border.HeroPanel">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#11242C" Offset="0" />
+        <GradientStop Color="#171E30" Offset="0.55" />
+        <GradientStop Color="#111824" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="CornerRadius" Value="22" />
+    <Setter Property="BorderBrush" Value="#2F4C58" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="22" />
+    <Setter Property="BoxShadow">
+      <BoxShadows>0 24 54 0 #44050A14</BoxShadows>
+    </Setter>
+  </Style>
+
+  <Style Selector="Border.SoftPanel">
+    <Setter Property="Background" Value="{DynamicResource Surface1}" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="BorderBrush" Value="#243241" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="14" />
+  </Style>
+
+  <Style Selector="Border.SectionPanel">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#101924" Offset="0" />
+        <GradientStop Color="#0C141D" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="CornerRadius" Value="20" />
+    <Setter Property="BorderBrush" Value="#294052" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="16" />
+    <Setter Property="BoxShadow">
+      <BoxShadows>0 18 42 0 #22040A12</BoxShadows>
+    </Setter>
+  </Style>
+
+  <Style Selector="Border.SurfaceCard">
+    <Setter Property="Background" Value="{DynamicResource Surface1}" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="BorderBrush" Value="#26384A" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="14" />
+  </Style>
+
+  <Style Selector="Border.SidebarShell">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#08111A" Offset="0" />
+        <GradientStop Color="#0A121D" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="CornerRadius" Value="24" />
+    <Setter Property="BorderBrush" Value="#1E2B38" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BoxShadow">
+      <BoxShadows>0 24 54 0 #33050A14</BoxShadows>
+    </Setter>
+  </Style>
+
+  <Style Selector="Border.TopBarShell">
+    <Setter Property="Background" Value="#0B131D" />
+    <Setter Property="CornerRadius" Value="22" />
+    <Setter Property="BorderBrush" Value="#202E3C" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BoxShadow">
+      <BoxShadows>0 18 44 0 #2A02070E</BoxShadows>
+    </Setter>
+  </Style>
+
+  <!-- ============================================================
+       ТИПОГРАФИКА
+  ============================================================ -->
+  <Style Selector="TextBlock.H1">
+    <Setter Property="FontSize" Value="30" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+
+  <Style Selector="TextBlock.H2">
+    <Setter Property="FontSize" Value="18" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+
+  <Style Selector="TextBlock.Overline">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSoft}" />
+  </Style>
+
+  <Style Selector="TextBlock.Metric">
+    <Setter Property="FontSize" Value="24" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+
+  <Style Selector="TextBlock.SectionMetric">
+    <Setter Property="FontSize" Value="18" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+
+  <Style Selector="TextBlock.SecondaryCopy">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+  </Style>
+
+  <Style Selector="TextBlock.MicroCopy">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSoft}" />
+  </Style>
+
+  <Style Selector="TextBlock.Value">
+    <Setter Property="FontSize" Value="32" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+  </Style>
+
+  <Style Selector="TextBlock.BrandTitle">
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="LetterSpacing" Value="0.6" />
+  </Style>
+
+  <!-- ============================================================
+       НАВИГАЦИЯ
+  ============================================================ -->
+  <Style Selector="Border.BrandGlyph">
+    <Setter Property="Width" Value="42" />
+    <Setter Property="Height" Value="42" />
+    <Setter Property="Background" Value="#0C1824" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="BorderBrush" Value="#1F3D46" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="8" />
+  </Style>
+
+  <Style Selector="Border.NavGlyph">
+    <Setter Property="Background" Value="#101C28" />
+    <Setter Property="BorderBrush" Value="#334659" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+  </Style>
+
+  <Style Selector="Button.SideNavButton">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Padding" Value="10,11" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="BorderThickness" Value="1,0,0,0" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="MinHeight" Value="42" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+
+  <Style Selector="Button.SideNavButton:pointerover">
+    <Setter Property="Background" Value="#111E2B" />
+    <Setter Property="BorderBrush" Value="#1E3248" />
+    <Setter Property="Foreground" Value="#B8CCDE" />
+  </Style>
+
+  <!-- Активный пункт меню — акцентная левая полоса -->
+  <Style Selector="Button.SideNavButton.active">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#14253A" Offset="0" />
+        <GradientStop Color="#0F1C2A" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+
+  <Style Selector="Button.SideUtilityButton">
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Padding" Value="14,10" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Background" Value="#0C151F" />
+    <Setter Property="BorderBrush" Value="#1E2A37" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Foreground" Value="#8FA3B8" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+
+  <Style Selector="Button.TopNavButton">
+    <Setter Property="Padding" Value="10,8" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="Button.TopNavButton:pointerover">
+    <Setter Property="Background" Value="#0F1823" />
+  </Style>
+
+  <Style Selector="Border.StatusPill">
+    <Setter Property="Background" Value="#0F1822" />
+    <Setter Property="BorderBrush" Value="#213140" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Padding" Value="12,7" />
+  </Style>
+
+  <Style Selector="Border.TopIconChip">
+    <Setter Property="Width" Value="32" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="Background" Value="#0F1822" />
+    <Setter Property="BorderBrush" Value="#22303F" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="17" />
+  </Style>
+
+  <!-- ============================================================
+       КНОПКИ
+  ============================================================ -->
+  <Style Selector="Button">
+    <Setter Property="Padding" Value="14,9" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Background" Value="#121A24" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStrokeBright}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="MinHeight" Value="36" />
+  </Style>
+
+  <Style Selector="Button:pointerover">
+    <Setter Property="Background" Value="#1A2840" />
+    <Setter Property="BorderBrush" Value="#4A7AAA" />
+  </Style>
+
+  <Style Selector="Button:pressed">
+    <Setter Property="RenderTransform">
+      <ScaleTransform ScaleX="0.975" ScaleY="0.975" />
+    </Setter>
+    <Setter Property="Opacity" Value="0.85" />
+  </Style>
+
+  <Style Selector="Button:disabled">
+    <Setter Property="Opacity" Value="0.4" />
+  </Style>
+
+  <Style Selector="Button.PrimaryTradeButton">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#149B85" Offset="0" />
+        <GradientStop Color="#21E6C1" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="Foreground" Value="#051018" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FontSize" Value="17" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+
+  <!-- AccentButton — стандартная акцентная кнопка для действий в панелях -->
+  <Style Selector="Button.AccentButton">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#149B85" Offset="0" />
+        <GradientStop Color="#21E6C1" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="Foreground" Value="#051018" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="16,8" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
+  <Style Selector="Button.AccentButton:disabled">
+    <Setter Property="Background" Value="#1A2E3A" />
+    <Setter Property="Foreground" Value="#3A5570" />
+  </Style>
+
+  <Style Selector="Button.TopActionButton">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#15A58D" Offset="0" />
+        <GradientStop Color="#1FE6C2" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="Foreground" Value="#071018" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="18,10" />
+  </Style>
+
+  <Style Selector="Button.BuyButton">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#18A05D" Offset="0" />
+        <GradientStop Color="#31D67C" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="Button.SellButton">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#D74D5C" Offset="0" />
+        <GradientStop Color="#FF776A" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="Button.TradeSideButton">
+    <Setter Property="Height" Value="48" />
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+
+  <Style Selector="Button.GhostButton">
+    <Setter Property="Background" Value="#0F1721" />
+    <Setter Property="BorderBrush" Value="#2A3A4B" />
+  </Style>
+
+  <!-- Timeframe button: active state (selected) -->
+  <Style Selector="Button.GhostButton.active">
+    <Setter Property="Background"   Value="#132030" />
+    <Setter Property="BorderBrush"  Value="#21E6C1" />
+    <Setter Property="Foreground"   Value="#21E6C1" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="Button.ChartToolbarButton">
+    <Setter Property="MinWidth" Value="62" />
+    <Setter Property="Height" Value="42" />
+    <Setter Property="Padding" Value="14,0" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="Button.AiPromptChip">
+    <Setter Property="Background" Value="#101924" />
+    <Setter Property="BorderBrush" Value="#294052" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Padding" Value="14,8" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="Button.SideNavGhost">
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Padding" Value="14,12" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Background" Value="#0D1721" />
+    <Setter Property="BorderBrush" Value="#233243" />
+  </Style>
+
+  <!-- ============================================================
+       ФОРМ-ЭЛЕМЕНТЫ
+  ============================================================ -->
+  <Style Selector="TextBox">
+    <Setter Property="Background" Value="#131F2E" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    <Setter Property="BorderBrush" Value="#445E78" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="12,10" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="MinHeight" Value="42" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden" />
+  </Style>
+
+  <Style Selector="TextBox:focus">
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+    <Setter Property="Background" Value="#152130" />
+    <Setter Property="BorderThickness" Value="1.5" />
+  </Style>
+
+  <Style Selector="TextBox:pointerover">
+    <Setter Property="BorderBrush" Value="#5A7A9A" />
+  </Style>
+
+  <Style Selector="TextBox.LogBox">
+    <Setter Property="Background" Value="#0B1119" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="FontFamily" Value="Consolas, Cascadia Code, monospace" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="AcceptsReturn" Value="True" />
+    <Setter Property="IsReadOnly" Value="True" />
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="Padding" Value="14" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="MinHeight" Value="0" />
+  </Style>
+
+  <Style Selector="TextBox.BotPromptBox">
+    <Setter Property="Background" Value="#0D141D" />
+    <Setter Property="BorderBrush" Value="#203040" />
+  </Style>
+
+  <Style Selector="NumericUpDown">
+    <Setter Property="Background" Value="#131F2E" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    <Setter Property="BorderBrush" Value="#445E78" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="MinHeight" Value="42" />
+    <Setter Property="Padding" Value="8,6" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+
+  <Style Selector="NumericUpDown:focus-within">
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+    <Setter Property="Background" Value="#152130" />
+  </Style>
+
+  <Style Selector="NumericUpDown:pointerover">
+    <Setter Property="BorderBrush" Value="#5A7A9A" />
+  </Style>
+
+  <Style Selector="ComboBox">
+    <Setter Property="Background" Value="#131F2E" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    <Setter Property="BorderBrush" Value="#445E78" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="10,10" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="MinHeight" Value="42" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+
+  <Style Selector="ComboBox:pointerover">
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBlue}" />
+  </Style>
+
+  <Style Selector="ComboBoxItem">
+    <Setter Property="Background" Value="#101821" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    <Setter Property="Padding" Value="12,10" />
+  </Style>
+
+  <Style Selector="ComboBoxItem:pointerover">
+    <Setter Property="Background" Value="#172230" />
+  </Style>
+
+  <Style Selector="Slider.TradeSlider">
+    <Setter Property="MinHeight" Value="28" />
+  </Style>
+
+  <!-- ============================================================
+       СПИСКИ
+  ============================================================ -->
+  <Style Selector="ListBox">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="ListBoxItem">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Margin" Value="0,0,0,10" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ListBoxItem /template/ ContentPresenter">
+    <Setter Property="Background" Value="#111924" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="12" />
+  </Style>
+
+  <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#172231" />
+  </Style>
+
+  <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#17373B" Offset="0" />
+        <GradientStop Color="#1A2540" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <!-- ============================================================
+       ТАБЫ
+  ============================================================ -->
+  <Style Selector="TabControl">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="TabControl > TabItem">
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="18,10" />
+    <Setter Property="Margin" Value="0,0,8,0" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="TabControl > TabItem /template/ ContentPresenter">
+    <Setter Property="Background" Value="#101822" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="14,8" />
+  </Style>
+
+  <Style Selector="TabControl > TabItem:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#182333" />
+  </Style>
+
+  <Style Selector="TabControl > TabItem:selected">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+
+  <Style Selector="TabControl > TabItem:selected /template/ ContentPresenter">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#11323A" Offset="0" />
+        <GradientStop Color="#16293A" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="TabControl.PrimaryNavTabs">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="TabControl.PrimaryNavTabs > TabItem">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="Foreground" Value="Transparent" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Height" Value="0" />
+  </Style>
+
+  <Style Selector="TabControl.PrimaryNavTabs > TabItem /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Height" Value="0" />
+  </Style>
+
+  <Style Selector="TabControl.PrimaryNavTabs > TabItem:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="TabControl.PrimaryNavTabs > TabItem:selected">
+    <Setter Property="Foreground" Value="Transparent" />
+  </Style>
+
+  <Style Selector="TabControl.PrimaryNavTabs > TabItem:selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="TabControl.DeskTabs > TabItem">
+    <Setter Property="Foreground" Value="#8FA3B8" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Margin" Value="0,0,22,0" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="TabControl.DeskTabs > TabItem /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Padding" Value="0,6,0,10" />
+  </Style>
+
+  <Style Selector="TabControl.DeskTabs > TabItem:selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="#21E6C1" />
+    <Setter Property="BorderThickness" Value="0,0,0,2" />
+  </Style>
+
+  <!-- ============================================================
+       МЕНЮ
+  ============================================================ -->
+  <Style Selector="Menu">
+    <Setter Property="Background" Value="#0C121A" />
+    <Setter Property="BorderBrush" Value="#1D2733" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="Padding" Value="10,6" />
+  </Style>
+
+  <Style Selector="MenuItem">
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="MenuItem:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#17202B" />
+    <Setter Property="CornerRadius" Value="8" />
+  </Style>
+
+  <!-- ============================================================
+       СКРОЛЛБАРЫ
+  ============================================================ -->
+  <Style Selector="ScrollViewer">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ScrollViewer.PageScroll">
+    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="AllowAutoHide" Value="True" />
+  </Style>
+
+  <Style Selector="ScrollBar">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Width" Value="8" />
+    <Setter Property="Margin" Value="0,2" />
+  </Style>
+
+  <Style Selector="ScrollBar /template/ Thumb">
+    <Setter Property="Background" Value="#2A3A4C" />
+    <Setter Property="CornerRadius" Value="999" />
+  </Style>
+
+  <Style Selector="ScrollBar:pointerover /template/ Thumb">
+    <Setter Property="Background" Value="#3A4F65" />
+  </Style>
+
+  <!-- Разделитель для навигационных групп в сайдбаре -->
+  <Style Selector="Border.SideNavDivider">
+    <Setter Property="Height" Value="1" />
+    <Setter Property="Background" Value="#1A2535" />
+    <Setter Property="Margin" Value="10,4" />
+  </Style>
+
+  <!-- ============================================================
+       EXPANDER
+  ============================================================ -->
+  <Style Selector="Expander">
+    <Setter Property="Background" Value="#111924" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStroke}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="6" />
+  </Style>
+
+  <Style Selector="Expander:pointerover">
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBlue}" />
+  </Style>
+
+  <!-- ============================================================
+       TRADING-СПЕЦИФИЧНЫЕ КОМПОНЕНТЫ
+  ============================================================ -->
+  <Style Selector="Border.TradingHero">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#0B141E" Offset="0" />
+        <GradientStop Color="#101A27" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="CornerRadius" Value="22" />
+    <Setter Property="BorderBrush" Value="#213243" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="16" />
+  </Style>
+
+  <Style Selector="Border.TradingHeaderCard">
+    <Setter Property="Background" Value="#0F1721" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="BorderBrush" Value="#213140" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="14" />
+  </Style>
+
+  <Style Selector="Border.AssetGlyph">
+    <Setter Property="Width" Value="64" />
+    <Setter Property="Height" Value="64" />
+    <Setter Property="Background" Value="#101925" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="BorderBrush" Value="#243647" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="12" />
+  </Style>
+
+  <Style Selector="Border.StarGlyph">
+    <Setter Property="Width" Value="34" />
+    <Setter Property="Height" Value="34" />
+    <Setter Property="Background" Value="#101925" />
+    <Setter Property="CornerRadius" Value="17" />
+    <Setter Property="BorderBrush" Value="#243647" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="Border.TicketMetricCard">
+    <Setter Property="Background" Value="#0D141D" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="BorderBrush" Value="#233243" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="12" />
+  </Style>
+
+  <Style Selector="Border.OrderBookSideCard">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#0C141D" Offset="0" />
+        <GradientStop Color="#0A121A" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="Padding" Value="12" />
+  </Style>
+
+  <Style Selector="Button.OrderBookRowButton">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Background" Value="#0D141C" />
+    <Setter Property="BorderBrush" Value="#1E2B39" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="10,8" />
+    <Setter Property="Margin" Value="0,0,0,6" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="Button.OrderBookBidRow">
+    <Setter Property="Background" Value="#10201A" />
+    <Setter Property="BorderBrush" Value="#214436" />
+  </Style>
+
+  <Style Selector="Button.OrderBookAskRow">
+    <Setter Property="Background" Value="#1A1115" />
+    <Setter Property="BorderBrush" Value="#4A2831" />
+  </Style>
+
+  <Style Selector="Button.OrderBookBidRow:pointerover">
+    <Setter Property="Background" Value="#143026" />
+    <Setter Property="BorderBrush" Value="#2F7158" />
+  </Style>
+
+  <Style Selector="Button.OrderBookAskRow:pointerover">
+    <Setter Property="Background" Value="#2A171D" />
+    <Setter Property="BorderBrush" Value="#7C3F4D" />
+  </Style>
+
+  <Style Selector="Border.ChartMetricCard">
+    <Setter Property="Background" Value="#0B121A" />
+    <Setter Property="BorderBrush" Value="#1E2D3C" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="12,10" />
+  </Style>
+
+  <Style Selector="Border.ChartCanvasHost">
+    <Setter Property="Background" Value="#091018" />
+    <Setter Property="BorderBrush" Value="#203041" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="Padding" Value="8" />
+  </Style>
+
+  <Style Selector="Border.OrderFieldCard">
+    <Setter Property="Background" Value="#0C141E" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="BorderBrush" Value="#223243" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="10,8" />
+  </Style>
+
+  <Style Selector="Border.TableRowCard">
+    <Setter Property="Background" Value="#0C131C" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="BorderBrush" Value="#1D2936" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="12,10" />
+  </Style>
+
+  <!-- ============================================================
+       AI-КОМПОНЕНТЫ
+  ============================================================ -->
+  <Style Selector="Border.AIPanelCard">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#0D1621" Offset="0" />
+        <GradientStop Color="#0A1119" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="BorderBrush" Value="#203140" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="16" />
+  </Style>
+
+  <Style Selector="Border.ConfidenceRing">
+    <Setter Property="Width" Value="104" />
+    <Setter Property="Height" Value="104" />
+    <Setter Property="CornerRadius" Value="52" />
+    <Setter Property="BorderBrush" Value="#21E6C1" />
+    <Setter Property="BorderThickness" Value="4" />
+    <Setter Property="Background" Value="#0E1822" />
+  </Style>
+
+  <Style Selector="Border.AiStudioStage">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#101A27" Offset="0" />
+        <GradientStop Color="#0A1118" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="CornerRadius" Value="20" />
+    <Setter Property="BorderBrush" Value="#294255" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="14" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+
+  <Style Selector="Border.AiPromptCard">
+    <Setter Property="Background" Value="#0D151E" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="BorderBrush" Value="#253749" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="14,12" />
+  </Style>
+
+  <Style Selector="Border.AiFactCard">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#111A25" Offset="0" />
+        <GradientStop Color="#0D131C" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="BorderBrush" Value="#26394B" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="14" />
+  </Style>
+
+  <Style Selector="Border.AiMessageAssistant">
+    <Setter Property="Background" Value="#0F1822" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="BorderBrush" Value="#243749" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="14,12" />
+  </Style>
+
+  <Style Selector="Border.AiMessageUser">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#123A36" Offset="0" />
+        <GradientStop Color="#0F2429" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="BorderBrush" Value="#1FE6C2" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="14,12" />
+  </Style>
+
+  <Style Selector="Border.AiThumbCard">
+    <Setter Property="Background" Value="#0C141C" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="BorderBrush" Value="#25384A" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="10" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+
+  <!-- ============================================================
+       SNIPER / RISK / GUARD
+  ============================================================ -->
+  <Style Selector="Border.WarningCard">
+    <Setter Property="Background" Value="#211915" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="BorderBrush" Value="#8A6130" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="14" />
+  </Style>
+
+  <Style Selector="Border.ExecutionGuardCard">
+    <Setter Property="Background" Value="{DynamicResource Surface1}" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="BorderBrush" Value="#203140" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="14" />
+  </Style>
+
+  <Style Selector="Border.GuardStripCard">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#0E1823" Offset="0" />
+        <GradientStop Color="#101A27" Offset="0.58" />
+        <GradientStop Color="#0A121B" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="BorderBrush" Value="#274052" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="16,14" />
+    <Setter Property="BoxShadow">
+      <BoxShadows>0 16 40 0 #26040A12</BoxShadows>
+    </Setter>
+  </Style>
+
+  <Style Selector="Border.GuardChip">
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="BorderBrush" Value="#234050" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="12,6" />
+    <Setter Property="Background" Value="#10202A" />
+  </Style>
+
+  <Style Selector="Border.InfoBand">
+    <Setter Property="Background" Value="#0B131C" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="BorderBrush" Value="#213141" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="12,10" />
+  </Style>
+
+  <Style Selector="Border.ToastCard">
+    <Setter Property="Background" Value="#0D1620" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="BorderBrush" Value="#203243" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="14" />
+  </Style>
+
+  <Style Selector="Border.SidebarStatusCard">
+    <Setter Property="Background" Value="#0D1721" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="BorderBrush" Value="#1F2B39" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="14" />
+  </Style>
+
+  <!-- ============================================================
+       СПЛЭШ-ЭКРАН
+  ============================================================ -->
+  <Style Selector="Border.SplashOverlay">
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#050B11" Offset="0" />
+        <GradientStop Color="#09131C" Offset="0.45" />
+        <GradientStop Color="#050A10" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+  </Style>
+
+  <Style Selector="Ellipse.SplashAuraPrimary">
+    <Setter Property="Fill" Value="#2239D8C8" />
+    <Setter Property="Opacity" Value="0.55" />
+    <Setter Property="Effect">
+      <BlurEffect Radius="140" />
+    </Setter>
+  </Style>
+
+  <Style Selector="Ellipse.SplashAuraSecondary">
+    <Setter Property="Fill" Value="#1B57A8FF" />
+    <Setter Property="Opacity" Value="0.38" />
+    <Setter Property="Effect">
+      <BlurEffect Radius="110" />
+    </Setter>
+  </Style>
+
+  <Style Selector="Ellipse.SplashAuraTertiary">
+    <Setter Property="Fill" Value="#1EDD8E58" />
+    <Setter Property="Opacity" Value="0.34" />
+    <Setter Property="Effect">
+      <BlurEffect Radius="96" />
+    </Setter>
+  </Style>
+
+  <Style Selector="Border.SplashLogoShell">
+    <Setter Property="Width" Value="220" />
+    <Setter Property="Height" Value="220" />
+    <Setter Property="Padding" Value="12" />
+  </Style>
+
+  <Style Selector="Ellipse.SplashLogoHalo">
+    <Setter Property="Fill" Value="#2421E6C1" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Effect">
+      <BlurEffect Radius="48" />
+    </Setter>
+  </Style>
+
+  <Style Selector="Border.SplashLogoCore">
+    <Setter Property="Width" Value="164" />
+    <Setter Property="Height" Value="164" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="CornerRadius" Value="82" />
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#102635" Offset="0" />
+        <GradientStop Color="#0A141E" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="BorderBrush" Value="#2E5968" />
+    <Setter Property="BorderThickness" Value="1.5" />
+    <Setter Property="BoxShadow">
+      <BoxShadows>0 0 40 0 #221FE6C1, 0 26 62 0 #42030A11</BoxShadows>
+    </Setter>
+  </Style>
+
+  <Style Selector="TextBlock.SplashTitle">
+    <Setter Property="FontSize" Value="28" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="LetterSpacing" Value="2.2" />
+    <Setter Property="Foreground" Value="#F6FBFF" />
+  </Style>
+
+  <Style Selector="TextBlock.SplashSubtitle">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="Foreground" Value="#9AB0C3" />
+    <Setter Property="TextAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Border.SplashProgressTrack">
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Background" Value="#12202D" />
+    <Setter Property="BorderBrush" Value="#223447" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="Border.SplashProgressFill">
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Background">
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#159A84" Offset="0" />
+        <GradientStop Color="#21E6C1" Offset="0.55" />
+        <GradientStop Color="#74D8FF" Offset="1" />
+      </LinearGradientBrush>
+    </Setter>
+    <Setter Property="BoxShadow">
+      <BoxShadows>0 0 18 0 #441FE6C1</BoxShadows>
+    </Setter>
+  </Style>
+
+  <Style Selector="TextBlock.SplashStatus">
+    <Setter Property="Foreground" Value="#C2D6E6" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+
+  <Style Selector="Border.SplashMetricChip">
+    <Setter Property="Background" Value="#0D1721" />
+    <Setter Property="BorderBrush" Value="#223242" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Padding" Value="12,7" />
+  </Style>
+
+</Styles>

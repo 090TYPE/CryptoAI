@@ -1,0 +1,70 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <Nullable>enable</Nullable>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <UsedAvaloniaProducts></UsedAvaloniaProducts>
+    <!-- WinForms for NotifyIcon + balloon notifications (Windows-only, no extra packages) -->
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.0.0" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.0.0" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.0" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.0" />
+    <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.0">
+      <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+    <PackageReference Include="ReactiveUI" Version="23.2.1" />
+    <PackageReference Include="ReactiveUI.Avalonia" Version="11.4.12" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Copy icon files to output so SystemTrayService can load them at runtime -->
+    <None Update="Assets\app.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\app-icon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\app-icon-square.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Remove="Models\**" />
+    <AvaloniaResource Include="Assets\**" />
+    <AvaloniaXaml Remove="Models\**" />
+    <Compile Remove="Models\**" />
+    <EmbeddedResource Remove="Models\**" />
+    <None Remove="Models\**" />
+    <Compile Update="**\*.xaml.cs">
+      <DependentUpon>%(Filename)</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CryptoAITerminal.Core\CryptoAITerminal.Core.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.Gateway.Bybit\CryptoAITerminal.Gateway.Bybit.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.Gateway.OKX\CryptoAITerminal.Gateway.OKX.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.Gateway.KuCoin\CryptoAITerminal.Gateway.KuCoin.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.WhaleTracker\CryptoAITerminal.WhaleTracker.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.Gateway.Binance\CryptoAITerminal.Gateway.Binance.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.Gateway.DEX\CryptoAITerminal.Gateway.DEX.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.OrderRouter\CryptoAITerminal.OrderRouter.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.RiskManager\CryptoAITerminal.RiskManager.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.AIEngine\CryptoAITerminal.AIEngine.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Views\MainWindow.axaml.cs">
+      <DependentUpon>MainWindow.axaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,40 @@
+namespace CryptoAITerminal.Gateway.DEX;
+
+public sealed record DexSellExecutionRequest(
+    string TokenAddress,
+    decimal TokenAmountToSell,
+    decimal SlippagePercent = 5m,
+    string? DexId = null,
+    string? ReceiveAssetSymbol = null);
+
+public sealed record DexSellExecutionResult(
+    string TransactionHash,
+    bool Confirmed,
+    bool BalanceVerified,
+    int TokenDecimals,
+    decimal RequestedTokenAmount,
+    decimal ActualTokenAmountSold,
+    decimal ExpectedNativeAmount,
+    decimal MinimumNativeAmount,
+    decimal ActualNativeAmountReceived,
+    decimal NativeBalanceBefore,
+    decimal NativeBalanceAfter,
+    decimal TokenBalanceBefore,
+    decimal TokenBalanceAfter,
+    string Narrative,
+    string? DexId = null,
+    decimal NetworkFeeNative = 0m,
+    long? GasUsed = null,
+    string? EffectiveGasPriceWei = null,
+    bool ReceiptParsed = false,
+    bool DecimalsVerified = false,
+    bool SlippageProtected = false,
+    bool BalanceSynchronized = false,
+    bool ApproveWasRequired = false,
+    string? ApproveTransactionHash = null,
+    decimal ApproveFeeNative = 0m,
+    string? ReceiveAssetSymbol = null,
+    decimal ActualReceiveAmount = 0m,
+    decimal ExpectedReceiveAmount = 0m,
+    decimal MinimumReceiveAmount = 0m,
+    bool UsedQuoteAsset = false);

@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "CryptoAITerminal.AIEngine": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

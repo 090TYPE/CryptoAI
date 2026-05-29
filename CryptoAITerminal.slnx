@@ -1,0 +1,46 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/AIEngine/">
+    <Project Path="CryptoAITerminal.AIEngine/CryptoAITerminal.AIEngine.csproj" />
+  </Folder>
+  <Folder Name="/src/Core/">
+    <Project Path="CryptoAITerminal.Core/CryptoAITerminal.Core.csproj" />
+  </Folder>
+  <Folder Name="/src/CryptoAITerminal/">
+    <Project Path="CryptoAITerminal.Gateway.DEX/CryptoAITerminal.Gateway.DEX.csproj" />
+  </Folder>
+  <Folder Name="/src/Gateway.Base/">
+    <Project Path="CryptoAITerminal.Gateway.Base/CryptoAITerminal.Gateway.Base.csproj" />
+  </Folder>
+  <Folder Name="/src/Gateway.Binance/">
+    <Project Path="CryptoAITerminal.Gateway.Binance/CryptoAITerminal.Gateway.Binance.csproj" />
+  </Folder>
+  <Folder Name="/src/Gateway.Bybit/">
+    <Project Path="CryptoAITerminal.Gateway.Bybit/CryptoAITerminal.Gateway.Bybit.csproj" />
+  </Folder>
+  <Folder Name="/src/Gateway.OKX/">
+    <Project Path="CryptoAITerminal.Gateway.OKX/CryptoAITerminal.Gateway.OKX.csproj" />
+  </Folder>
+  <Folder Name="/src/Gateway.KuCoin/">
+    <Project Path="CryptoAITerminal.Gateway.KuCoin/CryptoAITerminal.Gateway.KuCoin.csproj" />
+  </Folder>
+  <Folder Name="/src/WhaleTracker/">
+    <Project Path="CryptoAITerminal.WhaleTracker/CryptoAITerminal.WhaleTracker.csproj" />
+  </Folder>
+  <Folder Name="/src/OrderRouter/">
+    <Project Path="CryptoAITerminal.OrderRouter/CryptoAITerminal.OrderRouter.csproj" />
+  </Folder>
+  <Folder Name="/src/RiskManager/">
+    <Project Path="CryptoAITerminal.RiskManager/CryptoAITerminal.RiskManager.csproj" />
+  </Folder>
+  <Folder Name="/src/TerminalUI/">
+    <Project Path="CryptoAITerminal.TerminalUI/CryptoAITerminal.TerminalUI.csproj" />
+  </Folder>
+  <Folder Name="/src/WebApi/">
+    <Project Path="CryptoAITerminal.WebApi/CryptoAITerminal.WebApi.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/Core.Tests/">
+    <Project Path="CryptoAITerminal.Core.Tests/CryptoAITerminal.Core.Tests.csproj" />
+  </Folder>
+</Solution>

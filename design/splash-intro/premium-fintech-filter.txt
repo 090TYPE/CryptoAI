@@ -1,0 +1,13 @@
+[0:v]scale=2140:1204,crop=1920:1080:x='(iw-1920)/2+18*sin(t*0.8)':y='(ih-1080)/2+10*cos(t*0.6)',eq=saturation=1.05:contrast=1.04:brightness=-0.02,format=rgba[bg];
+[2:v]format=rgba,colorchannelmixer=aa=0.0,drawbox=x='-420+720*t':y=0:w=260:h=1080:color=0x22d6d0@0.16:t=fill,gblur=sigma=60[sweep];
+[bg][sweep]overlay=0:0[tmp0];
+[tmp0]drawbox=x=1206:y='if(lt(t,1.55),1080,1080-140*min((t-1.55)/0.55,1))':w=42:h='if(lt(t,1.55),0,140*min((t-1.55)/0.55,1))':color=0x081f59@0.82:t=fill:enable='gte(t,1.55)'[tmp1];
+[tmp1]drawbox=x=1286:y='if(lt(t,1.70),1080,1080-230*min((t-1.70)/0.60,1))':w=46:h='if(lt(t,1.70),0,230*min((t-1.70)/0.60,1))':color=0x081f59@0.86:t=fill:enable='gte(t,1.70)'[tmp2];
+[tmp2]drawbox=x=1374:y='if(lt(t,1.85),1080,1080-330*min((t-1.85)/0.65,1))':w=52:h='if(lt(t,1.85),0,330*min((t-1.85)/0.65,1))':color=0x081f59@0.92:t=fill:enable='gte(t,1.85)'[tmp3];
+[1:v]format=rgba,scale=w='if(lt(t,1.4),180+360*t,if(lt(t,2.9),684,if(lt(t,3.55),684-190*((t-2.9)/0.65),494)))':h=-1:eval=frame[icon];
+[1:v]format=rgba,scale=w='if(lt(t,1.4),260+420*t,if(lt(t,2.9),804,if(lt(t,3.55),804-240*((t-2.9)/0.65),564)))':h=-1:eval=frame,colorchannelmixer=aa=0.22,gblur=sigma=26[glow];
+[tmp3][glow]overlay=x='if(lt(t,2.9),(W-w)/2,if(lt(t,3.55),(W-w)/2-220*((t-2.9)/0.65),(W-w)/2-220))':y='if(lt(t,1.4),440-110*t,286)':format=auto[tmp4];
+[tmp4][icon]overlay=x='if(lt(t,2.9),(W-w)/2,if(lt(t,3.55),(W-w)/2-220*((t-2.9)/0.65),(W-w)/2-220))':y='if(lt(t,1.4),470-125*t,316)':format=auto[tmp5];
+[tmp5]drawtext=fontfile='C\:/Windows/Fonts/bahnschrift.ttf':text='CryptoAITerminal':fontcolor=white:fontsize=88:x='if(lt(t,3.0),2200,if(lt(t,3.75),1020-170*((t-3.0)/0.75),850))':y=382:alpha='if(lt(t,3.0),0,if(lt(t,3.5),(t-3.0)/0.5,1))'[tmp6];
+[tmp6]drawtext=fontfile='C\:/Windows/Fonts/segoeui.ttf':text='AI-Powered Trading Terminal':fontcolor=0x9ed9ff:fontsize=32:x='if(lt(t,3.18),2200,if(lt(t,3.9),1024-145*((t-3.18)/0.72),878))':y=484:alpha='if(lt(t,3.18),0,if(lt(t,3.68),(t-3.18)/0.5,0.94))'[tmp7];
+[tmp7]drawbox=x='if(lt(t,3.22),2200,if(lt(t,3.82),838-78*((t-3.22)/0.60),760))':y=468:w='if(lt(t,3.22),0,if(lt(t,3.82),120+180*((t-3.22)/0.60),300))':h=3:color=0x22d6d0@0.88:t=fill,format=yuv420p[v]
