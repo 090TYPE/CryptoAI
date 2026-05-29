@@ -1,0 +1,53 @@
+# ── Build output ──────────────────────────────────────────────────────────────
+bin/
+obj/
+publish/
+out/
+
+# ── Visual Studio ─────────────────────────────────────────────────────────────
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.lscache
+*.VC.db
+*.VC.opendb
+
+# ── Rider ─────────────────────────────────────────────────────────────────────
+.idea/
+*.DotSettings.user
+
+# ── .NET runtime/SDK artifacts ────────────────────────────────────────────────
+.dotnet/
+.dotnet-cli/
+*.trn
+*.sentinel
+
+# ── Publish profiles (keep .pubxml, ignore per-user overrides) ────────────────
+*.pubxml.user
+
+# ── NuGet ─────────────────────────────────────────────────────────────────────
+.nuget/
+packages/
+*.nupkg
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.temp
+*.bak
+*.orig
+
+# ── Application runtime data (user-specific, not source) ──────────────────────
+# These are written by the app at runtime in %AppData%
+# Nothing to exclude here — they live outside the repo
+
+# ── Sensitive ─────────────────────────────────────────────────────────────────
+*.key
+*.pem
+*.pfx
+appsettings.Local.json
+secrets.json

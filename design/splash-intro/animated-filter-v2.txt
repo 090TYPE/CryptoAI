@@ -1,0 +1,11 @@
+[0:v]scale=2100:1182,crop=1920:1080:x='(iw-1920)/2+30*sin(t*1.3)':y='(ih-1080)/2+18*cos(t*0.9)',eq=brightness=-0.03:saturation=1.12,format=yuv420p[v0];
+[1:v]scale=2140:1205,crop=1920:1080:x='(iw-1920)/2-60*t':y='(ih-1080)/2',eq=saturation=1.18:contrast=1.03,format=yuv420p[v1];
+[2:v]scale=2180:1228,crop=1920:1080:x='(iw-1920)/2+10*sin(t*5)':y='(ih-1080)/2-40+20*t',eq=contrast=1.08:saturation=1.16,format=yuv420p[v2];
+[3:v]scale=2140:1205,crop=1920:1080:x='(iw-1920)/2+45*t':y='(ih-1080)/2',eq=saturation=1.15,format=yuv420p[v3];
+[4:v]scale=2120:1194,crop=1920:1080:x='(iw-1920)/2':y='(ih-1080)/2+10*sin(t*2.0)',eq=contrast=1.09:saturation=1.20,format=yuv420p[v4];
+[5:v]scale=2080:1171,crop=1920:1080:x='(iw-1920)/2-12*sin(t*1.3)':y='(ih-1080)/2-8*cos(t*1.1)',eq=brightness=0.01:saturation=1.06,format=yuv420p[v5];
+[v0][v1]xfade=transition=fadeblack:duration=0.18:offset=0.92[x1];
+[x1][v2]xfade=transition=distance:duration=0.18:offset=1.74[x2];
+[x2][v3]xfade=transition=fade:duration=0.16:offset=2.56[x3];
+[x3][v4]xfade=transition=fadeblack:duration=0.16:offset=3.38[x4];
+[x4][v5]xfade=transition=fade:duration=0.22:offset=4.20,format=yuv420p[v]
