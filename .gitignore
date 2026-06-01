@@ -51,3 +51,19 @@ desktop.ini
 *.pfx
 appsettings.Local.json
 secrets.json
+
+# License signing private key — never commit
+.license-signing/
+
+# License bot secrets/data
+CryptoAITerminal.LicenseBot/appsettings.json
+*.db
+*.db-shm
+*.db-wal
+
+# Claude Code / environment cruft (not part of the .NET solution)
+node_modules/
+package.json
+package-lock.json
+.claude/
+portfolio/
