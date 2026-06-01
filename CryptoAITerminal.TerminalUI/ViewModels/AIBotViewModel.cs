@@ -422,6 +422,7 @@ public class AIBotViewModel : ReactiveObject
         };
 
         var strategy = CreateStrategy();
+        var claudeStrategy = strategy as CryptoAITerminal.AIEngine.ClaudeStrategy;
         BotLog += $"\n[Strategy] {strategy.Name}";
         var tpSl = new TpSlConfig
         {
@@ -440,7 +441,14 @@ public class AIBotViewModel : ReactiveObject
             BotLog += $"\n[ERROR] {msg}";
             App.Tray?.ShowError("Rule Bot Error", msg.Length > 120 ? msg[..120] + "…" : msg);
         };
-        _bot.OnSignal += (sig, conf, price) => BotLog += $"\n[{sig}] conf={conf:P0} @ {price:N4}";
+        _bot.OnSignal += (sig, conf, price) =>
+        {
+            BotLog += $"\n[{sig}] conf={conf:P0} @ {price:N4}";
+            // For the AI strategy, attach the model's "why" to each trade signal.
+            var reason = claudeStrategy?.LastReason;
+            if (!string.IsNullOrWhiteSpace(reason))
+                BotLog += $"\n   🧠 {reason}";
+        };
         _bot.OnTradeClosed += (sym, dir, entry, exit, qty, pnl) =>
         {
             BotLog += $"\n[CLOSED] {sym} {dir}  entry={entry:N4}  exit={exit:N4}  P&L={pnl:+0.00;-0.00}";

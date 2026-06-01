@@ -548,14 +548,14 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         ]);
         AllPositionsVM.OnLog += AddLog;
 
-        // Dashboard overview
-        DashboardVM = new DashboardViewModel(AIBotVM, GridBotVM, DcaBotVM, pnlService, AllPositionsVM);
-
         // News Feed (RSS: CoinTelegraph, CoinDesk, Decrypt, The Block, Bitcoin Magazine)
         _newsFeedService = new NewsFeedService();
         NewsFeedVM = new NewsFeedViewModel(_newsFeedService);
         NewsFeedVM.AlertTriggered += msg => { ShowToast(msg); AddLog($"[NEWS] {msg}"); };
         _newsFeedService.Start();
+
+        // Dashboard overview (reads the news market pulse + AI digest)
+        DashboardVM = new DashboardViewModel(AIBotVM, GridBotVM, DcaBotVM, pnlService, AllPositionsVM, NewsFeedVM);
 
         // On-Chain Metrics (Glassnode)
         _onChainService = new OnChainMetricsService();
@@ -827,6 +827,21 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         DexTradingVM.PropertyChanged += OnDexTradingPropertyChanged;
         LoadAiCustomPromptPresetsFromDisk();
 
+        // First-run: greet with the demo/paper explainer so buyers can explore
+        // the whole terminal before touching API keys.
+        IsWelcomeVisible = IsFirstRun();
+
+        // Background: check GitHub Releases for a newer version (non-blocking).
+        StartUpdateCheck();
+
+        // License: gate live execution on a valid license; demo stays open always.
+        LicenseVM.LicenseChanged += ApplyLicenseState;
+        ApplyLicenseState(LicenseVM.Snapshot);
+        // Trial expired → surface activation immediately (but never on the very
+        // first run, where the welcome overlay greets the user instead).
+        if (LicenseVM.Snapshot.IsExpired && !IsWelcomeVisible)
+            LicenseVM.IsVisible = true;
+
         _marketDataSubscription = _gateway.MarketDataStream.Subscribe(data =>
         {
             Dispatcher.UIThread.Post(() =>
@@ -934,6 +949,10 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         ReversePositionCommand = ReactiveCommand.CreateFromTask(ExecuteReversePosition, outputScheduler: App.UiScheduler);
         OpenWalletTabCommand = ReactiveCommand.Create(() => { SelectMainTab("portfolio"); }, outputScheduler: App.UiScheduler);
         SelectMainTabCommand = ReactiveCommand.Create<string>(SelectMainTab, outputScheduler: App.UiScheduler);
+        StartDemoCommand = ReactiveCommand.Create(StartDemoExploring, outputScheduler: App.UiScheduler);
+        OpenApiKeysFromWelcomeCommand = ReactiveCommand.Create(OpenApiKeysFromWelcome, outputScheduler: App.UiScheduler);
+        OpenUpdateCommand = ReactiveCommand.Create(OpenUpdateUrl, outputScheduler: App.UiScheduler);
+        DismissUpdateCommand = ReactiveCommand.Create(DismissUpdateBanner, outputScheduler: App.UiScheduler);
         SelectOrderSideCommand = ReactiveCommand.Create<string>(SelectOrderSide, outputScheduler: App.UiScheduler);
         PlacePrimaryOrderCommand = ReactiveCommand.CreateFromTask(PlacePrimaryOrderAsync, outputScheduler: App.UiScheduler);
         SelectTradeTimeframeCommand = ReactiveCommand.Create<string>(SelectTradeTimeframe, outputScheduler: App.UiScheduler);
@@ -1333,6 +1352,10 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> ReversePositionCommand { get; }
     public ReactiveCommand<Unit, Unit> OpenWalletTabCommand { get; }
     public ReactiveCommand<string, Unit> SelectMainTabCommand { get; }
+    public ReactiveCommand<Unit, Unit> StartDemoCommand { get; }
+    public ReactiveCommand<Unit, Unit> OpenApiKeysFromWelcomeCommand { get; }
+    public ReactiveCommand<Unit, Unit> OpenUpdateCommand { get; }
+    public ReactiveCommand<Unit, Unit> DismissUpdateCommand { get; }
     public ReactiveCommand<string, Unit> SelectOrderSideCommand { get; }
     public ReactiveCommand<Unit, Unit> PlacePrimaryOrderCommand { get; }
     public ReactiveCommand<string, Unit> SelectTradeTimeframeCommand { get; }
@@ -2671,6 +2694,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public AllPositionsViewModel         AllPositionsVM     { get; private set; } = null!;
     public NewsFeedViewModel             NewsFeedVM         { get; private set; } = null!;
     public OnChainMetricsViewModel       OnChainVM          { get; private set; } = null!;
+    public OnboardingViewModel           OnboardingVM       { get; } = new();
+    public LicenseViewModel              LicenseVM          { get; } = new();
 
     // ── private services ──────────────────────────────────────────────────────
     private readonly TelegramNotificationService _telegram = null!;
@@ -2686,6 +2711,110 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
     private string _toastMessage = string.Empty;
     private bool _isToastVisible;
+    private bool _isWelcomeVisible;
+
+    private static string WelcomeMarkerPath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "CryptoAITerminal",
+        ".welcome-shown");
+
+    private static bool IsFirstRun()
+    {
+        try { return !File.Exists(WelcomeMarkerPath); }
+        catch { return false; }
+    }
+
+    private static void MarkWelcomeShown()
+    {
+        try
+        {
+            var path = WelcomeMarkerPath;
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, DateTime.UtcNow.ToString("o"));
+        }
+        catch
+        {
+            // Non-fatal: worst case the welcome shows again next launch.
+        }
+    }
+
+    /// <summary>First-run welcome / demo overlay visibility.</summary>
+    public bool IsWelcomeVisible
+    {
+        get => _isWelcomeVisible;
+        private set => this.RaiseAndSetIfChanged(ref _isWelcomeVisible, value);
+    }
+
+    // ── Update banner ────────────────────────────────────────────────────────
+    private bool _isUpdateAvailable;
+    private string _updateBannerText = "";
+    private string _updateUrl = "";
+
+    public bool IsUpdateAvailable
+    {
+        get => _isUpdateAvailable;
+        private set => this.RaiseAndSetIfChanged(ref _isUpdateAvailable, value);
+    }
+
+    public string UpdateBannerText
+    {
+        get => _updateBannerText;
+        private set => this.RaiseAndSetIfChanged(ref _updateBannerText, value);
+    }
+
+    private void StartUpdateCheck()
+    {
+        RunLoggedAsync(async () =>
+        {
+            var result = await new UpdateCheckService().CheckAsync().ConfigureAwait(true);
+            if (!result.IsUpdateAvailable) return;
+
+            _updateUrl       = result.ReleaseUrl;
+            UpdateBannerText = $"Update available: v{result.LatestVersion} (you have v{result.CurrentVersion})";
+            IsUpdateAvailable = true;
+        }, "Update check");
+    }
+
+    private void OpenUpdateUrl()
+    {
+        IsUpdateAvailable = false;
+        if (string.IsNullOrWhiteSpace(_updateUrl)) return;
+        try
+        {
+            System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo(_updateUrl) { UseShellExecute = true });
+        }
+        catch { /* best-effort */ }
+    }
+
+    private void DismissUpdateBanner() => IsUpdateAvailable = false;
+
+    private void ApplyLicenseState(Services.LicenseSnapshot snapshot)
+    {
+        // Trial expired and unlicensed → block live trading and pin to paper.
+        WalletVM.LicenseAllowsLive = !snapshot.IsExpired;
+        if (snapshot.IsExpired)
+            WalletVM.GlobalPaperOnlyMode = true;
+    }
+
+    private void StartDemoExploring()
+    {
+        // Demo path: keep everything in paper-only mode (the safe default) and dismiss.
+        WalletVM.GlobalPaperOnlyMode = true;
+        DismissWelcome();
+    }
+
+    private void OpenApiKeysFromWelcome()
+    {
+        DismissWelcome();
+        OnboardingVM.Open();
+    }
+
+    private void DismissWelcome()
+    {
+        IsWelcomeVisible = false;
+        MarkWelcomeShown();
+    }
     private IDisposable? _toastTimer;
 
     public string ToastMessage
@@ -4230,6 +4359,14 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             this.RaisePropertyChanged(nameof(BotsRuntimeStatusLabel));
             this.RaisePropertyChanged(nameof(BotsRuntimeStatusBrush));
             this.RaisePropertyChanged(nameof(LogoutStatusLabel));
+        }
+
+        // Share the Claude credentials entered in the AI Bot with the sniper's
+        // AI verdict so a single key configures both.
+        if (e.PropertyName is nameof(AIBotViewModel.ClaudeApiKey) or nameof(AIBotViewModel.ClaudeModel))
+        {
+            SniperVM.ConfigureAiVerdict(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            NewsFeedVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
         }
 
         RefreshAiSignalStudioContext();

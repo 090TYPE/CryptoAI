@@ -420,10 +420,21 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
         return string.IsNullOrWhiteSpace(reason);
     }
 
-    public string GetExecutionGuardBlockReason(string routeLabel) =>
-        GlobalPaperOnlyMode
+    /// <summary>
+    /// Set by the license layer: when false (trial expired / no license) live
+    /// execution is blocked everywhere and the mode is pinned to PAPER ONLY.
+    /// </summary>
+    public bool LicenseAllowsLive { get; set; } = true;
+
+    public string GetExecutionGuardBlockReason(string routeLabel)
+    {
+        if (!LicenseAllowsLive)
+            return $"Live execution blocked for {routeLabel}: activate a license to trade live (trial expired).";
+
+        return GlobalPaperOnlyMode
             ? $"Global execution guard blocked {routeLabel}: PAPER ONLY is active."
             : string.Empty;
+    }
 
     public string GetDexExecutionBlockReason(string routeLabel, string? chainId, string? dexId)
     {
@@ -1588,7 +1599,9 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
 
     private void ApplyGlobalExecutionMode(string? mode)
     {
-        GlobalPaperOnlyMode = !string.Equals(mode, "LIVE", StringComparison.OrdinalIgnoreCase);
+        var wantsLive = string.Equals(mode, "LIVE", StringComparison.OrdinalIgnoreCase);
+        // Without a valid license, live mode cannot be enabled — pin to paper.
+        GlobalPaperOnlyMode = !(wantsLive && LicenseAllowsLive);
     }
 
     private string NormalizeEffectiveSymbolToGlobalSelection(string? symbol)
