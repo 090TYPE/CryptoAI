@@ -156,6 +156,7 @@ public class BacktestViewModel : ReactiveObject
     public ObservableCollection<WfSegmentViewModel> WalkForwardSegments { get; } = new();
     public bool HasWalkForwardSegments => WalkForwardSegments.Count > 0;
     private string         _bestParamsLabel = "";
+    private List<decimal>  _buyHoldValues   = [];
 
     // ═════════════════════ PROPERTIES ═════════════════════
 
@@ -449,6 +450,7 @@ public class BacktestViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit>          OptimizeCommand   { get; }
     public ReactiveCommand<Unit, Unit>          MonteCarloCommand { get; }
     public ReactiveCommand<Unit, Unit>          ExportCsvCommand  { get; }
+    public ReactiveCommand<Unit, Unit>          ExportReportCommand { get; }
     public ReactiveCommand<WfResultRowVM, Unit> ApplyCommand      { get; }
 
     private string _exportStatus = string.Empty;
@@ -467,6 +469,7 @@ public class BacktestViewModel : ReactiveObject
         OptimizeCommand   = ReactiveCommand.CreateFromTask(OptimizeAsync,   outputScheduler: App.UiScheduler);
         MonteCarloCommand = ReactiveCommand.CreateFromTask(MonteCarloAsync, outputScheduler: App.UiScheduler);
         ExportCsvCommand  = ReactiveCommand.Create(ExportCsv,               outputScheduler: App.UiScheduler);
+        ExportReportCommand = ReactiveCommand.Create(ExportReport,          outputScheduler: App.UiScheduler);
         ApplyCommand      = ReactiveCommand.Create<WfResultRowVM>(ApplyOptResult, outputScheduler: App.UiScheduler);
     }
 
@@ -505,6 +508,70 @@ public class BacktestViewModel : ReactiveObject
         catch (Exception ex)
         {
             ExportStatus = $"Ошибка экспорта: {ex.Message}";
+        }
+    }
+
+    // ═════════════════════ HTML REPORT EXPORT ═════════════════════
+
+    private void ExportReport()
+    {
+        if (!_mainResult.IsReady)
+        {
+            ExportStatus = "Сначала запустите бэктест.";
+            return;
+        }
+
+        try
+        {
+            var dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "CryptoAITerminal", "Backtests");
+            Directory.CreateDirectory(dir);
+
+            var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
+            var prefix = $"{stamp}_{SanitizeForFileName(Symbol)}_{SanitizeForFileName(SelectedTimeframe)}_{SanitizeForFileName(CurrentStrategyName)}";
+            var path = Path.Combine(dir, $"{prefix}_report.html");
+
+            var model = new BacktestReportExporter.ReportModel
+            {
+                Symbol             = Symbol,
+                Timeframe          = SelectedTimeframe,
+                StrategyName       = CurrentStrategyName,
+                Commission         = Commission,
+                GeneratedAt        = DateTime.Now,
+                DateRange          = EquityDateRange,
+                TradeCount         = _mainResult.TradeCount,
+                WinRatePercent     = _mainResult.WinRatePercent,
+                NetReturnPercent   = _mainResult.NetReturnPercent,
+                MaxDrawdownPercent = _mainResult.MaxDrawdownPercent,
+                SharpeRatio        = _mainResult.SharpeRatio,
+                BestTradePercent   = _mainResult.BestTradePercent,
+                WorstTradePercent  = _mainResult.WorstTradePercent,
+                Equity             = _mainResult.EquityCurve
+                    .Select(p => new BacktestReportExporter.EquityPoint(p.Time, p.Value)).ToList(),
+                BuyHold            = _buyHoldValues,
+                Comparison         = ComparisonRows
+                    .Select(r => new BacktestReportExporter.ComparisonRow(
+                        r.Name, r.TradeCount, r.WinRate, r.NetReturn, r.MaxDD, r.Sharpe, r.BestTrade, r.IsSelected))
+                    .ToList(),
+                MonteCarloSummary  = _monteCarloSummary.StartsWith("Monte Carlo не запускался", StringComparison.Ordinal)
+                    ? "" : _monteCarloSummary
+            };
+
+            File.WriteAllText(path, BacktestReportExporter.BuildHtml(model), Encoding.UTF8);
+
+            try
+            {
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true });
+            }
+            catch { /* file is written; opening is best-effort */ }
+
+            ExportStatus = $"Отчёт сохранён: {Path.GetFileName(path)} (открыт в браузере · Ctrl+P → PDF)";
+        }
+        catch (Exception ex)
+        {
+            ExportStatus = $"Ошибка экспорта отчёта: {ex.Message}";
         }
     }
 
@@ -973,7 +1040,12 @@ public class BacktestViewModel : ReactiveObject
         {
             var first = candles[0].Close;
             var bh    = candles.Select(c => (c.Close - first) / first * 100m + 100m).ToList();
+            _buyHoldValues = bh;
             BuyHoldGeometry = BuildPath(bh, minVal, valRange);
+        }
+        else
+        {
+            _buyHoldValues = [];
         }
 
         if (curve.Count >= 2)

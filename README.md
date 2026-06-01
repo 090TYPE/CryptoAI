@@ -8,10 +8,10 @@
   <img src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet" alt=".NET 8"/>
   <img src="https://img.shields.io/badge/Avalonia-12.0-883EFF" alt="Avalonia"/>
   <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11%20x64-0078D6?logo=windows" alt="Platform"/>
-  <img src="https://img.shields.io/badge/Version-v1.0-21E6C1" alt="v1.0"/>
+  <img src="https://img.shields.io/badge/Version-v1.1-21E6C1" alt="v1.1"/>
 </p>
 
-> **Профессиональный десктоп-терминал для торговли криптовалютами.** CEX + DEX в одном окне: Binance, Bybit, OKX, KuCoin, Uniswap, Jupiter, SunSwap. Алгоритмические боты, снайпер новых листингов, on-chain аналитика, AI-стратегии.
+> **Профессиональный десктоп-терминал для торговли криптовалютами.** CEX + DEX в одном окне: Binance, Bybit, OKX, KuCoin, Uniswap, Jupiter, SunSwap. Алгоритмические боты, снайпер новых листингов, on-chain аналитика, AI-стратегии и AI-оценка рисков. Демо-режим без ключей, лицензирование и Telegram-бот продажи лицензий с оплатой Stars/криптой.
 
 ---
 
@@ -26,6 +26,8 @@
 - [Аналитика и сигналы](#аналитика-и-сигналы)
 - [Управление рисками](#управление-рисками)
 - [Уведомления](#уведомления)
+- [AI-функции](#ai-функции)
+- [Демо-режим, лицензирование и обновления](#демо-режим-лицензирование-и-обновления)
 - [Быстрый старт](#быстрый-старт)
 - [API-ключи](#api-ключи)
 - [Сборка релиза](#сборка-релиза)
@@ -86,9 +88,10 @@ CryptoAI/
 ├── CryptoAITerminal.OrderRouter      ← Best Execution Router
 ├── CryptoAITerminal.RiskManager      ← Pre-trade risk checks, дневные лимиты
 ├── CryptoAITerminal.WhaleTracker     ← On-chain whale alerts
-├── CryptoAITerminal.AIEngine         ← Торговые стратегии + Claude API
+├── CryptoAITerminal.AIEngine         ← Торговые стратегии + Claude API (сигналы, AI-вердикт токена, дайджест новостей)
 ├── CryptoAITerminal.TerminalUI       ← Avalonia UI (главный проект)
-└── CryptoAITerminal.WebApi           ← REST API для мобильного мониторинга
+├── CryptoAITerminal.WebApi           ← REST API для мобильного мониторинга
+└── CryptoAITerminal.LicenseBot       ← Telegram-бот продажи лицензий (Stars + крипта, привязка к ПК)
 ```
 
 Все биржевые шлюзы реализуют единый интерфейс `IExchangeGateway` — стратегия, написанная один раз, работает на любой бирже без изменений.
@@ -310,6 +313,31 @@ RSS от CoinTelegraph, CoinDesk, Decrypt, The Block, Bitcoin Magazine. Авто
 
 ---
 
+## AI-функции
+
+Терминал использует Claude API (ключ задаётся в AI Bot настройках) и **работает без ключа** через офлайн-эвристику — AI-результат виден даже в демо.
+
+- **AI-вердикт токена (снайпер)** — для каждого кандидата AI-оценка риска: `AVOID / RISKY / NEUTRAL / FAVORABLE`, risk 0–100, red flags и причина. С ключом — Claude, без ключа — эвристика.
+- **AI Market Pulse (новости)** — агрегированный sentiment за час + AI-дайджест рынка одной-двумя фразами на дашборде новостей.
+- **AI-объяснение сделок бота** — каждая сделка AI-стратегии сопровождается строкой «почему» прямо в логе бота.
+- **AI-стратегия (Claude)** — генерация buy/sell сигналов по свечам.
+
+---
+
+## Демо-режим, лицензирование и обновления
+
+- **Demo / Paper режим** — при первом запуске приветственный экран: можно изучить весь терминал без API-ключей. Вся торговля симулируется (`GlobalPaperOnlyMode` по умолчанию), реальные ордера заблокированы.
+- **Onboarding-визард** — пошаговое подключение биржи (выбор → ключи → безопасное сохранение через DPAPI).
+- **Лицензирование** — офлайн-проверка по RSA-подписи (приложение содержит публичный ключ), 14-дневный триал, опциональная привязка к ПК. Без валидной лицензии после триала доступен только демо-режим. Активация: **Settings → License** или **Portfolio**, Machine ID показан там же.
+- **Авто-обновления** — проверка GitHub Releases на старте, ненавязчивый баннер с кнопкой загрузки.
+- **HTML-отчёт бэктеста** — кнопка «Export Report» рендерит самодостаточный отчёт (equity-кривая, метрики, сравнение стратегий, Monte Carlo); печатается в PDF из браузера.
+
+### Telegram-бот продажи лицензий
+
+Отдельный проект `CryptoAITerminal.LicenseBot`: продаёт лицензии за **Telegram Stars** или **криптовалюту** (Crypto Pay API, цена в ₽ — клиент платит крипто-эквивалент), подписывает ключ и мгновенно выдаёт его. Хранит базу клиентов и заказов (SQLite), привязывает ключ к Machine ID покупателя. Подробности — `CryptoAITerminal.LicenseBot/README.md`.
+
+---
+
 ## Быстрый старт
 
 ### Требования
@@ -470,5 +498,5 @@ dotnet run
 <p align="center">
   <img src="design/logo-assets/icons/cryptoaiterminal-icon-variant-a-transparent.png" width="80" alt="icon"/>
   <br/>
-  <sub>Crypto AI Terminal · v1.0 · 2026</sub>
+  <sub>Crypto AI Terminal · v1.1 · 2026</sub>
 </p>

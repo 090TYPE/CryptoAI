@@ -2565,6 +2565,24 @@
                            Foreground="#8B949E"
                            TextWrapping="Wrap" />
 
+                <!-- License activation -->
+                <Border Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="8" Padding="12">
+                  <StackPanel Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Grid.Column="0" Text="License" FontWeight="Bold" Foreground="#E0E8F0" VerticalAlignment="Center" />
+                      <Border Grid.Column="1" Background="{Binding LicenseVM.StateBrush}" CornerRadius="3" Padding="7,2">
+                        <TextBlock Text="{Binding LicenseVM.StateLabel}" Foreground="#06121C" FontSize="11" FontWeight="Bold" />
+                      </Border>
+                    </Grid>
+                    <TextBox Text="{Binding LicenseVM.KeyInput}" PlaceholderText="Paste activation key" />
+                    <Button Content="Activate" Command="{Binding LicenseVM.ActivateCommand}"
+                            HorizontalAlignment="Stretch" Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
+                    <TextBlock Text="{Binding LicenseVM.StatusMessage}" Foreground="#F4B860" FontSize="11" TextWrapping="Wrap" />
+                    <TextBlock Foreground="#4A6880" FontSize="10" TextWrapping="Wrap"
+                               Text="Get a key from the Telegram bot. Your Machine ID is in Settings → License. No key? You stay in Demo mode." />
+                  </StackPanel>
+                </Border>
+
                 <Expander IsExpanded="True">
                   <Expander.Header>
                     <TextBlock Text="Connection Studio" FontWeight="Bold" />
@@ -4939,6 +4957,47 @@
                                     </StackPanel>
                                   </Border>
 
+                                  <!-- ── AI Verdict (Claude / offline heuristic) ──────────────── -->
+                                  <Border Background="#0A1520"
+                                          BorderBrush="#243A66"
+                                          BorderThickness="1"
+                                          CornerRadius="4"
+                                          Padding="8,6"
+                                          IsVisible="{Binding HasAiVerdict}">
+                                    <StackPanel Spacing="4">
+                                      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                        <Border Grid.Column="0"
+                                                Background="{Binding AiAccentHex}"
+                                                CornerRadius="3"
+                                                Padding="7,3"
+                                                VerticalAlignment="Center">
+                                          <TextBlock Text="{Binding AiVerdictBadge}"
+                                                     Foreground="White"
+                                                     FontSize="11"
+                                                     FontWeight="Bold" />
+                                        </Border>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding AiSourceLabel}"
+                                                   Foreground="#3A5A70"
+                                                   FontSize="10"
+                                                   VerticalAlignment="Center" />
+                                      </Grid>
+                                      <TextBlock Text="{Binding AiReason}"
+                                                 Foreground="#8B949E"
+                                                 FontSize="10"
+                                                 TextWrapping="Wrap" />
+                                      <TextBlock Text="{Binding AiRedFlagsText}"
+                                                 Foreground="#C5934A"
+                                                 FontSize="10"
+                                                 TextWrapping="Wrap" />
+                                    </StackPanel>
+                                  </Border>
+                                  <TextBlock Text="AI: assessing…"
+                                             Foreground="#5A7A90"
+                                             FontSize="10"
+                                             FontStyle="Italic"
+                                             IsVisible="{Binding AiAssessmentRunning}" />
+
                                   <WrapPanel Orientation="Horizontal">
                                     <Button Content="BUY NOW"
                                             Command="{Binding $parent[Window].DataContext.SniperVM.BuyCandidateCommand}"
@@ -6322,8 +6381,8 @@
                              FontFamily="Consolas,Menlo,monospace" />
                 </Border>
 
-                <!-- ── CSV export ── -->
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                <!-- ── Export ── -->
+                <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10">
                   <Button Grid.Column="0"
                           Command="{Binding BacktestVM.ExportCsvCommand}"
                           Classes="SecondaryButton">
@@ -6332,7 +6391,15 @@
                       <TextBlock Text="Export CSV" />
                     </StackPanel>
                   </Button>
-                  <TextBlock Grid.Column="1"
+                  <Button Grid.Column="1"
+                          Command="{Binding BacktestVM.ExportReportCommand}"
+                          Classes="SecondaryButton">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <TextBlock Text="📄" />
+                      <TextBlock Text="Export Report" />
+                    </StackPanel>
+                  </Button>
+                  <TextBlock Grid.Column="2"
                              Text="{Binding BacktestVM.ExportStatus}"
                              Foreground="#8FA3B8" FontSize="11"
                              VerticalAlignment="Center" TextWrapping="Wrap" />
@@ -10070,6 +10137,34 @@
           ════════════════════════════════════════════════════════════════ -->
           <StackPanel Spacing="12" IsVisible="{Binding IsNewsSectionVisible}">
 
+            <!-- AI Market Pulse + digest -->
+            <Border Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1"
+                    CornerRadius="8" Padding="16,12">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <TextBlock Text="AI MARKET PULSE" Foreground="#5A7A90" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
+                    <Border Background="{Binding NewsFeedVM.PulseBrush}" CornerRadius="3" Padding="8,2">
+                      <TextBlock Text="{Binding NewsFeedVM.PulseLabel}" Foreground="#06121C" FontSize="12" FontWeight="Bold" />
+                    </Border>
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding NewsFeedVM.PulseDetail}"
+                             Foreground="#7E93A6" FontSize="11" VerticalAlignment="Center" Margin="12,0,0,0" />
+                  <Button Grid.Column="2" Content="↻ AI digest" Classes="SecondaryAction"
+                          Command="{Binding NewsFeedVM.RefreshDigestCommand}"
+                          Padding="10,4" FontSize="11" />
+                </Grid>
+                <TextBlock Text="{Binding NewsFeedVM.AiDigest}"
+                           Foreground="{Binding NewsFeedVM.AiDigestBrush}"
+                           FontSize="13" TextWrapping="Wrap" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="AI: assessing…" Foreground="#5A7A90" FontSize="10" FontStyle="Italic"
+                             IsVisible="{Binding NewsFeedVM.AiDigestRunning}" />
+                  <TextBlock Text="{Binding NewsFeedVM.AiDigestSource}" Foreground="#3A5A70" FontSize="10" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
             <!-- Filter bar -->
             <Grid ColumnDefinitions="120,110,*,Auto,Auto,Auto" ColumnSpacing="8">
               <TextBox Grid.Column="0" Text="{Binding NewsFeedVM.FilterSymbol}"
@@ -10695,6 +10790,40 @@
           </StackPanel>
 
           <StackPanel Spacing="16" IsVisible="{Binding IsSettingsSectionVisible}">
+
+            <!-- License & activation -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="12">
+                <TextBlock Classes="H2" Text="License &amp; Activation" />
+
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <Border Background="{Binding LicenseVM.StateBrush}" CornerRadius="3" Padding="8,3" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding LicenseVM.StateLabel}" Foreground="#06121C" FontSize="12" FontWeight="Bold" />
+                  </Border>
+                  <TextBlock Text="{Binding LicenseVM.DetailLabel}" Foreground="#8FA3B8" FontSize="12"
+                             TextWrapping="Wrap" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="Overline" Text="Your Machine ID (send this to the bot to bind your key)" />
+                  <TextBox Text="{Binding LicenseVM.MachineId, Mode=OneWay}" IsReadOnly="True"
+                           FontFamily="Consolas,Menlo,monospace" />
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="Overline" Text="Activation key" />
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <TextBox Grid.Column="0" Text="{Binding LicenseVM.KeyInput}" PlaceholderText="Paste your license key here" />
+                    <Button Grid.Column="1" Content="Activate" Command="{Binding LicenseVM.ActivateCommand}"
+                            Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
+                  </Grid>
+                  <TextBlock Text="{Binding LicenseVM.StatusMessage}" Foreground="#F4B860" FontSize="12" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <TextBlock Foreground="#4A6880" FontSize="11" TextWrapping="Wrap"
+                           Text="Buy a key in the Telegram bot. Send the Machine ID above to the bot before paying so your key is bound to this PC. Without a valid license, only Demo (paper) mode is available after the trial." />
+              </StackPanel>
+            </Border>
 
             <!-- Telegram setup -->
             <Border Classes="Panel">
@@ -11771,7 +11900,7 @@
     </Grid>
     </Grid>
 
-    <Border x:Name="SplashOverlay" Classes="SplashOverlay">
+    <Border x:Name="SplashOverlay" Classes="SplashOverlay" ZIndex="300">
       <Border.Transitions>
         <Transitions>
           <DoubleTransition Property="Opacity" Duration="0:0:0.65" />
@@ -11870,6 +11999,214 @@
         <TextBlock Text="Alert Fired" Foreground="#1FE6C2" FontSize="11" FontWeight="SemiBold" />
         <TextBlock Text="{Binding ToastMessage}" Foreground="#E0E8F0" TextWrapping="Wrap" FontSize="13" />
       </StackPanel>
+    </Border>
+
+    <!-- Update available banner -->
+    <Border IsVisible="{Binding IsUpdateAvailable}"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Bottom"
+            Margin="24,0,0,32"
+            Padding="16,12"
+            Background="#0D2233"
+            BorderBrush="#1FE6C2"
+            BorderThickness="1"
+            CornerRadius="8"
+            MaxWidth="420"
+            ZIndex="100">
+      <StackPanel Spacing="8">
+        <TextBlock Text="⬆ Update available" Foreground="#1FE6C2" FontSize="11" FontWeight="SemiBold" />
+        <TextBlock Text="{Binding UpdateBannerText}" Foreground="#E0E8F0" TextWrapping="Wrap" FontSize="13" />
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+          <Button Content="Later" Command="{Binding DismissUpdateCommand}"
+                  Padding="12,5" Background="Transparent" BorderBrush="#2C4257" BorderThickness="1" Foreground="#C5D2DE" />
+          <Button Content="Download" Command="{Binding OpenUpdateCommand}"
+                  Padding="14,5" Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- License status chip (trial / expired) -->
+    <Border IsVisible="{Binding LicenseVM.ShowTrialBanner}"
+            HorizontalAlignment="Right" VerticalAlignment="Top"
+            Margin="0,16,24,0" Padding="12,7"
+            Background="#0D2233" BorderBrush="{Binding LicenseVM.StateBrush}"
+            BorderThickness="1" CornerRadius="8" ZIndex="90">
+      <StackPanel Orientation="Horizontal" Spacing="10">
+        <TextBlock Text="{Binding LicenseVM.StateLabel}" Foreground="{Binding LicenseVM.StateBrush}"
+                   FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+        <Button Content="Activate" Command="{Binding LicenseVM.OpenCommand}"
+                Padding="10,3" Background="#1FE6C2" Foreground="#06121C" FontSize="11" FontWeight="Bold" />
+      </StackPanel>
+    </Border>
+
+    <!-- License activation overlay -->
+    <Border IsVisible="{Binding LicenseVM.IsVisible}" Background="#CC050A12" ZIndex="220">
+      <Border Width="560" HorizontalAlignment="Center" VerticalAlignment="Center"
+              Background="#0B1622" BorderBrush="#1FE6C2" BorderThickness="1"
+              CornerRadius="14" Padding="32,28">
+        <StackPanel Spacing="16">
+          <TextBlock Text="License activation" Foreground="#F0F6FC" FontSize="22" FontWeight="Bold" />
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Border Background="{Binding LicenseVM.StateBrush}" CornerRadius="3" Padding="8,3">
+              <TextBlock Text="{Binding LicenseVM.StateLabel}" Foreground="#06121C" FontSize="12" FontWeight="Bold" />
+            </Border>
+          </StackPanel>
+          <TextBlock Text="{Binding LicenseVM.DetailLabel}" Foreground="#9FB2C4" FontSize="13" TextWrapping="Wrap" />
+          <TextBox Text="{Binding LicenseVM.KeyInput}" PlaceholderText="Paste license key"
+                   Background="#0A1018" Foreground="#C8D8E8" Height="34" AcceptsReturn="False" />
+          <TextBlock Text="{Binding LicenseVM.StatusMessage}" Foreground="#F4B860" FontSize="12" TextWrapping="Wrap" />
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+            <TextBlock Grid.Column="0" Text="{Binding LicenseVM.MachineId, StringFormat='Machine ID: {0}'}"
+                       Foreground="#48586A" FontSize="10" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Content="Close" Command="{Binding LicenseVM.CloseCommand}"
+                    Padding="16,9" Background="Transparent" BorderBrush="#2C4257" BorderThickness="1" Foreground="#C5D2DE" />
+            <Button Grid.Column="2" Content="Activate" Command="{Binding LicenseVM.ActivateCommand}"
+                    Padding="18,9" Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
+          </Grid>
+        </StackPanel>
+      </Border>
+    </Border>
+
+    <!-- First-run Welcome / Demo overlay -->
+    <Border IsVisible="{Binding IsWelcomeVisible}"
+            Background="#CC050A12"
+            ZIndex="200">
+      <Border Width="560"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Background="#0B1622"
+              BorderBrush="#1FE6C2"
+              BorderThickness="1"
+              CornerRadius="14"
+              Padding="32,28">
+        <StackPanel Spacing="18">
+          <StackPanel Spacing="6">
+            <Border Background="#13312C"
+                    CornerRadius="4"
+                    Padding="8,3"
+                    HorizontalAlignment="Left">
+              <TextBlock Text="DEMO · NO API KEYS NEEDED"
+                         Foreground="#1FE6C2"
+                         FontSize="11"
+                         FontWeight="Bold" />
+            </Border>
+            <TextBlock Text="Welcome to Crypto AI Terminal"
+                       Foreground="#F0F6FC"
+                       FontSize="24"
+                       FontWeight="Bold" />
+            <TextBlock Foreground="#9FB2C4"
+                       FontSize="14"
+                       TextWrapping="Wrap"
+                       Text="You're starting in Paper (Demo) mode. Every order — spot, futures, DEX, and the sniper — is simulated. No real funds can leave the terminal until you add API keys and switch to Live yourself." />
+          </StackPanel>
+
+          <StackPanel Spacing="8">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+              <TextBlock Grid.Column="0" Text="✓" Foreground="#3DDC84" FontWeight="Bold" />
+              <TextBlock Grid.Column="1" Foreground="#C5D2DE" FontSize="13" TextWrapping="Wrap"
+                         Text="Explore live market data, charts, the DEX sniper and AI verdicts with zero setup." />
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+              <TextBlock Grid.Column="0" Text="✓" Foreground="#3DDC84" FontWeight="Bold" />
+              <TextBlock Grid.Column="1" Foreground="#C5D2DE" FontSize="13" TextWrapping="Wrap"
+                         Text="Run bots, backtests and paper trades — results are tracked in the journal and P&amp;L dashboard." />
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+              <TextBlock Grid.Column="0" Text="✓" Foreground="#3DDC84" FontWeight="Bold" />
+              <TextBlock Grid.Column="1" Foreground="#C5D2DE" FontSize="13" TextWrapping="Wrap"
+                         Text="Add exchange API keys any time from Settings when you're ready to trade live." />
+            </Grid>
+          </StackPanel>
+
+          <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
+            <Button Content="Add API keys"
+                    Command="{Binding OpenApiKeysFromWelcomeCommand}"
+                    Padding="18,10"
+                    Background="Transparent"
+                    BorderBrush="#2C4257"
+                    BorderThickness="1"
+                    Foreground="#C5D2DE" />
+            <Button Content="Start exploring in Demo"
+                    Command="{Binding StartDemoCommand}"
+                    Padding="20,10"
+                    Background="#1FE6C2"
+                    Foreground="#06121C"
+                    FontWeight="Bold" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Border>
+
+    <!-- Onboarding wizard overlay -->
+    <Border IsVisible="{Binding OnboardingVM.IsVisible}"
+            Background="#CC050A12"
+            ZIndex="210">
+      <Border Width="560"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Background="#0B1622"
+              BorderBrush="#1FE6C2"
+              BorderThickness="1"
+              CornerRadius="14"
+              Padding="32,28">
+        <StackPanel Spacing="18">
+
+          <!-- Step 1: choose exchange -->
+          <StackPanel Spacing="16" IsVisible="{Binding OnboardingVM.IsChooseStep}">
+            <StackPanel Spacing="6">
+              <TextBlock Text="Connect an exchange" Foreground="#F0F6FC" FontSize="22" FontWeight="Bold" />
+              <TextBlock Foreground="#9FB2C4" FontSize="13" TextWrapping="Wrap"
+                         Text="Pick where you trade. Keys are stored encrypted on this PC only (Windows DPAPI) and never leave the machine." />
+            </StackPanel>
+            <UniformGrid Columns="2" Margin="0,4,0,0">
+              <Button Content="Binance" Command="{Binding OnboardingVM.ChooseExchangeCommand}" CommandParameter="Binance"
+                      Margin="0,0,8,8" Height="46" Background="#10202E" Foreground="#E0E8F0" FontWeight="SemiBold" />
+              <Button Content="Bybit" Command="{Binding OnboardingVM.ChooseExchangeCommand}" CommandParameter="Bybit"
+                      Margin="0,0,0,8" Height="46" Background="#10202E" Foreground="#E0E8F0" FontWeight="SemiBold" />
+              <Button Content="OKX" Command="{Binding OnboardingVM.ChooseExchangeCommand}" CommandParameter="OKX"
+                      Margin="0,0,8,0" Height="46" Background="#10202E" Foreground="#E0E8F0" FontWeight="SemiBold" />
+              <Button Content="KuCoin" Command="{Binding OnboardingVM.ChooseExchangeCommand}" CommandParameter="KuCoin"
+                      Height="46" Background="#10202E" Foreground="#E0E8F0" FontWeight="SemiBold" />
+            </UniformGrid>
+            <Button Content="Skip — I'll explore in Demo first"
+                    Command="{Binding OnboardingVM.SkipCommand}"
+                    HorizontalAlignment="Center" Background="Transparent" Foreground="#7E93A6" FontSize="12" />
+          </StackPanel>
+
+          <!-- Step 2: enter keys -->
+          <StackPanel Spacing="12" IsVisible="{Binding OnboardingVM.IsKeysStep}">
+            <TextBlock Text="{Binding OnboardingVM.KeysStepTitle}" Foreground="#F0F6FC" FontSize="22" FontWeight="Bold" />
+            <TextBlock Foreground="#9FB2C4" FontSize="12" TextWrapping="Wrap"
+                       Text="Create an API key with trade permission only (no withdrawals), ideally IP-restricted." />
+            <TextBox Text="{Binding OnboardingVM.KeyInput}" PlaceholderText="API key"
+                     Background="#0A1018" Foreground="#C8D8E8" Height="34" />
+            <TextBox Text="{Binding OnboardingVM.SecretInput}" PlaceholderText="API secret" PasswordChar="•"
+                     Background="#0A1018" Foreground="#C8D8E8" Height="34" />
+            <TextBox Text="{Binding OnboardingVM.PassphraseInput}" PlaceholderText="Passphrase" PasswordChar="•"
+                     IsVisible="{Binding OnboardingVM.NeedsPassphrase}"
+                     Background="#0A1018" Foreground="#C8D8E8" Height="34" />
+            <TextBlock Text="{Binding OnboardingVM.StatusMessage}" Foreground="#FF8A4C" FontSize="12" TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
+              <Button Content="Back" Command="{Binding OnboardingVM.BackCommand}"
+                      Padding="16,9" Background="Transparent" BorderBrush="#2C4257" BorderThickness="1" Foreground="#C5D2DE" />
+              <Button Content="Save securely" Command="{Binding OnboardingVM.SaveKeysCommand}"
+                      Padding="18,9" Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
+            </StackPanel>
+          </StackPanel>
+
+          <!-- Step 3: done -->
+          <StackPanel Spacing="16" IsVisible="{Binding OnboardingVM.IsDoneStep}">
+            <TextBlock Text="✓ Keys saved" Foreground="#3DDC84" FontSize="22" FontWeight="Bold" />
+            <TextBlock Foreground="#9FB2C4" FontSize="13" TextWrapping="Wrap"
+                       Text="Your API keys are encrypted on this PC. Restart the terminal to connect them — until then you stay in Demo (paper) mode, so nothing trades live by accident." />
+            <Button Content="Done"
+                    Command="{Binding OnboardingVM.FinishCommand}"
+                    HorizontalAlignment="Right" Padding="22,10"
+                    Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
+          </StackPanel>
+
+        </StackPanel>
+      </Border>
     </Border>
   </Grid>
 </Window>

@@ -64,6 +64,8 @@ public class SniperCandidateViewModel : ReactiveObject
     private int _rankScore;
     private string _rankScoreLabel = string.Empty;
     private string _rankScoreBand = string.Empty;
+    private TokenAiVerdict? _aiVerdict;
+    private bool _aiAssessmentRunning;
 
     public SniperCandidateViewModel(DexTokenInfo tokenInfo, string reason, bool passedFilters)
     {
@@ -153,6 +155,57 @@ public class SniperCandidateViewModel : ReactiveObject
         get => _rankScoreBand;
         set => this.RaiseAndSetIfChanged(ref _rankScoreBand, value);
     }
+
+    // ── AI verdict (Claude or offline heuristic) ─────────────────────────────
+
+    public TokenAiVerdict? AiVerdict
+    {
+        get => _aiVerdict;
+        set
+        {
+            _aiVerdict = value;
+            this.RaisePropertyChanged(nameof(AiVerdict));
+            this.RaisePropertyChanged(nameof(HasAiVerdict));
+            this.RaisePropertyChanged(nameof(AiVerdictLabel));
+            this.RaisePropertyChanged(nameof(AiVerdictBadge));
+            this.RaisePropertyChanged(nameof(AiRiskScore));
+            this.RaisePropertyChanged(nameof(AiRedFlagsText));
+            this.RaisePropertyChanged(nameof(AiReason));
+            this.RaisePropertyChanged(nameof(AiAccentHex));
+            this.RaisePropertyChanged(nameof(AiSourceLabel));
+        }
+    }
+
+    public bool AiAssessmentRunning
+    {
+        get => _aiAssessmentRunning;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _aiAssessmentRunning, value);
+            this.RaisePropertyChanged(nameof(AiVerdictLabel));
+        }
+    }
+
+    public bool HasAiVerdict => _aiVerdict is not null;
+
+    public int AiRiskScore => _aiVerdict?.RiskScore ?? 0;
+
+    public string AiVerdictLabel =>
+        _aiVerdict is not null ? _aiVerdict.Verdict
+        : _aiAssessmentRunning ? "Assessing…"
+        : "Not assessed";
+
+    public string AiVerdictBadge =>
+        _aiVerdict is null ? AiVerdictLabel
+        : $"AI: {_aiVerdict.Verdict} · risk {_aiVerdict.RiskScore}/100";
+
+    public string AiRedFlagsText => _aiVerdict?.RedFlagsText ?? string.Empty;
+
+    public string AiReason => _aiVerdict?.Reason ?? string.Empty;
+
+    public string AiSourceLabel => _aiVerdict?.Source ?? string.Empty;
+
+    public string AiAccentHex => _aiVerdict?.AccentHex ?? "#8FA3B8";
 
     public string RiskBand
     {
