@@ -39,6 +39,9 @@
   <Folder Name="/src/WebApi/">
     <Project Path="CryptoAITerminal.WebApi/CryptoAITerminal.WebApi.csproj" />
   </Folder>
+  <Folder Name="/src/LicenseBot/">
+    <Project Path="CryptoAITerminal.LicenseBot/CryptoAITerminal.LicenseBot.csproj" />
+  </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/Core.Tests/">
     <Project Path="CryptoAITerminal.Core.Tests/CryptoAITerminal.Core.Tests.csproj" />

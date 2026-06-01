@@ -201,6 +201,8 @@ public partial class SniperViewModel : ReactiveObject, IDisposable
     private CancellationTokenSource? _signalStreamCts;
     private Task? _signalStreamTask;
     private readonly TokenSecurityService _tokenSecurityService = new();
+    private readonly TokenSecurityAiService _tokenAiService = new();
+    private bool _enableAiTokenVerdict = true;
     private bool _enableExternalSecurityScan;
     private decimal _slippagePercent = 3m;
 
@@ -222,6 +224,26 @@ public partial class SniperViewModel : ReactiveObject, IDisposable
     {
         get => _enableExternalSecurityScan;
         set => this.RaiseAndSetIfChanged(ref _enableExternalSecurityScan, value);
+    }
+
+    /// <summary>
+    /// When enabled, each accepted candidate gets an AI risk verdict (Claude if a
+    /// key is configured, otherwise an offline heuristic). Visible on the card.
+    /// </summary>
+    public bool EnableAiTokenVerdict
+    {
+        get => _enableAiTokenVerdict;
+        set => this.RaiseAndSetIfChanged(ref _enableAiTokenVerdict, value);
+    }
+
+    public bool AiVerdictUsesLiveModel => _tokenAiService.UsesLiveModel;
+
+    /// <summary>Wire the Claude API key/model (e.g. shared from the AI Bot settings).</summary>
+    public void ConfigureAiVerdict(string? apiKey, string? model = null)
+    {
+        if (apiKey is not null) _tokenAiService.ApiKey = apiKey;
+        if (!string.IsNullOrWhiteSpace(model)) _tokenAiService.Model = model;
+        this.RaisePropertyChanged(nameof(AiVerdictUsesLiveModel));
     }
 
     public decimal SlippagePercent
@@ -2475,6 +2497,8 @@ public partial class SniperViewModel : ReactiveObject, IDisposable
             TrimCollection(AcceptedPairs, 120);
             PushLog($"Accepted {candidate.DisplayName}: {reason} | Rank {candidate.RankScoreLabel}", true);
 
+            StartAiVerdict(candidate);
+
             if (CanExecuteAutoBuy)
             {
                 await BuyCandidateAsync(candidate);
@@ -2493,6 +2517,42 @@ public partial class SniperViewModel : ReactiveObject, IDisposable
         candidate.RankScore = rank.Total;
         candidate.RankScoreBand = rank.Band;
         candidate.RankScoreLabel = rank.Label;
+    }
+
+    private void StartAiVerdict(SniperCandidateViewModel candidate)
+    {
+        if (!EnableAiTokenVerdict) return;
+        if (candidate.HasAiVerdict || candidate.AiAssessmentRunning) return;
+
+        candidate.AiAssessmentRunning = true;
+        RunLoggedAsync(() => AssessCandidateAiAsync(candidate), $"AI verdict for {candidate.DisplayName}");
+    }
+
+    private async Task AssessCandidateAiAsync(SniperCandidateViewModel candidate)
+    {
+        try
+        {
+            var summary = candidate.SecurityScanComplete ? candidate.SecurityChecksSummary : null;
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
+            var verdict = await _tokenAiService
+                .AssessAsync(candidate.TokenInfo, summary, cts.Token)
+                .ConfigureAwait(false);
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                candidate.AiVerdict = verdict;
+                candidate.AiAssessmentRunning = false;
+            });
+
+            PushLog(
+                $"AI verdict for {candidate.DisplayName}: {verdict.Verdict} (risk {verdict.RiskScore}/100) — {verdict.Source}",
+                verdict.Verdict is not ("AVOID" or "RISKY"));
+        }
+        catch (Exception)
+        {
+            await Dispatcher.UIThread.InvokeAsync(() => candidate.AiAssessmentRunning = false);
+            throw; // RunLoggedAsync logs it
+        }
     }
 
     private void SortAcceptedPairsByRank()

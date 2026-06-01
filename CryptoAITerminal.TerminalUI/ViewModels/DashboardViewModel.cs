@@ -22,6 +22,7 @@ public sealed class DashboardViewModel : ReactiveObject, IDisposable
     private readonly DcaBotViewModel      _dcaBot;
     private readonly PnlDashboardService  _pnl;
     private readonly AllPositionsViewModel? _positions;
+    private readonly NewsFeedViewModel?   _news;
 
     // ── Observable properties ──────────────────────────────────────────────────
 
@@ -50,6 +51,19 @@ public sealed class DashboardViewModel : ReactiveObject, IDisposable
     public string CorrelationWarning { get => _correlationWarning; private set => this.RaiseAndSetIfChanged(ref _correlationWarning, value); }
     public bool HasCorrelationWarning => !string.IsNullOrEmpty(CorrelationWarning);
 
+    // ── News market pulse + AI digest (mirrored from NewsFeedViewModel) ──────────
+    private string _newsPulseLabel  = "No data";
+    private string _newsPulseBrush  = "#8FA3B8";
+    private string _newsPulseDetail = "Awaiting headlines";
+    private string _newsAiDigest    = "AI digest pending…";
+    private string _newsAiDigestBrush = "#8FA3B8";
+    public string NewsPulseLabel    { get => _newsPulseLabel;    private set => this.RaiseAndSetIfChanged(ref _newsPulseLabel, value); }
+    public string NewsPulseBrush    { get => _newsPulseBrush;    private set => this.RaiseAndSetIfChanged(ref _newsPulseBrush, value); }
+    public string NewsPulseDetail   { get => _newsPulseDetail;   private set => this.RaiseAndSetIfChanged(ref _newsPulseDetail, value); }
+    public string NewsAiDigest      { get => _newsAiDigest;      private set => this.RaiseAndSetIfChanged(ref _newsAiDigest, value); }
+    public string NewsAiDigestBrush { get => _newsAiDigestBrush; private set => this.RaiseAndSetIfChanged(ref _newsAiDigestBrush, value); }
+    public bool HasNews => _news is not null;
+
     // ── ctor ───────────────────────────────────────────────────────────────────
 
     public DashboardViewModel(
@@ -57,13 +71,15 @@ public sealed class DashboardViewModel : ReactiveObject, IDisposable
         GridBotViewModel     gridBot,
         DcaBotViewModel      dcaBot,
         PnlDashboardService  pnl,
-        AllPositionsViewModel? positions = null)
+        AllPositionsViewModel? positions = null,
+        NewsFeedViewModel?   news = null)
     {
         _aiBot     = aiBot;
         _gridBot   = gridBot;
         _dcaBot    = dcaBot;
         _pnl       = pnl;
         _positions = positions;
+        _news      = news;
 
         _refreshTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
@@ -81,7 +97,18 @@ public sealed class DashboardViewModel : ReactiveObject, IDisposable
     {
         RefreshBotCards();
         RefreshPnlSummary();
+        RefreshNews();
         LastUpdated = $"Updated {DateTime.Now:HH:mm:ss}";
+    }
+
+    private void RefreshNews()
+    {
+        if (_news is null) return;
+        NewsPulseLabel    = _news.PulseLabel;
+        NewsPulseBrush    = _news.PulseBrush;
+        NewsPulseDetail   = _news.PulseDetail;
+        NewsAiDigest      = _news.AiDigest;
+        NewsAiDigestBrush = _news.AiDigestBrush;
     }
 
     private void RefreshBotCards()

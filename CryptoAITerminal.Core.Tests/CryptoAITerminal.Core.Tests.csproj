@@ -28,6 +28,7 @@
     <ProjectReference Include="..\CryptoAITerminal.Core\CryptoAITerminal.Core.csproj" />
     <ProjectReference Include="..\CryptoAITerminal.RiskManager\CryptoAITerminal.RiskManager.csproj" />
     <ProjectReference Include="..\CryptoAITerminal.TerminalUI\CryptoAITerminal.TerminalUI.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.LicenseBot\CryptoAITerminal.LicenseBot.csproj" />
   </ItemGroup>
 
 </Project>
