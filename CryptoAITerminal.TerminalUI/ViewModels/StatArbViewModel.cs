@@ -70,6 +70,48 @@ public sealed class StatArbViewModel : ReactiveObject, IDisposable
 
     public ReactiveCommand<Unit, Unit> StartCommand { get; }
     public ReactiveCommand<Unit, Unit> StopCommand  { get; }
+    public ReactiveCommand<Unit, Unit> EvaluatePairCommand { get; }
+
+    // ── AI pair evaluation (#11) ────────────────────────────────────────────────
+    private readonly StatArbPairAiService _aiPair = new();
+    private bool _pairRunning, _hasPairVerdict;
+    private string _pairSignal = "", _pairReason = "", _pairSource = "";
+    private int _pairScore;
+    public bool PairRunning { get => _pairRunning; private set => this.RaiseAndSetIfChanged(ref _pairRunning, value); }
+    public bool HasPairVerdict { get => _hasPairVerdict; private set => this.RaiseAndSetIfChanged(ref _hasPairVerdict, value); }
+    public string PairSignal { get => _pairSignal; private set => this.RaiseAndSetIfChanged(ref _pairSignal, value); }
+    public string PairReason { get => _pairReason; private set => this.RaiseAndSetIfChanged(ref _pairReason, value); }
+    public string PairSource { get => _pairSource; private set => this.RaiseAndSetIfChanged(ref _pairSource, value); }
+    public int PairScore { get => _pairScore; private set => this.RaiseAndSetIfChanged(ref _pairScore, value); }
+    public string PairSignalBrush => _pairSignal switch
+    {
+        "LONG_A_SHORT_B" => "#3DDC84", "SHORT_A_LONG_B" => "#3DDC84", "WAIT" => "#F4B860", _ => "#FF6B6B"
+    };
+
+    public void ConfigureAi(string apiKey, string model)
+    {
+        _aiPair.ApiKey = apiKey ?? "";
+        if (!string.IsNullOrWhiteSpace(model)) _aiPair.Model = model;
+    }
+
+    private async Task EvaluatePairAsync()
+    {
+        if (PairRunning) return;
+        PairRunning = true;
+        try
+        {
+            // Correlation/half-life aren't measured by the service; Window is a sane half-life proxy
+            // and a user-selected pair is assumed cointegrated. The z-score drives the entry call.
+            var stats = new CryptoAITerminal.AIEngine.StatArbPairStats(
+                SymbolA, SymbolB, 0.8m, CurrentZScore, Window, EntryZScore, ExitZScore);
+            var v = await _aiPair.EvaluateAsync(stats).ConfigureAwait(true);
+            PairSignal = v.Signal; PairScore = v.Score; PairReason = v.Reason; PairSource = v.Source;
+            HasPairVerdict = true;
+            this.RaisePropertyChanged(nameof(PairSignalBrush));
+        }
+        catch (Exception ex) { StatusLabel = $"AI eval failed: {ex.Message}"; }
+        finally { PairRunning = false; }
+    }
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -79,6 +121,7 @@ public sealed class StatArbViewModel : ReactiveObject, IDisposable
 
         StartCommand = ReactiveCommand.CreateFromTask(StartAsync);
         StopCommand  = ReactiveCommand.CreateFromTask(StopAsync);
+        EvaluatePairCommand = ReactiveCommand.CreateFromTask(EvaluatePairAsync);
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────

@@ -364,6 +364,45 @@ public class AIBotViewModel : ReactiveObject
 
     public ReactiveCommand<Unit, Unit> StartBotCommand { get; }
     public ReactiveCommand<Unit, Unit> StopBotCommand { get; }
+    public ReactiveCommand<Unit, Unit> SuggestTpSlCommand { get; }
+
+    // ── AI dynamic TP/SL (#10) ──────────────────────────────────────────────────
+    private readonly CryptoAITerminal.TerminalUI.Services.DynamicTpSlAiService _aiTpSl = new();
+    private bool _tpSlSuggestRunning;
+    private string _tpSlSuggestNote = string.Empty;
+    public bool TpSlSuggestRunning { get => _tpSlSuggestRunning; private set => this.RaiseAndSetIfChanged(ref _tpSlSuggestRunning, value); }
+    public string TpSlSuggestNote { get => _tpSlSuggestNote; private set => this.RaiseAndSetIfChanged(ref _tpSlSuggestNote, value); }
+
+    private async Task SuggestTpSlAsync()
+    {
+        if (TpSlSuggestRunning) return;
+        _aiTpSl.ApiKey = ClaudeApiKey;
+        _aiTpSl.Model = ClaudeModel;
+        TpSlSuggestRunning = true;
+        try
+        {
+            decimal price = 0m;
+            try
+            {
+                var book = await _binanceSpot.GetOrderBookAsync(Symbol, 5);
+                var bid = book.Bids.Count > 0 ? book.Bids[0].Price : 0m;
+                var ask = book.Asks.Count > 0 ? book.Asks[0].Price : 0m;
+                price = bid > 0 && ask > 0 ? (bid + ask) / 2m : Math.Max(bid, ask);
+            }
+            catch { /* offline heuristic still produces defaults */ }
+
+            var ctx = new CryptoAITerminal.AIEngine.TpSlContext(
+                Symbol, "Long", price, price, 0m, 0m, 0m, "flat");
+            var s = await _aiTpSl.SuggestAsync(ctx);
+            TpEnabled = true; SlEnabled = true;
+            TpPercent = s.TpPercent;
+            SlPercent = s.SlPercent;
+            TrailingStop = s.Trailing;
+            TpSlSuggestNote = $"{s.Source}: {s.Rationale}";
+        }
+        catch (Exception ex) { TpSlSuggestNote = $"AI failed: {ex.Message}"; }
+        finally { TpSlSuggestRunning = false; }
+    }
 
     public AIBotViewModel(
         BinanceGateway binanceSpot,
@@ -386,6 +425,7 @@ public class AIBotViewModel : ReactiveObject
 
         StartBotCommand = ReactiveCommand.CreateFromTask(StartBotAsync, outputScheduler: App.UiScheduler);
         StopBotCommand = ReactiveCommand.Create(StopBot, outputScheduler: App.UiScheduler);
+        SuggestTpSlCommand = ReactiveCommand.CreateFromTask(SuggestTpSlAsync, outputScheduler: App.UiScheduler);
     }
 
     private async Task StartBotAsync()

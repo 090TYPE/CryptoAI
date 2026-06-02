@@ -229,6 +229,23 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
         WalletVM = new WalletWorkspaceViewModel(AddLog);
         AIBotVM = new AIBotViewModel(_gateway, _futuresGateway, bybitSpot, bybitFutures, okxSpot, okxFutures, kucoinSpot, kucoinFutures);
+        AiTraderVM = new AiTraderViewModel(
+            new Dictionary<string, IExchangeGateway>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Binance"] = _gateway,
+                ["Bybit"]   = bybitSpot,
+                ["OKX"]     = okxSpot,
+                ["KuCoin"]  = kucoinSpot,
+            },
+            new Dictionary<string, IExchangeGateway>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Binance"] = _futuresGateway,
+                ["Bybit"]   = bybitFutures,
+                ["OKX"]     = okxFutures,
+                ["KuCoin"]  = kucoinFutures,
+            },
+            dexGatewayAccessor: () => WalletVM.ActiveDexGateway,
+            dexLiveAllowed: () => WalletVM.GlobalLiveExecutionEnabled);
         GridBotVM = new GridBotViewModel(_gateway, _futuresGateway);
         DcaBotVM = new DcaBotViewModel(_gateway, _bybitSpotGateway, _okxSpotGateway, _kucoinSpotGateway);
         DexTradingVM = new DexTradingViewModel(WalletVM);
@@ -409,6 +426,35 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                 ProfileStatus = $"Profile '{_profileName}' deleted";
             }
             catch (Exception ex) { ProfileStatus = $"Delete error: {ex.Message}"; }
+        }, outputScheduler: App.UiScheduler);
+
+        ExportProfileCommand = ReactiveCommand.Create(() =>
+        {
+            try
+            {
+                var path = ProfileService.ExportToShared(_profileName.Trim());
+                ProfileStatus = $"✓ Exported to {System.IO.Path.GetFileName(path)} — share this file.";
+                try
+                {
+                    System.Diagnostics.Process.Start(
+                        new System.Diagnostics.ProcessStartInfo(ProfileService.SharedDir) { UseShellExecute = true });
+                }
+                catch { /* opening the folder is best-effort */ }
+            }
+            catch (Exception ex) { ProfileStatus = $"Export error: {ex.Message}"; }
+        }, outputScheduler: App.UiScheduler);
+
+        ImportProfileCommand = ReactiveCommand.Create(() =>
+        {
+            try
+            {
+                var names = ProfileService.ImportFromShared();
+                this.RaisePropertyChanged(nameof(AvailableProfiles));
+                ProfileStatus = names.Count == 0
+                    ? $"No profiles found. Drop *.caiprofile files into {ProfileService.SharedDir}"
+                    : $"✓ Imported {names.Count}: {string.Join(", ", names)}";
+            }
+            catch (Exception ex) { ProfileStatus = $"Import error: {ex.Message}"; }
         }, outputScheduler: App.UiScheduler);
 
         SaveAffiliateLinksCommand = ReactiveCommand.Create(() =>
@@ -1998,6 +2044,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
     public ReactiveCommand<Unit, Unit> SaveProfileCommand  { get; private set; } = null!;
     public ReactiveCommand<Unit, Unit> LoadProfileCommand  { get; private set; } = null!;
+    public ReactiveCommand<Unit, Unit> ExportProfileCommand { get; private set; } = null!;
+    public ReactiveCommand<Unit, Unit> ImportProfileCommand { get; private set; } = null!;
     public ReactiveCommand<Unit, Unit> DeleteProfileCommand { get; private set; } = null!;
 
     private static string MaskKey(string key) =>
@@ -2662,6 +2710,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     }
 
     public AIBotViewModel AIBotVM { get; }
+    public AiTraderViewModel AiTraderVM { get; }
     public GridBotViewModel GridBotVM { get; }
     public DcaBotViewModel DcaBotVM { get; }
     public WhaleTrackerViewModel      WhaleTrackerVM      { get; private set; } = null!;
@@ -4367,6 +4416,20 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         {
             SniperVM.ConfigureAiVerdict(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
             NewsFeedVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            AiTraderVM.Configure(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            ScannerVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            BacktestVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            CompositeRuleVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            TradeJournalVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            PortfolioRebalanceVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            WhaleTrackerVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            OnChainVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            SentimentVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            LiquidationHeatmapVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            GridBotVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            DexTrendingVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            StatArbVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            BestExecutionVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
         }
 
         RefreshAiSignalStudioContext();
@@ -7457,6 +7520,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             try { AIBotVM.StopBotAsync().Wait(TimeSpan.FromSeconds(5)); }
             catch { /* swallow during shutdown */ }
         }
+        AiTraderVM?.ShutdownStop();
         DexTradingVM.Dispose();
         SniperVM.Dispose();
         WalletVM.Dispose();

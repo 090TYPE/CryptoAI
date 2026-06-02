@@ -517,6 +517,53 @@ public sealed class CompositeRuleViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> ToggleEngineCommand { get; }
     public ReactiveCommand<Unit, Unit> TestNowCommand      { get; }
     public ReactiveCommand<Unit, Unit> ClearLogCommand     { get; }
+    public ReactiveCommand<Unit, Unit> GenerateRuleFromTextCommand { get; }
+
+    // ── NL → rule (#3) ───────────────────────────────────────────────────────
+    private readonly RuleBuilderAiService _aiRuleBuilder = new();
+    private string _nlPrompt = "";
+    private string _aiRuleStatus = "";
+    private bool _aiRuleRunning;
+
+    public string NlPrompt { get => _nlPrompt; set => this.RaiseAndSetIfChanged(ref _nlPrompt, value); }
+    public string AiRuleStatus { get => _aiRuleStatus; private set => this.RaiseAndSetIfChanged(ref _aiRuleStatus, value); }
+    public bool AiRuleRunning { get => _aiRuleRunning; private set => this.RaiseAndSetIfChanged(ref _aiRuleRunning, value); }
+
+    public void ConfigureAi(string apiKey, string model)
+    {
+        _aiRuleBuilder.ApiKey = apiKey ?? "";
+        if (!string.IsNullOrWhiteSpace(model)) _aiRuleBuilder.Model = model;
+    }
+
+    private async System.Threading.Tasks.Task GenerateRuleFromTextAsync()
+    {
+        if (AiRuleRunning) return;
+        if (string.IsNullOrWhiteSpace(NlPrompt)) { AiRuleStatus = "Describe a rule first."; return; }
+
+        AiRuleRunning = true;
+        AiRuleStatus = "Thinking…";
+        try
+        {
+            var result = await _aiRuleBuilder.BuildAsync(NlPrompt).ConfigureAwait(true);
+            if (result.Rule is null) { AiRuleStatus = result.Note; return; }
+
+            // Load the generated rule into the editor so the user reviews before saving.
+            _editTarget = null;
+            EditingName = result.Rule.Name;
+            SelectedLogic = result.Rule.Logic == ConditionLogic.And ? "AND" : "OR";
+            SelectedCooldown = CooldownToLabel(result.Rule.Cooldown);
+            EditingConditions.Clear();
+            foreach (var c in result.Rule.Conditions)
+                EditingConditions.Add(RuleConditionEditorVM.FromModel(c, RemoveCondition));
+            EditingActions.Clear();
+            foreach (var a in result.Rule.Actions)
+                EditingActions.Add(RuleActionEditorVM.FromModel(a, RemoveAction));
+            IsEditing = true;
+            AiRuleStatus = $"{result.Source}: {result.Note} Review and Save.";
+        }
+        catch (Exception ex) { AiRuleStatus = $"AI failed: {ex.Message}"; }
+        finally { AiRuleRunning = false; }
+    }
 
     // ── Engine reference (for wiring callbacks from MainWindowViewModel) ──────
     public CompositeRuleEngine Engine => _engine;
@@ -552,6 +599,7 @@ public sealed class CompositeRuleViewModel : ReactiveObject
         ToggleEngineCommand = ReactiveCommand.Create(ToggleEngine,       outputScheduler: App.UiScheduler);
         TestNowCommand      = ReactiveCommand.Create(TestNow,            outputScheduler: App.UiScheduler);
         ClearLogCommand     = ReactiveCommand.Create(() => TriggerLog.Clear(), outputScheduler: App.UiScheduler);
+        GenerateRuleFromTextCommand = ReactiveCommand.CreateFromTask(GenerateRuleFromTextAsync, outputScheduler: App.UiScheduler);
 
         SeedExampleRules();
     }

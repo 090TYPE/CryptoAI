@@ -8,10 +8,10 @@
   <img src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet" alt=".NET 8"/>
   <img src="https://img.shields.io/badge/Avalonia-12.0-883EFF" alt="Avalonia"/>
   <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11%20x64-0078D6?logo=windows" alt="Platform"/>
-  <img src="https://img.shields.io/badge/Version-v1.1-21E6C1" alt="v1.1"/>
+  <img src="https://img.shields.io/badge/Version-v1.2-21E6C1" alt="v1.2"/>
 </p>
 
-> **Профессиональный десктоп-терминал для торговли криптовалютами.** CEX + DEX в одном окне: Binance, Bybit, OKX, KuCoin, Uniswap, Jupiter, SunSwap. Алгоритмические боты, снайпер новых листингов, on-chain аналитика, AI-стратегии и AI-оценка рисков. Демо-режим без ключей, лицензирование и Telegram-бот продажи лицензий с оплатой Stars/криптой.
+> **Профессиональный десктоп-терминал для торговли криптовалютами.** CEX + DEX в одном окне: Binance, Bybit, OKX, KuCoin, Uniswap, Jupiter, SunSwap. Алгоритмические боты, снайпер новых листингов, on-chain аналитика и **AI везде**: автономный AI-трейдер (Claude сам торгует через tool use, CEX и DEX) плюс AI-помощники в 13 разделах терминала. Демо-режим без ключей, лицензирование и Telegram-бот продажи лицензий с оплатой Stars/криптой.
 
 ---
 
@@ -78,7 +78,7 @@
 ```
 CryptoAI/
 ├── CryptoAITerminal.Core             ← модели, интерфейсы (IExchangeGateway, IStrategy)
-├── CryptoAITerminal.Core.Tests       ← 59+ unit-тестов (RiskManager, Strategies, BacktestEngine)
+├── CryptoAITerminal.Core.Tests       ← 199 unit-тестов (RiskManager, Strategies, BacktestEngine, AI-агент и AI-сервисы)
 ├── CryptoAITerminal.Gateway.Base     ← общий код шлюзов
 ├── CryptoAITerminal.Gateway.Binance  ← Binance Spot + USDT-M Futures (Binance.Net)
 ├── CryptoAITerminal.Gateway.Bybit    ← Bybit v5 Spot + Linear Futures (Bybit.Net)
@@ -88,7 +88,7 @@ CryptoAI/
 ├── CryptoAITerminal.OrderRouter      ← Best Execution Router
 ├── CryptoAITerminal.RiskManager      ← Pre-trade risk checks, дневные лимиты
 ├── CryptoAITerminal.WhaleTracker     ← On-chain whale alerts
-├── CryptoAITerminal.AIEngine         ← Торговые стратегии + Claude API (сигналы, AI-вердикт токена, дайджест новостей)
+├── CryptoAITerminal.AIEngine         ← Claude API: автономный агент (tool use), сигналы, AI-вердикт токена, дайджест новостей + 13 AI-провайдеров
 ├── CryptoAITerminal.TerminalUI       ← Avalonia UI (главный проект)
 ├── CryptoAITerminal.WebApi           ← REST API для мобильного мониторинга
 └── CryptoAITerminal.LicenseBot       ← Telegram-бот продажи лицензий (Stars + крипта, привязка к ПК)
@@ -315,12 +315,45 @@ RSS от CoinTelegraph, CoinDesk, Decrypt, The Block, Bitcoin Magazine. Авто
 
 ## AI-функции
 
-Терминал использует Claude API (ключ задаётся в AI Bot настройках) и **работает без ключа** через офлайн-эвристику — AI-результат виден даже в демо.
+Терминал использует Claude API (один ключ задаётся в **AI Bot** и автоматически раздаётся во все разделы) и **работает без ключа** через детерминированную офлайн-эвристику — AI-результат виден даже в демо. Каждая кнопка помечена иконкой 🧠.
 
-- **AI-вердикт токена (снайпер)** — для каждого кандидата AI-оценка риска: `AVOID / RISKY / NEUTRAL / FAVORABLE`, risk 0–100, red flags и причина. С ключом — Claude, без ключа — эвристика.
-- **AI Market Pulse (новости)** — агрегированный sentiment за час + AI-дайджест рынка одной-двумя фразами на дашборде новостей.
-- **AI-объяснение сделок бота** — каждая сделка AI-стратегии сопровождается строкой «почему» прямо в логе бота.
-- **AI-стратегия (Claude)** — генерация buy/sell сигналов по свечам.
+### 🤖 Автономный AI-трейдер (Claude сам торгует)
+
+Не просто сигнал, а **агент с tool use**: Claude сам осматривает рынок и сам ставит ордера в цикле. Раздел **Bots → AI Trader (Autonomous)**.
+
+- **Инструменты агента** (CEX): `get_price`, `get_balance`, `get_positions`, `place_order`, `close_position`. Модель сама решает, что запросить и когда торговать.
+- **Spot, Futures и DEX** — переключатель Venue (CEX/DEX) и Market (Spot/Futures, плечо, Cross/Isolated). На фьючерсах — long **и** short с авто-определением hedge/one-way. На DEX — торговля по адресу токена за нативную монету (SOL/ETH) с **обязательной honeypot-пробой** перед покупкой.
+- **Безопасность:** по умолчанию **Paper** (полная симуляция по реальным ценам, приватные эндпоинты биржи не трогаются). **Live** — opt-in, каждый ордер проходит `RiskManager` + жёсткие лимиты (max на ордер, max экспозиция, max позиций, дневной лосс) + мгновенный **Kill-switch**.
+- **Лог мыслей** — стрим `🧠 thinking → 🔧 tool → ← result → 💰 fill` в реальном времени.
+
+### 🧠 AI-помощники по разделам (13)
+
+С ключом — Claude, без ключа — офлайн-эвристика (помечается «Heuristic (offline)»).
+
+| Раздел | AI-функция |
+|--------|-----------|
+| **Scanner** | Ранжирование топ-возможностей (score + LONG/SHORT + причина) |
+| **Backtest** | Вердикт `ROBUST / PROMISING / WEAK / OVERFIT` + риски (анти-оверфит) |
+| **Rules** | Текст → правило: «продай если RSI < 30 и упадёт 5%» собирается в CompositeRule |
+| **Journal** | Коуч сделок: сильные стороны, утечки (loss-aversion, R:R, стрики), советы |
+| **Portfolio** | Целевые веса под риск-профиль (Conservative / Balanced / Aggressive) |
+| **Whale Tracker** | Интерпретация потоков: `ACCUMULATION / DISTRIBUTION` по inflow/outflow бирж |
+| **On-Chain** | Режим оценки из MVRV / NUPL / exchange-flows: `BULLISH / BEARISH` |
+| **Sentiment** | Чтение Fear&Greed / long-short / Deribit (контрарный анализ) |
+| **Grid Bot** | Подбор границ сетки и числа уровней под волатильность |
+| **DEX Trending** | Ранжирование трендовых токенов: momentum vs rug-риск |
+| **AI Bot TP/SL** | Динамический TP/SL под текущую волатильность + трейлинг |
+| **Stat Arb** | Вердикт по паре: достаточно ли растянут спред и какая нога |
+| **Order Router** | TWAP-планировщик: разбивка крупного ордера на impact-aware слайсы |
+
+### Базовые AI-интеграции (с прошлых версий)
+
+- **AI-вердикт токена (снайпер)** — `AVOID / RISKY / NEUTRAL / FAVORABLE`, risk 0–100, red flags.
+- **AI Market Pulse (новости)** — агрегированный sentiment за час + AI-дайджест рынка.
+- **AI-объяснение сделок бота** — строка «почему» к каждой сделке AI-стратегии.
+- **AI-стратегия (Claude)** — генерация buy/sell сигналов по свечам в Rule Bot.
+
+> Архитектура: провайдеры в `CryptoAITerminal.AIEngine` (hand-rolled вызов Anthropic Messages API, без лишних NuGet) + сервисы-обёртки с офлайн-фолбэком в `TerminalUI/Services`. Покрыто юнит-тестами (агент + все офлайн-эвристики).
 
 ---
 
@@ -490,7 +523,8 @@ dotnet run
 | Solana | Solana.Unity.SDK, Jupiter API |
 | Charts | Custom Avalonia DrawingContext (StreamGeometry) |
 | JSON | System.Text.Json |
-| Tests | xUnit, 59+ unit tests |
+| AI | Claude (Anthropic Messages API, tool use) |
+| Tests | xUnit, 199 unit tests |
 | Notifications | WinForms NotifyIcon, Telegram Bot API, Discord Webhook |
 
 ---
@@ -498,5 +532,5 @@ dotnet run
 <p align="center">
   <img src="design/logo-assets/icons/cryptoaiterminal-icon-variant-a-transparent.png" width="80" alt="icon"/>
   <br/>
-  <sub>Crypto AI Terminal · v1.1 · 2026</sub>
+  <sub>Crypto AI Terminal · v1.2 · 2026</sub>
 </p>
