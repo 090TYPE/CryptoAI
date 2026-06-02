@@ -185,11 +185,68 @@ public class SentimentViewModel : ReactiveObject, IDisposable
     /// <summary>Width of the Long bar in the 200px total bar visual.</summary>
     public double LongBarWidth => _longRatio * 200.0;
 
+    // ── AI sentiment insight (#7) ───────────────────────────────────────────────
+    public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> AnalyzeWithAiCommand { get; }
+    private readonly MarketInsightAiService _insight = new();
+    private bool _insightRunning, _hasInsight;
+    private string _insightSummary = "", _insightSignal = "", _insightBullets = "", _insightSource = "";
+
+    public bool InsightRunning { get => _insightRunning; private set => this.RaiseAndSetIfChanged(ref _insightRunning, value); }
+    public bool HasInsight { get => _hasInsight; private set => this.RaiseAndSetIfChanged(ref _hasInsight, value); }
+    public string InsightSummary { get => _insightSummary; private set => this.RaiseAndSetIfChanged(ref _insightSummary, value); }
+    public string InsightSignal { get => _insightSignal; private set => this.RaiseAndSetIfChanged(ref _insightSignal, value); }
+    public string InsightBullets { get => _insightBullets; private set => this.RaiseAndSetIfChanged(ref _insightBullets, value); }
+    public string InsightSource { get => _insightSource; private set => this.RaiseAndSetIfChanged(ref _insightSource, value); }
+    public string InsightSignalBrush => _insightSignal switch { "BULLISH" => "#3DDC84", "BEARISH" => "#FF6B6B", _ => "#8FA3B8" };
+
+    public void ConfigureAi(string apiKey, string model)
+    {
+        _insight.ApiKey = apiKey ?? "";
+        if (!string.IsNullOrWhiteSpace(model)) _insight.Model = model;
+    }
+
+    private async System.Threading.Tasks.Task AnalyzeWithAiAsync()
+    {
+        if (InsightRunning) return;
+        var lines = new System.Collections.Generic.List<string>
+        {
+            $"Fear & Greed: {FearGreedValue} ({FearGreedLabel}), prev {FearGreedPrevious}",
+            $"Long/Short: {_longRatio:P0} long / {_shortRatio:P0} short",
+            $"Open interest: {OpenInterest:N0} ({OpenInterestChange24h:+0.0;-0.0}% 24h)",
+            $"Deribit sentiment: {DeribitSentiment}  BTC IV {DeribitBtcIv}  P/C {DeribitBtcPcRatio}  skew {DeribitBtcSkew}",
+        };
+        InsightRunning = true;
+        try
+        {
+            var offline = () =>
+            {
+                var signal = FearGreedValue <= 25 ? "BULLISH"            // extreme fear → contrarian long
+                           : FearGreedValue >= 75 ? "BEARISH"            // extreme greed → caution
+                           : _longRatio > 0.65 ? "BEARISH"               // crowded longs
+                           : _shortRatio > 0.65 ? "BULLISH" : "NEUTRAL";
+                var summary = $"Fear & Greed {FearGreedValue} ({FearGreedLabel}); crowd is {_longRatio:P0} long. " +
+                              (FearGreedValue <= 25 ? "Extreme fear often marks contrarian bottoms." :
+                               FearGreedValue >= 75 ? "Extreme greed warns of froth." : "Positioning is balanced.");
+                return new CryptoAITerminal.AIEngine.InsightResult(summary, signal, lines.ToArray(), "Heuristic (offline)", true);
+            };
+            var result = await _insight.InterpretAsync(
+                "You are a market-sentiment analyst. Extreme fear is contrarian-bullish, extreme greed contrarian-bearish; crowded long positioning is a risk.",
+                lines, ["BULLISH", "BEARISH", "NEUTRAL"], offline).ConfigureAwait(true);
+            InsightSummary = result.Summary; InsightSignal = result.Signal;
+            InsightBullets = result.Bullets.Length > 0 ? "• " + string.Join("\n• ", result.Bullets) : "";
+            InsightSource = result.Source; HasInsight = true;
+            this.RaisePropertyChanged(nameof(InsightSignalBrush));
+        }
+        catch (Exception ex) { InsightSummary = $"AI failed: {ex.Message}"; HasInsight = true; }
+        finally { InsightRunning = false; }
+    }
+
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public SentimentViewModel(SentimentService svc)
     {
         _svc = svc;
+        AnalyzeWithAiCommand = ReactiveCommand.CreateFromTask(AnalyzeWithAiAsync, outputScheduler: App.UiScheduler);
 
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(5) };
         _refreshTimer.Tick += async (_, _) => await LoadAsync();

@@ -151,6 +151,45 @@ public sealed class TradeJournalViewModel : ReactiveObject
     public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> RefreshCommand         { get; }
     public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> ExportCsvCommand       { get; }
     public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> ExportTaxReportCommand { get; }
+    public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> ReviewWithAiCommand    { get; }
+
+    // ── AI journal coach (#4) ───────────────────────────────────────────────────
+    private readonly TradeJournalCoachAiService _coach = new();
+    private bool _coachRunning, _hasCoach;
+    private string _coachSummary = "", _coachStrengths = "", _coachLeaks = "", _coachSuggestions = "", _coachSource = "";
+
+    public bool CoachRunning { get => _coachRunning; private set => this.RaiseAndSetIfChanged(ref _coachRunning, value); }
+    public bool HasCoachReview { get => _hasCoach; private set => this.RaiseAndSetIfChanged(ref _hasCoach, value); }
+    public string CoachSummary { get => _coachSummary; private set => this.RaiseAndSetIfChanged(ref _coachSummary, value); }
+    public string CoachStrengths { get => _coachStrengths; private set => this.RaiseAndSetIfChanged(ref _coachStrengths, value); }
+    public string CoachLeaks { get => _coachLeaks; private set => this.RaiseAndSetIfChanged(ref _coachLeaks, value); }
+    public string CoachSuggestions { get => _coachSuggestions; private set => this.RaiseAndSetIfChanged(ref _coachSuggestions, value); }
+    public string CoachSource { get => _coachSource; private set => this.RaiseAndSetIfChanged(ref _coachSource, value); }
+
+    public void ConfigureAi(string apiKey, string model)
+    {
+        _coach.ApiKey = apiKey ?? "";
+        if (!string.IsNullOrWhiteSpace(model)) _coach.Model = model;
+    }
+
+    private async System.Threading.Tasks.Task ReviewWithAiAsync()
+    {
+        if (CoachRunning) return;
+        var trades = Rows.Select(r => r.Model).ToList();
+        CoachRunning = true;
+        try
+        {
+            var review = await _coach.ReviewAsync(trades).ConfigureAwait(true);
+            CoachSummary = review.Summary;
+            CoachStrengths = review.Strengths.Length > 0 ? "✔ " + string.Join("\n✔ ", review.Strengths) : "";
+            CoachLeaks = review.Leaks.Length > 0 ? "⚠ " + string.Join("\n⚠ ", review.Leaks) : "";
+            CoachSuggestions = review.Suggestions.Length > 0 ? "→ " + string.Join("\n→ ", review.Suggestions) : "";
+            CoachSource = review.Source;
+            HasCoachReview = true;
+        }
+        catch (System.Exception ex) { ExportStatus = $"AI coach failed: {ex.Message}"; }
+        finally { CoachRunning = false; }
+    }
 
     // ── ctor ──────────────────────────────────────────────────────────────────
 
@@ -161,6 +200,7 @@ public sealed class TradeJournalViewModel : ReactiveObject
         RefreshCommand         = ReactiveCommand.Create(Refresh,          outputScheduler: App.UiScheduler);
         ExportCsvCommand       = ReactiveCommand.Create(ExportCsv,        outputScheduler: App.UiScheduler);
         ExportTaxReportCommand = ReactiveCommand.Create(ExportTaxReport,  outputScheduler: App.UiScheduler);
+        ReviewWithAiCommand    = ReactiveCommand.CreateFromTask(ReviewWithAiAsync, outputScheduler: App.UiScheduler);
 
         Refresh();
     }

@@ -5,6 +5,7 @@ using CryptoAITerminal.Core.Models;
 using CryptoAITerminal.TerminalUI.Services;
 using ReactiveUI;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
@@ -28,6 +29,8 @@ public sealed class ExchangeQuoteRowVM : ReactiveObject
     public string  FeeLabel     => _quote.HasData ? $"{_quote.FeeRatePct:F2}%" : "—";
     public string  EffLabel     => _quote.HasData ? FmtPrice(_quote.EffectivePrice) : "—";
     public string  LiqLabel     => _quote.HasData ? $"{_quote.AvailableQty:N4}" : "—";
+    /// <summary>Top-of-book liquidity in USD — used by the AI slice planner (#12).</summary>
+    public decimal LiquidityUsd => _quote.HasData ? _quote.AvailableQty * _quote.EffectivePrice : 0m;
 
     public bool    IsBest       { get; set; }
 
@@ -157,6 +160,43 @@ public sealed class BestExecutionViewModel : ReactiveObject, IDisposable
 
     public ReactiveCommand<Unit, Unit> ComputeCommand { get; }
     public ReactiveCommand<Unit, Unit> ExecuteCommand { get; }
+    public ReactiveCommand<Unit, Unit> PlanSlicesCommand { get; }
+
+    // ── AI slice planner (#12) ──────────────────────────────────────────────────
+    private readonly ExecutionScheduleAiService _aiSched = new();
+    private bool _planRunning, _hasSlicePlan;
+    private string _planRationale = "", _planSource = "", _selectedUrgency = "Medium";
+    public bool PlanRunning { get => _planRunning; private set => this.RaiseAndSetIfChanged(ref _planRunning, value); }
+    public bool HasSlicePlan { get => _hasSlicePlan; private set => this.RaiseAndSetIfChanged(ref _hasSlicePlan, value); }
+    public string PlanRationale { get => _planRationale; private set => this.RaiseAndSetIfChanged(ref _planRationale, value); }
+    public string PlanSource { get => _planSource; private set => this.RaiseAndSetIfChanged(ref _planSource, value); }
+    public IReadOnlyList<string> UrgencyOptions { get; } = ["Low", "Medium", "High"];
+    public string SelectedUrgency { get => _selectedUrgency; set => this.RaiseAndSetIfChanged(ref _selectedUrgency, value); }
+
+    public void ConfigureAi(string apiKey, string model)
+    {
+        _aiSched.ApiKey = apiKey ?? "";
+        if (!string.IsNullOrWhiteSpace(model)) _aiSched.Model = model;
+    }
+
+    private async Task PlanSlicesAsync()
+    {
+        if (PlanRunning) return;
+        var depth = Quotes.Sum(q => q.LiquidityUsd);
+        var ctx = new CryptoAITerminal.AIEngine.OrderExecutionContext(
+            Symbol, IsBuySide ? "Buy" : "Sell", NotionalUsd, 0m, depth, SelectedUrgency);
+
+        PlanRunning = true;
+        try
+        {
+            var plan = await _aiSched.PlanAsync(ctx).ConfigureAwait(true);
+            PlanRationale = plan.Rationale;
+            PlanSource = plan.Source;
+            HasSlicePlan = true;
+        }
+        catch (Exception ex) { StatusText = $"AI plan failed: {ex.Message}"; }
+        finally { PlanRunning = false; }
+    }
 
     // ── Toast ─────────────────────────────────────────────────────────────────
 
@@ -167,6 +207,7 @@ public sealed class BestExecutionViewModel : ReactiveObject, IDisposable
     public BestExecutionViewModel(BestExecutionRouterService svc)
     {
         _svc = svc;
+        PlanSlicesCommand = ReactiveCommand.CreateFromTask(PlanSlicesAsync, outputScheduler: App.UiScheduler);
 
         var canExecute = this.WhenAnyValue(x => x.HasPlan, x => x.IsBusy,
             (hp, busy) => hp && !busy);

@@ -452,6 +452,63 @@ public class BacktestViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit>          ExportCsvCommand  { get; }
     public ReactiveCommand<Unit, Unit>          ExportReportCommand { get; }
     public ReactiveCommand<WfResultRowVM, Unit> ApplyCommand      { get; }
+    public ReactiveCommand<Unit, Unit>          ReviewWithAiCommand { get; }
+
+    // ── AI backtest review (#2) ─────────────────────────────────────────────────
+    private readonly BacktestReviewAiService _aiReview = new();
+    private bool _aiReviewRunning;
+    private bool _hasAiReview;
+    private string _aiReviewVerdict = "";
+    private string _aiReviewSummary = "";
+    private string _aiReviewRisks = "";
+    private string _aiReviewSource = "";
+
+    public bool AiReviewRunning { get => _aiReviewRunning; private set => this.RaiseAndSetIfChanged(ref _aiReviewRunning, value); }
+    public bool HasAiReview { get => _hasAiReview; private set => this.RaiseAndSetIfChanged(ref _hasAiReview, value); }
+    public string AiReviewVerdict { get => _aiReviewVerdict; private set => this.RaiseAndSetIfChanged(ref _aiReviewVerdict, value); }
+    public string AiReviewSummary { get => _aiReviewSummary; private set => this.RaiseAndSetIfChanged(ref _aiReviewSummary, value); }
+    public string AiReviewRisks { get => _aiReviewRisks; private set => this.RaiseAndSetIfChanged(ref _aiReviewRisks, value); }
+    public string AiReviewSource { get => _aiReviewSource; private set => this.RaiseAndSetIfChanged(ref _aiReviewSource, value); }
+    public string AiVerdictBrush => _aiReviewVerdict switch
+    {
+        "ROBUST" => "#3DDC84", "PROMISING" => "#21E6C1", "OVERFIT" => "#FF6B6B", "WEAK" => "#F4B860", _ => "#8FA3B8"
+    };
+
+    public void ConfigureAi(string apiKey, string model)
+    {
+        _aiReview.ApiKey = apiKey ?? "";
+        if (!string.IsNullOrWhiteSpace(model)) _aiReview.Model = model;
+    }
+
+    private async Task ReviewWithAiAsync()
+    {
+        if (AiReviewRunning) return;
+        if (!_mainResult.IsReady) { ExportStatus = "Сначала запустите бэктест."; return; }
+
+        AiReviewRunning = true;
+        try
+        {
+            decimal buyHold = _buyHoldValues.Count >= 2 && _buyHoldValues[0] != 0m
+                ? (_buyHoldValues[^1] / _buyHoldValues[0] - 1m) * 100m : 0m;
+
+            var mc = _monteCarloSummary is { Length: > 0 } and not "Monte Carlo не запускался." ? _monteCarloSummary : null;
+            var metrics = new CryptoAITerminal.AIEngine.BacktestMetrics(
+                CurrentStrategyName,
+                _mainResult.NetReturnPercent, buyHold, _mainResult.WinRatePercent,
+                _mainResult.TradeCount, _mainResult.MaxDrawdownPercent, _mainResult.SharpeRatio,
+                _mainResult.BestTradePercent, _mainResult.WorstTradePercent, mc);
+
+            var review = await _aiReview.ReviewAsync(metrics).ConfigureAwait(true);
+            AiReviewVerdict = review.Verdict;
+            AiReviewSummary = review.Summary;
+            AiReviewRisks = review.Risks.Length > 0 ? "• " + string.Join("\n• ", review.Risks) : "";
+            AiReviewSource = review.Source;
+            HasAiReview = true;
+            this.RaisePropertyChanged(nameof(AiVerdictBrush));
+        }
+        catch (Exception ex) { ExportStatus = $"AI review failed: {ex.Message}"; }
+        finally { AiReviewRunning = false; }
+    }
 
     private string _exportStatus = string.Empty;
     public string ExportStatus
@@ -471,6 +528,7 @@ public class BacktestViewModel : ReactiveObject
         ExportCsvCommand  = ReactiveCommand.Create(ExportCsv,               outputScheduler: App.UiScheduler);
         ExportReportCommand = ReactiveCommand.Create(ExportReport,          outputScheduler: App.UiScheduler);
         ApplyCommand      = ReactiveCommand.Create<WfResultRowVM>(ApplyOptResult, outputScheduler: App.UiScheduler);
+        ReviewWithAiCommand = ReactiveCommand.CreateFromTask(ReviewWithAiAsync, outputScheduler: App.UiScheduler);
     }
 
     // ═════════════════════ CSV EXPORT ═════════════════════

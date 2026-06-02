@@ -153,6 +153,73 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
 
     public ReactiveCommand<Unit, Unit>   RefreshCommand   { get; }
     public ReactiveCommand<string, Unit> SetSymbolCommand { get; }
+    public ReactiveCommand<Unit, Unit>   AnalyzeWithAiCommand { get; }
+
+    // ── AI liquidation insight (#13) ────────────────────────────────────────────
+    private readonly MarketInsightAiService _insight = new();
+    private bool _insightRunning, _hasInsight;
+    private string _insightSummary = "", _insightSignal = "", _insightBullets = "", _insightSource = "";
+
+    public bool InsightRunning { get => _insightRunning; private set => this.RaiseAndSetIfChanged(ref _insightRunning, value); }
+    public bool HasInsight { get => _hasInsight; private set => this.RaiseAndSetIfChanged(ref _hasInsight, value); }
+    public string InsightSummary { get => _insightSummary; private set => this.RaiseAndSetIfChanged(ref _insightSummary, value); }
+    public string InsightSignal { get => _insightSignal; private set => this.RaiseAndSetIfChanged(ref _insightSignal, value); }
+    public string InsightBullets { get => _insightBullets; private set => this.RaiseAndSetIfChanged(ref _insightBullets, value); }
+    public string InsightSource { get => _insightSource; private set => this.RaiseAndSetIfChanged(ref _insightSource, value); }
+    public string InsightSignalBrush => _insightSignal switch { "MAGNET_ABOVE" => "#3DDC84", "MAGNET_BELOW" => "#FF6B6B", _ => "#8FA3B8" };
+
+    public void ConfigureAi(string apiKey, string model)
+    {
+        _insight.ApiKey = apiKey ?? "";
+        if (!string.IsNullOrWhiteSpace(model)) _insight.Model = model;
+    }
+
+    private async System.Threading.Tasks.Task AnalyzeWithAiAsync()
+    {
+        if (InsightRunning) return;
+        var levels = _levels;
+        if (levels.Count == 0) { InsightSummary = "No liquidation levels loaded."; HasInsight = true; return; }
+
+        var price = CurrentPrice;
+        decimal shortAbove = levels.Where(l => l.Price > price).Sum(l => l.ShortLiqUsd); // shorts liquidate as price rises
+        decimal longBelow  = levels.Where(l => l.Price < price).Sum(l => l.LongLiqUsd);  // longs liquidate as price falls
+
+        var lines = new System.Collections.Generic.List<string>
+        {
+            $"Current price: {price:0.##}",
+            $"Top long cluster: {TopLongLabel}",
+            $"Top short cluster: {TopShortLabel}",
+            $"Short liquidations above price: ${shortAbove:0}",
+            $"Long liquidations below price: ${longBelow:0}",
+        };
+
+        InsightRunning = true;
+        try
+        {
+            var offline = () =>
+            {
+                var total = shortAbove + longBelow;
+                var skew = total > 0 ? (shortAbove - longBelow) / total : 0m;
+                var signal = skew > 0.2m ? "MAGNET_ABOVE" : skew < -0.2m ? "MAGNET_BELOW" : "BALANCED";
+                var summary = signal switch
+                {
+                    "MAGNET_ABOVE" => $"Heavier short liquidations above (${shortAbove:0}) — price may be pulled UP to hunt them.",
+                    "MAGNET_BELOW" => $"Heavier long liquidations below (${longBelow:0}) — downside liquidity magnet.",
+                    _ => "Liquidation clusters are balanced on both sides."
+                };
+                return new CryptoAITerminal.AIEngine.InsightResult(summary, signal, lines.ToArray(), "Heuristic (offline)", true);
+            };
+            var result = await _insight.InterpretAsync(
+                "You are a liquidation-liquidity analyst. Large clusters of opposing-side liquidations act as price magnets (price tends to move toward resting liquidity).",
+                lines, ["MAGNET_ABOVE", "MAGNET_BELOW", "BALANCED"], offline).ConfigureAwait(true);
+            InsightSummary = result.Summary; InsightSignal = result.Signal;
+            InsightBullets = result.Bullets.Length > 0 ? "• " + string.Join("\n• ", result.Bullets) : "";
+            InsightSource = result.Source; HasInsight = true;
+            this.RaisePropertyChanged(nameof(InsightSignalBrush));
+        }
+        catch (Exception ex) { InsightSummary = $"AI failed: {ex.Message}"; HasInsight = true; }
+        finally { InsightRunning = false; }
+    }
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -160,6 +227,7 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
     {
         _svc = svc;
         DataSourceLabel = svc.DataSourceLabel;
+        AnalyzeWithAiCommand = ReactiveCommand.CreateFromTask(AnalyzeWithAiAsync, outputScheduler: App.UiScheduler);
 
         RefreshCommand = ReactiveCommand.CreateFromTask(
             _ => LoadAsync(), outputScheduler: App.UiScheduler);

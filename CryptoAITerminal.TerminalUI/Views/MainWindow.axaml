@@ -518,11 +518,31 @@
         <Border Classes="Panel">
           <StackPanel Spacing="12">
             <!-- Header row -->
-            <Grid ColumnDefinitions="*,Auto">
+            <Grid ColumnDefinitions="*,Auto,Auto">
               <TextBlock Grid.Column="0" Classes="H2" Text="MARKET SENTIMENT" />
               <TextBlock Grid.Column="1" Text="{Binding SentimentVM.StatusLabel}"
-                         Foreground="#8B949E" FontSize="12" VerticalAlignment="Center" />
+                         Foreground="#8B949E" FontSize="12" VerticalAlignment="Center" Margin="0,0,10,0" />
+              <Button Grid.Column="2" Content="🧠 AI Read"
+                      Command="{Binding SentimentVM.AnalyzeWithAiCommand}"
+                      IsEnabled="{Binding !SentimentVM.InsightRunning}"
+                      Foreground="#21E6C1" FontSize="11" />
             </Grid>
+
+            <!-- ── AI Sentiment Insight (#7) ── -->
+            <Border Background="#04101A" CornerRadius="6" Padding="12,9"
+                    IsVisible="{Binding SentimentVM.HasInsight}">
+              <StackPanel Spacing="5">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Grid.Column="0" Text="{Binding SentimentVM.InsightSignal}"
+                             Foreground="{Binding SentimentVM.InsightSignalBrush}" FontWeight="Bold" FontSize="13" />
+                  <TextBlock Grid.Column="1" Text="{Binding SentimentVM.InsightSource}"
+                             Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" />
+                </Grid>
+                <TextBlock Text="{Binding SentimentVM.InsightSummary}" Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding SentimentVM.InsightBullets}" Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap"
+                           IsVisible="{Binding SentimentVM.InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+            </Border>
 
             <!-- Fear & Greed row -->
             <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
@@ -2999,6 +3019,30 @@
                                FontFamily="Consolas" TextWrapping="Wrap" />
                   </Border>
 
+                  <!-- ── AI rebalance (#5) ── -->
+                  <Border Background="#0D1826" CornerRadius="8" Padding="12,10" Margin="0,0,0,4">
+                    <StackPanel Spacing="8">
+                      <Grid ColumnDefinitions="Auto,160,Auto,*,Auto">
+                        <TextBlock Grid.Column="0" Text="🧠 AI target weights"
+                                   FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13"
+                                   VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <ComboBox Grid.Column="1"
+                                  ItemsSource="{Binding PortfolioRebalanceVM.AvailableRiskProfiles}"
+                                  SelectedItem="{Binding PortfolioRebalanceVM.SelectedRiskProfile}"
+                                  HorizontalAlignment="Stretch" />
+                        <Button Grid.Column="2" Content="Suggest" Margin="10,0,0,0"
+                                Command="{Binding PortfolioRebalanceVM.SuggestWithAiCommand}"
+                                IsEnabled="{Binding !PortfolioRebalanceVM.AiRunning}"
+                                Foreground="#21E6C1" />
+                        <TextBlock Grid.Column="4" Text="{Binding PortfolioRebalanceVM.AiSource}"
+                                   Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" />
+                      </Grid>
+                      <TextBlock Text="{Binding PortfolioRebalanceVM.AiCommentary}"
+                                 Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap"
+                                 IsVisible="{Binding PortfolioRebalanceVM.AiCommentary, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    </StackPanel>
+                  </Border>
+
                   <!-- Column headers -->
                   <Grid ColumnDefinitions="32,70,55,55,80,70,55,*,Auto,Auto"
                         ColumnSpacing="6" Margin="4,0">
@@ -3217,15 +3261,15 @@
                 </Grid>
               </Border>
 
-              <Grid ColumnDefinitions="420,1*,470" ColumnSpacing="16" Height="810">
-                <Border Grid.Column="0" Classes="SectionPanel" Height="810">
+              <Grid ColumnDefinitions="480,1.1*,540" ColumnSpacing="24" MinHeight="980">
+                <Border Grid.Column="0" Classes="SectionPanel" Padding="20" MinHeight="980">
                   <Grid RowDefinitions="Auto,*" RowSpacing="12">
                     <StackPanel Spacing="6">
                       <TextBlock Classes="H2" Text="Prompt Library" />
                       <TextBlock Text="{Binding AiWorkspaceSubheadline}" Classes="SecondaryCopy" TextWrapping="Wrap" />
                     </StackPanel>
 
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ScrollViewer Grid.Row="1" MaxHeight="880" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                       <StackPanel Spacing="14">
                         <Border Classes="AiPromptCard">
                           <StackPanel Spacing="12">
@@ -3664,15 +3708,14 @@
                   </Grid>
                 </Border>
 
-                <Border Grid.Column="1" Classes="SectionPanel" Height="810">
-                  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="14">
+                <Border Grid.Column="1" Classes="SectionPanel" Padding="20" MinHeight="980">
+                  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="16">
                     <StackPanel Spacing="6">
                       <TextBlock Classes="H2" Text="Conversation" />
                       <TextBlock Text="Use this desk like an execution copilot: ask for setup, invalidation, route checks, sniper pressure, glossary topics, or a concrete next action." Classes="SecondaryCopy" TextWrapping="Wrap" />
                     </StackPanel>
 
                     <Border Grid.Row="1" Classes="AiPromptCard" Padding="14">
-                      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <ItemsControl ItemsSource="{Binding AiAssistantMessages}">
                           <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:AiAssistantMessageViewModel">
@@ -3697,7 +3740,6 @@
                             </DataTemplate>
                           </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                      </ScrollViewer>
                     </Border>
 
                     <StackPanel Grid.Row="2" Spacing="10">
@@ -3736,10 +3778,10 @@
                   </Grid>
                 </Border>
 
-                <Border Grid.Column="2" Classes="SectionPanel" Height="810">
-                  <Grid RowDefinitions="Auto,Auto,*" RowSpacing="14">
+                <Border Grid.Column="2" Classes="SectionPanel" Padding="20" MinHeight="980">
+                  <Grid RowDefinitions="Auto,Auto,*" RowSpacing="16">
                     <Border Classes="AiStudioStage">
-                      <Grid RowDefinitions="332,Auto,Auto" RowSpacing="12">
+                      <Grid RowDefinitions="420,Auto,Auto" RowSpacing="12">
                         <Border CornerRadius="14" ClipToBounds="True">
                           <Image Source="{Binding AiSelectedVisualImage}" Stretch="UniformToFill" />
                         </Border>
@@ -3764,8 +3806,7 @@
                       </StackPanel>
                     </Border>
 
-                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                      <StackPanel Spacing="12">
+                    <StackPanel Grid.Row="2" Spacing="12">
                         <Grid ColumnDefinitions="*,Auto">
                           <TextBlock Classes="H2" Text="Visual Rail" />
                           <TextBlock Grid.Column="1" Text="tap to focus" Classes="MicroCopy" VerticalAlignment="Center" />
@@ -3797,8 +3838,7 @@
                             </DataTemplate>
                           </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                      </StackPanel>
-                    </ScrollViewer>
+                    </StackPanel>
                   </Grid>
                 </Border>
               </Grid>
@@ -3924,6 +3964,40 @@
                           Command="{Binding DexTrendingVM.RefreshCommand}"
                           VerticalAlignment="Center" />
                 </Grid>
+
+                <!-- ── AI Picks (#9) ── -->
+                <Border Background="#0D1826" CornerRadius="8" Padding="12,10">
+                  <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                      <TextBlock Grid.Column="0" Text="🧠 AI Trending Picks (momentum vs rug risk)"
+                                 Foreground="#E8F0FE" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="{Binding DexTrendingVM.AiSource}"
+                                 Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                      <Button Grid.Column="2" Content="Rank with AI"
+                              Command="{Binding DexTrendingVM.RankWithAiCommand}"
+                              IsEnabled="{Binding !DexTrendingVM.AiRunning}" Foreground="#21E6C1" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding DexTrendingVM.AiPicks}" IsVisible="{Binding DexTrendingVM.HasAiPicks}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:AiPickVM">
+                          <Border Background="#0A1622" CornerRadius="6" Padding="10,7" Margin="0,2">
+                            <Grid ColumnDefinitions="Auto,110,*">
+                              <Border Grid.Column="0" CornerRadius="4" Padding="6,2" Background="#04101A" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding ScoreLabel}" FontWeight="Bold" Foreground="#21E6C1" FontSize="13" />
+                              </Border>
+                              <StackPanel Grid.Column="1" Spacing="0" Margin="8,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Symbol}" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
+                                <TextBlock Text="{Binding Bias}" Foreground="#8FA3B8" FontSize="11" FontWeight="Bold" />
+                              </StackPanel>
+                              <TextBlock Grid.Column="2" Text="{Binding Reason}" Foreground="#8FA3B8"
+                                         FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
 
                 <!-- ── Column headers ────────────────────────────────────── -->
                 <Grid ColumnDefinitions="28,64,*,70,70,60,46,70,Auto"
@@ -5971,22 +6045,22 @@
 
           <StackPanel Spacing="16" IsVisible="{Binding IsRiskSectionVisible}">
             <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16">
-              <Border Classes="SurfaceCard">
+              <Border Grid.Column="0" Classes="SurfaceCard">
                 <StackPanel Spacing="6">
                   <TextBlock Classes="Overline" Text="Execution Guard" />
                   <TextBlock Classes="Metric" Text="{Binding WalletVM.GlobalExecutionModeLabel}" />
                   <TextBlock Text="{Binding WalletVM.GlobalExecutionGuardStatusLabel}"
-                             Foreground="{Binding RiskRuntimeStatusBrush}" />
+                             Foreground="{Binding RiskRuntimeStatusBrush}" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
-              <Border Classes="SurfaceCard">
+              <Border Grid.Column="1" Classes="SurfaceCard">
                 <StackPanel Spacing="6">
                   <TextBlock Classes="Overline" Text="Risk Budget" />
                   <TextBlock Text="{Binding RiskRuntimeSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
                   <TextBlock Text="{Binding RiskCexExposureSummary}" Foreground="#8FA3B8" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
-              <Border Classes="SurfaceCard">
+              <Border Grid.Column="2" Classes="SurfaceCard">
                 <StackPanel Spacing="6">
                   <TextBlock Classes="Overline" Text="Sniper Safety" />
                   <TextBlock Text="{Binding RiskSniperGuardSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
@@ -5995,8 +6069,43 @@
               </Border>
             </Grid>
 
+            <!-- ── Live risk metrics ── -->
+            <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="16">
+              <Border Grid.Column="0" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Realized P&amp;L" />
+                  <TextBlock Classes="Metric" Text="{Binding PnlDashboardVM.TotalPnlLabel}"
+                             Foreground="{Binding PnlDashboardVM.TotalPnlBrush}" />
+                  <TextBlock Text="{Binding PnlDashboardVM.TradeCountLabel}" Foreground="#8FA3B8" FontSize="11" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Open P&amp;L (unrealized)" />
+                  <TextBlock Classes="Metric" Text="{Binding AllPositionsVM.TotalPnlLabel}"
+                             Foreground="{Binding AllPositionsVM.TotalPnlBrush}" />
+                  <TextBlock Text="{Binding AllPositionsVM.StatusLabel}" Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Open Positions" />
+                  <TextBlock Classes="Metric" Text="{Binding AllPositionsVM.PositionCount}" />
+                  <TextBlock Text="{Binding AllPositionsVM.TotalSizeLabel}" Foreground="#8FA3B8" FontSize="11" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="3" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Win Rate / PF" />
+                  <TextBlock Classes="Metric" Text="{Binding PnlDashboardVM.WinRateLabel}" />
+                  <TextBlock Text="{Binding PnlDashboardVM.ProfitFactorLabel, StringFormat='PF {0}'}" Foreground="#8FA3B8" FontSize="11" />
+                  <TextBlock Text="{Binding PnlDashboardVM.MaxDrawdownLabel, StringFormat='Max DD {0}'}" Foreground="#8FA3B8" FontSize="11" />
+                </StackPanel>
+              </Border>
+            </Grid>
+
             <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
-              <Border Classes="Panel">
+              <Border Grid.Column="0" Classes="Panel">
                 <StackPanel Spacing="10">
                   <TextBlock Classes="H2" Text="Quick Controls" />
                   <WrapPanel Orientation="Horizontal">
@@ -6022,7 +6131,7 @@
                   </WrapPanel>
                 </StackPanel>
               </Border>
-              <Border Classes="Panel">
+              <Border Grid.Column="1" Classes="Panel">
                 <StackPanel Spacing="10">
                   <TextBlock Classes="H2" Text="Readiness Notes" />
                   <TextBlock Text="{Binding WalletVM.GlobalExecutionSummary}" Foreground="#8FA3B8" TextWrapping="Wrap" />
@@ -6407,6 +6516,37 @@
               </StackPanel>
             </Border>
 
+            <!-- ── AI Backtest Review (#2) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Classes="H2" Text="🧠 AI Review" />
+                    <TextBlock Text="Robust or overfit? An AI read of this backtest."
+                               Foreground="#4A6880" FontSize="11" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding BacktestVM.AiReviewSource}"
+                             Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <Button Grid.Column="2" Content="Review with AI"
+                          Command="{Binding BacktestVM.ReviewWithAiCommand}"
+                          IsEnabled="{Binding !BacktestVM.AiReviewRunning}" />
+                </Grid>
+                <StackPanel Spacing="8" IsVisible="{Binding BacktestVM.HasAiReview}">
+                  <Border CornerRadius="6" Padding="10,7" Background="#04101A">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="{Binding BacktestVM.AiReviewVerdict}"
+                                 Foreground="{Binding BacktestVM.AiVerdictBrush}"
+                                 FontWeight="Bold" FontSize="14" />
+                      <TextBlock Text="{Binding BacktestVM.AiReviewSummary}"
+                                 Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+                  <TextBlock Text="{Binding BacktestVM.AiReviewRisks}"
+                             Foreground="#F4B860" FontSize="11" TextWrapping="Wrap" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
             <!-- ── Strategy Comparison (all types, same candles) ── -->
             <Border Classes="Panel"
                     IsVisible="{Binding BacktestVM.ComparisonRows.Count, Converter={x:Static ObjectConverters.IsNotNull}}">
@@ -6700,10 +6840,16 @@
             <!-- TP / SL configuration -->
             <Border Classes="Panel">
               <StackPanel Spacing="12">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
                   <TextBlock Classes="H2" Text="Take Profit / Stop Loss" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="1" Text="{Binding AIBotVM.TpSlSummary}" Foreground="#1FE6C2" FontSize="11" VerticalAlignment="Center" />
+                  <Button Grid.Column="2" Content="🧠 AI Suggest"
+                          Command="{Binding AIBotVM.SuggestTpSlCommand}"
+                          IsEnabled="{Binding !AIBotVM.TpSlSuggestRunning}"
+                          Foreground="#21E6C1" FontSize="11" />
                 </Grid>
+                <TextBlock Text="{Binding AIBotVM.TpSlSuggestNote}" Foreground="#6A8FA8" FontSize="11" TextWrapping="Wrap"
+                           IsVisible="{Binding AIBotVM.TpSlSuggestNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
                 <!-- TP row -->
                 <Grid ColumnDefinitions="Auto,*,Auto,*,*,Auto,*,Auto,Auto" ColumnSpacing="12">
@@ -6751,6 +6897,24 @@
                     </Border>
                   </StackPanel>
                 </Grid>
+
+                <!-- ── AI grid parameters (#8) ── -->
+                <Border Background="#04101A" CornerRadius="6" Padding="10,8">
+                  <StackPanel Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                      <TextBlock Grid.Column="0" Text="🧠 Let AI suggest grid bounds &amp; levels"
+                                 Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="{Binding GridBotVM.AiParamsSource}"
+                                 Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                      <Button Grid.Column="2" Content="AI Suggest"
+                              Command="{Binding GridBotVM.SuggestParamsCommand}"
+                              IsEnabled="{Binding !GridBotVM.AiParamsRunning}" Foreground="#21E6C1" />
+                    </Grid>
+                    <TextBlock Text="{Binding GridBotVM.AiParamsRationale}"
+                               Foreground="#6A8FA8" FontSize="11" TextWrapping="Wrap"
+                               IsVisible="{Binding GridBotVM.AiParamsRationale, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  </StackPanel>
+                </Border>
 
                 <!-- Row 1: Symbol · Lower Price · Upper Price · Grid Levels · Qty/Grid -->
                 <Grid ColumnDefinitions="2*,*,*,*,*" ColumnSpacing="12">
@@ -7008,6 +7172,148 @@
               </StackPanel>
             </Border>
 
+            <!-- ── Autonomous AI Trader (Claude tool-use agent) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="12">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock Classes="H2" Text="🤖 AI Trader (Autonomous)" />
+                    <TextBlock Text="Claude inspects the market and places its own orders via tool use."
+                               Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <Border Grid.Column="1" CornerRadius="6" Padding="10,4" VerticalAlignment="Center"
+                          Background="#04101A">
+                    <TextBlock Text="{Binding AiTraderVM.ModeLabel}"
+                               Foreground="{Binding AiTraderVM.ModeBrush}"
+                               FontWeight="SemiBold" FontSize="12" />
+                  </Border>
+                </Grid>
+
+                <TextBlock Text="{Binding AiTraderVM.StatusLabel}"
+                           Foreground="{Binding AiTraderVM.StatusBrush}" FontSize="12" />
+
+                <!-- Venue · Exchange · Interval · Live toggle -->
+                <Grid ColumnDefinitions="*,*,*,Auto" ColumnSpacing="10">
+                  <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Venue" />
+                    <ComboBox ItemsSource="{Binding AiTraderVM.AvailableVenues}"
+                              SelectedItem="{Binding AiTraderVM.SelectedVenue}"
+                              HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4" IsVisible="{Binding AiTraderVM.IsCexVenue}">
+                    <TextBlock Classes="Overline" Text="Exchange" />
+                    <ComboBox ItemsSource="{Binding AiTraderVM.AvailableExchanges}"
+                              SelectedItem="{Binding AiTraderVM.SelectedExchange}"
+                              HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4" IsVisible="{Binding AiTraderVM.IsDexVenue}">
+                    <TextBlock Classes="Overline" Text="Network" />
+                    <TextBlock Text="Active DEX wallet" Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Interval (sec)" />
+                    <NumericUpDown Value="{Binding AiTraderVM.IntervalSeconds}"
+                                   Minimum="30" Maximum="3600" Increment="30" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="3" Spacing="4" VerticalAlignment="Bottom">
+                    <TextBlock Classes="Overline" Text="Live trading" />
+                    <CheckBox IsChecked="{Binding AiTraderVM.LiveEnabled}"
+                              Content="Real orders" Foreground="#FF6B6B" />
+                  </StackPanel>
+                </Grid>
+
+                <!-- CEX: Market mode · Leverage · Margin -->
+                <Grid ColumnDefinitions="*,*,*,Auto" ColumnSpacing="10"
+                      IsVisible="{Binding AiTraderVM.IsCexVenue}">
+                  <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Market" />
+                    <ComboBox ItemsSource="{Binding AiTraderVM.AvailableMarketModes}"
+                              SelectedItem="{Binding AiTraderVM.SelectedMarketMode}"
+                              HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4" IsVisible="{Binding AiTraderVM.IsFuturesMode}">
+                    <TextBlock Classes="Overline" Text="Leverage" />
+                    <NumericUpDown Value="{Binding AiTraderVM.Leverage}" Minimum="1" Maximum="125" Increment="1" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="4" IsVisible="{Binding AiTraderVM.IsFuturesMode}">
+                    <TextBlock Classes="Overline" Text="Margin" />
+                    <ComboBox ItemsSource="{Binding AiTraderVM.AvailableMarginModes}"
+                              SelectedItem="{Binding AiTraderVM.SelectedMarginMode}"
+                              HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="3" Text="{Binding AiTraderVM.MarketSummary}"
+                             Foreground="#1FE6C2" FontSize="11" VerticalAlignment="Bottom" Margin="0,0,0,8" />
+                </Grid>
+
+                <!-- DEX: slippage · max native/trade · paper native start -->
+                <Grid ColumnDefinitions="*,*,*,Auto" ColumnSpacing="10"
+                      IsVisible="{Binding AiTraderVM.IsDexVenue}">
+                  <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Slippage %" />
+                    <NumericUpDown Value="{Binding AiTraderVM.DexSlippagePercent}" Minimum="0.1" Maximum="50" Increment="0.5" FormatString="N1" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Max native / trade" />
+                    <NumericUpDown Value="{Binding AiTraderVM.MaxNativePerTrade}" Minimum="0.0000001" Increment="0.01" FormatString="N4" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Paper native start" />
+                    <NumericUpDown Value="{Binding AiTraderVM.VirtualNativeStart}" Minimum="0.0000001" Increment="0.1" FormatString="N4" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="3" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Max positions" />
+                    <NumericUpDown Value="{Binding AiTraderVM.MaxOpenPositions}" Minimum="1" Maximum="20" Increment="1" FormatString="N0" Width="90" />
+                  </StackPanel>
+                </Grid>
+
+                <!-- Hard limits (CEX, USD-denominated) -->
+                <TextBlock Classes="Overline" Text="Risk limits (enforced in paper AND live)" Margin="0,4,0,0"
+                           IsVisible="{Binding AiTraderVM.IsCexVenue}" />
+                <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="10"
+                      IsVisible="{Binding AiTraderVM.IsCexVenue}">
+                  <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Max order $" />
+                    <NumericUpDown Value="{Binding AiTraderVM.MaxOrderUsd}" Minimum="1" Increment="10" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Max exposure $" />
+                    <NumericUpDown Value="{Binding AiTraderVM.MaxTotalExposureUsd}" Minimum="1" Increment="50" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Max positions" />
+                    <NumericUpDown Value="{Binding AiTraderVM.MaxOpenPositions}" Minimum="1" Maximum="20" Increment="1" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="3" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Max daily loss $" />
+                    <NumericUpDown Value="{Binding AiTraderVM.MaxDailyLossUsd}" Minimum="1" Increment="25" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="4" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Paper start $" />
+                    <NumericUpDown Value="{Binding AiTraderVM.VirtualStartUsd}" Minimum="10" Increment="100" FormatString="N0" />
+                  </StackPanel>
+                </Grid>
+
+                <!-- Controls -->
+                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10">
+                  <Button Grid.Column="0" Content="▶ Run once" Command="{Binding AiTraderVM.RunOnceCommand}" />
+                  <Button Grid.Column="1" Content="🔁 Start loop" Command="{Binding AiTraderVM.StartLoopCommand}" />
+                  <Button Grid.Column="2" Content="■ Stop" Command="{Binding AiTraderVM.StopCommand}" />
+                  <Button Grid.Column="3" Content="⛔ Kill" Command="{Binding AiTraderVM.KillCommand}"
+                          Foreground="#FF6B6B" />
+                </Grid>
+
+                <!-- Agent log -->
+                <TextBlock Classes="Overline" Text="Agent activity" Margin="0,4,0,0" />
+                <Border Background="#04101A" CornerRadius="6" Padding="10,8" MaxHeight="220">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <TextBlock Text="{Binding AiTraderVM.AgentLog}"
+                               Foreground="#6A8FA8" FontFamily="Courier New" FontSize="11"
+                               TextWrapping="Wrap" />
+                  </ScrollViewer>
+                </Border>
+              </StackPanel>
+            </Border>
+
           </StackPanel>
 
           <!-- ═══════════════════════════════════════════════════════════════
@@ -7046,6 +7352,31 @@
                 <TextBlock Text="{Binding WhaleTrackerVM.KnownWalletCount, StringFormat='{}Polling ETH · BSC · Solana  ·  {0} known wallets tracked'}" Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
                 <TextBlock Text="·  ETHERSCAN_API_KEY / BSCSCAN_API_KEY env vars for higher rate limits" Foreground="#4D5F70" FontSize="11" VerticalAlignment="Center" />
                 <Button Classes="LinkButton" Command="{Binding WhaleTrackerVM.ClearCommand}" HorizontalAlignment="Right">Clear</Button>
+              </StackPanel>
+            </Border>
+
+            <!-- ── AI Flow Insight (#6) ── -->
+            <Border Classes="Panel" Padding="14,12">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Text="🧠 AI Flow Insight" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
+                    <TextBlock Text="Accumulation or distribution? AI reads recent whale flows."
+                               Foreground="#5C6E82" FontSize="11" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding WhaleTrackerVM.InsightSource}"
+                             Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <Button Grid.Column="2" Content="Analyze with AI"
+                          Command="{Binding WhaleTrackerVM.AnalyzeWithAiCommand}"
+                          IsEnabled="{Binding !WhaleTrackerVM.InsightRunning}" Foreground="#21E6C1" />
+                </Grid>
+                <StackPanel Spacing="5" IsVisible="{Binding WhaleTrackerVM.HasInsight}">
+                  <TextBlock Text="{Binding WhaleTrackerVM.InsightSignal}"
+                             Foreground="{Binding WhaleTrackerVM.InsightSignalBrush}" FontWeight="Bold" FontSize="13" />
+                  <TextBlock Text="{Binding WhaleTrackerVM.InsightSummary}" Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding WhaleTrackerVM.InsightBullets}" Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap"
+                             IsVisible="{Binding WhaleTrackerVM.InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                </StackPanel>
               </StackPanel>
             </Border>
 
@@ -8100,6 +8431,33 @@
                       Command="{Binding StatArbVM.StopCommand}" />
             </Grid>
 
+            <!-- ── AI pair verdict (#11) ── -->
+            <Border Classes="Panel" Padding="14,12">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Text="🧠 AI Pair Verdict" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
+                    <TextBlock Text="Is the spread stretched enough to trade — and which leg?"
+                               Foreground="#5C6E82" FontSize="11" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding StatArbVM.PairSource}"
+                             Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <Button Grid.Column="2" Content="Evaluate with AI"
+                          Command="{Binding StatArbVM.EvaluatePairCommand}"
+                          IsEnabled="{Binding !StatArbVM.PairRunning}" Foreground="#21E6C1" />
+                </Grid>
+                <StackPanel Spacing="5" IsVisible="{Binding StatArbVM.HasPairVerdict}">
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="{Binding StatArbVM.PairSignal}"
+                               Foreground="{Binding StatArbVM.PairSignalBrush}" FontWeight="Bold" FontSize="13" />
+                    <TextBlock Text="{Binding StatArbVM.PairScore, StringFormat='score {0}/100'}"
+                               Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <TextBlock Text="{Binding StatArbVM.PairReason}" Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
             <!-- Config row -->
             <Border Classes="Panel" Padding="16,12">
               <Grid ColumnDefinitions="Auto,*,Auto,*,Auto,*,Auto,*,Auto,*,Auto,*"
@@ -8232,6 +8590,29 @@
                            Foreground="#8FA3B8" TextWrapping="Wrap" MaxWidth="280" />
               </Border>
             </Grid>
+
+            <!-- ── AI Slice Planner (#12) ── -->
+            <Border Background="#0D1B29" CornerRadius="10" Padding="14,12">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto,140,Auto">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Text="🧠 AI Slice Planner" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
+                    <TextBlock Text="Break a large order into impact-aware slices." Foreground="#5C6E82" FontSize="11" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="Urgency" Foreground="#8FA3B8" FontSize="11"
+                             VerticalAlignment="Center" Margin="0,0,8,0" />
+                  <ComboBox Grid.Column="2" ItemsSource="{Binding UrgencyOptions}"
+                            SelectedItem="{Binding SelectedUrgency}" HorizontalAlignment="Stretch" />
+                  <Button Grid.Column="3" Content="Plan with AI" Margin="10,0,0,0"
+                          Command="{Binding PlanSlicesCommand}"
+                          IsEnabled="{Binding !PlanRunning}" Foreground="#21E6C1" />
+                </Grid>
+                <TextBlock Text="{Binding PlanRationale}" Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap"
+                           IsVisible="{Binding HasSlicePlan}" />
+                <TextBlock Text="{Binding PlanSource}" Foreground="#5C6E82" FontSize="10"
+                           IsVisible="{Binding HasSlicePlan}" />
+              </StackPanel>
+            </Border>
 
             <!-- Input bar ───────────────────────────────────────────────── -->
             <Border Background="#0D1B29" CornerRadius="10" Padding="16,12">
@@ -8511,6 +8892,41 @@
                 </Border>
               </StackPanel>
             </Grid>
+
+            <!-- ── AI Picks (#1) ──────────────────────────────────────────── -->
+            <Border Background="#0D1B29" CornerRadius="10" Padding="14,12">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <StackPanel Grid.Column="0" Spacing="1">
+                    <TextBlock Text="🧠 AI Picks" FontSize="14" FontWeight="Bold" Foreground="#E8F0FE" />
+                    <TextBlock Text="Top opportunities ranked from the live scan." FontSize="11" Foreground="#5C6E82" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding AiSource}" Foreground="#5C6E82"
+                             FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <Button Grid.Column="2" Content="Rank with AI"
+                          Command="{Binding RankWithAiCommand}" IsEnabled="{Binding !AiRunning}" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding AiPicks}" IsVisible="{Binding HasAiPicks}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AiPickVM">
+                      <Border Background="#0A1622" CornerRadius="6" Padding="10,7" Margin="0,2">
+                        <Grid ColumnDefinitions="Auto,90,*">
+                          <Border Grid.Column="0" CornerRadius="4" Padding="6,2" Background="#04101A" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding ScoreLabel}" FontWeight="Bold" Foreground="#21E6C1" FontSize="13" />
+                          </Border>
+                          <StackPanel Grid.Column="1" Spacing="0" Margin="8,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Symbol}" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
+                            <TextBlock Text="{Binding Bias}" Foreground="{Binding BiasBrush}" FontSize="11" FontWeight="Bold" />
+                          </StackPanel>
+                          <TextBlock Grid.Column="2" Text="{Binding Reason}" Foreground="#8FA3B8"
+                                     FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
 
             <!-- Filter bar ──────────────────────────────────────────────── -->
             <Border Background="#0D1B29" CornerRadius="10" Padding="14,10">
@@ -9161,6 +9577,30 @@
                       IsEnabled="{Binding !LiquidationHeatmapVM.IsLoading}" />
             </Grid>
 
+            <!-- ── AI Liquidity Magnet (#13) ── -->
+            <Border Classes="Panel" Padding="14,12">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Text="🧠 AI Liquidity Magnet" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
+                    <TextBlock Text="Which liquidation cluster is pulling price?" Foreground="#5C6E82" FontSize="11" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding LiquidationHeatmapVM.InsightSource}"
+                             Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <Button Grid.Column="2" Content="Analyze with AI"
+                          Command="{Binding LiquidationHeatmapVM.AnalyzeWithAiCommand}"
+                          IsEnabled="{Binding !LiquidationHeatmapVM.InsightRunning}" Foreground="#21E6C1" />
+                </Grid>
+                <StackPanel Spacing="5" IsVisible="{Binding LiquidationHeatmapVM.HasInsight}">
+                  <TextBlock Text="{Binding LiquidationHeatmapVM.InsightSignal}"
+                             Foreground="{Binding LiquidationHeatmapVM.InsightSignalBrush}" FontWeight="Bold" FontSize="13" />
+                  <TextBlock Text="{Binding LiquidationHeatmapVM.InsightSummary}" Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding LiquidationHeatmapVM.InsightBullets}" Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap"
+                             IsVisible="{Binding LiquidationHeatmapVM.InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
             <!-- Symbol quick-select -->
             <WrapPanel Orientation="Horizontal">
               <Button Content="BTC" Classes="GhostButton" Margin="0,0,6,0"
@@ -9315,6 +9755,27 @@
                       Classes="GhostButton"
                       Foreground="#21E6C1" />
             </Grid>
+
+            <!-- ── AI: describe a rule in plain English (#3) ── -->
+            <Border Classes="SurfaceCard" Padding="14,12">
+              <StackPanel Spacing="8">
+                <TextBlock Text="🧠 Describe a rule in plain English"
+                           FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                  <TextBox Grid.Column="0"
+                           Text="{Binding CompositeRuleVM.NlPrompt}"
+                           PlaceholderText="e.g. When ETHUSDT RSI drops below 30, start DCA buy and notify me"
+                           VerticalContentAlignment="Center" />
+                  <Button Grid.Column="1" Content="Generate"
+                          Command="{Binding CompositeRuleVM.GenerateRuleFromTextCommand}"
+                          IsEnabled="{Binding !CompositeRuleVM.AiRuleRunning}"
+                          Foreground="#21E6C1" />
+                </Grid>
+                <TextBlock Text="{Binding CompositeRuleVM.AiRuleStatus}"
+                           Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap"
+                           IsVisible="{Binding CompositeRuleVM.AiRuleStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+            </Border>
 
             <!-- Main split: rule list (left) + editor (right) -->
             <Grid ColumnDefinitions="*,Auto,480" ColumnSpacing="0" MinHeight="500">
@@ -9689,6 +10150,33 @@
             <TextBlock Text="{Binding TradeJournalVM.ExportStatus}"
                        Foreground="#21E6C1" FontSize="11"
                        IsVisible="{Binding TradeJournalVM.ExportStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+            <!-- ── AI Coach (#4) ── -->
+            <Border Classes="SurfaceCard" Padding="14,12">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Text="🧠 AI Coach" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
+                    <TextBlock Text="Strengths, recurring leaks and concrete fixes from your trade history."
+                               Foreground="#5C6E82" FontSize="11" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding TradeJournalVM.CoachSource}"
+                             Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <Button Grid.Column="2" Content="Coach with AI"
+                          Command="{Binding TradeJournalVM.ReviewWithAiCommand}"
+                          IsEnabled="{Binding !TradeJournalVM.CoachRunning}" Foreground="#21E6C1" />
+                </Grid>
+                <StackPanel Spacing="6" IsVisible="{Binding TradeJournalVM.HasCoachReview}">
+                  <TextBlock Text="{Binding TradeJournalVM.CoachSummary}" Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding TradeJournalVM.CoachStrengths}" Foreground="#3DDC84" FontSize="11" TextWrapping="Wrap"
+                             IsVisible="{Binding TradeJournalVM.CoachStrengths, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <TextBlock Text="{Binding TradeJournalVM.CoachLeaks}" Foreground="#F4B860" FontSize="11" TextWrapping="Wrap"
+                             IsVisible="{Binding TradeJournalVM.CoachLeaks, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <TextBlock Text="{Binding TradeJournalVM.CoachSuggestions}" Foreground="#21E6C1" FontSize="11" TextWrapping="Wrap"
+                             IsVisible="{Binding TradeJournalVM.CoachSuggestions, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
 
             <!-- ── Filters ── -->
             <Border Classes="SurfaceCard">
@@ -10291,6 +10779,31 @@
               </StackPanel>
             </Border>
 
+            <!-- ── AI On-Chain Insight (#7) ── -->
+            <Border Background="#0F1721" CornerRadius="6" Padding="14,12">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Text="🧠 AI On-Chain Read" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
+                    <TextBlock Text="Valuation regime from MVRV / NUPL / exchange flows."
+                               Foreground="#5C6E82" FontSize="11" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding OnChainVM.InsightSource}"
+                             Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <Button Grid.Column="2" Content="Analyze with AI"
+                          Command="{Binding OnChainVM.AnalyzeWithAiCommand}"
+                          IsEnabled="{Binding !OnChainVM.InsightRunning}" Foreground="#21E6C1" />
+                </Grid>
+                <StackPanel Spacing="5" IsVisible="{Binding OnChainVM.HasInsight}">
+                  <TextBlock Text="{Binding OnChainVM.InsightSignal}"
+                             Foreground="{Binding OnChainVM.InsightSignalBrush}" FontWeight="Bold" FontSize="13" />
+                  <TextBlock Text="{Binding OnChainVM.InsightSummary}" Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding OnChainVM.InsightBullets}" Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap"
+                             IsVisible="{Binding OnChainVM.InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
             <!-- Two-column cards: BTC + ETH -->
             <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
 
@@ -10822,6 +11335,40 @@
 
                 <TextBlock Foreground="#4A6880" FontSize="11" TextWrapping="Wrap"
                            Text="Buy a key in the Telegram bot. Send the Machine ID above to the bot before paying so your key is bound to this PC. Without a valid license, only Demo (paper) mode is available after the trial." />
+              </StackPanel>
+            </Border>
+
+            <!-- Configuration profiles (save / load / share) -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="12">
+                <TextBlock Classes="H2" Text="Configuration Profiles" />
+                <TextBlock Foreground="#4A6880" FontSize="11" TextWrapping="Wrap"
+                           Text="Save all bot / sniper / grid / risk settings as a named profile (API keys are never included). Export to share a setup; Import picks up files dropped into the shared folder." />
+
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
+                  <TextBox Grid.Column="0" Text="{Binding ProfileName}" PlaceholderText="Profile name" />
+                  <Button Grid.Column="1" Content="Save" Command="{Binding SaveProfileCommand}" />
+                  <Button Grid.Column="2" Content="Load" Command="{Binding LoadProfileCommand}" />
+                  <Button Grid.Column="3" Content="Delete" Command="{Binding DeleteProfileCommand}" />
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <Button Content="⬆ Export (share)" Command="{Binding ExportProfileCommand}" />
+                  <Button Content="⬇ Import" Command="{Binding ImportProfileCommand}" />
+                </StackPanel>
+
+                <TextBlock Text="{Binding ProfileStatus}" Foreground="#8FA3B8" FontSize="12" TextWrapping="Wrap" />
+
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Saved profiles" />
+                  <ItemsControl ItemsSource="{Binding AvailableProfiles}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding}" Foreground="#C5D2DE" FontSize="12" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
               </StackPanel>
             </Border>
 

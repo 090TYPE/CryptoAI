@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
+using System.Threading.Tasks;
 
 namespace CryptoAITerminal.TerminalUI.ViewModels;
 
@@ -135,6 +136,17 @@ public sealed class PriceLevelRowVM : ReactiveObject
 //  Main ViewModel
 // ════════════════════════════════════════════════════════════════════════════
 
+/// <summary>One AI-ranked opportunity row in the scanner's "AI Picks" panel.</summary>
+public sealed class AiPickVM
+{
+    public string Symbol { get; init; } = "";
+    public int    Score  { get; init; }
+    public string Bias   { get; init; } = "WATCH";
+    public string Reason { get; init; } = "";
+    public string ScoreLabel => $"{Score}";
+    public string BiasBrush => Bias switch { "LONG" => "#3DDC84", "SHORT" => "#FF6B6B", _ => "#8FA3B8" };
+}
+
 public sealed class MarketScannerViewModel : ReactiveObject, IDisposable
 {
     private readonly MarketScannerService _svc;
@@ -145,6 +157,24 @@ public sealed class MarketScannerViewModel : ReactiveObject, IDisposable
     public ObservableCollection<ScanRowVM>       Rows    { get; } = [];
     public ObservableCollection<AlertRowVM>      Alerts  { get; } = [];
     public ObservableCollection<PriceLevelRowVM> Levels  { get; } = [];
+
+    // ── AI ranking (#1) ─────────────────────────────────────────────────────────
+    private readonly Services.MarketRankingAiService _aiRanker = new();
+    private IReadOnlyList<ScanResult> _latestResults = [];
+    public ObservableCollection<AiPickVM> AiPicks { get; } = [];
+
+    private bool _aiRunning;
+    private string _aiSource = "";
+    public bool AiRunning { get => _aiRunning; private set => this.RaiseAndSetIfChanged(ref _aiRunning, value); }
+    public string AiSource { get => _aiSource; private set => this.RaiseAndSetIfChanged(ref _aiSource, value); }
+    public bool HasAiPicks => AiPicks.Count > 0;
+
+    /// <summary>Share the Claude key/model (called by MainWindowViewModel).</summary>
+    public void ConfigureAi(string apiKey, string model)
+    {
+        _aiRanker.ApiKey = apiKey ?? "";
+        if (!string.IsNullOrWhiteSpace(model)) _aiRanker.Model = model;
+    }
 
     // ── Filter state ──────────────────────────────────────────────────────────
 
@@ -215,6 +245,7 @@ public sealed class MarketScannerViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit,           Unit>   AddLevelCommand        { get; }
     public ReactiveCommand<PriceLevelRowVM, Unit>  RemoveLevelCommand     { get; }
     public ReactiveCommand<string,         Unit>   SortByCommand          { get; }
+    public ReactiveCommand<Unit,           Unit>   RankWithAiCommand      { get; }
 
     // ── Navigation callback ───────────────────────────────────────────────────
 
@@ -249,12 +280,34 @@ public sealed class MarketScannerViewModel : ReactiveObject, IDisposable
             if (_sortColumn == col) SortDesc = !_sortDesc;
             else { SortColumn = col; SortDesc = true; }
         }, outputScheduler: App.UiScheduler);
+        RankWithAiCommand  = ReactiveCommand.CreateFromTask(RankWithAiAsync, outputScheduler: App.UiScheduler);
+    }
+
+    private async Task RankWithAiAsync()
+    {
+        if (AiRunning) return;
+        var snapshot = _latestResults;
+        if (snapshot.Count == 0) { ToastRequested?.Invoke("Scanner has no data yet."); return; }
+
+        AiRunning = true;
+        try
+        {
+            var result = await _aiRanker.RankAsync(snapshot, topN: 5).ConfigureAwait(true);
+            AiPicks.Clear();
+            foreach (var o in result.Opportunities)
+                AiPicks.Add(new AiPickVM { Symbol = o.Symbol, Score = o.Score, Bias = o.Bias, Reason = o.Reason });
+            AiSource = result.Source;
+            this.RaisePropertyChanged(nameof(HasAiPicks));
+        }
+        catch (Exception ex) { ToastRequested?.Invoke($"AI ranking failed: {ex.Message}"); }
+        finally { AiRunning = false; }
     }
 
     // ── Data updates ──────────────────────────────────────────────────────────
 
     private void OnResultsUpdated(IReadOnlyList<ScanResult> allResults)
     {
+        _latestResults = allResults;
         Dispatcher.UIThread.InvokeAsync(() =>
         {
             // Stats (computed from full unfiltered set)

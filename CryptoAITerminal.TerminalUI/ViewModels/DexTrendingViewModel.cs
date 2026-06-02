@@ -114,15 +114,53 @@ public class DexTrendingViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> RefreshCommand { get; }
     public ReactiveCommand<string, Unit> SetTimeframeCommand { get; }
     public ReactiveCommand<DexTokenRowViewModel, Unit> OpenInSniperCommand { get; }
+    public ReactiveCommand<Unit, Unit> RankWithAiCommand { get; }
 
     /// <summary>Wired by MainWindowViewModel to handle navigation + pre-fill.</summary>
     public Action<string, string>? OnOpenInSniper { get; set; }
+
+    // ── AI trending ranking (#9) ────────────────────────────────────────────────
+    private readonly DexTrendingAiService _aiTrending = new();
+    private bool _aiRunning; private string _aiSource = "";
+    public System.Collections.ObjectModel.ObservableCollection<AiPickVM> AiPicks { get; } = [];
+    public bool AiRunning { get => _aiRunning; private set => this.RaiseAndSetIfChanged(ref _aiRunning, value); }
+    public string AiSource { get => _aiSource; private set => this.RaiseAndSetIfChanged(ref _aiSource, value); }
+    public bool HasAiPicks => AiPicks.Count > 0;
+
+    public void ConfigureAi(string apiKey, string model)
+    {
+        _aiTrending.ApiKey = apiKey ?? "";
+        if (!string.IsNullOrWhiteSpace(model)) _aiTrending.Model = model;
+    }
+
+    private async System.Threading.Tasks.Task RankWithAiAsync()
+    {
+        if (AiRunning) return;
+        var rows = _allTokens.Select(t => new CryptoAITerminal.AIEngine.DexTrendRow(
+            t.Symbol, t.TokenAddress, t.PriceUsd, (decimal)t.PriceChangeM5, (decimal)t.PriceChangeH1,
+            (decimal)t.PriceChangeH24, t.LiquidityUsd, t.VolumeH24, t.MarketCap)).ToList();
+        if (rows.Count == 0) { StatusLabel = "No trending tokens loaded yet."; return; }
+
+        AiRunning = true;
+        try
+        {
+            var result = await _aiTrending.RankRowsAsync(rows, topN: 5).ConfigureAwait(true);
+            AiPicks.Clear();
+            foreach (var p in result.Tokens)
+                AiPicks.Add(new AiPickVM { Symbol = p.Symbol, Score = p.Score, Bias = p.Signal, Reason = p.Reason });
+            AiSource = result.Source;
+            this.RaisePropertyChanged(nameof(HasAiPicks));
+        }
+        catch (Exception ex) { StatusLabel = $"AI ranking failed: {ex.Message}"; }
+        finally { AiRunning = false; }
+    }
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public DexTrendingViewModel(DexTrendingService svc)
     {
         _svc = svc;
+        RankWithAiCommand = ReactiveCommand.CreateFromTask(RankWithAiAsync, outputScheduler: App.UiScheduler);
 
         RefreshCommand = ReactiveCommand.CreateFromTask(
             async _ => await LoadAsync(),

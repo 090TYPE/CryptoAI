@@ -143,12 +143,55 @@ public class GridBotViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> StopCommand { get; }
     public ReactiveCommand<Unit, Unit> PauseCommand { get; }
     public ReactiveCommand<Unit, Unit> ResumeCommand { get; }
+    public ReactiveCommand<Unit, Unit> SuggestParamsCommand { get; }
+
+    // ── AI grid parameters (#8) ─────────────────────────────────────────────────
+    private readonly BotParameterAiService _aiParams = new();
+    private bool _aiParamsRunning;
+    private string _aiParamsRationale = "", _aiParamsSource = "";
+    public bool AiParamsRunning { get => _aiParamsRunning; private set => this.RaiseAndSetIfChanged(ref _aiParamsRunning, value); }
+    public string AiParamsRationale { get => _aiParamsRationale; private set => this.RaiseAndSetIfChanged(ref _aiParamsRationale, value); }
+    public string AiParamsSource { get => _aiParamsSource; private set => this.RaiseAndSetIfChanged(ref _aiParamsSource, value); }
+
+    public void ConfigureAi(string apiKey, string model)
+    {
+        _aiParams.ApiKey = apiKey ?? "";
+        if (!string.IsNullOrWhiteSpace(model)) _aiParams.Model = model;
+    }
+
+    private async Task SuggestParamsAsync()
+    {
+        if (AiParamsRunning) return;
+        AiParamsRunning = true;
+        try
+        {
+            decimal price = 0m, high = 0m, low = 0m;
+            try
+            {
+                var book = await _spotGateway.GetOrderBookAsync(Symbol, 5);
+                var bid = book.Bids.Count > 0 ? book.Bids[0].Price : 0m;
+                var ask = book.Asks.Count > 0 ? book.Asks[0].Price : 0m;
+                price = bid > 0 && ask > 0 ? (bid + ask) / 2m : Math.Max(bid, ask);
+            }
+            catch { /* offline heuristic still works with price=0 */ }
+
+            var s = await _aiParams.SuggestAsync(BotParameterAiService.Grid, price, high, low, 0m);
+            if (s.Params.TryGetValue("LowerPrice", out var lp) && lp > 0) LowerPrice = lp;
+            if (s.Params.TryGetValue("UpperPrice", out var up) && up > 0) UpperPrice = up;
+            if (s.Params.TryGetValue("GridCount", out var gc) && gc >= 2) GridLevels = (int)gc;
+            AiParamsRationale = s.Rationale;
+            AiParamsSource = s.Source;
+        }
+        catch (Exception ex) { BotLog += $"\n[AI] {ex.Message}"; }
+        finally { AiParamsRunning = false; }
+    }
 
     public GridBotViewModel(BinanceGateway spotGateway, BinanceFuturesGateway futuresGateway)
     {
         _spotGateway = spotGateway;
         _futuresGateway = futuresGateway;
 
+        SuggestParamsCommand = ReactiveCommand.CreateFromTask(SuggestParamsAsync, outputScheduler: App.UiScheduler);
         StartCommand = ReactiveCommand.CreateFromTask(StartAsync, outputScheduler: App.UiScheduler);
         StopCommand = ReactiveCommand.CreateFromTask(StopAsync, outputScheduler: App.UiScheduler);
         PauseCommand = ReactiveCommand.CreateFromTask(PauseAsync, outputScheduler: App.UiScheduler);

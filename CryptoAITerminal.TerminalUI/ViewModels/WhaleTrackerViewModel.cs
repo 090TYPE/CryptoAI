@@ -7,6 +7,7 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -49,14 +50,80 @@ public class WhaleTrackerViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> StartCommand { get; }
     public ReactiveCommand<Unit, Unit> StopCommand  { get; }
     public ReactiveCommand<Unit, Unit> ClearCommand { get; }
+    public ReactiveCommand<Unit, Unit> AnalyzeWithAiCommand { get; }
 
     /// Set by MainWindowViewModel — called when user clicks Snipe on an alert.
     public Action<string>? RequestNavigateToSymbol { get; set; }
+
+    // ── AI flow insight (#6) ────────────────────────────────────────────────────
+    private readonly MarketInsightAiService _insight = new();
+    private bool _insightRunning, _hasInsight;
+    private string _insightSummary = "", _insightSignal = "", _insightBullets = "", _insightSource = "";
+
+    public bool InsightRunning { get => _insightRunning; private set => this.RaiseAndSetIfChanged(ref _insightRunning, value); }
+    public bool HasInsight { get => _hasInsight; private set => this.RaiseAndSetIfChanged(ref _hasInsight, value); }
+    public string InsightSummary { get => _insightSummary; private set => this.RaiseAndSetIfChanged(ref _insightSummary, value); }
+    public string InsightSignal { get => _insightSignal; private set => this.RaiseAndSetIfChanged(ref _insightSignal, value); }
+    public string InsightBullets { get => _insightBullets; private set => this.RaiseAndSetIfChanged(ref _insightBullets, value); }
+    public string InsightSource { get => _insightSource; private set => this.RaiseAndSetIfChanged(ref _insightSource, value); }
+    public string InsightSignalBrush => _insightSignal switch
+    {
+        "ACCUMULATION" => "#3DDC84", "DISTRIBUTION" => "#FF6B6B", _ => "#8FA3B8"
+    };
+
+    public void ConfigureAi(string apiKey, string model)
+    {
+        _insight.ApiKey = apiKey ?? "";
+        if (!string.IsNullOrWhiteSpace(model)) _insight.Model = model;
+    }
+
+    private async System.Threading.Tasks.Task AnalyzeWithAiAsync()
+    {
+        if (InsightRunning) return;
+        var alerts = RecentAlerts.Select(vm => vm.Alert).ToList();
+        if (alerts.Count == 0) { InsightSummary = "No whale alerts yet."; HasInsight = true; return; }
+
+        decimal inflow = 0m, outflow = 0m;
+        var lines = new System.Collections.Generic.List<string>();
+        foreach (var a in alerts.Take(40))
+        {
+            var toEx = string.Equals(a.ToLabel?.Category, "Exchange", StringComparison.OrdinalIgnoreCase);
+            var fromEx = string.Equals(a.FromLabel?.Category, "Exchange", StringComparison.OrdinalIgnoreCase);
+            if (toEx) inflow += a.Transfer.UsdValue;
+            if (fromEx) outflow += a.Transfer.UsdValue;
+            var dir = toEx ? "→exchange" : fromEx ? "exchange→" : "wallet→wallet";
+            lines.Add($"{a.Transfer.TokenSymbol} ${a.Transfer.UsdValue:0} {dir}");
+        }
+
+        InsightRunning = true;
+        try
+        {
+            var offline = () => InsightHeuristics.WhaleFlow(inflow, outflow, alerts.Count);
+            var result = await _insight.InterpretAsync(
+                "You are an on-chain whale-flow analyst. Coins moving TO exchanges hint at sell pressure; coins moving OFF hint at accumulation.",
+                lines, ["ACCUMULATION", "DISTRIBUTION", "NEUTRAL"], offline).ConfigureAwait(true);
+            ApplyInsight(result);
+        }
+        catch (Exception ex) { InsightSummary = $"AI failed: {ex.Message}"; HasInsight = true; }
+        finally { InsightRunning = false; }
+    }
+
+    private void ApplyInsight(CryptoAITerminal.AIEngine.InsightResult r)
+    {
+        InsightSummary = r.Summary;
+        InsightSignal = r.Signal;
+        InsightBullets = r.Bullets.Length > 0 ? "• " + string.Join("\n• ", r.Bullets) : "";
+        InsightSource = r.Source;
+        HasInsight = true;
+        this.RaisePropertyChanged(nameof(InsightSignalBrush));
+    }
 
     public WhaleTrackerViewModel(WhaleTrackerService service, WhaleTokenEnricher? enricher = null)
     {
         _service  = service;
         _enricher = enricher;
+
+        AnalyzeWithAiCommand = ReactiveCommand.CreateFromTask(AnalyzeWithAiAsync, outputScheduler: App.UiScheduler);
 
         StartCommand = ReactiveCommand.Create(StartTracking,
             this.WhenAnyValue(x => x.IsTracking).Select(t => !t),
@@ -159,6 +226,9 @@ public class WhaleTrackerViewModel : ReactiveObject, IDisposable
 public class WhaleAlertViewModel : ReactiveObject
 {
     private readonly WhaleAlert _alert;
+
+    /// <summary>Underlying alert — used by the AI flow-insight aggregation.</summary>
+    public WhaleAlert Alert => _alert;
 
     // ── Alchemy price-trend enrichment (populated asynchronously) ─────────────
     private string _priceTrendLabel = "";

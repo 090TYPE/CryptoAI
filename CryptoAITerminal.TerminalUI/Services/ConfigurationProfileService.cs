@@ -23,11 +23,27 @@ public sealed class ConfigurationProfileService
         PropertyNameCaseInsensitive = true
     };
 
-    public string ProfileDir { get; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "CryptoAITerminal", "profiles");
+    public string ProfileDir { get; }
 
-    public ConfigurationProfileService() => Directory.CreateDirectory(ProfileDir);
+    /// <summary>Folder for sharing: export drops files here, import reads them back.</summary>
+    public string SharedDir { get; }
+
+    private const string ShareExtension = ".caiprofile";
+
+    /// <param name="profileDir">Override the profile store dir (tests). Null → %AppData%.</param>
+    /// <param name="sharedDir">Override the shared dir (tests). Null → Documents.</param>
+    public ConfigurationProfileService(string? profileDir = null, string? sharedDir = null)
+    {
+        ProfileDir = profileDir ?? Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "CryptoAITerminal", "profiles");
+        SharedDir = sharedDir ?? Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            "CryptoAITerminal", "SharedProfiles");
+
+        Directory.CreateDirectory(ProfileDir);
+        Directory.CreateDirectory(SharedDir);
+    }
 
     // ── Profile management ────────────────────────────────────────────────────
 
@@ -67,6 +83,71 @@ public sealed class ConfigurationProfileService
     }
 
     public bool Exists(string name) => File.Exists(GetPath(name));
+
+    // ── Sharing: export / import ──────────────────────────────────────────────
+
+    /// <summary>Write a saved profile to the shared folder as a portable file. Returns its path.</summary>
+    public string ExportToShared(string name)
+    {
+        var profile = Load(name) ?? throw new FileNotFoundException($"Profile '{name}' not found.");
+        Directory.CreateDirectory(SharedDir);
+        var safe = SanitizeName(name);
+        var dest = Path.Combine(SharedDir, safe + ShareExtension);
+        File.WriteAllText(dest, JsonSerializer.Serialize(profile, JsonOpts));
+        return dest;
+    }
+
+    /// <summary>
+    /// Import every shareable profile (*.caiprofile, *.json) found in the shared
+    /// folder into the local profile store. Returns the names imported.
+    /// </summary>
+    public IReadOnlyList<string> ImportFromShared()
+    {
+        var imported = new List<string>();
+        if (!Directory.Exists(SharedDir)) return imported;
+
+        var files = Directory.GetFiles(SharedDir, "*" + ShareExtension)
+            .Concat(Directory.GetFiles(SharedDir, "*.json"));
+
+        foreach (var file in files)
+        {
+            try
+            {
+                var profile = JsonSerializer.Deserialize<TradingProfile>(File.ReadAllText(file), JsonOpts);
+                if (profile is null) continue;
+
+                var name = string.IsNullOrWhiteSpace(profile.Name)
+                    ? Path.GetFileNameWithoutExtension(file)
+                    : profile.Name;
+
+                // Don't overwrite an existing profile that has different content —
+                // import under "name (2)", "name (3)", … instead.
+                var finalName = name;
+                if (Exists(name) && IsDifferent(name, profile))
+                {
+                    var n = 2;
+                    while (Exists($"{name} ({n})") && IsDifferent($"{name} ({n})", profile))
+                        n++;
+                    finalName = $"{name} ({n})";
+                }
+
+                Save(finalName, profile);
+                imported.Add(finalName);
+            }
+            catch { /* skip malformed files */ }
+        }
+        return imported;
+    }
+
+    private bool IsDifferent(string name, TradingProfile incoming)
+    {
+        var existing = Load(name);
+        if (existing is null) return true;
+        return JsonSerializer.Serialize(existing, JsonOpts) != JsonSerializer.Serialize(incoming, JsonOpts);
+    }
+
+    private static string SanitizeName(string name) =>
+        string.Concat(name.Where(c => char.IsLetterOrDigit(c) || c is '-' or '_' or ' '));
 
     private string GetPath(string name)
     {

@@ -160,11 +160,57 @@ public class PortfolioRebalanceViewModel : ReactiveObject, IDisposable
     /// <summary>Raised when the rebalance engine detects a deviation exceeding the alert threshold.</summary>
     public event Action<string>? AlertFired;
 
+    // ── AI rebalance (#5) ───────────────────────────────────────────────────────
+    public ReactiveCommand<Unit, Unit> SuggestWithAiCommand { get; private set; } = null!;
+    private readonly PortfolioRebalanceAiService _aiRebalance = new();
+    private string _selectedRiskProfile = "Balanced";
+    private string _aiCommentary = "", _aiSource = "";
+    private bool _aiRunning;
+
+    public IReadOnlyList<string> AvailableRiskProfiles { get; } = ["Conservative", "Balanced", "Aggressive"];
+    public string SelectedRiskProfile { get => _selectedRiskProfile; set => this.RaiseAndSetIfChanged(ref _selectedRiskProfile, value); }
+    public string AiCommentary { get => _aiCommentary; private set => this.RaiseAndSetIfChanged(ref _aiCommentary, value); }
+    public string AiSource { get => _aiSource; private set => this.RaiseAndSetIfChanged(ref _aiSource, value); }
+    public bool AiRunning { get => _aiRunning; private set => this.RaiseAndSetIfChanged(ref _aiRunning, value); }
+
+    public void ConfigureAi(string apiKey, string model)
+    {
+        _aiRebalance.ApiKey = apiKey ?? "";
+        if (!string.IsNullOrWhiteSpace(model)) _aiRebalance.Model = model;
+    }
+
+    private async System.Threading.Tasks.Task SuggestWithAiAsync()
+    {
+        if (AiRunning) return;
+        var holdings = Allocations
+            .Select(r => new CryptoAITerminal.AIEngine.HoldingRow(r.Symbol, r.ValueUsd, (decimal)r.ActualPct))
+            .ToList();
+        if (holdings.Count == 0) { StatusLabel = "Add assets before asking AI."; return; }
+
+        AiRunning = true;
+        try
+        {
+            var plan = await _aiRebalance.SuggestAsync(holdings, SelectedRiskProfile).ConfigureAwait(true);
+            foreach (var target in plan.Targets)
+            {
+                var row = Allocations.FirstOrDefault(r => string.Equals(r.Symbol, target.Symbol, StringComparison.OrdinalIgnoreCase));
+                if (row is not null) row.TargetPct = (double)target.TargetPct;
+            }
+            RecalcTargetSum();
+            SaveAllocations();
+            AiCommentary = plan.Commentary;
+            AiSource = plan.Source;
+        }
+        catch (Exception ex) { StatusLabel = $"AI rebalance failed: {ex.Message}"; }
+        finally { AiRunning = false; }
+    }
+
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public PortfolioRebalanceViewModel(PortfolioRebalanceService svc)
     {
         _svc = svc;
+        SuggestWithAiCommand = ReactiveCommand.CreateFromTask(SuggestWithAiAsync, outputScheduler: App.UiScheduler);
 
         RefreshCommand = ReactiveCommand.CreateFromTask(
             _ => RefreshAsync(), outputScheduler: App.UiScheduler);

@@ -61,12 +61,68 @@ public sealed class OnChainMetricsViewModel : ReactiveObject, IDisposable
     public event Action<string>? AlertTriggered;
 
     public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> RefreshCommand { get; }
+    public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> AnalyzeWithAiCommand { get; }
+
+    // ── AI on-chain insight (#7) ────────────────────────────────────────────────
+    private readonly MarketInsightAiService _insight = new();
+    private bool _insightRunning, _hasInsight;
+    private string _insightSummary = "", _insightSignal = "", _insightBullets = "", _insightSource = "";
+
+    public bool InsightRunning { get => _insightRunning; private set => this.RaiseAndSetIfChanged(ref _insightRunning, value); }
+    public bool HasInsight { get => _hasInsight; private set => this.RaiseAndSetIfChanged(ref _hasInsight, value); }
+    public string InsightSummary { get => _insightSummary; private set => this.RaiseAndSetIfChanged(ref _insightSummary, value); }
+    public string InsightSignal { get => _insightSignal; private set => this.RaiseAndSetIfChanged(ref _insightSignal, value); }
+    public string InsightBullets { get => _insightBullets; private set => this.RaiseAndSetIfChanged(ref _insightBullets, value); }
+    public string InsightSource { get => _insightSource; private set => this.RaiseAndSetIfChanged(ref _insightSource, value); }
+    public string InsightSignalBrush => _insightSignal switch { "BULLISH" => "#3DDC84", "BEARISH" => "#FF6B6B", _ => "#8FA3B8" };
+
+    public void ConfigureAi(string apiKey, string model)
+    {
+        _insight.ApiKey = apiKey ?? "";
+        if (!string.IsNullOrWhiteSpace(model)) _insight.Model = model;
+    }
+
+    private async System.Threading.Tasks.Task AnalyzeWithAiAsync()
+    {
+        if (InsightRunning) return;
+        var lines = new System.Collections.Generic.List<string>
+        {
+            $"BTC MVRV: {BtcMvrvLabel} ({BtcMvrvPhase})",
+            $"BTC NUPL: {BtcNuplLabel} ({BtcNuplPhase})",
+            $"BTC exchange net-flow: {BtcNetFlowLabel}",
+            $"ETH MVRV: {EthMvrvLabel}",
+            $"ETH exchange net-flow: {EthNetFlowLabel}",
+        };
+        InsightRunning = true;
+        try
+        {
+            var offline = () =>
+            {
+                var phase = (BtcMvrvPhase + " " + BtcNuplPhase).ToLowerInvariant();
+                var signal = phase.Contains("euphoria") || phase.Contains("overvalued") || phase.Contains("greed") ? "BEARISH"
+                           : phase.Contains("capitulation") || phase.Contains("undervalued") || phase.Contains("opportunity") ? "BULLISH"
+                           : "NEUTRAL";
+                var summary = $"On-chain valuation sits at MVRV {BtcMvrvLabel} ({BtcMvrvPhase}), NUPL {BtcNuplLabel}.";
+                return new CryptoAITerminal.AIEngine.InsightResult(summary, signal, lines.ToArray(), "Heuristic (offline)", true);
+            };
+            var result = await _insight.InterpretAsync(
+                "You are an on-chain valuation analyst. High MVRV/NUPL = overvalued (bearish), low = undervalued (bullish); net outflows from exchanges are bullish.",
+                lines, ["BULLISH", "BEARISH", "NEUTRAL"], offline).ConfigureAwait(true);
+            InsightSummary = result.Summary; InsightSignal = result.Signal;
+            InsightBullets = result.Bullets.Length > 0 ? "• " + string.Join("\n• ", result.Bullets) : "";
+            InsightSource = result.Source; HasInsight = true;
+            this.RaisePropertyChanged(nameof(InsightSignalBrush));
+        }
+        catch (Exception ex) { InsightSummary = $"AI failed: {ex.Message}"; HasInsight = true; }
+        finally { InsightRunning = false; }
+    }
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public OnChainMetricsViewModel(OnChainMetricsService service)
     {
         _service   = service;
+        AnalyzeWithAiCommand = ReactiveCommand.CreateFromTask(AnalyzeWithAiAsync, outputScheduler: App.UiScheduler);
         HasApiKey  = service.HasApiKey;
         var glassnodeKey = Environment.GetEnvironmentVariable("GLASSNODE_API_KEY");
         ApiKeyStatus = !string.IsNullOrWhiteSpace(glassnodeKey)
