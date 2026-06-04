@@ -15,12 +15,11 @@ namespace CryptoAITerminal.TerminalUI.Services;
 /// </summary>
 public sealed class MarketRankingAiService
 {
-    public string ApiKey { get; set; } =
-        Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY")
-        ?? Environment.GetEnvironmentVariable("CRYPTOAI_CLAUDE_KEY")
-        ?? string.Empty;
+    private string? _apiKey;
+    public string ApiKey { get => _apiKey ?? AiRuntime.ActiveApiKey; set => _apiKey = value; }
 
-    public string Model { get; set; } = "claude-sonnet-4-6";
+    private string? _model;
+    public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
 
     public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
 

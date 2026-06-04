@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
@@ -6,24 +5,21 @@ namespace CryptoAITerminal.AIEngine;
 /// <summary>
 /// Suggests starting parameters for a Grid or DCA bot from current market context.
 /// The caller lists the parameter keys it wants values for; the model returns a
-/// numeric map plus a rationale. Hand-rolled HTTP like the other AIEngine providers.
+/// numeric map plus a rationale. The vendor call goes through <see cref="ChatClient"/>.
 /// </summary>
 public sealed class BotParameterAiProvider
 {
-    private const string DefaultEndpoint = "https://api.anthropic.com/v1/messages";
-    private const string AnthropicVersion = "2023-06-01";
-
-    private readonly HttpClient _http;
+    private readonly HttpClient? _http;
     private readonly string _apiKey;
     private readonly string _model;
 
     public BotParameterAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         if (string.IsNullOrWhiteSpace(apiKey))
-            throw new ArgumentException("Anthropic API key is required.", nameof(apiKey));
+            throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
-        _http   = http ?? new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
+        _http   = http;
     }
 
     public async Task<BotParamSuggestion?> SuggestAsync(
@@ -39,49 +35,21 @@ public sealed class BotParameterAiProvider
             + string.Join('\n', (contextLines ?? []).Take(20).Select(l => "- " + l))
             + $"\n\nSuggest numeric values for these keys: {keysCsv}. Return the JSON.";
 
-        var payload = new
-        {
-            model       = _model,
-            max_tokens  = 400,
-            temperature = 0.2,
-            system =
+        var text = await ChatClient.CompleteTextAsync(
+            _apiKey, _model, maxTokens: 400, temperature: 0.2,
+            system:
                 $"You are a trading-bot configurator. Suggest safe, sensible starting parameters for a {botType} bot " +
                 "given the market context (price, volatility, 24h range, trend). " +
                 "Provide a numeric value for EVERY requested key. " +
                 "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
                 "Schema: {\"params\":{<key>:number,...},\"rationale\":string}.",
-            messages = new[] { new { role = "user", content = prompt } }
-        };
+            userContent: prompt, _http, ct).ConfigureAwait(false);
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, DefaultEndpoint)
-        {
-            Content = JsonContent.Create(payload)
-        };
-        req.Headers.Add("x-api-key",         _apiKey);
-        req.Headers.Add("anthropic-version", AnthropicVersion);
-
-        using var res = await _http.SendAsync(req, ct).ConfigureAwait(false);
-        var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (!res.IsSuccessStatusCode)
-            throw new HttpRequestException($"Anthropic API {(int)res.StatusCode}: {body}");
-
-        return ParseResponse(body, _model, paramKeys);
+        return ParseResponse(text, _model, paramKeys);
     }
 
-    private static BotParamSuggestion? ParseResponse(string body, string model, IReadOnlyList<string> keys)
+    private static BotParamSuggestion? ParseResponse(string text, string model, IReadOnlyList<string> keys)
     {
-        using var doc = JsonDocument.Parse(body);
-        if (!doc.RootElement.TryGetProperty("content", out var contentArr) ||
-            contentArr.ValueKind != JsonValueKind.Array || contentArr.GetArrayLength() == 0)
-            return null;
-
-        string text = "";
-        foreach (var block in contentArr.EnumerateArray())
-        {
-            if (block.TryGetProperty("type", out var bt) && bt.GetString() == "text" &&
-                block.TryGetProperty("text", out var v))
-            { text = v.GetString() ?? ""; break; }
-        }
         if (string.IsNullOrWhiteSpace(text)) return null;
 
         text = text.Trim();
@@ -107,7 +75,7 @@ public sealed class BotParameterAiProvider
 
             if (map.Count == 0) return null;
             var rationale = root.TryGetProperty("rationale", out var r) ? r.GetString() ?? "" : "";
-            return new BotParamSuggestion(map, rationale.Trim(), $"Claude {model}", false);
+            return new BotParamSuggestion(map, rationale.Trim(), $"{AiRuntime.VendorLabel} {model}", false);
         }
         catch (JsonException)
         {

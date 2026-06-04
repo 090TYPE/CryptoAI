@@ -1,28 +1,24 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
 /// <summary>
-/// Ranks trending DEX tokens for momentum vs rug risk. One cheap Claude call;
-/// hand-rolled HTTP like the other AIEngine providers.
+/// Ranks trending DEX tokens for momentum vs rug risk. One cheap model call routed
+/// through <see cref="ChatClient"/> to the active vendor.
 /// </summary>
 public sealed class DexTrendingAiProvider
 {
-    private const string DefaultEndpoint = "https://api.anthropic.com/v1/messages";
-    private const string AnthropicVersion = "2023-06-01";
-
-    private readonly HttpClient _http;
+    private readonly HttpClient? _http;
     private readonly string _apiKey;
     private readonly string _model;
 
     public DexTrendingAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         if (string.IsNullOrWhiteSpace(apiKey))
-            throw new ArgumentException("Anthropic API key is required.", nameof(apiKey));
+            throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
-        _http   = http ?? new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
+        _http   = http;
     }
 
     public async Task<DexTrendingResult?> RankAsync(IReadOnlyList<DexTrendRow> rows, int topN = 5, CancellationToken ct = default)
@@ -34,34 +30,21 @@ public sealed class DexTrendingAiProvider
             $"{r.Symbol} ({r.Address})  px:${r.PriceUsd:0.######}  5m:{r.Change5m:+0.0;-0.0}%  1h:{r.Change1h:+0.0;-0.0}%  24h:{r.Change24h:+0.0;-0.0}%  liq:${r.LiquidityUsd:0}  vol:${r.Volume24h:0}  mcap:${r.MarketCap:0}"))
             + $"\n\nRank the top {topN}. Return the JSON.";
 
-        var payload = new
-        {
-            model       = _model,
-            max_tokens  = 700,
-            temperature = 0.2,
-            system =
+        var text = await ChatClient.CompleteTextAsync(
+            _apiKey, _model, maxTokens: 700, temperature: 0.2,
+            system:
                 "You are a DEX momentum analyst. Rank tokens by genuine momentum while penalising rug risk " +
                 "(thin liquidity, parabolic-then-fading, volume >> liquidity churn). " +
                 "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
                 "Schema: {\"tokens\":[{\"symbol\":string,\"address\":string,\"score\":0..100,\"signal\":\"MOMENTUM\"|\"EARLY\"|\"FADING\"|\"AVOID\",\"reason\":string}]}.",
-            messages = new[] { new { role = "user", content = prompt } }
-        };
+            userContent: prompt, _http, ct).ConfigureAwait(false);
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, DefaultEndpoint) { Content = JsonContent.Create(payload) };
-        req.Headers.Add("x-api-key", _apiKey);
-        req.Headers.Add("anthropic-version", AnthropicVersion);
-
-        using var res = await _http.SendAsync(req, ct).ConfigureAwait(false);
-        var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (!res.IsSuccessStatusCode)
-            throw new HttpRequestException($"Anthropic API {(int)res.StatusCode}: {body}");
-
-        return Parse(body, _model);
+        return Parse(text, _model);
     }
 
     private static DexTrendingResult? Parse(string body, string model)
     {
-        var text = AiJson.ExtractText(body);
+        var text = AiJson.StripFences(body);
         if (text is null) return null;
         try
         {
@@ -78,7 +61,7 @@ public sealed class DexTrendingAiProvider
                 var signal = NormalizeSignal(AiJson.Str(o, "signal"));
                 list.Add(new DexTrendPick(sym, AiJson.Str(o, "address"), score, signal, AiJson.Str(o, "reason")));
             }
-            return list.Count == 0 ? null : new DexTrendingResult(list, $"Claude {model}", false);
+            return list.Count == 0 ? null : new DexTrendingResult(list, $"{AiRuntime.VendorLabel} {model}", false);
         }
         catch (JsonException) { return null; }
     }

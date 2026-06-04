@@ -13,6 +13,9 @@ using Xunit;
 
 namespace CryptoAITerminal.Core.Tests;
 
+// Shares a serial collection with the other tests that read the global AiRuntime.Vendor,
+// so a provider-switch test can never run concurrently with these.
+[Collection("AiVendorSerial")]
 public class AiTraderAgentServiceTests
 {
     // ── Stub gateway: public order book at a fixed mid; private endpoints unused in paper. ──

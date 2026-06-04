@@ -106,6 +106,15 @@ public partial class MainWindow : Window
                 // нужно подхватить новые контролы для локализации.
                 if (args.PropertyName == nameof(MainWindowViewModel.SelectedShellSection))
                     RearmLocalizationScan();
+
+                // Auto-focus the Ctrl+K command bar input the moment it opens.
+                else if (args.PropertyName == nameof(MainWindowViewModel.IsCommandPaletteOpen)
+                         && vm.IsCommandPaletteOpen)
+                {
+                    Dispatcher.UIThread.Post(() =>
+                        this.FindControl<TextBox>("CommandPaletteBox")?.Focus(),
+                        DispatcherPriority.Input);
+                }
             };
         }
         StartSplashSequence();

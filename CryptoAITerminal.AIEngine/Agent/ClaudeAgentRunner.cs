@@ -14,7 +14,7 @@ namespace CryptoAITerminal.AIEngine.Agent;
 /// Hand-rolled HTTP, mirroring the rest of AIEngine, so the terminal keeps
 /// building offline without an extra NuGet graph.
 /// </summary>
-public sealed class ClaudeAgentRunner
+public sealed class ClaudeAgentRunner : IAgentRunner
 {
     private const string DefaultEndpoint = "https://api.anthropic.com/v1/messages";
     private const string AnthropicVersion = "2023-06-01";

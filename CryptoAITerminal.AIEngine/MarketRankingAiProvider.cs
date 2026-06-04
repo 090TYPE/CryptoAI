@@ -1,29 +1,24 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
 /// <summary>
 /// Ranks the most promising symbols from a live market-scanner snapshot. One cheap
-/// Claude call per refresh, mirroring <see cref="NewsDigestAiProvider"/>'s hand-rolled
-/// HTTP so the terminal keeps building offline without an extra NuGet graph.
+/// model call per refresh, routed through <see cref="ChatClient"/> to the active vendor.
 /// </summary>
 public sealed class MarketRankingAiProvider
 {
-    private const string DefaultEndpoint = "https://api.anthropic.com/v1/messages";
-    private const string AnthropicVersion = "2023-06-01";
-
-    private readonly HttpClient _http;
+    private readonly HttpClient? _http;
     private readonly string _apiKey;
     private readonly string _model;
 
     public MarketRankingAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         if (string.IsNullOrWhiteSpace(apiKey))
-            throw new ArgumentException("Anthropic API key is required.", nameof(apiKey));
+            throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
-        _http   = http ?? new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
+        _http   = http;
     }
 
     public async Task<MarketRankingResult?> RankAsync(
@@ -36,37 +31,18 @@ public sealed class MarketRankingAiProvider
 
         var prompt = BuildPrompt(rows, topN);
 
-        var payload = new
-        {
-            model       = _model,
-            max_tokens  = 700,
-            temperature = 0.2,
-            system =
+        var text = await ChatClient.CompleteTextAsync(
+            _apiKey, _model, maxTokens: 700, temperature: 0.2,
+            system:
                 "You are a crypto market analyst. From a live scanner snapshot, pick the strongest " +
                 $"trade candidates RIGHT NOW (at most {topN}). Consider momentum (24h change), liquidity " +
                 "(24h volume), RSI extremes (oversold<30 / overbought>70), and tick activity. " +
                 "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
                 "Schema: {\"opportunities\":[{\"symbol\":string,\"score\":0..100,\"bias\":\"LONG\"|\"SHORT\"|\"WATCH\",\"reason\":string}]}. " +
                 "Higher score = stronger setup. Only include symbols present in the input.",
-            messages = new[]
-            {
-                new { role = "user", content = prompt }
-            }
-        };
+            userContent: prompt, _http, ct).ConfigureAwait(false);
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, DefaultEndpoint)
-        {
-            Content = JsonContent.Create(payload)
-        };
-        req.Headers.Add("x-api-key",         _apiKey);
-        req.Headers.Add("anthropic-version", AnthropicVersion);
-
-        using var res = await _http.SendAsync(req, ct).ConfigureAwait(false);
-        var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (!res.IsSuccessStatusCode)
-            throw new HttpRequestException($"Anthropic API {(int)res.StatusCode}: {body}");
-
-        return ParseResponse(body, _model);
+        return ParseResponse(text, _model);
     }
 
     private static string BuildPrompt(IReadOnlyList<MarketScanRow> rows, int topN)
@@ -82,23 +58,8 @@ public sealed class MarketRankingAiProvider
              + $"\n\nReturn the top {topN} opportunities as JSON.";
     }
 
-    private static MarketRankingResult? ParseResponse(string body, string model)
+    private static MarketRankingResult? ParseResponse(string text, string model)
     {
-        using var doc = JsonDocument.Parse(body);
-        if (!doc.RootElement.TryGetProperty("content", out var contentArr) ||
-            contentArr.ValueKind != JsonValueKind.Array || contentArr.GetArrayLength() == 0)
-            return null;
-
-        string text = "";
-        foreach (var block in contentArr.EnumerateArray())
-        {
-            if (block.TryGetProperty("type", out var bt) && bt.GetString() == "text" &&
-                block.TryGetProperty("text", out var v))
-            {
-                text = v.GetString() ?? "";
-                break;
-            }
-        }
         if (string.IsNullOrWhiteSpace(text)) return null;
 
         text = text.Trim();
@@ -130,7 +91,7 @@ public sealed class MarketRankingAiProvider
             }
 
             if (list.Count == 0) return null;
-            return new MarketRankingResult(list, $"Claude {model}", false);
+            return new MarketRankingResult(list, $"{AiRuntime.VendorLabel} {model}", false);
         }
         catch (JsonException)
         {

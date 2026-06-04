@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
@@ -7,24 +6,21 @@ namespace CryptoAITerminal.AIEngine;
 /// Turns a natural-language instruction ("buy the dip on BTC when RSI drops below
 /// 30 and notify me") into a structured automation-rule spec. The engine stays
 /// UI-agnostic: it returns string-typed enum names that the host maps onto its own
-/// CompositeRule model. Hand-rolled HTTP like the other providers.
+/// CompositeRule model. The vendor call goes through <see cref="ChatClient"/>.
 /// </summary>
 public sealed class RuleBuilderAiProvider
 {
-    private const string DefaultEndpoint = "https://api.anthropic.com/v1/messages";
-    private const string AnthropicVersion = "2023-06-01";
-
-    private readonly HttpClient _http;
+    private readonly HttpClient? _http;
     private readonly string _apiKey;
     private readonly string _model;
 
     public RuleBuilderAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         if (string.IsNullOrWhiteSpace(apiKey))
-            throw new ArgumentException("Anthropic API key is required.", nameof(apiKey));
+            throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
-        _http   = http ?? new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
+        _http   = http;
     }
 
     /// <param name="conditionTypes">Allowed ConditionType enum names.</param>
@@ -53,44 +49,17 @@ public sealed class RuleBuilderAiProvider
             "\"conditions\":[{\"type\":string,\"symbol\":string,\"param1\":number,\"param2\":number}]," +
             "\"actions\":[{\"type\":string,\"symbol\":string,\"amount\":number,\"message\":string}]}.";
 
-        var payload = new
-        {
-            model       = _model,
-            max_tokens  = 600,
-            temperature = 0.1,
-            system,
-            messages = new[] { new { role = "user", content = "Instruction: " + instruction + "\n\nReturn the JSON rule." } }
-        };
+        var text = await ChatClient.CompleteTextAsync(
+            _apiKey, _model, maxTokens: 600, temperature: 0.1,
+            system: system,
+            userContent: "Instruction: " + instruction + "\n\nReturn the JSON rule.",
+            _http, ct).ConfigureAwait(false);
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, DefaultEndpoint)
-        {
-            Content = JsonContent.Create(payload)
-        };
-        req.Headers.Add("x-api-key",         _apiKey);
-        req.Headers.Add("anthropic-version", AnthropicVersion);
-
-        using var res = await _http.SendAsync(req, ct).ConfigureAwait(false);
-        var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (!res.IsSuccessStatusCode)
-            throw new HttpRequestException($"Anthropic API {(int)res.StatusCode}: {body}");
-
-        return ParseResponse(body, _model);
+        return ParseResponse(text, _model);
     }
 
-    private static AiRuleSpec? ParseResponse(string body, string model)
+    private static AiRuleSpec? ParseResponse(string text, string model)
     {
-        using var doc = JsonDocument.Parse(body);
-        if (!doc.RootElement.TryGetProperty("content", out var contentArr) ||
-            contentArr.ValueKind != JsonValueKind.Array || contentArr.GetArrayLength() == 0)
-            return null;
-
-        string text = "";
-        foreach (var block in contentArr.EnumerateArray())
-        {
-            if (block.TryGetProperty("type", out var bt) && bt.GetString() == "text" &&
-                block.TryGetProperty("text", out var v))
-            { text = v.GetString() ?? ""; break; }
-        }
         if (string.IsNullOrWhiteSpace(text)) return null;
 
         text = text.Trim();
@@ -132,7 +101,7 @@ public sealed class RuleBuilderAiProvider
             if (conditions.Count == 0 && actions.Count == 0) return null;
 
             return new AiRuleSpec(name.Trim(), logic.Trim(), cooldown.Trim(),
-                conditions.ToArray(), actions.ToArray(), $"Claude {model}", false);
+                conditions.ToArray(), actions.ToArray(), $"{AiRuntime.VendorLabel} {model}", false);
         }
         catch (JsonException)
         {

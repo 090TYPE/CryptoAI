@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
@@ -7,24 +6,21 @@ namespace CryptoAITerminal.AIEngine;
 /// Reviews a trader's closed-trade statistics and writes coaching feedback:
 /// strengths, recurring leaks, and concrete suggestions. The host computes the
 /// aggregate stat lines (so raw trades never leave the machine); the provider
-/// only interprets them. Hand-rolled HTTP like the other AIEngine providers.
+/// only interprets them. The vendor call goes through <see cref="ChatClient"/>.
 /// </summary>
 public sealed class TradeJournalCoachAiProvider
 {
-    private const string DefaultEndpoint = "https://api.anthropic.com/v1/messages";
-    private const string AnthropicVersion = "2023-06-01";
-
-    private readonly HttpClient _http;
+    private readonly HttpClient? _http;
     private readonly string _apiKey;
     private readonly string _model;
 
     public TradeJournalCoachAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         if (string.IsNullOrWhiteSpace(apiKey))
-            throw new ArgumentException("Anthropic API key is required.", nameof(apiKey));
+            throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
-        _http   = http ?? new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
+        _http   = http;
     }
 
     public async Task<JournalReview?> ReviewAsync(IReadOnlyList<JournalStatLine> stats, CancellationToken ct = default)
@@ -35,49 +31,21 @@ public sealed class TradeJournalCoachAiProvider
             + string.Join('\n', stats.Select(s => $"- {s.Label}: {s.Value}"))
             + "\n\nGive concise, actionable coaching. Return the JSON.";
 
-        var payload = new
-        {
-            model       = _model,
-            max_tokens  = 600,
-            temperature = 0.3,
-            system =
+        var text = await ChatClient.CompleteTextAsync(
+            _apiKey, _model, maxTokens: 600, temperature: 0.3,
+            system:
                 "You are a trading-performance coach. From the statistics, identify what the trader " +
                 "does well, the recurring leaks (where they lose money), and concrete, specific " +
                 "suggestions to improve. Be direct and practical; avoid generic platitudes. " +
                 "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
                 "Schema: {\"summary\":string,\"strengths\":[string],\"leaks\":[string],\"suggestions\":[string]}.",
-            messages = new[] { new { role = "user", content = prompt } }
-        };
+            userContent: prompt, _http, ct).ConfigureAwait(false);
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, DefaultEndpoint)
-        {
-            Content = JsonContent.Create(payload)
-        };
-        req.Headers.Add("x-api-key",         _apiKey);
-        req.Headers.Add("anthropic-version", AnthropicVersion);
-
-        using var res = await _http.SendAsync(req, ct).ConfigureAwait(false);
-        var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (!res.IsSuccessStatusCode)
-            throw new HttpRequestException($"Anthropic API {(int)res.StatusCode}: {body}");
-
-        return ParseResponse(body, _model);
+        return ParseResponse(text, _model);
     }
 
-    private static JournalReview? ParseResponse(string body, string model)
+    private static JournalReview? ParseResponse(string text, string model)
     {
-        using var doc = JsonDocument.Parse(body);
-        if (!doc.RootElement.TryGetProperty("content", out var contentArr) ||
-            contentArr.ValueKind != JsonValueKind.Array || contentArr.GetArrayLength() == 0)
-            return null;
-
-        string text = "";
-        foreach (var block in contentArr.EnumerateArray())
-        {
-            if (block.TryGetProperty("type", out var bt) && bt.GetString() == "text" &&
-                block.TryGetProperty("text", out var v))
-            { text = v.GetString() ?? ""; break; }
-        }
         if (string.IsNullOrWhiteSpace(text)) return null;
 
         text = text.Trim();
@@ -101,7 +69,7 @@ public sealed class TradeJournalCoachAiProvider
                 ReadArray(root, "strengths"),
                 ReadArray(root, "leaks"),
                 ReadArray(root, "suggestions"),
-                $"Claude {model}", false);
+                $"{AiRuntime.VendorLabel} {model}", false);
         }
         catch (JsonException)
         {

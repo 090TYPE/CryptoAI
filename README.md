@@ -8,10 +8,10 @@
   <img src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet" alt=".NET 8"/>
   <img src="https://img.shields.io/badge/Avalonia-12.0-883EFF" alt="Avalonia"/>
   <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11%20x64-0078D6?logo=windows" alt="Platform"/>
-  <img src="https://img.shields.io/badge/Version-v1.2-21E6C1" alt="v1.2"/>
+  <img src="https://img.shields.io/badge/Version-v1.3-21E6C1" alt="v1.3"/>
 </p>
 
-> **Профессиональный десктоп-терминал для торговли криптовалютами.** CEX + DEX в одном окне: Binance, Bybit, OKX, KuCoin, Uniswap, Jupiter, SunSwap. Алгоритмические боты, снайпер новых листингов, on-chain аналитика и **AI везде**: автономный AI-трейдер (Claude сам торгует через tool use, CEX и DEX) плюс AI-помощники в 13 разделах терминала. Демо-режим без ключей, лицензирование и Telegram-бот продажи лицензий с оплатой Stars/криптой.
+> **Профессиональный десктоп-терминал для торговли криптовалютами.** CEX + DEX в одном окне: Binance, Bybit, OKX, KuCoin, Uniswap, Jupiter, SunSwap. Алгоритмические боты, снайпер новых листингов, on-chain аналитика и **AI везде**: на выбор **Claude или ChatGPT** (один переключатель на весь терминал), глобальная **AI-командная строка `Ctrl+K`** (навигация и вопросы из любого места), автономный AI-трейдер (сам торгует через tool use, CEX и DEX) плюс AI-помощники в 13 разделах. Демо-режим без ключей, лицензирование и Telegram-бот продажи лицензий с оплатой Stars/криптой.
 
 ---
 
@@ -78,7 +78,7 @@
 ```
 CryptoAI/
 ├── CryptoAITerminal.Core             ← модели, интерфейсы (IExchangeGateway, IStrategy)
-├── CryptoAITerminal.Core.Tests       ← 199 unit-тестов (RiskManager, Strategies, BacktestEngine, AI-агент и AI-сервисы)
+├── CryptoAITerminal.Core.Tests       ← 267 unit-тестов (RiskManager, Strategies, BacktestEngine, AI-агент, AI-сервисы, провайдер-свитч и командная строка)
 ├── CryptoAITerminal.Gateway.Base     ← общий код шлюзов
 ├── CryptoAITerminal.Gateway.Binance  ← Binance Spot + USDT-M Futures (Binance.Net)
 ├── CryptoAITerminal.Gateway.Bybit    ← Bybit v5 Spot + Linear Futures (Bybit.Net)
@@ -88,7 +88,7 @@ CryptoAI/
 ├── CryptoAITerminal.OrderRouter      ← Best Execution Router
 ├── CryptoAITerminal.RiskManager      ← Pre-trade risk checks, дневные лимиты
 ├── CryptoAITerminal.WhaleTracker     ← On-chain whale alerts
-├── CryptoAITerminal.AIEngine         ← Claude API: автономный агент (tool use), сигналы, AI-вердикт токена, дайджест новостей + 13 AI-провайдеров
+├── CryptoAITerminal.AIEngine         ← AI-движок: единый ChatClient/AiRuntime (Claude ИЛИ ChatGPT), автономный агент (tool use), сигналы, AI-вердикт токена + 13 AI-провайдеров
 ├── CryptoAITerminal.TerminalUI       ← Avalonia UI (главный проект)
 ├── CryptoAITerminal.WebApi           ← REST API для мобильного мониторинга
 └── CryptoAITerminal.LicenseBot       ← Telegram-бот продажи лицензий (Stars + крипта, привязка к ПК)
@@ -315,9 +315,26 @@ RSS от CoinTelegraph, CoinDesk, Decrypt, The Block, Bitcoin Magazine. Авто
 
 ## AI-функции
 
-Терминал использует Claude API (один ключ задаётся в **AI Bot** и автоматически раздаётся во все разделы) и **работает без ключа** через детерминированную офлайн-эвристику — AI-результат виден даже в демо. Каждая кнопка помечена иконкой 🧠.
+Один выбранный провайдер (**Claude** или **ChatGPT**) питает **все** AI-функции терминала. Ключ задаётся в **Settings → AI Assistant** (или в **AI Bot**) и автоматически раздаётся во все разделы. Без ключа терминал **работает** через детерминированную офлайн-эвристику — AI-результат виден даже в демо. Каждая кнопка помечена иконкой 🧠.
 
-### 🤖 Автономный AI-трейдер (Claude сам торгует)
+### 🌐 Выбор AI-провайдера (Claude / ChatGPT)
+
+Единый переключатель в **Settings → AI Assistant** определяет, какой движок обслуживает весь терминал — от копайлота и брифинга до автономного трейдера и скоринга сканера:
+
+- **Claude (Anthropic)** или **ChatGPT (OpenAI)** — radio-переключатель, отдельные поля ключа и модели для каждого.
+- **Веб-вход** — кнопка «🌐 Log in / get key» открывает консоль провайдера ([console.anthropic.com](https://console.anthropic.com/settings/keys) / [platform.openai.com](https://platform.openai.com/api-keys)) для входа и создания ключа.
+- Переключение применяется **сразу, без перезапуска**: общий слой `AiRuntime` + `ChatClient` маршрутизирует каждый вызов в нужный API (Anthropic Messages / OpenAI Chat Completions), а агентный цикл — в `ClaudeAgentRunner` или `OpenAiAgentRunner` (function calling).
+- Ключи хранятся зашифрованно (DPAPI) и уходят только выбранному провайдеру.
+
+### ⚡ Глобальная AI-командная строка (`Ctrl+K`)
+
+Омнибокс поверх всего приложения — главная точка входа в AI:
+
+- **Навигация** — «open scanner», «go to settings», «покажи киты», «liquidations» → мгновенный переход в раздел (детерминированно, без обращения к AI: быстро, бесплатно, работает даже без квоты).
+- **Вопросы** — «what's my biggest risk?», «summarize my positions» → отвечает AI-копайлот (выбранный провайдер, без ключа — офлайн-ассистент).
+- `Enter` — выполнить, `Esc` — закрыть; поле автофокусируется при открытии. Строка **только советует и навигирует** — никогда не торгует.
+
+### 🤖 Автономный AI-трейдер (сам торгует)
 
 Не просто сигнал, а **агент с tool use**: Claude сам осматривает рынок и сам ставит ордера в цикле. Раздел **Bots → AI Trader (Autonomous)**.
 
@@ -353,7 +370,7 @@ RSS от CoinTelegraph, CoinDesk, Decrypt, The Block, Bitcoin Magazine. Авто
 - **AI-объяснение сделок бота** — строка «почему» к каждой сделке AI-стратегии.
 - **AI-стратегия (Claude)** — генерация buy/sell сигналов по свечам в Rule Bot.
 
-> Архитектура: провайдеры в `CryptoAITerminal.AIEngine` (hand-rolled вызов Anthropic Messages API, без лишних NuGet) + сервисы-обёртки с офлайн-фолбэком в `TerminalUI/Services`. Покрыто юнит-тестами (агент + все офлайн-эвристики).
+> Архитектура: провайдеры в `CryptoAITerminal.AIEngine` обращаются к LLM через единый `ChatClient` (hand-rolled вызов, без лишних NuGet), который по `AiRuntime.Vendor` маршрутизирует в Anthropic **или** OpenAI; сервисы-обёртки с офлайн-фолбэком в `TerminalUI/Services`. Покрыто юнит-тестами (агент, провайдер-свитч, командная строка, все офлайн-эвристики).
 
 ---
 
@@ -523,7 +540,7 @@ dotnet run
 | Solana | Solana.Unity.SDK, Jupiter API |
 | Charts | Custom Avalonia DrawingContext (StreamGeometry) |
 | JSON | System.Text.Json |
-| AI | Claude (Anthropic Messages API, tool use) |
+| AI | Claude (Anthropic Messages API) или ChatGPT (OpenAI Chat Completions), tool use — переключаемо |
 | Tests | xUnit, 199 unit tests |
 | Notifications | WinForms NotifyIcon, Telegram Bot API, Discord Webhook |
 

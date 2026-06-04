@@ -26,6 +26,8 @@
     <KeyBinding Gesture="Shift+D7" Command="{Binding ApplyTemplate7Command}" />
     <KeyBinding Gesture="Shift+D8" Command="{Binding ApplyTemplate8Command}" />
     <KeyBinding Gesture="Shift+D9" Command="{Binding ApplyTemplate9Command}" />
+    <!-- Global AI command bar -->
+    <KeyBinding Gesture="Ctrl+K" Command="{Binding OpenCommandPaletteCommand}" />
   </Window.KeyBindings>
 
   <Grid>
@@ -6646,6 +6648,206 @@
           </StackPanel>
 
           <StackPanel Spacing="16" IsVisible="{Binding IsBotsSectionVisible}">
+
+            <!-- ── Daily AI Briefing (morning read: book + news + sentiment + scanner) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock Classes="H2" Text="🗞️ Daily AI Briefing" />
+                    <TextBlock Text="One morning read across your book, the news pulse, sentiment and the scanner."
+                               Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <Border Grid.Column="1" CornerRadius="6" Padding="10,4" VerticalAlignment="Center" Margin="0,0,10,0"
+                          Background="#04101A" IsVisible="{Binding BriefingVM.HasSignal}">
+                    <TextBlock Text="{Binding BriefingVM.SignalLabel}"
+                               Foreground="{Binding BriefingVM.SignalBrush}"
+                               FontWeight="SemiBold" FontSize="12" />
+                  </Border>
+                  <Button Grid.Column="2" Content="↻ Generate" Command="{Binding BriefingVM.RefreshCommand}"
+                          IsEnabled="{Binding !BriefingVM.Running}" VerticalAlignment="Center" />
+                </Grid>
+
+                <TextBlock Text="{Binding BriefingVM.Summary}" Foreground="#E8F0FE" FontSize="13"
+                           TextWrapping="Wrap" />
+
+                <ItemsControl ItemsSource="{Binding BriefingVM.Bullets}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                        <TextBlock Text="•" Foreground="#21E6C1" />
+                        <TextBlock Text="{Binding}" Foreground="#A8B6C6" FontSize="12" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock Text="{Binding BriefingVM.Source}" Foreground="#4D5F70" FontSize="10" />
+                  <TextBlock Text="{Binding BriefingVM.GeneratedAt, StringFormat='· {0}'}"
+                             Foreground="#4D5F70" FontSize="10" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <!-- ── AI Risk Check (holistic pre-trade assessment) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="10">
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="H2" Text="🛡️ AI Risk Check" />
+                  <TextBlock Text="Score a proposed order against your open book before you place it. Advisory — never auto-trades."
+                             Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <!-- Order form -->
+                <Grid ColumnDefinitions="2*,*,*,*,Auto" ColumnSpacing="10">
+                  <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Symbol" />
+                    <TextBox Text="{Binding RiskCheckVM.Symbol}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Side" />
+                    <ComboBox ItemsSource="{Binding RiskCheckVM.AvailableSides}"
+                              SelectedItem="{Binding RiskCheckVM.Side}" HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Order $" />
+                    <NumericUpDown Value="{Binding RiskCheckVM.OrderUsd}" Minimum="0" Increment="10" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="3" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Leverage" />
+                    <NumericUpDown Value="{Binding RiskCheckVM.Leverage}" Minimum="1" Maximum="125" Increment="1" FormatString="N0" />
+                  </StackPanel>
+                  <Button Grid.Column="4" Content="Check" VerticalAlignment="Bottom"
+                          Command="{Binding RiskCheckVM.CheckCommand}"
+                          IsEnabled="{Binding !RiskCheckVM.Running}" />
+                </Grid>
+
+                <!-- Verdict -->
+                <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding RiskCheckVM.HasVerdict}">
+                  <Border CornerRadius="6" Padding="12,5" Background="#04101A" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding RiskCheckVM.Verdict}"
+                               Foreground="{Binding RiskCheckVM.VerdictBrush}"
+                               FontWeight="Bold" FontSize="14" />
+                  </Border>
+                  <TextBlock Text="{Binding RiskCheckVM.ScoreLabel, StringFormat='Risk {0}'}"
+                             Foreground="#8FA3B8" FontSize="13" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <TextBlock Text="{Binding RiskCheckVM.Rationale}" Foreground="#E8F0FE" FontSize="13"
+                           TextWrapping="Wrap" />
+
+                <ItemsControl ItemsSource="{Binding RiskCheckVM.Reasons}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                        <TextBlock Text="•" Foreground="#F4B860" />
+                        <TextBlock Text="{Binding}" Foreground="#A8B6C6" FontSize="12" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="{Binding RiskCheckVM.Source}" Foreground="#4D5F70" FontSize="10"
+                           IsVisible="{Binding RiskCheckVM.HasVerdict}" />
+              </StackPanel>
+            </Border>
+
+            <!-- ── AI Correlation Insight (diversification posture across the book) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="10">
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="H2" Text="🔗 AI Correlation Insight" />
+                  <TextBlock Text="How diversified is the book? AI reads the correlation matrix for clusters and concentration risk."
+                             Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                  <TextBox Grid.Column="0" Text="{Binding CorrelationInsightVM.Symbols}"
+                           PlaceholderText="BTCUSDT, ETHUSDT, SOLUSDT…" />
+                  <Border Grid.Column="1" CornerRadius="6" Padding="10,4" VerticalAlignment="Center"
+                          Background="#04101A" IsVisible="{Binding CorrelationInsightVM.HasSignal}">
+                    <TextBlock Text="{Binding CorrelationInsightVM.SignalLabel}"
+                               Foreground="{Binding CorrelationInsightVM.SignalBrush}"
+                               FontWeight="SemiBold" FontSize="12" />
+                  </Border>
+                  <Button Grid.Column="2" Content="Analyze" Command="{Binding CorrelationInsightVM.AnalyzeCommand}"
+                          IsEnabled="{Binding !CorrelationInsightVM.Running}" />
+                </Grid>
+
+                <TextBlock Text="{Binding CorrelationInsightVM.Summary}" Foreground="#E8F0FE" FontSize="13"
+                           TextWrapping="Wrap" />
+
+                <ItemsControl ItemsSource="{Binding CorrelationInsightVM.Bullets}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                        <TextBlock Text="•" Foreground="#21E6C1" />
+                        <TextBlock Text="{Binding}" Foreground="#A8B6C6" FontSize="12" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="{Binding CorrelationInsightVM.Source}" Foreground="#4D5F70" FontSize="10"
+                           IsVisible="{Binding CorrelationInsightVM.HasSignal}" />
+              </StackPanel>
+            </Border>
+
+            <!-- ── AI Options Advisor (strategy from Deribit IV/skew/PCR + view) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="10">
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="H2" Text="📐 AI Options Advisor" />
+                  <TextBlock Text="Suggests an options structure from Deribit IV / skew / put-call and your view. Educational — never trades."
+                             Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="10">
+                  <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Asset" />
+                    <ComboBox ItemsSource="{Binding OptionsStrategyVM.AvailableAssets}"
+                              SelectedItem="{Binding OptionsStrategyVM.Asset}" HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Classes="Overline" Text="View" />
+                    <ComboBox ItemsSource="{Binding OptionsStrategyVM.AvailableDirections}"
+                              SelectedItem="{Binding OptionsStrategyVM.Direction}" HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <Button Grid.Column="2" Content="Suggest" VerticalAlignment="Bottom"
+                          Command="{Binding OptionsStrategyVM.SuggestCommand}"
+                          IsEnabled="{Binding !OptionsStrategyVM.Running}" />
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding OptionsStrategyVM.HasResult}">
+                  <Border CornerRadius="6" Padding="12,5" Background="#04101A" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding OptionsStrategyVM.Strategy}" Foreground="#E8F0FE"
+                               FontWeight="Bold" FontSize="14" />
+                  </Border>
+                  <TextBlock Text="{Binding OptionsStrategyVM.IvRegime, StringFormat='{}{0} IV'}"
+                             Foreground="{Binding OptionsStrategyVM.IvRegimeBrush}"
+                             FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <TextBlock Text="{Binding OptionsStrategyVM.Rationale}" Foreground="#E8F0FE" FontSize="13"
+                           TextWrapping="Wrap" />
+
+                <ItemsControl ItemsSource="{Binding OptionsStrategyVM.Considerations}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                        <TextBlock Text="•" Foreground="#21E6C1" />
+                        <TextBlock Text="{Binding}" Foreground="#A8B6C6" FontSize="12" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="{Binding OptionsStrategyVM.Source}" Foreground="#4D5F70" FontSize="10"
+                           IsVisible="{Binding OptionsStrategyVM.HasResult}" />
+              </StackPanel>
+            </Border>
+
             <Grid ColumnDefinitions="*,260" ColumnSpacing="16">
 
               <!-- ── Left: Rule Bot Controls ── -->
@@ -7311,6 +7513,74 @@
                                TextWrapping="Wrap" />
                   </ScrollViewer>
                 </Border>
+              </StackPanel>
+            </Border>
+
+            <!-- ── AI Copilot (read-only conversational assistant) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="12">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock Classes="H2" Text="💬 AI Copilot" />
+                    <TextBlock Text="Ask about your balance, positions, P&amp;L, risk or the market. Read-only — it never trades."
+                               Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <Border Grid.Column="1" CornerRadius="6" Padding="10,4" VerticalAlignment="Center"
+                          Background="#04101A">
+                    <TextBlock Text="{Binding CopilotVM.ModeLabel}"
+                               Foreground="{Binding CopilotVM.ModeBrush}"
+                               FontWeight="SemiBold" FontSize="12" />
+                  </Border>
+                </Grid>
+
+                <!-- Transcript -->
+                <Border Background="#04101A" CornerRadius="6" Padding="10,8" MinHeight="160" MaxHeight="320">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding CopilotVM.Messages}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <StackPanel Spacing="2" Margin="0,0,0,10" HorizontalAlignment="{Binding Align}">
+                            <TextBlock Text="{Binding RoleLabel}" Foreground="{Binding RoleBrush}"
+                                       FontSize="10" FontWeight="SemiBold" />
+                            <Border Background="#08161F" CornerRadius="6" Padding="10,7" MaxWidth="520">
+                              <TextBlock Text="{Binding Text}" Foreground="#E8F0FE" FontSize="12"
+                                         TextWrapping="Wrap" />
+                            </Border>
+                            <TextBlock Text="{Binding Source}" Foreground="#4D5F70" FontSize="9"
+                                       IsVisible="{Binding HasSource}" />
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </Border>
+
+                <!-- Suggestion chips -->
+                <ItemsControl ItemsSource="{Binding CopilotVM.Suggestions}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <WrapPanel />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Button Classes="LinkButton" Content="{Binding}" Margin="0,0,8,6"
+                              Command="{Binding $parent[ItemsControl].DataContext.CopilotVM.AskSuggestionCommand}"
+                              CommandParameter="{Binding}" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Input -->
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                  <TextBox Grid.Column="0" Text="{Binding CopilotVM.Question}"
+                           PlaceholderText="Ask the copilot…" />
+                  <Button Grid.Column="1" Content="Ask" Command="{Binding CopilotVM.AskCommand}"
+                          IsEnabled="{Binding !CopilotVM.IsBusy}" />
+                  <Button Grid.Column="2" Content="Clear" Classes="LinkButton"
+                          Command="{Binding CopilotVM.ClearCommand}" />
+                </Grid>
+                <TextBlock Text="{Binding CopilotVM.StatusLabel}" Foreground="#5C6E82" FontSize="11" />
               </StackPanel>
             </Border>
 
@@ -11304,6 +11574,58 @@
 
           <StackPanel Spacing="16" IsVisible="{Binding IsSettingsSectionVisible}">
 
+            <!-- ═══ AI Assistant Provider (Claude / ChatGPT) ═══ -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="12">
+                <TextBlock Classes="H2" Text="AI Assistant — Claude or ChatGPT" />
+                <TextBlock Foreground="#8FA3B8" FontSize="12" TextWrapping="Wrap"
+                           Text="Choose which AI powers every assistant in the terminal (copilot, daily briefing, pre-trade risk, alerts, scanner ranking, options, and the rest). Paste an API key for the provider you pick. Use the 'Log in / get key' button to open the provider's website, sign in, and create a key." />
+
+                <!-- Provider toggle -->
+                <StackPanel Orientation="Horizontal" Spacing="20">
+                  <RadioButton GroupName="AiProvider" Content="Claude (Anthropic)" IsChecked="{Binding AiIsClaude, Mode=TwoWay}" Foreground="#C5D2DE" />
+                  <RadioButton GroupName="AiProvider" Content="ChatGPT (OpenAI)"   IsChecked="{Binding AiIsChatGpt, Mode=TwoWay}" Foreground="#C5D2DE" />
+                </StackPanel>
+
+                <!-- Claude credentials -->
+                <Border Background="#0E1B27" CornerRadius="6" Padding="12" IsVisible="{Binding AiIsClaude}">
+                  <StackPanel Spacing="8">
+                    <TextBlock Classes="Overline" Text="Claude (Anthropic) API key" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                      <TextBox Grid.Column="0" Text="{Binding AnthropicKeyInput}" PasswordChar="•" PlaceholderText="sk-ant-…" />
+                      <Button Grid.Column="1" Content="🌐 Log in / get key" Command="{Binding OpenAnthropicConsoleCommand}" />
+                    </Grid>
+                    <TextBlock Classes="Overline" Text="Model" />
+                    <TextBox Text="{Binding AnthropicModelInput}" PlaceholderText="claude-sonnet-4-6" />
+                  </StackPanel>
+                </Border>
+
+                <!-- ChatGPT credentials -->
+                <Border Background="#0E1B27" CornerRadius="6" Padding="12" IsVisible="{Binding AiIsChatGpt}">
+                  <StackPanel Spacing="8">
+                    <TextBlock Classes="Overline" Text="ChatGPT (OpenAI) API key" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                      <TextBox Grid.Column="0" Text="{Binding OpenAiKeyInput}" PasswordChar="•" PlaceholderText="sk-…" />
+                      <Button Grid.Column="1" Content="🌐 Log in / get key" Command="{Binding OpenOpenAiConsoleCommand}" />
+                    </Grid>
+                    <TextBlock Classes="Overline" Text="Model" />
+                    <TextBox Text="{Binding OpenAiModelInput}" PlaceholderText="gpt-4o" />
+                  </StackPanel>
+                </Border>
+
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                  <Button Content="Save AI provider" Command="{Binding SaveAiSettingsCommand}"
+                          Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
+                  <TextBlock Text="{Binding AiSettingsStatus}" Foreground="#8FA3B8" FontSize="12"
+                             TextWrapping="Wrap" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <TextBlock Foreground="#4A6880" FontSize="11" TextWrapping="Wrap"
+                           Text="Keys are stored encrypted on this PC (DPAPI) and never leave it except in calls to the provider you selected. The change applies immediately — no restart needed." />
+              </StackPanel>
+            </Border>
+            <!-- ═══ End AI Assistant Provider ═══ -->
+
             <!-- License & activation -->
             <Border Classes="Panel">
               <StackPanel Spacing="12">
@@ -12201,6 +12523,25 @@
               </StackPanel>
             </Border>
 
+            <!-- ── AI alert builder (natural language → alert form) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="8">
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="H2" Text="🧠 Describe an alert" />
+                  <TextBlock Text="e.g. &quot;ping me when BTC breaks 75k&quot; or &quot;tell me if ETH drops 10% in 1h&quot;. Fills the form below for review."
+                             Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+                </StackPanel>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                  <TextBox Grid.Column="0" Text="{Binding AlertsVM.NlPrompt}"
+                           PlaceholderText="Alert me when…" />
+                  <Button Grid.Column="1" Content="Generate" Command="{Binding AlertsVM.GenerateAlertFromTextCommand}"
+                          IsEnabled="{Binding !AlertsVM.NlRunning}" />
+                </Grid>
+                <TextBlock Text="{Binding AlertsVM.NlStatus}" Foreground="#21E6C1" FontSize="11"
+                           TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
             <!-- New alert form -->
             <Border Classes="Panel">
               <StackPanel Spacing="12">
@@ -12754,6 +13095,61 @@
 
         </StackPanel>
       </Border>
+    </Border>
+
+    <!-- ═══ Global AI Command Bar (Ctrl+K) ═══ -->
+    <Border IsVisible="{Binding IsCommandPaletteOpen}"
+            Background="#CC04101A" ZIndex="100">
+      <Grid>
+        <!-- click-outside to close -->
+        <Button Command="{Binding CloseCommandPaletteCommand}"
+                Background="Transparent" BorderThickness="0"
+                HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+
+        <Border VerticalAlignment="Top" HorizontalAlignment="Center"
+                Margin="0,120,0,0" Width="680" MaxWidth="680"
+                Background="#0E1B27" BorderBrush="#21E6C1" BorderThickness="1"
+                CornerRadius="12" Padding="18" BoxShadow="0 18 60 0 #99000000">
+          <StackPanel Spacing="12">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Grid.Column="0" Spacing="2">
+                <TextBlock Text="⚡ AI Command" Classes="H2" />
+                <TextBlock Text="Navigate or ask anything — Enter to run, Esc to close."
+                           Foreground="#8FA3B8" FontSize="12" />
+              </StackPanel>
+              <Button Grid.Column="1" Content="✕" Command="{Binding CloseCommandPaletteCommand}"
+                      Background="Transparent" Foreground="#8FA3B8" FontSize="16"
+                      VerticalAlignment="Top" Padding="8,2" />
+            </Grid>
+
+            <TextBox x:Name="CommandPaletteBox"
+                     Text="{Binding CommandPaletteInput}"
+                     FontSize="16" Padding="12,10"
+                     PlaceholderText="e.g. “open scanner”, “go to settings”, “what's my biggest risk?”">
+              <TextBox.KeyBindings>
+                <KeyBinding Gesture="Enter"  Command="{Binding RunCommandPaletteCommand}" />
+                <KeyBinding Gesture="Escape" Command="{Binding CloseCommandPaletteCommand}" />
+              </TextBox.KeyBindings>
+            </TextBox>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button Content="Run" Command="{Binding RunCommandPaletteCommand}"
+                      Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" Padding="18,8" />
+              <TextBlock Text="Thinking…" Foreground="#21E6C1" VerticalAlignment="Center"
+                         IsVisible="{Binding CommandPaletteBusy}" />
+            </StackPanel>
+
+            <Border Background="#0A1722" CornerRadius="6" Padding="12"
+                    IsVisible="{Binding CommandPaletteResult, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+              <TextBlock Text="{Binding CommandPaletteResult}" Foreground="#D7E3EE"
+                         TextWrapping="Wrap" />
+            </Border>
+
+            <TextBlock Foreground="#4A6880" FontSize="11" TextWrapping="Wrap"
+                       Text="Tip: type a destination (scanner, settings, whales, liquidations…) to jump there, or ask a question to get an AI answer. The command bar never trades — it only advises and navigates." />
+          </StackPanel>
+        </Border>
+      </Grid>
     </Border>
   </Grid>
 </Window>

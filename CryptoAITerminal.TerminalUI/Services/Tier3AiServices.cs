@@ -25,8 +25,10 @@ internal static class AiKeys
 /// <summary>#9 — rank trending DEX tokens by momentum vs rug risk.</summary>
 public sealed class DexTrendingAiService
 {
-    public string ApiKey { get; set; } = AiKeys.Default();
-    public string Model { get; set; } = "claude-sonnet-4-6";
+    private string? _apiKey;
+    public string ApiKey { get => _apiKey ?? AiRuntime.ActiveApiKey; set => _apiKey = value; }
+    private string? _model;
+    public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
     public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
 
     public Task<DexTrendingResult> RankAsync(IReadOnlyList<DexTokenInfo> tokens, int topN = 5, CancellationToken ct = default)
@@ -93,8 +95,10 @@ public sealed class DexTrendingAiService
 /// <summary>#10 — volatility-adaptive TP/SL.</summary>
 public sealed class DynamicTpSlAiService
 {
-    public string ApiKey { get; set; } = AiKeys.Default();
-    public string Model { get; set; } = "claude-sonnet-4-6";
+    private string? _apiKey;
+    public string ApiKey { get => _apiKey ?? AiRuntime.ActiveApiKey; set => _apiKey = value; }
+    private string? _model;
+    public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
     public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
 
     public async Task<TpSlSuggestion> SuggestAsync(TpSlContext ctx, CancellationToken ct = default)
@@ -131,8 +135,10 @@ public sealed class DynamicTpSlAiService
 /// <summary>#11 — score a StatArb pair for tradeability.</summary>
 public sealed class StatArbPairAiService
 {
-    public string ApiKey { get; set; } = AiKeys.Default();
-    public string Model { get; set; } = "claude-sonnet-4-6";
+    private string? _apiKey;
+    public string ApiKey { get => _apiKey ?? AiRuntime.ActiveApiKey; set => _apiKey = value; }
+    private string? _model;
+    public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
     public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
 
     public async Task<StatArbPairVerdict> EvaluateAsync(StatArbPairStats s, CancellationToken ct = default)
@@ -182,8 +188,10 @@ public sealed class StatArbPairAiService
 /// <summary>#12 — slice a large order to limit market impact.</summary>
 public sealed class ExecutionScheduleAiService
 {
-    public string ApiKey { get; set; } = AiKeys.Default();
-    public string Model { get; set; } = "claude-sonnet-4-6";
+    private string? _apiKey;
+    public string ApiKey { get => _apiKey ?? AiRuntime.ActiveApiKey; set => _apiKey = value; }
+    private string? _model;
+    public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
     public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
 
     public async Task<ExecutionPlan> PlanAsync(OrderExecutionContext ctx, CancellationToken ct = default)

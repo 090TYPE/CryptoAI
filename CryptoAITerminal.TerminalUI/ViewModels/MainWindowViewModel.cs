@@ -472,6 +472,74 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             catch (Exception ex) { AffiliateSaveStatus = $"Error: {ex.Message}"; }
         }, outputScheduler: App.UiScheduler);
 
+        // ── AI provider (Claude / ChatGPT) settings ──────────────────────────────
+        var aiSettings = CredentialsService.LoadAiSettings();
+        _aiIsChatGpt        = aiSettings.Provider == CryptoAITerminal.AIEngine.AiVendor.OpenAi;
+        _aiIsClaude         = !_aiIsChatGpt;
+        _anthropicKeyInput  = aiSettings.AnthropicKey;
+        _openAiKeyInput     = aiSettings.OpenAiKey;
+        _anthropicModelInput = string.IsNullOrWhiteSpace(aiSettings.AnthropicModel)
+            ? CryptoAITerminal.AIEngine.AiRuntime.AnthropicModel : aiSettings.AnthropicModel;
+        _openAiModelInput   = string.IsNullOrWhiteSpace(aiSettings.OpenAiModel)
+            ? CryptoAITerminal.AIEngine.AiRuntime.OpenAiModel : aiSettings.OpenAiModel;
+
+        SaveAiSettingsCommand = ReactiveCommand.Create(() =>
+        {
+            try
+            {
+                var provider = _aiIsChatGpt
+                    ? CryptoAITerminal.AIEngine.AiVendor.OpenAi
+                    : CryptoAITerminal.AIEngine.AiVendor.Anthropic;
+                CredentialsService.SaveAiSettings(new CredentialsService.AiSettings(
+                    provider,
+                    (_anthropicKeyInput ?? "").Trim(),
+                    (_openAiKeyInput ?? "").Trim(),
+                    (_anthropicModelInput ?? "").Trim(),
+                    (_openAiModelInput ?? "").Trim()));
+
+                // Push the active provider's key/model into the master AIBot field, which
+                // fans out (OnAIBotPropertyChanged) to every AI sub-VM — including the
+                // autonomous trader and signal bot that read the key directly. The 15
+                // generic AI services also resolve it via AiRuntime, so this unifies both.
+                ApplyActiveAiKeyToAgents();
+
+                AiSettingsStatus = $"✓ Saved — AI now uses {(_aiIsChatGpt ? "ChatGPT" : "Claude")}";
+            }
+            catch (Exception ex) { AiSettingsStatus = $"Error: {ex.Message}"; }
+        }, outputScheduler: App.UiScheduler);
+
+        OpenAnthropicConsoleCommand = ReactiveCommand.Create(() => OpenUrl("https://console.anthropic.com/settings/keys"),
+            outputScheduler: App.UiScheduler);
+        OpenOpenAiConsoleCommand = ReactiveCommand.Create(() => OpenUrl("https://platform.openai.com/api-keys"),
+            outputScheduler: App.UiScheduler);
+
+        // At startup, seed the autonomous trader + signal bot from the saved provider so a
+        // previously-saved key works without reopening Settings. (The generic AI services
+        // already fall back to AiRuntime, so they need no seeding.)
+        {
+            var startupKey = CryptoAITerminal.AIEngine.AiRuntime.ActiveApiKey;
+            if (!string.IsNullOrWhiteSpace(startupKey))
+            {
+                AIBotVM.ClaudeApiKey = startupKey;
+                AIBotVM.ClaudeModel  = CryptoAITerminal.AIEngine.AiRuntime.ActiveModel;
+                AiTraderVM.Configure(startupKey, CryptoAITerminal.AIEngine.AiRuntime.ActiveModel);
+            }
+        }
+
+        // ── Global AI command bar (Ctrl+K) ───────────────────────────────────────
+        OpenCommandPaletteCommand = ReactiveCommand.Create(() =>
+        {
+            CommandPaletteInput  = string.Empty;
+            CommandPaletteResult = string.Empty;
+            IsCommandPaletteOpen = true;
+        }, outputScheduler: App.UiScheduler);
+
+        CloseCommandPaletteCommand = ReactiveCommand.Create(
+            () => { IsCommandPaletteOpen = false; }, outputScheduler: App.UiScheduler);
+
+        RunCommandPaletteCommand = ReactiveCommand.CreateFromTask(
+            RunCommandPaletteAsync, outputScheduler: App.UiScheduler);
+
         BacktestVM = new BacktestViewModel(_gateway);
 
         var etherscanKey  = Environment.GetEnvironmentVariable("ETHERSCAN_API_KEY");
@@ -602,6 +670,110 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
         // Dashboard overview (reads the news market pulse + AI digest)
         DashboardVM = new DashboardViewModel(AIBotVM, GridBotVM, DcaBotVM, pnlService, AllPositionsVM, NewsFeedVM);
+
+        // AI Copilot — read-only conversational assistant. Reads real positions from the
+        // unified positions view, scanner AI picks and the news pulse; can never trade.
+        var copilotData = new CopilotAgentService.CopilotDataSource(
+            Account: async ct => await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                var positions = new List<CopilotAgentService.PositionLine>(AllPositionsVM.Rows.Count);
+                foreach (var r in AllPositionsVM.Rows)
+                {
+                    var qty = r.Side == "Short" ? -r.Size : r.Size;
+                    positions.Add(new CopilotAgentService.PositionLine(
+                        r.Symbol, qty, r.EntryPrice, r.MarkPrice, r.UnrealizedPnl));
+                }
+                var mode = WalletVM.GlobalLiveExecutionEnabled ? "live" : "paper";
+                // Cash isn't a single coherent figure across wallets here → 0 = "not tracked".
+                return new CopilotAgentService.AccountSnapshot(mode, 0m, 0m, positions);
+            }),
+            Price: async (symbol, ct) =>
+            {
+                var book = await _gateway.GetOrderBookAsync(symbol, 5).ConfigureAwait(false);
+                var bid = book.Bids.Count > 0 ? book.Bids[0].Price : 0m;
+                var ask = book.Asks.Count > 0 ? book.Asks[0].Price : 0m;
+                return bid > 0 && ask > 0 ? (bid + ask) / 2m : Math.Max(bid, ask);
+            },
+            TopOpportunities: async ct => await Dispatcher.UIThread.InvokeAsync(() =>
+                (IReadOnlyList<string>)ScannerVM.AiPicks
+                    .Select(p => $"{p.Symbol} [{p.Bias} {p.Score}] {p.Reason}").ToList()),
+            MarketPulse: async ct => await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                var pulse = $"{NewsFeedVM.PulseLabel} (score {NewsFeedVM.PulseScore}). {NewsFeedVM.PulseDetail}";
+                if (!string.IsNullOrWhiteSpace(NewsFeedVM.AiDigest))
+                    pulse += $" Digest [{NewsFeedVM.AiDigestBias}]: {NewsFeedVM.AiDigest}";
+                return pulse;
+            }));
+        CopilotVM = new CopilotViewModel(copilotData);
+
+        // Daily AI briefing — one morning read tying together the book, news pulse,
+        // sentiment and scanner. RefreshCommand runs on the UI scheduler, so the
+        // gather delegate may read the VM collections directly.
+        BriefingVM = new DailyBriefingViewModel(() =>
+        {
+            decimal upnl = 0m, bestPnl = 0m, worstPnl = 0m;
+            string? bestSym = null, worstSym = null;
+            foreach (var r in AllPositionsVM.Rows)
+            {
+                upnl += r.UnrealizedPnl;
+                if (bestSym is null || r.UnrealizedPnl > bestPnl)  { bestSym = r.Symbol;  bestPnl = r.UnrealizedPnl; }
+                if (worstSym is null || r.UnrealizedPnl < worstPnl) { worstSym = r.Symbol; worstPnl = r.UnrealizedPnl; }
+            }
+            var picks = ScannerVM.AiPicks.Select(p => $"{p.Symbol} [{p.Bias} {p.Score}]").ToList();
+            return new BriefingInput(
+                OpenPositions: AllPositionsVM.Rows.Count,
+                UnrealizedPnlUsd: upnl,
+                BestSymbol: bestSym, BestPnlUsd: bestPnl,
+                WorstSymbol: worstSym, WorstPnlUsd: worstPnl,
+                NewsPulseScore: NewsFeedVM.PulseScore,
+                NewsPulseLabel: NewsFeedVM.PulseLabel,
+                FearGreed: SentimentVM.FearGreedValue,
+                TopPicks: picks);
+        });
+
+        // AI pre-trade risk check — scores a proposed order against the open book.
+        // Advisory only; never touches the live order path.
+        RiskCheckVM = new PreTradeRiskViewModel((symbol, side, orderUsd, leverage) =>
+        {
+            decimal existing = 0m, same = 0m;
+            foreach (var r in AllPositionsVM.Rows)
+            {
+                var px = r.MarkPrice > 0 ? r.MarkPrice : r.EntryPrice;
+                var notional = r.Size * px;
+                existing += notional;
+                if (string.Equals(r.Symbol, symbol, StringComparison.OrdinalIgnoreCase)) same += notional;
+            }
+            return new PreTradeRiskInput(
+                Symbol: symbol, Side: side, OrderUsd: orderUsd,
+                EquityUsd: 0m,                      // no single coherent equity figure → unknown
+                ExistingExposureUsd: existing,
+                SameSymbolExposureUsd: same,
+                MaxExposureUsd: AiTraderVM.MaxTotalExposureUsd,
+                Leverage: leverage,
+                DailyPnlUsd: 0m,
+                MaxDailyLossUsd: AiTraderVM.MaxDailyLossUsd);
+        });
+
+        // AI correlation insight — builds a matrix from recent daily closes (spot
+        // gateway) and reads the book's diversification posture.
+        CorrelationInsightVM = new CorrelationInsightViewModel(
+            fetchCloses: async (symbol, ct) =>
+            {
+                var candles = await _gateway.GetCandlesAsync(symbol, "1d", 60).ConfigureAwait(false);
+                return candles.Select(c => (c.Timestamp, c.Close)).ToList();
+            },
+            heldSymbols: () => AllPositionsVM.Rows.Select(r => r.Symbol).Distinct().ToList());
+
+        // AI options advisor — suggests a structure from the Deribit IV/skew/PCR
+        // snapshot (owned by the Sentiment tab) plus a directional view.
+        OptionsStrategyVM = new OptionsStrategyViewModel((asset, direction) =>
+        {
+            var snap = SentimentVM.OptionsSnapshot;
+            if (snap is null) return null;
+            var d = string.Equals(asset, "ETH", StringComparison.OrdinalIgnoreCase) ? snap.Eth : snap.Btc;
+            if (!d.IsValid) return null;
+            return new OptionsStrategyInput(d.Asset, d.AtmIv, d.Skew25Delta, d.PutCallRatio, d.IndexPrice, direction);
+        });
 
         // On-Chain Metrics (Glassnode)
         _onChainService = new OnChainMetricsService();
@@ -1921,6 +2093,149 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         private set => this.RaiseAndSetIfChanged(ref _affiliateSaveStatus, value);
     }
 
+    // ── AI provider (Claude / ChatGPT) selection ──────────────────────────────
+    private bool _aiIsClaude = true;
+    private bool _aiIsChatGpt;
+    private string _anthropicKeyInput = string.Empty;
+    private string _openAiKeyInput = string.Empty;
+    private string _anthropicModelInput = string.Empty;
+    private string _openAiModelInput = string.Empty;
+    private string _aiSettingsStatus = string.Empty;
+
+    /// <summary>Claude is the active AI provider (two-way bound to the Claude radio button).</summary>
+    public bool AiIsClaude
+    {
+        get => _aiIsClaude;
+        set { this.RaiseAndSetIfChanged(ref _aiIsClaude, value); if (value && _aiIsChatGpt) AiIsChatGpt = false; }
+    }
+
+    /// <summary>ChatGPT is the active AI provider (two-way bound to the ChatGPT radio button).</summary>
+    public bool AiIsChatGpt
+    {
+        get => _aiIsChatGpt;
+        set { this.RaiseAndSetIfChanged(ref _aiIsChatGpt, value); if (value && _aiIsClaude) AiIsClaude = false; }
+    }
+
+    public string AnthropicKeyInput
+    {
+        get => _anthropicKeyInput;
+        set => this.RaiseAndSetIfChanged(ref _anthropicKeyInput, value);
+    }
+
+    public string OpenAiKeyInput
+    {
+        get => _openAiKeyInput;
+        set => this.RaiseAndSetIfChanged(ref _openAiKeyInput, value);
+    }
+
+    public string AnthropicModelInput
+    {
+        get => _anthropicModelInput;
+        set => this.RaiseAndSetIfChanged(ref _anthropicModelInput, value);
+    }
+
+    public string OpenAiModelInput
+    {
+        get => _openAiModelInput;
+        set => this.RaiseAndSetIfChanged(ref _openAiModelInput, value);
+    }
+
+    public string AiSettingsStatus
+    {
+        get => _aiSettingsStatus;
+        private set => this.RaiseAndSetIfChanged(ref _aiSettingsStatus, value);
+    }
+
+    /// <summary>
+    /// Pushes the active provider's key/model into the master AIBot field. Its
+    /// PropertyChanged handler fans the value out to every AI sub-VM, so the
+    /// autonomous trader, signal bot and sniper verdict all switch provider too.
+    /// </summary>
+    private void ApplyActiveAiKeyToAgents()
+    {
+        AIBotVM.ClaudeApiKey = CryptoAITerminal.AIEngine.AiRuntime.ActiveApiKey;
+        AIBotVM.ClaudeModel  = CryptoAITerminal.AIEngine.AiRuntime.ActiveModel;
+    }
+
+    /// <summary>Opens a URL in the user's default browser (web login / API-key console).</summary>
+    private static void OpenUrl(string url)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch { /* no browser available — non-fatal */ }
+    }
+
+    // ── Global AI command bar (Ctrl+K) ──────────────────────────────────────────
+    private readonly AiCommandPaletteService _palette = new();
+    private bool _isCommandPaletteOpen;
+    private string _commandPaletteInput = string.Empty;
+    private string _commandPaletteResult = string.Empty;
+    private bool _commandPaletteBusy;
+
+    public bool IsCommandPaletteOpen
+    {
+        get => _isCommandPaletteOpen;
+        set => this.RaiseAndSetIfChanged(ref _isCommandPaletteOpen, value);
+    }
+
+    public string CommandPaletteInput
+    {
+        get => _commandPaletteInput;
+        set => this.RaiseAndSetIfChanged(ref _commandPaletteInput, value ?? string.Empty);
+    }
+
+    public string CommandPaletteResult
+    {
+        get => _commandPaletteResult;
+        private set => this.RaiseAndSetIfChanged(ref _commandPaletteResult, value);
+    }
+
+    public bool CommandPaletteBusy
+    {
+        get => _commandPaletteBusy;
+        private set => this.RaiseAndSetIfChanged(ref _commandPaletteBusy, value);
+    }
+
+    /// <summary>
+    /// Runs the Ctrl+K command bar. Navigation intents jump to the section instantly
+    /// (deterministic, offline-safe); everything else is answered by the AI copilot
+    /// inline. Per the chosen autonomy level the bar never trades — it advises and navigates.
+    /// </summary>
+    private async System.Threading.Tasks.Task RunCommandPaletteAsync()
+    {
+        var text = (CommandPaletteInput ?? string.Empty).Trim();
+        if (text.Length == 0 || CommandPaletteBusy) return;
+
+        var parsed = _palette.Parse(text);
+
+        if (parsed.Intent == AiCommandPaletteService.Intent.Navigate && parsed.SectionKey is not null)
+        {
+            SelectMainTab(parsed.SectionKey);
+            CommandPaletteResult = $"→ {parsed.SectionLabel}";
+            IsCommandPaletteOpen = false;
+            return;
+        }
+
+        // Question → AI copilot (live provider when keyed, offline assistant otherwise).
+        CommandPaletteBusy = true;
+        CommandPaletteResult = "Thinking…";
+        try
+        {
+            var answer = await CopilotVM.AskInlineAsync(text).ConfigureAwait(true);
+            CommandPaletteResult = answer.Text;
+        }
+        catch (Exception ex)
+        {
+            CommandPaletteResult = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            CommandPaletteBusy = false;
+        }
+    }
+
     // ── Status / mask display ─────────────────────────────────────────────────
 
     public string BinanceApiKeyMask => MaskKey(_loadedBinanceKey);
@@ -2023,6 +2338,16 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> OpenOkxAffiliateCommand      { get; private set; } = null!;
     public ReactiveCommand<Unit, Unit> OpenKucoinAffiliateCommand   { get; private set; } = null!;
     public ReactiveCommand<Unit, Unit> SaveAffiliateLinksCommand    { get; private set; } = null!;
+
+    // ── AI provider (Claude / ChatGPT) ──────────────────────────────────────────
+    public ReactiveCommand<Unit, Unit> SaveAiSettingsCommand        { get; private set; } = null!;
+    public ReactiveCommand<Unit, Unit> OpenAnthropicConsoleCommand  { get; private set; } = null!;
+    public ReactiveCommand<Unit, Unit> OpenOpenAiConsoleCommand     { get; private set; } = null!;
+
+    // ── Global AI command bar (Ctrl+K) ──────────────────────────────────────────
+    public ReactiveCommand<Unit, Unit> OpenCommandPaletteCommand    { get; private set; } = null!;
+    public ReactiveCommand<Unit, Unit> CloseCommandPaletteCommand   { get; private set; } = null!;
+    public ReactiveCommand<Unit, Unit> RunCommandPaletteCommand     { get; private set; } = null!;
 
     // ── Configuration Profiles ────────────────────────────────────────────────
     private string _profileName = "default";
@@ -2711,6 +3036,11 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
     public AIBotViewModel AIBotVM { get; }
     public AiTraderViewModel AiTraderVM { get; }
+    public CopilotViewModel CopilotVM { get; private set; } = null!;
+    public DailyBriefingViewModel BriefingVM { get; private set; } = null!;
+    public PreTradeRiskViewModel RiskCheckVM { get; private set; } = null!;
+    public CorrelationInsightViewModel CorrelationInsightVM { get; private set; } = null!;
+    public OptionsStrategyViewModel OptionsStrategyVM { get; private set; } = null!;
     public GridBotViewModel GridBotVM { get; }
     public DcaBotViewModel DcaBotVM { get; }
     public WhaleTrackerViewModel      WhaleTrackerVM      { get; private set; } = null!;
@@ -4417,6 +4747,12 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             SniperVM.ConfigureAiVerdict(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
             NewsFeedVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
             AiTraderVM.Configure(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            CopilotVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            BriefingVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            RiskCheckVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            CorrelationInsightVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            OptionsStrategyVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            AlertsVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
             ScannerVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
             BacktestVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
             CompositeRuleVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);

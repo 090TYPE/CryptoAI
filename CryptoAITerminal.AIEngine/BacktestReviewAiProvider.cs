@@ -1,62 +1,42 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
 /// <summary>
 /// Reviews a finished backtest and writes a plain-English verdict (robust /
-/// promising / weak / overfit) plus key risks. One cheap Claude call, mirroring
-/// the other hand-rolled AIEngine providers.
+/// promising / weak / overfit) plus key risks. One cheap model call routed through
+/// <see cref="ChatClient"/> to the active vendor.
 /// </summary>
 public sealed class BacktestReviewAiProvider
 {
-    private const string DefaultEndpoint = "https://api.anthropic.com/v1/messages";
-    private const string AnthropicVersion = "2023-06-01";
-
-    private readonly HttpClient _http;
+    private readonly HttpClient? _http;
     private readonly string _apiKey;
     private readonly string _model;
 
     public BacktestReviewAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         if (string.IsNullOrWhiteSpace(apiKey))
-            throw new ArgumentException("Anthropic API key is required.", nameof(apiKey));
+            throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
-        _http   = http ?? new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
+        _http   = http;
     }
 
     public async Task<BacktestReview?> ReviewAsync(BacktestMetrics m, CancellationToken ct = default)
     {
         var prompt = BuildPrompt(m);
 
-        var payload = new
-        {
-            model       = _model,
-            max_tokens  = 400,
-            temperature = 0.2,
-            system =
+        var text = await ChatClient.CompleteTextAsync(
+            _apiKey, _model, maxTokens: 400, temperature: 0.2,
+            system:
                 "You are a quantitative strategy reviewer. Judge whether a backtest result is " +
                 "trustworthy or likely overfit. Watch for: too few trades, returns that only beat " +
                 "buy&hold by luck, sky-high Sharpe on tiny samples, and large drawdowns. " +
                 "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
                 "Schema: {\"verdict\":\"ROBUST\"|\"PROMISING\"|\"WEAK\"|\"OVERFIT\",\"summary\":string,\"risks\":[string]}.",
-            messages = new[] { new { role = "user", content = prompt } }
-        };
+            userContent: prompt, _http, ct).ConfigureAwait(false);
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, DefaultEndpoint)
-        {
-            Content = JsonContent.Create(payload)
-        };
-        req.Headers.Add("x-api-key",         _apiKey);
-        req.Headers.Add("anthropic-version", AnthropicVersion);
-
-        using var res = await _http.SendAsync(req, ct).ConfigureAwait(false);
-        var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (!res.IsSuccessStatusCode)
-            throw new HttpRequestException($"Anthropic API {(int)res.StatusCode}: {body}");
-
-        return ParseResponse(body, _model);
+        return ParseResponse(text, _model);
     }
 
     private static string BuildPrompt(BacktestMetrics m)
@@ -75,20 +55,8 @@ public sealed class BacktestReviewAiProvider
         return "Review this backtest:\n" + string.Join('\n', lines) + "\n\nReturn the JSON verdict.";
     }
 
-    private static BacktestReview? ParseResponse(string body, string model)
+    private static BacktestReview? ParseResponse(string text, string model)
     {
-        using var doc = JsonDocument.Parse(body);
-        if (!doc.RootElement.TryGetProperty("content", out var contentArr) ||
-            contentArr.ValueKind != JsonValueKind.Array || contentArr.GetArrayLength() == 0)
-            return null;
-
-        string text = "";
-        foreach (var block in contentArr.EnumerateArray())
-        {
-            if (block.TryGetProperty("type", out var bt) && bt.GetString() == "text" &&
-                block.TryGetProperty("text", out var v))
-            { text = v.GetString() ?? ""; break; }
-        }
         if (string.IsNullOrWhiteSpace(text)) return null;
 
         text = text.Trim();
@@ -116,7 +84,7 @@ public sealed class BacktestReviewAiProvider
                     if (!string.IsNullOrWhiteSpace(rs)) risks.Add(rs.Trim());
                 }
 
-            return new BacktestReview(verdict, summary.Trim(), risks.ToArray(), $"Claude {model}", false);
+            return new BacktestReview(verdict, summary.Trim(), risks.ToArray(), $"{AiRuntime.VendorLabel} {model}", false);
         }
         catch (JsonException)
         {

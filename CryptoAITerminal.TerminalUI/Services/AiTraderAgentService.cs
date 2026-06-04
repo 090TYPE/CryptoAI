@@ -168,7 +168,7 @@ public sealed class AiTraderAgentService
         if (_killed)
             return new AgentRunResult("Kill-switch active.", 0, 0, "killed");
 
-        var runner = new ClaudeAgentRunner(apiKey, model, http: _httpForTests);
+        var runner = AgentRunnerFactory.Create(apiKey, model, http: _httpForTests);
         var tools = BuildTools();
         return await runner.RunAsync(SystemPrompt(), UserInstruction(), tools, OnEvent, ct).ConfigureAwait(false);
     }

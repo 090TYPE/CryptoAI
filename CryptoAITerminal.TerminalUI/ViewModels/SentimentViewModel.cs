@@ -31,6 +31,9 @@ public class SentimentViewModel : ReactiveObject, IDisposable
     public string DeribitUpdated      => _deribitSnap?.UpdatedLabel      ?? "Not loaded";
     public bool   HasDeribitData      => _deribitSnap is not null;
 
+    /// <summary>Raw latest Deribit options snapshot (numeric IV/skew/PCR) for the options advisor.</summary>
+    public DeribitOptionsSnapshot? OptionsSnapshot => _deribitSnap;
+
     // ── Backing fields ────────────────────────────────────────────────────────
     private string  _symbol              = "BTCUSDT";
     private int     _fearGreedValue      = 50;

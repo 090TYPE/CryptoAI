@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
@@ -7,24 +6,21 @@ namespace CryptoAITerminal.AIEngine;
 /// Domain-agnostic "interpret raw data → one-paragraph narrative + a labelled signal
 /// + a few bullets" provider. Reused by whale-flow, on-chain, sentiment and
 /// liquidation insight services — the caller supplies the role, the data lines and
-/// the allowed signal vocabulary. Hand-rolled HTTP like the other AIEngine providers.
+/// the allowed signal vocabulary. The vendor call goes through <see cref="ChatClient"/>.
 /// </summary>
 public sealed class MarketInsightAiProvider
 {
-    private const string DefaultEndpoint = "https://api.anthropic.com/v1/messages";
-    private const string AnthropicVersion = "2023-06-01";
-
-    private readonly HttpClient _http;
+    private readonly HttpClient? _http;
     private readonly string _apiKey;
     private readonly string _model;
 
     public MarketInsightAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         if (string.IsNullOrWhiteSpace(apiKey))
-            throw new ArgumentException("Anthropic API key is required.", nameof(apiKey));
+            throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
-        _http   = http ?? new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
+        _http   = http;
     }
 
     /// <param name="roleSentence">e.g. "You are an on-chain whale-flow analyst."</param>
@@ -46,47 +42,17 @@ public sealed class MarketInsightAiProvider
             "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
             "Schema: {\"summary\":string,\"signal\":\"" + vocab + "\",\"bullets\":[string]}.";
 
-        var payload = new
-        {
-            model       = _model,
-            max_tokens  = 400,
-            temperature = 0.3,
-            system,
-            messages = new[]
-            {
-                new { role = "user", content = string.Join('\n', dataLines.Take(40)) + "\n\nReturn the JSON." }
-            }
-        };
+        var text = await ChatClient.CompleteTextAsync(
+            _apiKey, _model, maxTokens: 400, temperature: 0.3,
+            system: system,
+            userContent: string.Join('\n', dataLines.Take(40)) + "\n\nReturn the JSON.",
+            _http, ct).ConfigureAwait(false);
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, DefaultEndpoint)
-        {
-            Content = JsonContent.Create(payload)
-        };
-        req.Headers.Add("x-api-key",         _apiKey);
-        req.Headers.Add("anthropic-version", AnthropicVersion);
-
-        using var res = await _http.SendAsync(req, ct).ConfigureAwait(false);
-        var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (!res.IsSuccessStatusCode)
-            throw new HttpRequestException($"Anthropic API {(int)res.StatusCode}: {body}");
-
-        return ParseResponse(body, _model, signalVocabulary);
+        return ParseResponse(text, _model, signalVocabulary);
     }
 
-    private static InsightResult? ParseResponse(string body, string model, IReadOnlyList<string> vocab)
+    private static InsightResult? ParseResponse(string text, string model, IReadOnlyList<string> vocab)
     {
-        using var doc = JsonDocument.Parse(body);
-        if (!doc.RootElement.TryGetProperty("content", out var contentArr) ||
-            contentArr.ValueKind != JsonValueKind.Array || contentArr.GetArrayLength() == 0)
-            return null;
-
-        string text = "";
-        foreach (var block in contentArr.EnumerateArray())
-        {
-            if (block.TryGetProperty("type", out var bt) && bt.GetString() == "text" &&
-                block.TryGetProperty("text", out var v))
-            { text = v.GetString() ?? ""; break; }
-        }
         if (string.IsNullOrWhiteSpace(text)) return null;
 
         text = text.Trim();
@@ -117,7 +83,7 @@ public sealed class MarketInsightAiProvider
                     if (!string.IsNullOrWhiteSpace(b)) bullets.Add(b.Trim());
                 }
 
-            return new InsightResult(summary.Trim(), signal, bullets.ToArray(), $"Claude {model}", false);
+            return new InsightResult(summary.Trim(), signal, bullets.ToArray(), $"{AiRuntime.VendorLabel} {model}", false);
         }
         catch (JsonException)
         {

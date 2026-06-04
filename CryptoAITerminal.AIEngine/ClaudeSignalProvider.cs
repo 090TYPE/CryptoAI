@@ -1,32 +1,26 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
 /// <summary>
-/// Compact, dependency-free Anthropic Messages API client used by
-/// <see cref="ClaudeStrategy"/> to score market context.
-///
-/// We hand-roll the HTTP call instead of pulling Anthropic.SDK so the
-/// terminal stays buildable offline and we don't add another transitive
-/// NuGet graph. The payload follows api.anthropic.com /v1/messages.
+/// Compact buy/sell/hold signal provider used by <see cref="ClaudeStrategy"/> to
+/// score market context. The vendor-specific wire call lives in
+/// <see cref="ChatClient"/>, so this routes to Claude or ChatGPT per
+/// <see cref="AiRuntime.Vendor"/>; here we only build the prompt and parse the JSON.
 /// </summary>
 public sealed class ClaudeSignalProvider
 {
-    private const string DefaultEndpoint = "https://api.anthropic.com/v1/messages";
-    private const string AnthropicVersion = "2023-06-01";
-
-    private readonly HttpClient _http;
+    private readonly HttpClient? _http;
     private readonly string _apiKey;
     private readonly string _model;
 
     public ClaudeSignalProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         if (string.IsNullOrWhiteSpace(apiKey))
-            throw new ArgumentException("Anthropic API key is required.", nameof(apiKey));
+            throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
-        _http   = http ?? new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+        _http   = http;
     }
 
     public async Task<ClaudeSignal?> GetSignalAsync(string symbol,
@@ -37,35 +31,17 @@ public sealed class ClaudeSignalProvider
 
         var prompt = BuildPrompt(symbol, recentCandles);
 
-        var payload = new
-        {
-            model      = _model,
-            max_tokens = 256,
+        var text = await ChatClient.CompleteTextAsync(
+            _apiKey, _model, maxTokens: 256,
             // Keep determinism reasonable — we want a verdict, not creative writing.
-            temperature = 0.2,
-            system =
+            temperature: 0.2,
+            system:
                 "You are a quantitative crypto trading assistant. " +
                 "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
                 "Schema: {\"signal\":\"buy\"|\"sell\"|\"hold\",\"confidence\":0..1,\"reason\":string}.",
-            messages = new[]
-            {
-                new { role = "user", content = prompt }
-            }
-        };
+            userContent: prompt, _http, ct).ConfigureAwait(false);
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, DefaultEndpoint)
-        {
-            Content = JsonContent.Create(payload)
-        };
-        req.Headers.Add("x-api-key",         _apiKey);
-        req.Headers.Add("anthropic-version", AnthropicVersion);
-
-        using var res = await _http.SendAsync(req, ct).ConfigureAwait(false);
-        var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (!res.IsSuccessStatusCode)
-            throw new HttpRequestException($"Anthropic API {(int)res.StatusCode}: {body}");
-
-        return ParseResponse(body);
+        return ParseResponse(text);
     }
 
     private static string BuildPrompt(string symbol, IReadOnlyList<ClaudeCandle> candles)
@@ -79,24 +55,8 @@ public sealed class ClaudeSignalProvider
              + "\n\nReturn the JSON verdict.";
     }
 
-    private static ClaudeSignal? ParseResponse(string body)
+    private static ClaudeSignal? ParseResponse(string text)
     {
-        using var doc = JsonDocument.Parse(body);
-        if (!doc.RootElement.TryGetProperty("content", out var contentArr) ||
-            contentArr.ValueKind != JsonValueKind.Array || contentArr.GetArrayLength() == 0)
-            return null;
-
-        // Anthropic returns content blocks; the model is instructed to send JSON in text[0].
-        string text = "";
-        foreach (var block in contentArr.EnumerateArray())
-        {
-            if (block.TryGetProperty("type", out var t) && t.GetString() == "text" &&
-                block.TryGetProperty("text", out var v))
-            {
-                text = v.GetString() ?? "";
-                break;
-            }
-        }
         if (string.IsNullOrWhiteSpace(text)) return null;
 
         // Defensive: the model may still wrap JSON in markdown fences.

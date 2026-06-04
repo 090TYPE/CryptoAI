@@ -37,6 +37,25 @@ internal static class AiJson
         return text;
     }
 
+    /// <summary>
+    /// Strips a leading/trailing ```json markdown fence from a model's text reply.
+    /// Used by providers that now receive the assistant text from <see cref="ChatClient"/>
+    /// (already vendor-neutral) rather than a raw Anthropic body.
+    /// </summary>
+    public static string? StripFences(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        text = text.Trim();
+        if (text.StartsWith("```"))
+        {
+            var nl = text.IndexOf('\n');
+            if (nl >= 0) text = text[(nl + 1)..];
+            if (text.EndsWith("```")) text = text[..^3];
+            text = text.Trim();
+        }
+        return text.Length == 0 ? null : text;
+    }
+
     public static string Str(JsonElement e, string name, string fallback = "") =>
         e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String
             ? v.GetString() ?? fallback : fallback;

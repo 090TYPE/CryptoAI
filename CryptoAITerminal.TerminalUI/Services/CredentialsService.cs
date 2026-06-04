@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using CryptoAITerminal.AIEngine;
 
 namespace CryptoAITerminal.TerminalUI.Services;
 
@@ -39,6 +40,13 @@ public static class CredentialsService
         public string KucoinKey        { get; set; } = "";
         public string KucoinSecret     { get; set; } = "";
         public string KucoinPassphrase { get; set; } = "";
+
+        // ── AI provider (Claude / ChatGPT) ────────────────────────────────────
+        public string AiProvider     { get; set; } = "";   // CRYPTOAI_AI_PROVIDER ("anthropic"/"openai")
+        public string AnthropicApiKey { get; set; } = "";   // ANTHROPIC_API_KEY
+        public string OpenAiApiKey    { get; set; } = "";   // OPENAI_API_KEY
+        public string AnthropicModel  { get; set; } = "";   // CRYPTOAI_CLAUDE_MODEL
+        public string OpenAiModel     { get; set; } = "";   // CRYPTOAI_OPENAI_MODEL
 
         // ── On-chain / blockchain data ────────────────────────────────────────
         public string EtherscanApiKey  { get; set; } = "";   // ETHERSCAN_API_KEY
@@ -104,6 +112,11 @@ public static class CredentialsService
         var creds = ReadFromDisk();
 
         // Map: field value → env-var name
+        Apply("CRYPTOAI_AI_PROVIDER",     creds.AiProvider);
+        Apply("ANTHROPIC_API_KEY",        creds.AnthropicApiKey);
+        Apply("OPENAI_API_KEY",           creds.OpenAiApiKey);
+        Apply("CRYPTOAI_CLAUDE_MODEL",    creds.AnthropicModel);
+        Apply("CRYPTOAI_OPENAI_MODEL",    creds.OpenAiModel);
         Apply("BINANCE_API_KEY",         creds.BinanceKey);
         Apply("BINANCE_API_SECRET",       creds.BinanceSecret);
         Apply("BYBIT_API_KEY",            creds.BybitKey);
@@ -181,6 +194,50 @@ public static class CredentialsService
     /// Persists the complete credentials object to disk (used when inserting all keys at once).
     /// </summary>
     public static void SaveAll(AllCredentials creds) => WriteToDisk(creds);
+
+    /// <summary>Current AI provider settings, for populating the Settings UI.</summary>
+    public sealed record AiSettings(
+        AiVendor Provider,
+        string AnthropicKey,
+        string OpenAiKey,
+        string AnthropicModel,
+        string OpenAiModel);
+
+    /// <summary>Reads the saved AI provider settings (file values; blank models mean "use the default").</summary>
+    public static AiSettings LoadAiSettings()
+    {
+        var f = ReadFromDisk();
+        return new AiSettings(
+            AiRuntime.ParseVendor(PickFirst("CRYPTOAI_AI_PROVIDER", f.AiProvider)),
+            PickFirst("ANTHROPIC_API_KEY", f.AnthropicApiKey),
+            PickFirst("OPENAI_API_KEY",    f.OpenAiApiKey),
+            f.AnthropicModel,
+            f.OpenAiModel);
+    }
+
+    /// <summary>
+    /// Persists the AI provider choice + keys/models and applies them live: sets the
+    /// process env vars <see cref="AiRuntime"/> reads and flips <see cref="AiRuntime.Vendor"/>,
+    /// so every AI feature switches between Claude and ChatGPT without a restart.
+    /// </summary>
+    public static void SaveAiSettings(AiSettings s)
+    {
+        var current = ReadFromDisk();
+        current.AiProvider      = AiRuntime.ToToken(s.Provider);
+        current.AnthropicApiKey = (s.AnthropicKey ?? "").Trim();
+        current.OpenAiApiKey    = (s.OpenAiKey ?? "").Trim();
+        current.AnthropicModel  = (s.AnthropicModel ?? "").Trim();
+        current.OpenAiModel     = (s.OpenAiModel ?? "").Trim();
+        WriteToDisk(current);
+
+        // Apply live (overriding any existing process value, since the user just changed it).
+        Environment.SetEnvironmentVariable("CRYPTOAI_AI_PROVIDER",  current.AiProvider,     EnvironmentVariableTarget.Process);
+        Environment.SetEnvironmentVariable("ANTHROPIC_API_KEY",     current.AnthropicApiKey, EnvironmentVariableTarget.Process);
+        Environment.SetEnvironmentVariable("OPENAI_API_KEY",        current.OpenAiApiKey,    EnvironmentVariableTarget.Process);
+        Environment.SetEnvironmentVariable("CRYPTOAI_CLAUDE_MODEL", current.AnthropicModel,  EnvironmentVariableTarget.Process);
+        Environment.SetEnvironmentVariable("CRYPTOAI_OPENAI_MODEL", current.OpenAiModel,     EnvironmentVariableTarget.Process);
+        AiRuntime.Vendor = s.Provider;
+    }
 
     /// <summary>Persists Binance API key and secret to disk.</summary>
     public static void SaveBinance(string key, string secret)

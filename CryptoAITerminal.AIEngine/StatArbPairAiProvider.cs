@@ -1,28 +1,24 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
 /// <summary>
 /// Scores a statistical-arbitrage pair for tradeability from its spread statistics.
-/// One cheap Claude call; hand-rolled HTTP.
+/// One cheap model call routed through <see cref="ChatClient"/>.
 /// </summary>
 public sealed class StatArbPairAiProvider
 {
-    private const string DefaultEndpoint = "https://api.anthropic.com/v1/messages";
-    private const string AnthropicVersion = "2023-06-01";
-
-    private readonly HttpClient _http;
+    private readonly HttpClient? _http;
     private readonly string _apiKey;
     private readonly string _model;
 
     public StatArbPairAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         if (string.IsNullOrWhiteSpace(apiKey))
-            throw new ArgumentException("Anthropic API key is required.", nameof(apiKey));
+            throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
-        _http   = http ?? new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
+        _http   = http;
     }
 
     public async Task<StatArbPairVerdict?> EvaluateAsync(StatArbPairStats s, CancellationToken ct = default)
@@ -35,31 +31,18 @@ public sealed class StatArbPairAiProvider
             $"Entry/Exit z thresholds: {s.EntryZ:0.0} / {s.ExitZ:0.0}\n\n" +
             "Is this pair tradeable now, and which leg? Return the JSON.";
 
-        var payload = new
-        {
-            model       = _model,
-            max_tokens  = 320,
-            temperature = 0.2,
-            system =
+        var raw = await ChatClient.CompleteTextAsync(
+            _apiKey, _model, maxTokens: 320, temperature: 0.2,
+            system:
                 "You are a stat-arb quant. A pair is tradeable when it is well-correlated and mean-reverting " +
                 "(reasonable half-life) and the z-score is stretched beyond the entry threshold. " +
                 "Signal LONG_A_SHORT_B when z is very negative (A cheap vs B), SHORT_A_LONG_B when very positive, " +
                 "WAIT when inside thresholds, AVOID when correlation/half-life are poor. " +
                 "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
                 "Schema: {\"tradeable\":boolean,\"score\":0..100,\"signal\":\"LONG_A_SHORT_B\"|\"SHORT_A_LONG_B\"|\"WAIT\"|\"AVOID\",\"reason\":string}.",
-            messages = new[] { new { role = "user", content = prompt } }
-        };
+            userContent: prompt, _http, ct).ConfigureAwait(false);
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, DefaultEndpoint) { Content = JsonContent.Create(payload) };
-        req.Headers.Add("x-api-key", _apiKey);
-        req.Headers.Add("anthropic-version", AnthropicVersion);
-
-        using var res = await _http.SendAsync(req, ct).ConfigureAwait(false);
-        var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (!res.IsSuccessStatusCode)
-            throw new HttpRequestException($"Anthropic API {(int)res.StatusCode}: {body}");
-
-        var text = AiJson.ExtractText(body);
+        var text = AiJson.StripFences(raw);
         if (text is null) return null;
         try
         {
@@ -71,7 +54,7 @@ public sealed class StatArbPairAiProvider
                 AiJson.Bool(r, "tradeable"),
                 (int)Math.Clamp(AiJson.Num(r, "score", 50m), 0m, 100m),
                 NormalizeSignal(AiJson.Str(r, "signal")),
-                reason, $"Claude {_model}", false);
+                reason, $"{AiRuntime.VendorLabel} {_model}", false);
         }
         catch (JsonException) { return null; }
     }

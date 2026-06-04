@@ -109,6 +109,12 @@ public class AlertsViewModel : ReactiveObject
     private string _logText = string.Empty;
     private bool _soundEnabled = true;
 
+    // ── Natural-language alert builder ──────────────────────────────────────────
+    private readonly AlertNlService _nl = new();
+    private string _nlPrompt = string.Empty;
+    private string _nlStatus = string.Empty;
+    private bool _nlRunning;
+
     public event Action<string>? ToastRequested;
 
     public ObservableCollection<AlertItemViewModel> Alerts { get; } = [];
@@ -290,6 +296,34 @@ public class AlertsViewModel : ReactiveObject
         "ChangePercent1hAbove", "ChangePercent24hAbove", "VolumeSpike"
     ];
 
+    // ── Natural-language alert builder ──────────────────────────────────────────
+    public string NlPrompt
+    {
+        get => _nlPrompt;
+        set => this.RaiseAndSetIfChanged(ref _nlPrompt, value ?? string.Empty);
+    }
+
+    public string NlStatus
+    {
+        get => _nlStatus;
+        private set => this.RaiseAndSetIfChanged(ref _nlStatus, value);
+    }
+
+    public bool NlRunning
+    {
+        get => _nlRunning;
+        private set => this.RaiseAndSetIfChanged(ref _nlRunning, value);
+    }
+
+    /// <summary>Share the Claude key/model from the AI Bot tab.</summary>
+    public void ConfigureAi(string? apiKey, string? model = null)
+    {
+        if (apiKey is not null) _nl.ApiKey = apiKey;
+        if (!string.IsNullOrWhiteSpace(model)) _nl.Model = model;
+    }
+
+    public ReactiveCommand<Unit, Unit> GenerateAlertFromTextCommand { get; }
+
     public ReactiveCommand<Unit, Unit> AddAlertCommand { get; }
     public ReactiveCommand<string, Unit> DeleteAlertCommand { get; }
     public ReactiveCommand<Unit, Unit> ClearFiredCommand { get; }
@@ -344,6 +378,7 @@ public class AlertsViewModel : ReactiveObject
 
         LoadHistory();
 
+        GenerateAlertFromTextCommand = ReactiveCommand.CreateFromTask(GenerateFromTextAsync, outputScheduler: App.UiScheduler);
         AddAlertCommand = ReactiveCommand.Create(AddAlert, outputScheduler: App.UiScheduler);
         DeleteAlertCommand = ReactiveCommand.Create<string>(DeleteAlert, outputScheduler: App.UiScheduler);
         ClearFiredCommand = ReactiveCommand.Create(ClearFired, outputScheduler: App.UiScheduler);
@@ -357,6 +392,31 @@ public class AlertsViewModel : ReactiveObject
     private void ReconfigureEmail()
     {
         _email.Configure(_emailHost, _emailPort, _emailUseSsl, _emailUsername, _emailPassword, _emailFrom, _emailTo);
+    }
+
+    /// <summary>
+    /// Parse the natural-language prompt into the alert form fields for review.
+    /// The user can tweak then press Add — mirrors the NL→rule review flow.
+    /// </summary>
+    private async Task GenerateFromTextAsync()
+    {
+        var prompt = NlPrompt.Trim();
+        if (prompt.Length == 0) { NlStatus = "Type a request first, e.g. \"alert when BTC goes above 70000\"."; return; }
+
+        NlRunning = true;
+        NlStatus = "Parsing…";
+        try
+        {
+            var r = await _nl.ParseAsync(prompt);
+            if (!r.Success) { NlStatus = "⚠ " + r.Explanation; return; }
+
+            NewAlertSymbol = r.Symbol;
+            SelectedCondition = r.Condition.ToString();
+            NewAlertThreshold = r.Threshold;
+            NlStatus = $"✓ {r.Explanation}  Review and press Add.  ({r.Source})";
+        }
+        catch (Exception ex) { NlStatus = $"⚠ {ex.Message}"; }
+        finally { NlRunning = false; }
     }
 
     private void AddAlert()
