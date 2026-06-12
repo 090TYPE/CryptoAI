@@ -798,9 +798,10 @@ public partial class SniperViewModel
 
         for (var index = 0; index < equity.Count; index++)
         {
+            // Y normalised to [0..1] (0 = top, 1 = bottom) to match CexPriceChart.
             var normalized = (double)(equity[index] - min) / range;
-            var invertedY = 100d - (normalized * 100d);
-            PerformanceCurvePoints.Add(new Point(index + 1, invertedY));
+            var y = 1d - normalized;
+            PerformanceCurvePoints.Add(new Point(index + 1, y));
         }
     }
 

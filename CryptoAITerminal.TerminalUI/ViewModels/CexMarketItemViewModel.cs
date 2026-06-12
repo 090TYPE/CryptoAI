@@ -240,15 +240,25 @@ public class CexMarketItemViewModel : ReactiveObject
 
         var min = visibleHistory.Min(sample => sample.Price);
         var max = visibleHistory.Max(sample => sample.Price);
-        var range = Math.Max((double)(max - min), 0.00000001d);
-        var maxIndex = Math.Max(visibleHistory.Count - 1, 1);
+        var rawRange = (double)(max - min);
+
+        // Floor the visible range to a small fraction of price so negligible
+        // tick-to-tick noise stays a near-flat line instead of being amplified
+        // into a full-height square wave. When real movement exceeds the floor
+        // the chart auto-scales exactly as before. The domain is centred on the
+        // mid price so a flat market renders as a centred flat line.
+        var midPrice = (double)(min + max) / 2d;
+        var rangeFloor = Math.Max(midPrice * 0.0015d, 0.00000001d);
+        var range = Math.Max(rawRange, rangeFloor);
+        var lo = midPrice - (range / 2d);
 
         for (var index = 0; index < visibleHistory.Count; index++)
         {
-            var x = ChartWidth * index / maxIndex;
-            var normalized = (double)(visibleHistory[index].Price - min) / range;
-            var y = ChartHeight - (normalized * ChartHeight);
-            ChartPoints.Add(new Point(x, y));
+            // X stays a sample index; CexPriceChart maps it across the width.
+            // Y is normalised to [0..1] with 0 = top (high price), 1 = bottom.
+            var normalized = ((double)visibleHistory[index].Price - lo) / range;
+            var y = 1d - normalized;
+            ChartPoints.Add(new Point(index, y));
         }
 
         this.RaisePropertyChanged(nameof(HasPriceHistory));

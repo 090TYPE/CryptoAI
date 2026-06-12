@@ -557,7 +557,7 @@
     <Setter Property="CornerRadius" Value="10" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="MinHeight" Value="42" />
-    <Setter Property="Padding" Value="8,6" />
+    <Setter Property="Padding" Value="6,6" />
     <Setter Property="FontSize" Value="13" />
   </Style>
 
@@ -568,6 +568,14 @@
 
   <Style Selector="NumericUpDown:pointerover">
     <Setter Property="BorderBrush" Value="#5A7A9A" />
+  </Style>
+
+  <!-- Compact spinner arrows so the number itself stays visible even in
+       narrow numeric fields (default chevrons eat most of the width). -->
+  <Style Selector="ButtonSpinner /template/ RepeatButton">
+    <Setter Property="MinWidth" Value="22" />
+    <Setter Property="Width" Value="22" />
+    <Setter Property="Padding" Value="0" />
   </Style>
 
   <Style Selector="ComboBox">
@@ -598,6 +606,70 @@
 
   <Style Selector="Slider.TradeSlider">
     <Setter Property="MinHeight" Value="28" />
+  </Style>
+
+  <!-- ============================================================
+       ЧЕКБОКСЫ — крупный, выровненный бокс 22px с акцентной галкой
+  ============================================================ -->
+  <Style Selector="CheckBox">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center" Background="Transparent">
+          <Border Name="Box"
+                  Grid.Column="0"
+                  Width="22" Height="22"
+                  CornerRadius="6"
+                  Background="#0E151E"
+                  BorderBrush="#3C566E"
+                  BorderThickness="1.4"
+                  VerticalAlignment="Center">
+            <Path Name="Check"
+                  Stretch="Uniform"
+                  Width="12" Height="12"
+                  Stroke="#04101A"
+                  StrokeThickness="2.4"
+                  StrokeJoin="Round"
+                  StrokeLineCap="Round"
+                  Data="M2,7 L6,11 L13,3"
+                  IsVisible="False" />
+          </Border>
+          <ContentPresenter Name="PART_ContentPresenter"
+                            Grid.Column="1"
+                            Margin="10,0,0,0"
+                            VerticalAlignment="Center"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            RecognizesAccessKey="True" />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="CheckBox:pointerover /template/ Border#Box">
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+  </Style>
+
+  <Style Selector="CheckBox:checked /template/ Border#Box">
+    <Setter Property="Background" Value="{DynamicResource Accent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+  </Style>
+
+  <Style Selector="CheckBox:checked /template/ Path#Check">
+    <Setter Property="IsVisible" Value="True" />
+  </Style>
+
+  <Style Selector="CheckBox:indeterminate /template/ Border#Box">
+    <Setter Property="Background" Value="#173D3D" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+  </Style>
+
+  <Style Selector="CheckBox:disabled">
+    <Setter Property="Opacity" Value="0.45" />
   </Style>
 
   <!-- ============================================================
