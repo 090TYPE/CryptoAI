@@ -1447,6 +1447,36 @@
             </Border>
           </Grid>
 
+          <!-- AI risk verdict (auto on select; Deep scan enriches) -->
+          <Border Classes="TicketMetricCard" IsVisible="{Binding DexTradingVM.HasSelectedToken}">
+            <StackPanel Spacing="8">
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                <Border Grid.Column="0"
+                        Background="{Binding DexTradingVM.TokenVerdict.AccentHex}"
+                        CornerRadius="4" Padding="8,3" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding DexTradingVM.TokenVerdict.Badge}"
+                             Foreground="White" FontWeight="Bold" FontSize="12" />
+                </Border>
+                <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                           Text="{Binding DexTradingVM.TokenVerdict.ScoreLabel, StringFormat=risk {0}}"
+                           Foreground="#8FA3B8" FontSize="12" />
+                <Button Grid.Column="2" Content="🔍 Deep scan"
+                        Classes="GhostButton" FontSize="11" Padding="8,3"
+                        Command="{Binding DexTradingVM.DeepScanTokenCommand}"
+                        IsEnabled="{Binding !DexTradingVM.TokenVerdict.DeepScanBusy}" />
+              </Grid>
+              <TextBlock Text="{Binding DexTradingVM.TokenVerdict.RedFlagsText}"
+                         Foreground="#C9D6E2" FontSize="11" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding DexTradingVM.TokenVerdict.Reason}"
+                         Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding DexTradingVM.TokenVerdict.SourceLabel}"
+                         Foreground="#5C6E82" FontSize="10" />
+              <TextBlock Text="{Binding DexTradingVM.TokenVerdict.DeepScanNote}"
+                         Foreground="#F4B860" FontSize="10" TextWrapping="Wrap"
+                         IsVisible="{Binding DexTradingVM.TokenVerdict.HasDeepScanNote}" />
+            </StackPanel>
+          </Border>
+
           <!-- Token list -->
           <ScrollViewer MaxHeight="520">
             <ListBox ItemsSource="{Binding DexTradingVM.Tokens}"
