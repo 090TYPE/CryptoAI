@@ -322,10 +322,6 @@
             <StackPanel Spacing="6">
               <TextBlock Classes="Overline" Text="MARKET OVERVIEW" />
               <TextBlock Classes="H1" Text="{Binding SelectedMarketTitle}" />
-              <TextBlock Text="Public Binance stream, local history buildup and order book snapshots in one workspace."
-                         Foreground="#8FA3B8"
-                         TextWrapping="Wrap"
-                         MaxWidth="760" />
             </StackPanel>
 
             <WrapPanel Orientation="Horizontal">
@@ -352,8 +348,9 @@
             <Border Classes="Panel" Grid.Column="0">
               <StackPanel Spacing="12">
                 <TextBlock Classes="H2" Text="Tracked Coins" />
-                <TextBlock Text="{Binding IsMarketLoading, StringFormat=Loading: {0}}"
-                           Foreground="#8B949E" />
+                <TextBlock Text="Loading markets…"
+                           Foreground="#8B949E"
+                           IsVisible="{Binding IsMarketLoading}" />
 
                 <ScrollViewer Classes="PageScroll" MaxHeight="640">
                   <ListBox ItemsSource="{Binding Markets}"
@@ -1424,7 +1421,8 @@
                           <NumericUpDown Value="{Binding ManualFuturesLeverage}"
                                          Increment="1"
                                          Minimum="1"
-                                         Width="96" />
+                                         HorizontalAlignment="Stretch"
+                                         MinWidth="110" />
                         </StackPanel>
                         <StackPanel Grid.Column="2" Spacing="6"
                                     IsVisible="{Binding IsManualFuturesMode}">
@@ -2320,6 +2318,37 @@
                     </Border>
                   </Grid>
 
+                  <!-- AI risk verdict (auto on select; Deep scan enriches) -->
+                  <Border Classes="SoftPanel" Padding="12"
+                          IsVisible="{Binding DexTradingVM.HasSelectedToken}">
+                    <StackPanel Spacing="8">
+                      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                        <Border Grid.Column="0"
+                                Background="{Binding DexTradingVM.TokenVerdict.AccentHex}"
+                                CornerRadius="4" Padding="8,3" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding DexTradingVM.TokenVerdict.Badge}"
+                                     Foreground="White" FontWeight="Bold" FontSize="12" />
+                        </Border>
+                        <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                                   Text="{Binding DexTradingVM.TokenVerdict.ScoreLabel, StringFormat=risk {0}}"
+                                   Foreground="#8FA3B8" FontSize="12" />
+                        <Button Grid.Column="2" Content="🔍 Deep scan"
+                                Classes="GhostButton" FontSize="11" Padding="8,3"
+                                Command="{Binding DexTradingVM.DeepScanTokenCommand}"
+                                IsEnabled="{Binding !DexTradingVM.TokenVerdict.DeepScanBusy}" />
+                      </Grid>
+                      <TextBlock Text="{Binding DexTradingVM.TokenVerdict.RedFlagsText}"
+                                 Foreground="#C9D6E2" FontSize="11" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding DexTradingVM.TokenVerdict.Reason}"
+                                 Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding DexTradingVM.TokenVerdict.SourceLabel}"
+                                 Foreground="#5C6E82" FontSize="10" />
+                      <TextBlock Text="{Binding DexTradingVM.TokenVerdict.DeepScanNote}"
+                                 Foreground="#F4B860" FontSize="10" TextWrapping="Wrap"
+                                 IsVisible="{Binding DexTradingVM.TokenVerdict.HasDeepScanNote}" />
+                    </StackPanel>
+                  </Border>
+
                   <!-- Pair + token address -->
                   <TextBlock Text="{Binding DexTradingVM.SelectedTokenSubtitle}"
                              Foreground="#8FA3B8" TextWrapping="Wrap" FontSize="11" />
@@ -2987,7 +3016,7 @@
                                  VerticalAlignment="Center" />
                       <NumericUpDown Value="{Binding PortfolioRebalanceVM.GlobalAlertThresholdPct}"
                                      Minimum="0.5" Maximum="50" Increment="0.5"
-                                     Width="80" FontSize="12" />
+                                     Width="120" FontSize="12" />
                       <TextBlock Text="%" FontSize="12" Foreground="#8FA3B8" VerticalAlignment="Center" />
 
                       <!-- Target sum validator -->
@@ -3159,12 +3188,12 @@
                                FontSize="12" Foreground="#8FA3B8" VerticalAlignment="Center" />
                     <TextBox Grid.Column="1"
                              Text="{Binding PortfolioRebalanceVM.NewAssetSymbol}"
-                             Width="80" FontSize="12" PlaceholderText="BTC" />
+                             Width="110" FontSize="12" PlaceholderText="BTC" />
                     <NumericUpDown Grid.Column="2"
                                    Value="{Binding PortfolioRebalanceVM.NewAssetTargetPct}"
                                    Minimum="0.1" Maximum="100" Increment="5"
                                    FormatString="F1"
-                                   Width="90" FontSize="12" />
+                                   Width="120" FontSize="12" />
                     <TextBlock Grid.Column="3" Text="%" FontSize="12" Foreground="#8FA3B8"
                                VerticalAlignment="Center" />
                     <Button Grid.Column="4"
@@ -3923,7 +3952,7 @@
                                      Minimum="0"
                                      Maximum="10000000"
                                      Increment="5000"
-                                     Width="110"
+                                     Width="165"
                                      FontSize="12" />
                     </StackPanel>
                     <!-- Pool age -->
@@ -3933,7 +3962,7 @@
                                      Minimum="1"
                                      Maximum="8760"
                                      Increment="24"
-                                     Width="90"
+                                     Width="125"
                                      FontSize="12" />
                       <TextBlock Text="h" VerticalAlignment="Center" FontSize="12" Foreground="#8FA3B8" />
                     </StackPanel>
@@ -3944,7 +3973,7 @@
                                      Minimum="0"
                                      Maximum="100"
                                      Increment="10"
-                                     Width="80"
+                                     Width="115"
                                      FontSize="12" />
                     </StackPanel>
                     <!-- Search -->
@@ -6030,20 +6059,7 @@
     <Border IsVisible="{Binding IsPlaceholderSectionVisible}" Classes="Panel" Padding="26" ZIndex="5">
       <ScrollViewer Classes="PageScroll">
         <StackPanel Spacing="18">
-          <StackPanel Spacing="8">
-            <TextBlock Classes="Overline" Text="WORKSPACE" />
-            <TextBlock Classes="H1" Text="{Binding CurrentSectionTitle}" />
-            <TextBlock Text="{Binding CurrentSectionDescription}"
-                       Foreground="#8FA3B8"
-                       TextWrapping="Wrap"
-                       MaxWidth="920" />
-          </StackPanel>
-
-          <Border Classes="TicketMetricCard">
-            <TextBlock Text="{Binding CurrentSectionRoadmap}"
-                       Foreground="#D7E3EE"
-                       TextWrapping="Wrap" />
-          </Border>
+          <TextBlock Classes="H1" Text="{Binding CurrentSectionTitle}" />
 
           <StackPanel Spacing="16" IsVisible="{Binding IsRiskSectionVisible}">
             <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16">
@@ -6655,8 +6671,6 @@
                 <Grid ColumnDefinitions="*,Auto,Auto">
                   <StackPanel Grid.Column="0" Spacing="2">
                     <TextBlock Classes="H2" Text="🗞️ Daily AI Briefing" />
-                    <TextBlock Text="One morning read across your book, the news pulse, sentiment and the scanner."
-                               Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
                   </StackPanel>
                   <Border Grid.Column="1" CornerRadius="6" Padding="10,4" VerticalAlignment="Center" Margin="0,0,10,0"
                           Background="#04101A" IsVisible="{Binding BriefingVM.HasSignal}">
@@ -6695,8 +6709,6 @@
               <StackPanel Spacing="10">
                 <StackPanel Spacing="2">
                   <TextBlock Classes="H2" Text="🛡️ AI Risk Check" />
-                  <TextBlock Text="Score a proposed order against your open book before you place it. Advisory — never auto-trades."
-                             Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
                 </StackPanel>
 
                 <!-- Order form -->
@@ -6758,8 +6770,6 @@
               <StackPanel Spacing="10">
                 <StackPanel Spacing="2">
                   <TextBlock Classes="H2" Text="🔗 AI Correlation Insight" />
-                  <TextBlock Text="How diversified is the book? AI reads the correlation matrix for clusters and concentration risk."
-                             Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
                 </StackPanel>
 
                 <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
@@ -6799,8 +6809,6 @@
               <StackPanel Spacing="10">
                 <StackPanel Spacing="2">
                   <TextBlock Classes="H2" Text="📐 AI Options Advisor" />
-                  <TextBlock Text="Suggests an options structure from Deribit IV / skew / put-call and your view. Educational — never trades."
-                             Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
                 </StackPanel>
 
                 <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="10">
@@ -8707,8 +8715,6 @@
                 <Grid ColumnDefinitions="*,Auto,Auto">
                   <StackPanel Grid.Column="0">
                     <TextBlock Text="🧠 AI Pair Verdict" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
-                    <TextBlock Text="Is the spread stretched enough to trade — and which leg?"
-                               Foreground="#5C6E82" FontSize="11" />
                   </StackPanel>
                   <TextBlock Grid.Column="1" Text="{Binding StatArbVM.PairSource}"
                              Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
@@ -9889,7 +9895,7 @@
                       Command="{Binding LiquidationHeatmapVM.SetSymbolCommand}"
                       CommandParameter="DOGEUSDT" />
               <TextBox Text="{Binding LiquidationHeatmapVM.Symbol}"
-                       PlaceholderText="XRPUSDT" Width="100" Margin="6,0,0,0" />
+                       PlaceholderText="XRPUSDT" Width="130" Margin="6,0,0,0" />
             </WrapPanel>
 
             <!-- KPI row -->
@@ -10427,8 +10433,6 @@
                 <Grid ColumnDefinitions="*,Auto,Auto">
                   <StackPanel Grid.Column="0">
                     <TextBlock Text="🧠 AI Coach" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
-                    <TextBlock Text="Strengths, recurring leaks and concrete fixes from your trade history."
-                               Foreground="#5C6E82" FontSize="11" />
                   </StackPanel>
                   <TextBlock Grid.Column="1" Text="{Binding TradeJournalVM.CoachSource}"
                              Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
@@ -11055,8 +11059,6 @@
                 <Grid ColumnDefinitions="*,Auto,Auto">
                   <StackPanel Grid.Column="0">
                     <TextBlock Text="🧠 AI On-Chain Read" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
-                    <TextBlock Text="Valuation regime from MVRV / NUPL / exchange flows."
-                               Foreground="#5C6E82" FontSize="11" />
                   </StackPanel>
                   <TextBlock Grid.Column="1" Text="{Binding OnChainVM.InsightSource}"
                              Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
