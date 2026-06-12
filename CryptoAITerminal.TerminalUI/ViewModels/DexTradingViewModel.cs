@@ -9,6 +9,7 @@ using Avalonia;
 using Avalonia.Threading;
 using CryptoAITerminal.Core.Models;
 using CryptoAITerminal.Gateway.DEX;
+using CryptoAITerminal.TerminalUI.Services;
 using ReactiveUI;
 using System.Reactive;
 
@@ -25,6 +26,10 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     private readonly DexPriceHistoryCache _historyCache = new();
     private readonly HashSet<string> _onChainScanStarted = new(StringComparer.OrdinalIgnoreCase);
     private string _onChainScanStatus = string.Empty;
+
+    private readonly TokenSecurityAiService _tokenAiService = new();
+    private readonly TokenSecurityService _securityScanner = new();
+    private int _verdictSeq;
 
     private DexTokenItemViewModel? _selectedToken;
     private string _searchText = string.Empty;
@@ -89,6 +94,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             QueueBuyQuote();
             _ = RefreshQuoteAssetBalanceAsync();
             _ = RefreshTokenBalanceAsync();
+            _ = RefreshTokenVerdictAsync(value);
         }
     }
 
@@ -600,6 +606,9 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> RefreshTokenBalanceCommand { get; }
     public ReactiveCommand<string, Unit> SelectChartRangeCommand { get; }
 
+    public DexTokenAiVerdictViewModel TokenVerdict { get; } = new();
+    public ReactiveCommand<Unit, Unit> DeepScanTokenCommand { get; }
+
     public DexTradingViewModel(WalletWorkspaceViewModel walletWorkspace)
     {
         _walletWorkspace = walletWorkspace;
@@ -616,6 +625,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         ApplySellBalancePresetCommand = ReactiveCommand.Create<string>(ApplySellBalancePreset, outputScheduler: App.UiScheduler);
         RefreshTokenBalanceCommand = ReactiveCommand.CreateFromTask(RefreshTokenBalanceAsync, outputScheduler: App.UiScheduler);
         SelectChartRangeCommand = ReactiveCommand.CreateFromTask<string>(SelectChartRangeAsync, outputScheduler: App.UiScheduler);
+        DeepScanTokenCommand = ReactiveCommand.CreateFromTask(DeepScanTokenAsync, outputScheduler: App.UiScheduler);
 
         _refreshTimer = new DispatcherTimer
         {
@@ -650,12 +660,83 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         _ = RefreshAsync();
     }
 
+    private async Task RefreshTokenVerdictAsync(DexTokenItemViewModel? token)
+    {
+        if (token is null)
+        {
+            TokenVerdict.Reset();
+            return;
+        }
+
+        var seq = ++_verdictSeq;
+        TokenVerdict.IsBusy = true;
+        TokenVerdict.DeepScanNote = null;
+        try
+        {
+            var verdict = await _tokenAiService.AssessAsync(token.TokenInfo);
+            if (seq != _verdictSeq || !ReferenceEquals(SelectedToken, token))
+                return; // a newer selection superseded this one
+            TokenVerdict.ApplyVerdict(verdict);
+        }
+        catch
+        {
+            // Never let verdict failure break token selection; keep prior state.
+        }
+        finally
+        {
+            if (seq == _verdictSeq)
+                TokenVerdict.IsBusy = false;
+        }
+    }
+
+    private async Task DeepScanTokenAsync()
+    {
+        var token = SelectedToken;
+        if (token is null)
+            return;
+
+        TokenVerdict.DeepScanBusy = true;
+        TokenVerdict.DeepScanNote = null;
+        try
+        {
+            var scan = await _securityScanner.ScanAsync(
+                token.TokenInfo.TokenAddress, token.TokenInfo.ChainId);
+
+            if (!ReferenceEquals(SelectedToken, token))
+                return; // token changed while scanning
+
+            if (scan.ScanFailed)
+            {
+                TokenVerdict.DeepScanNote = $"Deep scan unavailable: {scan.Source}";
+                return;
+            }
+
+            var summary = DexSecuritySummary.Build(scan);
+            _tokenAiService.Invalidate(token.TokenInfo);
+            var verdict = await _tokenAiService.AssessAsync(token.TokenInfo, summary);
+
+            if (!ReferenceEquals(SelectedToken, token))
+                return;
+
+            TokenVerdict.ApplyVerdict(verdict);
+        }
+        catch (System.Exception ex)
+        {
+            TokenVerdict.DeepScanNote = $"Deep scan error: {ex.Message}";
+        }
+        finally
+        {
+            TokenVerdict.DeepScanBusy = false;
+        }
+    }
+
     public void Dispose()
     {
         _refreshTimer.Stop();
         _chartDebounceTimer.Stop();
         _quoteDebounceTimer.Stop();
         _walletWorkspace.PropertyChanged -= OnWalletWorkspacePropertyChanged;
+        _securityScanner.Dispose();
     }
 
     private string NativeQuoteSymbol =>
