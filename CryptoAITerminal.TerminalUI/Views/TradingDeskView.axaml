@@ -1280,11 +1280,10 @@
                          Foreground="#7E92A7" VerticalAlignment="Center" TextAlignment="Right" />
             </Grid>
 
-            <!-- Candlestick chart (same host styling as CEX) -->
+            <!-- Candlestick chart (same control as CEX) -->
             <Border Classes="SoftPanel,ChartCanvasHost" Padding="8">
-              <ctrl:DexPriceChart Height="320"
-                                  Candles="{Binding DexTradingVM.ChartCandles}"
-                                  ShowVwap="True" />
+              <ctrl:CexCandlestickChart Height="320"
+                                        Candles="{Binding DexTradingVM.ChartCandles}" />
             </Border>
 
             <!-- Chart status bar -->
