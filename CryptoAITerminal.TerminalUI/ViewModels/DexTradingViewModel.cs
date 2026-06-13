@@ -85,7 +85,9 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     public string SelectedChainFilter
     {
         get => _selectedChainFilter;
-        set { this.RaiseAndSetIfChanged(ref _selectedChainFilter, value); ApplyTokenFilter(); }
+        // Changing the chain reloads the list for that chain (the latest-profiles
+        // feed is Solana/ETH-heavy, so client-only filtering leaves BSC/Tron empty).
+        set { this.RaiseAndSetIfChanged(ref _selectedChainFilter, value); _ = RefreshAsync(); }
     }
 
     public string SelectedMinLiquidity
@@ -809,6 +811,15 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
     private async Task RefreshAsync()
     {
+        var chainId = ChainIdForFilter(_selectedChainFilter);
+        if (!string.IsNullOrEmpty(chainId))
+        {
+            await LoadTokensAsync(
+                () => _dexClient.GetMomentumScoutTokensAsync(new[] { chainId }, 60),
+                $"{_selectedChainFilter} tokens loaded.");
+            return;
+        }
+
         await LoadTokensAsync(() => _dexClient.GetLatestTokensAsync(), "Latest DEX tokens refreshed.");
     }
 
@@ -1877,6 +1888,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             "bsc" => "bsc",
             "base" => "base",
             "solana" => "solana",
+            "tron" => "tron",
             "polygon" => "polygon_pos",
             "arbitrum" => "arbitrum",
             "avalanche" => "avax",
