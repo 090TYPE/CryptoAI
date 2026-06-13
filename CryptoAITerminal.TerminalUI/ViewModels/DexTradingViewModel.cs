@@ -9,6 +9,7 @@ using Avalonia;
 using Avalonia.Threading;
 using CryptoAITerminal.Core.Models;
 using CryptoAITerminal.Gateway.DEX;
+using CryptoAITerminal.TerminalUI.Services;
 using ReactiveUI;
 using System.Reactive;
 
@@ -25,6 +26,13 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     private readonly DexPriceHistoryCache _historyCache = new();
     private readonly HashSet<string> _onChainScanStarted = new(StringComparer.OrdinalIgnoreCase);
     private string _onChainScanStatus = string.Empty;
+
+    private IReadOnlyList<DexTokenInfo> _loadedTokens = System.Array.Empty<DexTokenInfo>();
+    private string _lastLoadSuccessMessage = "Latest DEX tokens refreshed.";
+    private string _selectedChainFilter = "All";
+    private string _selectedMinLiquidity = "Any";
+    private string _selectedMinVolume = "Any";
+    private string _selectedSortMode = "Volume";
 
     private DexTokenItemViewModel? _selectedToken;
     private string _searchText = string.Empty;
@@ -64,6 +72,35 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     public ObservableCollection<Point> ChartPoints { get; } = new();
     public ObservableCollection<DexOhlcvPoint> ChartCandles { get; } = new();
     public ObservableCollection<string> QuoteAssetOptions { get; } = new();
+
+    public ObservableCollection<string> ChainFilterOptions { get; } = new() { "All", "BSC", "Ethereum", "Base", "Solana", "Tron" };
+    public ObservableCollection<string> MinLiquidityOptions { get; } = new() { "Any", "$10k", "$50k", "$100k", "$500k" };
+    public ObservableCollection<string> MinVolumeOptions { get; } = new() { "Any", "$10k", "$50k", "$250k", "$1M" };
+    public ObservableCollection<string> SortModeOptions { get; } = new() { "Volume", "Liquidity", "24h Change" };
+
+    public string SelectedChainFilter
+    {
+        get => _selectedChainFilter;
+        set { this.RaiseAndSetIfChanged(ref _selectedChainFilter, value); ApplyTokenFilter(); }
+    }
+
+    public string SelectedMinLiquidity
+    {
+        get => _selectedMinLiquidity;
+        set { this.RaiseAndSetIfChanged(ref _selectedMinLiquidity, value); ApplyTokenFilter(); }
+    }
+
+    public string SelectedMinVolume
+    {
+        get => _selectedMinVolume;
+        set { this.RaiseAndSetIfChanged(ref _selectedMinVolume, value); ApplyTokenFilter(); }
+    }
+
+    public string SelectedSortMode
+    {
+        get => _selectedSortMode;
+        set { this.RaiseAndSetIfChanged(ref _selectedSortMode, value); ApplyTokenFilter(); }
+    }
 
     public DexTokenItemViewModel? SelectedToken
     {
@@ -705,7 +742,6 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         try
         {
             await RunOnUiAsync(() => IsLoading = true);
-            var previousTokenAddress = await RunOnUiAsync(() => SelectedToken?.TokenAddress);
             var tokens = await loader();
             var sampleTimeUtc = DateTime.UtcNow;
 
@@ -716,19 +752,10 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
             await RunOnUiAsync(() =>
             {
-                Tokens.Clear();
-                foreach (var token in tokens)
-                {
-                    var item = new DexTokenItemViewModel();
-                    item.Update(token);
-                    Tokens.Add(item);
-                }
-
-                SelectedToken = Tokens.FirstOrDefault(token => string.Equals(token.TokenAddress, previousTokenAddress, StringComparison.OrdinalIgnoreCase))
-                    ?? Tokens.FirstOrDefault();
-
+                _loadedTokens = tokens;
+                _lastLoadSuccessMessage = successMessage;
+                ApplyTokenFilter();
                 LastUpdatedLocal = DateTime.Now;
-                StatusMessage = Tokens.Count == 0 ? "No tokens found for the current filter." : successMessage;
             });
 
             await RunOnUiAsync(QueueChartReload);
@@ -742,6 +769,56 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             await RunOnUiAsync(() => IsLoading = false);
         }
     }
+
+    private void ApplyTokenFilter()
+    {
+        var previousTokenAddress = SelectedToken?.TokenAddress;
+
+        var filtered = DexTokenFilter.Apply(
+            _loadedTokens,
+            ChainIdForFilter(_selectedChainFilter),
+            ThresholdValue(_selectedMinLiquidity),
+            ThresholdValue(_selectedMinVolume),
+            SortModeKey(_selectedSortMode));
+
+        Tokens.Clear();
+        foreach (var token in filtered)
+        {
+            var item = new DexTokenItemViewModel();
+            item.Update(token);
+            Tokens.Add(item);
+        }
+
+        SelectedToken = Tokens.FirstOrDefault(t => string.Equals(t.TokenAddress, previousTokenAddress, StringComparison.OrdinalIgnoreCase))
+            ?? Tokens.FirstOrDefault();
+
+        StatusMessage = Tokens.Count == 0
+            ? (_loadedTokens.Count == 0 ? "No tokens found." : "No tokens match filters.")
+            : _lastLoadSuccessMessage;
+    }
+
+    private static string? ChainIdForFilter(string display) => display switch
+    {
+        "BSC"      => "bsc",
+        "Ethereum" => "ethereum",
+        "Base"     => "base",
+        "Solana"   => "solana",
+        "Tron"     => "tron",
+        _          => null,
+    };
+
+    private static decimal ThresholdValue(string preset) => preset switch
+    {
+        "$10k"  => 10_000m,
+        "$50k"  => 50_000m,
+        "$100k" => 100_000m,
+        "$250k" => 250_000m,
+        "$500k" => 500_000m,
+        "$1M"   => 1_000_000m,
+        _       => 0m,
+    };
+
+    private static string SortModeKey(string display) => display == "24h Change" ? "Change" : display;
 
     private void RecordPriceSample(DexTokenInfo token, DateTime sampleTimeUtc)
     {
