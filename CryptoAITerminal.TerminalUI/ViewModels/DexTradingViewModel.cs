@@ -1759,12 +1759,17 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
     private static GeckoChartRequest GetGeckoChartRequest(string range)
     {
+        // GeckoTerminal only accepts these aggregates: minute → 1/5/15, hour → 1/4/12,
+        // day → 1. "minute" with aggregate 30 is rejected with HTTP 400, so longer
+        // ranges must use the hour/day timeframes.
         return range switch
         {
             "15M" => new GeckoChartRequest("minute", 1, 15),
+            "1H"  => new GeckoChartRequest("minute", 5, 12),
             "4H"  => new GeckoChartRequest("minute", 5, 48),
             "12H" => new GeckoChartRequest("minute", 15, 48),
-            "1W"  => new GeckoChartRequest("minute", 30, 336),
+            "1D"  => new GeckoChartRequest("hour", 1, 24),
+            "1W"  => new GeckoChartRequest("hour", 1, 168),
             _ => new GeckoChartRequest("minute", 5, 288)
         };
     }

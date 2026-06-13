@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using CryptoAITerminal.Core.Models;
 
 namespace CryptoAITerminal.Gateway.DEX;
@@ -79,6 +80,11 @@ public class GeckoTerminalClient
 
     private sealed class OhlcvAttributesDto
     {
+        // GeckoTerminal returns this under the snake_case key "ohlcv_list".
+        // PropertyNameCaseInsensitive does not bridge the underscore, so the
+        // mapping must be explicit — otherwise the list is always null and the
+        // chart silently falls back to synthetic data.
+        [JsonPropertyName("ohlcv_list")]
         public List<List<JsonElement>>? OhlcvList { get; set; }
     }
 }
