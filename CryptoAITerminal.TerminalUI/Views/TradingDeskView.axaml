@@ -1418,6 +1418,34 @@
             <Button Grid.Column="1" Content="REFRESH" Classes="GhostButton" Command="{Binding DexTradingVM.RefreshCommand}" />
           </Grid>
 
+          <!-- Screener filters -->
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="8" RowDefinitions="Auto,Auto" RowSpacing="8">
+            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+              <TextBlock Classes="Overline" Text="Chain" />
+              <ComboBox ItemsSource="{Binding DexTradingVM.ChainFilterOptions}"
+                        SelectedItem="{Binding DexTradingVM.SelectedChainFilter}"
+                        HorizontalAlignment="Stretch" />
+            </StackPanel>
+            <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
+              <TextBlock Classes="Overline" Text="Sort" />
+              <ComboBox ItemsSource="{Binding DexTradingVM.SortModeOptions}"
+                        SelectedItem="{Binding DexTradingVM.SelectedSortMode}"
+                        HorizontalAlignment="Stretch" />
+            </StackPanel>
+            <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2">
+              <TextBlock Classes="Overline" Text="Min Liq" />
+              <ComboBox ItemsSource="{Binding DexTradingVM.MinLiquidityOptions}"
+                        SelectedItem="{Binding DexTradingVM.SelectedMinLiquidity}"
+                        HorizontalAlignment="Stretch" />
+            </StackPanel>
+            <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
+              <TextBlock Classes="Overline" Text="Min Vol" />
+              <ComboBox ItemsSource="{Binding DexTradingVM.MinVolumeOptions}"
+                        SelectedItem="{Binding DexTradingVM.SelectedMinVolume}"
+                        HorizontalAlignment="Stretch" />
+            </StackPanel>
+          </Grid>
+
           <!-- Selected token quick info -->
           <Border Classes="GuardStripCard" IsVisible="{Binding DexTradingVM.HasSelectedToken}">
             <StackPanel Spacing="4">
