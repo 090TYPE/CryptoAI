@@ -924,11 +924,6 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             _priceHistory[token.TokenAddress] = history;
         }
 
-        if (history.Count == 0)
-        {
-            SeedSyntheticHistory(history, token, sampleTimeUtc);
-        }
-
         var hasSameTimestamp = history.Count > 0
             && history[^1].TimestampUtc == sampleTimeUtc;
 
@@ -1345,14 +1340,12 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
                     }
                     else
                     {
-                        // ── Source 4: synthetic bootstrap ─────────────────────
-                        candles = BuildLocalCandles(selectedToken.TokenInfo, chartRange, out diagnostics);
-                        candles = NormalizeDexCandlesForDisplay(candles, selectedToken.TokenInfo, chartRange);
-                        sourceLabel = "Synthetic bootstrap";
-                        statusLabel = $"Synthetic chart (no live data yet). On-chain scan running...";
-
-                        // Kick off background on-chain scan if not already running
+                        // ── No real data available: honest empty state ───────
+                        ClearChart(
+                            "No live chart data for this pair yet — collecting live ticks; on-chain scan running.",
+                            "No live OHLCV, on-chain history or local samples available yet.");
                         TriggerBackgroundOnChainScan(selectedToken.TokenInfo);
+                        return;
                     }
                 }
             }
@@ -1558,26 +1551,11 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
         if (samples.Count < 2)
         {
-            samples = BuildSyntheticWindow(token, request, nowUtc);
-            diagnostics = "Chart was bootstrapped from current pair stats because live local history is still short.";
-        }
-        else if (samples[0].TimestampUtc > fromUtc)
-        {
-            var syntheticPrefix = BuildSyntheticWindow(token, request, nowUtc)
-                .Where(sample => sample.TimestampUtc < samples[0].TimestampUtc)
-                .ToList();
-
-            if (syntheticPrefix.Count > 0)
-            {
-                samples.InsertRange(0, syntheticPrefix);
-                diagnostics = "Chart mixes sampled prices with a synthetic backfill based on the pair's 5m/1h/24h changes.";
-            }
-        }
-        else
-        {
-            diagnostics = $"Chart built from {samples.Count} locally collected price samples.";
+            diagnostics = "Local samples are still too sparse to form candles.";
+            return Array.Empty<DexOhlcvPoint>();
         }
 
+        diagnostics = $"Chart built from {samples.Count} locally collected price samples.";
         var candles = DexCandleBuilder.Bucketize(samples, fromUtc, nowUtc, request.BucketSize, request.MaxCandles);
         if (candles.Count < 2)
         {
@@ -1709,92 +1687,9 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         DexTokenInfo token,
         string range)
     {
-        if (candles.Count < 2)
-        {
-            return candles;
-        }
-
-        var request = GetLocalChartRequest(range);
-        var interval = request.BucketSize;
-        var ordered = candles
+        return candles
             .Where(static candle => candle.Open > 0 && candle.High > 0 && candle.Low > 0 && candle.Close > 0)
             .OrderBy(candle => candle.Timestamp)
-            .ToList();
-
-        if (ordered.Count < 2)
-        {
-            return ordered;
-        }
-
-        var normalized = new List<DexOhlcvPoint>(Math.Max(ordered.Count, request.MaxCandles));
-        for (var index = 0; index < ordered.Count - 1; index++)
-        {
-            var current = ordered[index];
-            var next = ordered[index + 1];
-            normalized.Add(current);
-
-            var gap = next.Timestamp - current.Timestamp;
-            var missingSteps = (int)Math.Round(gap.TotalSeconds / interval.TotalSeconds) - 1;
-            if (missingSteps <= 0)
-            {
-                continue;
-            }
-
-            missingSteps = Math.Min(missingSteps, 48);
-            for (var step = 1; step <= missingSteps; step++)
-            {
-                var factor = step / (decimal)(missingSteps + 1);
-                var interpolatedOpen = Interpolate(current.Close, next.Open, factor);
-                var interpolatedClose = Interpolate(current.Close, next.Close, factor);
-                var high = Math.Max(interpolatedOpen, interpolatedClose);
-                var low = Math.Min(interpolatedOpen, interpolatedClose);
-
-                normalized.Add(new DexOhlcvPoint
-                {
-                    Timestamp = current.Timestamp.AddTicks(interval.Ticks * step),
-                    Open = interpolatedOpen,
-                    High = high,
-                    Low = low,
-                    Close = interpolatedClose,
-                    Volume = 0
-                });
-            }
-        }
-
-        normalized.Add(ordered[^1]);
-
-        var lastVisible = normalized[^1];
-        var nowLocal = DateTime.Now;
-        var trailingGap = nowLocal - lastVisible.Timestamp;
-        var trailingMissingSteps = (int)Math.Round(trailingGap.TotalSeconds / interval.TotalSeconds);
-        if (trailingMissingSteps > 0)
-        {
-            trailingMissingSteps = Math.Min(trailingMissingSteps, 48);
-            var latestTargetPrice = token.PriceUsd > 0 ? token.PriceUsd : lastVisible.Close;
-
-            for (var step = 1; step <= trailingMissingSteps; step++)
-            {
-                var factor = step / (decimal)trailingMissingSteps;
-                var interpolatedClose = Interpolate(lastVisible.Close, latestTargetPrice, factor);
-                var interpolatedOpen = step == 1 ? lastVisible.Close : normalized[^1].Close;
-                var high = Math.Max(interpolatedOpen, interpolatedClose);
-                var low = Math.Min(interpolatedOpen, interpolatedClose);
-
-                normalized.Add(new DexOhlcvPoint
-                {
-                    Timestamp = lastVisible.Timestamp.AddTicks(interval.Ticks * step),
-                    Open = interpolatedOpen,
-                    High = high,
-                    Low = low,
-                    Close = interpolatedClose,
-                    Volume = 0
-                });
-            }
-        }
-
-        return normalized
-            .OrderBy(candle => candle.Timestamp)
-            .TakeLast(request.MaxCandles)
             .ToList();
     }
 
