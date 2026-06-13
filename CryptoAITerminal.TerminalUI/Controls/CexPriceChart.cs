@@ -77,13 +77,22 @@ public class CexPriceChart : Control
             return;
         }
 
-        var sourceWidth = Math.Max(points.Max(point => point.X), 1d);
-        var sourceHeight = Math.Max(points.Max(point => point.Y), 1d);
+        // X is a sample index; map its observed [min..max] across the full width.
+        // Y arrives already normalised to [0..1] (0 = top/high, 1 = bottom/low),
+        // so it is mapped 1:1 here — no second auto-scaling pass that would
+        // amplify a near-flat price into a fake square wave.
+        var minX = points.Min(point => point.X);
+        var maxX = points.Max(point => point.X);
+        var spanX = Math.Max(maxX - minX, 1d);
+
+        // Keep the line off the very top/bottom edges for breathing room.
+        const double inset = 0.08;
+        var plotHeight = bounds.Height * (1d - (inset * 2d));
 
         var scaled = points
             .Select(point => new Point(
-                bounds.Left + ((point.X / sourceWidth) * bounds.Width),
-                bounds.Top + ((point.Y / sourceHeight) * bounds.Height)))
+                bounds.Left + (((point.X - minX) / spanX) * bounds.Width),
+                bounds.Top + (bounds.Height * inset) + (Math.Clamp(point.Y, 0d, 1d) * plotHeight)))
             .ToList();
 
         if (scaled.Count == 1)
