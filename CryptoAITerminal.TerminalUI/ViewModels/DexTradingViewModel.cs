@@ -799,13 +799,16 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(SearchText))
+        switch (DexRefreshPolicy.NextAutoRefresh(ChainIdForFilter(_selectedChainFilter), SearchText))
         {
-            await RefreshAsync();
-        }
-        else
-        {
-            await SearchAsync();
+            case DexRefreshPolicy.AutoRefreshAction.Search:
+                await SearchAsync();
+                break;
+            case DexRefreshPolicy.AutoRefreshAction.ReloadLatest:
+                await RefreshAsync();
+                break;
+            // Skip: a specific chain uses the multi-request scout — it loads on
+            // chain-select and the REFRESH button, never on the fast timer.
         }
     }
 
