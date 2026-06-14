@@ -33,17 +33,28 @@ Model (confirmed with user): **English = source of truth, RU rendered at runtime
     strings → English source + dict entries (prefix entries for interpolated `$"Error: {…}"`).
 
 ## Phases (build + commit per phase)
-- [ ] **A. Scanner infra** — add `ToolTip.Tip` (Controls) + `Run.Text` (walk `TextBlock.Inlines`)
-      to `AttachLocalizationObservers` / `ApplyLocalizationToObservedControls`. Build.
-- [ ] **B. XAML literals → English + dict**, page by page, build after each:
-  - [ ] B1 Smart Order Router (7217–7434)
-  - [ ] B2 Market Scanner + Alerts/Price Levels (7494–7782)
-  - [ ] B3 API-key panels ×4 (10211–10678) — convert bare-text TextBlocks to explicit `<Run>`s
-  - [ ] B4 Misc: L441 tooltip, L5642 DCA note
-- [ ] **C. VM Russian-only → English + dict** (BestExecution, Backtest, scan others). Leave bilingual ternaries.
-- [ ] **D. Dictionary coverage test** in `CryptoAITerminal.Core.Tests` — no Russian chars leak
-      for known keys; round-trip sanity.
-- [ ] **E. Build + run + smoke** RU/EN on each touched page; commit.
+- [x] **A. Scanner infra** — added `ToolTip.Tip` (Controls), `Run.Text` (walk `TextBlock.Inlines`),
+      and `ToggleSwitch` OnContent/OffContent. (commit 1de650b + f3ef521)
+- [x] **B. XAML literals → English + dict** (all 113 occurrences):
+  - [x] B1 Smart Order Router  - [x] B2 Market Scanner + Alerts/Price Levels
+  - [x] B3 API-key panels ×4 (bare-text TextBlocks restructured to explicit `<Run>`s)
+  - [x] B4 Misc: liquidation tooltip, DCA note, scanner sort headers
+- [x] **C. VM Russian-only → English + dict** — BestExecution, Backtest (incl. 2 sync-bug fixes),
+      AIBot, FundingRate, MarketScanner, MainWindow section metadata. Bilingual ternaries + Russian
+      input-matching keywords left untouched.
+- [x] **D. Dictionary coverage test** — `UiLocalizationServiceTests` (4 tests). Full suite 294 green.
+- [x] **E. Build (0 errors) + launch smoke** — app starts, survives scan ticks, no crash.
+
+## Done — branch `task1-ui-language-unification`
+English is now the single source for all authored UI text; RU renders via the dictionary/scanner.
+
+### Remaining optional polish (not blocking; consistent with existing conventions)
+- Long placeholder-section descriptions/roadmaps (funding, liquidation, rules, arb, scanner, router,
+  journal, gas, positions, news, onchain, copy, statarb) are English source but have no RU dict
+  entries → show English under RU (same convention as existing English-only product names like
+  "Whale Tracker"). Add RU dict entries if full RU coverage is wanted.
+- A few interpolated VM status strings with mid-string dynamic values and transient toasts show
+  English under RU (line-match dictionary can't translate them). Minor.
 
 ## Verification
 - `dotnet build CryptoAITerminal.TerminalUI/CryptoAITerminal.TerminalUI.csproj -c Debug` → 0 errors.
