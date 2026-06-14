@@ -508,7 +508,7 @@ public class AIBotViewModel : ReactiveObject
     public void StopBot()
     {
         if (IsRunning)
-            App.Tray?.ShowInfo("Rule Bot Stopped", $"{Symbol} · бот остановлен");
+            App.Tray?.ShowInfo("Rule Bot Stopped", $"{Symbol} · bot stopped");
 
         var bot = _bot;
         _bot = null;
@@ -528,7 +528,7 @@ public class AIBotViewModel : ReactiveObject
     public async Task StopBotAsync()
     {
         if (IsRunning)
-            App.Tray?.ShowInfo("Rule Bot Stopped", $"{Symbol} · бот остановлен");
+            App.Tray?.ShowInfo("Rule Bot Stopped", $"{Symbol} · bot stopped");
 
         var bot = _bot;
         _bot = null;

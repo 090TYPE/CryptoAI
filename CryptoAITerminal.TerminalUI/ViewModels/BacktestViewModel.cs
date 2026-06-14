@@ -141,11 +141,11 @@ public class BacktestViewModel : ReactiveObject
     private int     _mcRuns              = 100;
     private decimal _mcSubsamplePercent  = 70m;
     private bool    _isMonteCarloRunning;
-    private string  _monteCarloSummary   = "Monte Carlo не запускался.";
+    private string  _monteCarloSummary   = "Monte Carlo has not run.";
 
     // ── Results ───────────────────────────────────────────────────────────────
-    private BacktestResult _mainResult   = BacktestResult.Empty("Выберите инструмент и нажмите Run");
-    private string         _statusText   = "Готов";
+    private BacktestResult _mainResult   = BacktestResult.Empty("Select an instrument and click Run");
+    private string         _statusText   = "Ready";
     private Geometry?      _equityGeometry;
     private Geometry?      _buyHoldGeometry;
     private string         _equityDateRange = "";
@@ -398,7 +398,7 @@ public class BacktestViewModel : ReactiveObject
 
     // ── KPI labels ────────────────────────────────────────────────────────────
 
-    public string StatusLabel    => _isRunning ? "Загрузка…" : (_mainResult.IsReady ? "Готов" : _statusText);
+    public string StatusLabel    => _isRunning ? "Loading…" : (_mainResult.IsReady ? "Ready" : _statusText);
     public string StatusBrush    => _mainResult.IsReady ? "#3DDC84" : (_isRunning ? "#F4B860" : "#8FA3B8");
     public string WindowLabel    => _mainResult.IsReady
         ? $"{_mainResult.Message} | {CurrentStrategyName}"
@@ -413,19 +413,19 @@ public class BacktestViewModel : ReactiveObject
     public string WorstTradeLabel  => _mainResult.IsReady ? $"{_mainResult.WorstTradePercent:+0.##;-0.##;0}%" : "--";
     public string LastSignalLabel  => _mainResult.LastSignal;
     public string BiasLabel        => _mainResult.IsReady
-        ? (_mainResult.WinRatePercent >= 50 ? "Momentum позитивный" : "Momentum защитный")
+        ? (_mainResult.WinRatePercent >= 50 ? "Momentum positive" : "Momentum defensive")
         : "--";
     public string NetReturnColor   => _mainResult.IsReady
         ? (_mainResult.NetReturnPercent >= 0 ? "#3DDC84" : "#FF5D73")
         : "#8FA3B8";
 
     public string Narrative => _mainResult.IsReady
-        ? $"{CurrentStrategyName} на {Symbol} ({SelectedTimeframe}): " +
+        ? $"{CurrentStrategyName} on {Symbol} ({SelectedTimeframe}): " +
           $"Win rate {_mainResult.WinRatePercent:0.#}%, " +
-          $"доходность {_mainResult.NetReturnPercent:+0.##;-0.##;0}%, " +
-          $"макс. просадка {_mainResult.MaxDrawdownPercent:0.##}%, " +
+          $"return {_mainResult.NetReturnPercent:+0.##;-0.##;0}%, " +
+          $"max drawdown {_mainResult.MaxDrawdownPercent:0.##}%, " +
           $"Sharpe {_mainResult.SharpeRatio:0.##}. " +
-          $"Комиссия {Commission}% (round-trip {Commission * 2}%)."
+          $"Commission {Commission}% (round-trip {Commission * 2}%)."
         : _statusText;
 
     private string CurrentStrategyName => _selectedStrategy switch
@@ -483,7 +483,7 @@ public class BacktestViewModel : ReactiveObject
     private async Task ReviewWithAiAsync()
     {
         if (AiReviewRunning) return;
-        if (!_mainResult.IsReady) { ExportStatus = "Сначала запустите бэктест."; return; }
+        if (!_mainResult.IsReady) { ExportStatus = "Run a backtest first."; return; }
 
         AiReviewRunning = true;
         try
@@ -491,7 +491,7 @@ public class BacktestViewModel : ReactiveObject
             decimal buyHold = _buyHoldValues.Count >= 2 && _buyHoldValues[0] != 0m
                 ? (_buyHoldValues[^1] / _buyHoldValues[0] - 1m) * 100m : 0m;
 
-            var mc = _monteCarloSummary is { Length: > 0 } and not "Monte Carlo не запускался." ? _monteCarloSummary : null;
+            var mc = _monteCarloSummary is { Length: > 0 } and not "Monte Carlo has not run." ? _monteCarloSummary : null;
             var metrics = new CryptoAITerminal.AIEngine.BacktestMetrics(
                 CurrentStrategyName,
                 _mainResult.NetReturnPercent, buyHold, _mainResult.WinRatePercent,
@@ -537,7 +537,7 @@ public class BacktestViewModel : ReactiveObject
     {
         if (!_mainResult.IsReady)
         {
-            ExportStatus = "Сначала запустите бэктест.";
+            ExportStatus = "Run a backtest first.";
             return;
         }
 
@@ -561,11 +561,11 @@ public class BacktestViewModel : ReactiveObject
             File.WriteAllText(comparisonPath, BuildComparisonCsv(),         Encoding.UTF8);
             File.WriteAllText(summaryPath,    BuildSummaryCsv(),            Encoding.UTF8);
 
-            ExportStatus = $"Экспортировано в {dir} ({Path.GetFileName(prefix)}_*.csv)";
+            ExportStatus = $"Exported to {dir} ({Path.GetFileName(prefix)}_*.csv)";
         }
         catch (Exception ex)
         {
-            ExportStatus = $"Ошибка экспорта: {ex.Message}";
+            ExportStatus = $"Export error: {ex.Message}";
         }
     }
 
@@ -575,7 +575,7 @@ public class BacktestViewModel : ReactiveObject
     {
         if (!_mainResult.IsReady)
         {
-            ExportStatus = "Сначала запустите бэктест.";
+            ExportStatus = "Run a backtest first.";
             return;
         }
 
@@ -612,7 +612,7 @@ public class BacktestViewModel : ReactiveObject
                     .Select(r => new BacktestReportExporter.ComparisonRow(
                         r.Name, r.TradeCount, r.WinRate, r.NetReturn, r.MaxDD, r.Sharpe, r.BestTrade, r.IsSelected))
                     .ToList(),
-                MonteCarloSummary  = _monteCarloSummary.StartsWith("Monte Carlo не запускался", StringComparison.Ordinal)
+                MonteCarloSummary  = _monteCarloSummary.StartsWith("Monte Carlo has not run", StringComparison.Ordinal)
                     ? "" : _monteCarloSummary
             };
 
@@ -625,11 +625,11 @@ public class BacktestViewModel : ReactiveObject
             }
             catch { /* file is written; opening is best-effort */ }
 
-            ExportStatus = $"Отчёт сохранён: {Path.GetFileName(path)} (открыт в браузере · Ctrl+P → PDF)";
+            ExportStatus = $"Report saved: {Path.GetFileName(path)} (opened in browser · Ctrl+P → PDF)";
         }
         catch (Exception ex)
         {
-            ExportStatus = $"Ошибка экспорта отчёта: {ex.Message}";
+            ExportStatus = $"Report export error: {ex.Message}";
         }
     }
 
@@ -728,8 +728,8 @@ public class BacktestViewModel : ReactiveObject
     {
         IsRunning   = true;
         _statusText = UseCustomDateRange
-            ? $"Загружаю {Symbol} {SelectedTimeframe} c {StartDate:dd.MM.yy} по {EndDate:dd.MM.yy}…"
-            : $"Загружаю {CandleLimit} × {SelectedTimeframe} свечей {Symbol}…";
+            ? $"Loading {Symbol} {SelectedTimeframe} from {StartDate:dd.MM.yy} to {EndDate:dd.MM.yy}…"
+            : $"Loading {CandleLimit} × {SelectedTimeframe} candles for {Symbol}…";
         RaiseAllLabels();
 
         IReadOnlyList<DexOhlcvPoint> candles;
@@ -741,19 +741,19 @@ public class BacktestViewModel : ReactiveObject
 
             if (candles.Count == 0)
             {
-                _statusText = "Binance вернул 0 свечей — проверьте символ и период.";
+                _statusText = "Binance returned 0 candles — check the symbol and period.";
                 _mainResult = BacktestResult.Empty(_statusText);
                 IsRunning   = false;
                 RaiseAllLabels();
                 return;
             }
 
-            _statusText = $"Прогоняю стратегии на {candles.Count} свечах…";
+            _statusText = $"Running strategies on {candles.Count} candles…";
             RaiseAllLabels();
         }
         catch (Exception ex)
         {
-            _statusText = $"Ошибка загрузки: {ex.Message}";
+            _statusText = $"Load error: {ex.Message}";
             _mainResult = BacktestResult.Empty(_statusText);
             IsRunning   = false;
             RaiseAllLabels();
@@ -775,11 +775,11 @@ public class BacktestViewModel : ReactiveObject
             // ── Cross-strategy comparison ──────────────────────────────────
             RunComparisons(candles);
 
-            _statusText = _mainResult.IsReady ? "Бэктест завершён." : _mainResult.Message;
+            _statusText = _mainResult.IsReady ? "Backtest complete." : _mainResult.Message;
         }
         catch (Exception ex)
         {
-            _statusText = $"Ошибка прогона: {ex.Message}";
+            _statusText = $"Run error: {ex.Message}";
             _mainResult = BacktestResult.Empty(_statusText);
         }
 
@@ -792,7 +792,7 @@ public class BacktestViewModel : ReactiveObject
     private async Task MonteCarloAsync()
     {
         IsMonteCarloRunning = true;
-        MonteCarloSummary   = $"Monte Carlo: загрузка {Symbol} {SelectedTimeframe}…";
+        MonteCarloSummary   = $"Monte Carlo: loading {Symbol} {SelectedTimeframe}…";
 
         IReadOnlyList<DexOhlcvPoint> candles;
         try
@@ -803,21 +803,21 @@ public class BacktestViewModel : ReactiveObject
 
             if (candles.Count < 30)
             {
-                MonteCarloSummary   = "Monte Carlo: нужно минимум 30 свечей.";
+                MonteCarloSummary   = "Monte Carlo: needs at least 30 candles.";
                 IsMonteCarloRunning = false;
                 return;
             }
         }
         catch (Exception ex)
         {
-            MonteCarloSummary   = $"Monte Carlo: ошибка загрузки — {ex.Message}";
+            MonteCarloSummary   = $"Monte Carlo: load error — {ex.Message}";
             IsMonteCarloRunning = false;
             return;
         }
 
         try
         {
-            MonteCarloSummary = $"Monte Carlo: прогон {MonteCarloRuns}× на подвыборках {MonteCarloSubsamplePercent:0}%…";
+            MonteCarloSummary = $"Monte Carlo: running {MonteCarloRuns}× on {MonteCarloSubsamplePercent:0}% subsamples…";
             var fraction = (double)(MonteCarloSubsamplePercent / 100m);
             var commission = Commission;
             var runs       = MonteCarloRuns;
@@ -838,15 +838,15 @@ public class BacktestViewModel : ReactiveObject
             {
                 MonteCarloSummary =
                     $"Monte Carlo {stratName} | {result.Message}\n" +
-                    $"Средняя доходность: {result.MeanReturnPercent:+0.##;-0.##;0}% | Медиана: {result.MedianReturnPercent:+0.##;-0.##;0}% | σ: {result.StdDevPercent:0.##}%\n" +
-                    $"90% доверительный интервал: [{result.Percentile5:+0.##;-0.##;0}% … {result.Percentile95:+0.##;-0.##;0}%]\n" +
-                    $"Лучший: {result.BestReturnPercent:+0.##;-0.##;0}% | Худший: {result.WorstReturnPercent:+0.##;-0.##;0}% | Средняя просадка: {result.MeanDrawdownPercent:0.##}%\n" +
-                    $"Прибыльных прогонов: {result.ProfitableRunsPercent:0.#}%";
+                    $"Mean return: {result.MeanReturnPercent:+0.##;-0.##;0}% | Median: {result.MedianReturnPercent:+0.##;-0.##;0}% | σ: {result.StdDevPercent:0.##}%\n" +
+                    $"90% confidence interval: [{result.Percentile5:+0.##;-0.##;0}% … {result.Percentile95:+0.##;-0.##;0}%]\n" +
+                    $"Best: {result.BestReturnPercent:+0.##;-0.##;0}% | Worst: {result.WorstReturnPercent:+0.##;-0.##;0}% | Mean drawdown: {result.MeanDrawdownPercent:0.##}%\n" +
+                    $"Profitable runs: {result.ProfitableRunsPercent:0.#}%";
             }
         }
         catch (Exception ex)
         {
-            MonteCarloSummary = $"Monte Carlo: ошибка прогона — {ex.Message}";
+            MonteCarloSummary = $"Monte Carlo: run error — {ex.Message}";
         }
 
         IsMonteCarloRunning = false;
@@ -858,7 +858,7 @@ public class BacktestViewModel : ReactiveObject
     {
         IsOptimizing = true;
         OptimizerRows.Clear();
-        BestParamsLabel = "Оптимизация…";
+        BestParamsLabel = "Optimizing…";
         RaiseAllLabels();
 
         IReadOnlyList<DexOhlcvPoint> candles;
@@ -870,7 +870,7 @@ public class BacktestViewModel : ReactiveObject
 
             if (candles.Count < 60)
             {
-                BestParamsLabel = "Нужно минимум 60 свечей для оптимизации.";
+                BestParamsLabel = "Need at least 60 candles for optimization.";
                 IsOptimizing = false;
                 RaiseAllLabels();
                 return;
@@ -878,7 +878,7 @@ public class BacktestViewModel : ReactiveObject
         }
         catch (Exception ex)
         {
-            BestParamsLabel = $"Ошибка загрузки: {ex.Message}";
+            BestParamsLabel = $"Load error: {ex.Message}";
             IsOptimizing = false;
             RaiseAllLabels();
             return;
@@ -899,19 +899,19 @@ public class BacktestViewModel : ReactiveObject
 
             if (results.Count > 0)
             {
-                BestParamsLabel = $"Лучшие параметры: {results[0].Params.Label}  " +
+                BestParamsLabel = $"Best params: {results[0].Params.Label}  " +
                                   $"WF Score {results[0].WfScore:0.000}  " +
                                   $"OOS Return {results[0].OosReturn:+0.##;-0.##;0}%  " +
                                   $"Eff {results[0].Efficiency:0.00}×";
             }
             else
             {
-                BestParamsLabel = "Нет результатов — недостаточно данных.";
+                BestParamsLabel = "No results — not enough data.";
             }
         }
         catch (Exception ex)
         {
-            BestParamsLabel = $"Ошибка оптимизации: {ex.Message}";
+            BestParamsLabel = $"Optimization error: {ex.Message}";
         }
 
         IsOptimizing = false;
@@ -941,7 +941,7 @@ public class BacktestViewModel : ReactiveObject
                 BreakoutPeriod = (int)v["Period"];
                 break;
         }
-        BestParamsLabel = $"Применено: {row.Raw.Params.Label}";
+        BestParamsLabel = $"Applied: {row.Raw.Params.Label}";
     }
 
     // ═════════════════════ STRATEGY COMPARISON ═════════════════════
@@ -1215,8 +1215,8 @@ public class BacktestTradeRow
         ReturnLabel = $"{trade.ReturnPercent:+0.##;-0.##;0}%";
         ReturnColor = trade.ReturnPercent >= 0 ? "#3DDC84" : "#FF5D73";
         var span    = trade.CloseTime - trade.OpenTime;
-        Duration    = span.TotalDays  >= 1 ? $"{span.TotalDays:0}д"
-                    : span.TotalHours >= 1 ? $"{span.TotalHours:0}ч"
-                    :                        $"{span.TotalMinutes:0}м";
+        Duration    = span.TotalDays  >= 1 ? $"{span.TotalDays:0}d"
+                    : span.TotalHours >= 1 ? $"{span.TotalHours:0}h"
+                    :                        $"{span.TotalMinutes:0}m";
     }
 }

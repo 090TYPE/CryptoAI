@@ -434,7 +434,7 @@ public class FundingRateViewModel : ReactiveObject, IDisposable
             var dir = s.FundingRate > 0 ? "HIGH" : "LOW";
             App.Tray?.ShowWarning(
                 $"Funding Rate Alert: {s.Symbol}",
-                $"{dir} funding {ratePct} — проверьте позиции!");
+                $"{dir} funding {ratePct} — check your positions!");
         }
 
         // Cap alert list at 100

@@ -127,7 +127,7 @@ public sealed class BestExecutionViewModel : ReactiveObject, IDisposable
 
     private bool   _isBusy;
     private bool   _hasPlan;
-    private string _statusText = "Введите параметры и нажмите «Рассчитать маршрут»";
+    private string _statusText = "Enter parameters and click «Compute route»";
 
     public bool   IsBusy      { get => _isBusy;  private set { this.RaiseAndSetIfChanged(ref _isBusy,  value); } }
     public bool   HasPlan     { get => _hasPlan; private set { this.RaiseAndSetIfChanged(ref _hasPlan, value); } }
@@ -234,7 +234,7 @@ public sealed class BestExecutionViewModel : ReactiveObject, IDisposable
         _cts = new CancellationTokenSource();
         IsBusy  = true;
         HasPlan = false;
-        StatusText = "Получение стаканов с бирж…";
+        StatusText = "Fetching order books from exchanges…";
 
         try
         {
@@ -246,7 +246,7 @@ public sealed class BestExecutionViewModel : ReactiveObject, IDisposable
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            StatusText = $"Ошибка: {ex.Message}";
+            StatusText = $"Error: {ex.Message}";
         }
         finally
         {
@@ -306,9 +306,9 @@ public sealed class BestExecutionViewModel : ReactiveObject, IDisposable
         HasPlan    = plan.Legs.Count > 0;
         StatusText = HasPlan
             ? (plan.IsSplit
-                ? $"Сплит на {plan.Legs.Count} бирж — экономия {plan.SavingsPct:+0.0000;-0.0000}%"
-                : $"Лучшая биржа: {plan.Legs[0].Exchange}")
-            : "Нет доступных данных — проверьте подключение";
+                ? $"Split across {plan.Legs.Count} exchanges — saving {plan.SavingsPct:+0.0000;-0.0000}%"
+                : $"Best exchange: {plan.Legs[0].Exchange}")
+            : "No data available — check the connection";
 
         this.RaisePropertyChanged(nameof(SavingsBrush));
     }
@@ -317,27 +317,27 @@ public sealed class BestExecutionViewModel : ReactiveObject, IDisposable
     {
         if (_plan is null) return;
         IsBusy = true;
-        StatusText = "Исполнение…";
+        StatusText = "Executing…";
         try
         {
             var (ok, err) = await _svc.ExecutePlanAsync(_plan);
-            var side      = _plan.Side == OrderSide.Buy ? "покупка" : "продажа";
+            var side      = _plan.Side == OrderSide.Buy ? "buy" : "sell";
             if (ok)
             {
                 ToastRequested?.Invoke(
-                    $"✓ {_plan.Symbol} {side} ${_plan.TotalNotionalUsd:N0} — исполнено " +
-                    $"({_plan.Legs.Count} {(_plan.IsSplit ? "биржи" : "биржа")})");
-                StatusText = "Ордер исполнен";
+                    $"✓ {_plan.Symbol} {side} ${_plan.TotalNotionalUsd:N0} — executed " +
+                    $"({_plan.Legs.Count} {(_plan.IsSplit ? "exchanges" : "exchange")})");
+                StatusText = "Order executed";
             }
             else
             {
-                ToastRequested?.Invoke($"✗ Ошибка исполнения: {err}");
-                StatusText = $"Ошибка: {err}";
+                ToastRequested?.Invoke($"✗ Execution error: {err}");
+                StatusText = $"Error: {err}";
             }
         }
         catch (Exception ex)
         {
-            StatusText = $"Ошибка: {ex.Message}";
+            StatusText = $"Error: {ex.Message}";
         }
         finally
         {

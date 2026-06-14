@@ -124,7 +124,7 @@ public sealed class PriceLevelRowVM : ReactiveObject
 
     public string Symbol       => Model.Symbol;
     public string PriceLabel   => $"${Model.Price:N2}";
-    public string KindLabel    => Model.IsResistance ? "Сопр." : "Подд.";
+    public string KindLabel    => Model.IsResistance ? "Res." : "Sup.";
     public string Note         => Model.Note;
     public bool   IsTriggered  => Model.Triggered;
     public IBrush KindBrush    => Model.IsResistance
@@ -451,7 +451,7 @@ public sealed class MarketScannerViewModel : ReactiveObject, IDisposable
         };
         _svc.AddPriceLevel(lvl);
         Levels.Add(new PriceLevelRowVM(lvl));
-        ToastRequested?.Invoke($"Уровень {lvl.Symbol} ${lvl.Price:N2} добавлен");
+        ToastRequested?.Invoke($"Level {lvl.Symbol} ${lvl.Price:N2} added");
     }
 
     private void RemoveLevel(PriceLevelRowVM row)
