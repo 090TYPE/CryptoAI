@@ -1,0 +1,509 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.BacktestView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <StackPanel Spacing="16" IsVisible="{Binding IsBacktestSectionVisible}">
+
+            <!-- ── Configuration ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="14">
+                <TextBlock Classes="H2" Text="Backtest Configuration" />
+
+                <!-- Row 1: symbol · timeframe · commission · strategy · date toggle · run -->
+                <Grid ColumnDefinitions="*,110,110,*,Auto,Auto" ColumnSpacing="12">
+                  <StackPanel Grid.Column="0" Spacing="5">
+                    <TextBlock Classes="Overline" Text="Symbol" />
+                    <TextBox Text="{Binding BacktestVM.Symbol}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="5">
+                    <TextBlock Classes="Overline" Text="Timeframe" />
+                    <ComboBox ItemsSource="{Binding BacktestVM.AvailableTimeframes}"
+                              SelectedItem="{Binding BacktestVM.SelectedTimeframe}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="5">
+                    <TextBlock Classes="Overline" Text="Commission %" />
+                    <NumericUpDown Value="{Binding BacktestVM.Commission}"
+                                   Increment="0.05" Minimum="0" Maximum="5" FormatString="0.00" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="3" Spacing="5">
+                    <TextBlock Classes="Overline" Text="Strategy" />
+                    <ComboBox ItemsSource="{Binding BacktestVM.AvailableStrategies}"
+                              SelectedItem="{Binding BacktestVM.SelectedStrategy}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="4" Spacing="5" VerticalAlignment="Bottom">
+                    <CheckBox Content="By Date Range" IsChecked="{Binding BacktestVM.UseCustomDateRange}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="5" Spacing="5" VerticalAlignment="Bottom">
+                    <Button Command="{Binding BacktestVM.RunCommand}"
+                            IsEnabled="{Binding BacktestVM.CanRun}"
+                            Content="▶  Run" Classes="AccentButton" />
+                  </StackPanel>
+                </Grid>
+
+                <!-- Row 2a: last N candles (no date range) -->
+                <StackPanel IsVisible="{Binding BacktestVM.UseCustomDateRange, Converter={x:Static BoolConverters.Not}}">
+                  <StackPanel Spacing="5" MaxWidth="200" HorizontalAlignment="Left">
+                    <TextBlock Classes="Overline" Text="Candles (max 3000)" />
+                    <NumericUpDown Value="{Binding BacktestVM.CandleLimit}"
+                                   Increment="100" Minimum="50" Maximum="3000" />
+                  </StackPanel>
+                </StackPanel>
+
+                <!-- Row 2b: date range -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12"
+                      IsVisible="{Binding BacktestVM.UseCustomDateRange}">
+                  <StackPanel Grid.Column="0" Spacing="5">
+                    <TextBlock Classes="Overline" Text="Start Date" />
+                    <CalendarDatePicker SelectedDate="{Binding BacktestVM.StartDate}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="5">
+                    <TextBlock Classes="Overline" Text="End Date" />
+                    <CalendarDatePicker SelectedDate="{Binding BacktestVM.EndDate}" />
+                  </StackPanel>
+                </Grid>
+
+                <!-- Row 3a: MA Crossover params -->
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12"
+                      IsVisible="{Binding BacktestVM.IsMAStrategy}">
+                  <Border Grid.Column="0" Grid.ColumnSpan="3" Background="#091520" CornerRadius="4" Padding="12,8">
+                    <Grid ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="12">
+                      <TextBlock Grid.Column="0" Text="Fast Period" Classes="Overline" VerticalAlignment="Center" />
+                      <NumericUpDown Grid.Column="1" Value="{Binding BacktestVM.MaFastPeriod}"
+                                     Increment="1" Minimum="2" Maximum="200" />
+                      <TextBlock Grid.Column="2" Text="Slow Period" Classes="Overline" VerticalAlignment="Center" Margin="8,0,0,0" />
+                      <NumericUpDown Grid.Column="3" Value="{Binding BacktestVM.MaSlowPeriod}"
+                                     Increment="1" Minimum="3" Maximum="500" />
+                    </Grid>
+                  </Border>
+                </Grid>
+
+                <!-- Row 3b: RSI params -->
+                <Border Background="#091520" CornerRadius="4" Padding="12,8"
+                        IsVisible="{Binding BacktestVM.IsRsiStrategy}">
+                  <Grid ColumnDefinitions="Auto,100,Auto,120,Auto,120" ColumnSpacing="12">
+                    <TextBlock Grid.Column="0" Text="Period" Classes="Overline" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Column="1" Value="{Binding BacktestVM.RsiPeriod}"
+                                   Increment="1" Minimum="2" Maximum="100" />
+                    <TextBlock Grid.Column="2" Text="Overbought" Classes="Overline" VerticalAlignment="Center" Margin="8,0,0,0" />
+                    <NumericUpDown Grid.Column="3" Value="{Binding BacktestVM.RsiOverbought}"
+                                   Increment="1" Minimum="51" Maximum="99" FormatString="0" />
+                    <TextBlock Grid.Column="4" Text="Oversold" Classes="Overline" VerticalAlignment="Center" Margin="8,0,0,0" />
+                    <NumericUpDown Grid.Column="5" Value="{Binding BacktestVM.RsiOversold}"
+                                   Increment="1" Minimum="1" Maximum="49" FormatString="0" />
+                  </Grid>
+                </Border>
+
+                <!-- Row 3c: Bollinger Bands params -->
+                <Border Background="#091520" CornerRadius="4" Padding="12,8"
+                        IsVisible="{Binding BacktestVM.IsBBStrategy}">
+                  <Grid ColumnDefinitions="Auto,100,Auto,120" ColumnSpacing="12">
+                    <TextBlock Grid.Column="0" Text="Period" Classes="Overline" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Column="1" Value="{Binding BacktestVM.BbPeriod}"
+                                   Increment="1" Minimum="2" Maximum="200" />
+                    <TextBlock Grid.Column="2" Text="Multiplier (σ)" Classes="Overline" VerticalAlignment="Center" Margin="8,0,0,0" />
+                    <NumericUpDown Grid.Column="3" Value="{Binding BacktestVM.BbMultiplier}"
+                                   Increment="0.1" Minimum="0.5" Maximum="5" FormatString="0.0" />
+                  </Grid>
+                </Border>
+
+                <!-- Row 3d: Breakout params -->
+                <Border Background="#091520" CornerRadius="4" Padding="12,8"
+                        IsVisible="{Binding BacktestVM.IsBreakoutStrategy}">
+                  <Grid ColumnDefinitions="Auto,100" ColumnSpacing="12">
+                    <TextBlock Grid.Column="0" Text="Lookback Period" Classes="Overline" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Column="1" Value="{Binding BacktestVM.BreakoutPeriod}"
+                                   Increment="1" Minimum="2" Maximum="300" />
+                  </Grid>
+                </Border>
+
+              </StackPanel>
+            </Border>
+
+            <!-- Метрики главной стратегии -->
+            <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="12">
+              <Border Classes="SurfaceCard">
+                <StackPanel Spacing="5">
+                  <TextBlock Classes="Overline" Text="Status" />
+                  <TextBlock Classes="Metric" Text="{Binding BacktestVM.StatusLabel}" />
+                  <TextBlock Text="{Binding BacktestVM.WindowLabel}"
+                             Foreground="{Binding BacktestVM.StatusBrush}"
+                             TextWrapping="Wrap" FontSize="11" />
+                </StackPanel>
+              </Border>
+              <Border Classes="SurfaceCard">
+                <StackPanel Spacing="5">
+                  <TextBlock Classes="Overline" Text="Trades / Win Rate" />
+                  <TextBlock Classes="Metric" Text="{Binding BacktestVM.TradeCountLabel}" />
+                  <TextBlock Text="{Binding BacktestVM.WinRateLabel}" Foreground="#8FA3B8" />
+                </StackPanel>
+              </Border>
+              <Border Classes="SurfaceCard">
+                <StackPanel Spacing="5">
+                  <TextBlock Classes="Overline" Text="Net Return" />
+                  <TextBlock Classes="Metric"
+                             Text="{Binding BacktestVM.NetReturnLabel}"
+                             Foreground="{Binding BacktestVM.NetReturnColor}" />
+                  <TextBlock Text="{Binding BacktestVM.DrawdownLabel, StringFormat='Max DD {0}'}"
+                             Foreground="#8FA3B8" />
+                </StackPanel>
+              </Border>
+              <Border Classes="SurfaceCard">
+                <StackPanel Spacing="5">
+                  <TextBlock Classes="Overline" Text="Sharpe / Bias" />
+                  <TextBlock Classes="Metric" Text="{Binding BacktestVM.SharpeLabel}" />
+                  <TextBlock Text="{Binding BacktestVM.BiasLabel}" Foreground="#8FA3B8" />
+                </StackPanel>
+              </Border>
+              <Border Classes="SurfaceCard">
+                <StackPanel Spacing="5">
+                  <TextBlock Classes="Overline" Text="Best / Worst Trade" />
+                  <TextBlock Classes="Metric" Text="{Binding BacktestVM.BestTradeLabel}" Foreground="#3DDC84" />
+                  <TextBlock Text="{Binding BacktestVM.WorstTradeLabel}" Foreground="#FF5D73" />
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <!-- ГРАФИК ЭКВИТИ -->
+            <Border Classes="Panel" IsVisible="{Binding BacktestVM.EquityGeometry, Converter={x:Static ObjectConverters.IsNotNull}}">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Classes="H2" Text="Equity Curve" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <Border Width="18" Height="2" Background="#1FE0B3" VerticalAlignment="Center" />
+                      <TextBlock Text="Strategy" Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <Border Width="18" Height="2" Background="#F4B860" VerticalAlignment="Center" />
+                      <TextBlock Text="Buy &amp; Hold" Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding BacktestVM.EquityDateRange}" Foreground="#4A6880" FontSize="11" VerticalAlignment="Center" />
+                  </StackPanel>
+                </Grid>
+
+                <!-- SVG-график через Viewbox + Path -->
+                <Grid>
+                  <!-- Ось Y: мин/макс -->
+                  <StackPanel HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="36">
+                    <TextBlock Text="{Binding BacktestVM.EquityMaxLabel}" FontSize="10" Foreground="#4A6880" />
+                    <TextBlock Text="{Binding BacktestVM.EquityMinLabel}" FontSize="10" Foreground="#4A6880"
+                               VerticalAlignment="Bottom" Margin="0,110,0,0" />
+                  </StackPanel>
+                  <Border Background="#07131C" CornerRadius="6" Height="130" Margin="40,0,0,0" ClipToBounds="True">
+                    <Viewbox Stretch="Fill">
+                      <Canvas Width="700" Height="130">
+                        <!-- Нулевая линия (equity = 100) -->
+                        <Line StartPoint="0,65" EndPoint="700,65"
+                              Stroke="#1A2E3A" StrokeThickness="1" StrokeDashArray="4,4" />
+                        <!-- Buy & Hold -->
+                        <Path Data="{Binding BacktestVM.BuyHoldGeometry}"
+                              Stroke="#F4B860" StrokeThickness="1.2"
+                              Opacity="0.55" Fill="Transparent" />
+                        <!-- Стратегия -->
+                        <Path Data="{Binding BacktestVM.EquityGeometry}"
+                              Stroke="#1FE0B3" StrokeThickness="1.8"
+                              Fill="Transparent" />
+                      </Canvas>
+                    </Viewbox>
+                  </Border>
+                </Grid>
+                <TextBlock Text="{Binding BacktestVM.Narrative}"
+                           Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
+            <!-- ── Walk-Forward Optimizer ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="12">
+                <!-- Header row -->
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Classes="H2" Text="Walk-Forward Optimizer" />
+                    <TextBlock Text="Splits data into IS/OOS folds · sweeps all parameter combinations · ranks by OOS WF Score"
+                               Foreground="#4A6880" FontSize="11" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Folds" />
+                    <NumericUpDown Value="{Binding BacktestVM.WfFolds}"
+                                   Increment="1" Minimum="2" Maximum="10" Width="70" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="4">
+                    <TextBlock Classes="Overline" Text="In-Sample %" />
+                    <NumericUpDown Value="{Binding BacktestVM.WfInSamplePct}"
+                                   Increment="5" Minimum="40" Maximum="90" Width="80" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="3" Spacing="4" VerticalAlignment="Bottom">
+                    <Button Command="{Binding BacktestVM.OptimizeCommand}"
+                            IsEnabled="{Binding BacktestVM.CanOptimize}"
+                            Classes="AccentButton">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="⚙" />
+                        <TextBlock Text="Optimize" />
+                      </StackPanel>
+                    </Button>
+                  </StackPanel>
+                </Grid>
+
+                <!-- Best params label -->
+                <Border Background="#091520" CornerRadius="4" Padding="10,6"
+                        IsVisible="{Binding BacktestVM.BestParamsLabel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                  <TextBlock Text="{Binding BacktestVM.BestParamsLabel}"
+                             Foreground="#F4B860" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+                </Border>
+
+                <!-- Results table -->
+                <StackPanel IsVisible="{Binding BacktestVM.OptimizerRows.Count, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Spacing="6">
+
+                  <!-- Column headers -->
+                  <Grid ColumnDefinitions="180,70,80,70,80,70,70,70,60,Auto" ColumnSpacing="6">
+                    <TextBlock Grid.Column="0" Classes="Overline" Text="Params" />
+                    <TextBlock Grid.Column="1" Classes="Overline" Text="IS Sharpe" />
+                    <TextBlock Grid.Column="2" Classes="Overline" Text="IS Return" />
+                    <TextBlock Grid.Column="3" Classes="Overline" Text="OOS Sharpe" />
+                    <TextBlock Grid.Column="4" Classes="Overline" Text="OOS Return" />
+                    <TextBlock Grid.Column="5" Classes="Overline" Text="OOS DD" />
+                    <TextBlock Grid.Column="6" Classes="Overline" Text="Efficiency" />
+                    <TextBlock Grid.Column="7" Classes="Overline" Text="WF Score" />
+                    <TextBlock Grid.Column="8" Classes="Overline" Text="Times #1" />
+                    <TextBlock Grid.Column="9" Classes="Overline" Text="" />
+                  </Grid>
+                  <Border Height="1" Background="#0E2030" />
+
+                  <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding BacktestVM.OptimizerRows}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:WfResultRowVM">
+                          <Border Padding="0,3" BorderBrush="#1A3A50" BorderThickness="0,0,0,1">
+                            <Grid ColumnDefinitions="180,70,80,70,80,70,70,70,60,Auto" ColumnSpacing="6">
+                              <TextBlock Grid.Column="0" Text="{Binding Params}"
+                                         Foreground="{Binding NameColor}" FontSize="11" VerticalAlignment="Center"
+                                         TextTrimming="CharacterEllipsis" />
+                              <TextBlock Grid.Column="1" Text="{Binding IsSharpe}"
+                                         Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="2" Text="{Binding IsReturn}"
+                                         Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="3" Text="{Binding OosSharpe}"
+                                         Foreground="{Binding EffColor}" FontSize="11" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="4" Text="{Binding OosReturn}"
+                                         Foreground="{Binding ReturnColor}" FontWeight="SemiBold"
+                                         FontSize="11" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="5" Text="{Binding OosMaxDD}"
+                                         Foreground="#FF8A4C" FontSize="11" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="6" Text="{Binding Efficiency}"
+                                         Foreground="{Binding EffColor}" FontSize="11" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="7" Text="{Binding WfScore}"
+                                         Foreground="{Binding ScoreColor}" FontWeight="SemiBold"
+                                         FontSize="11" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="8" Text="{Binding TimesLabel}"
+                                         Foreground="#21E6C1" FontSize="11" VerticalAlignment="Center" />
+                              <Button Grid.Column="9"
+                                      Command="{Binding $parent[ItemsControl].((vm:BacktestViewModel)DataContext).ApplyCommand}"
+                                      CommandParameter="{Binding}"
+                                      Content="Apply" FontSize="10" Padding="6,2"
+                                      Classes="SecondaryButton" VerticalAlignment="Center" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <!-- ── Monte Carlo Simulator ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="12">
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Classes="H2" Text="Monte Carlo Simulator" />
+                    <TextBlock Text="Runs the selected strategy N times on random candle subsets · reports mean, median, σ, and a 90% confidence interval"
+                               Foreground="#4A6880" FontSize="11" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Runs" />
+                    <NumericUpDown Value="{Binding BacktestVM.MonteCarloRuns}"
+                                   Increment="10" Minimum="10" Maximum="5000" Width="90" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Subsample %" />
+                    <NumericUpDown Value="{Binding BacktestVM.MonteCarloSubsamplePercent}"
+                                   Increment="5" Minimum="10" Maximum="100" Width="90" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="3" Spacing="4" VerticalAlignment="Bottom">
+                    <Button Command="{Binding BacktestVM.MonteCarloCommand}"
+                            IsEnabled="{Binding BacktestVM.CanMonteCarlo}"
+                            Classes="AccentButton">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="🎲" />
+                        <TextBlock Text="Run Monte Carlo" />
+                      </StackPanel>
+                    </Button>
+                  </StackPanel>
+                </Grid>
+
+                <Border Background="#091520" CornerRadius="4" Padding="10,8">
+                  <TextBlock Text="{Binding BacktestVM.MonteCarloSummary}"
+                             Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap"
+                             FontFamily="Consolas,Menlo,monospace" />
+                </Border>
+
+                <!-- ── Export ── -->
+                <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10">
+                  <Button Grid.Column="0"
+                          Command="{Binding BacktestVM.ExportCsvCommand}"
+                          Classes="SecondaryButton">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <TextBlock Text="💾" />
+                      <TextBlock Text="Export CSV" />
+                    </StackPanel>
+                  </Button>
+                  <Button Grid.Column="1"
+                          Command="{Binding BacktestVM.ExportReportCommand}"
+                          Classes="SecondaryButton">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <TextBlock Text="📄" />
+                      <TextBlock Text="Export Report" />
+                    </StackPanel>
+                  </Button>
+                  <TextBlock Grid.Column="2"
+                             Text="{Binding BacktestVM.ExportStatus}"
+                             Foreground="#8FA3B8" FontSize="11"
+                             VerticalAlignment="Center" TextWrapping="Wrap" />
+                </Grid>
+              </StackPanel>
+            </Border>
+
+            <!-- ── AI Backtest Review (#2) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Classes="H2" Text="🧠 AI Review" />
+                    <TextBlock Text="Robust or overfit? An AI read of this backtest."
+                               Foreground="#4A6880" FontSize="11" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding BacktestVM.AiReviewSource}"
+                             Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <Button Grid.Column="2" Content="Review with AI"
+                          Command="{Binding BacktestVM.ReviewWithAiCommand}"
+                          IsEnabled="{Binding !BacktestVM.AiReviewRunning}" />
+                </Grid>
+                <StackPanel Spacing="8" IsVisible="{Binding BacktestVM.HasAiReview}">
+                  <Border CornerRadius="6" Padding="10,7" Background="#04101A">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="{Binding BacktestVM.AiReviewVerdict}"
+                                 Foreground="{Binding BacktestVM.AiVerdictBrush}"
+                                 FontWeight="Bold" FontSize="14" />
+                      <TextBlock Text="{Binding BacktestVM.AiReviewSummary}"
+                                 Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+                  <TextBlock Text="{Binding BacktestVM.AiReviewRisks}"
+                             Foreground="#F4B860" FontSize="11" TextWrapping="Wrap" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <!-- ── Strategy Comparison (all types, same candles) ── -->
+            <Border Classes="Panel"
+                    IsVisible="{Binding BacktestVM.ComparisonRows.Count, Converter={x:Static ObjectConverters.IsNotNull}}">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Classes="H2" Text="Strategy Comparison" />
+                    <TextBlock Text="MA · RSI · BB · Breakout presets on the same dataset. Sorted by net return."
+                               Foreground="#4A6880" FontSize="11" />
+                  </StackPanel>
+                </Grid>
+
+                <Grid ColumnDefinitions="180,55,70,90,70,70,90" ColumnSpacing="8">
+                  <TextBlock Grid.Column="0" Classes="Overline" Text="Strategy" />
+                  <TextBlock Grid.Column="1" Classes="Overline" Text="Trades" />
+                  <TextBlock Grid.Column="2" Classes="Overline" Text="Win Rate" />
+                  <TextBlock Grid.Column="3" Classes="Overline" Text="Net Return" />
+                  <TextBlock Grid.Column="4" Classes="Overline" Text="Max DD" />
+                  <TextBlock Grid.Column="5" Classes="Overline" Text="Sharpe" />
+                  <TextBlock Grid.Column="6" Classes="Overline" Text="Best Trade" />
+                </Grid>
+                <Border Height="1" Background="#0E2030" />
+
+                <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
+                  <ListBox ItemsSource="{Binding BacktestVM.ComparisonRows}"
+                           Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate x:DataType="vm:StrategyComparisonRow">
+                        <Grid ColumnDefinitions="180,55,70,90,70,70,90" ColumnSpacing="8" Margin="0,3">
+                          <TextBlock Grid.Column="0" Text="{Binding Name}"
+                                     Foreground="{Binding NameColor}" FontSize="12" VerticalAlignment="Center"
+                                     TextTrimming="CharacterEllipsis" />
+                          <TextBlock Grid.Column="1" Text="{Binding TradeCount}"
+                                     Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="2" Text="{Binding WinRate}"
+                                     Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="3" Text="{Binding NetReturn}"
+                                     Foreground="{Binding ReturnColor}" FontWeight="SemiBold"
+                                     FontSize="12" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="4" Text="{Binding MaxDD}"
+                                     Foreground="#FF8A4C" FontSize="12" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="5" Text="{Binding Sharpe}"
+                                     Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="6" Text="{Binding BestTrade}"
+                                     Foreground="#3DDC84" FontSize="12" VerticalAlignment="Center" />
+                        </Grid>
+                      </DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+                </ScrollViewer>
+              </StackPanel>
+            </Border>
+
+            <!-- ── Trade History ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Classes="H2" Text="Trades" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1"
+                             Text="{Binding BacktestVM.TradeCountLabel, StringFormat='Total: {0}'}"
+                             Foreground="#4A6880" VerticalAlignment="Center" />
+                </Grid>
+                <Grid ColumnDefinitions="110,80,80,110,60,50" ColumnSpacing="8">
+                  <TextBlock Grid.Column="0" Classes="Overline" Text="Opened" />
+                  <TextBlock Grid.Column="1" Classes="Overline" Text="Entry" />
+                  <TextBlock Grid.Column="2" Classes="Overline" Text="Exit" />
+                  <TextBlock Grid.Column="3" Classes="Overline" Text="Closed" />
+                  <TextBlock Grid.Column="4" Classes="Overline" Text="Duration" />
+                  <TextBlock Grid.Column="5" Classes="Overline" Text="P&amp;L" />
+                </Grid>
+                <Border Height="1" Background="#0E2030" />
+                <ListBox ItemsSource="{Binding BacktestVM.TradeRows}"
+                         MaxHeight="280" Background="Transparent">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:BacktestTradeRow">
+                      <Grid ColumnDefinitions="110,80,80,110,60,50" ColumnSpacing="8" Margin="0,2">
+                        <TextBlock Grid.Column="0" Text="{Binding OpenTime}"
+                                   Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="{Binding EntryPrice}"
+                                   FontSize="11" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2" Text="{Binding ExitPrice}"
+                                   FontSize="11" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="3" Text="{Binding CloseTime}"
+                                   Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="4" Text="{Binding Duration}"
+                                   Foreground="#4A6880" FontSize="11" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="5" Text="{Binding ReturnLabel}"
+                                   Foreground="{Binding ReturnColor}"
+                                   FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" />
+                      </Grid>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+</UserControl>

@@ -1,0 +1,698 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.ScannerView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <Border IsVisible="{Binding IsScannerSectionVisible}">
+          <StackPanel Spacing="16" DataContext="{Binding ScannerVM}">
+
+            <!-- Header + KPI strip ──────────────────────────────────────── -->
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="4">
+                <TextBlock Text="Real-time Market Scanner"
+                           FontSize="20" FontWeight="Bold" Foreground="#E8F0FE" />
+                <TextBlock Text="Filter by RSI, change, volume and activity. Click a row → trading screen."
+                           FontSize="12" Foreground="#5C6E82" />
+              </StackPanel>
+              <!-- KPI cards -->
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <Border Background="#0D1B29" CornerRadius="8" Padding="14,8">
+                  <StackPanel Spacing="1" HorizontalAlignment="Center">
+                    <TextBlock Text="Total" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding TotalSymbols}" FontSize="16" FontWeight="Bold"
+                               Foreground="#8FA3B8" HorizontalAlignment="Center" />
+                  </StackPanel>
+                </Border>
+                <Border Background="#0A1F16" CornerRadius="8" Padding="14,8">
+                  <StackPanel Spacing="1" HorizontalAlignment="Center">
+                    <TextBlock Text="🔥 Hot" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding HotCount}" FontSize="16" FontWeight="Bold"
+                               Foreground="#FF6B00" HorizontalAlignment="Center" />
+                  </StackPanel>
+                </Border>
+                <Border Background="#0A1F0A" CornerRadius="8" Padding="14,8">
+                  <StackPanel Spacing="1" HorizontalAlignment="Center">
+                    <TextBlock Text="▲ Gainers" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding GainersCount}" FontSize="16" FontWeight="Bold"
+                               Foreground="#21E6C1" HorizontalAlignment="Center" />
+                  </StackPanel>
+                </Border>
+                <Border Background="#1F0A0A" CornerRadius="8" Padding="14,8">
+                  <StackPanel Spacing="1" HorizontalAlignment="Center">
+                    <TextBlock Text="▼ Losers" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding LosersCount}" FontSize="16" FontWeight="Bold"
+                               Foreground="#FF5555" HorizontalAlignment="Center" />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </Grid>
+
+            <!-- ── AI Picks (#1) ──────────────────────────────────────────── -->
+            <Border Background="#0D1B29" CornerRadius="10" Padding="14,12">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <StackPanel Grid.Column="0" Spacing="1">
+                    <TextBlock Text="🧠 AI Picks" FontSize="14" FontWeight="Bold" Foreground="#E8F0FE" />
+                    <TextBlock Text="Top opportunities ranked from the live scan." FontSize="11" Foreground="#5C6E82" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding AiSource}" Foreground="#5C6E82"
+                             FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <Button Grid.Column="2" Content="Rank with AI"
+                          Command="{Binding RankWithAiCommand}" IsEnabled="{Binding !AiRunning}" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding AiPicks}" IsVisible="{Binding HasAiPicks}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AiPickVM">
+                      <Border Background="#0A1622" CornerRadius="6" Padding="10,7" Margin="0,2">
+                        <Grid ColumnDefinitions="Auto,90,*">
+                          <Border Grid.Column="0" CornerRadius="4" Padding="6,2" Background="#04101A" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding ScoreLabel}" FontWeight="Bold" Foreground="#21E6C1" FontSize="13" />
+                          </Border>
+                          <StackPanel Grid.Column="1" Spacing="0" Margin="8,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Symbol}" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
+                            <TextBlock Text="{Binding Bias}" Foreground="{Binding BiasBrush}" FontSize="11" FontWeight="Bold" />
+                          </StackPanel>
+                          <TextBlock Grid.Column="2" Text="{Binding Reason}" Foreground="#8FA3B8"
+                                     FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
+            <!-- Filter bar ──────────────────────────────────────────────── -->
+            <Border Background="#0D1B29" CornerRadius="10" Padding="14,10">
+              <StackPanel Spacing="10">
+
+                <!-- Preset buttons -->
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Text="Preset:" FontSize="11" Foreground="#5C6E82" VerticalAlignment="Center" />
+                  <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="All">All</Button>
+                  <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="Hot">🔥 Hot</Button>
+                  <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="Gainers">📈 Gainers</Button>
+                  <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="Losers">📉 Losers</Button>
+                  <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="Oversold">💎 Oversold</Button>
+                  <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="Overbought">⚡ Overbought</Button>
+                </StackPanel>
+
+                <!-- Custom filters row -->
+                <Grid ColumnDefinitions="Auto,8,*,16,Auto,8,*,8,*,16,Auto,8,*,8,*,16,Auto,8,*">
+                  <TextBlock Grid.Column="0" Text="Symbol" FontSize="10" Foreground="#5C6E82" VerticalAlignment="Center" />
+                  <TextBox Grid.Column="2" Text="{Binding SymbolSearch, Mode=TwoWay}"
+                           PlaceholderText="BTC, ETH…"
+                           FontSize="12" Background="#131F2E" Foreground="#E8F0FE"
+                           BorderBrush="#445E78" CornerRadius="8" Padding="10,8" MinHeight="38" />
+
+                  <TextBlock Grid.Column="4" Text="Change %" FontSize="10" Foreground="#5C6E82" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Column="6" Value="{Binding MinChange, Mode=TwoWay}"
+                                 FormatString="F1" Increment="0.5"
+                                 Background="#131F2E" Foreground="#E8F0FE"
+                                 BorderBrush="#445E78" CornerRadius="8" Padding="8,6" MinHeight="38" />
+                  <TextBlock Grid.Column="7" Text="…" FontSize="11" Foreground="#3A4F63" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                  <NumericUpDown Grid.Column="8" Value="{Binding MaxChange, Mode=TwoWay}"
+                                 FormatString="F1" Increment="0.5"
+                                 Background="#131F2E" Foreground="#E8F0FE"
+                                 BorderBrush="#445E78" CornerRadius="8" Padding="8,6" MinHeight="38" />
+
+                  <TextBlock Grid.Column="10" Text="RSI" FontSize="10" Foreground="#5C6E82" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Column="12" Value="{Binding MinRsi, Mode=TwoWay}"
+                                 Minimum="0" Maximum="100" Increment="5"
+                                 FormatString="F0"
+                                 Background="#131F2E" Foreground="#E8F0FE"
+                                 BorderBrush="#445E78" CornerRadius="8" Padding="8,6" MinHeight="38" />
+                  <TextBlock Grid.Column="13" Text="…" FontSize="11" Foreground="#3A4F63" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                  <NumericUpDown Grid.Column="14" Value="{Binding MaxRsi, Mode=TwoWay}"
+                                 Minimum="0" Maximum="100" Increment="5"
+                                 FormatString="F0"
+                                 Background="#131F2E" Foreground="#E8F0FE"
+                                 BorderBrush="#445E78" CornerRadius="8" Padding="8,6" MinHeight="38" />
+
+                  <TextBlock Grid.Column="16" Text="Volume min $" FontSize="10" Foreground="#5C6E82" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Column="18" Value="{Binding MinVolume, Mode=TwoWay}"
+                                 Minimum="0" Increment="1000000" FormatString="N0"
+                                 Background="#131F2E" Foreground="#E8F0FE"
+                                 BorderBrush="#445E78" CornerRadius="8" Padding="8,6" MinHeight="38" />
+                </Grid>
+              </StackPanel>
+            </Border>
+
+            <!-- Main table + Alerts (side-by-side) ──────────────────────── -->
+            <Grid ColumnDefinitions="*,12,300">
+
+              <!-- Scanner table -->
+              <Border Background="#0D1B29" CornerRadius="10" Padding="14,12">
+                <StackPanel Spacing="8">
+
+                  <!-- Column headers (sortable) -->
+                  <Grid ColumnDefinitions="30,*,90,80,90,80,70,70">
+                    <TextBlock Grid.Column="0" Text="" FontSize="10" Foreground="#3A4F63" />
+                    <Button Grid.Column="1" Classes="SortHeader"
+                            Command="{Binding SortByCommand}" CommandParameter="symbol">
+                      Symbol</Button>
+                    <Button Grid.Column="2" Classes="SortHeader"
+                            Command="{Binding SortByCommand}" CommandParameter="price"
+                            HorizontalAlignment="Right">Price</Button>
+                    <Button Grid.Column="3" Classes="SortHeader"
+                            Command="{Binding SortByCommand}" CommandParameter="change"
+                            HorizontalAlignment="Right">24h %</Button>
+                    <Button Grid.Column="4" Classes="SortHeader"
+                            Command="{Binding SortByCommand}" CommandParameter="volume"
+                            HorizontalAlignment="Right">Volume</Button>
+                    <Button Grid.Column="5" Classes="SortHeader"
+                            Command="{Binding SortByCommand}" CommandParameter="rsi"
+                            HorizontalAlignment="Right">RSI</Button>
+                    <Button Grid.Column="6" Classes="SortHeader"
+                            Command="{Binding SortByCommand}" CommandParameter="activity"
+                            HorizontalAlignment="Right">Act.</Button>
+                    <TextBlock Grid.Column="7" Text="H/L" FontSize="10"
+                               Foreground="#3A4F63" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                  </Grid>
+
+                  <Rectangle Height="1" Fill="#1E3A5F" />
+
+                  <!-- Rows -->
+                  <ScrollViewer MaxHeight="520" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Rows}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Button Background="{Binding RowBackground}"
+                                  Command="{Binding $parent[ItemsControl].DataContext.GoToTradingCommand}"
+                                  CommandParameter="{Binding}"
+                                  Padding="0" Margin="0,1"
+                                  HorizontalContentAlignment="Stretch">
+                            <Grid ColumnDefinitions="30,*,90,80,90,80,70,70" Margin="4,5">
+                              <!-- Hot badge / glyph -->
+                              <TextBlock Grid.Column="0" Text="{Binding HotBadgeText}"
+                                         FontSize="13" VerticalAlignment="Center"
+                                         HorizontalAlignment="Center" />
+                              <!-- Symbol + exchange -->
+                              <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Symbol}" FontSize="12"
+                                           FontWeight="SemiBold" Foreground="#E8F0FE" />
+                                <TextBlock Text="{Binding Exchange}" FontSize="9"
+                                           Foreground="#3A4F63" />
+                              </StackPanel>
+                              <!-- Price -->
+                              <TextBlock Grid.Column="2" Text="{Binding PriceLabel}"
+                                         FontFamily="Consolas" FontSize="11"
+                                         Foreground="#8FA3B8"
+                                         HorizontalAlignment="Right" VerticalAlignment="Center" />
+                              <!-- 24h % change (colored) -->
+                              <TextBlock Grid.Column="3" Text="{Binding ChangeLabel}"
+                                         FontFamily="Consolas" FontSize="12"
+                                         FontWeight="SemiBold"
+                                         Foreground="{Binding ChangeBrush}"
+                                         HorizontalAlignment="Right" VerticalAlignment="Center" />
+                              <!-- Volume -->
+                              <TextBlock Grid.Column="4" Text="{Binding VolumeLabel}"
+                                         FontFamily="Consolas" FontSize="11"
+                                         Foreground="#5C6E82"
+                                         HorizontalAlignment="Right" VerticalAlignment="Center" />
+                              <!-- RSI (colored) -->
+                              <TextBlock Grid.Column="5" Text="{Binding RsiLabel}"
+                                         FontFamily="Consolas" FontSize="12"
+                                         FontWeight="SemiBold"
+                                         Foreground="{Binding RsiBrush}"
+                                         HorizontalAlignment="Right" VerticalAlignment="Center" />
+                              <!-- Activity -->
+                              <TextBlock Grid.Column="6" Text="{Binding ActivityLabel}"
+                                         FontFamily="Consolas" FontSize="11"
+                                         Foreground="#5C6E82"
+                                         HorizontalAlignment="Right" VerticalAlignment="Center" />
+                              <!-- High / Low -->
+                              <TextBlock Grid.Column="7" Text="{Binding HighLowLabel}"
+                                         FontFamily="Consolas" FontSize="9"
+                                         Foreground="#3A4F63"
+                                         HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            </Grid>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </StackPanel>
+              </Border>
+
+              <!-- Right column: Alerts + Price Levels ──────────────────── -->
+              <StackPanel Grid.Column="2" Spacing="10">
+
+                <!-- Alerts -->
+                <Border Background="#0D1B29" CornerRadius="10" Padding="14,12">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="Alerts" FontSize="13" FontWeight="SemiBold"
+                               Foreground="#8FA3B8" />
+                    <Rectangle Height="1" Fill="#1E3A5F" />
+                    <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
+                      <ItemsControl ItemsSource="{Binding Alerts}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Border Padding="6,5" Margin="0,1">
+                              <Grid ColumnDefinitions="12,*,Auto">
+                                <TextBlock Grid.Column="0" Text="{Binding SeverityDot}"
+                                           Foreground="{Binding SeverityBrush}"
+                                           FontSize="10" VerticalAlignment="Center" />
+                                <StackPanel Grid.Column="1" Spacing="1" Margin="6,0,0,0">
+                                  <TextBlock Text="{Binding Symbol}" FontSize="11"
+                                             FontWeight="Bold" Foreground="#E8F0FE" />
+                                  <TextBlock Text="{Binding Message}" FontSize="10"
+                                             Foreground="#8FA3B8" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Text="{Binding TimeLabel}"
+                                           FontSize="9" Foreground="#3A4F63"
+                                           VerticalAlignment="Top" />
+                              </Grid>
+                            </Border>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </ScrollViewer>
+                  </StackPanel>
+                </Border>
+
+                <!-- Price Levels -->
+                <Border Background="#0D1B29" CornerRadius="10" Padding="14,12">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="Price Levels" FontSize="13" FontWeight="SemiBold"
+                               Foreground="#8FA3B8" />
+
+                    <!-- Add level form -->
+                    <Grid ColumnDefinitions="*,6,*,6,Auto">
+                      <TextBox Grid.Column="0" Text="{Binding LevelSymbol, Mode=TwoWay}"
+                               PlaceholderText="BTCUSDT" FontSize="12"
+                               Background="#131F2E" Foreground="#E8F0FE"
+                               BorderBrush="#445E78" CornerRadius="8" Padding="10,8" MinHeight="38" />
+                      <NumericUpDown Grid.Column="2" Value="{Binding LevelPrice, Mode=TwoWay}"
+                                     Minimum="0" FormatString="N2" Increment="100"
+                                     Background="#131F2E" Foreground="#E8F0FE"
+                                     BorderBrush="#445E78" CornerRadius="8" Padding="8,6" MinHeight="38" />
+                      <Button Grid.Column="4" Command="{Binding AddLevelCommand}"
+                              Background="#1A3A5C" Foreground="#21E6C1"
+                              CornerRadius="8" Padding="12,8" FontSize="12" MinHeight="38">
+                        + Add
+                      </Button>
+                    </Grid>
+                    <!-- Resistance / Support toggle -->
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="Type:" FontSize="10" Foreground="#5C6E82" VerticalAlignment="Center" />
+                      <ToggleSwitch IsChecked="{Binding LevelIsResistance, Mode=TwoWay}"
+                                   OnContent="Resistance" OffContent="Support"
+                                   FontSize="10" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <Rectangle Height="1" Fill="#1E3A5F" />
+
+                    <!-- Level list -->
+                    <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
+                      <ItemsControl ItemsSource="{Binding Levels}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Grid ColumnDefinitions="*,60,50,24" Margin="0,3">
+                              <StackPanel Grid.Column="0" Spacing="0">
+                                <TextBlock Text="{Binding Symbol}" FontSize="11"
+                                           FontWeight="SemiBold" Foreground="#E8F0FE" />
+                                <TextBlock Text="{Binding Note}" FontSize="9"
+                                           Foreground="#3A4F63" />
+                              </StackPanel>
+                              <TextBlock Grid.Column="1" Text="{Binding PriceLabel}"
+                                         FontFamily="Consolas" FontSize="11"
+                                         Foreground="#8FA3B8"
+                                         VerticalAlignment="Center" HorizontalAlignment="Right" />
+                              <Border Grid.Column="2" CornerRadius="4" Padding="5,2"
+                                      Background="#0A1520" HorizontalAlignment="Center"
+                                      VerticalAlignment="Center">
+                                <TextBlock Text="{Binding KindLabel}" FontSize="9"
+                                           FontWeight="Bold"
+                                           Foreground="{Binding KindBrush}" />
+                              </Border>
+                              <Button Grid.Column="3"
+                                      Command="{Binding $parent[ItemsControl].DataContext.RemoveLevelCommand}"
+                                      CommandParameter="{Binding}"
+                                      Background="Transparent" Foreground="#3A4F63"
+                                      FontSize="12" Padding="2,0"
+                                      VerticalAlignment="Center">×</Button>
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </ScrollViewer>
+                  </StackPanel>
+                </Border>
+
+              </StackPanel>
+            </Grid>
+
+            <!-- ══════════════════════════════════════════════════════════════
+                 DEX TRADING STATION  (visible only when DEX mode active)
+            ══════════════════════════════════════════════════════════════ -->
+            <Border Background="#070E17" CornerRadius="10" Padding="0"
+                    IsVisible="{Binding $parent[Window].DataContext.IsDexTradingMode}">
+
+              <!-- Inner panel re-binds to DexTradingVM so all children use short paths -->
+              <StackPanel Spacing="16" Margin="16,14"
+                          DataContext="{Binding $parent[Window].DataContext.DexTradingVM}">
+
+                <!-- ── Station header ──────────────────────────────────────── -->
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                  <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock Text="DEX Trading Station"
+                               FontSize="18" FontWeight="Bold" Foreground="#E8F0FE" />
+                    <TextBlock Text="{Binding WalletSessionSummary}"
+                               Foreground="#8FA3B8" FontSize="12" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="2" HorizontalAlignment="Right">
+                    <TextBlock Text="{Binding WalletBalanceSummary}"
+                               Foreground="#21E6C1" FontWeight="Bold"
+                               HorizontalAlignment="Right" />
+                    <TextBlock Text="{Binding WalletTradeStatus}"
+                               Foreground="#8FA3B8" FontSize="11"
+                               HorizontalAlignment="Right" />
+                  </StackPanel>
+                </Grid>
+
+                <Rectangle Height="1" Fill="#1E3A5F" />
+
+                <!-- ── Two-column layout: chart left, trading right ─────────── -->
+                <Grid ColumnDefinitions="1.5*,*" ColumnSpacing="16">
+
+                  <!-- ── LEFT: Chart Desk ──────────────────────────────────── -->
+                  <Border Classes="Panel" Grid.Column="0">
+                    <StackPanel Spacing="12">
+
+                      <!-- Title + timeframe row -->
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Classes="H2" Text="Price History" />
+                        <WrapPanel Grid.Column="1" Orientation="Horizontal"
+                                   VerticalAlignment="Center">
+                          <Button Content="15M"
+                                  Command="{Binding SelectChartRangeCommand}"
+                                  CommandParameter="15M"
+                                  Classes="GhostButton" Width="52" Margin="0,0,6,0"
+                                  Background="{Binding SelectedChartRange, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                          <Button Content="4H"
+                                  Command="{Binding SelectChartRangeCommand}"
+                                  CommandParameter="4H"
+                                  Classes="GhostButton" Width="52" Margin="0,0,6,0" />
+                          <Button Content="12H"
+                                  Command="{Binding SelectChartRangeCommand}"
+                                  CommandParameter="12H"
+                                  Classes="GhostButton" Width="52" Margin="0,0,6,0" />
+                          <Button Content="1D"
+                                  Command="{Binding SelectChartRangeCommand}"
+                                  CommandParameter="1D"
+                                  Classes="GhostButton" Width="52" Margin="0,0,6,0" />
+                          <Button Content="1W"
+                                  Command="{Binding SelectChartRangeCommand}"
+                                  CommandParameter="1W"
+                                  Classes="GhostButton" Width="52" />
+                        </WrapPanel>
+                      </Grid>
+
+                      <!-- Price stat KPIs (mirror CEX: Last / High / Low / Change) -->
+                      <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10">
+                        <Border Classes="SurfaceCard" Grid.Column="0">
+                          <StackPanel Spacing="4">
+                            <TextBlock Classes="Overline" Text="Last Price" />
+                            <TextBlock Classes="Metric" FontSize="20"
+                                       Text="{Binding SelectedToken.PriceUsd, StringFormat=\${0:N6}}" />
+                          </StackPanel>
+                        </Border>
+                        <Border Classes="SurfaceCard" Grid.Column="1">
+                          <StackPanel Spacing="4">
+                            <TextBlock Classes="Overline" Text="High" />
+                            <TextBlock Classes="Metric" FontSize="20" Foreground="#21E6C1"
+                                       Text="{Binding ChartHigh, StringFormat=\${0:N6}}" />
+                          </StackPanel>
+                        </Border>
+                        <Border Classes="SurfaceCard" Grid.Column="2">
+                          <StackPanel Spacing="4">
+                            <TextBlock Classes="Overline" Text="Low" />
+                            <TextBlock Classes="Metric" FontSize="20" Foreground="#FF6B6B"
+                                       Text="{Binding ChartLow, StringFormat=\${0:N6}}" />
+                          </StackPanel>
+                        </Border>
+                        <Border Classes="SurfaceCard" Grid.Column="3">
+                          <StackPanel Spacing="4">
+                            <TextBlock Classes="Overline" Text="Change" />
+                            <TextBlock Classes="Metric" FontSize="20"
+                                       Text="{Binding ChartChangePercent, StringFormat={}{0:+0.##;-0.##;0}%}" />
+                          </StackPanel>
+                        </Border>
+                      </Grid>
+
+                      <!-- Chart canvas -->
+                      <Border Classes="SoftPanel">
+                        <StackPanel Spacing="8">
+                          <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding ChartStatusMessage}"
+                                       Foreground="#8B949E" TextWrapping="Wrap" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding ChartTelemetry}"
+                                       Foreground="#14E0C1" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding ChartSource, StringFormat=src: {0}}"
+                                       Foreground="#8B949E" FontSize="11" />
+                            <TextBlock Grid.Column="3"
+                                       Text="{Binding SelectedChartRange, StringFormat=range: {0}}"
+                                       Foreground="#8B949E" FontSize="11" />
+                          </Grid>
+
+                          <Border Background="#0D1117"
+                                  BorderBrush="#30363D" BorderThickness="1"
+                                  CornerRadius="10" Padding="12" MinHeight="300">
+                            <Grid RowDefinitions="*,Auto">
+                              <ctrl:DexPriceChart Grid.Row="0"
+                                                  Height="320"
+                                                  HorizontalAlignment="Stretch"
+                                                  VerticalAlignment="Stretch"
+                                                  Candles="{Binding ChartCandles}" />
+                              <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding ChartStartLabel}"
+                                           Foreground="#8B949E" FontSize="11" />
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding ChartEndLabel}"
+                                           Foreground="#8B949E" FontSize="11" />
+                              </Grid>
+                            </Grid>
+                          </Border>
+                        </StackPanel>
+                      </Border>
+
+                      <!-- Secondary KPIs: Volume / Liquidity / 24h change -->
+                      <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                        <Border Classes="SoftPanel" Grid.Column="0" Padding="10">
+                          <StackPanel Spacing="4">
+                            <TextBlock Classes="Overline" Text="24h Volume" />
+                            <TextBlock FontSize="16" FontWeight="Bold"
+                                       Text="{Binding SelectedToken.Volume24h, StringFormat=\${0:N0}}" />
+                          </StackPanel>
+                        </Border>
+                        <Border Classes="SoftPanel" Grid.Column="1" Padding="10">
+                          <StackPanel Spacing="4">
+                            <TextBlock Classes="Overline" Text="Liquidity" />
+                            <TextBlock FontSize="16" FontWeight="Bold"
+                                       Text="{Binding SelectedToken.LiquidityUsd, StringFormat=\${0:N0}}" />
+                          </StackPanel>
+                        </Border>
+                        <Border Classes="SoftPanel" Grid.Column="2" Padding="10">
+                          <StackPanel Spacing="4">
+                            <TextBlock Classes="Overline" Text="24h Change" />
+                            <TextBlock FontSize="16" FontWeight="Bold"
+                                       Text="{Binding SelectedToken.PriceChange24h, StringFormat={}{0:+0.##;-0.##;0}%}" />
+                          </StackPanel>
+                        </Border>
+                      </Grid>
+
+                    </StackPanel>
+                  </Border>
+
+                  <!-- ── RIGHT: Trading Module ──────────────────────────────── -->
+                  <Border Classes="Panel" Grid.Column="1">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="12">
+                      <TextBlock Classes="H2" Text="Trading Module" />
+
+                      <!-- Token search / selector -->
+                      <Border Classes="SoftPanel">
+                        <StackPanel Spacing="10">
+                          <TextBlock Classes="Overline" Text="Token" />
+                          <TextBox Text="{Binding SearchText}"
+                                   PlaceholderText="Symbol, name or address" />
+                          <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                            <Button Grid.Column="0" Content="SEARCH"
+                                    Classes="GhostButton"
+                                    Command="{Binding SearchCommand}" />
+                            <Button Grid.Column="1" Content="REFRESH"
+                                    Classes="GhostButton"
+                                    Command="{Binding RefreshCommand}" />
+                          </Grid>
+                          <ComboBox ItemsSource="{Binding Tokens}"
+                                    SelectedItem="{Binding SelectedToken}"
+                                    HorizontalAlignment="Stretch">
+                            <ComboBox.ItemTemplate>
+                              <DataTemplate x:DataType="vm:DexTokenItemViewModel">
+                                <TextBlock Text="{Binding DisplayName}" />
+                              </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                          </ComboBox>
+                          <TextBlock Text="{Binding SelectedTokenSubtitle}"
+                                     Foreground="#8FA3B8" TextWrapping="Wrap" FontSize="11" />
+                        </StackPanel>
+                      </Border>
+
+                      <!-- Guard status strip -->
+                      <Border Classes="GuardStripCard">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                          <Border Classes="GuardChip"
+                                  Background="#10251F"
+                                  BorderBrush="{Binding DexGuardStatusBrush}">
+                            <TextBlock Text="{Binding DexGuardStatusLabel}"
+                                       Foreground="{Binding DexGuardStatusBrush}"
+                                       FontWeight="Bold" />
+                          </Border>
+                          <StackPanel Grid.Column="1" Spacing="4">
+                            <TextBlock Text="{Binding DexGuardSummary}"
+                                       FontWeight="SemiBold" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding DexGuardDetail}"
+                                       Foreground="#8B949E" TextWrapping="Wrap" FontSize="11" />
+                          </StackPanel>
+                        </Grid>
+                      </Border>
+
+                      <!-- Wallet balance KPIs -->
+                      <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                        <Border Classes="SurfaceCard" Grid.Column="0">
+                          <StackPanel Spacing="4">
+                            <TextBlock Classes="Overline" Text="Native" />
+                            <TextBlock FontSize="15" FontWeight="Bold" Foreground="#21E6C1"
+                                       Text="{Binding WalletBalanceSummary}" TextTrimming="CharacterEllipsis" />
+                          </StackPanel>
+                        </Border>
+                        <Border Classes="SurfaceCard" Grid.Column="1">
+                          <StackPanel Spacing="4">
+                            <TextBlock Classes="Overline" Text="Quote" />
+                            <TextBlock FontSize="15" FontWeight="Bold" Foreground="#F4B860"
+                                       Text="{Binding QuoteAssetBalanceLabel}" TextTrimming="CharacterEllipsis" />
+                          </StackPanel>
+                        </Border>
+                      </Grid>
+
+                      <!-- Spendable + pair compat -->
+                      <TextBlock Text="{Binding SpendableQuoteBalanceLabel}"
+                                 Foreground="#14E0C1" FontSize="11" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding PairCompatibilityMessage}"
+                                 Foreground="{Binding QuoteAssetModeBrush}"
+                                 FontSize="11" TextWrapping="Wrap" />
+
+                      <!-- Quote asset + slippage -->
+                      <Grid ColumnDefinitions="Auto,*,Auto,74" ColumnSpacing="8"
+                            IsEnabled="{Binding CanTradeSelectedToken}">
+                        <TextBlock Grid.Column="0" Text="Quote" VerticalAlignment="Center" Foreground="#8FA3B8" />
+                        <ComboBox Grid.Column="1"
+                                  ItemsSource="{Binding QuoteAssetOptions}"
+                                  SelectedItem="{Binding SelectedQuoteAssetSymbol}" />
+                        <TextBlock Grid.Column="2" Text="Slip%" VerticalAlignment="Center" Foreground="#8FA3B8" />
+                        <NumericUpDown Grid.Column="3"
+                                       Value="{Binding SlippagePercent}"
+                                       Increment="0.5" FormatString="0.#"
+                                       Minimum="0.1" Maximum="50"
+                                       ToolTip.Tip="{Binding SlippageSummary}" />
+                      </Grid>
+
+                      <!-- ── BUY ── -->
+                      <TextBlock Classes="Overline" Text="BUY" Margin="0,4,0,0" />
+                      <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="6"
+                            IsEnabled="{Binding CanTradeSelectedToken}">
+                        <Button Grid.Column="0" Content="25%" Classes="GhostButton"
+                                Command="{Binding ApplyBuyBalancePresetCommand}" CommandParameter="25" />
+                        <Button Grid.Column="1" Content="50%" Classes="GhostButton"
+                                Command="{Binding ApplyBuyBalancePresetCommand}" CommandParameter="50" />
+                        <Button Grid.Column="2" Content="75%" Classes="GhostButton"
+                                Command="{Binding ApplyBuyBalancePresetCommand}" CommandParameter="75" />
+                        <Button Grid.Column="3" Content="100%" Classes="GhostButton"
+                                Command="{Binding ApplyBuyBalancePresetCommand}" CommandParameter="100" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8"
+                            IsEnabled="{Binding CanTradeSelectedToken}">
+                        <NumericUpDown Grid.Column="0"
+                                       Value="{Binding BuyAmountBnb}"
+                                       Increment="0.001" FormatString="0.0000" Minimum="0"
+                                       HorizontalAlignment="Stretch" />
+                        <Button Grid.Column="1" Content="MAX" Classes="GhostButton"
+                                Command="{Binding UseMaxBuyAmountCommand}" />
+                      </Grid>
+                      <TextBlock Text="{Binding BuyQuoteLabel}"
+                                 Foreground="{Binding BuyQuoteBrush}"
+                                 FontWeight="SemiBold"
+                                 IsVisible="{Binding HasSelectedToken}" />
+
+                      <!-- ── SELL ── -->
+                      <TextBlock Classes="Overline" Text="SELL" Margin="0,4,0,0" />
+                      <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="Bal:" VerticalAlignment="Center" Foreground="#8FA3B8" />
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding TokenBalanceLabel}"
+                                   VerticalAlignment="Center" Foreground="#F4B860"
+                                   IsVisible="{Binding HasSelectedToken}" />
+                        <Button Grid.Column="2" Content="↻" Classes="GhostButton" Width="34"
+                                Command="{Binding RefreshTokenBalanceCommand}"
+                                ToolTip.Tip="Refresh token balance" />
+                        <NumericUpDown Grid.Column="3"
+                                       Value="{Binding SellAmountTokens}"
+                                       Increment="1" FormatString="0.########" Minimum="0" Width="130"
+                                       IsEnabled="{Binding CanTradeSelectedToken}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="6"
+                            IsEnabled="{Binding CanTradeSelectedToken}">
+                        <Button Grid.Column="0" Content="25%" Classes="GhostButton"
+                                Command="{Binding ApplySellBalancePresetCommand}" CommandParameter="25" />
+                        <Button Grid.Column="1" Content="50%" Classes="GhostButton"
+                                Command="{Binding ApplySellBalancePresetCommand}" CommandParameter="50" />
+                        <Button Grid.Column="2" Content="75%" Classes="GhostButton"
+                                Command="{Binding ApplySellBalancePresetCommand}" CommandParameter="75" />
+                        <Button Grid.Column="3" Content="100%" Classes="GhostButton"
+                                Command="{Binding ApplySellBalancePresetCommand}" CommandParameter="100" />
+                      </Grid>
+
+                      <!-- Execute -->
+                      <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                        <Button Grid.Column="0" Content="BUY TOKEN" Classes="BuyButton"
+                                Command="{Binding BuyCommand}"
+                                HorizontalAlignment="Stretch"
+                                IsEnabled="{Binding CanBuySelectedTokenLive}"
+                                ToolTip.Tip="{Binding ManualBuyBlockedReason}" />
+                        <Button Grid.Column="1" Content="SELL TOKEN" Classes="SellButton"
+                                Command="{Binding SellCommand}"
+                                HorizontalAlignment="Stretch"
+                                IsEnabled="{Binding CanSellSelectedTokenLive}"
+                                ToolTip.Tip="{Binding ManualSellBlockedReason}" />
+                      </Grid>
+
+                      <!-- Status -->
+                      <TextBlock Text="{Binding ManualBuyBlockedReason}"
+                                 Foreground="#F4B860" TextWrapping="Wrap" FontSize="11"
+                                 IsVisible="{Binding !CanBuySelectedTokenLive}" />
+                      <TextBlock Text="{Binding StatusMessage}"
+                                 Foreground="#8FA3B8" TextWrapping="Wrap" FontSize="12"
+                                 IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+                      <!-- Token links -->
+                      <TextBlock Text="{Binding SelectedToken.TokenAddress, StringFormat=Token: {0}}"
+                                 Foreground="#3A4F63" TextWrapping="Wrap" FontSize="10"
+                                 IsVisible="{Binding HasSelectedToken}" />
+                    </StackPanel>
+                    </ScrollViewer>
+                  </Border>
+
+                </Grid>
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+          </Border>
+</UserControl>

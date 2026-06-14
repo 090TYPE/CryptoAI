@@ -1,0 +1,362 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.AnalyticsView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <StackPanel Spacing="16" IsVisible="{Binding IsAnalyticsSectionVisible}">
+
+            <!-- ── Filters + action bar ── -->
+            <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="10">
+              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <TextBlock Classes="Overline" Text="Period" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding PnlDashboardVM.AvailablePeriods}"
+                          SelectedItem="{Binding PnlDashboardVM.SelectedPeriod}"
+                          MinWidth="80" />
+              </StackPanel>
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <TextBlock Classes="Overline" Text="Source" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding PnlDashboardVM.AvailableSources}"
+                          SelectedItem="{Binding PnlDashboardVM.SelectedSource}"
+                          MinWidth="80" />
+              </StackPanel>
+              <TextBlock Grid.Column="2" Text="{Binding PnlDashboardVM.StatusMessage}"
+                         Foreground="#4D5F70" FontSize="11" VerticalAlignment="Center" Margin="12,0,0,0" />
+              <Button Grid.Column="3" Classes="SecondaryButton" Command="{Binding PnlDashboardVM.RefreshCommand}">↻ Refresh</Button>
+              <Button Grid.Column="4" Classes="SecondaryButton" Command="{Binding PnlDashboardVM.ExportCsvCommand}">⬇ Export CSV</Button>
+            </Grid>
+
+            <!-- ── KPI cards ── -->
+            <Grid ColumnDefinitions="*,*,*,*,*,*" ColumnSpacing="12">
+              <Border Grid.Column="0" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Total P&amp;L" />
+                  <TextBlock Text="{Binding PnlDashboardVM.TotalPnlLabel}"
+                             Foreground="{Binding PnlDashboardVM.TotalPnlBrush}"
+                             FontSize="16" FontWeight="SemiBold" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Win Rate" />
+                  <TextBlock Text="{Binding PnlDashboardVM.WinRateLabel}" Foreground="#21E6C1" FontSize="16" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding PnlDashboardVM.TradeCountLabel}" Foreground="#4D5F70" FontSize="11" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Avg Win" />
+                  <TextBlock Text="{Binding PnlDashboardVM.AvgWinLabel}" Foreground="#3DDC84" FontSize="16" FontWeight="SemiBold" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="3" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Avg Loss" />
+                  <TextBlock Text="{Binding PnlDashboardVM.AvgLossLabel}" Foreground="#FF5D73" FontSize="16" FontWeight="SemiBold" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="4" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Max Drawdown" />
+                  <TextBlock Text="{Binding PnlDashboardVM.MaxDrawdownLabel}" Foreground="#F4B860" FontSize="16" FontWeight="SemiBold" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="5" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Profit Factor" />
+                  <TextBlock Text="{Binding PnlDashboardVM.ProfitFactorLabel}" Foreground="#A78BFA" FontSize="16" FontWeight="SemiBold" />
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <!-- ── Equity curve ── -->
+            <Border Classes="Panel" Padding="16,12">
+              <StackPanel Spacing="8">
+                <!-- Header row: title + min/max + legend -->
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10">
+                  <TextBlock Grid.Column="0" Classes="H2" Text="Equity Curve" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding PnlDashboardVM.EquityCurveMaxLabel}"
+                             Foreground="#3DDC84" FontSize="11" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Text="{Binding PnlDashboardVM.EquityCurveMinLabel}"
+                             Foreground="#FF5D73" FontSize="11" VerticalAlignment="Center" />
+                  <!-- Legend -->
+                  <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                    <Border Width="12" Height="2" Background="#21E6C1" VerticalAlignment="Center" />
+                    <TextBlock Text="Active" Foreground="#8FA3B8" FontSize="10" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center"
+                              IsVisible="{Binding PnlDashboardVM.HasHoldLine}">
+                    <Border Width="12" Height="2" Background="#5A6A7A" VerticalAlignment="Center" />
+                    <TextBlock Text="Hold" Foreground="#8FA3B8" FontSize="10" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                    <Border Width="10" Height="10" Background="#FF5D7340" CornerRadius="2" VerticalAlignment="Center" />
+                    <TextBlock Text="Drawdown" Foreground="#8FA3B8" FontSize="10" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="6" Text="{Binding PnlDashboardVM.HoldDeltaLabel}"
+                             Foreground="#F4B860" FontSize="10" VerticalAlignment="Center"
+                             IsVisible="{Binding PnlDashboardVM.HasHoldLine}" />
+                </Grid>
+
+                <!-- Chart canvas -->
+                <Border Background="#070F18" CornerRadius="4" Height="142" IsVisible="{Binding PnlDashboardVM.EquityCurveHasData}">
+                  <Canvas Width="560" Height="130" VerticalAlignment="Center" HorizontalAlignment="Left">
+                    <!-- Drawdown fill (red translucent area below rolling peak) -->
+                    <Path Fill="#33FF5D73" Stroke="Transparent"
+                          Data="{Binding PnlDashboardVM.DrawdownPathData}" />
+                    <!-- Hold comparison line (gray dashed) -->
+                    <Path Stroke="#4D5F70" StrokeThickness="1" StrokeDashArray="5,3" Fill="Transparent"
+                          Data="{Binding PnlDashboardVM.HoldPathData}"
+                          IsVisible="{Binding PnlDashboardVM.HasHoldLine}" />
+                    <!-- Zero line (dynamic Y position via TranslateTransform) -->
+                    <Line StartPoint="0,0" EndPoint="560,0"
+                          Stroke="#1A2E3A" StrokeThickness="1" StrokeDashArray="4,4">
+                      <Line.RenderTransform>
+                        <TranslateTransform Y="{Binding PnlDashboardVM.ZeroLineY}" />
+                      </Line.RenderTransform>
+                    </Line>
+                    <!-- Equity curve (teal solid line) -->
+                    <Path Stroke="#21E6C1" StrokeThickness="1.5" Fill="Transparent"
+                          Data="{Binding PnlDashboardVM.EquityCurvePathData}" />
+                  </Canvas>
+                </Border>
+
+                <!-- Placeholder when no data -->
+                <Border Background="#070F18" CornerRadius="4" Height="60"
+                        IsVisible="{Binding PnlDashboardVM.EquityCurveIsEmpty}">
+                  <TextBlock Text="No trade data yet. Complete a trade to see the equity curve."
+                             Foreground="#2A3D4F" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" />
+                </Border>
+              </StackPanel>
+            </Border>
+
+            <!-- ── Breakdown tables — row 1: By Day + By Source ── -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+
+              <!-- By day -->
+              <Border Grid.Column="0" Classes="Panel" Padding="0">
+                <StackPanel>
+                  <Border Padding="16,10" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
+                    <TextBlock Classes="H2" Text="P&amp;L by Day" />
+                  </Border>
+                  <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10" Margin="16,8">
+                    <TextBlock Grid.Column="0" Classes="Overline" Text="Date" />
+                    <TextBlock Grid.Column="1" Classes="Overline" Text="Trades" />
+                    <TextBlock Grid.Column="2" Classes="Overline" Text="Win %" />
+                    <TextBlock Grid.Column="3" Classes="Overline" Text="P&amp;L" />
+                  </Grid>
+                  <ScrollViewer MaxHeight="240" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding PnlDashboardVM.ByDayRows}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PeriodRowViewModel">
+                          <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10"
+                                Margin="16,5" VerticalAlignment="Center">
+                            <TextBlock Grid.Column="0" Text="{Binding Label}" Foreground="#C8D8E8" />
+                            <TextBlock Grid.Column="1" Text="{Binding Trades}" Foreground="#8FA3B8" />
+                            <TextBlock Grid.Column="2" Text="{Binding WinRate}" Foreground="#8FA3B8" />
+                            <TextBlock Grid.Column="3" Text="{Binding PnlLabel}"
+                                       Foreground="{Binding PnlBrush}" FontWeight="SemiBold" />
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </StackPanel>
+              </Border>
+
+              <!-- By source -->
+              <Border Grid.Column="1" Classes="Panel" Padding="0">
+                <StackPanel>
+                  <Border Padding="16,10" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
+                    <TextBlock Classes="H2" Text="P&amp;L by Source" />
+                  </Border>
+                  <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10" Margin="16,8">
+                    <TextBlock Grid.Column="0" Classes="Overline" Text="Source" />
+                    <TextBlock Grid.Column="1" Classes="Overline" Text="Trades" />
+                    <TextBlock Grid.Column="2" Classes="Overline" Text="Win %" />
+                    <TextBlock Grid.Column="3" Classes="Overline" Text="P&amp;L" />
+                  </Grid>
+                  <ItemsControl ItemsSource="{Binding PnlDashboardVM.BySourceRows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:SourceRowViewModel">
+                        <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10"
+                              Margin="16,6" VerticalAlignment="Center">
+                          <TextBlock Grid.Column="0" Text="{Binding Label}" Foreground="#C8D8E8" FontWeight="SemiBold" />
+                          <TextBlock Grid.Column="1" Text="{Binding Trades}" Foreground="#8FA3B8" />
+                          <TextBlock Grid.Column="2" Text="{Binding WinRate}" Foreground="#8FA3B8" />
+                          <TextBlock Grid.Column="3" Text="{Binding PnlLabel}"
+                                     Foreground="{Binding PnlBrush}" FontWeight="SemiBold" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+
+            </Grid>
+
+            <!-- ── Breakdown tables — row 2: By Bot, By Exchange, By Asset ── -->
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16">
+
+              <!-- By Bot -->
+              <Border Grid.Column="0" Classes="Panel" Padding="0">
+                <StackPanel>
+                  <Border Padding="16,10" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
+                    <Grid ColumnDefinitions="Auto,*">
+                      <TextBlock Grid.Column="0" Classes="H2" Text="P&amp;L by Bot" />
+                      <TextBlock Grid.Column="1" Text="Grid · DCA · AI · CEX Arb · Funding"
+                                 Foreground="#3A5068" FontSize="10" VerticalAlignment="Center" Margin="8,0,0,0" />
+                    </Grid>
+                  </Border>
+                  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10" Margin="16,8">
+                    <TextBlock Grid.Column="0" Classes="Overline" Text="Bot" />
+                    <TextBlock Grid.Column="1" Classes="Overline" Text="W/T" />
+                    <TextBlock Grid.Column="2" Classes="Overline" Text="P&amp;L" />
+                  </Grid>
+                  <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding PnlDashboardVM.ByBotRows}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:SourceRowViewModel">
+                          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10"
+                                Margin="16,5" VerticalAlignment="Center">
+                            <TextBlock Grid.Column="0" Text="{Binding Label}"
+                                       Foreground="#C8D8E8" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="1" Text="{Binding Trades}" Foreground="#8FA3B8" FontSize="11" />
+                            <TextBlock Grid.Column="2" Text="{Binding PnlLabel}"
+                                       Foreground="{Binding PnlBrush}" FontWeight="SemiBold" />
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </StackPanel>
+              </Border>
+
+              <!-- By Exchange -->
+              <Border Grid.Column="1" Classes="Panel" Padding="0">
+                <StackPanel>
+                  <Border Padding="16,10" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
+                    <TextBlock Classes="H2" Text="P&amp;L by Exchange" />
+                  </Border>
+                  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10" Margin="16,8">
+                    <TextBlock Grid.Column="0" Classes="Overline" Text="Exchange" />
+                    <TextBlock Grid.Column="1" Classes="Overline" Text="W/T" />
+                    <TextBlock Grid.Column="2" Classes="Overline" Text="P&amp;L" />
+                  </Grid>
+                  <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding PnlDashboardVM.ByExchangeRows}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:SourceRowViewModel">
+                          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10"
+                                Margin="16,5" VerticalAlignment="Center">
+                            <TextBlock Grid.Column="0" Text="{Binding Label}"
+                                       Foreground="#C8D8E8" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="1" Text="{Binding Trades}" Foreground="#8FA3B8" FontSize="11" />
+                            <TextBlock Grid.Column="2" Text="{Binding PnlLabel}"
+                                       Foreground="{Binding PnlBrush}" FontWeight="SemiBold" />
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </StackPanel>
+              </Border>
+
+              <!-- By Asset -->
+              <Border Grid.Column="2" Classes="Panel" Padding="0">
+                <StackPanel>
+                  <Border Padding="16,10" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
+                    <TextBlock Classes="H2" Text="P&amp;L by Asset" />
+                  </Border>
+                  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10" Margin="16,8">
+                    <TextBlock Grid.Column="0" Classes="Overline" Text="Asset" />
+                    <TextBlock Grid.Column="1" Classes="Overline" Text="W/T" />
+                    <TextBlock Grid.Column="2" Classes="Overline" Text="P&amp;L" />
+                  </Grid>
+                  <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding PnlDashboardVM.ByAssetRows}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:SourceRowViewModel">
+                          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10"
+                                Margin="16,5" VerticalAlignment="Center">
+                            <TextBlock Grid.Column="0" Text="{Binding Label}"
+                                       Foreground="#C8D8E8" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="1" Text="{Binding Trades}" Foreground="#8FA3B8" FontSize="11" />
+                            <TextBlock Grid.Column="2" Text="{Binding PnlLabel}"
+                                       Foreground="{Binding PnlBrush}" FontWeight="SemiBold" />
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </StackPanel>
+              </Border>
+
+            </Grid>
+
+            <!-- ── Trade history table ── -->
+            <Border Classes="Panel" Padding="0">
+              <StackPanel>
+                <Border Padding="16,10" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
+                  <TextBlock Classes="H2" Text="Trade History" />
+                </Border>
+                <!-- Column headers -->
+                <Grid ColumnDefinitions="120,*,80,70,80,80,80,*" ColumnSpacing="10" Margin="16,8">
+                  <TextBlock Grid.Column="0" Classes="Overline" Text="Date" />
+                  <TextBlock Grid.Column="1" Classes="Overline" Text="Symbol" />
+                  <TextBlock Grid.Column="2" Classes="Overline" Text="Source" />
+                  <TextBlock Grid.Column="3" Classes="Overline" Text="Side" />
+                  <TextBlock Grid.Column="4" Classes="Overline" Text="P&amp;L" />
+                  <TextBlock Grid.Column="5" Classes="Overline" Text="P&amp;L %" />
+                  <TextBlock Grid.Column="6" Classes="Overline" Text="Duration" />
+                  <TextBlock Grid.Column="7" Classes="Overline" Text="Exit" />
+                </Grid>
+                <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto">
+                  <ItemsControl ItemsSource="{Binding PnlDashboardVM.TradeRows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:TradeRowViewModel">
+                        <Border Padding="16,6" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
+                          <Grid ColumnDefinitions="120,*,80,70,80,80,80,*" ColumnSpacing="10">
+                            <TextBlock Grid.Column="0" Text="{Binding DateLabel}"  Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="{Binding Symbol}"     Foreground="#C8D8E8" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2" Text="{Binding Source}"     Foreground="#4D7EA8" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="3" Text="{Binding Direction}"  Foreground="#8FA3B8" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="4" Text="{Binding PnlLabel}"   Foreground="{Binding PnlBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="5" Text="{Binding PnlPctLabel}" Foreground="{Binding PnlBrush}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="6" Text="{Binding Duration}"   Foreground="#8FA3B8" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="7" Text="{Binding ExitReason}" Foreground="#4D5F70" FontSize="11" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </StackPanel>
+            </Border>
+
+            <!-- ── Session summary (existing, kept for legacy compatibility) ── -->
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16">
+              <Border Grid.Column="0" Classes="SurfaceCard">
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="Overline" Text="Session P&amp;L" />
+                  <TextBlock Classes="Metric" Text="{Binding SessionPnlLabel}" />
+                  <TextBlock Text="{Binding SessionPnlPercentLabel}" Foreground="{Binding SessionPnlBrush}" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Classes="SurfaceCard">
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="Overline" Text="Execution" />
+                  <TextBlock Text="{Binding AnalyticsExecutionSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Classes="SurfaceCard">
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="Overline" Text="Market Breadth" />
+                  <TextBlock Text="{Binding AnalyticsMarketSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+            </Grid>
+
+          </StackPanel>
+</UserControl>

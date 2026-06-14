@@ -1,0 +1,175 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.PositionsView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <StackPanel Spacing="12" IsVisible="{Binding IsPositionsSectionVisible}">
+
+            <!-- Header row: totals + Close All -->
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+              <StackPanel Spacing="4">
+                <TextBlock Text="Unrealized PnL (all exchanges)" Classes="Overline" />
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                  <TextBlock Text="{Binding AllPositionsVM.TotalPnlLabel}"
+                             Foreground="{Binding AllPositionsVM.TotalPnlBrush}"
+                             FontSize="22" FontWeight="Bold" />
+                  <TextBlock Text="{Binding AllPositionsVM.TotalSizeLabel}"
+                             Foreground="#4A6880" FontSize="13" VerticalAlignment="Bottom" />
+                </StackPanel>
+              </StackPanel>
+
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+                <Button Content="↻  Refresh"
+                        Classes="SecondaryAction"
+                        Command="{Binding AllPositionsVM.RefreshCommand}"
+                        IsEnabled="{Binding !AllPositionsVM.IsRefreshing}"
+                        Padding="12,6" FontSize="12" />
+                <Button Content="⚠ Close All"
+                        Background="#402020" Foreground="#FF6B6B"
+                        BorderBrush="#FF6B6B" BorderThickness="1"
+                        CornerRadius="4"
+                        Command="{Binding AllPositionsVM.CloseAllCommand}"
+                        IsEnabled="{Binding AllPositionsVM.HasPositions}"
+                        Padding="14,6" FontSize="12" FontWeight="Bold"
+                        ToolTip.Tip="Two-step confirmation: first click arms (StatusLabel changes), second click within 8 s closes all positions." />
+                <!-- Armed-indicator (видим только когда первый клик уже был): -->
+                <Border IsVisible="{Binding AllPositionsVM.CloseAllConfirmRequested}"
+                        Background="#FF6B6B" CornerRadius="3" Padding="6,3"
+                        VerticalAlignment="Center">
+                  <TextBlock Text="⚠ ARMED — click again" Foreground="#0A1018"
+                             FontSize="11" FontWeight="Bold" />
+                </Border>
+              </StackPanel>
+            </Grid>
+
+            <!-- Status bar -->
+            <TextBlock Text="{Binding AllPositionsVM.StatusLabel}"
+                       Foreground="#4A6880" FontSize="11" />
+
+            <!-- Table header row with sort buttons -->
+            <Grid ColumnDefinitions="100,80,60,80,80,80,80,*,100" ColumnSpacing="8"
+                  Margin="0,4,0,0">
+              <Button Grid.Column="0" Content="EXCHANGE" Classes="SortHeader"
+                      Command="{Binding AllPositionsVM.SortByExchangeCommand}" />
+              <TextBlock Grid.Column="1" Text="SYMBOL" Classes="Overline" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="2" Text="SIDE" Classes="Overline" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="3" Text="ENTRY" Classes="Overline" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="4" Text="MARK" Classes="Overline" VerticalAlignment="Center" />
+              <Button Grid.Column="5" Content="SIZE" Classes="SortHeader"
+                      Command="{Binding AllPositionsVM.SortBySizeCommand}" />
+              <TextBlock Grid.Column="6" Text="LEV. / LIQ." Classes="Overline" VerticalAlignment="Center" />
+              <Button Grid.Column="7" Content="UNREAL. PNL" Classes="SortHeader"
+                      Command="{Binding AllPositionsVM.SortByPnlCommand}" />
+              <TextBlock Grid.Column="8" Text="" />
+            </Grid>
+            <Border Height="1" Background="#17263A" />
+
+            <!-- Empty state -->
+            <Border IsVisible="{Binding AllPositionsVM.HasNoPositions}"
+                    Background="#0A1018" CornerRadius="4" Padding="20" Margin="0,4,0,0">
+              <StackPanel HorizontalAlignment="Center" Spacing="8">
+                <TextBlock Text="⊞" FontSize="32" Foreground="#2D4A5A" HorizontalAlignment="Center" />
+                <TextBlock Text="No open futures positions across Binance · Bybit · OKX"
+                           Foreground="#4A6880" FontSize="13" HorizontalAlignment="Center" />
+                <TextBlock Text="Press Refresh to query all connected exchanges."
+                           Foreground="#2D4A5A" FontSize="11" HorizontalAlignment="Center" />
+              </StackPanel>
+            </Border>
+
+            <!-- Positions list -->
+            <ScrollViewer IsVisible="{Binding AllPositionsVM.HasPositions}"
+                          MaxHeight="520" VerticalScrollBarVisibility="Auto">
+              <ItemsControl ItemsSource="{Binding AllPositionsVM.Rows}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="{x:Type vm:UnifiedPositionRowVM}">
+                    <Border Background="#0A1018" CornerRadius="4" Padding="8,6" Margin="0,2">
+                      <Grid ColumnDefinitions="100,80,60,80,80,80,80,*,100" ColumnSpacing="8">
+
+                        <!-- Exchange badge -->
+                        <Border Grid.Column="0" Background="#0F1721" CornerRadius="3" Padding="6,2"
+                                HorizontalAlignment="Left" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Exchange}"
+                                     Foreground="{Binding ExchangeBrush}"
+                                     FontSize="11" FontWeight="SemiBold" />
+                        </Border>
+
+                        <!-- Symbol -->
+                        <TextBlock Grid.Column="1" Text="{Binding Symbol}"
+                                   Foreground="#C8D8E8" FontSize="12" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+
+                        <!-- Side -->
+                        <Border Grid.Column="2" Background="#0F1721" CornerRadius="3" Padding="5,2"
+                                HorizontalAlignment="Left" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Side}"
+                                     Foreground="{Binding SideBrush}"
+                                     FontSize="11" FontWeight="Bold" />
+                        </Border>
+
+                        <!-- Entry price -->
+                        <TextBlock Grid.Column="3" Text="{Binding EntryPriceLabel}"
+                                   Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
+
+                        <!-- Mark price -->
+                        <TextBlock Grid.Column="4" Text="{Binding MarkPriceLabel}"
+                                   Foreground="#C8D8E8" FontSize="12" VerticalAlignment="Center" />
+
+                        <!-- Size + notional -->
+                        <StackPanel Grid.Column="5" VerticalAlignment="Center" Spacing="2">
+                          <TextBlock Text="{Binding SizeLabel}" Foreground="#C8D8E8" FontSize="12" />
+                          <TextBlock Text="{Binding NotionalLabel}" Foreground="#4A6880" FontSize="10" />
+                        </StackPanel>
+
+                        <!-- Leverage / Liq -->
+                        <StackPanel Grid.Column="6" VerticalAlignment="Center" Spacing="2">
+                          <TextBlock Text="{Binding LeverageLabel}" Foreground="#8FA3B8" FontSize="12" />
+                          <TextBlock Text="{Binding LiqLabel}" Foreground="#FF6B6B" FontSize="10" />
+                        </StackPanel>
+
+                        <!-- PnL -->
+                        <TextBlock Grid.Column="7" Text="{Binding PnlLabel}"
+                                   Foreground="{Binding PnlBrush}"
+                                   FontSize="13" FontWeight="Bold"
+                                   VerticalAlignment="Center" />
+
+                        <!-- Partial-close + full-close buttons -->
+                        <StackPanel Grid.Column="8" Orientation="Horizontal" Spacing="3"
+                                    VerticalAlignment="Center" HorizontalAlignment="Right">
+                          <Button Content="25%" Background="#11171F" Foreground="#A0B4C8"
+                                  BorderBrush="#2D4A5A" BorderThickness="1" CornerRadius="3"
+                                  Padding="5,3" FontSize="10"
+                                  Command="{Binding $parent[ItemsControl].((vm:AllPositionsViewModel)DataContext).Close25Command}"
+                                  CommandParameter="{Binding}"
+                                  ToolTip.Tip="Reduce 25% of position size (reduce-only market order)." />
+                          <Button Content="50%" Background="#11171F" Foreground="#A0B4C8"
+                                  BorderBrush="#2D4A5A" BorderThickness="1" CornerRadius="3"
+                                  Padding="5,3" FontSize="10"
+                                  Command="{Binding $parent[ItemsControl].((vm:AllPositionsViewModel)DataContext).Close50Command}"
+                                  CommandParameter="{Binding}"
+                                  ToolTip.Tip="Reduce 50% of position size." />
+                          <Button Content="75%" Background="#11171F" Foreground="#A0B4C8"
+                                  BorderBrush="#2D4A5A" BorderThickness="1" CornerRadius="3"
+                                  Padding="5,3" FontSize="10"
+                                  Command="{Binding $parent[ItemsControl].((vm:AllPositionsViewModel)DataContext).Close75Command}"
+                                  CommandParameter="{Binding}"
+                                  ToolTip.Tip="Reduce 75% of position size." />
+                          <Button Content="Close"
+                                  Background="#2A1010" Foreground="#FF6B6B"
+                                  BorderBrush="#FF6B6B" BorderThickness="1" CornerRadius="3"
+                                  Padding="6,3" FontSize="11"
+                                  Command="{Binding $parent[ItemsControl].((vm:AllPositionsViewModel)DataContext).ClosePositionCommand}"
+                                  CommandParameter="{Binding}"
+                                  ToolTip.Tip="Close 100% of position." />
+                        </StackPanel>
+
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+
+          </StackPanel>
+</UserControl>

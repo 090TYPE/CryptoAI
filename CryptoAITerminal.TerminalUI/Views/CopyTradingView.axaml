@@ -1,0 +1,123 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.CopyTradingView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <StackPanel Spacing="16" IsVisible="{Binding IsCopySectionVisible}">
+
+            <!-- Header -->
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
+              <StackPanel Grid.Column="0" Spacing="2">
+                <TextBlock Classes="H1" Text="Copy Trading" />
+                <TextBlock Text="{Binding CopyTradingVM.ModeLabel}"
+                           FontSize="11" Foreground="#8FA3B8" />
+              </StackPanel>
+              <Button Grid.Column="1" Classes="GhostButton" Content="Leader"
+                      Command="{Binding CopyTradingVM.SetLeaderCommand}" />
+              <Button Grid.Column="2" Classes="GhostButton" Content="Follower"
+                      Command="{Binding CopyTradingVM.SetFollowerCommand}" />
+              <Button Grid.Column="3" Classes="GhostButton" Content="Off"
+                      Command="{Binding CopyTradingVM.SetOffCommand}" />
+            </Grid>
+
+            <!-- KPI strip -->
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+              <Border Grid.Column="0" Classes="SurfaceCard">
+                <StackPanel Spacing="3">
+                  <TextBlock Classes="Overline" Text="PUBLISHED" />
+                  <TextBlock Text="{Binding CopyTradingVM.TotalPublished}"
+                             Classes="Metric" Foreground="#21E6C1" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Classes="SurfaceCard">
+                <StackPanel Spacing="3">
+                  <TextBlock Classes="Overline" Text="COPIED" />
+                  <TextBlock Text="{Binding CopyTradingVM.TotalCopied}"
+                             Classes="Metric" Foreground="#F4B860" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Classes="SurfaceCard">
+                <StackPanel Spacing="3">
+                  <TextBlock Classes="Overline" Text="EST. PERF FEE" />
+                  <TextBlock Text="{Binding CopyTradingVM.FeeLabel}"
+                             Classes="Metric" Foreground="#21E6C1" />
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <!-- Follower config (shown when Follower mode active) -->
+            <Border Classes="Panel" Padding="16,12"
+                    IsVisible="{Binding CopyTradingVM.IsFollower}">
+              <Grid ColumnDefinitions="Auto,*,Auto,120,Auto,100" ColumnSpacing="12" VerticalAlignment="Center">
+                <TextBlock Grid.Column="0" Text="Leader URL" Classes="Overline" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" Text="{Binding CopyTradingVM.LeaderUrl}"
+                         PlaceholderText="http://leader-ip:5180"
+                         FontFamily="Consolas" FontSize="12" />
+                <TextBlock Grid.Column="2" Text="Scale" Classes="Overline"
+                           VerticalAlignment="Center" Margin="8,0,0,0" />
+                <NumericUpDown Grid.Column="3"
+                               Value="{Binding CopyTradingVM.ScaleRatio}"
+                               Minimum="0.01" Maximum="10" Increment="0.1"
+                               FormatString="N2" />
+                <TextBlock Grid.Column="4" Text="Perf fee %" Classes="Overline"
+                           VerticalAlignment="Center" Margin="8,0,0,0" />
+                <NumericUpDown Grid.Column="5"
+                               Value="{Binding CopyTradingVM.PerformanceFeePct}"
+                               Minimum="0" Maximum="50" Increment="1"
+                               FormatString="N0" />
+              </Grid>
+            </Border>
+
+            <!-- Activity log -->
+            <Border Classes="Panel" Padding="16,12">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="H2" Text="Activity Log" />
+                <ScrollViewer Classes="PageScroll" MaxHeight="300">
+                  <ItemsControl ItemsSource="{Binding CopyTradingVM.Log}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:CopyTradeLogEntry">
+                        <Grid ColumnDefinitions="70,*" ColumnSpacing="8" Margin="0,2">
+                          <TextBlock Grid.Column="0" Text="{Binding Time}"
+                                     FontFamily="Consolas" FontSize="10"
+                                     Foreground="#5C6E82" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="1" Text="{Binding Message}"
+                                     FontSize="11" Foreground="#8FA3B8"
+                                     TextWrapping="Wrap" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+                <TextBlock Text="No activity yet. Switch to Leader or Follower mode to start."
+                           Foreground="#3A4F63" FontSize="11"
+                           IsVisible="{Binding !CopyTradingVM.Log.Count}" />
+              </StackPanel>
+            </Border>
+
+            <!-- Info box -->
+            <Border Background="#080F18" BorderBrush="#1E3A52" BorderThickness="1"
+                    CornerRadius="8" Padding="14,10">
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="20">
+                <StackPanel Grid.Column="0" Spacing="4">
+                  <TextBlock Text="Leader mode" FontWeight="Bold" FontSize="12" Foreground="#21E6C1" />
+                  <TextBlock FontSize="11" Foreground="#8FA3B8" TextWrapping="Wrap" LineHeight="18">
+                    Every trade closed by AI Bot or Grid Bot is published to
+                    %APPDATA%/CryptoAITerminal/webapi/copy-trades.json and served at
+                    /api/copy-trades. Followers poll this endpoint and mirror trades.
+                  </TextBlock>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="4">
+                  <TextBlock Text="Follower mode" FontWeight="Bold" FontSize="12" Foreground="#F4B860" />
+                  <TextBlock FontSize="11" Foreground="#8FA3B8" TextWrapping="Wrap" LineHeight="18">
+                    Polls the leader every 2 seconds. New trade IDs are mirrored with
+                    quantity × ScaleRatio. Performance fee (default 20 %) is tracked
+                    locally — charge your subscribers manually.
+                  </TextBlock>
+                </StackPanel>
+              </Grid>
+            </Border>
+
+          </StackPanel>
+</UserControl>

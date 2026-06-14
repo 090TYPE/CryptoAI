@@ -1,0 +1,191 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.LiquidationView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <StackPanel Spacing="16" IsVisible="{Binding IsLiquidationSectionVisible}">
+
+            <!-- Proximity alert banner -->
+            <Border IsVisible="{Binding LiquidationHeatmapVM.IsProximityAlertActive}"
+                    Background="#2A1A10" BorderBrush="#FF9500" BorderThickness="0,0,0,1" Padding="14,10">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Text="⚡" FontSize="16" VerticalAlignment="Center" Foreground="#FF9500" />
+                <TextBlock Text="{Binding LiquidationHeatmapVM.ProximityAlertMessage}"
+                           Foreground="#FF9500" FontSize="13" FontWeight="SemiBold"
+                           VerticalAlignment="Center" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
+            <!-- Header -->
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="10">
+              <StackPanel Grid.Column="0">
+                <TextBlock Classes="H1" Text="Liquidation Heatmap" />
+                <TextBlock Text="{Binding LiquidationHeatmapVM.StatusLabel}"
+                           Foreground="#8FA3B8" FontSize="11" />
+              </StackPanel>
+              <TextBlock Grid.Column="1" Text="{Binding LiquidationHeatmapVM.DataSourceLabel}"
+                         Foreground="#21E6C1" FontSize="11" FontWeight="SemiBold"
+                         VerticalAlignment="Center" />
+              <CheckBox Grid.Column="2" IsChecked="{Binding LiquidationHeatmapVM.ShowLongs}"
+                        Content="Longs" Foreground="#21E6C1" VerticalAlignment="Center" />
+              <CheckBox Grid.Column="3" IsChecked="{Binding LiquidationHeatmapVM.ShowShorts}"
+                        Content="Shorts" Foreground="#FF6B6B" VerticalAlignment="Center" />
+              <Button Grid.Column="4" Content="&#x21BA; Refresh"
+                      Classes="GhostButton"
+                      Command="{Binding LiquidationHeatmapVM.RefreshCommand}"
+                      IsEnabled="{Binding !LiquidationHeatmapVM.IsLoading}" />
+            </Grid>
+
+            <!-- ── AI Liquidity Magnet (#13) ── -->
+            <Border Classes="Panel" Padding="14,12">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Text="🧠 AI Liquidity Magnet" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
+                    <TextBlock Text="Which liquidation cluster is pulling price?" Foreground="#5C6E82" FontSize="11" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding LiquidationHeatmapVM.InsightSource}"
+                             Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <Button Grid.Column="2" Content="Analyze with AI"
+                          Command="{Binding LiquidationHeatmapVM.AnalyzeWithAiCommand}"
+                          IsEnabled="{Binding !LiquidationHeatmapVM.InsightRunning}" Foreground="#21E6C1" />
+                </Grid>
+                <StackPanel Spacing="5" IsVisible="{Binding LiquidationHeatmapVM.HasInsight}">
+                  <TextBlock Text="{Binding LiquidationHeatmapVM.InsightSignal}"
+                             Foreground="{Binding LiquidationHeatmapVM.InsightSignalBrush}" FontWeight="Bold" FontSize="13" />
+                  <TextBlock Text="{Binding LiquidationHeatmapVM.InsightSummary}" Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding LiquidationHeatmapVM.InsightBullets}" Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap"
+                             IsVisible="{Binding LiquidationHeatmapVM.InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <!-- Symbol quick-select -->
+            <WrapPanel Orientation="Horizontal">
+              <Button Content="BTC" Classes="GhostButton" Margin="0,0,6,0"
+                      Command="{Binding LiquidationHeatmapVM.SetSymbolCommand}"
+                      CommandParameter="BTCUSDT" />
+              <Button Content="ETH" Classes="GhostButton" Margin="0,0,6,0"
+                      Command="{Binding LiquidationHeatmapVM.SetSymbolCommand}"
+                      CommandParameter="ETHUSDT" />
+              <Button Content="SOL" Classes="GhostButton" Margin="0,0,6,0"
+                      Command="{Binding LiquidationHeatmapVM.SetSymbolCommand}"
+                      CommandParameter="SOLUSDT" />
+              <Button Content="BNB" Classes="GhostButton" Margin="0,0,6,0"
+                      Command="{Binding LiquidationHeatmapVM.SetSymbolCommand}"
+                      CommandParameter="BNBUSDT" />
+              <Button Content="DOGE" Classes="GhostButton" Margin="0,0,6,0"
+                      Command="{Binding LiquidationHeatmapVM.SetSymbolCommand}"
+                      CommandParameter="DOGEUSDT" />
+              <TextBox Text="{Binding LiquidationHeatmapVM.Symbol}"
+                       PlaceholderText="XRPUSDT" Width="130" Margin="6,0,0,0" />
+            </WrapPanel>
+
+            <!-- KPI row -->
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+              <Border Grid.Column="0" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Current Price" />
+                  <TextBlock Classes="Metric"
+                             Text="{Binding LiquidationHeatmapVM.CurrentPrice, StringFormat=$ {0:N2}}"
+                             Foreground="#F4B860" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Top Long Liq Level" />
+                  <TextBlock Text="{Binding LiquidationHeatmapVM.TopLongLabel}"
+                             Foreground="#21E6C1" FontSize="13" FontWeight="SemiBold" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Top Short Liq Level" />
+                  <TextBlock Text="{Binding LiquidationHeatmapVM.TopShortLabel}"
+                             Foreground="#FF6B6B" FontSize="13" FontWeight="SemiBold" />
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <!-- Main heatmap — Canvas 1200×460, no Viewbox (avoids Avalonia 12 stretch bug).
+                 HorizontalAlignment="Center" centres on wide screens; ClipToBounds clips
+                 symmetrically on narrow ones so longs/shorts stay balanced. -->
+            <Grid ColumnDefinitions="*,56" ColumnSpacing="0">
+
+              <Border Grid.Column="0" Background="#04101A" CornerRadius="8"
+                      ClipToBounds="True" Height="460">
+                <Canvas Width="1200" Height="460"
+                        HorizontalAlignment="Center" VerticalAlignment="Top">
+
+                  <!-- Long bars — teal, left of centre -->
+                  <Path Data="{Binding LiquidationHeatmapVM.LongBarsGeometry}"
+                        Fill="#CC21E6C1"
+                        Stroke="#21E6C1"
+                        StrokeThickness="1" />
+
+                  <!-- Short bars — red, right of centre -->
+                  <Path Data="{Binding LiquidationHeatmapVM.ShortBarsGeometry}"
+                        Fill="#CCFF4444"
+                        Stroke="#FF4444"
+                        StrokeThickness="1" />
+
+                  <!-- Centre divider at X=600 -->
+                  <Line StartPoint="600,0" EndPoint="600,460"
+                        Stroke="#2A4A60" StrokeThickness="1.5" />
+
+                  <!-- Current price dashed horizontal line -->
+                  <Path Data="{Binding LiquidationHeatmapVM.CurrentPriceGeometry}"
+                        Stroke="#F4B860"
+                        StrokeThickness="2.5"
+                        StrokeDashArray="8,4" />
+
+                  <!-- Column headers -->
+                  <TextBlock Canvas.Left="4"   Canvas.Top="4"
+                             Text="◀  LONGS" Foreground="#6021E6C1" FontSize="14" FontWeight="Bold" />
+                  <TextBlock Canvas.Left="610" Canvas.Top="4"
+                             Text="SHORTS  ▶" Foreground="#60FF4444" FontSize="14" FontWeight="Bold" />
+                </Canvas>
+              </Border>
+
+              <!-- Price axis labels — absolute-positioned on a Canvas -->
+              <ItemsControl Grid.Column="1"
+                            ItemsSource="{Binding LiquidationHeatmapVM.PriceLabels}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <Canvas Width="56" Height="460" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:PriceAxisLabel">
+                    <TextBlock Text="{Binding Text}"
+                               Foreground="#5A7080"
+                               FontSize="10"
+                               Canvas.Left="3"
+                               Canvas.Top="{Binding Y}" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+
+            </Grid>
+
+            <!-- Legend -->
+            <Grid ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="8">
+              <Border Grid.Column="0" Width="12" Height="12" Background="#4021E6C1"
+                      BorderBrush="#21E6C1" BorderThickness="1" CornerRadius="2" />
+              <TextBlock Grid.Column="1" Text="Long liquidations (bears buy here)" Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+              <Border Grid.Column="2" Width="12" Height="12" Background="#40FF4444"
+                      BorderBrush="#FF4444" BorderThickness="1" CornerRadius="2" />
+              <TextBlock Grid.Column="3" Text="Short liquidations (bulls sell here)" Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+            </Grid>
+
+            <!-- Note about data source -->
+            <TextBlock Foreground="#4A6070" FontSize="11" TextWrapping="Wrap">
+              <Run Text="Data: " />
+              <Run Text="{Binding LiquidationHeatmapVM.DataSourceLabel}" Foreground="#21E6C1" />
+              <Run Text=" · Set COINGLASS_API_KEY env var for real liquidation data. Without key — estimated from Binance Futures order book + leverage model. Refreshes every 5 min." />
+            </TextBlock>
+
+          </StackPanel>
+</UserControl>

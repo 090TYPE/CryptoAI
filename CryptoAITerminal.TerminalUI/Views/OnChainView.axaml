@@ -1,0 +1,184 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.OnChainView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <StackPanel Spacing="16" IsVisible="{Binding IsOnChainSectionVisible}">
+
+            <!-- API key status -->
+            <Border Background="#0F1721" CornerRadius="4" Padding="12,8">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock IsVisible="{Binding OnChainVM.HasApiKey}"
+                           Text="{Binding OnChainVM.ApiKeyStatus}"
+                           Foreground="#3DDC84" FontSize="11" />
+                <TextBlock IsVisible="{Binding !OnChainVM.HasApiKey}"
+                           Text="{Binding OnChainVM.ApiKeyStatus}"
+                           Foreground="#F4B860" FontSize="11" />
+              </StackPanel>
+            </Border>
+
+            <!-- ── AI On-Chain Insight (#7) ── -->
+            <Border Background="#0F1721" CornerRadius="6" Padding="14,12">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Text="🧠 AI On-Chain Read" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding OnChainVM.InsightSource}"
+                             Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <Button Grid.Column="2" Content="Analyze with AI"
+                          Command="{Binding OnChainVM.AnalyzeWithAiCommand}"
+                          IsEnabled="{Binding !OnChainVM.InsightRunning}" Foreground="#21E6C1" />
+                </Grid>
+                <StackPanel Spacing="5" IsVisible="{Binding OnChainVM.HasInsight}">
+                  <TextBlock Text="{Binding OnChainVM.InsightSignal}"
+                             Foreground="{Binding OnChainVM.InsightSignalBrush}" FontWeight="Bold" FontSize="13" />
+                  <TextBlock Text="{Binding OnChainVM.InsightSummary}" Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding OnChainVM.InsightBullets}" Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap"
+                             IsVisible="{Binding OnChainVM.InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <!-- Two-column cards: BTC + ETH -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+
+              <!-- BTC card -->
+              <Border Grid.Column="0" Background="#0F1721" CornerRadius="6" Padding="16">
+                <StackPanel Spacing="12">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="₿" FontSize="18" Foreground="#F0B90B" FontWeight="Bold" VerticalAlignment="Center" />
+                    <TextBlock Text="Bitcoin On-Chain" Classes="H2" VerticalAlignment="Center" />
+                  </StackPanel>
+
+                  <!-- MVRV -->
+                  <StackPanel Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="MVRV Ratio" Classes="Overline" />
+                      <TextBlock Text="(Market / Realised Value)" Foreground="#2D4A5A" FontSize="10" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                      <TextBlock Text="{Binding OnChainVM.BtcMvrvLabel}"
+                                 Foreground="{Binding OnChainVM.BtcMvrvColor}"
+                                 FontSize="22" FontWeight="Bold" />
+                      <Border Background="#0A1018" CornerRadius="3" Padding="6,2" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding OnChainVM.BtcMvrvPhase}"
+                                   Foreground="{Binding OnChainVM.BtcMvrvColor}"
+                                   FontSize="11" FontWeight="Bold" />
+                      </Border>
+                    </StackPanel>
+                    <!-- MVRV gauge: 5 static colour bands (visual reference) -->
+                    <Grid ColumnDefinitions="*,*,*,*,*" Height="6" ColumnSpacing="2">
+                      <Border Grid.Column="0" CornerRadius="2" Background="#21E6C1" Opacity="0.35" />
+                      <Border Grid.Column="1" CornerRadius="2" Background="#3DDC84" Opacity="0.35" />
+                      <Border Grid.Column="2" CornerRadius="2" Background="#F4D03F" Opacity="0.35" />
+                      <Border Grid.Column="3" CornerRadius="2" Background="#FF9500" Opacity="0.35" />
+                      <Border Grid.Column="4" CornerRadius="2" Background="#FF6B6B" Opacity="0.35" />
+                    </Grid>
+                    <TextBlock Text="&lt;1 undervalued · 1–2 fair · 2–3.5 overvalued · &gt;3.5 euphoria"
+                               Foreground="#2D4A5A" FontSize="9" />
+                  </StackPanel>
+
+                  <!-- NUPL -->
+                  <StackPanel Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="NUPL" Classes="Overline" />
+                      <TextBlock Text="(Net Unrealised P/L)" Foreground="#2D4A5A" FontSize="10" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                      <TextBlock Text="{Binding OnChainVM.BtcNuplLabel}"
+                                 Foreground="{Binding OnChainVM.BtcNuplColor}"
+                                 FontSize="22" FontWeight="Bold" />
+                      <Border Background="#0A1018" CornerRadius="3" Padding="6,2" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding OnChainVM.BtcNuplPhase}"
+                                   Foreground="{Binding OnChainVM.BtcNuplColor}"
+                                   FontSize="11" FontWeight="Bold" />
+                      </Border>
+                    </StackPanel>
+                    <!-- NUPL gauge: 5 colour segments -->
+                    <Grid ColumnDefinitions="*,*,*,*,*" Height="6" ColumnSpacing="2">
+                      <Border Grid.Column="0" CornerRadius="2" Background="#21E6C1" Opacity="0.3" />
+                      <Border Grid.Column="1" CornerRadius="2" Background="#8FA3B8" Opacity="0.3" />
+                      <Border Grid.Column="2" CornerRadius="2" Background="#F4D03F" Opacity="0.3" />
+                      <Border Grid.Column="3" CornerRadius="2" Background="#FF9500" Opacity="0.3" />
+                      <Border Grid.Column="4" CornerRadius="2" Background="#FF6B6B" Opacity="0.3" />
+                    </Grid>
+                    <TextBlock Text="&lt;0 capitulation · 0–0.5 hope/optimism · 0.5–0.75 belief · &gt;0.75 euphoria"
+                               Foreground="#2D4A5A" FontSize="9" />
+                  </StackPanel>
+
+                  <!-- Exchange Net Flow -->
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="Exchange Net Flow" Classes="Overline" />
+                    <TextBlock Text="{Binding OnChainVM.BtcNetFlowLabel}"
+                               Foreground="{Binding OnChainVM.BtcNetFlowColor}"
+                               FontSize="16" FontWeight="Bold" />
+                    <TextBlock Text="positive = coins flowing IN (sell pressure) · negative = flowing OUT (accumulation)"
+                               Foreground="#2D4A5A" FontSize="9" TextWrapping="Wrap" />
+                  </StackPanel>
+
+                  <!-- Realised Price -->
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="Realised Price" Classes="Overline" />
+                    <TextBlock Text="{Binding OnChainVM.BtcRealisedLabel}"
+                               Foreground="#8FA3B8" FontSize="16" FontWeight="Bold" />
+                    <TextBlock Text="Average cost basis of all coins on-chain"
+                               Foreground="#2D4A5A" FontSize="9" />
+                  </StackPanel>
+
+                </StackPanel>
+              </Border>
+
+              <!-- ETH card -->
+              <Border Grid.Column="1" Background="#0F1721" CornerRadius="6" Padding="16">
+                <StackPanel Spacing="12">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Ξ" FontSize="18" Foreground="#8FA3B8" FontWeight="Bold" VerticalAlignment="Center" />
+                    <TextBlock Text="Ethereum On-Chain" Classes="H2" VerticalAlignment="Center" />
+                  </StackPanel>
+
+                  <!-- ETH MVRV -->
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="MVRV Ratio" Classes="Overline" />
+                    <TextBlock Text="{Binding OnChainVM.EthMvrvLabel}"
+                               Foreground="{Binding OnChainVM.EthMvrvColor}"
+                               FontSize="22" FontWeight="Bold" />
+                  </StackPanel>
+
+                  <!-- ETH Net Flow -->
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="Exchange Net Flow" Classes="Overline" />
+                    <TextBlock Text="{Binding OnChainVM.EthNetFlowLabel}"
+                               Foreground="{Binding OnChainVM.EthNetFlowColor}"
+                               FontSize="16" FontWeight="Bold" />
+                  </StackPanel>
+
+                  <!-- No API key note -->
+                  <Border IsVisible="{Binding !OnChainVM.HasApiKey}"
+                          Background="#0A1018" CornerRadius="4" Padding="10,8">
+                    <TextBlock Foreground="#4A6880" FontSize="11" TextWrapping="Wrap">
+                      <Run Text="Set " />
+                      <Run Text="GLASSNODE_API_KEY" FontWeight="Bold" />
+                      <Run Text=" environment variable before launching to enable live on-chain data." />
+                    </TextBlock>
+                  </Border>
+
+                </StackPanel>
+              </Border>
+
+            </Grid>
+
+            <!-- Last updated + Refresh -->
+            <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
+              <TextBlock Text="{Binding OnChainVM.LastUpdatedLabel}"
+                         Foreground="#4A6880" FontSize="11" VerticalAlignment="Center" />
+              <Button Content="↻  Refresh" Classes="SecondaryAction"
+                      Command="{Binding OnChainVM.RefreshCommand}"
+                      IsEnabled="{Binding !OnChainVM.IsLoading}"
+                      Padding="12,5" FontSize="12" />
+            </StackPanel>
+
+          </StackPanel>
+</UserControl>

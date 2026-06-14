@@ -1,0 +1,146 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.NewsView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <StackPanel Spacing="12" IsVisible="{Binding IsNewsSectionVisible}">
+
+            <!-- AI Market Pulse + digest -->
+            <Border Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1"
+                    CornerRadius="8" Padding="16,12">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <TextBlock Text="AI MARKET PULSE" Foreground="#5A7A90" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
+                    <Border Background="{Binding NewsFeedVM.PulseBrush}" CornerRadius="3" Padding="8,2">
+                      <TextBlock Text="{Binding NewsFeedVM.PulseLabel}" Foreground="#06121C" FontSize="12" FontWeight="Bold" />
+                    </Border>
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding NewsFeedVM.PulseDetail}"
+                             Foreground="#7E93A6" FontSize="11" VerticalAlignment="Center" Margin="12,0,0,0" />
+                  <Button Grid.Column="2" Content="↻ AI digest" Classes="SecondaryAction"
+                          Command="{Binding NewsFeedVM.RefreshDigestCommand}"
+                          Padding="10,4" FontSize="11" />
+                </Grid>
+                <TextBlock Text="{Binding NewsFeedVM.AiDigest}"
+                           Foreground="{Binding NewsFeedVM.AiDigestBrush}"
+                           FontSize="13" TextWrapping="Wrap" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="AI: assessing…" Foreground="#5A7A90" FontSize="10" FontStyle="Italic"
+                             IsVisible="{Binding NewsFeedVM.AiDigestRunning}" />
+                  <TextBlock Text="{Binding NewsFeedVM.AiDigestSource}" Foreground="#3A5A70" FontSize="10" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <!-- Filter bar -->
+            <Grid ColumnDefinitions="120,110,*,Auto,Auto,Auto" ColumnSpacing="8">
+              <TextBox Grid.Column="0" Text="{Binding NewsFeedVM.FilterSymbol}"
+                       PlaceholderText="Filter: BTC, ETH…"
+                       Background="#0A1018" Foreground="#C8D8E8"
+                       FontSize="12" Height="30" />
+              <ComboBox Grid.Column="1" ItemsSource="{Binding NewsFeedVM.SentimentOptions}"
+                        SelectedItem="{Binding NewsFeedVM.FilterSentiment}"
+                        Background="#0A1018" Foreground="#C8D8E8"
+                        FontSize="12" Height="30" />
+              <TextBox Grid.Column="2" Text="{Binding NewsFeedVM.SearchText}"
+                       PlaceholderText="Search in headlines…"
+                       Background="#0A1018" Foreground="#C8D8E8"
+                       FontSize="12" Height="30" />
+              <CheckBox Grid.Column="3" Content="Important only"
+                        IsChecked="{Binding NewsFeedVM.ShowImportantOnly}"
+                        Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+              <Button Grid.Column="4" Content="Clear filters" Classes="SecondaryAction"
+                      Command="{Binding NewsFeedVM.ClearFilterCommand}"
+                      Padding="10,4" FontSize="11" />
+              <Button Grid.Column="5" Content="Mark read" Classes="SecondaryAction"
+                      Command="{Binding NewsFeedVM.ClearUnreadCommand}"
+                      IsVisible="{Binding NewsFeedVM.HasUnread}"
+                      Padding="10,4" FontSize="11" />
+            </Grid>
+
+            <!-- Status / unread badge -->
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="{Binding NewsFeedVM.StatusLabel}" Foreground="#4A6880" FontSize="11" VerticalAlignment="Center" />
+              <Border IsVisible="{Binding NewsFeedVM.HasUnread}"
+                      Background="#FF6B6B" CornerRadius="8" Padding="6,1">
+                <TextBlock Text="{Binding NewsFeedVM.UnreadBadge, StringFormat='{}{0} new'}"
+                           Foreground="White" FontSize="10" FontWeight="Bold" />
+              </Border>
+            </StackPanel>
+
+            <!-- Loading state -->
+            <TextBlock IsVisible="{Binding NewsFeedVM.IsLoading}"
+                       Text="Fetching news from RSS feeds…"
+                       Foreground="#4A6880" FontSize="12" />
+
+            <!-- News rows -->
+            <ScrollViewer IsVisible="{Binding !NewsFeedVM.IsLoading}"
+                          MaxHeight="580" VerticalScrollBarVisibility="Auto">
+              <ItemsControl ItemsSource="{Binding NewsFeedVM.Rows}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="{x:Type vm:NewsItemRowVM}">
+                    <Border Background="{Binding SentimentBackground}"
+                            CornerRadius="4" Padding="12,8" Margin="0,2"
+                            BorderBrush="#17263A" BorderThickness="0,0,0,1">
+                      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+
+                        <!-- Sentiment badge -->
+                        <Border Grid.Column="0" CornerRadius="3" Padding="6,3"
+                                VerticalAlignment="Top" Margin="0,2,0,0">
+                          <Border.Background>
+                            <SolidColorBrush Color="{Binding SentimentBrush}" Opacity="0.15" />
+                          </Border.Background>
+                          <TextBlock Text="{Binding SentimentLabel}"
+                                     Foreground="{Binding SentimentBrush}"
+                                     FontSize="10" FontWeight="Bold" />
+                        </Border>
+
+                        <!-- Title + meta -->
+                        <StackPanel Grid.Column="1" Spacing="3">
+                          <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Border IsVisible="{Binding IsImportant}"
+                                    Background="#2A2010" CornerRadius="2" Padding="4,1">
+                              <TextBlock Text="⭐ IMPORTANT" Foreground="#F4B860"
+                                         FontSize="9" FontWeight="Bold" />
+                            </Border>
+                            <TextBlock IsVisible="{Binding HasTags}"
+                                       Text="{Binding CurrencyTags}"
+                                       Foreground="#3BBFFF" FontSize="10" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                          </StackPanel>
+                          <TextBlock Text="{Binding Title}" Foreground="#C8D8E8"
+                                     FontSize="12" TextWrapping="Wrap" />
+                          <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{Binding Source}" Foreground="#4A6880" FontSize="10" />
+                            <TextBlock Text="·" Foreground="#2D4A5A" FontSize="10" />
+                            <TextBlock Text="{Binding AgeLabel}" Foreground="#4A6880" FontSize="10" />
+                          </StackPanel>
+                        </StackPanel>
+
+                        <!-- Votes -->
+                        <TextBlock Grid.Column="2" Text="{Binding VotesLabel}"
+                                   Foreground="{Binding VotesBrush}"
+                                   FontSize="11" FontWeight="Bold"
+                                   VerticalAlignment="Top" Margin="0,2,0,0" />
+
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Note about API key -->
+            <Border Background="#0A1018" CornerRadius="4" Padding="10,6">
+              <TextBlock Foreground="#2D4A5A" FontSize="10" TextWrapping="Wrap">
+                <Run Text="Powered by RSS feeds: CoinTelegraph, CoinDesk, Decrypt, The Block, Bitcoin Magazine. " />
+                <Run Text="CRYPTOPANIC_API_KEY" FontWeight="Bold" Foreground="#4A6880" />
+                <Run Text=" env var enables CryptoPanic as additional source." />
+              </TextBlock>
+            </Border>
+
+          </StackPanel>
+</UserControl>

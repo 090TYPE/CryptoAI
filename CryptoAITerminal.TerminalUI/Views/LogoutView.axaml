@@ -1,0 +1,35 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.LogoutView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <StackPanel Spacing="16" IsVisible="{Binding IsLogoutSectionVisible}">
+            <Border Classes="ExecutionGuardCard">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="H2" Text="Current Session State" />
+                <TextBlock Text="{Binding LogoutStatusLabel}" Foreground="#D7E3EE" TextWrapping="Wrap" />
+                <TextBlock Text="This action forces paper mode, stops the rule bot, disarms sniper, disconnects the wallet, and returns to the dashboard."
+                           Foreground="#8FA3B8"
+                           TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+            <WrapPanel Orientation="Horizontal">
+              <Button Classes="GhostButton"
+                      Content="Safe Logout"
+                      Margin="0,0,10,10"
+                      Command="{Binding SafeLogoutCommand}" />
+              <Button Classes="GhostButton"
+                      Content="Open Dashboard"
+                      Margin="0,0,10,10"
+                      Command="{Binding SelectMainTabCommand}"
+                      CommandParameter="dashboard" />
+              <Button Classes="GhostButton"
+                      Content="Open Logs"
+                      Margin="0,0,10,10"
+                      Command="{Binding SelectMainTabCommand}"
+                      CommandParameter="logs" />
+            </WrapPanel>
+          </StackPanel>
+</UserControl>

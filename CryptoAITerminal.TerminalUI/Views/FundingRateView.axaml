@@ -1,0 +1,234 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.FundingRateView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <StackPanel Spacing="16" IsVisible="{Binding IsFundingRateSectionVisible}">
+
+            <!-- ── Control bar ── -->
+            <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="10">
+              <TextBox Grid.Column="0"
+                       Width="180"
+                       Text="{Binding FundingRateVM.FilterText}"
+                       PlaceholderText="Filter symbol…"
+                       Classes="DarkInput" />
+              <CheckBox Grid.Column="1"
+                        Content="Extremes only"
+                        IsChecked="{Binding FundingRateVM.ShowOnlyExtremes}" />
+              <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <TextBlock Text="{Binding FundingRateVM.StatusMessage}"
+                           Foreground="#8B949E" FontSize="12" VerticalAlignment="Center" />
+              </StackPanel>
+              <Button Grid.Column="3" Classes="GhostButton"
+                      Command="{Binding FundingRateVM.RefreshCommand}">Refresh</Button>
+              <Button Grid.Column="4" Classes="BuyButton" Width="110"
+                      Command="{Binding FundingRateVM.StartTrackingCommand}"
+                      IsVisible="{Binding !FundingRateVM.IsTracking}">Start</Button>
+              <Button Grid.Column="5" Classes="SellButton" Width="110"
+                      Command="{Binding FundingRateVM.StopTrackingCommand}"
+                      IsVisible="{Binding FundingRateVM.IsTracking}">Stop</Button>
+            </Grid>
+
+            <!-- ── Summary KPI strip ── -->
+            <Border Classes="Panel" Padding="16,10">
+              <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="16">
+                <StackPanel Grid.Column="0" Spacing="2">
+                  <TextBlock Classes="Overline" Text="AVG FUNDING" />
+                  <TextBlock Text="{Binding FundingRateVM.AvgRateLabel}"
+                             FontSize="18" FontWeight="Bold" Foreground="#8B949E" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="2">
+                  <TextBlock Classes="Overline" Text="EXTREME INSTRUMENTS" />
+                  <TextBlock Text="{Binding FundingRateVM.ExtremeCount}"
+                             FontSize="18" FontWeight="Bold" Foreground="#F4B860" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Spacing="2">
+                  <TextBlock Classes="Overline" Text="TOP LONG FUNDING (best short)" />
+                  <TextBlock Text="{Binding FundingRateVM.TopBearishLabel}"
+                             FontSize="13" FontWeight="SemiBold" Foreground="#FF5D73" />
+                </StackPanel>
+                <StackPanel Grid.Column="3" Spacing="2">
+                  <TextBlock Classes="Overline" Text="TOP SHORT FUNDING (best long)" />
+                  <TextBlock Text="{Binding FundingRateVM.TopBullishLabel}"
+                             FontSize="13" FontWeight="SemiBold" Foreground="#3DDC84" />
+                </StackPanel>
+              </Grid>
+            </Border>
+
+            <!-- ── Main content: table + history chart + alerts ── -->
+            <Grid ColumnDefinitions="*,320" ColumnSpacing="12">
+
+              <!-- Left: rates table -->
+              <Border Classes="Panel" Grid.Column="0">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="H2" Text="All Instruments" />
+
+                  <!-- Table header -->
+                  <Grid ColumnDefinitions="*,90,90,80,90" ColumnSpacing="8"
+                        Margin="0,0,0,4">
+                    <TextBlock Grid.Column="0" Text="SYMBOL"   Classes="Overline" />
+                    <TextBlock Grid.Column="1" Text="RATE"     Classes="Overline" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="2" Text="ANNL."    Classes="Overline" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="3" Text="MARK $"   Classes="Overline" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="4" Text="NEXT"     Classes="Overline" HorizontalAlignment="Right" />
+                  </Grid>
+
+                  <ScrollViewer Classes="PageScroll" MaxHeight="460">
+                    <ItemsControl ItemsSource="{Binding FundingRateVM.DisplayRates}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:FundingRateRowViewModel">
+                          <Border Padding="0,5"
+                                  BorderBrush="#12283A"
+                                  BorderThickness="0,0,0,1">
+                            <Grid ColumnDefinitions="*,90,90,80,90" ColumnSpacing="8">
+                              <!-- Symbol + extreme tag — click to load history -->
+                              <Button Grid.Column="0"
+                                      Classes="LinkButton"
+                                      HorizontalAlignment="Left"
+                                      Command="{Binding $parent[Window].DataContext.FundingRateVM.SelectSymbolCommand}"
+                                      CommandParameter="{Binding Symbol}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                  <TextBlock Text="{Binding Symbol}"
+                                             FontWeight="SemiBold"
+                                             VerticalAlignment="Center" />
+                                  <TextBlock Text="{Binding ExtremeTag}"
+                                             FontSize="10"
+                                             VerticalAlignment="Center" />
+                                </StackPanel>
+                              </Button>
+                              <!-- Rate -->
+                              <TextBlock Grid.Column="1"
+                                         Text="{Binding FundingRatePct}"
+                                         Foreground="{Binding RateColor}"
+                                         FontWeight="Bold"
+                                         HorizontalAlignment="Right"
+                                         VerticalAlignment="Center" />
+                              <!-- Annualised -->
+                              <TextBlock Grid.Column="2"
+                                         Text="{Binding AnnualizedLabel}"
+                                         Foreground="{Binding RateColor}"
+                                         FontSize="11"
+                                         HorizontalAlignment="Right"
+                                         VerticalAlignment="Center" />
+                              <!-- Mark price -->
+                              <TextBlock Grid.Column="3"
+                                         Text="{Binding MarkPriceLabel}"
+                                         Foreground="#8B949E"
+                                         FontSize="11"
+                                         HorizontalAlignment="Right"
+                                         VerticalAlignment="Center" />
+                              <!-- Countdown -->
+                              <TextBlock Grid.Column="4"
+                                         Text="{Binding NextFundingLabel}"
+                                         Foreground="#5A7080"
+                                         FontSize="11"
+                                         HorizontalAlignment="Right"
+                                         VerticalAlignment="Center" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </StackPanel>
+              </Border>
+
+              <!-- Right: history chart + alert feed -->
+              <StackPanel Grid.Column="1" Spacing="12">
+
+                <!-- History chart -->
+                <Border Classes="Panel">
+                  <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Grid.Column="0" Classes="H2"
+                                 Text="{Binding FundingRateVM.HistorySymbolLabel,
+                                        StringFormat='Funding History — {0}'}" />
+                      <TextBlock Grid.Column="1"
+                                 Text="(click row to switch)"
+                                 Foreground="#3A5A70" FontSize="10"
+                                 VerticalAlignment="Center" />
+                    </Grid>
+
+                    <!-- SVG chart canvas -->
+                    <Grid IsVisible="{Binding FundingRateVM.HistoryHasData}">
+                      <Canvas Width="300" Height="130" ClipToBounds="True">
+                        <!-- Zero line -->
+                        <Line StartPoint="0,0" EndPoint="300,0"
+                              Stroke="#1A3A50" StrokeThickness="1">
+                          <Line.RenderTransform>
+                            <TranslateTransform Y="{Binding FundingRateVM.HistoryZeroLineY}" />
+                          </Line.RenderTransform>
+                        </Line>
+                        <!-- Rate path -->
+                        <Path Stroke="#21E6C1"
+                              StrokeThickness="1.5"
+                              Fill="Transparent"
+                              Data="{Binding FundingRateVM.HistoryPathData}" />
+                      </Canvas>
+                      <!-- Y-axis labels -->
+                      <Grid VerticalAlignment="Stretch">
+                        <TextBlock Text="{Binding FundingRateVM.HistoryMaxLabel}"
+                                   Foreground="#5A7080" FontSize="9"
+                                   VerticalAlignment="Top" HorizontalAlignment="Right" />
+                        <TextBlock Text="{Binding FundingRateVM.HistoryMinLabel}"
+                                   Foreground="#5A7080" FontSize="9"
+                                   VerticalAlignment="Bottom" HorizontalAlignment="Right" />
+                      </Grid>
+                    </Grid>
+                    <TextBlock Text="No history data — select a symbol or refresh"
+                               Foreground="#3A5A70" FontSize="11"
+                               IsVisible="{Binding FundingRateVM.HistoryIsEmpty}" />
+                  </StackPanel>
+                </Border>
+
+                <!-- Extreme alerts feed -->
+                <Border Classes="Panel">
+                  <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Grid.Column="0" Classes="H2" Text="Extreme Rate Alerts" />
+                      <Button Grid.Column="1" Classes="LinkButton"
+                              Command="{Binding FundingRateVM.ClearAlertsCommand}">Clear</Button>
+                    </Grid>
+                    <TextBlock Text="No extreme rates detected yet."
+                               Foreground="#3A5A70" FontSize="11"
+                               IsVisible="{Binding !FundingRateVM.Alerts.Count}" />
+                    <ScrollViewer Classes="PageScroll" MaxHeight="280">
+                      <ItemsControl ItemsSource="{Binding FundingRateVM.Alerts}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:FundingAlertViewModel">
+                            <Border Padding="0,4"
+                                    BorderBrush="#12283A"
+                                    BorderThickness="0,0,0,1">
+                              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding TimeLabel}"
+                                           Foreground="#3A5A70" FontSize="11"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding DisplayLabel}"
+                                           Foreground="{Binding Color}"
+                                           FontSize="12" FontWeight="SemiBold"
+                                           VerticalAlignment="Center" />
+                                <Border Grid.Column="2"
+                                        Background="{Binding Color}"
+                                        CornerRadius="2" Padding="5,1">
+                                  <TextBlock Text="{Binding Direction}"
+                                             Foreground="White"
+                                             FontSize="10" FontWeight="Bold" />
+                                </Border>
+                              </Grid>
+                            </Border>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </ScrollViewer>
+                  </StackPanel>
+                </Border>
+
+              </StackPanel>
+            </Grid>
+
+          </StackPanel>
+</UserControl>

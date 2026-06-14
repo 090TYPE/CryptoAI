@@ -1,0 +1,106 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.RiskView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <StackPanel Spacing="16" IsVisible="{Binding IsRiskSectionVisible}">
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16">
+              <Border Grid.Column="0" Classes="SurfaceCard">
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="Overline" Text="Execution Guard" />
+                  <TextBlock Classes="Metric" Text="{Binding WalletVM.GlobalExecutionModeLabel}" />
+                  <TextBlock Text="{Binding WalletVM.GlobalExecutionGuardStatusLabel}"
+                             Foreground="{Binding RiskRuntimeStatusBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Classes="SurfaceCard">
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="Overline" Text="Risk Budget" />
+                  <TextBlock Text="{Binding RiskRuntimeSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding RiskCexExposureSummary}" Foreground="#8FA3B8" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Classes="SurfaceCard">
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="Overline" Text="Sniper Safety" />
+                  <TextBlock Text="{Binding RiskSniperGuardSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding SniperVM.StatusMessage}" Foreground="#8FA3B8" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <!-- ── Live risk metrics ── -->
+            <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="16">
+              <Border Grid.Column="0" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Realized P&amp;L" />
+                  <TextBlock Classes="Metric" Text="{Binding PnlDashboardVM.TotalPnlLabel}"
+                             Foreground="{Binding PnlDashboardVM.TotalPnlBrush}" />
+                  <TextBlock Text="{Binding PnlDashboardVM.TradeCountLabel}" Foreground="#8FA3B8" FontSize="11" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Open P&amp;L (unrealized)" />
+                  <TextBlock Classes="Metric" Text="{Binding AllPositionsVM.TotalPnlLabel}"
+                             Foreground="{Binding AllPositionsVM.TotalPnlBrush}" />
+                  <TextBlock Text="{Binding AllPositionsVM.StatusLabel}" Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Open Positions" />
+                  <TextBlock Classes="Metric" Text="{Binding AllPositionsVM.PositionCount}" />
+                  <TextBlock Text="{Binding AllPositionsVM.TotalSizeLabel}" Foreground="#8FA3B8" FontSize="11" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="3" Classes="SurfaceCard">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="Overline" Text="Win Rate / PF" />
+                  <TextBlock Classes="Metric" Text="{Binding PnlDashboardVM.WinRateLabel}" />
+                  <TextBlock Text="{Binding PnlDashboardVM.ProfitFactorLabel, StringFormat='PF {0}'}" Foreground="#8FA3B8" FontSize="11" />
+                  <TextBlock Text="{Binding PnlDashboardVM.MaxDrawdownLabel, StringFormat='Max DD {0}'}" Foreground="#8FA3B8" FontSize="11" />
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+              <Border Grid.Column="0" Classes="Panel">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="H2" Text="Quick Controls" />
+                  <WrapPanel Orientation="Horizontal">
+                    <Button Classes="GhostButton"
+                            Content="Paper Mode"
+                            Margin="0,0,10,10"
+                            Command="{Binding WalletVM.ApplyGlobalExecutionModeCommand}"
+                            CommandParameter="PAPER" />
+                    <Button Classes="GhostButton"
+                            Content="Live Allowed"
+                            Margin="0,0,10,10"
+                            Command="{Binding WalletVM.ApplyGlobalExecutionModeCommand}"
+                            CommandParameter="LIVE" />
+                    <Button Classes="GhostButton"
+                            Content="Refresh Wallet"
+                            Margin="0,0,10,10"
+                            Command="{Binding WalletVM.RefreshWalletCommand}" />
+                    <Button Classes="GhostButton"
+                            Content="Open Logs"
+                            Margin="0,0,10,10"
+                            Command="{Binding SelectMainTabCommand}"
+                            CommandParameter="logs" />
+                  </WrapPanel>
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Classes="Panel">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="H2" Text="Readiness Notes" />
+                  <TextBlock Text="{Binding WalletVM.GlobalExecutionSummary}" Foreground="#8FA3B8" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding WalletVM.GlobalQuoteAssetSummary}" Foreground="#8FA3B8" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding FuturesPrivateApiStatusLabel}" Foreground="{Binding FuturesPrivateApiStatusBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+            </Grid>
+          </StackPanel>
+</UserControl>

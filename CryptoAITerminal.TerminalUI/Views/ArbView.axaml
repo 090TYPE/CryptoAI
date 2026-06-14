@@ -1,0 +1,262 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.ArbView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <StackPanel Spacing="16" IsVisible="{Binding IsArbSectionVisible}">
+
+            <!-- Header + status -->
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
+              <StackPanel Grid.Column="0" Spacing="2">
+                <TextBlock Classes="H1" Text="CEX-CEX Spot Arbitrage" />
+                <TextBlock Text="{Binding CrossExchangeArbVM.StatusLabel}"
+                           FontSize="11" Foreground="#8FA3B8" />
+              </StackPanel>
+              <!-- Auto-execute toggle -->
+              <Border Grid.Column="1" CornerRadius="6" Padding="10,5" VerticalAlignment="Center"
+                      Background="{Binding CrossExchangeArbVM.AutoExecute,
+                        FallbackValue=#0D1E2D}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <ToggleSwitch IsChecked="{Binding CrossExchangeArbVM.AutoExecute}"
+                                OffContent="" OnContent="" Margin="0,-2,0,0" />
+                  <TextBlock Text="Auto-Execute" FontSize="11" FontWeight="SemiBold"
+                             Foreground="#F4B860" VerticalAlignment="Center" />
+                </StackPanel>
+              </Border>
+              <!-- Warning badge when auto-execute is on -->
+              <Border Grid.Column="2" CornerRadius="6" Padding="8,5"
+                      Background="#2A1500" VerticalAlignment="Center"
+                      IsVisible="{Binding CrossExchangeArbVM.AutoExecute}">
+                <TextBlock Text="⚠ LIVE ORDERS" FontSize="10" FontWeight="Bold"
+                           Foreground="#FFAA33" />
+              </Border>
+            </Grid>
+
+            <!-- Config bar -->
+            <Border Classes="Panel" Padding="14,10">
+              <Grid ColumnDefinitions="Auto,*,Auto,*,Auto,*,2*" ColumnSpacing="10" VerticalAlignment="Center">
+                <TextBlock Grid.Column="0" Text="Min net spread %" Classes="Overline" VerticalAlignment="Center" />
+                <NumericUpDown Grid.Column="1"
+                               Value="{Binding CrossExchangeArbVM.MinNetSpreadPct}"
+                               Minimum="0.01" Maximum="5" Increment="0.01" FormatString="N2" />
+
+                <TextBlock Grid.Column="2" Text="Notional $" Classes="Overline"
+                           VerticalAlignment="Center" Margin="8,0,0,0" />
+                <NumericUpDown Grid.Column="3"
+                               Value="{Binding CrossExchangeArbVM.NotionalUsd}"
+                               Minimum="10" Maximum="1000000" Increment="100" FormatString="N0" />
+
+                <TextBlock Grid.Column="4" Text="Taker fee %" Classes="Overline"
+                           VerticalAlignment="Center" Margin="8,0,0,0" />
+                <NumericUpDown Grid.Column="5"
+                               Value="{Binding CrossExchangeArbVM.TakerFeePct}"
+                               Minimum="0.01" Maximum="1" Increment="0.01" FormatString="N2" />
+
+                <TextBlock Grid.Column="6" FontSize="10" Foreground="#3A4F63"
+                           VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap"
+                           Text="Round-trip fee = Taker × 2. Net spread = Gross − Round-trip. Opportunities refresh every second." />
+              </Grid>
+            </Border>
+
+            <!-- KPI strip -->
+            <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12">
+              <Border Grid.Column="0" Classes="SurfaceCard">
+                <StackPanel Spacing="3">
+                  <TextBlock Classes="Overline" Text="TRACKED SYMBOLS" />
+                  <TextBlock Text="{Binding CrossExchangeArbVM.TotalSymbols}"
+                             Classes="Metric" Foreground="#8FA3B8" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Classes="SurfaceCard">
+                <StackPanel Spacing="3">
+                  <TextBlock Classes="Overline" Text="PROFITABLE NOW" />
+                  <TextBlock Text="{Binding CrossExchangeArbVM.ProfitableCount}"
+                             Classes="Metric" Foreground="#21E6C1" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Classes="SurfaceCard">
+                <StackPanel Spacing="3">
+                  <TextBlock Classes="Overline" Text="BEST SPREAD" />
+                  <TextBlock Text="{Binding CrossExchangeArbVM.BestSpreadLabel}"
+                             FontSize="11" FontWeight="SemiBold" Foreground="#F4B860"
+                             VerticalAlignment="Center" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="3" Classes="SurfaceCard">
+                <StackPanel Spacing="3">
+                  <TextBlock Classes="Overline" Text="SESSION PROFIT" />
+                  <TextBlock Text="{Binding CrossExchangeArbVM.TotalProfitLabel}"
+                             Classes="Metric" Foreground="#21E6C1" />
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <!-- Main price comparison table -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="H2" Text="Live Price Comparison — All Symbols" />
+                <TextBlock FontSize="11" Foreground="#5C6E82"
+                           Text="Best buy price highlighted in teal. Best sell price highlighted in amber. Net spread = gross − round-trip fees." />
+
+                <!-- Table header -->
+                <Grid ColumnDefinitions="*,70,70,70,70,70,70,110,110,70,70,Auto"
+                      ColumnSpacing="6" Margin="0,4,0,0">
+                  <TextBlock Grid.Column="0"  Text="SYMBOL"   Classes="Overline" />
+                  <TextBlock Grid.Column="1"  Text="BIN Bid"  Classes="Overline" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="2"  Text="BIN Ask"  Classes="Overline" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="3"  Text="BYB Bid"  Classes="Overline" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="4"  Text="BYB Ask"  Classes="Overline" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="5"  Text="OKX Bid"  Classes="Overline" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="6"  Text="OKX Ask"  Classes="Overline" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="7"  Text="BEST BUY"  Classes="Overline" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="8"  Text="BEST SELL" Classes="Overline" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="9"  Text="GROSS"    Classes="Overline" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="10" Text="NET"      Classes="Overline" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="11" Text=""         Classes="Overline" Width="82" />
+                </Grid>
+
+                <ScrollViewer Classes="PageScroll" MaxHeight="500">
+                  <ItemsControl ItemsSource="{Binding CrossExchangeArbVM.SpreadRows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:CrossExchangeSpreadRowVM">
+                        <Border Padding="0,5" BorderBrush="#0D1E2D" BorderThickness="0,0,0,1">
+                          <Grid ColumnDefinitions="*,70,70,70,70,70,70,110,110,70,70,Auto"
+                                ColumnSpacing="6">
+                            <!-- Symbol -->
+                            <TextBlock Grid.Column="0" Text="{Binding Symbol}"
+                                       FontWeight="SemiBold" VerticalAlignment="Center" />
+
+                            <!-- Binance Bid / Ask — amber if best sell, teal if best buy -->
+                            <TextBlock Grid.Column="1" Text="{Binding BinanceBidLabel}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                                       FontSize="11" FontFamily="Consolas"
+                                       Foreground="{Binding BinanceBidBrush}" />
+                            <TextBlock Grid.Column="2" Text="{Binding BinanceAskLabel}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                                       FontSize="11" FontFamily="Consolas"
+                                       Foreground="{Binding BinanceAskBrush}" />
+
+                            <!-- Bybit Bid / Ask -->
+                            <TextBlock Grid.Column="3" Text="{Binding BybitBidLabel}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                                       FontSize="11" FontFamily="Consolas"
+                                       Foreground="{Binding BybitBidBrush}" />
+                            <TextBlock Grid.Column="4" Text="{Binding BybitAskLabel}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                                       FontSize="11" FontFamily="Consolas"
+                                       Foreground="{Binding BybitAskBrush}" />
+
+                            <!-- OKX Bid / Ask -->
+                            <TextBlock Grid.Column="5" Text="{Binding OkxBidLabel}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                                       FontSize="11" FontFamily="Consolas"
+                                       Foreground="{Binding OkxBidBrush}" />
+                            <TextBlock Grid.Column="6" Text="{Binding OkxAskLabel}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                                       FontSize="11" FontFamily="Consolas"
+                                       Foreground="{Binding OkxAskBrush}" />
+
+                            <!-- Best buy direction -->
+                            <TextBlock Grid.Column="7" Text="{Binding BestBuyLabel}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                                       FontSize="11" Foreground="#21E6C1" />
+
+                            <!-- Best sell direction -->
+                            <TextBlock Grid.Column="8" Text="{Binding BestSellLabel}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                                       FontSize="11" Foreground="#F4B860" />
+
+                            <!-- Gross spread -->
+                            <TextBlock Grid.Column="9" Text="{Binding GrossSpreadLabel}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                                       FontSize="11" Foreground="#5C6E82" />
+
+                            <!-- Net spread (colored by profitability) -->
+                            <TextBlock Grid.Column="10" Text="{Binding NetSpreadLabel}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                                       FontSize="11" FontWeight="Bold"
+                                       Foreground="{Binding NetSpreadBrush}" />
+
+                            <!-- Execute button -->
+                            <Button Grid.Column="11"
+                                    Classes="BuyButton"
+                                    Content="⚡ Execute"
+                                    Padding="8,3" FontSize="11"
+                                    Width="80"
+                                    IsEnabled="{Binding IsProfitable}"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding $parent[Window].DataContext.CrossExchangeArbVM.ExecuteCommand}"
+                                    CommandParameter="{Binding}" />
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </StackPanel>
+            </Border>
+
+            <!-- Execution History -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="H2" Text="Execution History" />
+
+                <!-- Table header -->
+                <Grid ColumnDefinitions="70,*,120,70,70,70,70,*" ColumnSpacing="8" Margin="0,4,0,0">
+                  <TextBlock Grid.Column="0" Text="TIME"    Classes="Overline" />
+                  <TextBlock Grid.Column="1" Text="SYMBOL"  Classes="Overline" />
+                  <TextBlock Grid.Column="2" Text="ROUTE"   Classes="Overline" />
+                  <TextBlock Grid.Column="3" Text="BUY $"   Classes="Overline" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="4" Text="SELL $"  Classes="Overline" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="5" Text="SPREAD"  Classes="Overline" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="6" Text="PROFIT"  Classes="Overline" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="7" Text="STATUS"  Classes="Overline" />
+                </Grid>
+
+                <ScrollViewer Classes="PageScroll" MaxHeight="250">
+                  <ItemsControl ItemsSource="{Binding CrossExchangeArbVM.History}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ArbExecutionRowVM">
+                        <Border Padding="0,5" BorderBrush="#0D1E2D" BorderThickness="0,0,0,1">
+                          <Grid ColumnDefinitions="70,*,120,70,70,70,70,*" ColumnSpacing="8">
+                            <TextBlock Grid.Column="0" Text="{Binding TimeLabel}"
+                                       FontFamily="Consolas" FontSize="11" Foreground="#5C6E82"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="{Binding Symbol}"
+                                       FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2" Text="{Binding RouteLabel}"
+                                       FontSize="11" Foreground="#8FA3B8" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="3" Text="{Binding BuyLabel}"
+                                       FontFamily="Consolas" FontSize="11"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="4" Text="{Binding SellLabel}"
+                                       FontFamily="Consolas" FontSize="11"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="5" Text="{Binding SpreadLabel}"
+                                       FontSize="11" Foreground="#5C6E82"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="6" Text="{Binding ProfitLabel}"
+                                       FontSize="11" FontWeight="Bold"
+                                       Foreground="{Binding ProfitBrush}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="7" Text="{Binding StatusLabel}"
+                                       FontSize="11" Foreground="{Binding StatusBrush}"
+                                       VerticalAlignment="Center" />
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Empty history -->
+                <TextBlock IsVisible="{Binding !CrossExchangeArbVM.History.Count}"
+                           Text="No executions yet. Click ⚡ Execute on a profitable row, or enable Auto-Execute."
+                           Foreground="#3A4F63" FontSize="12" TextWrapping="Wrap" Margin="0,8" />
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+</UserControl>

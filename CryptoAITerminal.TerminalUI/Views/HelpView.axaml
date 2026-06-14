@@ -1,0 +1,30 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.HelpView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <StackPanel Spacing="16" IsVisible="{Binding IsHelpSectionVisible}">
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+              <Border Classes="SectionPanel">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="H2" Text="Quick Start" />
+                  <TextBlock Text="{Binding HelpQuickStartSummary}" TextWrapping="Wrap" />
+                  <TextBlock Text="1. Pick a market or token." Classes="SecondaryCopy" />
+                  <TextBlock Text="2. Verify wallet mode, quote asset, and sizing." Classes="SecondaryCopy" />
+                  <TextBlock Text="3. Trade manually or arm the sniper after reviewing risk." Classes="SecondaryCopy" />
+                </StackPanel>
+              </Border>
+              <Border Classes="SectionPanel">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="H2" Text="Safety" />
+                  <TextBlock Text="{Binding HelpSafetySummary}" TextWrapping="Wrap" />
+                  <TextBlock Text="Use Logs after every failed execution attempt." Classes="SecondaryCopy" />
+                  <TextBlock Text="Keep paper mode on while checking new routers or wallet sessions." Classes="SecondaryCopy" />
+                  <TextBlock Text="Run Safe Logout before leaving the workstation." Classes="SecondaryCopy" />
+                </StackPanel>
+              </Border>
+            </Grid>
+          </StackPanel>
+</UserControl>

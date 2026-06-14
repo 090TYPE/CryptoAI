@@ -1,0 +1,183 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.JournalView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <StackPanel Spacing="16" IsVisible="{Binding IsJournalSectionVisible}">
+
+            <!-- ── Header ── -->
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
+              <TextBlock Grid.Column="0" Classes="H1" Text="Trade Journal" VerticalAlignment="Center" />
+              <Button Grid.Column="1" Content="⟳ Refresh"
+                      Command="{Binding TradeJournalVM.RefreshCommand}"
+                      Classes="GhostButton" FontSize="11" />
+              <Button Grid.Column="2" Content="⬇ Export CSV"
+                      Command="{Binding TradeJournalVM.ExportCsvCommand}"
+                      Classes="GhostButton" FontSize="11" Foreground="#21E6C1" />
+            </Grid>
+            <TextBlock Text="{Binding TradeJournalVM.ExportStatus}"
+                       Foreground="#21E6C1" FontSize="11"
+                       IsVisible="{Binding TradeJournalVM.ExportStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+            <!-- ── AI Coach (#4) ── -->
+            <Border Classes="SurfaceCard" Padding="14,12">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <StackPanel Grid.Column="0">
+                    <TextBlock Text="🧠 AI Coach" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding TradeJournalVM.CoachSource}"
+                             Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <Button Grid.Column="2" Content="Coach with AI"
+                          Command="{Binding TradeJournalVM.ReviewWithAiCommand}"
+                          IsEnabled="{Binding !TradeJournalVM.CoachRunning}" Foreground="#21E6C1" />
+                </Grid>
+                <StackPanel Spacing="6" IsVisible="{Binding TradeJournalVM.HasCoachReview}">
+                  <TextBlock Text="{Binding TradeJournalVM.CoachSummary}" Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding TradeJournalVM.CoachStrengths}" Foreground="#3DDC84" FontSize="11" TextWrapping="Wrap"
+                             IsVisible="{Binding TradeJournalVM.CoachStrengths, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <TextBlock Text="{Binding TradeJournalVM.CoachLeaks}" Foreground="#F4B860" FontSize="11" TextWrapping="Wrap"
+                             IsVisible="{Binding TradeJournalVM.CoachLeaks, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <TextBlock Text="{Binding TradeJournalVM.CoachSuggestions}" Foreground="#21E6C1" FontSize="11" TextWrapping="Wrap"
+                             IsVisible="{Binding TradeJournalVM.CoachSuggestions, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <!-- ── Filters ── -->
+            <Border Classes="SurfaceCard">
+              <Grid ColumnDefinitions="Auto,160,Auto,160,*" ColumnSpacing="12">
+                <TextBlock Grid.Column="0" Text="Tag" Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1"
+                          ItemsSource="{Binding TradeJournalVM.TagOptions}"
+                          SelectedItem="{Binding TradeJournalVM.FilterTag}"
+                          FontSize="11" />
+                <TextBlock Grid.Column="2" Text="Period" Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="3"
+                          ItemsSource="{Binding TradeJournalVM.PeriodOptions}"
+                          SelectedItem="{Binding TradeJournalVM.FilterPeriod}"
+                          FontSize="11" />
+                <TextBox Grid.Column="4"
+                         Text="{Binding TradeJournalVM.SearchText}"
+                         PlaceholderText="Search symbol / notes…"
+                         FontSize="11" />
+              </Grid>
+            </Border>
+
+            <!-- ── Summary ── -->
+            <TextBlock Text="{Binding TradeJournalVM.SummaryLabel}"
+                       Foreground="#8FA3B8" FontSize="11" />
+
+            <!-- ── Tag statistics ── -->
+            <Border Classes="SurfaceCard">
+              <StackPanel Spacing="6">
+                <TextBlock Text="BY TAG" Classes="Overline" />
+                <ItemsControl ItemsSource="{Binding TradeJournalVM.TagStats}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:TagStatRow">
+                      <Grid ColumnDefinitions="110,50,50,80,80" ColumnSpacing="10" Margin="0,2">
+                        <Border Grid.Column="0" CornerRadius="3" Padding="6,2"
+                                Background="#0D1520">
+                          <TextBlock Text="{Binding TagLabel}"
+                                     Foreground="{Binding TagBrush}"
+                                     FontSize="11" FontWeight="SemiBold" />
+                        </Border>
+                        <TextBlock Grid.Column="1" Text="{Binding Trades}"
+                                   Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2" Text="{Binding WinRateLabel}"
+                                   Foreground="#D7E3EE" FontSize="11" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="3" Text="{Binding PnlLabel}"
+                                   Foreground="{Binding PnlBrush}"
+                                   FontSize="12" FontWeight="Bold" VerticalAlignment="Center" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
+            <!-- ── Trade rows ── -->
+            <Border Classes="SurfaceCard">
+              <StackPanel Spacing="0">
+                <Grid ColumnDefinitions="90,60,40,70,80,70,*,80" ColumnSpacing="8" Margin="0,0,0,6">
+                  <TextBlock Grid.Column="0" Text="DATE" Classes="Overline" />
+                  <TextBlock Grid.Column="1" Text="SYMBOL" Classes="Overline" />
+                  <TextBlock Grid.Column="2" Text="DIR" Classes="Overline" />
+                  <TextBlock Grid.Column="3" Text="P&amp;L USD" Classes="Overline" />
+                  <TextBlock Grid.Column="4" Text="P&amp;L %" Classes="Overline" />
+                  <TextBlock Grid.Column="5" Text="EXCHANGE" Classes="Overline" />
+                  <TextBlock Grid.Column="6" Text="NOTES" Classes="Overline" />
+                  <TextBlock Grid.Column="7" Text="TAG" Classes="Overline" />
+                </Grid>
+
+                <TextBlock Text="No trades match the current filter."
+                           Foreground="#4A6880" FontSize="12" Margin="0,16"
+                           IsVisible="{Binding TradeJournalVM.HasNoRows}" />
+
+                <ScrollViewer MaxHeight="480">
+                  <ItemsControl ItemsSource="{Binding TradeJournalVM.Rows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:JournalEntryRowVM">
+                        <Border Padding="0,4" BorderBrush="#0E1820" BorderThickness="0,0,0,1">
+                          <StackPanel Spacing="4">
+                            <!-- Main row -->
+                            <Grid ColumnDefinitions="90,60,40,70,80,70,*,80" ColumnSpacing="8">
+                              <TextBlock Grid.Column="0" Text="{Binding DateLabel}"
+                                         Foreground="#8FA3B8" FontSize="10" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="1" Text="{Binding SymbolLabel}"
+                                         Foreground="#D7E3EE" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="2" Text="{Binding DirectionLabel}"
+                                         Foreground="{Binding DirectionBrush}" FontSize="11" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="3" Text="{Binding PnlLabel}"
+                                         Foreground="{Binding PnlBrush}" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="4" Text="{Binding PnlPctLabel}"
+                                         Foreground="{Binding PnlBrush}" FontSize="10" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="5" Text="{Binding ExchangeLabel}"
+                                         Foreground="#4A7090" FontSize="10" VerticalAlignment="Center" />
+                              <!-- Notes (editable on click) -->
+                              <Panel Grid.Column="6">
+                                <TextBlock Text="{Binding Notes}"
+                                           Foreground="#8FA3B8" FontSize="10"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center"
+                                           IsVisible="{Binding !IsEditing}" />
+                                <TextBox Text="{Binding Notes}"
+                                         FontSize="10"
+                                         Background="#0B1118"
+                                         IsVisible="{Binding IsEditing}" />
+                              </Panel>
+                              <!-- Tag ComboBox -->
+                              <ComboBox Grid.Column="7"
+                                        ItemsSource="{Binding $parent[ItemsControl].((vm:TradeJournalViewModel)DataContext).AllTags}"
+                                        SelectedItem="{Binding Tag}"
+                                        FontSize="10"
+                                        Background="#111821" />
+                            </Grid>
+                            <!-- Edit / Done button -->
+                            <Grid ColumnDefinitions="*,Auto,Auto" IsVisible="{Binding IsEditing}">
+                              <Button Grid.Column="1" Content="✓ Done"
+                                      Command="{Binding DoneCommand}"
+                                      Classes="GhostButton" FontSize="10"
+                                      Foreground="#21E6C1" />
+                            </Grid>
+                            <!-- Edit link (shown when not editing) -->
+                            <Button Content="✎ Add note"
+                                    Command="{Binding EditCommand}"
+                                    Classes="GhostButton"
+                                    FontSize="9" Padding="0"
+                                    Foreground="#4A6880"
+                                    HorizontalAlignment="Left"
+                                    IsVisible="{Binding !IsEditing}" />
+                          </StackPanel>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+</UserControl>

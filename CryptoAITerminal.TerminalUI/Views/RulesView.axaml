@@ -1,0 +1,408 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.RulesView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <StackPanel Spacing="16" IsVisible="{Binding IsRulesSectionVisible}">
+
+            <!-- Header bar -->
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
+              <StackPanel Grid.Column="0">
+                <TextBlock Classes="H1" Text="Composite Bot — Rule Engine" />
+                <TextBlock Text="{Binding CompositeRuleVM.EngineStatus}"
+                           Foreground="{Binding CompositeRuleVM.EngineStatusColor}"
+                           FontSize="11" />
+              </StackPanel>
+              <Button Grid.Column="1"
+                      Content="{Binding CompositeRuleVM.EngineButtonLabel}"
+                      Command="{Binding CompositeRuleVM.ToggleEngineCommand}"
+                      Foreground="{Binding CompositeRuleVM.EngineButtonColor}"
+                      Classes="GhostButton" />
+              <Button Grid.Column="2" Content="▷ Test Now"
+                      Command="{Binding CompositeRuleVM.TestNowCommand}"
+                      Classes="GhostButton"
+                      ToolTip.Tip="Evaluate all active rules immediately" />
+              <Button Grid.Column="3" Content="+ New Rule"
+                      Command="{Binding CompositeRuleVM.AddRuleCommand}"
+                      Classes="GhostButton"
+                      Foreground="#21E6C1" />
+            </Grid>
+
+            <!-- ── AI: describe a rule in plain English (#3) ── -->
+            <Border Classes="SurfaceCard" Padding="14,12">
+              <StackPanel Spacing="8">
+                <TextBlock Text="🧠 Describe a rule in plain English"
+                           FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                  <TextBox Grid.Column="0"
+                           Text="{Binding CompositeRuleVM.NlPrompt}"
+                           PlaceholderText="e.g. When ETHUSDT RSI drops below 30, start DCA buy and notify me"
+                           VerticalContentAlignment="Center" />
+                  <Button Grid.Column="1" Content="Generate"
+                          Command="{Binding CompositeRuleVM.GenerateRuleFromTextCommand}"
+                          IsEnabled="{Binding !CompositeRuleVM.AiRuleRunning}"
+                          Foreground="#21E6C1" />
+                </Grid>
+                <TextBlock Text="{Binding CompositeRuleVM.AiRuleStatus}"
+                           Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap"
+                           IsVisible="{Binding CompositeRuleVM.AiRuleStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+            </Border>
+
+            <!-- Main split: rule list (left) + editor (right) -->
+            <Grid ColumnDefinitions="*,Auto,480" ColumnSpacing="0" MinHeight="500">
+
+              <!-- ── Left: rule list ─────────────────────────────────────── -->
+              <Border Grid.Column="0" Classes="SurfaceCard" Padding="0">
+                <StackPanel>
+                  <TextBlock Text="Rules" Classes="H2" Margin="14,12,14,8" />
+                  <ScrollViewer MaxHeight="560">
+                    <ItemsControl ItemsSource="{Binding CompositeRuleVM.Rules}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:RuleRowVM">
+                          <Border Background="{Binding EnabledBackground}"
+                                  BorderBrush="#1E3040" BorderThickness="0,0,0,1"
+                                  Padding="14,10">
+                            <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="4">
+
+                              <!-- Row 1: Name + toggle + edit/delete -->
+                              <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding Name}"
+                                           FontWeight="SemiBold"
+                                           Foreground="#D7E3EE"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding EnabledLabel}"
+                                           Foreground="{Binding EnabledColor}"
+                                           FontSize="10" FontWeight="Bold"
+                                           VerticalAlignment="Center" />
+                                <Button Grid.Column="2"
+                                        Content="ON/OFF"
+                                        Command="{Binding ToggleCommand}"
+                                        Classes="GhostButton"
+                                        FontSize="10" Padding="6,2" />
+                                <Button Grid.Column="3"
+                                        Content="Edit"
+                                        Command="{Binding EditCommand}"
+                                        Classes="GhostButton"
+                                        FontSize="10" Padding="6,2" />
+                                <Button Grid.Column="4"
+                                        Content="✕"
+                                        Command="{Binding DeleteCommand}"
+                                        Classes="GhostButton"
+                                        Foreground="#FF5D73"
+                                        FontSize="10" Padding="6,2" />
+                              </Grid>
+
+                              <!-- Row 2: One-line summary -->
+                              <TextBlock Grid.Row="1"
+                                         Text="{Binding OneLineSummary}"
+                                         Foreground="#8FA3B8"
+                                         FontSize="11"
+                                         TextWrapping="Wrap" />
+
+                              <!-- Row 3: Stats -->
+                              <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding CooldownLabel}"
+                                           Foreground="#4A6880"
+                                           FontSize="10" />
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding TriggerCountLabel}"
+                                           Foreground="#21E6C1"
+                                           FontSize="10" />
+                              </Grid>
+
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+
+                  <!-- No rules placeholder -->
+                  <TextBlock Text="No rules yet — click '+ New Rule' to add one."
+                             Foreground="#4A6880" FontSize="12"
+                             HorizontalAlignment="Center" Margin="0,24"
+                             IsVisible="{Binding CompositeRuleVM.HasNoRules}" />
+                </StackPanel>
+              </Border>
+
+              <!-- Separator -->
+              <Border Grid.Column="1" Width="1" Background="#1E3040" Margin="0" />
+
+              <!-- ── Right: editor panel ─────────────────────────────────── -->
+              <Border Grid.Column="2" Background="#0D1520" Padding="16">
+                <Panel>
+                <ScrollViewer>
+                  <StackPanel Spacing="14"
+                              IsVisible="{Binding CompositeRuleVM.IsEditing}">
+
+                    <!-- Editor header -->
+                    <TextBlock Text="Rule Editor" Classes="H2" />
+
+                    <!-- Rule name -->
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Rule Name" Foreground="#8FA3B8" FontSize="11" />
+                      <TextBox Text="{Binding CompositeRuleVM.EditingName}"
+                               Background="#111821" Foreground="#D7E3EE"
+                               BorderBrush="#2A3F54" />
+                    </StackPanel>
+
+                    <!-- Logic + Cooldown row -->
+                    <Grid ColumnDefinitions="*,12,*" >
+                      <StackPanel Grid.Column="0" Spacing="4">
+                        <TextBlock Text="Condition Logic" Foreground="#8FA3B8" FontSize="11" />
+                        <ComboBox ItemsSource="{Binding CompositeRuleVM.LogicOptions}"
+                                  SelectedItem="{Binding CompositeRuleVM.SelectedLogic}"
+                                  Background="#111821" Foreground="#D7E3EE" />
+                      </StackPanel>
+                      <StackPanel Grid.Column="2" Spacing="4">
+                        <TextBlock Text="Cooldown" Foreground="#8FA3B8" FontSize="11" />
+                        <ComboBox ItemsSource="{Binding CompositeRuleVM.CooldownOptions}"
+                                  SelectedItem="{Binding CompositeRuleVM.SelectedCooldown}"
+                                  Background="#111821" Foreground="#D7E3EE" />
+                      </StackPanel>
+                    </Grid>
+
+                    <!-- ── CONDITIONS ── -->
+                    <Border BorderBrush="#1E3040" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                      <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="*,Auto">
+                          <TextBlock Grid.Column="0" Text="CONDITIONS"
+                                     Foreground="#21E6C1" FontSize="11"
+                                     FontWeight="SemiBold" LetterSpacing="1" />
+                          <Button Grid.Column="1" Content="+ Add Condition"
+                                  Command="{Binding CompositeRuleVM.AddConditionCommand}"
+                                  Classes="GhostButton" FontSize="10" />
+                        </Grid>
+
+                        <ItemsControl ItemsSource="{Binding CompositeRuleVM.EditingConditions}">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:RuleConditionEditorVM">
+                              <Border Background="#0F1825" CornerRadius="6"
+                                      Padding="10,8" Margin="0,0,0,6">
+                                <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+
+                                  <!-- Row 0: Type + Remove -->
+                                  <Grid Grid.Row="0"
+                                        ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <ComboBox Grid.Column="0"
+                                              ItemsSource="{x:Static vm:RuleConditionEditorVM.AllTypes}"
+                                              SelectedItem="{Binding SelectedType}"
+                                              Background="#111821" Foreground="#D7E3EE" />
+                                    <Button Grid.Column="1" Content="✕"
+                                            Command="{Binding RemoveCommand}"
+                                            Classes="GhostButton"
+                                            Foreground="#FF5D73"
+                                            FontSize="11" Padding="6,2" />
+                                  </Grid>
+
+                                  <!-- Row 1: Symbol + Params -->
+                                  <Grid Grid.Row="1"
+                                        ColumnDefinitions="Auto,*,Auto,*,Auto,*"
+                                        ColumnSpacing="6">
+                                    <TextBlock Grid.Column="0" Text="Symbol"
+                                               Foreground="#8FA3B8" FontSize="10"
+                                               VerticalAlignment="Center"
+                                               IsVisible="{Binding IsSymbolVisible}" />
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding Symbol}"
+                                             IsVisible="{Binding IsSymbolVisible}"
+                                             Background="#111821" Foreground="#D7E3EE"
+                                             FontSize="11" />
+                                    <TextBlock Grid.Column="2"
+                                               Text="{Binding Param1Label}"
+                                               Foreground="#8FA3B8" FontSize="10"
+                                               VerticalAlignment="Center"
+                                               Margin="4,0,0,0" />
+                                    <NumericUpDown Grid.Column="3"
+                                                   Value="{Binding Param1}"
+                                                   Minimum="0" Maximum="999"
+                                                   Increment="1"
+                                                   Background="#111821" Foreground="#D7E3EE"
+                                                   FontSize="11" />
+                                    <TextBlock Grid.Column="4"
+                                               Text="{Binding Param2Label}"
+                                               Foreground="#8FA3B8" FontSize="10"
+                                               VerticalAlignment="Center"
+                                               Margin="4,0,0,0"
+                                               IsVisible="{Binding IsParam2Visible}" />
+                                    <NumericUpDown Grid.Column="5"
+                                                   Value="{Binding Param2}"
+                                                   Minimum="-9999" Maximum="9999"
+                                                   Increment="1"
+                                                   Background="#111821" Foreground="#D7E3EE"
+                                                   FontSize="11"
+                                                   IsVisible="{Binding IsParam2Visible}" />
+                                  </Grid>
+
+                                  <!-- Row 2: Summary preview -->
+                                  <TextBlock Grid.Row="2"
+                                             Text="{Binding Summary}"
+                                             Foreground="#4A7090"
+                                             FontSize="10" />
+                                </Grid>
+                              </Border>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="No conditions yet — click '+ Add Condition'"
+                                   Foreground="#4A6880" FontSize="11"
+                                   IsVisible="{Binding CompositeRuleVM.HasNoEditingConditions}" />
+                      </StackPanel>
+                    </Border>
+
+                    <!-- ── ACTIONS ── -->
+                    <Border BorderBrush="#1E3040" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                      <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="*,Auto">
+                          <TextBlock Grid.Column="0" Text="ACTIONS"
+                                     Foreground="#F4B860" FontSize="11"
+                                     FontWeight="SemiBold" LetterSpacing="1" />
+                          <Button Grid.Column="1" Content="+ Add Action"
+                                  Command="{Binding CompositeRuleVM.AddActionCommand}"
+                                  Classes="GhostButton" FontSize="10" />
+                        </Grid>
+
+                        <ItemsControl ItemsSource="{Binding CompositeRuleVM.EditingActions}">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:RuleActionEditorVM">
+                              <Border Background="#0F1825" CornerRadius="6"
+                                      Padding="10,8" Margin="0,0,0,6">
+                                <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="5">
+
+                                  <!-- Row 0: Type + Remove -->
+                                  <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <ComboBox Grid.Column="0"
+                                              ItemsSource="{x:Static vm:RuleActionEditorVM.AllTypes}"
+                                              SelectedItem="{Binding SelectedType}"
+                                              Background="#111821" Foreground="#D7E3EE" />
+                                    <Button Grid.Column="1" Content="✕"
+                                            Command="{Binding RemoveCommand}"
+                                            Classes="GhostButton"
+                                            Foreground="#FF5D73"
+                                            FontSize="11" Padding="6,2" />
+                                  </Grid>
+
+                                  <!-- Row 1: Symbol + Amount params -->
+                                  <Grid Grid.Row="1"
+                                        ColumnDefinitions="Auto,*,Auto,*"
+                                        ColumnSpacing="6">
+                                    <TextBlock Grid.Column="0" Text="Symbol"
+                                               Foreground="#8FA3B8" FontSize="10"
+                                               VerticalAlignment="Center"
+                                               IsVisible="{Binding IsSymbolVisible}" />
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding Symbol}"
+                                             IsVisible="{Binding IsSymbolVisible}"
+                                             Background="#111821" Foreground="#D7E3EE"
+                                             FontSize="11" />
+                                    <TextBlock Grid.Column="2" Text="USD $"
+                                               Foreground="#8FA3B8" FontSize="10"
+                                               VerticalAlignment="Center"
+                                               Margin="4,0,0,0"
+                                               IsVisible="{Binding IsAmountVisible}" />
+                                    <NumericUpDown Grid.Column="3"
+                                                   Value="{Binding Amount}"
+                                                   Minimum="0" Maximum="999999"
+                                                   Increment="10"
+                                                   Background="#111821" Foreground="#D7E3EE"
+                                                   FontSize="11"
+                                                   IsVisible="{Binding IsAmountVisible}" />
+                                  </Grid>
+
+                                  <!-- Row 2: Notification message (only for Notify action) -->
+                                  <TextBox Grid.Row="2"
+                                           Text="{Binding Message}"
+                                           PlaceholderText="Notification message..."
+                                           IsVisible="{Binding IsMessageVisible}"
+                                           Background="#111821" Foreground="#D7E3EE"
+                                           FontSize="11" />
+
+                                  <!-- Row 3: Summary -->
+                                  <TextBlock Grid.Row="3"
+                                             Text="{Binding Summary}"
+                                             Foreground="#4A7090"
+                                             FontSize="10" />
+                                </Grid>
+                              </Border>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="No actions yet — click '+ Add Action'"
+                                   Foreground="#4A6880" FontSize="11"
+                                   IsVisible="{Binding CompositeRuleVM.HasNoEditingActions}" />
+                      </StackPanel>
+                    </Border>
+
+                    <!-- Save / Cancel -->
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                      <Button Grid.Column="1" Content="Cancel"
+                              Command="{Binding CompositeRuleVM.CancelEditCommand}"
+                              Classes="GhostButton" />
+                      <Button Grid.Column="2" Content="✓ Save Rule"
+                              Command="{Binding CompositeRuleVM.SaveRuleCommand}"
+                              Classes="GhostButton"
+                              Foreground="#21E6C1"
+                              FontWeight="SemiBold" />
+                    </Grid>
+
+                  </StackPanel>
+                </ScrollViewer>
+
+                <!-- Placeholder when no rule is being edited -->
+                <Border IsVisible="{Binding !CompositeRuleVM.IsEditing}"
+                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                  <StackPanel Spacing="12" HorizontalAlignment="Center">
+                    <TextBlock Text="⚡" FontSize="40"
+                               HorizontalAlignment="Center"
+                               Foreground="#1E3A4C" />
+                    <TextBlock Text="Select a rule to edit or click '+ New Rule'"
+                               Foreground="#4A6880" FontSize="13"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="The engine evaluates conditions every 10 seconds"
+                               Foreground="#2A4A60" FontSize="11"
+                               HorizontalAlignment="Center" />
+                  </StackPanel>
+                </Border>
+
+                </Panel>
+              </Border>
+            </Grid>
+
+            <!-- Trigger log -->
+            <Border Classes="SurfaceCard">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Grid.Column="0" Text="Trigger Log" Classes="H2" />
+                  <Button Grid.Column="1" Content="Clear"
+                          Command="{Binding CompositeRuleVM.ClearLogCommand}"
+                          Classes="GhostButton" FontSize="10" />
+                </Grid>
+                <ScrollViewer MaxHeight="140">
+                  <ItemsControl ItemsSource="{Binding CompositeRuleVM.TriggerLog}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding}"
+                                   Foreground="#8FA3B8"
+                                   FontSize="11"
+                                   FontFamily="Consolas,Courier New,monospace"
+                                   Margin="0,1" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+                <TextBlock Text="No triggers yet — start the engine to begin evaluation."
+                           Foreground="#4A6880" FontSize="11"
+                           IsVisible="{Binding CompositeRuleVM.HasNoTriggerLog}" />
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+</UserControl>
