@@ -1,0 +1,938 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.BotsView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <StackPanel Spacing="16" IsVisible="{Binding IsBotsSectionVisible}">
+
+            <!-- ── Daily AI Briefing (morning read: book + news + sentiment + scanner) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock Classes="H2" Text="🗞️ Daily AI Briefing" />
+                  </StackPanel>
+                  <Border Grid.Column="1" CornerRadius="6" Padding="10,4" VerticalAlignment="Center" Margin="0,0,10,0"
+                          Background="#04101A" IsVisible="{Binding BriefingVM.HasSignal}">
+                    <TextBlock Text="{Binding BriefingVM.SignalLabel}"
+                               Foreground="{Binding BriefingVM.SignalBrush}"
+                               FontWeight="SemiBold" FontSize="12" />
+                  </Border>
+                  <Button Grid.Column="2" Content="↻ Generate" Command="{Binding BriefingVM.RefreshCommand}"
+                          IsEnabled="{Binding !BriefingVM.Running}" VerticalAlignment="Center" />
+                </Grid>
+
+                <TextBlock Text="{Binding BriefingVM.Summary}" Foreground="#E8F0FE" FontSize="13"
+                           TextWrapping="Wrap" />
+
+                <ItemsControl ItemsSource="{Binding BriefingVM.Bullets}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                        <TextBlock Text="•" Foreground="#21E6C1" />
+                        <TextBlock Text="{Binding}" Foreground="#A8B6C6" FontSize="12" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock Text="{Binding BriefingVM.Source}" Foreground="#4D5F70" FontSize="10" />
+                  <TextBlock Text="{Binding BriefingVM.GeneratedAt, StringFormat='· {0}'}"
+                             Foreground="#4D5F70" FontSize="10" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <!-- ── AI Risk Check (holistic pre-trade assessment) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="10">
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="H2" Text="🛡️ AI Risk Check" />
+                </StackPanel>
+
+                <!-- Order form -->
+                <Grid ColumnDefinitions="2*,*,*,*,Auto" ColumnSpacing="10">
+                  <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Symbol" />
+                    <TextBox Text="{Binding RiskCheckVM.Symbol}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Side" />
+                    <ComboBox ItemsSource="{Binding RiskCheckVM.AvailableSides}"
+                              SelectedItem="{Binding RiskCheckVM.Side}" HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Order $" />
+                    <NumericUpDown Value="{Binding RiskCheckVM.OrderUsd}" Minimum="0" Increment="10" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="3" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Leverage" />
+                    <NumericUpDown Value="{Binding RiskCheckVM.Leverage}" Minimum="1" Maximum="125" Increment="1" FormatString="N0" />
+                  </StackPanel>
+                  <Button Grid.Column="4" Content="Check" VerticalAlignment="Bottom"
+                          Command="{Binding RiskCheckVM.CheckCommand}"
+                          IsEnabled="{Binding !RiskCheckVM.Running}" />
+                </Grid>
+
+                <!-- Verdict -->
+                <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding RiskCheckVM.HasVerdict}">
+                  <Border CornerRadius="6" Padding="12,5" Background="#04101A" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding RiskCheckVM.Verdict}"
+                               Foreground="{Binding RiskCheckVM.VerdictBrush}"
+                               FontWeight="Bold" FontSize="14" />
+                  </Border>
+                  <TextBlock Text="{Binding RiskCheckVM.ScoreLabel, StringFormat='Risk {0}'}"
+                             Foreground="#8FA3B8" FontSize="13" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <TextBlock Text="{Binding RiskCheckVM.Rationale}" Foreground="#E8F0FE" FontSize="13"
+                           TextWrapping="Wrap" />
+
+                <ItemsControl ItemsSource="{Binding RiskCheckVM.Reasons}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                        <TextBlock Text="•" Foreground="#F4B860" />
+                        <TextBlock Text="{Binding}" Foreground="#A8B6C6" FontSize="12" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="{Binding RiskCheckVM.Source}" Foreground="#4D5F70" FontSize="10"
+                           IsVisible="{Binding RiskCheckVM.HasVerdict}" />
+              </StackPanel>
+            </Border>
+
+            <!-- ── AI Correlation Insight (diversification posture across the book) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="10">
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="H2" Text="🔗 AI Correlation Insight" />
+                </StackPanel>
+
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                  <TextBox Grid.Column="0" Text="{Binding CorrelationInsightVM.Symbols}"
+                           PlaceholderText="BTCUSDT, ETHUSDT, SOLUSDT…" />
+                  <Border Grid.Column="1" CornerRadius="6" Padding="10,4" VerticalAlignment="Center"
+                          Background="#04101A" IsVisible="{Binding CorrelationInsightVM.HasSignal}">
+                    <TextBlock Text="{Binding CorrelationInsightVM.SignalLabel}"
+                               Foreground="{Binding CorrelationInsightVM.SignalBrush}"
+                               FontWeight="SemiBold" FontSize="12" />
+                  </Border>
+                  <Button Grid.Column="2" Content="Analyze" Command="{Binding CorrelationInsightVM.AnalyzeCommand}"
+                          IsEnabled="{Binding !CorrelationInsightVM.Running}" />
+                </Grid>
+
+                <TextBlock Text="{Binding CorrelationInsightVM.Summary}" Foreground="#E8F0FE" FontSize="13"
+                           TextWrapping="Wrap" />
+
+                <ItemsControl ItemsSource="{Binding CorrelationInsightVM.Bullets}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                        <TextBlock Text="•" Foreground="#21E6C1" />
+                        <TextBlock Text="{Binding}" Foreground="#A8B6C6" FontSize="12" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="{Binding CorrelationInsightVM.Source}" Foreground="#4D5F70" FontSize="10"
+                           IsVisible="{Binding CorrelationInsightVM.HasSignal}" />
+              </StackPanel>
+            </Border>
+
+            <!-- ── AI Options Advisor (strategy from Deribit IV/skew/PCR + view) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="10">
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="H2" Text="📐 AI Options Advisor" />
+                </StackPanel>
+
+                <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="10">
+                  <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Asset" />
+                    <ComboBox ItemsSource="{Binding OptionsStrategyVM.AvailableAssets}"
+                              SelectedItem="{Binding OptionsStrategyVM.Asset}" HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Classes="Overline" Text="View" />
+                    <ComboBox ItemsSource="{Binding OptionsStrategyVM.AvailableDirections}"
+                              SelectedItem="{Binding OptionsStrategyVM.Direction}" HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <Button Grid.Column="2" Content="Suggest" VerticalAlignment="Bottom"
+                          Command="{Binding OptionsStrategyVM.SuggestCommand}"
+                          IsEnabled="{Binding !OptionsStrategyVM.Running}" />
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding OptionsStrategyVM.HasResult}">
+                  <Border CornerRadius="6" Padding="12,5" Background="#04101A" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding OptionsStrategyVM.Strategy}" Foreground="#E8F0FE"
+                               FontWeight="Bold" FontSize="14" />
+                  </Border>
+                  <TextBlock Text="{Binding OptionsStrategyVM.IvRegime, StringFormat='{}{0} IV'}"
+                             Foreground="{Binding OptionsStrategyVM.IvRegimeBrush}"
+                             FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <TextBlock Text="{Binding OptionsStrategyVM.Rationale}" Foreground="#E8F0FE" FontSize="13"
+                           TextWrapping="Wrap" />
+
+                <ItemsControl ItemsSource="{Binding OptionsStrategyVM.Considerations}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                        <TextBlock Text="•" Foreground="#21E6C1" />
+                        <TextBlock Text="{Binding}" Foreground="#A8B6C6" FontSize="12" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="{Binding OptionsStrategyVM.Source}" Foreground="#4D5F70" FontSize="10"
+                           IsVisible="{Binding OptionsStrategyVM.HasResult}" />
+              </StackPanel>
+            </Border>
+
+            <Grid ColumnDefinitions="*,260" ColumnSpacing="16">
+
+              <!-- ── Left: Rule Bot Controls ── -->
+              <Border Grid.Column="0" Classes="Panel">
+                <StackPanel Spacing="12">
+                  <TextBlock Classes="H2" Text="Rule Bot Controls" />
+                  <TextBlock Text="{Binding BotsRuntimeStatusLabel}" Foreground="{Binding BotsRuntimeStatusBrush}" />
+
+                  <!-- Row 1: Symbol · Quantity · Exchange · Risk Cap -->
+                  <Grid ColumnDefinitions="2*,*,*,*" ColumnSpacing="10">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                      <TextBlock Classes="Overline" Text="Symbol" />
+                      <TextBox Text="{Binding AIBotVM.Symbol}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="4">
+                      <TextBlock Classes="Overline" Text="Quantity" />
+                      <NumericUpDown Value="{Binding AIBotVM.Quantity}"
+                                     Increment="0.001" Minimum="0.001" FormatString="N4" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Classes="Overline" Text="Exchange" />
+                      <ComboBox ItemsSource="{Binding AIBotVM.AvailableExchanges}"
+                                SelectedItem="{Binding AIBotVM.SelectedExchange}"
+                                HorizontalAlignment="Stretch" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Spacing="4">
+                      <TextBlock Classes="Overline" Text="Risk Cap $" />
+                      <NumericUpDown Value="{Binding AIBotVM.MaxRiskPerTrade}"
+                                     Increment="10" Minimum="10" FormatString="N0" />
+                    </StackPanel>
+                  </Grid>
+
+                  <!-- Row 2: Market Mode · Margin · Bias · Leverage (futures only) -->
+                  <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                      <TextBlock Classes="Overline" Text="Market Mode" />
+                      <ComboBox ItemsSource="{Binding AIBotVM.AvailableMarketModes}"
+                                SelectedItem="{Binding AIBotVM.SelectedMarketMode}"
+                                HorizontalAlignment="Stretch" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="4">
+                      <TextBlock Classes="Overline" Text="Margin" />
+                      <ComboBox ItemsSource="{Binding AIBotVM.AvailableFuturesMarginModes}"
+                                SelectedItem="{Binding AIBotVM.SelectedFuturesMarginMode}"
+                                HorizontalAlignment="Stretch" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                      <TextBlock Classes="Overline" Text="Bias" />
+                      <ComboBox ItemsSource="{Binding AIBotVM.AvailableFuturesBiasModes}"
+                                SelectedItem="{Binding AIBotVM.SelectedFuturesBias}"
+                                HorizontalAlignment="Stretch" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Spacing="4"
+                                IsVisible="{Binding AIBotVM.IsFuturesMode}">
+                      <TextBlock Classes="Overline" Text="Leverage ×" />
+                      <NumericUpDown Value="{Binding AIBotVM.FuturesLeverage}"
+                                     Increment="1" Minimum="1" Maximum="125" />
+                    </StackPanel>
+                  </Grid>
+
+                  <!-- Row 2b: Strategy selector -->
+                  <Grid ColumnDefinitions="Auto,180,*" ColumnSpacing="10">
+                    <TextBlock Grid.Column="0" Classes="Overline" Text="Strategy" VerticalAlignment="Center" />
+                    <ComboBox Grid.Column="1"
+                              ItemsSource="{Binding AIBotVM.AvailableStrategies}"
+                              SelectedItem="{Binding AIBotVM.SelectedStrategy}"
+                              HorizontalAlignment="Stretch" />
+                    <TextBlock Grid.Column="2" Text="{Binding AIBotVM.StrategySummary}"
+                               Foreground="#21E6C1" FontSize="11"
+                               VerticalAlignment="Center" Margin="8,0,0,0" />
+                  </Grid>
+
+                  <!-- Row 2c: MA Cross parameters (used when Strategy = MA Cross) -->
+                  <Grid ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="10">
+                    <TextBlock Grid.Column="0" Classes="Overline" Text="Fast MA" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Column="1" Value="{Binding AIBotVM.MaFastPeriod}"
+                                   Increment="1" Minimum="2" Maximum="200" />
+                    <TextBlock Grid.Column="2" Classes="Overline" Text="Slow MA"
+                               VerticalAlignment="Center" Margin="8,0,0,0" />
+                    <NumericUpDown Grid.Column="3" Value="{Binding AIBotVM.MaSlowPeriod}"
+                                   Increment="1" Minimum="3" Maximum="500" />
+                  </Grid>
+
+                  <!-- Row 2d: RSI parameters -->
+                  <Grid ColumnDefinitions="Auto,*,Auto,*,Auto,*" ColumnSpacing="8">
+                    <TextBlock Grid.Column="0" Classes="Overline" Text="RSI Period" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Column="1" Value="{Binding AIBotVM.RsiPeriod}"
+                                   Increment="1" Minimum="2" Maximum="100" />
+                    <TextBlock Grid.Column="2" Classes="Overline" Text="Oversold"
+                               VerticalAlignment="Center" Margin="8,0,0,0" />
+                    <NumericUpDown Grid.Column="3" Value="{Binding AIBotVM.RsiOversold}"
+                                   Increment="1" Minimum="1" Maximum="50" />
+                    <TextBlock Grid.Column="4" Classes="Overline" Text="Overbought"
+                               VerticalAlignment="Center" Margin="8,0,0,0" />
+                    <NumericUpDown Grid.Column="5" Value="{Binding AIBotVM.RsiOverbought}"
+                                   Increment="1" Minimum="50" Maximum="99" />
+                  </Grid>
+
+                  <!-- Row 2e: Bollinger parameters -->
+                  <Grid ColumnDefinitions="Auto,*,Auto,*,Auto" ColumnSpacing="8">
+                    <TextBlock Grid.Column="0" Classes="Overline" Text="BB Period" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Column="1" Value="{Binding AIBotVM.BbPeriod}"
+                                   Increment="1" Minimum="2" Maximum="200" />
+                    <TextBlock Grid.Column="2" Classes="Overline" Text="BB σ"
+                               VerticalAlignment="Center" Margin="8,0,0,0" />
+                    <NumericUpDown Grid.Column="3" Value="{Binding AIBotVM.BbDeviation}"
+                                   Increment="0.1" Minimum="0.5" Maximum="5" />
+                    <TextBlock Grid.Column="4" Classes="Overline" Text="Breakout Period"
+                               VerticalAlignment="Center" Margin="14,0,0,0" />
+                  </Grid>
+
+                  <!-- Row 2f: Breakout + MACD parameters -->
+                  <Grid ColumnDefinitions="Auto,*,Auto,*,Auto,*,Auto,*" ColumnSpacing="8">
+                    <TextBlock Grid.Column="0" Classes="Overline" Text="Breakout N" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Column="1" Value="{Binding AIBotVM.BreakoutPeriod}"
+                                   Increment="1" Minimum="2" Maximum="200" />
+                    <TextBlock Grid.Column="2" Classes="Overline" Text="MACD Fast"
+                               VerticalAlignment="Center" Margin="14,0,0,0" />
+                    <NumericUpDown Grid.Column="3" Value="{Binding AIBotVM.MacdFast}"
+                                   Increment="1" Minimum="2" Maximum="100" />
+                    <TextBlock Grid.Column="4" Classes="Overline" Text="MACD Slow"
+                               VerticalAlignment="Center" Margin="6,0,0,0" />
+                    <NumericUpDown Grid.Column="5" Value="{Binding AIBotVM.MacdSlow}"
+                                   Increment="1" Minimum="3" Maximum="200" />
+                    <TextBlock Grid.Column="6" Classes="Overline" Text="MACD Sig"
+                               VerticalAlignment="Center" Margin="6,0,0,0" />
+                    <NumericUpDown Grid.Column="7" Value="{Binding AIBotVM.MacdSignal}"
+                                   Increment="1" Minimum="2" Maximum="50" />
+                  </Grid>
+
+                  <!-- Row 2f-vwap: VWAP parameters -->
+                  <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                    <TextBlock Grid.Column="0" Classes="Overline" Text="VWAP Band %"
+                               VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Column="1" Value="{Binding AIBotVM.VwapBandPct}"
+                                   Increment="0.01" Minimum="0" Maximum="5" />
+                  </Grid>
+
+                  <!-- Row 2g: Claude (AI) parameters -->
+                  <Grid ColumnDefinitions="Auto,*,Auto,200,Auto,130" ColumnSpacing="8">
+                    <TextBlock Grid.Column="0" Classes="Overline" Text="Claude Key" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="1" PasswordChar="•"
+                             PlaceholderText="sk-ant-…"
+                             Text="{Binding AIBotVM.ClaudeApiKey}"
+                             UseFloatingPlaceholder="False" />
+                    <TextBlock Grid.Column="2" Classes="Overline" Text="Model"
+                               VerticalAlignment="Center" Margin="8,0,0,0" />
+                    <TextBox Grid.Column="3" Text="{Binding AIBotVM.ClaudeModel}" />
+                    <TextBlock Grid.Column="4" Classes="Overline" Text="Poll sec"
+                               VerticalAlignment="Center" Margin="8,0,0,0" />
+                    <NumericUpDown Grid.Column="5" Value="{Binding AIBotVM.ClaudePollSeconds}"
+                                   Increment="15" Minimum="15" Maximum="3600" />
+                  </Grid>
+
+                  <!-- Row 3: Buttons + mode summary -->
+                  <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10">
+                    <Button Grid.Column="0" Classes="GhostButton" Content="▶ Start Bot"
+                            Command="{Binding AIBotVM.StartBotCommand}" />
+                    <Button Grid.Column="1" Classes="GhostButton" Content="■ Stop Bot"
+                            Command="{Binding AIBotVM.StopBotCommand}" />
+                    <TextBlock Grid.Column="2" Text="{Binding AIBotVM.BotModeSummary}"
+                               Foreground="#1FE6C2" FontSize="11"
+                               VerticalAlignment="Center" TextWrapping="Wrap" />
+                  </Grid>
+
+                  <!-- Bot Activity Log (monospace terminal) -->
+                  <Border Background="#04101A" CornerRadius="4" Padding="10,8" MaxHeight="140">
+                    <ScrollViewer x:Name="BotLogScrollViewer" VerticalScrollBarVisibility="Auto">
+                      <TextBlock Text="{Binding AIBotVM.BotLog}"
+                                 FontFamily="Consolas,Courier New,monospace"
+                                 FontSize="11" Foreground="#21E6C1"
+                                 TextWrapping="Wrap" />
+                    </ScrollViewer>
+                  </Border>
+                </StackPanel>
+              </Border>
+
+              <!-- ── Right: Runtime status card ── -->
+              <Border Grid.Column="1" Classes="SurfaceCard" VerticalAlignment="Top">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="Overline" Text="Runtime" />
+                  <TextBlock Text="{Binding WalletVM.GlobalExecutionSummary}"
+                             Foreground="#8FA3B8" TextWrapping="Wrap" FontSize="11" />
+                  <TextBlock Text="{Binding FuturesPrivateApiStatusLabel}"
+                             Foreground="{Binding FuturesPrivateApiStatusBrush}"
+                             TextWrapping="Wrap" FontSize="11" />
+                </StackPanel>
+              </Border>
+
+            </Grid>
+
+            <!-- TP / SL configuration -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="12">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                  <TextBlock Classes="H2" Text="Take Profit / Stop Loss" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding AIBotVM.TpSlSummary}" Foreground="#1FE6C2" FontSize="11" VerticalAlignment="Center" />
+                  <Button Grid.Column="2" Content="🧠 AI Suggest"
+                          Command="{Binding AIBotVM.SuggestTpSlCommand}"
+                          IsEnabled="{Binding !AIBotVM.TpSlSuggestRunning}"
+                          Foreground="#21E6C1" FontSize="11" />
+                </Grid>
+                <TextBlock Text="{Binding AIBotVM.TpSlSuggestNote}" Foreground="#6A8FA8" FontSize="11" TextWrapping="Wrap"
+                           IsVisible="{Binding AIBotVM.TpSlSuggestNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+                <!-- TP row -->
+                <Grid ColumnDefinitions="Auto,*,Auto,*,*,Auto,*,Auto,Auto" ColumnSpacing="12">
+                  <CheckBox Grid.Column="0" IsChecked="{Binding AIBotVM.TpEnabled}" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Take Profit %" />
+                    <NumericUpDown Value="{Binding AIBotVM.TpPercent}" Increment="0.1" Minimum="0.1" Maximum="100" FormatString="N1" />
+                  </StackPanel>
+
+                  <CheckBox Grid.Column="2" IsChecked="{Binding AIBotVM.PartialTp}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                  <StackPanel Grid.Column="3" Spacing="4">
+                    <TextBlock Classes="Overline" Text="TP1 Close %" />
+                    <NumericUpDown Value="{Binding AIBotVM.PartialTpClosePercent}" Increment="5" Minimum="1" Maximum="99" FormatString="N0" IsEnabled="{Binding AIBotVM.PartialTp}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="4" Spacing="4" Margin="0,0,0,0">
+                    <TextBlock Classes="Overline" Text="TP2 %" />
+                    <NumericUpDown Value="{Binding AIBotVM.PartialTp2Percent}" Increment="0.1" Minimum="0.1" Maximum="100" FormatString="N1" IsEnabled="{Binding AIBotVM.PartialTp}" />
+                  </StackPanel>
+
+                  <CheckBox Grid.Column="5" IsChecked="{Binding AIBotVM.SlEnabled}" VerticalAlignment="Center" Margin="16,0,0,0" />
+                  <StackPanel Grid.Column="6" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Stop Loss %" />
+                    <NumericUpDown Value="{Binding AIBotVM.SlPercent}" Increment="0.1" Minimum="0.1" Maximum="100" FormatString="N1" />
+                  </StackPanel>
+
+                  <CheckBox Grid.Column="7" IsChecked="{Binding AIBotVM.TrailingStop}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                  <StackPanel Grid.Column="8" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Trailing SL" />
+                    <TextBlock Text="{Binding AIBotVM.TrailingStop, StringFormat={}{0}}" Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                  </StackPanel>
+                </Grid>
+
+                <TextBlock Text="Futures: TP/SL placed as exchange orders (TakeProfitMarket / StopMarket) with ReduceOnly. Trailing SL replaces SL order on each new peak. Spot: monitored in-process." Foreground="#4A6070" FontSize="11" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
+            <!-- ═══════════════ GRID TRADING BOT ═══════════════ -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="14">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                  <TextBlock Classes="H2" Text="Grid Trading Bot" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Border Background="{Binding GridBotVM.StatusColor}" CornerRadius="4" Padding="8,3">
+                      <TextBlock Text="{Binding GridBotVM.StatusLabel}" FontSize="11" FontWeight="SemiBold" Foreground="#0A1628" />
+                    </Border>
+                  </StackPanel>
+                </Grid>
+
+                <!-- ── AI grid parameters (#8) ── -->
+                <Border Background="#04101A" CornerRadius="6" Padding="10,8">
+                  <StackPanel Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                      <TextBlock Grid.Column="0" Text="🧠 Let AI suggest grid bounds &amp; levels"
+                                 Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="{Binding GridBotVM.AiParamsSource}"
+                                 Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                      <Button Grid.Column="2" Content="AI Suggest"
+                              Command="{Binding GridBotVM.SuggestParamsCommand}"
+                              IsEnabled="{Binding !GridBotVM.AiParamsRunning}" Foreground="#21E6C1" />
+                    </Grid>
+                    <TextBlock Text="{Binding GridBotVM.AiParamsRationale}"
+                               Foreground="#6A8FA8" FontSize="11" TextWrapping="Wrap"
+                               IsVisible="{Binding GridBotVM.AiParamsRationale, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  </StackPanel>
+                </Border>
+
+                <!-- Row 1: Symbol · Lower Price · Upper Price · Grid Levels · Qty/Grid -->
+                <Grid ColumnDefinitions="2*,*,*,*,*" ColumnSpacing="12">
+                  <StackPanel Grid.Column="0" Spacing="5">
+                    <TextBlock Classes="Overline" Text="Symbol" />
+                    <TextBox Text="{Binding GridBotVM.Symbol}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="5">
+                    <TextBlock Classes="Overline" Text="Lower Price" />
+                    <NumericUpDown Value="{Binding GridBotVM.LowerPrice}" Increment="100" Minimum="0" FormatString="N2" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="5">
+                    <TextBlock Classes="Overline" Text="Upper Price" />
+                    <NumericUpDown Value="{Binding GridBotVM.UpperPrice}" Increment="100" Minimum="0" FormatString="N2" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="3" Spacing="5">
+                    <TextBlock Classes="Overline" Text="Grid Levels" />
+                    <NumericUpDown Value="{Binding GridBotVM.GridLevels}" Increment="1" Minimum="2" Maximum="100" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="4" Spacing="5">
+                    <TextBlock Classes="Overline" Text="Qty / Grid" />
+                    <NumericUpDown Value="{Binding GridBotVM.QuantityPerGrid}" Increment="0.001" Minimum="0.0001" FormatString="N4" />
+                  </StackPanel>
+                </Grid>
+
+                <!-- Row 2: Market Mode · Margin · Leverage (futures only) -->
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                  <StackPanel Grid.Column="0" Spacing="5">
+                    <TextBlock Classes="Overline" Text="Market Mode" />
+                    <ComboBox ItemsSource="{Binding GridBotVM.AvailableMarketModes}"
+                              SelectedItem="{Binding GridBotVM.SelectedMarketMode}"
+                              HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="5" IsVisible="{Binding GridBotVM.IsFuturesMode}">
+                    <TextBlock Classes="Overline" Text="Margin" />
+                    <ComboBox ItemsSource="{Binding GridBotVM.AvailableMarginModes}"
+                              SelectedItem="{Binding GridBotVM.SelectedMarginMode}"
+                              HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="5" IsVisible="{Binding GridBotVM.IsFuturesMode}">
+                    <TextBlock Classes="Overline" Text="Leverage" />
+                    <NumericUpDown Value="{Binding GridBotVM.Leverage}" Increment="1" Minimum="1" Maximum="25" />
+                  </StackPanel>
+                </Grid>
+
+                <!-- Grid preview info -->
+                <TextBlock Text="{Binding GridBotVM.GridSummary}" Foreground="#8FA3B8" FontSize="12" />
+
+                <!-- Controls -->
+                <WrapPanel Orientation="Horizontal">
+                  <Button Content="Start Grid"
+                          Classes="AccentButton"
+                          Margin="0,0,10,0"
+                          IsEnabled="{Binding GridBotVM.CanStart}"
+                          Command="{Binding GridBotVM.StartCommand}" />
+                  <Button Content="Pause"
+                          Classes="GhostButton"
+                          Margin="0,0,10,0"
+                          IsEnabled="{Binding GridBotVM.CanPause}"
+                          Command="{Binding GridBotVM.PauseCommand}" />
+                  <Button Content="Resume"
+                          Classes="GhostButton"
+                          Margin="0,0,10,0"
+                          IsEnabled="{Binding GridBotVM.CanResume}"
+                          Command="{Binding GridBotVM.ResumeCommand}" />
+                  <Button Content="Stop Grid"
+                          Classes="GhostButton"
+                          IsEnabled="{Binding GridBotVM.CanStop}"
+                          Command="{Binding GridBotVM.StopCommand}" />
+                </WrapPanel>
+
+                <!-- Stats row -->
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                  <Border Grid.Column="0" Classes="SurfaceCard">
+                    <StackPanel Spacing="4">
+                      <TextBlock Classes="Overline" Text="Cycles Completed" />
+                      <TextBlock Classes="Metric" Text="{Binding GridBotVM.CyclesCompleted}" />
+                    </StackPanel>
+                  </Border>
+                  <Border Grid.Column="1" Classes="SurfaceCard">
+                    <StackPanel Spacing="4">
+                      <TextBlock Classes="Overline" Text="Grid P&amp;L" />
+                      <TextBlock Classes="Metric"
+                                 Text="{Binding GridBotVM.GridPnLLabel}"
+                                 Foreground="{Binding GridBotVM.GridPnLColor}" />
+                    </StackPanel>
+                  </Border>
+                  <Border Grid.Column="2" Classes="SurfaceCard">
+                    <StackPanel Spacing="4">
+                      <TextBlock Classes="Overline" Text="Grid Spacing" />
+                      <TextBlock Classes="Metric" Text="{Binding GridBotVM.GridSpacing, StringFormat={}{0:N2}}" />
+                    </StackPanel>
+                  </Border>
+                </Grid>
+
+                <!-- Log -->
+                <Border Background="#04101A" CornerRadius="6" Padding="10,8" MaxHeight="120">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <TextBlock Text="{Binding GridBotVM.BotLog}"
+                               Foreground="#6A8FA8" FontFamily="Courier New" FontSize="11"
+                               TextWrapping="Wrap" />
+                  </ScrollViewer>
+                </Border>
+              </StackPanel>
+            </Border>
+
+            <!-- ═══════════════ DCA BOT ═══════════════ -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="14">
+
+                <!-- Header + status -->
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                  <TextBlock Classes="H2" Text="DCA Bot" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding DcaBotVM.CountdownLabel}"
+                             Foreground="#F4B860" FontSize="12" VerticalAlignment="Center"
+                             IsVisible="{Binding DcaBotVM.IsRunning}" />
+                  <TextBlock Grid.Column="2" Text="{Binding DcaBotVM.NextExecutionLabel}"
+                             Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center"
+                             IsVisible="{Binding DcaBotVM.IsRunning}" />
+                </Grid>
+
+                <!-- Schedule row: Interval · Period · Budget · Checkbox -->
+                <Grid ColumnDefinitions="*,*,*,2*" ColumnSpacing="12">
+                  <StackPanel Grid.Column="0" Spacing="5">
+                    <TextBlock Classes="Overline" Text="Interval" />
+                    <NumericUpDown Value="{Binding DcaBotVM.IntervalValue}" Increment="1" Minimum="1" Maximum="999" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="5">
+                    <TextBlock Classes="Overline" Text="Period" />
+                    <ComboBox ItemsSource="{Binding DcaBotVM.IntervalTypes}"
+                              SelectedItem="{Binding DcaBotVM.SelectedIntervalType}"
+                              HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="5">
+                    <TextBlock Classes="Overline" Text="Budget USDT" />
+                    <NumericUpDown Value="{Binding DcaBotVM.TotalBudget}" Increment="10" Minimum="1" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="3" Spacing="5" VerticalAlignment="Bottom" Margin="0,0,0,4">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <CheckBox IsChecked="{Binding DcaBotVM.ExecuteImmediately}" VerticalAlignment="Center" />
+                      <TextBlock Text="Run immediately on start" Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
+                    </StackPanel>
+                  </StackPanel>
+                </Grid>
+
+                <!-- Exchange selector -->
+                <Grid ColumnDefinitions="Auto,200,*" ColumnSpacing="10">
+                  <TextBlock Grid.Column="0" Classes="Overline" Text="Exchange"
+                             VerticalAlignment="Center" />
+                  <ComboBox Grid.Column="1"
+                            ItemsSource="{Binding DcaBotVM.AvailableExchanges}"
+                            SelectedItem="{Binding DcaBotVM.SelectedExchange}"
+                            HorizontalAlignment="Stretch"
+                            IsEnabled="{Binding !DcaBotVM.IsRunning}" />
+                  <TextBlock Grid.Column="2" Text="Spot-only: by design DCA does not trade futures."
+                             Foreground="#6A8FA8" FontSize="11" VerticalAlignment="Center" />
+                </Grid>
+
+                <!-- Coin list header -->
+                <Grid ColumnDefinitions="2*,120,40,120,*,32" ColumnSpacing="10">
+                  <TextBlock Grid.Column="0" Classes="Overline" Text="Symbol" />
+                  <TextBlock Grid.Column="1" Classes="Overline" Text="Weight %" />
+                  <TextBlock Grid.Column="2" Classes="Overline" Text="MA" />
+                  <TextBlock Grid.Column="3" Classes="Overline" Text="MA Days" />
+                  <TextBlock Grid.Column="4" Classes="Overline" Text="Avg Price / Held" />
+                  <TextBlock Grid.Column="5" Classes="Overline" Text="" />
+                </Grid>
+
+                <!-- Coin list -->
+                <ItemsControl ItemsSource="{Binding DcaBotVM.Coins}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:DcaCoinRowViewModel">
+                      <Grid ColumnDefinitions="2*,120,40,120,*,32" ColumnSpacing="10" Margin="0,3">
+                        <TextBox Grid.Column="0" Text="{Binding Symbol}" />
+                        <NumericUpDown Grid.Column="1" Value="{Binding WeightPercent}" Increment="5" Minimum="1" Maximum="100" />
+                        <CheckBox Grid.Column="2" IsChecked="{Binding ConditionalBuy}" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        <NumericUpDown Grid.Column="3" Value="{Binding MaPeriod}" Increment="10" Minimum="10" Maximum="500"
+                                       IsEnabled="{Binding ConditionalBuy}" />
+                        <TextBlock Grid.Column="4" Text="{Binding StatsLabel}" Foreground="#8FA3B8"
+                                   FontSize="12" VerticalAlignment="Center" />
+                        <Button Grid.Column="5" Content="✕" FontSize="11" Padding="4,2"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Command="{Binding $parent[Window].DataContext.DcaBotVM.RemoveCoinCommand}"
+                                CommandParameter="{Binding Id}" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Add coin form -->
+                <Grid ColumnDefinitions="2*,120,40,120,Auto,Auto" ColumnSpacing="10">
+                  <TextBox Grid.Column="0" Text="{Binding DcaBotVM.NewCoinSymbol}" PlaceholderText="SOLUSDT" />
+                  <NumericUpDown Grid.Column="1" Value="{Binding DcaBotVM.NewCoinWeight}" Increment="5" Minimum="1" Maximum="100" />
+                  <CheckBox Grid.Column="2" IsChecked="{Binding DcaBotVM.NewCoinConditional}"
+                            VerticalAlignment="Center" HorizontalAlignment="Center" />
+                  <NumericUpDown Grid.Column="3" Value="{Binding DcaBotVM.NewCoinMaPeriod}" Increment="10" Minimum="10" Maximum="500"
+                                 IsEnabled="{Binding DcaBotVM.NewCoinConditional}" />
+                  <Button Grid.Column="4" Content="+ Add Coin" Margin="4,0,0,0"
+                          Command="{Binding DcaBotVM.AddCoinCommand}" />
+                  <TextBlock Grid.Column="5" Text="{Binding DcaBotVM.WeightSumLabel}"
+                             Foreground="{Binding DcaBotVM.WeightSumColor}"
+                             FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="8,0,0,0" />
+                </Grid>
+
+                <!-- Controls -->
+                <WrapPanel Orientation="Horizontal">
+                  <Button Content="Start DCA" Classes="AccentButton" Margin="0,0,10,0"
+                          IsEnabled="{Binding DcaBotVM.CanStart}"
+                          Command="{Binding DcaBotVM.StartCommand}" />
+                  <Button Content="Run Now" Classes="GhostButton" Margin="0,0,10,0"
+                          IsEnabled="{Binding DcaBotVM.IsRunning}"
+                          Command="{Binding DcaBotVM.RunNowCommand}" />
+                  <Button Content="Stop DCA" Classes="GhostButton"
+                          IsEnabled="{Binding DcaBotVM.CanStop}"
+                          Command="{Binding DcaBotVM.StopCommand}" />
+                </WrapPanel>
+
+                <!-- Execution history -->
+                <TextBlock Classes="Overline" Text="Execution History" Margin="0,6,0,0" />
+                <Grid ColumnDefinitions="70,*,90,80,80,70" ColumnSpacing="8">
+                  <TextBlock Grid.Column="0" Classes="Overline" Text="Time" />
+                  <TextBlock Grid.Column="1" Classes="Overline" Text="Symbol" />
+                  <TextBlock Grid.Column="2" Classes="Overline" Text="Price" />
+                  <TextBlock Grid.Column="3" Classes="Overline" Text="Qty" />
+                  <TextBlock Grid.Column="4" Classes="Overline" Text="Total USDT" />
+                  <TextBlock Grid.Column="5" Classes="Overline" Text="Status" />
+                </Grid>
+                <ListBox ItemsSource="{Binding DcaBotVM.Executions}"
+                         MaxHeight="200" Background="Transparent"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:DcaExecutionRowViewModel">
+                      <Grid ColumnDefinitions="70,*,90,80,80,70" ColumnSpacing="8" Margin="0,2">
+                        <TextBlock Grid.Column="0" Text="{Binding TimeLabel}" Foreground="#4A6880" FontSize="11" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="{Binding Symbol}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2" Text="{Binding PriceLabel}" Foreground="#D7E3EE" FontSize="12" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="3" Text="{Binding QtyLabel}" Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="4" Text="{Binding TotalLabel}" Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="5" Text="{Binding StatusLabel}" Foreground="{Binding StatusColor}"
+                                   FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                      </Grid>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- Bot log -->
+                <Border Background="#04101A" CornerRadius="6" Padding="10,8" MaxHeight="100">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <TextBlock Text="{Binding DcaBotVM.BotLog}"
+                               Foreground="#6A8FA8" FontFamily="Courier New" FontSize="11"
+                               TextWrapping="Wrap" />
+                  </ScrollViewer>
+                </Border>
+
+              </StackPanel>
+            </Border>
+
+            <!-- ── Autonomous AI Trader (Claude tool-use agent) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="12">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock Classes="H2" Text="🤖 AI Trader (Autonomous)" />
+                    <TextBlock Text="Claude inspects the market and places its own orders via tool use."
+                               Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <Border Grid.Column="1" CornerRadius="6" Padding="10,4" VerticalAlignment="Center"
+                          Background="#04101A">
+                    <TextBlock Text="{Binding AiTraderVM.ModeLabel}"
+                               Foreground="{Binding AiTraderVM.ModeBrush}"
+                               FontWeight="SemiBold" FontSize="12" />
+                  </Border>
+                </Grid>
+
+                <TextBlock Text="{Binding AiTraderVM.StatusLabel}"
+                           Foreground="{Binding AiTraderVM.StatusBrush}" FontSize="12" />
+
+                <!-- Venue · Exchange · Interval · Live toggle -->
+                <Grid ColumnDefinitions="*,*,*,Auto" ColumnSpacing="10">
+                  <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Venue" />
+                    <ComboBox ItemsSource="{Binding AiTraderVM.AvailableVenues}"
+                              SelectedItem="{Binding AiTraderVM.SelectedVenue}"
+                              HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4" IsVisible="{Binding AiTraderVM.IsCexVenue}">
+                    <TextBlock Classes="Overline" Text="Exchange" />
+                    <ComboBox ItemsSource="{Binding AiTraderVM.AvailableExchanges}"
+                              SelectedItem="{Binding AiTraderVM.SelectedExchange}"
+                              HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4" IsVisible="{Binding AiTraderVM.IsDexVenue}">
+                    <TextBlock Classes="Overline" Text="Network" />
+                    <TextBlock Text="Active DEX wallet" Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Interval (sec)" />
+                    <NumericUpDown Value="{Binding AiTraderVM.IntervalSeconds}"
+                                   Minimum="30" Maximum="3600" Increment="30" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="3" Spacing="4" VerticalAlignment="Bottom">
+                    <TextBlock Classes="Overline" Text="Live trading" />
+                    <CheckBox IsChecked="{Binding AiTraderVM.LiveEnabled}"
+                              Content="Real orders" Foreground="#FF6B6B" />
+                  </StackPanel>
+                </Grid>
+
+                <!-- CEX: Market mode · Leverage · Margin -->
+                <Grid ColumnDefinitions="*,*,*,Auto" ColumnSpacing="10"
+                      IsVisible="{Binding AiTraderVM.IsCexVenue}">
+                  <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Market" />
+                    <ComboBox ItemsSource="{Binding AiTraderVM.AvailableMarketModes}"
+                              SelectedItem="{Binding AiTraderVM.SelectedMarketMode}"
+                              HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4" IsVisible="{Binding AiTraderVM.IsFuturesMode}">
+                    <TextBlock Classes="Overline" Text="Leverage" />
+                    <NumericUpDown Value="{Binding AiTraderVM.Leverage}" Minimum="1" Maximum="125" Increment="1" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="4" IsVisible="{Binding AiTraderVM.IsFuturesMode}">
+                    <TextBlock Classes="Overline" Text="Margin" />
+                    <ComboBox ItemsSource="{Binding AiTraderVM.AvailableMarginModes}"
+                              SelectedItem="{Binding AiTraderVM.SelectedMarginMode}"
+                              HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="3" Text="{Binding AiTraderVM.MarketSummary}"
+                             Foreground="#1FE6C2" FontSize="11" VerticalAlignment="Bottom" Margin="0,0,0,8" />
+                </Grid>
+
+                <!-- DEX: slippage · max native/trade · paper native start -->
+                <Grid ColumnDefinitions="*,*,*,Auto" ColumnSpacing="10"
+                      IsVisible="{Binding AiTraderVM.IsDexVenue}">
+                  <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Slippage %" />
+                    <NumericUpDown Value="{Binding AiTraderVM.DexSlippagePercent}" Minimum="0.1" Maximum="50" Increment="0.5" FormatString="N1" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Max native / trade" />
+                    <NumericUpDown Value="{Binding AiTraderVM.MaxNativePerTrade}" Minimum="0.0000001" Increment="0.01" FormatString="N4" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Paper native start" />
+                    <NumericUpDown Value="{Binding AiTraderVM.VirtualNativeStart}" Minimum="0.0000001" Increment="0.1" FormatString="N4" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="3" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Max positions" />
+                    <NumericUpDown Value="{Binding AiTraderVM.MaxOpenPositions}" Minimum="1" Maximum="20" Increment="1" FormatString="N0" Width="90" />
+                  </StackPanel>
+                </Grid>
+
+                <!-- Hard limits (CEX, USD-denominated) -->
+                <TextBlock Classes="Overline" Text="Risk limits (enforced in paper AND live)" Margin="0,4,0,0"
+                           IsVisible="{Binding AiTraderVM.IsCexVenue}" />
+                <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="10"
+                      IsVisible="{Binding AiTraderVM.IsCexVenue}">
+                  <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Max order $" />
+                    <NumericUpDown Value="{Binding AiTraderVM.MaxOrderUsd}" Minimum="1" Increment="10" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Max exposure $" />
+                    <NumericUpDown Value="{Binding AiTraderVM.MaxTotalExposureUsd}" Minimum="1" Increment="50" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Max positions" />
+                    <NumericUpDown Value="{Binding AiTraderVM.MaxOpenPositions}" Minimum="1" Maximum="20" Increment="1" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="3" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Max daily loss $" />
+                    <NumericUpDown Value="{Binding AiTraderVM.MaxDailyLossUsd}" Minimum="1" Increment="25" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="4" Spacing="4">
+                    <TextBlock Classes="Overline" Text="Paper start $" />
+                    <NumericUpDown Value="{Binding AiTraderVM.VirtualStartUsd}" Minimum="10" Increment="100" FormatString="N0" />
+                  </StackPanel>
+                </Grid>
+
+                <!-- Controls -->
+                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10">
+                  <Button Grid.Column="0" Content="▶ Run once" Command="{Binding AiTraderVM.RunOnceCommand}" />
+                  <Button Grid.Column="1" Content="🔁 Start loop" Command="{Binding AiTraderVM.StartLoopCommand}" />
+                  <Button Grid.Column="2" Content="■ Stop" Command="{Binding AiTraderVM.StopCommand}" />
+                  <Button Grid.Column="3" Content="⛔ Kill" Command="{Binding AiTraderVM.KillCommand}"
+                          Foreground="#FF6B6B" />
+                </Grid>
+
+                <!-- Agent log -->
+                <TextBlock Classes="Overline" Text="Agent activity" Margin="0,4,0,0" />
+                <Border Background="#04101A" CornerRadius="6" Padding="10,8" MaxHeight="220">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <TextBlock Text="{Binding AiTraderVM.AgentLog}"
+                               Foreground="#6A8FA8" FontFamily="Courier New" FontSize="11"
+                               TextWrapping="Wrap" />
+                  </ScrollViewer>
+                </Border>
+              </StackPanel>
+            </Border>
+
+            <!-- ── AI Copilot (read-only conversational assistant) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="12">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock Classes="H2" Text="💬 AI Copilot" />
+                    <TextBlock Text="Ask about your balance, positions, P&amp;L, risk or the market. Read-only — it never trades."
+                               Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <Border Grid.Column="1" CornerRadius="6" Padding="10,4" VerticalAlignment="Center"
+                          Background="#04101A">
+                    <TextBlock Text="{Binding CopilotVM.ModeLabel}"
+                               Foreground="{Binding CopilotVM.ModeBrush}"
+                               FontWeight="SemiBold" FontSize="12" />
+                  </Border>
+                </Grid>
+
+                <!-- Transcript -->
+                <Border Background="#04101A" CornerRadius="6" Padding="10,8" MinHeight="160" MaxHeight="320">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding CopilotVM.Messages}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <StackPanel Spacing="2" Margin="0,0,0,10" HorizontalAlignment="{Binding Align}">
+                            <TextBlock Text="{Binding RoleLabel}" Foreground="{Binding RoleBrush}"
+                                       FontSize="10" FontWeight="SemiBold" />
+                            <Border Background="#08161F" CornerRadius="6" Padding="10,7" MaxWidth="520">
+                              <TextBlock Text="{Binding Text}" Foreground="#E8F0FE" FontSize="12"
+                                         TextWrapping="Wrap" />
+                            </Border>
+                            <TextBlock Text="{Binding Source}" Foreground="#4D5F70" FontSize="9"
+                                       IsVisible="{Binding HasSource}" />
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </Border>
+
+                <!-- Suggestion chips -->
+                <ItemsControl ItemsSource="{Binding CopilotVM.Suggestions}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <WrapPanel />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Button Classes="LinkButton" Content="{Binding}" Margin="0,0,8,6"
+                              Command="{Binding $parent[ItemsControl].DataContext.CopilotVM.AskSuggestionCommand}"
+                              CommandParameter="{Binding}" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Input -->
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                  <TextBox Grid.Column="0" Text="{Binding CopilotVM.Question}"
+                           PlaceholderText="Ask the copilot…" />
+                  <Button Grid.Column="1" Content="Ask" Command="{Binding CopilotVM.AskCommand}"
+                          IsEnabled="{Binding !CopilotVM.IsBusy}" />
+                  <Button Grid.Column="2" Content="Clear" Classes="LinkButton"
+                          Command="{Binding CopilotVM.ClearCommand}" />
+                </Grid>
+                <TextBlock Text="{Binding CopilotVM.StatusLabel}" Foreground="#5C6E82" FontSize="11" />
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+</UserControl>

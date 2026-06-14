@@ -119,26 +119,9 @@ public partial class MainWindow : Window
             };
         }
         StartSplashSequence();
-        SetupBotLogAutoScroll();
 
         // Single-key trading hotkeys (fire only when no text-input control is focused)
         AddHandler(KeyDownEvent, OnTradingHotkeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
-    }
-
-    /// <summary>
-    /// Subscribes to AIBotVM.BotLog changes and scrolls the terminal log to the bottom.
-    /// </summary>
-    private void SetupBotLogAutoScroll()
-    {
-        if (ViewModel?.AIBotVM is not { } botVm) return;
-        var sv = this.FindControl<ScrollViewer>("BotLogScrollViewer");
-        if (sv is null) return;
-
-        botVm.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == nameof(AIBotViewModel.BotLog))
-                Dispatcher.UIThread.Post(() => sv.ScrollToEnd());
-        };
     }
 
     /// <summary>
