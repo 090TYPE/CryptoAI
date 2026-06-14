@@ -1,0 +1,347 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.MarketsView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+        <StackPanel Spacing="16">
+          <Border Classes="HeroPanel">
+            <Grid ColumnDefinitions="1.35*,Auto" ColumnSpacing="18">
+              <StackPanel Spacing="6">
+                <TextBlock Classes="Overline" Text="MARKET EXPLORER" />
+                <TextBlock Classes="H1" Text="Live Spot Radar" />
+                <TextBlock Text="{Binding MarketsScreenSummary}"
+                           Foreground="#8FA3B8"
+                           TextWrapping="Wrap"
+                           MaxWidth="760" />
+              </StackPanel>
+
+              <WrapPanel Orientation="Horizontal">
+                <Border Classes="SoftPanel" MinWidth="140" Margin="0,0,12,0">
+                  <StackPanel Spacing="4">
+                    <TextBlock Classes="Overline" Text="Tracked" />
+                    <TextBlock FontSize="22" FontWeight="Bold" Foreground="#21E6C1"
+                               Text="{Binding TrackedMarketsCount}" />
+                  </StackPanel>
+                </Border>
+                <Border Classes="SoftPanel" MinWidth="140" Margin="0,0,12,0">
+                  <StackPanel Spacing="4">
+                    <TextBlock Classes="Overline" Text="Visible" />
+                    <TextBlock FontSize="22" FontWeight="Bold" Foreground="#F4F7FB"
+                               Text="{Binding VisibleMarketsCount}" />
+                  </StackPanel>
+                </Border>
+                <Border Classes="SoftPanel" MinWidth="140" Margin="0,0,12,0">
+                  <StackPanel Spacing="4">
+                    <TextBlock Classes="Overline" Text="Favorites" />
+                    <TextBlock FontSize="22" FontWeight="Bold" Foreground="#F4B860"
+                               Text="{Binding FavoriteMarketsCount}" />
+                  </StackPanel>
+                </Border>
+                <Border Classes="SoftPanel" MinWidth="180">
+                  <StackPanel Spacing="4">
+                    <TextBlock Classes="Overline" Text="Breadth" />
+                    <TextBlock FontSize="22" FontWeight="Bold" Foreground="#F4F7FB"
+                               Text="{Binding MarketBreadthLabel}" />
+                  </StackPanel>
+                </Border>
+              </WrapPanel>
+            </Grid>
+          </Border>
+
+          <Grid ColumnDefinitions="320,*" ColumnSpacing="16">
+            <Border Classes="Panel" Grid.Column="0">
+              <StackPanel Spacing="14">
+                <TextBlock Classes="H2" Text="Scanner Controls" />
+
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="Overline" Text="Search" />
+                  <TextBox Text="{Binding MarketsSearchText}"
+                           PlaceholderText="BTC, ETH, BNB..." />
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="Overline" Text="Sort" />
+                  <ComboBox ItemsSource="{Binding MarketSortOptions}"
+                            SelectedItem="{Binding SelectedMarketSortMode}" />
+                </StackPanel>
+
+                <CheckBox Content="Show favorites only"
+                          IsChecked="{Binding ShowFavoriteMarketsOnly}" />
+
+                <WrapPanel Orientation="Horizontal">
+                  <Button Content="REFRESH"
+                          Command="{Binding RefreshMarketsCommand}"
+                          Width="120"
+                          Margin="0,0,10,0" />
+                  <Button Content="OPEN TRADING"
+                          Command="{Binding OpenMarketInTradingCommand}"
+                          CommandParameter="{Binding SelectedMarket}"
+                          Width="150"
+                          Classes="GhostButton" />
+                </WrapPanel>
+
+                <Border Classes="SoftPanel">
+                  <StackPanel Spacing="8">
+                    <TextBlock Classes="Overline" Text="Selection" />
+                    <TextBlock Text="{Binding MarketsSelectionSummary}"
+                               Foreground="#D7E3EE"
+                               TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
+
+                <Border Classes="SoftPanel">
+                  <StackPanel Spacing="8">
+                    <TextBlock Classes="Overline" Text="Leaders" />
+                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+                      <TextBlock Grid.Row="0" Text="Strongest" Foreground="#8FA3B8" />
+                      <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding StrongestMarketLabel}" FontWeight="SemiBold" />
+                      <TextBlock Grid.Row="1" Text="Weakest" Foreground="#8FA3B8" />
+                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding WeakestMarketLabel}" FontWeight="SemiBold" />
+                      <TextBlock Grid.Row="2" Text="Tightest" Foreground="#8FA3B8" />
+                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding TightestSpreadMarketLabel}" FontWeight="SemiBold" />
+                      <TextBlock Grid.Row="3" Text="Active" Foreground="#8FA3B8" />
+                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding MostActiveMarketLabel}" FontWeight="SemiBold" />
+                    </Grid>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </Border>
+
+            <StackPanel Grid.Column="1" Spacing="16">
+              <Border Classes="Panel">
+                <StackPanel Spacing="12">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <TextBlock Classes="H2" Text="Heatmap" />
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding ConnectionStateLabel}"
+                               Foreground="#8FA3B8"
+                               VerticalAlignment="Center" />
+                  </Grid>
+                  <ItemsControl ItemsSource="{Binding MarketHeatmapMarkets}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:CexMarketItemViewModel">
+                        <Button Width="170"
+                                Margin="0,0,12,12"
+                                Padding="12"
+                                HorizontalContentAlignment="Stretch"
+                                Command="{Binding $parent[Window].DataContext.FocusMarketCommand}"
+                                CommandParameter="{Binding .}"
+                                Background="{Binding LogoBackground}">
+                          <StackPanel Spacing="4">
+                            <Grid ColumnDefinitions="*,Auto">
+                              <TextBlock Grid.Column="0"
+                                         Text="{Binding BaseAssetSymbol}"
+                                         FontWeight="Bold"
+                                         Foreground="{Binding LogoForeground}" />
+                              <TextBlock Grid.Column="1"
+                                         Text="{Binding ChangePercentLabel}"
+                                         Foreground="{Binding LogoForeground}" />
+                            </Grid>
+                            <TextBlock Text="{Binding LastPrice, StringFormat=$ {0:N4}}"
+                                       Foreground="{Binding LogoForeground}"
+                                       FontSize="18"
+                                       FontWeight="Bold" />
+                            <TextBlock Text="{Binding TrendLabel}"
+                                       Foreground="{Binding LogoForeground}" />
+                          </StackPanel>
+                        </Button>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+
+              <Grid ColumnDefinitions="0.95*,1.05*" ColumnSpacing="16">
+                <Border Classes="Panel" Grid.Column="0">
+                  <StackPanel Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                      <TextBlock Classes="H2" Text="Market Board" />
+                      <TextBlock Grid.Column="1"
+                                 Text="{Binding VisibleMarketsCount, StringFormat=Rows: {0}}"
+                                 Foreground="#8FA3B8"
+                                 VerticalAlignment="Center" />
+                    </Grid>
+
+                    <ListBox ItemsSource="{Binding VisibleMarkets}"
+                             SelectedItem="{Binding SelectedMarket}">
+                      <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:CexMarketItemViewModel">
+                          <Border Classes="SoftPanel" Margin="0,0,0,10">
+                            <StackPanel Spacing="8">
+                              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                <Border Grid.Column="0"
+                                        Width="34"
+                                        Height="34"
+                                        Background="{Binding LogoBackground}"
+                                        CornerRadius="17">
+                                  <TextBlock Text="{Binding LogoText}"
+                                             Foreground="{Binding LogoForeground}"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center"
+                                             FontWeight="Bold" />
+                                </Border>
+                                <StackPanel Grid.Column="1" Spacing="2">
+                                  <TextBlock Text="{Binding DisplaySymbol}" FontWeight="Bold" />
+                                  <TextBlock Text="{Binding TrendLabel}"
+                                             Foreground="{Binding TrendBrush}" />
+                                </StackPanel>
+                                <Button Grid.Column="2"
+                                        Content="{Binding FavoriteGlyph}"
+                                        Command="{Binding $parent[Window].DataContext.ToggleMarketFavoriteCommand}"
+                                        CommandParameter="{Binding .}"
+                                        Classes="GhostButton"
+                                        Foreground="{Binding FavoriteBrush}"
+                                        MinWidth="70" />
+                              </Grid>
+
+                              <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="6">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding LastPrice, StringFormat=Last: $ {0:N4}}" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ChangePercentLabel}" Foreground="{Binding ChangeBrush}" HorizontalAlignment="Right" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding SpreadPercentLabel, StringFormat=Spread: {0}}" Foreground="#8FA3B8" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding UpdatedLabel, StringFormat=Updated: {0}}" Foreground="#8FA3B8" HorizontalAlignment="Right" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding RangeLabel, StringFormat=Range: {0}}" Foreground="#8FA3B8" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ActivityScoreLabel, StringFormat=Score: {0}}" Foreground="#8FA3B8" HorizontalAlignment="Right" />
+                              </Grid>
+
+                              <Button Content="OPEN IN TRADING"
+                                      Command="{Binding $parent[Window].DataContext.OpenMarketInTradingCommand}"
+                                      CommandParameter="{Binding .}"
+                                      Classes="GhostButton"
+                                      HorizontalAlignment="Left" />
+                            </StackPanel>
+                          </Border>
+                        </DataTemplate>
+                      </ListBox.ItemTemplate>
+                    </ListBox>
+                  </StackPanel>
+                </Border>
+
+                <Border Classes="Panel" Grid.Column="1">
+                  <StackPanel Spacing="14">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                      <StackPanel Spacing="4">
+                        <TextBlock Classes="H2" Text="{Binding SelectedMarketTitle}" />
+                        <TextBlock Text="{Binding MarketsSelectionSummary}"
+                                   Foreground="#8FA3B8"
+                                   TextWrapping="Wrap" />
+                      </StackPanel>
+                      <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                        <Button Content="TRADING"
+                                Command="{Binding OpenMarketInTradingCommand}"
+                                CommandParameter="{Binding SelectedMarket}"
+                                Width="110"
+                                Margin="0,0,10,0" />
+                        <Button Content="FAVORITE"
+                                Command="{Binding ToggleMarketFavoriteCommand}"
+                                CommandParameter="{Binding SelectedMarket}"
+                                Width="110"
+                                Classes="GhostButton" />
+                      </WrapPanel>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12">
+                      <Border Classes="SurfaceCard" Grid.Column="0">
+                        <StackPanel Spacing="4">
+                          <TextBlock Classes="Overline" Text="Last" />
+                          <TextBlock Classes="Metric" FontSize="22"
+                                     Text="{Binding SelectedMarket.LastPrice, StringFormat=$ {0:N4}}" />
+                        </StackPanel>
+                      </Border>
+                      <Border Classes="SurfaceCard" Grid.Column="1">
+                        <StackPanel Spacing="4">
+                          <TextBlock Classes="Overline" Text="Change" />
+                          <TextBlock Classes="Metric" FontSize="22"
+                                     Text="{Binding SelectedMarket.ChangePercentLabel}"
+                                     Foreground="{Binding SelectedMarket.ChangeBrush}" />
+                        </StackPanel>
+                      </Border>
+                      <Border Classes="SurfaceCard" Grid.Column="2">
+                        <StackPanel Spacing="4">
+                          <TextBlock Classes="Overline" Text="Spread" />
+                          <TextBlock Classes="Metric" FontSize="22"
+                                     Text="{Binding SelectedMarket.SpreadPercentLabel}" />
+                        </StackPanel>
+                      </Border>
+                      <Border Classes="SurfaceCard" Grid.Column="3">
+                        <StackPanel Spacing="4">
+                          <TextBlock Classes="Overline" Text="Activity" />
+                          <TextBlock Classes="Metric" FontSize="22"
+                                     Text="{Binding SelectedMarket.ActivityScoreLabel}" />
+                        </StackPanel>
+                      </Border>
+                    </Grid>
+
+                    <Border Classes="SoftPanel">
+                      <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
+                        <TextBlock Grid.Row="0" Classes="H2" Text="Micro Trend" />
+                        <ctrl:CexPriceChart Grid.Row="1"
+                                            Height="220"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch"
+                                            Points="{Binding SelectedMarket.ChartPoints}"
+                                            IsPositiveTrend="{Binding SelectedMarket.IsPositiveTrend}" />
+                        <TextBlock Grid.Row="2"
+                                   Text="{Binding SelectedMarket.RangeLabel, StringFormat=Observed range: {0}}"
+                                   Foreground="#8FA3B8" />
+                      </Grid>
+                    </Border>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                      <Border Classes="SurfaceCard" Grid.Column="0">
+                        <StackPanel Spacing="8">
+                          <TextBlock Classes="H2" Text="Bids" />
+                          <ScrollViewer Classes="PageScroll" MaxHeight="240">
+                            <ItemsControl ItemsSource="{Binding SelectedMarket.BidLevels}">
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
+                                  <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding Price, StringFormat=$ {0:N4}}"
+                                               Foreground="#3DDC84" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Quantity, StringFormat={}{0:N4}}"
+                                               Foreground="#8B949E" />
+                                  </Grid>
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                          </ScrollViewer>
+                        </StackPanel>
+                      </Border>
+
+                      <Border Classes="SurfaceCard" Grid.Column="1">
+                        <StackPanel Spacing="8">
+                          <TextBlock Classes="H2" Text="Asks" />
+                          <ScrollViewer Classes="PageScroll" MaxHeight="240">
+                            <ItemsControl ItemsSource="{Binding SelectedMarket.AskLevels}">
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
+                                  <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding Price, StringFormat=$ {0:N4}}"
+                                               Foreground="#FF6B6B" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Quantity, StringFormat={}{0:N4}}"
+                                               Foreground="#8B949E" />
+                                  </Grid>
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                          </ScrollViewer>
+                        </StackPanel>
+                      </Border>
+                    </Grid>
+                  </StackPanel>
+                </Border>
+              </Grid>
+            </StackPanel>
+          </Grid>
+        </StackPanel>
+</UserControl>

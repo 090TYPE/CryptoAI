@@ -1,0 +1,632 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             x:Class="CryptoAITerminal.TerminalUI.Views.AiSignalsView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+          <Border Classes="Panel">
+            <StackPanel Spacing="18">
+              <Border Classes="HeroPanel">
+                <Grid ColumnDefinitions="1.2*,Auto" ColumnSpacing="18">
+                  <StackPanel Spacing="8">
+                    <TextBlock Classes="Overline" Text="AI SIGNAL STUDIO" />
+                    <TextBlock Classes="H1" Text="Crypto Copilot Workspace" />
+                    <TextBlock Text="A focused signal desk with local crypto chat, visual review, route context, and quick action prompts built around the live terminal state."
+                               Foreground="#8FA3B8"
+                               MaxWidth="940"
+                               TextWrapping="Wrap" />
+                  </StackPanel>
+                  <WrapPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Border Classes="SurfaceCard" MinWidth="148" Margin="0,0,12,0">
+                      <StackPanel Spacing="4">
+                        <TextBlock Classes="Overline" Text="Status" />
+                        <TextBlock Text="{Binding AiAssistantStatusLabel}" FontWeight="Bold" Foreground="{Binding AiAssistantStatusBrush}" />
+                      </StackPanel>
+                    </Border>
+                    <Border Classes="SurfaceCard" MinWidth="136" Margin="0,0,12,0">
+                      <StackPanel Spacing="4">
+                        <TextBlock Classes="Overline" Text="Chat" />
+                        <TextBlock Text="{Binding AiConversationCountLabel}" FontWeight="Bold" />
+                      </StackPanel>
+                    </Border>
+                    <Border Classes="SurfaceCard" MinWidth="136" Margin="0,0,12,0">
+                      <StackPanel Spacing="4">
+                        <TextBlock Classes="Overline" Text="Visuals" />
+                        <TextBlock Text="{Binding AiVisualCountLabel}" FontWeight="Bold" />
+                      </StackPanel>
+                    </Border>
+                    <Border Classes="SurfaceCard" MinWidth="170">
+                      <StackPanel Spacing="4">
+                        <TextBlock Classes="Overline" Text="Engine" />
+                        <TextBlock Text="{Binding AiEngineAvailabilityLabel}" FontWeight="Bold" Foreground="{Binding AiEngineAvailabilityBrush}" />
+                      </StackPanel>
+                    </Border>
+                  </WrapPanel>
+                </Grid>
+              </Border>
+
+              <Grid ColumnDefinitions="480,1.1*,540" ColumnSpacing="24" MinHeight="980">
+                <Border Grid.Column="0" Classes="SectionPanel" Padding="20" MinHeight="980">
+                  <Grid RowDefinitions="Auto,*" RowSpacing="12">
+                    <StackPanel Spacing="6">
+                      <TextBlock Classes="H2" Text="Prompt Library" />
+                      <TextBlock Text="{Binding AiWorkspaceSubheadline}" Classes="SecondaryCopy" TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="1" MaxHeight="880" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                      <StackPanel Spacing="14">
+                        <Border Classes="AiPromptCard">
+                          <StackPanel Spacing="12">
+                            <Grid ColumnDefinitions="*,Auto">
+                              <TextBlock Classes="H2" Text="Prompt Builder" />
+                              <Button Grid.Column="1"
+                                      Content="BUILD PROMPT"
+                                      Classes="GhostButton"
+                                      Command="{Binding GenerateAiPresetPromptCommand}" />
+                            </Grid>
+                            <TextBlock Text="Assemble a focused AI question from the active context, trade style, horizon, risk, and analysis goal." Classes="SecondaryCopy" TextWrapping="Wrap" />
+
+                            <StackPanel Spacing="6">
+                              <TextBlock Classes="Overline" Text="Asset" />
+                              <TextBox Text="{Binding AiPromptPresetAsset}" />
+                            </StackPanel>
+
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                              <StackPanel Grid.Column="0" Spacing="6">
+                                <TextBlock Classes="Overline" Text="Trade Style" />
+                                <ComboBox ItemsSource="{Binding AiPromptTradeStyleOptions}"
+                                          SelectedItem="{Binding SelectedAiPromptTradeStyle}" />
+                              </StackPanel>
+                              <StackPanel Grid.Column="1" Spacing="6">
+                                <TextBlock Classes="Overline" Text="Horizon" />
+                                <ComboBox ItemsSource="{Binding AiPromptHorizonOptions}"
+                                          SelectedItem="{Binding SelectedAiPromptHorizon}" />
+                              </StackPanel>
+                            </Grid>
+
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                              <StackPanel Grid.Column="0" Spacing="6">
+                                <TextBlock Classes="Overline" Text="Risk Profile" />
+                                <ComboBox ItemsSource="{Binding AiPromptRiskProfileOptions}"
+                                          SelectedItem="{Binding SelectedAiPromptRiskProfile}" />
+                              </StackPanel>
+                              <StackPanel Grid.Column="1" Spacing="6">
+                                <TextBlock Classes="Overline" Text="Focus" />
+                                <ComboBox ItemsSource="{Binding AiPromptFocusOptions}"
+                                          SelectedItem="{Binding SelectedAiPromptFocus}" />
+                              </StackPanel>
+                            </Grid>
+
+                            <Border Classes="InfoBand">
+                              <StackPanel Spacing="4">
+                                <TextBlock Classes="Overline" Text="Preset Summary" />
+                                <TextBlock Text="{Binding AiPromptPresetSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                              </StackPanel>
+                            </Border>
+
+                            <Border Classes="AiFactCard">
+                              <StackPanel Spacing="4">
+                                <TextBlock Classes="Overline" Text="Prompt Preview" />
+                                <TextBlock Text="{Binding AiPromptPresetPreview}" Classes="SecondaryCopy" TextWrapping="Wrap" />
+                              </StackPanel>
+                            </Border>
+
+                            <StackPanel Spacing="6">
+                              <TextBlock Classes="Overline" Text="My Preset Name" />
+                              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                <TextBox Text="{Binding AiCustomPresetName}" />
+                                <Button Grid.Column="1"
+                                        Content="SAVE MY PRESET"
+                                        Classes="GhostButton"
+                                        Command="{Binding SaveAiCustomPromptPresetCommand}"
+                                        IsEnabled="{Binding CanSaveAiCustomPromptPreset}" />
+                              </Grid>
+                            </StackPanel>
+                          </StackPanel>
+                        </Border>
+
+                        <Border Classes="AiPromptCard">
+                          <StackPanel Spacing="12">
+                            <Grid ColumnDefinitions="*,Auto">
+                              <TextBlock Classes="H2" Text="Saved Presets" />
+                              <TextBlock Grid.Column="1" Text="{Binding AiSavedPresetCountLabel}" Classes="MicroCopy" VerticalAlignment="Center" />
+                            </Grid>
+                            <TextBlock Text="One-click tactical profiles for scalp, swing, DEX, sniper, and risk review workflows." Classes="SecondaryCopy" TextWrapping="Wrap" />
+                            <ItemsControl ItemsSource="{Binding AiSavedPromptPresets}">
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:AiPromptPresetViewModel">
+                                  <Border Classes="AiFactCard" Margin="0,0,0,10">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                      <StackPanel Spacing="4">
+                                        <DockPanel LastChildFill="True">
+                                          <TextBlock DockPanel.Dock="Left" Text="{Binding Label}" FontWeight="Bold" />
+                                          <TextBlock DockPanel.Dock="Right" Text="{Binding Asset}" Classes="MicroCopy" />
+                                        </DockPanel>
+                                        <TextBlock Text="{Binding Summary}" Classes="SecondaryCopy" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding TradeStyle}" Foreground="#6FDBFF" FontWeight="SemiBold" />
+                                      </StackPanel>
+                                      <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
+                                        <Button Content="LOAD"
+                                                Classes="GhostButton"
+                                                Command="{Binding #RootWindow.DataContext.LoadAiSavedPromptPresetCommand}"
+                                                CommandParameter="{Binding .}" />
+                                        <Button Content="BUILD"
+                                                Classes="GhostButton"
+                                                Command="{Binding #RootWindow.DataContext.BuildAiSavedPromptPresetCommand}"
+                                                CommandParameter="{Binding .}" />
+                                        <Button Content="SEND NOW"
+                                                Classes="GhostButton"
+                                                Command="{Binding #RootWindow.DataContext.SendAiSavedPromptPresetCommand}"
+                                                CommandParameter="{Binding .}" />
+                                      </StackPanel>
+                                    </Grid>
+                                  </Border>
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                          </StackPanel>
+                        </Border>
+
+                        <Border Classes="AiPromptCard">
+                          <StackPanel Spacing="12">
+                            <Grid ColumnDefinitions="*,Auto">
+                              <TextBlock Classes="H2" Text="My Presets" />
+                              <TextBlock Grid.Column="1" Text="{Binding AiCustomPresetCountLabel}" Classes="MicroCopy" VerticalAlignment="Center" />
+                            </Grid>
+                            <TextBlock Text="Your own saved prompt profiles live here and persist between terminal restarts." Classes="SecondaryCopy" TextWrapping="Wrap" />
+                            <ItemsControl ItemsSource="{Binding AiCustomPromptPresets}">
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:AiPromptPresetViewModel">
+                                  <Border Classes="AiFactCard" Margin="0,0,0,10">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                      <StackPanel Spacing="4">
+                                        <TextBlock Text="{Binding Label}" FontWeight="Bold" />
+                                        <TextBlock Text="{Binding Summary}" Classes="SecondaryCopy" TextWrapping="Wrap" />
+                                      </StackPanel>
+                                      <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
+                                        <Button Content="LOAD"
+                                                Classes="GhostButton"
+                                                Command="{Binding #RootWindow.DataContext.LoadAiSavedPromptPresetCommand}"
+                                                CommandParameter="{Binding .}" />
+                                        <Button Content="BUILD"
+                                                Classes="GhostButton"
+                                                Command="{Binding #RootWindow.DataContext.BuildAiSavedPromptPresetCommand}"
+                                                CommandParameter="{Binding .}" />
+                                        <Button Content="SEND NOW"
+                                                Classes="GhostButton"
+                                                Command="{Binding #RootWindow.DataContext.SendAiSavedPromptPresetCommand}"
+                                                CommandParameter="{Binding .}" />
+                                        <Button Content="DELETE"
+                                                Classes="GhostButton"
+                                                Command="{Binding #RootWindow.DataContext.DeleteAiCustomPromptPresetCommand}"
+                                                CommandParameter="{Binding .}" />
+                                      </StackPanel>
+                                    </Grid>
+                                  </Border>
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                          </StackPanel>
+                        </Border>
+
+                        <Border Classes="AiPromptCard">
+                          <StackPanel Spacing="12">
+                            <Grid ColumnDefinitions="*,Auto">
+                              <TextBlock Classes="H2" Text="Prompt Library" />
+                              <TextBlock Grid.Column="1" Text="{Binding AiQuickPromptCountLabel}" Classes="MicroCopy" VerticalAlignment="Center" />
+                            </Grid>
+                            <TextBlock Text="{Binding AiWorkspaceSubheadline}" Classes="SecondaryCopy" TextWrapping="Wrap" />
+
+                            <StackPanel Spacing="10">
+                              <TextBlock Classes="Overline" Text="ENTRY" />
+                              <ItemsControl ItemsSource="{Binding AiEntryPrompts}">
+                                <ItemsControl.ItemsPanel>
+                                  <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                  </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate x:DataType="vm:AiAssistantQuickPromptViewModel">
+                                    <Button Classes="AiPromptChip"
+                                            Content="{Binding Label}"
+                                            Command="{Binding #RootWindow.DataContext.UseAiAssistantQuickPromptCommand}"
+                                            CommandParameter="{Binding .}"
+                                            Margin="0,0,10,10" />
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+                            </StackPanel>
+
+                            <StackPanel Spacing="10">
+                              <TextBlock Classes="Overline" Text="EXIT" />
+                              <ItemsControl ItemsSource="{Binding AiExitPrompts}">
+                                <ItemsControl.ItemsPanel>
+                                  <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                  </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate x:DataType="vm:AiAssistantQuickPromptViewModel">
+                                    <Button Classes="AiPromptChip"
+                                            Content="{Binding Label}"
+                                            Command="{Binding #RootWindow.DataContext.UseAiAssistantQuickPromptCommand}"
+                                            CommandParameter="{Binding .}"
+                                            Margin="0,0,10,10" />
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+                            </StackPanel>
+
+                            <StackPanel Spacing="10">
+                              <TextBlock Classes="Overline" Text="RISK" />
+                              <ItemsControl ItemsSource="{Binding AiRiskPrompts}">
+                                <ItemsControl.ItemsPanel>
+                                  <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                  </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate x:DataType="vm:AiAssistantQuickPromptViewModel">
+                                    <Button Classes="AiPromptChip"
+                                            Content="{Binding Label}"
+                                            Command="{Binding #RootWindow.DataContext.UseAiAssistantQuickPromptCommand}"
+                                            CommandParameter="{Binding .}"
+                                            Margin="0,0,10,10" />
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+                            </StackPanel>
+
+                            <StackPanel Spacing="10">
+                              <TextBlock Classes="Overline" Text="DEX" />
+                              <ItemsControl ItemsSource="{Binding AiDexPrompts}">
+                                <ItemsControl.ItemsPanel>
+                                  <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                  </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate x:DataType="vm:AiAssistantQuickPromptViewModel">
+                                    <Button Classes="AiPromptChip"
+                                            Content="{Binding Label}"
+                                            Command="{Binding #RootWindow.DataContext.UseAiAssistantQuickPromptCommand}"
+                                            CommandParameter="{Binding .}"
+                                            Margin="0,0,10,10" />
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+                            </StackPanel>
+
+                            <StackPanel Spacing="10">
+                              <TextBlock Classes="Overline" Text="SNIPER" />
+                              <ItemsControl ItemsSource="{Binding AiSniperPrompts}">
+                                <ItemsControl.ItemsPanel>
+                                  <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                  </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate x:DataType="vm:AiAssistantQuickPromptViewModel">
+                                    <Button Classes="AiPromptChip"
+                                            Content="{Binding Label}"
+                                            Command="{Binding #RootWindow.DataContext.UseAiAssistantQuickPromptCommand}"
+                                            CommandParameter="{Binding .}"
+                                            Margin="0,0,10,10" />
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+                            </StackPanel>
+
+                            <StackPanel Spacing="10">
+                              <TextBlock Classes="Overline" Text="VISUAL" />
+                              <ItemsControl ItemsSource="{Binding AiVisualPrompts}">
+                                <ItemsControl.ItemsPanel>
+                                  <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                  </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate x:DataType="vm:AiAssistantQuickPromptViewModel">
+                                    <Button Classes="AiPromptChip"
+                                            Content="{Binding Label}"
+                                            Command="{Binding #RootWindow.DataContext.UseAiAssistantQuickPromptCommand}"
+                                            CommandParameter="{Binding .}"
+                                            Margin="0,0,10,10" />
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+                            </StackPanel>
+                          </StackPanel>
+                        </Border>
+
+                        <Border Classes="AiPromptCard">
+                          <StackPanel Spacing="10">
+                            <TextBlock Classes="Overline" Text="Context Venue" />
+                            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                              <Button Grid.Column="0"
+                                      Content="AUTO"
+                                      Classes="GhostButton"
+                                      Command="{Binding SelectAiContextVenueModeCommand}"
+                                      CommandParameter="AUTO"
+                                      Background="{Binding AiContextAutoBackground}"
+                                      Foreground="{Binding AiContextAutoForeground}" />
+                              <Button Grid.Column="1"
+                                      Content="CEX"
+                                      Classes="GhostButton"
+                                      Command="{Binding SelectAiContextVenueModeCommand}"
+                                      CommandParameter="CEX"
+                                      Background="{Binding AiContextCexBackground}"
+                                      Foreground="{Binding AiContextCexForeground}" />
+                              <Button Grid.Column="2"
+                                      Content="DEX"
+                                      Classes="GhostButton"
+                                      Command="{Binding SelectAiContextVenueModeCommand}"
+                                      CommandParameter="DEX"
+                                      Background="{Binding AiContextDexBackground}"
+                                      Foreground="{Binding AiContextDexForeground}" />
+                            </Grid>
+                            <TextBlock Text="{Binding AiContextVenueLabel}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding AiContextVenueSummary}" Classes="SecondaryCopy" TextWrapping="Wrap" />
+                          </StackPanel>
+                        </Border>
+
+                        <Border Classes="AiPromptCard">
+                          <StackPanel Spacing="10">
+                            <TextBlock Classes="Overline" Text="Context Sources" />
+                            <WrapPanel Orientation="Horizontal">
+                              <Button Content="MARKET"
+                                      Classes="GhostButton"
+                                      Command="{Binding ToggleAiContextSourceCommand}"
+                                      CommandParameter="MARKET"
+                                      Background="{Binding AiMarketChipBackground}"
+                                      Foreground="{Binding AiMarketChipForeground}"
+                                      Margin="0,0,8,8" />
+                              <Button Content="RISK"
+                                      Classes="GhostButton"
+                                      Command="{Binding ToggleAiContextSourceCommand}"
+                                      CommandParameter="RISK"
+                                      Background="{Binding AiRiskChipBackground}"
+                                      Foreground="{Binding AiRiskChipForeground}"
+                                      Margin="0,0,8,8" />
+                              <Button Content="DEX"
+                                      Classes="GhostButton"
+                                      Command="{Binding ToggleAiContextSourceCommand}"
+                                      CommandParameter="DEX"
+                                      Background="{Binding AiDexChipBackground}"
+                                      Foreground="{Binding AiDexChipForeground}"
+                                      Margin="0,0,8,8" />
+                              <Button Content="SNIPER"
+                                      Classes="GhostButton"
+                                      Command="{Binding ToggleAiContextSourceCommand}"
+                                      CommandParameter="SNIPER"
+                                      Background="{Binding AiSniperChipBackground}"
+                                      Foreground="{Binding AiSniperChipForeground}"
+                                      Margin="0,0,8,8" />
+                              <Button Content="VISUAL"
+                                      Classes="GhostButton"
+                                      Command="{Binding ToggleAiContextSourceCommand}"
+                                      CommandParameter="VISUAL"
+                                      Background="{Binding AiVisualChipBackground}"
+                                      Foreground="{Binding AiVisualChipForeground}"
+                                      Margin="0,0,8,8" />
+                            </WrapPanel>
+                            <TextBlock Text="{Binding AiContextSourcesSummary}" Classes="SecondaryCopy" TextWrapping="Wrap" />
+                          </StackPanel>
+                        </Border>
+
+                        <Border Classes="AiPromptCard">
+                          <StackPanel Spacing="8">
+                            <TextBlock Classes="Overline" Text="Scope" />
+                            <TextBlock Text="{Binding AiAssistantScopeLabel}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding AiAssistantModeSummary}" Classes="SecondaryCopy" TextWrapping="Wrap" />
+                          </StackPanel>
+                        </Border>
+
+                        <Border Classes="AiPromptCard">
+                          <StackPanel Spacing="8">
+                            <TextBlock Classes="Overline" Text="Model Slot" />
+                            <TextBlock Text="{Binding AiEngineAvailabilityLabel}" FontWeight="Bold" Foreground="{Binding AiEngineAvailabilityBrush}" />
+                            <TextBlock Text="{Binding AiEngineAvailabilitySummary}" Classes="SecondaryCopy" TextWrapping="Wrap" />
+                          </StackPanel>
+                        </Border>
+
+                        <Border Classes="AiPromptCard">
+                          <StackPanel Spacing="8">
+                            <TextBlock Classes="Overline" Text="Image Window" />
+                            <TextBlock Text="{Binding AiAttachmentStatusLabel}" FontWeight="Bold" />
+                            <TextBlock Text="{Binding AiAttachmentStatusSummary}" Classes="SecondaryCopy" TextWrapping="Wrap" />
+                          </StackPanel>
+                        </Border>
+
+                        <StackPanel Spacing="10">
+                          <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Classes="H2" Text="Live Context" />
+                            <TextBlock Grid.Column="1" Text="{Binding AiQuickPromptCountLabel}" Classes="MicroCopy" VerticalAlignment="Center" />
+                          </Grid>
+                          <ItemsControl ItemsSource="{Binding AiAssistantContextCards}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="vm:AiContextCardViewModel">
+                                <Border Classes="AiFactCard" Margin="0,0,0,10">
+                                  <StackPanel Spacing="4">
+                                    <TextBlock Classes="Overline" Text="{Binding Overline}" />
+                                    <TextBlock Text="{Binding Value}" FontSize="17" FontWeight="Bold" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding Caption}" Classes="SecondaryCopy" TextWrapping="Wrap" />
+                                  </StackPanel>
+                                </Border>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </StackPanel>
+
+                        <StackPanel Spacing="10">
+                          <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Classes="H2" Text="Knowledge Base" />
+                            <TextBlock Grid.Column="1" Text="{Binding AiKnowledgeCountLabel}" Classes="MicroCopy" VerticalAlignment="Center" />
+                          </Grid>
+                          <TextBlock Text="{Binding AiKnowledgeSummary}" Classes="SecondaryCopy" TextWrapping="Wrap" />
+                          <ItemsControl ItemsSource="{Binding AiAssistantKnowledgeTopics}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="vm:AiKnowledgeTopicViewModel">
+                                <Button Command="{Binding #RootWindow.DataContext.ExplainAiKnowledgeTopicCommand}"
+                                        CommandParameter="{Binding .}"
+                                        Padding="0"
+                                        Margin="0,0,0,10"
+                                        Background="Transparent"
+                                        BorderThickness="0">
+                                  <Border Classes="AiFactCard">
+                                    <StackPanel Spacing="4">
+                                      <DockPanel LastChildFill="True">
+                                        <TextBlock DockPanel.Dock="Left" Text="{Binding Label}" FontWeight="Bold" />
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Category}" Classes="MicroCopy" />
+                                      </DockPanel>
+                                      <TextBlock Text="{Binding Question}" Classes="SecondaryCopy" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                  </Border>
+                                </Button>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </StackPanel>
+                      </StackPanel>
+                    </ScrollViewer>
+                  </Grid>
+                </Border>
+
+                <Border Grid.Column="1" Classes="SectionPanel" Padding="20" MinHeight="980">
+                  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="16">
+                    <StackPanel Spacing="6">
+                      <TextBlock Classes="H2" Text="Conversation" />
+                      <TextBlock Text="Use this desk like an execution copilot: ask for setup, invalidation, route checks, sniper pressure, glossary topics, or a concrete next action." Classes="SecondaryCopy" TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <Border Grid.Row="1" Classes="AiPromptCard" Padding="14">
+                        <ItemsControl ItemsSource="{Binding AiAssistantMessages}">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:AiAssistantMessageViewModel">
+                              <Grid ColumnDefinitions="*,*" Margin="0,0,0,12">
+                                <Border Grid.Column="{Binding ColumnIndex}"
+                                        HorizontalAlignment="{Binding BubbleAlignment}"
+                                        Background="{Binding BubbleBackground}"
+                                        BorderBrush="{Binding BubbleBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="18"
+                                        Padding="14,12"
+                                        MaxWidth="560">
+                                  <StackPanel Spacing="6">
+                                    <DockPanel LastChildFill="True">
+                                      <TextBlock DockPanel.Dock="Left" Text="{Binding Title}" FontWeight="Bold" Foreground="{Binding TitleBrush}" />
+                                      <TextBlock DockPanel.Dock="Right" Text="{Binding Meta}" Foreground="{Binding MetaBrush}" FontSize="11" HorizontalAlignment="Right" />
+                                    </DockPanel>
+                                    <TextBlock Text="{Binding Body}" TextWrapping="Wrap" LineHeight="20" />
+                                  </StackPanel>
+                                </Border>
+                              </Grid>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+
+                    <StackPanel Grid.Row="2" Spacing="10">
+                      <TextBox Text="{Binding AiAssistantDraftPrompt}"
+                               AcceptsReturn="True"
+                               TextWrapping="Wrap"
+                               Height="126"
+                               PlaceholderText="{Binding AiAssistantComposerPlaceholder}" />
+                      <WrapPanel Orientation="Horizontal">
+                        <Button Content="SEND"
+                                Width="124"
+                                Command="{Binding SendAiAssistantPromptCommand}"
+                                IsEnabled="{Binding CanSendAiAssistantPrompt}"
+                                Margin="0,0,10,0" />
+                        <Button Content="SYNC CONTEXT"
+                                Width="136"
+                                Classes="GhostButton"
+                                Command="{Binding InjectAiMarketContextCommand}"
+                                Margin="0,0,10,0" />
+                        <Button Content="BUILD PLAN"
+                                Width="136"
+                                Classes="GhostButton"
+                                Command="{Binding BuildAiTradePlanCommand}"
+                                Margin="0,0,10,0" />
+                        <Button Content="ANALYZE VISUAL"
+                                Width="156"
+                                Classes="GhostButton"
+                                Command="{Binding AnalyzeSelectedAiVisualCommand}"
+                                Margin="0,0,10,0" />
+                        <Button Content="CLEAR"
+                                Width="112"
+                                Classes="GhostButton"
+                                Command="{Binding ClearAiAssistantConversationCommand}" />
+                      </WrapPanel>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+
+                <Border Grid.Column="2" Classes="SectionPanel" Padding="20" MinHeight="980">
+                  <Grid RowDefinitions="Auto,Auto,*" RowSpacing="16">
+                    <Border Classes="AiStudioStage">
+                      <Grid RowDefinitions="420,Auto,Auto" RowSpacing="12">
+                        <Border CornerRadius="14" ClipToBounds="True">
+                          <Image Source="{Binding AiSelectedVisualImage}" Stretch="UniformToFill" />
+                        </Border>
+                        <StackPanel Grid.Row="1" Spacing="6">
+                          <TextBlock Classes="Overline" Text="Pinned Visual" />
+                          <TextBlock Text="{Binding AiSelectedVisualTitle}" FontSize="22" FontWeight="Bold" />
+                          <TextBlock Text="{Binding AiSelectedVisualCaption}" Classes="SecondaryCopy" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <Border Grid.Row="2" Classes="InfoBand">
+                          <StackPanel Spacing="4">
+                            <TextBlock Classes="Overline" Text="Signal Metric" />
+                            <TextBlock Text="{Binding AiSelectedVisualMetric}" FontWeight="Bold" />
+                          </StackPanel>
+                        </Border>
+                      </Grid>
+                    </Border>
+
+                    <Border Grid.Row="1" Classes="AiPromptCard">
+                      <StackPanel Spacing="8">
+                        <TextBlock Classes="Overline" Text="Visual Usage" />
+                        <TextBlock Text="Use the gallery below to pin a chart-style image, then run visual analysis to get a local explanation tied to current market and route state." Classes="SecondaryCopy" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </Border>
+
+                    <StackPanel Grid.Row="2" Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto">
+                          <TextBlock Classes="H2" Text="Visual Rail" />
+                          <TextBlock Grid.Column="1" Text="tap to focus" Classes="MicroCopy" VerticalAlignment="Center" />
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding AiAssistantVisuals}">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:AiVisualCardViewModel">
+                              <Button Command="{Binding #RootWindow.DataContext.SelectAiVisualCommand}"
+                                      CommandParameter="{Binding .}"
+                                      Padding="0"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      Margin="0,0,0,10">
+                                <Border Classes="AiThumbCard"
+                                        Background="{Binding CardBackground}"
+                                        BorderBrush="{Binding CardBorderBrush}">
+                                  <Grid ColumnDefinitions="118,*" ColumnSpacing="12">
+                                    <Border Grid.Column="0" CornerRadius="10" ClipToBounds="True" Height="82">
+                                      <Image Source="{Binding Image}" Stretch="UniformToFill" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                      <TextBlock Text="{Binding Title}" FontWeight="Bold" />
+                                      <TextBlock Text="{Binding Caption}" Classes="SecondaryCopy" TextWrapping="Wrap" MaxHeight="40" />
+                                      <TextBlock Text="{Binding Metric}" Foreground="{Binding MetricBrush}" FontWeight="SemiBold" />
+                                    </StackPanel>
+                                  </Grid>
+                                </Border>
+                              </Button>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </Grid>
+            </StackPanel>
+          </Border>
+</UserControl>
