@@ -438,7 +438,7 @@
                       <!-- Mini liquidation heatmap — Viewbox scales 1200×460 → 160×224.
                            Explicit Width+Height on Viewbox gives well-defined ScaleX/ScaleY. -->
                       <Border Grid.Column="1" Background="#04101A" CornerRadius="6" ClipToBounds="True"
-                              ToolTip.Tip="Liquidation Heatmap — нажмите 🔥 Liq Map для полного экрана">
+                              ToolTip.Tip="Liquidation Heatmap — click 🔥 Liq Map for fullscreen">
                         <StackPanel>
                           <TextBlock Text="LIQ MAP" Foreground="#4A6070" FontSize="9" FontWeight="Bold"
                                      Margin="4,4,0,2" />
@@ -5639,7 +5639,7 @@
                             SelectedItem="{Binding DcaBotVM.SelectedExchange}"
                             HorizontalAlignment="Stretch"
                             IsEnabled="{Binding !DcaBotVM.IsRunning}" />
-                  <TextBlock Grid.Column="2" Text="Spot-only: DCA по архитектуре не торгует фьючерсами."
+                  <TextBlock Grid.Column="2" Text="Spot-only: by design DCA does not trade futures."
                              Foreground="#6A8FA8" FontSize="11" VerticalAlignment="Center" />
                 </Grid>
 
@@ -7632,22 +7632,22 @@
                     <TextBlock Grid.Column="0" Text="" FontSize="10" Foreground="#3A4F63" />
                     <Button Grid.Column="1" Classes="SortHeader"
                             Command="{Binding SortByCommand}" CommandParameter="symbol">
-                      Символ</Button>
+                      Symbol</Button>
                     <Button Grid.Column="2" Classes="SortHeader"
                             Command="{Binding SortByCommand}" CommandParameter="price"
-                            HorizontalAlignment="Right">Цена</Button>
+                            HorizontalAlignment="Right">Price</Button>
                     <Button Grid.Column="3" Classes="SortHeader"
                             Command="{Binding SortByCommand}" CommandParameter="change"
                             HorizontalAlignment="Right">24h %</Button>
                     <Button Grid.Column="4" Classes="SortHeader"
                             Command="{Binding SortByCommand}" CommandParameter="volume"
-                            HorizontalAlignment="Right">Объём</Button>
+                            HorizontalAlignment="Right">Volume</Button>
                     <Button Grid.Column="5" Classes="SortHeader"
                             Command="{Binding SortByCommand}" CommandParameter="rsi"
                             HorizontalAlignment="Right">RSI</Button>
                     <Button Grid.Column="6" Classes="SortHeader"
                             Command="{Binding SortByCommand}" CommandParameter="activity"
-                            HorizontalAlignment="Right">Акт.</Button>
+                            HorizontalAlignment="Right">Act.</Button>
                     <TextBlock Grid.Column="7" Text="H/L" FontSize="10"
                                Foreground="#3A4F63" HorizontalAlignment="Right" VerticalAlignment="Center" />
                   </Grid>
@@ -10208,31 +10208,31 @@
                         Background="#080F18" BorderBrush="#1E3A52" BorderThickness="1"
                         CornerRadius="8" Padding="14,12">
                   <StackPanel Spacing="8">
-                    <TextBlock Text="Как получить API-ключи Binance" FontWeight="Bold"
+                    <TextBlock Text="How to get Binance API keys" FontWeight="Bold"
                                Foreground="#F0B90B" FontSize="13" />
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="1." FontWeight="Bold" /> <Run Text="Войдите на " />
+                      <Run Text="1." FontWeight="Bold" /> <Run Text="Log in to " />
                       <Run Text="binance.com" FontWeight="Bold" Foreground="#F0B90B" />
-                      <Run Text=" → профиль → API Management" />
+                      <Run Text=" → profile → API Management" />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="2." FontWeight="Bold" /> <Run Text="Создать API → выберите разрешения: " />
+                      <Run Text="2." FontWeight="Bold" /> <Run Text="Create API → select permissions: " />
                       <Run Text="Enable Spot &amp; Margin Trading" FontWeight="Bold" />
-                      <Run Text=" и " />
+                      <Run Text=" and " />
                       <Run Text="Enable Futures" FontWeight="Bold" />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="3." FontWeight="Bold" /> <Run Text="Скопируйте API Key и Secret Key — Secret показывается " />
-                      <Run Text="только один раз!" FontWeight="Bold" Foreground="#FFAA33" />
+                      <Run Text="3." FontWeight="Bold" /> <Run Text="Copy API Key and Secret Key — the Secret is shown " />
+                      <Run Text="only once!" FontWeight="Bold" Foreground="#FFAA33" />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="4." FontWeight="Bold" /> <Run Text="Вставьте ниже и нажмите «Сохранить»." />
+                      <Run Text="4." FontWeight="Bold" /> <Run Text="Paste below and click «Save»." />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="18"
                                Foreground="#5C6E82" Margin="0,4,0,0">
-                      Ключи сохраняются в <Run FontFamily="Consolas">%LOCALAPPDATA%\CryptoAITerminal\api-credentials.json</Run>
-                      (только для вашего аккаунта Windows).
-                      Переменные окружения BINANCE_API_KEY / BINANCE_API_SECRET имеют приоритет.
+                      <Run Text="Keys are stored in " />
+                      <Run FontFamily="Consolas" Text="%LOCALAPPDATA%\CryptoAITerminal\api-credentials.json" />
+                      <Run Text=" (only for your Windows account). Environment variables BINANCE_API_KEY / BINANCE_API_SECRET take priority." />
                     </TextBlock>
                   </StackPanel>
                 </Border>
@@ -10241,8 +10241,8 @@
                 <Border Background="#0E1E10" CornerRadius="6" Padding="10,6"
                         IsVisible="{Binding IsBinanceCredSourceEnv}">
                   <TextBlock FontSize="11" Foreground="#4CAF50" TextWrapping="Wrap">
-                    <Run Text="✓ Активна переменная окружения BINANCE_API_KEY." />
-                    <Run Text=" Значения ниже не применяются, пока она задана." />
+                    <Run Text="✓ Environment variable BINANCE_API_KEY is active." />
+                    <Run Text=" Values below are not applied while it is set." />
                   </TextBlock>
                 </Border>
 
@@ -10253,13 +10253,13 @@
                   <Panel Grid.Column="1">
                     <TextBox Text="{Binding BinanceKeyInput}" PasswordChar="●"
                              IsVisible="{Binding !IsShowingBinanceKey}"
-                             PlaceholderText="вставьте API Key…" />
+                             PlaceholderText="paste API Key…" />
                     <TextBox Text="{Binding BinanceKeyInput}"
                              IsVisible="{Binding IsShowingBinanceKey}"
-                             PlaceholderText="вставьте API Key…" />
+                             PlaceholderText="paste API Key…" />
                   </Panel>
                   <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Показать / скрыть"
+                          ToolTip.Tip="Show / hide"
                           Command="{Binding ToggleBinanceKeyVisibilityCommand}" />
                 </Grid>
 
@@ -10270,19 +10270,19 @@
                   <Panel Grid.Column="1">
                     <TextBox Text="{Binding BinanceSecretInput}" PasswordChar="●"
                              IsVisible="{Binding !IsShowingBinanceSecret}"
-                             PlaceholderText="вставьте API Secret…" />
+                             PlaceholderText="paste API Secret…" />
                     <TextBox Text="{Binding BinanceSecretInput}"
                              IsVisible="{Binding IsShowingBinanceSecret}"
-                             PlaceholderText="вставьте API Secret…" />
+                             PlaceholderText="paste API Secret…" />
                   </Panel>
                   <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Показать / скрыть"
+                          ToolTip.Tip="Show / hide"
                           Command="{Binding ToggleBinanceSecretVisibilityCommand}" />
                 </Grid>
 
                 <!-- Save row -->
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                  <Button Grid.Column="0" Content="💾 Сохранить"
+                  <Button Grid.Column="0" Content="💾 Save"
                           Classes="GhostButton" Padding="14,6"
                           Command="{Binding SaveBinanceCredentialsCommand}" />
                   <TextBlock Grid.Column="1"
@@ -10329,30 +10329,30 @@
                         Background="#080F18" BorderBrush="#1E3A52" BorderThickness="1"
                         CornerRadius="8" Padding="14,12">
                   <StackPanel Spacing="8">
-                    <TextBlock Text="Как получить API-ключи Bybit" FontWeight="Bold"
+                    <TextBlock Text="How to get Bybit API keys" FontWeight="Bold"
                                Foreground="#21E6C1" FontSize="13" />
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="1." FontWeight="Bold" /> <Run Text="Войдите на " />
+                      <Run Text="1." FontWeight="Bold" /> <Run Text="Log in to " />
                       <Run Text="bybit.com" FontWeight="Bold" Foreground="#21E6C1" />
-                      <Run Text=" → правый верхний угол → Аккаунт → API" />
+                      <Run Text=" → top-right corner → Account → API" />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="2." FontWeight="Bold" /> <Run Text="Создать новый ключ → выберите разрешения: " />
-                      <Run Text="Trade" FontWeight="Bold" /> <Run Text=" и " />
+                      <Run Text="2." FontWeight="Bold" /> <Run Text="Create a new key → select permissions: " />
+                      <Run Text="Trade" FontWeight="Bold" /> <Run Text=" and " />
                       <Run Text="Account Info" FontWeight="Bold" />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="3." FontWeight="Bold" /> <Run Text="Скопируйте API Key и Secret Key — Secret показывается " />
-                      <Run Text="только один раз!" FontWeight="Bold" Foreground="#FFAA33" />
+                      <Run Text="3." FontWeight="Bold" /> <Run Text="Copy API Key and Secret Key — the Secret is shown " />
+                      <Run Text="only once!" FontWeight="Bold" Foreground="#FFAA33" />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="4." FontWeight="Bold" /> <Run Text="Вставьте ниже и нажмите «Сохранить»." />
+                      <Run Text="4." FontWeight="Bold" /> <Run Text="Paste below and click «Save»." />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="18"
                                Foreground="#5C6E82" Margin="0,4,0,0">
-                      Ключи сохраняются в <Run FontFamily="Consolas">%LOCALAPPDATA%\CryptoAITerminal\api-credentials.json</Run>
-                      (только для вашего аккаунта Windows).
-                      Переменные окружения BYBIT_API_KEY / BYBIT_API_SECRET имеют приоритет.
+                      <Run Text="Keys are stored in " />
+                      <Run FontFamily="Consolas" Text="%LOCALAPPDATA%\CryptoAITerminal\api-credentials.json" />
+                      <Run Text=" (only for your Windows account). Environment variables BYBIT_API_KEY / BYBIT_API_SECRET take priority." />
                     </TextBlock>
                   </StackPanel>
                 </Border>
@@ -10361,8 +10361,8 @@
                 <Border Background="#0E1E10" CornerRadius="6" Padding="10,6"
                         IsVisible="{Binding IsBybitCredSourceEnv}">
                   <TextBlock FontSize="11" Foreground="#4CAF50" TextWrapping="Wrap">
-                    <Run Text="✓ Активна переменная окружения BYBIT_API_KEY." />
-                    <Run Text=" Значения ниже не применяются, пока она задана." />
+                    <Run Text="✓ Environment variable BYBIT_API_KEY is active." />
+                    <Run Text=" Values below are not applied while it is set." />
                   </TextBlock>
                 </Border>
 
@@ -10373,13 +10373,13 @@
                   <Panel Grid.Column="1">
                     <TextBox Text="{Binding BybitKeyInput}" PasswordChar="●"
                              IsVisible="{Binding !IsShowingBybitKey}"
-                             PlaceholderText="вставьте API Key…" />
+                             PlaceholderText="paste API Key…" />
                     <TextBox Text="{Binding BybitKeyInput}"
                              IsVisible="{Binding IsShowingBybitKey}"
-                             PlaceholderText="вставьте API Key…" />
+                             PlaceholderText="paste API Key…" />
                   </Panel>
                   <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Показать / скрыть"
+                          ToolTip.Tip="Show / hide"
                           Command="{Binding ToggleBybitKeyVisibilityCommand}" />
                 </Grid>
 
@@ -10390,19 +10390,19 @@
                   <Panel Grid.Column="1">
                     <TextBox Text="{Binding BybitSecretInput}" PasswordChar="●"
                              IsVisible="{Binding !IsShowingBybitSecret}"
-                             PlaceholderText="вставьте API Secret…" />
+                             PlaceholderText="paste API Secret…" />
                     <TextBox Text="{Binding BybitSecretInput}"
                              IsVisible="{Binding IsShowingBybitSecret}"
-                             PlaceholderText="вставьте API Secret…" />
+                             PlaceholderText="paste API Secret…" />
                   </Panel>
                   <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Показать / скрыть"
+                          ToolTip.Tip="Show / hide"
                           Command="{Binding ToggleBybitSecretVisibilityCommand}" />
                 </Grid>
 
                 <!-- Save row -->
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                  <Button Grid.Column="0" Content="💾 Сохранить"
+                  <Button Grid.Column="0" Content="💾 Save"
                           Classes="GhostButton" Padding="14,6"
                           Command="{Binding SaveBybitCredentialsCommand}" />
                   <TextBlock Grid.Column="1"
@@ -10437,7 +10437,7 @@
                           Width="28" Height="28"
                           FontWeight="Bold" FontSize="13"
                           Padding="0"
-                          ToolTip.Tip="Как создать API-ключи OKX"
+                          ToolTip.Tip="How to create OKX API keys"
                           Command="{Binding ToggleOkxHelpCommand}" />
                 </Grid>
 
@@ -10446,33 +10446,34 @@
                         Background="#080F18" BorderBrush="#1E3A52" BorderThickness="1"
                         CornerRadius="8" Padding="14,12">
                   <StackPanel Spacing="8">
-                    <TextBlock Text="Как получить API-ключи OKX" FontWeight="Bold"
+                    <TextBlock Text="How to get OKX API keys" FontWeight="Bold"
                                Foreground="#21E6C1" FontSize="13" />
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="1." FontWeight="Bold" /> <Run Text="Войдите на " />
+                      <Run Text="1." FontWeight="Bold" /> <Run Text="Log in to " />
                       <Run Text="okx.com" FontWeight="Bold" Foreground="#21E6C1" />
-                      <Run Text=" → аватар (правый верхний угол) → API Keys" />
+                      <Run Text=" → avatar (top-right corner) → API Keys" />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="2." FontWeight="Bold" /> <Run Text="Create API Key → задайте Passphrase (запомните его!)." />
+                      <Run Text="2." FontWeight="Bold" /> <Run Text="Create API Key → set a Passphrase (remember it!)." />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="3." FontWeight="Bold" /> <Run Text="Разрешения: " />
+                      <Run Text="3." FontWeight="Bold" /> <Run Text="Permissions: " />
                       <Run Text="Trade" FontWeight="Bold" /> <Run Text=" + " />
                       <Run Text="Read" FontWeight="Bold" />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
                       <Run Text="4." FontWeight="Bold" />
-                      <Run Text=" Скопируйте API Key, Secret Key и Passphrase — Secret показывается " />
-                      <Run Text="только один раз!" FontWeight="Bold" Foreground="#FFAA33" />
+                      <Run Text=" Copy API Key, Secret Key and Passphrase — the Secret is shown " />
+                      <Run Text="only once!" FontWeight="Bold" Foreground="#FFAA33" />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="5." FontWeight="Bold" /> <Run Text="Вставьте все три поля ниже и нажмите «Сохранить»." />
+                      <Run Text="5." FontWeight="Bold" /> <Run Text="Paste all three fields below and click «Save»." />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="18"
                                Foreground="#5C6E82" Margin="0,4,0,0">
-                      Ключи сохраняются в <Run FontFamily="Consolas">%LOCALAPPDATA%\CryptoAITerminal\api-credentials.json</Run>.
-                      Переменные окружения OKX_API_KEY / OKX_API_SECRET / OKX_API_PASSPHRASE имеют приоритет.
+                      <Run Text="Keys are stored in " />
+                      <Run FontFamily="Consolas" Text="%LOCALAPPDATA%\CryptoAITerminal\api-credentials.json" />
+                      <Run Text=". Environment variables OKX_API_KEY / OKX_API_SECRET / OKX_API_PASSPHRASE take priority." />
                     </TextBlock>
                   </StackPanel>
                 </Border>
@@ -10481,8 +10482,8 @@
                 <Border Background="#0E1E10" CornerRadius="6" Padding="10,6"
                         IsVisible="{Binding IsOkxCredSourceEnv}">
                   <TextBlock FontSize="11" Foreground="#4CAF50" TextWrapping="Wrap">
-                    <Run Text="✓ Активна переменная окружения OKX_API_KEY." />
-                    <Run Text=" Значения ниже не применяются, пока она задана." />
+                    <Run Text="✓ Environment variable OKX_API_KEY is active." />
+                    <Run Text=" Values below are not applied while it is set." />
                   </TextBlock>
                 </Border>
 
@@ -10493,13 +10494,13 @@
                   <Panel Grid.Column="1">
                     <TextBox Text="{Binding OkxKeyInput}" PasswordChar="●"
                              IsVisible="{Binding !IsShowingOkxKey}"
-                             PlaceholderText="вставьте API Key…" />
+                             PlaceholderText="paste API Key…" />
                     <TextBox Text="{Binding OkxKeyInput}"
                              IsVisible="{Binding IsShowingOkxKey}"
-                             PlaceholderText="вставьте API Key…" />
+                             PlaceholderText="paste API Key…" />
                   </Panel>
                   <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Показать / скрыть"
+                          ToolTip.Tip="Show / hide"
                           Command="{Binding ToggleOkxKeyVisibilityCommand}" />
                 </Grid>
 
@@ -10510,13 +10511,13 @@
                   <Panel Grid.Column="1">
                     <TextBox Text="{Binding OkxSecretInput}" PasswordChar="●"
                              IsVisible="{Binding !IsShowingOkxSecret}"
-                             PlaceholderText="вставьте API Secret…" />
+                             PlaceholderText="paste API Secret…" />
                     <TextBox Text="{Binding OkxSecretInput}"
                              IsVisible="{Binding IsShowingOkxSecret}"
-                             PlaceholderText="вставьте API Secret…" />
+                             PlaceholderText="paste API Secret…" />
                   </Panel>
                   <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Показать / скрыть"
+                          ToolTip.Tip="Show / hide"
                           Command="{Binding ToggleOkxSecretVisibilityCommand}" />
                 </Grid>
 
@@ -10527,19 +10528,19 @@
                   <Panel Grid.Column="1">
                     <TextBox Text="{Binding OkxPassphraseInput}" PasswordChar="●"
                              IsVisible="{Binding !IsShowingOkxPassphrase}"
-                             PlaceholderText="ваш Passphrase от API Key…" />
+                             PlaceholderText="your API Key Passphrase…" />
                     <TextBox Text="{Binding OkxPassphraseInput}"
                              IsVisible="{Binding IsShowingOkxPassphrase}"
-                             PlaceholderText="ваш Passphrase от API Key…" />
+                             PlaceholderText="your API Key Passphrase…" />
                   </Panel>
                   <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Показать / скрыть"
+                          ToolTip.Tip="Show / hide"
                           Command="{Binding ToggleOkxPassphraseVisibilityCommand}" />
                 </Grid>
 
                 <!-- Save row -->
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                  <Button Grid.Column="0" Content="💾 Сохранить"
+                  <Button Grid.Column="0" Content="💾 Save"
                           Classes="GhostButton" Padding="14,6"
                           Command="{Binding SaveOkxCredentialsCommand}" />
                   <TextBlock Grid.Column="1"
@@ -10574,7 +10575,7 @@
                           Width="28" Height="28"
                           FontWeight="Bold" FontSize="13"
                           Padding="0"
-                          ToolTip.Tip="Как создать API-ключи KuCoin"
+                          ToolTip.Tip="How to create KuCoin API keys"
                           Command="{Binding ToggleKucoinHelpCommand}" />
                 </Grid>
 
@@ -10583,32 +10584,33 @@
                         Background="#080F18" BorderBrush="#1E3A52" BorderThickness="1"
                         CornerRadius="8" Padding="14,12">
                   <StackPanel Spacing="8">
-                    <TextBlock Text="Как получить API-ключи KuCoin" FontWeight="Bold"
+                    <TextBlock Text="How to get KuCoin API keys" FontWeight="Bold"
                                Foreground="#21E6C1" FontSize="13" />
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="1." FontWeight="Bold" /> <Run Text="Войдите на " />
+                      <Run Text="1." FontWeight="Bold" /> <Run Text="Log in to " />
                       <Run Text="kucoin.com" FontWeight="Bold" Foreground="#21E6C1" />
-                      <Run Text=" → аватар (правый верхний угол) → API Management" />
+                      <Run Text=" → avatar (top-right corner) → API Management" />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="2." FontWeight="Bold" /> <Run Text="Create API → задайте API Name и Trading Password (Passphrase)." />
+                      <Run Text="2." FontWeight="Bold" /> <Run Text="Create API → set an API Name and Trading Password (Passphrase)." />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="3." FontWeight="Bold" /> <Run Text="Разрешения: " />
+                      <Run Text="3." FontWeight="Bold" /> <Run Text="Permissions: " />
                       <Run Text="General + Trade" FontWeight="Bold" />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
                       <Run Text="4." FontWeight="Bold" />
-                      <Run Text=" Скопируйте API Key, Secret и Passphrase — Secret показывается " />
-                      <Run Text="только один раз!" FontWeight="Bold" Foreground="#FFAA33" />
+                      <Run Text=" Copy API Key, Secret and Passphrase — the Secret is shown " />
+                      <Run Text="only once!" FontWeight="Bold" Foreground="#FFAA33" />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="5." FontWeight="Bold" /> <Run Text="Вставьте все три поля ниже и нажмите «Сохранить»." />
+                      <Run Text="5." FontWeight="Bold" /> <Run Text="Paste all three fields below and click «Save»." />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="18"
                                Foreground="#5C6E82" Margin="0,4,0,0">
-                      Ключи сохраняются в <Run FontFamily="Consolas">%LOCALAPPDATA%\CryptoAITerminal\api-credentials.json</Run>.
-                      Переменные окружения KUCOIN_API_KEY / KUCOIN_API_SECRET / KUCOIN_API_PASSPHRASE имеют приоритет.
+                      <Run Text="Keys are stored in " />
+                      <Run FontFamily="Consolas" Text="%LOCALAPPDATA%\CryptoAITerminal\api-credentials.json" />
+                      <Run Text=". Environment variables KUCOIN_API_KEY / KUCOIN_API_SECRET / KUCOIN_API_PASSPHRASE take priority." />
                     </TextBlock>
                   </StackPanel>
                 </Border>
@@ -10617,8 +10619,8 @@
                 <Border Background="#0E1E10" CornerRadius="6" Padding="10,6"
                         IsVisible="{Binding IsKucoinCredSourceEnv}">
                   <TextBlock FontSize="11" Foreground="#4CAF50" TextWrapping="Wrap">
-                    <Run Text="✓ Активна переменная окружения KUCOIN_API_KEY." />
-                    <Run Text=" Значения ниже не применяются, пока она задана." />
+                    <Run Text="✓ Environment variable KUCOIN_API_KEY is active." />
+                    <Run Text=" Values below are not applied while it is set." />
                   </TextBlock>
                 </Border>
 
@@ -10629,13 +10631,13 @@
                   <Panel Grid.Column="1">
                     <TextBox Text="{Binding KucoinKeyInput}" PasswordChar="●"
                              IsVisible="{Binding !IsShowingKucoinKey}"
-                             PlaceholderText="вставьте API Key…" />
+                             PlaceholderText="paste API Key…" />
                     <TextBox Text="{Binding KucoinKeyInput}"
                              IsVisible="{Binding IsShowingKucoinKey}"
-                             PlaceholderText="вставьте API Key…" />
+                             PlaceholderText="paste API Key…" />
                   </Panel>
                   <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Показать / скрыть"
+                          ToolTip.Tip="Show / hide"
                           Command="{Binding ToggleKucoinKeyVisibilityCommand}" />
                 </Grid>
 
@@ -10646,13 +10648,13 @@
                   <Panel Grid.Column="1">
                     <TextBox Text="{Binding KucoinSecretInput}" PasswordChar="●"
                              IsVisible="{Binding !IsShowingKucoinSecret}"
-                             PlaceholderText="вставьте API Secret…" />
+                             PlaceholderText="paste API Secret…" />
                     <TextBox Text="{Binding KucoinSecretInput}"
                              IsVisible="{Binding IsShowingKucoinSecret}"
-                             PlaceholderText="вставьте API Secret…" />
+                             PlaceholderText="paste API Secret…" />
                   </Panel>
                   <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Показать / скрыть"
+                          ToolTip.Tip="Show / hide"
                           Command="{Binding ToggleKucoinSecretVisibilityCommand}" />
                 </Grid>
 
@@ -10663,19 +10665,19 @@
                   <Panel Grid.Column="1">
                     <TextBox Text="{Binding KucoinPassphraseInput}" PasswordChar="●"
                              IsVisible="{Binding !IsShowingKucoinPassphrase}"
-                             PlaceholderText="ваш Passphrase от API Key…" />
+                             PlaceholderText="your API Key Passphrase…" />
                     <TextBox Text="{Binding KucoinPassphraseInput}"
                              IsVisible="{Binding IsShowingKucoinPassphrase}"
-                             PlaceholderText="ваш Passphrase от API Key…" />
+                             PlaceholderText="your API Key Passphrase…" />
                   </Panel>
                   <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Показать / скрыть"
+                          ToolTip.Tip="Show / hide"
                           Command="{Binding ToggleKucoinPassphraseVisibilityCommand}" />
                 </Grid>
 
                 <!-- Save row -->
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                  <Button Grid.Column="0" Content="💾 Сохранить"
+                  <Button Grid.Column="0" Content="💾 Save"
                           Classes="GhostButton" Padding="14,6"
                           Command="{Binding SaveKucoinCredentialsCommand}" />
                   <TextBlock Grid.Column="1"

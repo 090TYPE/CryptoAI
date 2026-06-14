@@ -663,7 +663,54 @@ public sealed class UiLocalizationService
         ["Support"] = "Поддержка",
         ["+ Add"] = "+ Добавить",
         ["Alerts"] = "Алерты",
-        ["Price Levels"] = "Уровни цен"
+        ["Price Levels"] = "Уровни цен",
+        ["Act."] = "Акт.",
+        ["Liquidation Heatmap — click 🔥 Liq Map for fullscreen"] = "Liquidation Heatmap — нажмите 🔥 Liq Map для полного экрана",
+        ["Spot-only: by design DCA does not trade futures."] = "Spot-only: DCA по архитектуре не торгует фьючерсами.",
+
+        // API-key settings panels (shared controls + Run fragments)
+        ["paste API Key…"] = "вставьте API Key…",
+        ["paste API Secret…"] = "вставьте API Secret…",
+        ["your API Key Passphrase…"] = "ваш Passphrase от API Key…",
+        ["Show / hide"] = "Показать / скрыть",
+        ["💾 Save"] = "💾 Сохранить",
+        ["Log in to "] = "Войдите на ",
+        [" and "] = " и ",
+        ["only once!"] = "только один раз!",
+        ["Permissions: "] = "Разрешения: ",
+        ["Keys are stored in "] = "Ключи сохраняются в ",
+        [" Values below are not applied while it is set."] = " Значения ниже не применяются, пока она задана.",
+        ["Paste below and click «Save»."] = "Вставьте ниже и нажмите «Сохранить».",
+        ["Paste all three fields below and click «Save»."] = "Вставьте все три поля ниже и нажмите «Сохранить».",
+        ["Create API → select permissions: "] = "Создать API → выберите разрешения: ",
+        ["Copy API Key and Secret Key — the Secret is shown "] = "Скопируйте API Key и Secret Key — Secret показывается ",
+        // Binance
+        ["How to get Binance API keys"] = "Как получить API-ключи Binance",
+        [" → profile → API Management"] = " → профиль → API Management",
+        [" (only for your Windows account). Environment variables BINANCE_API_KEY / BINANCE_API_SECRET take priority."] = " (только для вашего аккаунта Windows). Переменные окружения BINANCE_API_KEY / BINANCE_API_SECRET имеют приоритет.",
+        ["✓ Environment variable BINANCE_API_KEY is active."] = "✓ Активна переменная окружения BINANCE_API_KEY.",
+        // Bybit
+        ["How to get Bybit API keys"] = "Как получить API-ключи Bybit",
+        [" → top-right corner → Account → API"] = " → правый верхний угол → Аккаунт → API",
+        ["Create a new key → select permissions: "] = "Создать новый ключ → выберите разрешения: ",
+        [" (only for your Windows account). Environment variables BYBIT_API_KEY / BYBIT_API_SECRET take priority."] = " (только для вашего аккаунта Windows). Переменные окружения BYBIT_API_KEY / BYBIT_API_SECRET имеют приоритет.",
+        ["✓ Environment variable BYBIT_API_KEY is active."] = "✓ Активна переменная окружения BYBIT_API_KEY.",
+        // OKX
+        ["How to create OKX API keys"] = "Как создать API-ключи OKX",
+        ["How to get OKX API keys"] = "Как получить API-ключи OKX",
+        [" → avatar (top-right corner) → API Keys"] = " → аватар (правый верхний угол) → API Keys",
+        ["Create API Key → set a Passphrase (remember it!)."] = "Create API Key → задайте Passphrase (запомните его!).",
+        [" Copy API Key, Secret Key and Passphrase — the Secret is shown "] = " Скопируйте API Key, Secret Key и Passphrase — Secret показывается ",
+        [". Environment variables OKX_API_KEY / OKX_API_SECRET / OKX_API_PASSPHRASE take priority."] = ". Переменные окружения OKX_API_KEY / OKX_API_SECRET / OKX_API_PASSPHRASE имеют приоритет.",
+        ["✓ Environment variable OKX_API_KEY is active."] = "✓ Активна переменная окружения OKX_API_KEY.",
+        // KuCoin
+        ["How to create KuCoin API keys"] = "Как создать API-ключи KuCoin",
+        ["How to get KuCoin API keys"] = "Как получить API-ключи KuCoin",
+        [" → avatar (top-right corner) → API Management"] = " → аватар (правый верхний угол) → API Management",
+        ["Create API → set an API Name and Trading Password (Passphrase)."] = "Create API → задайте API Name и Trading Password (Passphrase).",
+        [" Copy API Key, Secret and Passphrase — the Secret is shown "] = " Скопируйте API Key, Secret и Passphrase — Secret показывается ",
+        [". Environment variables KUCOIN_API_KEY / KUCOIN_API_SECRET / KUCOIN_API_PASSPHRASE take priority."] = ". Переменные окружения KUCOIN_API_KEY / KUCOIN_API_SECRET / KUCOIN_API_PASSPHRASE имеют приоритет.",
+        ["✓ Environment variable KUCOIN_API_KEY is active."] = "✓ Активна переменная окружения KUCOIN_API_KEY."
     };
 
     private readonly (string Prefix, string Translation)[] _prefixTranslations =
