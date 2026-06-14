@@ -7214,9 +7214,9 @@
             <!-- Header ─────────────────────────────────────────────────── -->
             <Grid ColumnDefinitions="*,Auto">
               <StackPanel Spacing="4">
-                <TextBlock Text="Умный маршрутизатор ордеров"
+                <TextBlock Text="Smart Order Router"
                            FontSize="20" FontWeight="Bold" Foreground="#E8F0FE" />
-                <TextBlock Text="Находит лучшую цену на Binance / Bybit / OKX с учётом комиссий. Для крупных ордеров — автоматический сплит по биржам."
+                <TextBlock Text="Finds the best price across Binance / Bybit / OKX including fees. Large orders are automatically split across exchanges."
                            FontSize="12" Foreground="#5C6E82" TextWrapping="Wrap" />
               </StackPanel>
               <!-- Status badge -->
@@ -7256,7 +7256,7 @@
                     VerticalAlignment="Center">
 
                 <!-- Symbol label + input -->
-                <TextBlock Grid.Column="0" Text="Символ" FontSize="11"
+                <TextBlock Grid.Column="0" Text="Symbol" FontSize="11"
                            Foreground="#5C6E82" VerticalAlignment="Center" />
                 <TextBox Grid.Column="2"
                          Text="{Binding Symbol, Mode=TwoWay}"
@@ -7267,7 +7267,7 @@
                          Padding="8,6" VerticalAlignment="Center" />
 
                 <!-- USD notional -->
-                <TextBlock Grid.Column="4" Text="Объём ($)" FontSize="11"
+                <TextBlock Grid.Column="4" Text="Size ($)" FontSize="11"
                            Foreground="#5C6E82" VerticalAlignment="Center" />
                 <NumericUpDown Grid.Column="6" Value="{Binding NotionalUsd, Mode=TwoWay}"
                                Minimum="10" Maximum="10000000" Increment="100"
@@ -7305,7 +7305,7 @@
                         VerticalAlignment="Center">
                   <StackPanel Orientation="Horizontal" Spacing="6">
                     <TextBlock Text="⟳" FontSize="13" VerticalAlignment="Center" />
-                    <TextBlock Text="Рассчитать маршрут" VerticalAlignment="Center" />
+                    <TextBlock Text="Compute route" VerticalAlignment="Center" />
                   </StackPanel>
                 </Button>
 
@@ -7320,7 +7320,7 @@
                         VerticalAlignment="Center">
                   <StackPanel Orientation="Horizontal" Spacing="6">
                     <TextBlock Text="⚡" FontSize="13" VerticalAlignment="Center" />
-                    <TextBlock Text="Исполнить" VerticalAlignment="Center" />
+                    <TextBlock Text="Execute" VerticalAlignment="Center" />
                   </StackPanel>
                 </Button>
               </Grid>
@@ -7329,16 +7329,16 @@
             <!-- Exchange quotes ─────────────────────────────────────────── -->
             <Border Background="#0D1B29" CornerRadius="10" Padding="16,12">
               <StackPanel Spacing="10">
-                <TextBlock Text="Котировки бирж" FontSize="13" FontWeight="SemiBold"
+                <TextBlock Text="Exchange Quotes" FontSize="13" FontWeight="SemiBold"
                            Foreground="#8FA3B8" />
 
                 <!-- Column headers -->
                 <Grid ColumnDefinitions="120,*,*,*,100">
-                  <TextBlock Grid.Column="0" Text="Биржа" FontSize="10" Foreground="#3A4F63" />
-                  <TextBlock Grid.Column="1" Text="Цена (raw)" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="2" Text="Комиссия" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="3" Text="Эфф. цена" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="4" Text="Ликвидность" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="0" Text="Exchange" FontSize="10" Foreground="#3A4F63" />
+                  <TextBlock Grid.Column="1" Text="Price (raw)" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="2" Text="Fee" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="3" Text="Eff. price" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="4" Text="Liquidity" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
                 </Grid>
                 <Rectangle Height="1" Fill="#1E3A5F" />
 
@@ -7392,7 +7392,7 @@
                 <!-- Plan header with split badge -->
                 <Grid ColumnDefinitions="*,Auto">
                   <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBlock Text="План исполнения" FontSize="13" FontWeight="SemiBold"
+                    <TextBlock Text="Execution Plan" FontSize="13" FontWeight="SemiBold"
                                Foreground="#8FA3B8" VerticalAlignment="Center" />
                     <Border CornerRadius="5" Padding="7,3"
                             Background="#1A2A3A"
@@ -7404,18 +7404,18 @@
                   <!-- Summary stats -->
                   <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20">
                     <StackPanel Spacing="1" HorizontalAlignment="Right">
-                      <TextBlock Text="Средняя цена" FontSize="10" Foreground="#3A4F63" />
+                      <TextBlock Text="Average price" FontSize="10" Foreground="#3A4F63" />
                       <TextBlock Text="{Binding WavgLabel}" FontFamily="Consolas"
                                  FontSize="13" FontWeight="SemiBold" Foreground="#E8F0FE" />
                     </StackPanel>
                     <StackPanel Spacing="1" HorizontalAlignment="Right">
-                      <TextBlock Text="Экономия vs худшей" FontSize="10" Foreground="#3A4F63" />
+                      <TextBlock Text="Savings vs worst" FontSize="10" Foreground="#3A4F63" />
                       <TextBlock Text="{Binding SavingsLabel}" FontFamily="Consolas"
                                  FontSize="13" FontWeight="Bold"
                                  Foreground="{Binding SavingsBrush}" />
                     </StackPanel>
                     <StackPanel Spacing="1" HorizontalAlignment="Right">
-                      <TextBlock Text="Объём" FontSize="10" Foreground="#3A4F63" />
+                      <TextBlock Text="Size" FontSize="10" Foreground="#3A4F63" />
                       <TextBlock Text="{Binding TotalLabel}" FontFamily="Consolas"
                                  FontSize="13" Foreground="#8FA3B8" />
                     </StackPanel>
@@ -7426,12 +7426,12 @@
 
                 <!-- Column headers -->
                 <Grid ColumnDefinitions="120,*,*,*,*,80">
-                  <TextBlock Grid.Column="0" Text="Биржа" FontSize="10" Foreground="#3A4F63" />
-                  <TextBlock Grid.Column="1" Text="Количество" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="2" Text="Avg цена" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="3" Text="Комиссия" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="4" Text="Стоимость" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="5" Text="Доля" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="0" Text="Exchange" FontSize="10" Foreground="#3A4F63" />
+                  <TextBlock Grid.Column="1" Text="Quantity" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="2" Text="Avg price" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="3" Text="Fee" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="4" Text="Cost" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="5" Text="Share" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
                 </Grid>
 
                 <!-- Leg rows -->
@@ -7491,16 +7491,16 @@
             <!-- Header + KPI strip ──────────────────────────────────────── -->
             <Grid ColumnDefinitions="*,Auto">
               <StackPanel Spacing="4">
-                <TextBlock Text="Сканер рынка в реальном времени"
+                <TextBlock Text="Real-time Market Scanner"
                            FontSize="20" FontWeight="Bold" Foreground="#E8F0FE" />
-                <TextBlock Text="Фильтрация по RSI, изменению, объёму и активности. Клик по строке → торговый экран."
+                <TextBlock Text="Filter by RSI, change, volume and activity. Click a row → trading screen."
                            FontSize="12" Foreground="#5C6E82" />
               </StackPanel>
               <!-- KPI cards -->
               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                 <Border Background="#0D1B29" CornerRadius="8" Padding="14,8">
                   <StackPanel Spacing="1" HorizontalAlignment="Center">
-                    <TextBlock Text="Всего" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
+                    <TextBlock Text="Total" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
                     <TextBlock Text="{Binding TotalSymbols}" FontSize="16" FontWeight="Bold"
                                Foreground="#8FA3B8" HorizontalAlignment="Center" />
                   </StackPanel>
@@ -7514,14 +7514,14 @@
                 </Border>
                 <Border Background="#0A1F0A" CornerRadius="8" Padding="14,8">
                   <StackPanel Spacing="1" HorizontalAlignment="Center">
-                    <TextBlock Text="▲ Рост" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
+                    <TextBlock Text="▲ Gainers" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
                     <TextBlock Text="{Binding GainersCount}" FontSize="16" FontWeight="Bold"
                                Foreground="#21E6C1" HorizontalAlignment="Center" />
                   </StackPanel>
                 </Border>
                 <Border Background="#1F0A0A" CornerRadius="8" Padding="14,8">
                   <StackPanel Spacing="1" HorizontalAlignment="Center">
-                    <TextBlock Text="▼ Падение" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
+                    <TextBlock Text="▼ Losers" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
                     <TextBlock Text="{Binding LosersCount}" FontSize="16" FontWeight="Bold"
                                Foreground="#FF5555" HorizontalAlignment="Center" />
                   </StackPanel>
@@ -7570,24 +7570,24 @@
 
                 <!-- Preset buttons -->
                 <StackPanel Orientation="Horizontal" Spacing="6">
-                  <TextBlock Text="Пресет:" FontSize="11" Foreground="#5C6E82" VerticalAlignment="Center" />
-                  <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="All">Все</Button>
+                  <TextBlock Text="Preset:" FontSize="11" Foreground="#5C6E82" VerticalAlignment="Center" />
+                  <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="All">All</Button>
                   <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="Hot">🔥 Hot</Button>
-                  <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="Gainers">📈 Гейнеры</Button>
-                  <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="Losers">📉 Лузеры</Button>
-                  <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="Oversold">💎 Перепродан</Button>
-                  <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="Overbought">⚡ Перекуплен</Button>
+                  <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="Gainers">📈 Gainers</Button>
+                  <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="Losers">📉 Losers</Button>
+                  <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="Oversold">💎 Oversold</Button>
+                  <Button Classes="FilterChip" Command="{Binding SetPresetCommand}" CommandParameter="Overbought">⚡ Overbought</Button>
                 </StackPanel>
 
                 <!-- Custom filters row -->
                 <Grid ColumnDefinitions="Auto,8,*,16,Auto,8,*,8,*,16,Auto,8,*,8,*,16,Auto,8,*">
-                  <TextBlock Grid.Column="0" Text="Символ" FontSize="10" Foreground="#5C6E82" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="0" Text="Symbol" FontSize="10" Foreground="#5C6E82" VerticalAlignment="Center" />
                   <TextBox Grid.Column="2" Text="{Binding SymbolSearch, Mode=TwoWay}"
                            PlaceholderText="BTC, ETH…"
                            FontSize="12" Background="#131F2E" Foreground="#E8F0FE"
                            BorderBrush="#445E78" CornerRadius="8" Padding="10,8" MinHeight="38" />
 
-                  <TextBlock Grid.Column="4" Text="Изменение %" FontSize="10" Foreground="#5C6E82" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="4" Text="Change %" FontSize="10" Foreground="#5C6E82" VerticalAlignment="Center" />
                   <NumericUpDown Grid.Column="6" Value="{Binding MinChange, Mode=TwoWay}"
                                  FormatString="F1" Increment="0.5"
                                  Background="#131F2E" Foreground="#E8F0FE"
@@ -7611,7 +7611,7 @@
                                  Background="#131F2E" Foreground="#E8F0FE"
                                  BorderBrush="#445E78" CornerRadius="8" Padding="8,6" MinHeight="38" />
 
-                  <TextBlock Grid.Column="16" Text="Объём мин. $" FontSize="10" Foreground="#5C6E82" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="16" Text="Volume min $" FontSize="10" Foreground="#5C6E82" VerticalAlignment="Center" />
                   <NumericUpDown Grid.Column="18" Value="{Binding MinVolume, Mode=TwoWay}"
                                  Minimum="0" Increment="1000000" FormatString="N0"
                                  Background="#131F2E" Foreground="#E8F0FE"
@@ -7723,7 +7723,7 @@
                 <!-- Alerts -->
                 <Border Background="#0D1B29" CornerRadius="10" Padding="14,12">
                   <StackPanel Spacing="8">
-                    <TextBlock Text="Алерты" FontSize="13" FontWeight="SemiBold"
+                    <TextBlock Text="Alerts" FontSize="13" FontWeight="SemiBold"
                                Foreground="#8FA3B8" />
                     <Rectangle Height="1" Fill="#1E3A5F" />
                     <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
@@ -7756,7 +7756,7 @@
                 <!-- Price Levels -->
                 <Border Background="#0D1B29" CornerRadius="10" Padding="14,12">
                   <StackPanel Spacing="8">
-                    <TextBlock Text="Уровни цен" FontSize="13" FontWeight="SemiBold"
+                    <TextBlock Text="Price Levels" FontSize="13" FontWeight="SemiBold"
                                Foreground="#8FA3B8" />
 
                     <!-- Add level form -->
@@ -7772,14 +7772,14 @@
                       <Button Grid.Column="4" Command="{Binding AddLevelCommand}"
                               Background="#1A3A5C" Foreground="#21E6C1"
                               CornerRadius="8" Padding="12,8" FontSize="12" MinHeight="38">
-                        + Добавить
+                        + Add
                       </Button>
                     </Grid>
                     <!-- Resistance / Support toggle -->
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBlock Text="Тип:" FontSize="10" Foreground="#5C6E82" VerticalAlignment="Center" />
+                      <TextBlock Text="Type:" FontSize="10" Foreground="#5C6E82" VerticalAlignment="Center" />
                       <ToggleSwitch IsChecked="{Binding LevelIsResistance, Mode=TwoWay}"
-                                   OnContent="Сопротивление" OffContent="Поддержка"
+                                   OnContent="Resistance" OffContent="Support"
                                    FontSize="10" VerticalAlignment="Center" />
                     </StackPanel>
 

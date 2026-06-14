@@ -322,6 +322,9 @@ public partial class MainWindow : Window
                     RegisterTextBlock(textBlock);
                     RegisterInlines(textBlock.Inlines);
                     break;
+                case ToggleSwitch toggleSwitch:
+                    RegisterToggleSwitch(toggleSwitch);
+                    break;
                 case Button button:
                     RegisterContentControl(button);
                     break;
@@ -397,6 +400,52 @@ public partial class MainWindow : Window
                     RegisterInlines(span.Inlines);
                     break;
             }
+        }
+    }
+
+    private const string OnContentPropertyName = "OnContent";
+    private const string OffContentPropertyName = "OffContent";
+
+    /// <summary>
+    /// Регистрирует строковые <c>OnContent</c>/<c>OffContent</c> у <see cref="ToggleSwitch"/> —
+    /// видимая подпись переключателя берётся из них, а не из обычного <c>Content</c>.
+    /// </summary>
+    private void RegisterToggleSwitch(ToggleSwitch toggleSwitch)
+    {
+        RegisterToggleSwitchContent(
+            toggleSwitch, OnContentPropertyName, ToggleSwitch.OnContentProperty,
+            () => toggleSwitch.OnContent as string,
+            value => toggleSwitch.SetCurrentValue(ToggleSwitch.OnContentProperty, value));
+        RegisterToggleSwitchContent(
+            toggleSwitch, OffContentPropertyName, ToggleSwitch.OffContentProperty,
+            () => toggleSwitch.OffContent as string,
+            value => toggleSwitch.SetCurrentValue(ToggleSwitch.OffContentProperty, value));
+    }
+
+    private void RegisterToggleSwitchContent(
+        ToggleSwitch toggleSwitch,
+        string propertyName,
+        AvaloniaProperty<object?> property,
+        Func<string?> getter,
+        Action<string?> setter)
+    {
+        var key = new LocalizationKey(toggleSwitch, propertyName);
+        if (!_observedProperties.Add(key))
+        {
+            return;
+        }
+
+        _localizationSubscriptions.Add(toggleSwitch.GetObservable(property).Subscribe(value =>
+        {
+            if (value is string text)
+            {
+                HandleStringChanged(key, text, getter, setter);
+            }
+        }));
+
+        if (getter() is string initial)
+        {
+            HandleStringChanged(key, initial, getter, setter);
         }
     }
 
@@ -562,6 +611,12 @@ public partial class MainWindow : Window
                     break;
                 case Run run when entry.Key.PropertyName == nameof(Run.Text):
                     ApplyLocalizedValue(value => run.SetCurrentValue(Run.TextProperty, value), translated);
+                    break;
+                case ToggleSwitch onToggle when entry.Key.PropertyName == OnContentPropertyName:
+                    ApplyLocalizedValue(value => onToggle.SetCurrentValue(ToggleSwitch.OnContentProperty, value), translated);
+                    break;
+                case ToggleSwitch offToggle when entry.Key.PropertyName == OffContentPropertyName:
+                    ApplyLocalizedValue(value => offToggle.SetCurrentValue(ToggleSwitch.OffContentProperty, value), translated);
                     break;
                 case Control control when entry.Key.PropertyName == ToolTipPropertyName:
                     ApplyLocalizedValue(value => ToolTip.SetTip(control, value), translated);

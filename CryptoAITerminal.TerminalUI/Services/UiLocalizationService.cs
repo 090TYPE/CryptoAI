@@ -626,7 +626,44 @@ public sealed class UiLocalizationService
         ["ENTRY"] = "ВХОД",
         ["MARK"] = "МАРК",
         ["LIQ."] = "ЛИК.",
-        ["UNREAL. PNL"] = "НЕРЕАЛ. P&L"
+        ["UNREAL. PNL"] = "НЕРЕАЛ. P&L",
+
+        // Smart Order Router page
+        ["Smart Order Router"] = "Умный маршрутизатор ордеров",
+        ["Finds the best price across Binance / Bybit / OKX including fees. Large orders are automatically split across exchanges."] = "Находит лучшую цену на Binance / Bybit / OKX с учётом комиссий. Для крупных ордеров — автоматический сплит по биржам.",
+        ["Size ($)"] = "Объём ($)",
+        ["Compute route"] = "Рассчитать маршрут",
+        ["Execute"] = "Исполнить",
+        ["Exchange Quotes"] = "Котировки бирж",
+        ["Price (raw)"] = "Цена (raw)",
+        ["Fee"] = "Комиссия",
+        ["Eff. price"] = "Эфф. цена",
+        ["Execution Plan"] = "План исполнения",
+        ["Average price"] = "Средняя цена",
+        ["Savings vs worst"] = "Экономия vs худшей",
+        ["Avg price"] = "Avg цена",
+        ["Cost"] = "Стоимость",
+        ["Share"] = "Доля",
+
+        // Market Scanner page
+        ["Real-time Market Scanner"] = "Сканер рынка в реальном времени",
+        ["Filter by RSI, change, volume and activity. Click a row → trading screen."] = "Фильтрация по RSI, изменению, объёму и активности. Клик по строке → торговый экран.",
+        ["Total"] = "Всего",
+        ["▲ Gainers"] = "▲ Рост",
+        ["▼ Losers"] = "▼ Падение",
+        ["Preset:"] = "Пресет:",
+        ["📈 Gainers"] = "📈 Гейнеры",
+        ["📉 Losers"] = "📉 Лузеры",
+        ["💎 Oversold"] = "💎 Перепродан",
+        ["⚡ Overbought"] = "⚡ Перекуплен",
+        ["Change %"] = "Изменение %",
+        ["Volume min $"] = "Объём мин. $",
+        ["Type:"] = "Тип:",
+        ["Resistance"] = "Сопротивление",
+        ["Support"] = "Поддержка",
+        ["+ Add"] = "+ Добавить",
+        ["Alerts"] = "Алерты",
+        ["Price Levels"] = "Уровни цен"
     };
 
     private readonly (string Prefix, string Translation)[] _prefixTranslations =
