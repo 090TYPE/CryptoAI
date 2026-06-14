@@ -710,7 +710,29 @@ public sealed class UiLocalizationService
         ["Create API → set an API Name and Trading Password (Passphrase)."] = "Create API → задайте API Name и Trading Password (Passphrase).",
         [" Copy API Key, Secret and Passphrase — the Secret is shown "] = " Скопируйте API Key, Secret и Passphrase — Secret показывается ",
         [". Environment variables KUCOIN_API_KEY / KUCOIN_API_SECRET / KUCOIN_API_PASSPHRASE take priority."] = ". Переменные окружения KUCOIN_API_KEY / KUCOIN_API_SECRET / KUCOIN_API_PASSPHRASE имеют приоритет.",
-        ["✓ Environment variable KUCOIN_API_KEY is active."] = "✓ Активна переменная окружения KUCOIN_API_KEY."
+        ["✓ Environment variable KUCOIN_API_KEY is active."] = "✓ Активна переменная окружения KUCOIN_API_KEY.",
+
+        // View-model status strings (Best Execution / Backtest / Scanner)
+        ["Enter parameters and click «Compute route»"] = "Введите параметры и нажмите «Рассчитать маршрут»",
+        ["Fetching order books from exchanges…"] = "Получение стаканов с бирж…",
+        ["No data available — check the connection"] = "Нет доступных данных — проверьте подключение",
+        ["Executing…"] = "Исполнение…",
+        ["Order executed"] = "Ордер исполнен",
+        ["Monte Carlo has not run."] = "Monte Carlo не запускался.",
+        ["Ready"] = "Готов",
+        ["Loading…"] = "Загрузка…",
+        ["Run a backtest first."] = "Сначала запустите бэктест.",
+        ["Binance returned 0 candles — check the symbol and period."] = "Binance вернул 0 свечей — проверьте символ и период.",
+        ["Monte Carlo: needs at least 30 candles."] = "Monte Carlo: нужно минимум 30 свечей.",
+        ["Optimizing…"] = "Оптимизация…",
+        ["Need at least 60 candles for optimization."] = "Нужно минимум 60 свечей для оптимизации.",
+        ["No results — not enough data."] = "Нет результатов — недостаточно данных.",
+        ["Select an instrument and click Run"] = "Выберите инструмент и нажмите Run",
+        ["Backtest complete."] = "Бэктест завершён.",
+        ["Momentum positive"] = "Momentum позитивный",
+        ["Momentum defensive"] = "Momentum защитный",
+        ["Res."] = "Сопр.",
+        ["Sup."] = "Подд."
     };
 
     private readonly (string Prefix, string Translation)[] _prefixTranslations =
@@ -735,7 +757,16 @@ public sealed class UiLocalizationService
         ("Net ", "Результат "),
         ("Local runtime ", "Локальный runtime "),
         ("Talk through DEX execution, route readiness, token context, and sniper overlays for ", "Разберите DEX-исполнение, готовность маршрута, контекст токена и sniper-оверлеи для "),
-        ("Total: ", "Итого: ")
+        ("Total: ", "Итого: "),
+        ("Error: ", "Ошибка: "),
+        ("Best exchange: ", "Лучшая биржа: "),
+        ("Export error: ", "Ошибка экспорта: "),
+        ("Report export error: ", "Ошибка экспорта отчёта: "),
+        ("Load error: ", "Ошибка загрузки: "),
+        ("Run error: ", "Ошибка прогона: "),
+        ("Optimization error: ", "Ошибка оптимизации: "),
+        ("Applied: ", "Применено: "),
+        ("Best params: ", "Лучшие параметры: ")
     ];
 
     private UiLocalizationService()
