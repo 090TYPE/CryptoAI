@@ -27,16 +27,24 @@ statically typed inside a UserControl. Runtime behavior identical (reflection bi
 ## Namespaces used inside sections (from x:DataType grep)
 Most need `vm:` + `ctrl:`. Whale section also uses `wt:` (`wt:LabeledWallet`). No section uses `views:`.
 
-## Pages (handoff order)
-- [x] Sniper → `SniperView` (commit c06134c)
-- [ ] Bots (placeholder `IsBotsSectionVisible`)
-- [ ] AI Signals (TabItem)
-- [ ] Portfolio (TabItem)
-- [ ] Backtest (placeholder `IsBacktestSectionVisible`)
-- [ ] Markets (TabItem)
-- [ ] Dashboard (TabItem)
-- [ ] Smaller placeholder sections: Risk, Funding, Arb, Copy, StatArb, Router, Scanner,
-      Liquidation, Rules, Journal, Gas, Positions, News, OnChain, Analytics, Settings, Help, Logout, Whale
+## Pages — ALL DONE
+- [x] Sniper → `SniperView` (c06134c)
+- [x] Bots → `BotsView` (8e1fdce) — bot-log auto-scroll moved into BotsView code-behind
+- [x] Dashboard, Markets, Portfolio, AI Signals → `*View` (9362b9c)
+- [x] All 21 placeholder sections → `*View` (86e57a6): Risk, Backtest, Whale, FundingRate,
+      FundingArb, Arb, Copy, StatArb, Router, Scanner, Liquidation, Rules, Journal, Gas, Positions,
+      News, OnChain, Analytics, Settings, Help, Logout
+
+## Result
+`MainWindow.axaml`: **11523 → 1198 lines**. It now holds only the shell: sidebar nav, the
+`TabControl` (each TabItem = `<views:*View/>`), the placeholder `Border` (list of `<views:*View/>`),
+splash overlay, command palette. 27 page UserControls in `Views/`. Build 0 errors, 294 tests green,
+launch smoke OK on every commit. Code-behind coupling: only `BotLogScrollViewer` (moved to BotsView).
+
+### Note for whoever merges
+Branch `task2-mainwindow-split` is stacked on `task1-ui-language-unification`. Merge Task 1 first,
+then Task 2. Visual smoke per page (click each nav item in RU/EN) recommended before merge —
+automated checks only cover build + Dashboard-on-startup + unit tests.
 
 ## Notes / gotchas
 - Line numbers SHIFT after each extraction — re-grep boundaries before each page.
