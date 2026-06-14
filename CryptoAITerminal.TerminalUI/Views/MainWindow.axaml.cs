@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Media;
@@ -310,10 +311,16 @@ public partial class MainWindow : Window
 
         foreach (var visual in this.GetVisualDescendants())
         {
+            if (visual is Control control)
+            {
+                RegisterToolTip(control);
+            }
+
             switch (visual)
             {
                 case TextBlock textBlock:
                     RegisterTextBlock(textBlock);
+                    RegisterInlines(textBlock.Inlines);
                     break;
                 case Button button:
                     RegisterContentControl(button);
@@ -329,6 +336,86 @@ public partial class MainWindow : Window
                     break;
             }
         }
+    }
+
+    private const string ToolTipPropertyName = "ToolTip";
+
+    /// <summary>
+    /// Регистрирует строковый <c>ToolTip.Tip</c> контрола под локализацию. Регистрируем только
+    /// если подсказка уже задана строкой (статические тултипы), чтобы не плодить тысячи пустых подписок.
+    /// </summary>
+    private void RegisterToolTip(Control control)
+    {
+        if (ToolTip.GetTip(control) is not string)
+        {
+            return;
+        }
+
+        var key = new LocalizationKey(control, ToolTipPropertyName);
+        if (!_observedProperties.Add(key))
+        {
+            return;
+        }
+
+        _localizationSubscriptions.Add(control.GetObservable(ToolTip.TipProperty).Subscribe(tip =>
+        {
+            if (tip is string text)
+            {
+                HandleStringChanged(
+                    key,
+                    text,
+                    () => ToolTip.GetTip(control) as string,
+                    value => ToolTip.SetTip(control, value));
+            }
+        }));
+
+        if (ToolTip.GetTip(control) is string initialTip)
+        {
+            HandleStringChanged(key, initialTip, () => ToolTip.GetTip(control) as string, value => ToolTip.SetTip(control, value));
+        }
+    }
+
+    /// <summary>
+    /// Регистрирует inline-фрагменты (<c>Run</c>) внутри <see cref="TextBlock"/> — у TextBlock с
+    /// inline-содержимым свойство <c>Text</c> пустое, поэтому такие тексты иначе не переводятся.
+    /// </summary>
+    private void RegisterInlines(InlineCollection? inlines)
+    {
+        if (inlines is null)
+        {
+            return;
+        }
+
+        foreach (var inline in inlines)
+        {
+            switch (inline)
+            {
+                case Run run:
+                    RegisterRun(run);
+                    break;
+                case Span span:
+                    RegisterInlines(span.Inlines);
+                    break;
+            }
+        }
+    }
+
+    private void RegisterRun(Run run)
+    {
+        var key = new LocalizationKey(run, nameof(Run.Text));
+        if (!_observedProperties.Add(key))
+        {
+            return;
+        }
+
+        _localizationSubscriptions.Add(run.GetObservable(Run.TextProperty).Subscribe(text =>
+            HandleStringChanged(
+                key,
+                text,
+                () => run.Text,
+                value => run.SetCurrentValue(Run.TextProperty, value))));
+
+        HandleStringChanged(key, run.Text, () => run.Text, value => run.SetCurrentValue(Run.TextProperty, value));
     }
 
     private void RegisterTextBlock(TextBlock textBlock)
@@ -472,6 +559,12 @@ public partial class MainWindow : Window
                     break;
                 case TextBox textBox when entry.Key.PropertyName == nameof(TextBox.PlaceholderText):
                     ApplyLocalizedValue(value => textBox.SetCurrentValue(TextBox.PlaceholderTextProperty, value), translated);
+                    break;
+                case Run run when entry.Key.PropertyName == nameof(Run.Text):
+                    ApplyLocalizedValue(value => run.SetCurrentValue(Run.TextProperty, value), translated);
+                    break;
+                case Control control when entry.Key.PropertyName == ToolTipPropertyName:
+                    ApplyLocalizedValue(value => ToolTip.SetTip(control, value), translated);
                     break;
             }
         }
