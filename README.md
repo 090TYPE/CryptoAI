@@ -8,10 +8,10 @@
   <img src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet" alt=".NET 8"/>
   <img src="https://img.shields.io/badge/Avalonia-12.0-883EFF" alt="Avalonia"/>
   <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11%20x64-0078D6?logo=windows" alt="Platform"/>
-  <img src="https://img.shields.io/badge/Version-v1.3-21E6C1" alt="v1.3"/>
+  <img src="https://img.shields.io/badge/Version-v1.4-21E6C1" alt="v1.4"/>
 </p>
 
-> **Профессиональный десктоп-терминал для торговли криптовалютами.** CEX + DEX в одном окне: Binance, Bybit, OKX, KuCoin, Uniswap, Jupiter, SunSwap. Алгоритмические боты, снайпер новых листингов, on-chain аналитика и **AI везде**: на выбор **Claude или ChatGPT** (один переключатель на весь терминал), глобальная **AI-командная строка `Ctrl+K`** (навигация и вопросы из любого места), автономный AI-трейдер (сам торгует через tool use, CEX и DEX) плюс AI-помощники в 13 разделах. Демо-режим без ключей, лицензирование и Telegram-бот продажи лицензий с оплатой Stars/криптой.
+> **Профессиональный десктоп-терминал для торговли криптовалютами.** CEX + DEX в одном окне: Binance, Bybit, OKX, KuCoin, Uniswap, Jupiter, SunSwap. Алгоритмические боты, снайпер новых листингов, on-chain аналитика и **AI везде**: на выбор **Claude или ChatGPT** (один переключатель на весь терминал), глобальная **AI-командная строка `Ctrl+K`** (навигация и вопросы из любого места), автономный AI-трейдер (сам торгует через tool use, CEX и DEX) плюс AI-помощники в 13 разделах. Демо-режим без ключей, лицензирование и Telegram-бот продажи лицензий с оплатой Stars/криптой. Интерфейс полностью двуязычный — мгновенное переключение **RU ⇄ EN** на лету.
 
 ---
 
@@ -78,7 +78,7 @@
 ```
 CryptoAI/
 ├── CryptoAITerminal.Core             ← модели, интерфейсы (IExchangeGateway, IStrategy)
-├── CryptoAITerminal.Core.Tests       ← 267 unit-тестов (RiskManager, Strategies, BacktestEngine, AI-агент, AI-сервисы, провайдер-свитч и командная строка)
+├── CryptoAITerminal.Core.Tests       ← 294 unit-теста (RiskManager, Strategies, BacktestEngine, AI-агент, AI-сервисы, провайдер-свитч, командная строка, локализация UI)
 ├── CryptoAITerminal.Gateway.Base     ← общий код шлюзов
 ├── CryptoAITerminal.Gateway.Binance  ← Binance Spot + USDT-M Futures (Binance.Net)
 ├── CryptoAITerminal.Gateway.Bybit    ← Bybit v5 Spot + Linear Futures (Bybit.Net)
@@ -89,7 +89,7 @@ CryptoAI/
 ├── CryptoAITerminal.RiskManager      ← Pre-trade risk checks, дневные лимиты
 ├── CryptoAITerminal.WhaleTracker     ← On-chain whale alerts
 ├── CryptoAITerminal.AIEngine         ← AI-движок: единый ChatClient/AiRuntime (Claude ИЛИ ChatGPT), автономный агент (tool use), сигналы, AI-вердикт токена + 13 AI-провайдеров
-├── CryptoAITerminal.TerminalUI       ← Avalonia UI (главный проект)
+├── CryptoAITerminal.TerminalUI       ← Avalonia UI (главный проект; каждая страница вынесена в свой UserControl в Views/, локализация EN→RU через словарь)
 ├── CryptoAITerminal.WebApi           ← REST API для мобильного мониторинга
 └── CryptoAITerminal.LicenseBot       ← Telegram-бот продажи лицензий (Stars + крипта, привязка к ПК)
 ```
@@ -541,7 +541,7 @@ dotnet run
 | Charts | Custom Avalonia DrawingContext (StreamGeometry) |
 | JSON | System.Text.Json |
 | AI | Claude (Anthropic Messages API) или ChatGPT (OpenAI Chat Completions), tool use — переключаемо |
-| Tests | xUnit, 199 unit tests |
+| Tests | xUnit, 294 unit tests |
 | Notifications | WinForms NotifyIcon, Telegram Bot API, Discord Webhook |
 
 ---
@@ -549,5 +549,5 @@ dotnet run
 <p align="center">
   <img src="design/logo-assets/icons/cryptoaiterminal-icon-variant-a-transparent.png" width="80" alt="icon"/>
   <br/>
-  <sub>Crypto AI Terminal · v1.2 · 2026</sub>
+  <sub>Crypto AI Terminal · v1.4 · 2026</sub>
 </p>
