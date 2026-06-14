@@ -732,7 +732,8 @@ public sealed class UiLocalizationService
         ["Momentum positive"] = "Momentum позитивный",
         ["Momentum defensive"] = "Momentum защитный",
         ["Res."] = "Сопр.",
-        ["Sup."] = "Подд."
+        ["Sup."] = "Подд.",
+        ["Ask AI · Ctrl+K"] = "Спросить AI · Ctrl+K"
     };
 
     private readonly (string Prefix, string Translation)[] _prefixTranslations =

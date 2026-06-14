@@ -909,7 +909,7 @@
     <Border IsVisible="{Binding IsToastVisible}"
             HorizontalAlignment="Right"
             VerticalAlignment="Bottom"
-            Margin="0,0,24,32"
+            Margin="0,0,24,96"
             Padding="16,12"
             Background="#0D2233"
             BorderBrush="#1FE6C2"
@@ -1134,6 +1134,29 @@
 
         </StackPanel>
       </Border>
+    </Border>
+
+    <!-- Floating "Ask AI" button — opens the global omnibox (same as Ctrl+K) -->
+    <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"
+            Margin="0,0,24,28" ZIndex="95"
+            CornerRadius="26"
+            BoxShadow="0 6 20 0 #80000000"
+            IsVisible="{Binding !IsCommandPaletteOpen}">
+      <Button Command="{Binding OpenCommandPaletteCommand}"
+              Width="52" Height="52" CornerRadius="26" Padding="0"
+              Background="#21E6C1" Foreground="#06121C"
+              FontSize="22" Content="🧠"
+              HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+              ToolTip.Tip="Ask AI · Ctrl+K">
+        <Button.Styles>
+          <Style Selector="Button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#3FF0D4" />
+          </Style>
+          <Style Selector="Button:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#15C7A8" />
+          </Style>
+        </Button.Styles>
+      </Button>
     </Border>
 
     <!-- ═══ Global AI Command Bar (Ctrl+K) ═══ -->
