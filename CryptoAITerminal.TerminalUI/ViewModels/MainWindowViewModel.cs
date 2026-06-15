@@ -705,6 +705,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                 return pulse;
             }));
         CopilotVM = new CopilotViewModel(copilotData);
+        TelegramAccountVM = new TelegramAccountViewModel(new Services.TelegramUserClientService());
 
         // Daily AI briefing — one morning read tying together the book, news pulse,
         // sentiment and scanner. RefreshCommand runs on the UI scheduler, so the
@@ -3037,6 +3038,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public AIBotViewModel AIBotVM { get; }
     public AiTraderViewModel AiTraderVM { get; }
     public CopilotViewModel CopilotVM { get; private set; } = null!;
+    public TelegramAccountViewModel TelegramAccountVM { get; private set; } = null!;
     public DailyBriefingViewModel BriefingVM { get; private set; } = null!;
     public PreTradeRiskViewModel RiskCheckVM { get; private set; } = null!;
     public CorrelationInsightViewModel CorrelationInsightVM { get; private set; } = null!;

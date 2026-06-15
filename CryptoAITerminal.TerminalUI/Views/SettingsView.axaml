@@ -152,6 +152,26 @@
               </StackPanel>
             </Border>
 
+            <!-- Telegram Account (MTProto user login) -->
+            <Border Classes="Panel" DataContext="{Binding TelegramAccountVM}">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="H2" Text="Telegram Account" />
+                <TextBlock Text="Sign in with your Telegram account to talk to the bot from inside the app."
+                           FontSize="11" Foreground="#5C6E82" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="#21E6C1" />
+                <TextBox Text="{Binding Phone, Mode=TwoWay}" PlaceholderText="+1 234 567 8900"
+                         IsVisible="{Binding !IsConnected}" />
+                <TextBox Text="{Binding Code, Mode=TwoWay}" PlaceholderText="Login code"
+                         IsVisible="{Binding IsCodeVisible}" />
+                <TextBox Text="{Binding Password, Mode=TwoWay}" PlaceholderText="Two-factor password"
+                         PasswordChar="●" IsVisible="{Binding IsPasswordVisible}" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <Button Content="Connect" Command="{Binding ConnectCommand}" IsVisible="{Binding !IsConnected}" />
+                  <Button Content="Disconnect" Command="{Binding DisconnectCommand}" IsVisible="{Binding IsConnected}" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
             <!-- Discord webhook setup -->
             <Border Classes="Panel">
               <StackPanel Spacing="12">

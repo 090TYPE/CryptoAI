@@ -733,7 +733,18 @@ public sealed class UiLocalizationService
         ["Momentum defensive"] = "Momentum защитный",
         ["Res."] = "Сопр.",
         ["Sup."] = "Подд.",
-        ["Ask AI · Ctrl+K"] = "Спросить AI · Ctrl+K"
+        ["Ask AI · Ctrl+K"] = "Спросить AI · Ctrl+K",
+
+        // Telegram Account (Settings)
+        ["Telegram Account"] = "Telegram-аккаунт",
+        ["Sign in with your Telegram account to talk to the bot from inside the app."] = "Войдите в свой Telegram-аккаунт, чтобы общаться с ботом прямо из приложения.",
+        ["Not connected"] = "Не подключено",
+        ["Enter the code from Telegram"] = "Введите код из Telegram",
+        ["Enter your two-factor password"] = "Введите пароль двухфакторной аутентификации",
+        ["Connection error"] = "Ошибка подключения",
+        ["Connect"] = "Подключить",
+        ["Login code"] = "Код входа",
+        ["Two-factor password"] = "Пароль 2FA"
     };
 
     private readonly (string Prefix, string Translation)[] _prefixTranslations =
