@@ -37,6 +37,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private readonly BinanceFuturesGateway _futuresGateway;
     private readonly MarketOrderRouter _router;
     private readonly RiskManager.RiskManager _riskManager;
+    private decimal _riskLimitPositionInput = 1000m;
+    private decimal _riskLimitDailyLossInput = 500m;
     // Stored as fields so the Portfolio Rebalancer and Funding Arb can query all gateways
     private readonly Core.Interfaces.IExchangeGateway _bybitSpotGateway     = null!;
     private readonly Core.Interfaces.IExchangeGateway _okxSpotGateway       = null!;
@@ -198,6 +200,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         _futuresGateway = new BinanceFuturesGateway(DefaultSymbols, binanceApiKey, binanceApiSecret);
         _router = new MarketOrderRouter(_gateway);
         _riskManager = new RiskManager.RiskManager(maxPositionSizeUsd: 1000, maxDailyLossUsd: 500);
+        ApplyRiskLimitsCommand = ReactiveCommand.Create(ApplyRiskLimits);
 
         var bybitSpot = new BybitGateway(DefaultSymbols, bybitApiKey, bybitApiSecret);
         var bybitFutures = new BybitFuturesGateway(DefaultSymbols, bybitApiKey, bybitApiSecret);
@@ -2572,6 +2575,47 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public string RiskRuntimeSummary => $"{WalletVM.GlobalRiskCapLabel} | {WalletVM.GlobalRiskSummary}";
     public string RiskSniperGuardSummary => $"Open slots {SniperVM.OpenPositionCount}/{SniperVM.MaxSimultaneousPositions} | Session buys left {SniperVM.RemainingSessionBuys} | Consecutive live losses {SniperVM.ConsecutiveLiveLossCount}";
     public string RiskCexExposureSummary => $"Ticket {TradeNotional:N2} USDT | Exposure {PortfolioExposureLabel} | Equity {AccountEquityLabel}";
+
+    // ── RiskManager (CEX order guard) limits + live budget, surfaced on the Risk page ──
+    public decimal RiskLimitPositionInput
+    {
+        get => _riskLimitPositionInput;
+        set => this.RaiseAndSetIfChanged(ref _riskLimitPositionInput, value);
+    }
+
+    public decimal RiskLimitDailyLossInput
+    {
+        get => _riskLimitDailyLossInput;
+        set => this.RaiseAndSetIfChanged(ref _riskLimitDailyLossInput, value);
+    }
+
+    public string RiskBudgetPositionCapLabel => $"Max position / exposure {_riskManager.MaxPositionSizeUsd:N0} USDT";
+
+    public string RiskBudgetDailyLossLabel
+    {
+        get
+        {
+            var snapshot = _riskManager.GetBudgetSnapshot();
+            return $"Daily loss {snapshot.DailyLossUsd:N2} / {snapshot.MaxDailyLossUsd:N2} USDT";
+        }
+    }
+
+    public string RiskBudgetRemainingLabel =>
+        $"{_riskManager.GetBudgetSnapshot().RemainingDailyLossBudgetUsd:N2} USDT loss budget left today";
+
+    public string RiskBudgetBlockReason
+    {
+        get
+        {
+            var reason = _riskManager.LastBlockReason;
+            return string.IsNullOrEmpty(reason) ? "No CEX orders blocked this session." : reason;
+        }
+    }
+
+    public string RiskBudgetBlockBrush =>
+        string.IsNullOrEmpty(_riskManager.LastBlockReason) ? "#8FA3B8" : "#F4B860";
+
+    public ReactiveCommand<Unit, Unit> ApplyRiskLimitsCommand { get; }
     public string BacktestStatusLabel => BacktestVM.StatusLabel;
     public string BacktestStatusBrush => BacktestVM.StatusBrush;
     public string BacktestWindowLabel => BacktestVM.WindowLabel;
@@ -5934,6 +5978,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(RiskRuntimeSummary));
         this.RaisePropertyChanged(nameof(RiskSniperGuardSummary));
         this.RaisePropertyChanged(nameof(RiskCexExposureSummary));
+        RefreshRiskBudgetDisplay();
         this.RaisePropertyChanged(nameof(BotsRuntimeStatusLabel));
         this.RaisePropertyChanged(nameof(BotsRuntimeStatusBrush));
         this.RaisePropertyChanged(nameof(AnalyticsExecutionSummary));
@@ -5943,6 +5988,25 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(HelpQuickStartSummary));
         this.RaisePropertyChanged(nameof(HelpSafetySummary));
         this.RaisePropertyChanged(nameof(LogoutStatusLabel));
+    }
+
+    private void ApplyRiskLimits()
+    {
+        _riskManager.UpdateLimits(_riskLimitPositionInput, _riskLimitDailyLossInput);
+        // UpdateLimits ignores non-positive values; mirror the effective limits back so
+        // the inputs never show a value that wasn't actually applied.
+        RiskLimitPositionInput = _riskManager.MaxPositionSizeUsd;
+        RiskLimitDailyLossInput = _riskManager.MaxDailyLossUsd;
+        RefreshRiskBudgetDisplay();
+    }
+
+    private void RefreshRiskBudgetDisplay()
+    {
+        this.RaisePropertyChanged(nameof(RiskBudgetPositionCapLabel));
+        this.RaisePropertyChanged(nameof(RiskBudgetDailyLossLabel));
+        this.RaisePropertyChanged(nameof(RiskBudgetRemainingLabel));
+        this.RaisePropertyChanged(nameof(RiskBudgetBlockReason));
+        this.RaisePropertyChanged(nameof(RiskBudgetBlockBrush));
     }
 
     private void RefreshQuickBacktestSnapshot()

@@ -66,6 +66,31 @@
               </Border>
             </Grid>
 
+            <!-- ── CEX order-guard limits (RiskManager) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="H2" Text="Risk Limits (CEX order guard)" />
+                <TextBlock Text="Hard caps enforced on every CEX order before it is placed."
+                           Foreground="#8FA3B8" TextWrapping="Wrap" />
+                <Grid ColumnDefinitions="Auto,160,Auto,160,Auto" ColumnSpacing="12" RowSpacing="8">
+                  <TextBlock Grid.Column="0" Text="Max position / exposure (USDT)" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Column="1" Minimum="0" Increment="50"
+                                 Value="{Binding RiskLimitPositionInput}" />
+                  <TextBlock Grid.Column="2" Text="Max daily loss (USDT)" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Column="3" Minimum="0" Increment="25"
+                                 Value="{Binding RiskLimitDailyLossInput}" />
+                  <Button Grid.Column="4" Classes="GhostButton" Content="Apply Limits"
+                          VerticalAlignment="Center"
+                          Command="{Binding ApplyRiskLimitsCommand}" />
+                </Grid>
+                <TextBlock Text="{Binding RiskBudgetPositionCapLabel}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding RiskBudgetDailyLossLabel}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding RiskBudgetRemainingLabel}" Foreground="#8FA3B8" />
+                <TextBlock Text="{Binding RiskBudgetBlockReason}"
+                           Foreground="{Binding RiskBudgetBlockBrush}" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
             <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
               <Border Grid.Column="0" Classes="Panel">
                 <StackPanel Spacing="10">
