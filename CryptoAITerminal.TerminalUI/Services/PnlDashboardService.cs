@@ -76,11 +76,16 @@ public sealed class PnlDashboardService
 
     // ── Write ─────────────────────────────────────────────────────────────────
 
+    /// Raised once per newly recorded (post-dedup) trade. Lets the risk guard feed its
+    /// daily-loss budget from real closed trades without coupling this store to it.
+    public Action<TradeRecord>? OnTradeRecorded { get; set; }
+
     public void RecordTrade(TradeRecord record)
     {
         if (!_knownIds.Add(record.Id)) return; // de-dup
         _records.Add(record);
         Save();
+        OnTradeRecorded?.Invoke(record);
     }
 
     /// Converts existing PaperTradeRecordViewModels (sniper history) to unified records.
