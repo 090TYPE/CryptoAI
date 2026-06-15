@@ -86,6 +86,8 @@
                 <TextBlock Text="{Binding RiskBudgetPositionCapLabel}" FontWeight="SemiBold" />
                 <TextBlock Text="{Binding RiskBudgetDailyLossLabel}" FontWeight="SemiBold" />
                 <TextBlock Text="{Binding RiskBudgetRemainingLabel}" Foreground="#8FA3B8" />
+                <TextBlock Text="{Binding RiskBudgetWarningLabel}" FontWeight="SemiBold"
+                           Foreground="{Binding RiskBudgetWarningBrush}" TextWrapping="Wrap" />
                 <TextBlock Text="{Binding RiskBudgetBlockReason}"
                            Foreground="{Binding RiskBudgetBlockBrush}" TextWrapping="Wrap" />
               </StackPanel>

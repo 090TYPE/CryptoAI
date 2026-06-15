@@ -141,9 +141,36 @@ public sealed record RiskCheckResult(bool Allowed, string Reason)
     public static readonly RiskCheckResult Allow = new(true, string.Empty);
 }
 
+public enum RiskBudgetLevel
+{
+    Ok,
+    Caution,
+    Critical
+}
+
 public sealed record RiskBudgetSnapshot(
     decimal MaxPositionSizeUsd,
     decimal MaxDailyLossUsd,
     decimal DailyLossUsd,
     decimal RemainingDailyLossBudgetUsd,
-    string LastBlockReason);
+    string LastBlockReason)
+{
+    /// <summary>Fraction of the daily-loss cap already consumed (0 when no cap is set).</summary>
+    public decimal DailyLossUsedFraction =>
+        MaxDailyLossUsd <= 0m ? 0m : DailyLossUsd / MaxDailyLossUsd;
+
+    /// <summary>Caution at 50% of the daily-loss cap, Critical at 80%.</summary>
+    public RiskBudgetLevel Level
+    {
+        get
+        {
+            var used = DailyLossUsedFraction;
+            if (used >= 0.8m)
+            {
+                return RiskBudgetLevel.Critical;
+            }
+
+            return used >= 0.5m ? RiskBudgetLevel.Caution : RiskBudgetLevel.Ok;
+        }
+    }
+}

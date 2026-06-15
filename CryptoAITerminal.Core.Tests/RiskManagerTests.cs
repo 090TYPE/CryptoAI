@@ -141,4 +141,34 @@ public class RiskManagerObservabilityTests
 
         Assert.Equal(string.Empty, risk.LastBlockReason);
     }
+
+    [Theory]
+    [InlineData(0, RiskManager.RiskBudgetLevel.Ok)]        // 0%
+    [InlineData(200, RiskManager.RiskBudgetLevel.Ok)]      // 40%
+    [InlineData(250, RiskManager.RiskBudgetLevel.Caution)] // 50% -> caution
+    [InlineData(350, RiskManager.RiskBudgetLevel.Caution)] // 70%
+    [InlineData(400, RiskManager.RiskBudgetLevel.Critical)]// 80% -> critical
+    [InlineData(500, RiskManager.RiskBudgetLevel.Critical)]// 100%
+    [InlineData(900, RiskManager.RiskBudgetLevel.Critical)]// breached
+    public void Snapshot_Level_ReflectsDailyLossConsumption(decimal lossToRecord, RiskManager.RiskBudgetLevel expected)
+    {
+        var risk = NewManager(); // 500 daily-loss cap
+        if (lossToRecord > 0m)
+        {
+            risk.RecordLoss(lossToRecord);
+        }
+
+        Assert.Equal(expected, risk.GetBudgetSnapshot().Level);
+    }
+
+    [Fact]
+    public void Snapshot_DailyLossUsedFraction_ZeroWhenNoCap()
+    {
+        var risk = new RiskManager.RiskManager(maxPositionSizeUsd: 1000m, maxDailyLossUsd: 0m);
+        risk.RecordLoss(100m);
+
+        var snapshot = risk.GetBudgetSnapshot();
+        Assert.Equal(0m, snapshot.DailyLossUsedFraction);
+        Assert.Equal(RiskManager.RiskBudgetLevel.Ok, snapshot.Level);
+    }
 }

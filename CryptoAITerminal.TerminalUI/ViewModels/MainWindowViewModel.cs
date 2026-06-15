@@ -830,6 +830,10 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             });
         _webApiQueueProcessor = new WebApiQueueProcessor(queueGateways, msg => AddLog(msg));
 
+        // Feed the CEX risk guard's daily-loss budget from every realized losing trade
+        // (bots, grid, manual) routed through the P&L store.
+        pnlService.OnTradeRecorded = OnRealizedTradeRecorded;
+
         // Forward bot closed trades to P&L
         AIBotVM.OnBotTradeClosed = (sym, dir, entry, exit, qty, pnl) =>
         {
@@ -2614,6 +2618,20 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
     public string RiskBudgetBlockBrush =>
         string.IsNullOrEmpty(_riskManager.LastBlockReason) ? "#8FA3B8" : "#F4B860";
+
+    public string RiskBudgetWarningLabel => _riskManager.GetBudgetSnapshot().Level switch
+    {
+        RiskManager.RiskBudgetLevel.Critical => "Critical: near or over the daily loss limit — new orders will be blocked.",
+        RiskManager.RiskBudgetLevel.Caution => "Caution: over half the daily loss budget is used.",
+        _ => "Within daily risk budget."
+    };
+
+    public string RiskBudgetWarningBrush => _riskManager.GetBudgetSnapshot().Level switch
+    {
+        RiskManager.RiskBudgetLevel.Critical => "#FF5D73",
+        RiskManager.RiskBudgetLevel.Caution => "#F4B860",
+        _ => "#3DDC84"
+    };
 
     public ReactiveCommand<Unit, Unit> ApplyRiskLimitsCommand { get; }
     public string BacktestStatusLabel => BacktestVM.StatusLabel;
@@ -5990,6 +6008,19 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(LogoutStatusLabel));
     }
 
+    private void OnRealizedTradeRecorded(TradeRecord record)
+    {
+        // Only today's realized losses count against the daily-loss budget; historical
+        // imports (which bypass RecordTrade) and profits are ignored here.
+        if (record.PnlUsd >= 0m || record.ClosedAtUtc.Date != DateTime.UtcNow.Date)
+        {
+            return;
+        }
+
+        _riskManager.RecordLoss(Math.Abs(record.PnlUsd));
+        Dispatcher.UIThread.Post(RefreshRiskBudgetDisplay);
+    }
+
     private void ApplyRiskLimits()
     {
         _riskManager.UpdateLimits(_riskLimitPositionInput, _riskLimitDailyLossInput);
@@ -6007,6 +6038,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(RiskBudgetRemainingLabel));
         this.RaisePropertyChanged(nameof(RiskBudgetBlockReason));
         this.RaisePropertyChanged(nameof(RiskBudgetBlockBrush));
+        this.RaisePropertyChanged(nameof(RiskBudgetWarningLabel));
+        this.RaisePropertyChanged(nameof(RiskBudgetWarningBrush));
     }
 
     private void RefreshQuickBacktestSnapshot()
