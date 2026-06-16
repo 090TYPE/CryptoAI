@@ -1,3 +1,4 @@
+using System.Linq;
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Models;
 
@@ -170,5 +171,72 @@ public class RiskManagerObservabilityTests
         var snapshot = risk.GetBudgetSnapshot();
         Assert.Equal(0m, snapshot.DailyLossUsedFraction);
         Assert.Equal(RiskManager.RiskBudgetLevel.Ok, snapshot.Level);
+    }
+
+    [Fact]
+    public void GetRecentBlocks_FreshManager_IsEmpty()
+    {
+        Assert.Empty(NewManager().GetRecentBlocks());
+    }
+
+    [Fact]
+    public void GetRecentBlocks_RecordsBlockedOrdersNewestFirst()
+    {
+        var risk = NewManager();
+        risk.Evaluate(SpotOrder(0m), 500m, 1000m);   // "positive"
+        risk.Evaluate(SpotOrder(3m), 500m, 10_000m); // "exceeds max"
+
+        var blocks = risk.GetRecentBlocks();
+
+        Assert.Equal(2, blocks.Count);
+        Assert.Contains("exceeds max", blocks[0].Reason); // newest first
+        Assert.Contains("positive", blocks[1].Reason);
+    }
+
+    [Fact]
+    public void GetRecentBlocks_AllowedOrdersAreNotLogged()
+    {
+        var risk = NewManager();
+        risk.Evaluate(SpotOrder(1m), 500m, 1000m); // allowed
+
+        Assert.Empty(risk.GetRecentBlocks());
+    }
+
+    [Fact]
+    public void GetRecentBlocks_IsBoundedToTwentyEntries()
+    {
+        var risk = NewManager();
+        for (var i = 0; i < 30; i++)
+        {
+            risk.Evaluate(SpotOrder(0m), 500m, 1000m); // always blocks
+        }
+
+        Assert.Equal(20, risk.GetRecentBlocks().Count);
+    }
+
+    [Fact]
+    public void GetDailyLossHistory_AccumulatesCumulativeReadings()
+    {
+        var risk = NewManager();
+        risk.RecordLoss(100m);
+        risk.RecordLoss(50m);
+
+        Assert.Equal(new[] { 100m, 150m }, risk.GetDailyLossHistory().ToArray());
+    }
+
+    [Fact]
+    public void ResetDailyLoss_ClearsLossBlocksAndHistory()
+    {
+        var risk = NewManager();
+        risk.RecordLoss(300m);
+        risk.Evaluate(SpotOrder(0m), 500m, 1000m); // logs a block + sets reason
+
+        risk.ResetDailyLoss();
+
+        var snapshot = risk.GetBudgetSnapshot();
+        Assert.Equal(0m, snapshot.DailyLossUsd);
+        Assert.Equal(string.Empty, snapshot.LastBlockReason);
+        Assert.Empty(risk.GetRecentBlocks());
+        Assert.Empty(risk.GetDailyLossHistory());
     }
 }

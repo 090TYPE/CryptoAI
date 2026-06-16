@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Models;
 
@@ -5,12 +6,21 @@ namespace CryptoAITerminal.RiskManager;
 
 public class RiskManager
 {
+    private const int MaxBlockHistory = 20;
+    private const int MaxLossSamples = 40;
+
     private decimal _maxPositionSizeUsd;
     private decimal _maxDailyLossUsd;
     private decimal _dailyLoss;
     private string _lastBlockReason = string.Empty;
     private DateTime _currentDate = DateTime.UtcNow.Date;
     private readonly object _lockObj = new(); // БАГ-21: thread-safe
+
+    // Bounded audit trail for the Risk page. Newest entries are appended; the oldest are
+    // trimmed once the cap is hit so memory stays flat over a long session.
+    private readonly List<RiskBlockEntry> _blockHistory = new();
+    // Cumulative daily-loss readings, one per RecordLoss, for the daily-loss sparkline.
+    private readonly List<decimal> _dailyLossSamples = new();
 
     public RiskManager(decimal maxPositionSizeUsd = 1000, decimal maxDailyLossUsd = 500)
     {
@@ -78,10 +88,47 @@ public class RiskManager
         {
             RollDailyLossIfNewDay();
             _dailyLoss += Math.Max(0m, lossUsd);
+            RecordLossSample();
             if (_dailyLoss > _maxDailyLossUsd)
             {
                 _lastBlockReason = $"Daily loss limit reached! {_dailyLoss:C} / {_maxDailyLossUsd:C}";
             }
+        }
+    }
+
+    /// <summary>
+    /// Manually clears today's accumulated loss and the block log (e.g. the "Reset daily"
+    /// button on the Risk page after the trader has reviewed and accepted the day's drawdown).
+    /// </summary>
+    public void ResetDailyLoss()
+    {
+        lock (_lockObj)
+        {
+            _dailyLoss = 0m;
+            _currentDate = DateTime.UtcNow.Date;
+            _lastBlockReason = string.Empty;
+            _dailyLossSamples.Clear();
+            _blockHistory.Clear();
+        }
+    }
+
+    /// <summary>Most-recent-first copy of the bounded block log.</summary>
+    public IReadOnlyList<RiskBlockEntry> GetRecentBlocks()
+    {
+        lock (_lockObj)
+        {
+            var copy = new List<RiskBlockEntry>(_blockHistory);
+            copy.Reverse();
+            return copy;
+        }
+    }
+
+    /// <summary>Cumulative daily-loss readings (oldest first) for the sparkline.</summary>
+    public IReadOnlyList<decimal> GetDailyLossHistory()
+    {
+        lock (_lockObj)
+        {
+            return new List<decimal>(_dailyLossSamples);
         }
     }
 
@@ -125,16 +172,35 @@ public class RiskManager
         {
             _dailyLoss = 0;
             _currentDate = DateTime.UtcNow.Date;
+            _dailyLossSamples.Clear();
+        }
+    }
+
+    private void RecordLossSample()
+    {
+        _dailyLossSamples.Add(_dailyLoss);
+        if (_dailyLossSamples.Count > MaxLossSamples)
+        {
+            _dailyLossSamples.RemoveAt(0);
         }
     }
 
     private RiskCheckResult Block(string reason)
     {
         _lastBlockReason = reason;
+        _blockHistory.Add(new RiskBlockEntry(DateTime.UtcNow, reason));
+        if (_blockHistory.Count > MaxBlockHistory)
+        {
+            _blockHistory.RemoveAt(0);
+        }
+
         Console.WriteLine($"RiskManager: {reason}");
         return new RiskCheckResult(false, reason);
     }
 }
+
+/// <summary>A single blocked-order event recorded for the Risk page audit trail.</summary>
+public sealed record RiskBlockEntry(DateTime TimeUtc, string Reason);
 
 public sealed record RiskCheckResult(bool Allowed, string Reason)
 {

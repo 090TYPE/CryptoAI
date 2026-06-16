@@ -39,6 +39,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private readonly RiskManager.RiskManager _riskManager;
     private decimal _riskLimitPositionInput = 1000m;
     private decimal _riskLimitDailyLossInput = 500m;
+    // Last budget level shown, so a toast fires only when the level worsens (not every refresh).
+    private RiskManager.RiskBudgetLevel _lastRiskBudgetLevel = RiskManager.RiskBudgetLevel.Ok;
     // Stored as fields so the Portfolio Rebalancer and Funding Arb can query all gateways
     private readonly Core.Interfaces.IExchangeGateway _bybitSpotGateway     = null!;
     private readonly Core.Interfaces.IExchangeGateway _okxSpotGateway       = null!;
@@ -201,6 +203,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         _router = new MarketOrderRouter(_gateway);
         _riskManager = new RiskManager.RiskManager(maxPositionSizeUsd: 1000, maxDailyLossUsd: 500);
         ApplyRiskLimitsCommand = ReactiveCommand.Create(ApplyRiskLimits);
+        ResetDailyRiskCommand = ReactiveCommand.Create(ResetDailyRisk);
 
         var bybitSpot = new BybitGateway(DefaultSymbols, bybitApiKey, bybitApiSecret);
         var bybitFutures = new BybitFuturesGateway(DefaultSymbols, bybitApiKey, bybitApiSecret);
@@ -2639,6 +2642,56 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     };
 
     public ReactiveCommand<Unit, Unit> ApplyRiskLimitsCommand { get; }
+    public ReactiveCommand<Unit, Unit> ResetDailyRiskCommand { get; }
+
+    // ── Block audit log + daily-loss sparkline (Risk page) ──
+    private const double RiskSparklineWidth = 240d;
+    private const double RiskSparklineHeight = 44d;
+
+    public IReadOnlyList<string> RiskBlockHistoryLines =>
+        _riskManager.GetRecentBlocks()
+            .Select(static b => $"{b.TimeUtc.ToLocalTime():HH:mm:ss}  {b.Reason}")
+            .ToList();
+
+    public bool HasRiskBlockHistory => _riskManager.GetRecentBlocks().Count > 0;
+
+    public string RiskBlockHistoryEmptyLabel => "No CEX orders blocked this session.";
+
+    /// <summary>Polyline points for the cumulative daily-loss trajectory, fit to the sparkline box.</summary>
+    public List<Avalonia.Point> RiskDailyLossSparkline
+    {
+        get
+        {
+            var history = _riskManager.GetDailyLossHistory();
+            var points = new List<Avalonia.Point>();
+            if (history.Count < 2)
+            {
+                return points;
+            }
+
+            var max = (double)_riskManager.MaxDailyLossUsd;
+            // Scale to the cap when set, otherwise to the largest sample so the line still reads.
+            var peak = max > 0d ? max : (double)history.Max();
+            if (peak <= 0d)
+            {
+                return points;
+            }
+
+            var stepX = RiskSparklineWidth / (history.Count - 1);
+            for (var i = 0; i < history.Count; i++)
+            {
+                var ratio = Math.Min(1d, (double)history[i] / peak);
+                var x = i * stepX;
+                var y = RiskSparklineHeight - (ratio * RiskSparklineHeight); // invert: more loss = higher
+                points.Add(new Avalonia.Point(x, y));
+            }
+
+            return points;
+        }
+    }
+
+    public bool HasRiskDailyLossSparkline => _riskManager.GetDailyLossHistory().Count >= 2;
+
     public string BacktestStatusLabel => BacktestVM.StatusLabel;
     public string BacktestStatusBrush => BacktestVM.StatusBrush;
     public string BacktestWindowLabel => BacktestVM.WindowLabel;
@@ -6053,6 +6106,14 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         RefreshRiskBudgetDisplay();
     }
 
+    private void ResetDailyRisk()
+    {
+        _riskManager.ResetDailyLoss();
+        _lastRiskBudgetLevel = RiskManager.RiskBudgetLevel.Ok;
+        RefreshRiskBudgetDisplay();
+        AddLog("[RISK] Daily loss budget reset.");
+    }
+
     private void RefreshRiskBudgetDisplay()
     {
         this.RaisePropertyChanged(nameof(RiskBudgetPositionCapLabel));
@@ -6062,6 +6123,26 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(RiskBudgetBlockBrush));
         this.RaisePropertyChanged(nameof(RiskBudgetWarningLabel));
         this.RaisePropertyChanged(nameof(RiskBudgetWarningBrush));
+        this.RaisePropertyChanged(nameof(RiskBlockHistoryLines));
+        this.RaisePropertyChanged(nameof(HasRiskBlockHistory));
+        this.RaisePropertyChanged(nameof(RiskDailyLossSparkline));
+        this.RaisePropertyChanged(nameof(HasRiskDailyLossSparkline));
+
+        // Toast only when the budget level worsens (Ok→Caution→Critical), never on every tick.
+        var level = _riskManager.GetBudgetSnapshot().Level;
+        if (level > _lastRiskBudgetLevel)
+        {
+            if (level == RiskManager.RiskBudgetLevel.Critical)
+            {
+                ShowToast("🚨 Risk: critical — near or over the daily loss limit.");
+            }
+            else if (level == RiskManager.RiskBudgetLevel.Caution)
+            {
+                ShowToast("⚠️ Risk: caution — over half the daily loss budget used.");
+            }
+        }
+
+        _lastRiskBudgetLevel = level;
     }
 
     private void RefreshQuickBacktestSnapshot()

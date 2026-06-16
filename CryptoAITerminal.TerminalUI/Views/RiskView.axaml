@@ -90,8 +90,50 @@
                            Foreground="{Binding RiskBudgetWarningBrush}" TextWrapping="Wrap" />
                 <TextBlock Text="{Binding RiskBudgetBlockReason}"
                            Foreground="{Binding RiskBudgetBlockBrush}" TextWrapping="Wrap" />
+                <Button Classes="GhostButton" Content="Reset Daily Loss"
+                        HorizontalAlignment="Left"
+                        Command="{Binding ResetDailyRiskCommand}" />
               </StackPanel>
             </Border>
+
+            <!-- ── Daily-loss trajectory + blocked-order log ── -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+              <Border Grid.Column="0" Classes="Panel">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="H2" Text="Daily Loss Trajectory" />
+                  <TextBlock Text="Cumulative realized loss today vs the daily cap."
+                             Foreground="#8FA3B8" TextWrapping="Wrap" />
+                  <Border Background="#0E1622" CornerRadius="6" Padding="8" Height="64"
+                          IsVisible="{Binding HasRiskDailyLossSparkline}">
+                    <Polyline Points="{Binding RiskDailyLossSparkline}"
+                              Stroke="{Binding RiskBudgetWarningBrush}" StrokeThickness="2"
+                              StrokeJoin="Round" />
+                  </Border>
+                  <TextBlock Text="No realized losses recorded today."
+                             Foreground="#8FA3B8" FontSize="12"
+                             IsVisible="{Binding !HasRiskDailyLossSparkline}" />
+                  <TextBlock Text="{Binding RiskBudgetRemainingLabel}" Foreground="#8FA3B8" FontSize="12" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Classes="Panel">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="H2" Text="Blocked Orders" />
+                  <TextBlock Text="{Binding RiskBlockHistoryEmptyLabel}"
+                             Foreground="#8FA3B8" TextWrapping="Wrap"
+                             IsVisible="{Binding !HasRiskBlockHistory}" />
+                  <ItemsControl ItemsSource="{Binding RiskBlockHistoryLines}"
+                                IsVisible="{Binding HasRiskBlockHistory}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding}" Foreground="#F4B860"
+                                   FontSize="12" FontFamily="Cascadia Code,Consolas,monospace"
+                                   TextWrapping="Wrap" Margin="0,0,0,2" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+            </Grid>
 
             <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
               <Border Grid.Column="0" Classes="Panel">
