@@ -708,7 +708,12 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                 return pulse;
             }));
         CopilotVM = new CopilotViewModel(copilotData);
-        TelegramAccountVM = new TelegramAccountViewModel(new Services.TelegramUserClientService());
+        var telegramUserClient = new Services.TelegramUserClientService();
+        TelegramAccountVM = new TelegramAccountViewModel(telegramUserClient);
+
+        // Read trading signals from followed Telegram channels: every new channel/group
+        // message is parsed; only clean signals (symbol + direction) surface in the queue.
+        telegramUserClient.ChannelMessageReceived += OnTelegramChannelMessage;
 
         // Daily AI briefing — one morning read tying together the book, news pulse,
         // sentiment and scanner. RefreshCommand runs on the UI scheduler, so the
@@ -6006,6 +6011,23 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(HelpQuickStartSummary));
         this.RaisePropertyChanged(nameof(HelpSafetySummary));
         this.RaisePropertyChanged(nameof(LogoutStatusLabel));
+    }
+
+    // Fired on a Telegram reactor thread for each new channel/group message.
+    private void OnTelegramChannelMessage(Services.TelegramChannelMessage msg)
+    {
+        var signal = Services.TelegramSignalParser.Parse(msg.Text);
+        if (!signal.IsValid) return; // not a trading call — ignore noise
+
+        TelegramSignalVM.AddIncomingChannelSignal(signal, msg.ChannelTitle);
+
+        var source = string.IsNullOrWhiteSpace(msg.ChannelTitle) ? "Telegram" : msg.ChannelTitle;
+        var summary = $"{signal.Side} {signal.Symbol} ({source})";
+        Dispatcher.UIThread.Post(() =>
+        {
+            ShowToast($"📡 Signal: {summary}");
+            AddLog($"[TG SIGNAL] {summary} — {signal.RawText.Replace('\n', ' ')}");
+        });
     }
 
     private void OnRealizedTradeRecorded(TradeRecord record)
