@@ -260,6 +260,12 @@
               <TextBlock Grid.Column="1" Text="Whales" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" />
             </Grid>
           </Button>
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="tape" Background="{Binding TapeNavBackground}" Foreground="{Binding TapeNavForeground}">
+            <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
+              <Border Width="18" Height="18" Classes="NavGlyph"><TextBlock Text="🎞" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" /></Border>
+              <TextBlock Grid.Column="1" Text="Live Tape" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" />
+            </Grid>
+          </Button>
           <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="liquidation" Background="{Binding LiquidationNavBackground}" Foreground="{Binding LiquidationNavForeground}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Border Width="18" Height="18" Classes="NavGlyph"><TextBlock Text="🔥" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" /></Border>
@@ -734,6 +740,11 @@
                Whale Tracker Section
           ════════════════════════════════════════════════════════════════ -->
           <views:WhaleTrackerView />
+
+          <!-- ═══════════════════════════════════════════════════════════════
+               Live Tape — public market trades (time & sales)
+          ════════════════════════════════════════════════════════════════ -->
+          <views:MarketTapeView />
 
           <!-- ═══════════════════════════════════════════════════════════════
                Funding Rate Monitor
