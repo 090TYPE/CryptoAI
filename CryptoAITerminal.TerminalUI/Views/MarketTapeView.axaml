@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             x:Class="CryptoAITerminal.TerminalUI.Views.MarketTapeView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+  <StackPanel Spacing="16" IsVisible="{Binding IsTapeSectionVisible}">
+
+    <Border Classes="Panel">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="H2" Text="Live Tape (public market trades)" />
+        <TextBlock Text="Every participant's anonymous fills on the symbol. The exchange never exposes identity — this is the aggregate tape. Large prints are highlighted."
+                   Foreground="#8FA3B8" TextWrapping="Wrap" />
+        <Grid ColumnDefinitions="Auto,160,Auto,160,Auto" ColumnSpacing="12">
+          <TextBlock Grid.Column="0" Text="Symbol" VerticalAlignment="Center" />
+          <TextBox Grid.Column="1" Text="{Binding MarketTapeVM.Symbol}" Watermark="BTCUSDT" />
+          <TextBlock Grid.Column="2" Text="Large print ≥ (USDT)" VerticalAlignment="Center" />
+          <NumericUpDown Grid.Column="3" Minimum="0" Increment="10000"
+                         Value="{Binding MarketTapeVM.LargePrintThreshold}" />
+          <Button Grid.Column="4" Classes="GhostButton" Content="Apply"
+                  VerticalAlignment="Center" Command="{Binding MarketTapeVM.RefreshCommand}" />
+        </Grid>
+        <TextBlock Text="{Binding MarketTapeVM.PressureLabel}" FontWeight="SemiBold"
+                   Foreground="{Binding MarketTapeVM.PressureBrush}" />
+        <TextBlock Text="{Binding MarketTapeVM.StatusLabel}" Foreground="#8FA3B8" FontSize="11" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="Panel">
+      <StackPanel Spacing="6">
+        <Grid ColumnDefinitions="90,70,*,*,90" Margin="0,0,0,2">
+          <TextBlock Grid.Column="0" Text="Time"  Foreground="#8FA3B8" FontSize="11" />
+          <TextBlock Grid.Column="1" Text="Side"  Foreground="#8FA3B8" FontSize="11" />
+          <TextBlock Grid.Column="2" Text="Price" Foreground="#8FA3B8" FontSize="11" />
+          <TextBlock Grid.Column="3" Text="Qty"   Foreground="#8FA3B8" FontSize="11" />
+          <TextBlock Grid.Column="4" Text="USDT"  Foreground="#8FA3B8" FontSize="11"
+                     HorizontalAlignment="Right" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding MarketTapeVM.Rows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Border Background="{Binding RowBrush}" CornerRadius="3" Padding="2,1">
+                <Grid ColumnDefinitions="90,70,*,*,90">
+                  <TextBlock Grid.Column="0" Text="{Binding TimeLabel}"
+                             FontFamily="Cascadia Code,Consolas,monospace" FontSize="12" Foreground="#8FA3B8" />
+                  <TextBlock Grid.Column="1" Text="{Binding Side}"
+                             Foreground="{Binding SideBrush}" FontWeight="{Binding Weight}" FontSize="12" />
+                  <TextBlock Grid.Column="2" Text="{Binding PriceLabel}"
+                             FontFamily="Cascadia Code,Consolas,monospace" FontWeight="{Binding Weight}" FontSize="12" />
+                  <TextBlock Grid.Column="3" Text="{Binding QtyLabel}"
+                             FontFamily="Cascadia Code,Consolas,monospace" FontSize="12" Foreground="#C7D3DF" />
+                  <TextBlock Grid.Column="4" Text="{Binding QuoteLabel}"
+                             FontFamily="Cascadia Code,Consolas,monospace" FontWeight="{Binding Weight}" FontSize="12"
+                             HorizontalAlignment="Right" Foreground="#C7D3DF" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+
+  </StackPanel>
+</UserControl>

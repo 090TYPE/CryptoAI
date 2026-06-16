@@ -640,6 +640,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         PnlDashboardVM     = new PnlDashboardViewModel(pnlService);
         TradeJournalVM     = new TradeJournalViewModel(pnlService);
         TelegramSignalVM   = new TelegramSignalViewModel(_telegram);
+        MarketTapeVM       = new MarketTapeViewModel(new MarketTapeService());
         HotkeySettings     = HotkeySettings.Load();
 
         // Gas Monitor (Ethereum / BSC / Solana)
@@ -2514,6 +2515,9 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public bool IsWhaleTrackerSectionVisible => IsWorkspaceSection("whale");
     public string WhaleNavBackground => GetShellSectionBackground("whale");
     public string WhaleNavForeground => GetShellSectionForeground("whale");
+    public bool IsTapeSectionVisible => IsWorkspaceSection("tape");
+    public string TapeNavBackground => GetShellSectionBackground("tape");
+    public string TapeNavForeground => GetShellSectionForeground("tape");
     public bool IsFundingRateSectionVisible => IsWorkspaceSection("funding");
     public string FundingNavBackground => GetShellSectionBackground("funding");
     public string FundingNavForeground => GetShellSectionForeground("funding");
@@ -2563,6 +2567,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         IsAlertsSectionVisible ||
         IsAnalyticsSectionVisible ||
         IsWhaleTrackerSectionVisible ||
+        IsTapeSectionVisible ||
         IsFundingRateSectionVisible ||
         IsArbSectionVisible ||
         IsRouterSectionVisible ||
@@ -3190,6 +3195,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public AdvancedTrailingStopViewModel AdvancedTrailingVM { get; }
     public TradeJournalViewModel         TradeJournalVM     { get; private set; } = null!;
     public TelegramSignalViewModel       TelegramSignalVM   { get; private set; } = null!;
+    public MarketTapeViewModel           MarketTapeVM       { get; private set; } = null!;
     public HotkeySettings                HotkeySettings     { get; private set; } = null!;
     public GasMonitorViewModel           GasMonitorVM       { get; private set; } = null!;
     public AllPositionsViewModel         AllPositionsVM     { get; private set; } = null!;
@@ -4656,6 +4662,12 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         // Refresh P&L dashboard whenever the analytics section is opened
         if (normalized == "analytics" && PnlDashboardVM is not null)
             PnlDashboardVM.Refresh();
+
+        // Only poll the live tape while its section is on screen.
+        if (normalized == "tape")
+            MarketTapeVM?.Start();
+        else
+            MarketTapeVM?.Stop();
     }
 
     private void FocusMarket(CexMarketItemViewModel? market)
@@ -6003,6 +6015,9 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(IsWhaleTrackerSectionVisible));
         this.RaisePropertyChanged(nameof(WhaleNavBackground));
         this.RaisePropertyChanged(nameof(WhaleNavForeground));
+        this.RaisePropertyChanged(nameof(IsTapeSectionVisible));
+        this.RaisePropertyChanged(nameof(TapeNavBackground));
+        this.RaisePropertyChanged(nameof(TapeNavForeground));
         this.RaisePropertyChanged(nameof(IsFundingRateSectionVisible));
         this.RaisePropertyChanged(nameof(FundingNavBackground));
         this.RaisePropertyChanged(nameof(FundingNavForeground));
@@ -6481,6 +6496,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         "bots" => "bots",
         "analytics" => "analytics",
         "whale" or "whales" or "whale-tracker" => "whale",
+        "tape" or "live-tape" or "livetape" or "trades" or "time-and-sales" => "tape",
         "funding" or "funding-rate" or "fundingrate" or "fundingrates" => "funding",
         "liquidation" or "liq" or "liq-map" or "liquidations" => "liquidation",
         "rules" or "composite" or "composite-bot" or "rule-bot" => "rules",
@@ -6514,6 +6530,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         "backtest" => new(7, true, "Backtest", "A fast local scenario run on already loaded candles.", "Computes the rule-based strategy result, win rate, drawdown and current bias."),
         "bots" => new(7, true, "Bots", "Start/stop console for the rule-based bot on spot and futures.", "Gives direct access to symbol, size, risk cap, margin mode, bias and leverage."),
         "whale" => new(7, true, "Whale Tracker", "Monitoring of large on-chain transfers and known wallet activity.", "Shows transfers > $500K on ETH/BSC/Solana, labeled addresses and Sniper entry."),
+        "tape" => new(7, true, "Live Tape", "Live public-trade tape: every participant's anonymous fills on a symbol.", "Polls the Binance public recent-trades feed, highlights large prints and shows buy/sell pressure. No identity is exposed by the exchange."),
         "funding" => new(7, true, "Funding Rates", "Real-time funding rate table for all Binance USD-M perpetuals.", "Alerts on extreme values (>0.1% / <-0.1%), chart history and best long/short arbitrage picks."),
         "liquidation" => new(7, true, "Liq Heatmap", "Liquidation map — clusters of stops and forced closures.", "Shows levels where longs/shorts get liquidated. Source: CoinGlass API or Binance OB estimation."),
         "rules"   => new(7, true, "Composite Bot", "Visual Condition → Action rule builder, no code.", "Build rules: RSI < 30 AND Volume > SMA×1.5 → DCA Buy. The engine evaluates all rules every 10 seconds."),
