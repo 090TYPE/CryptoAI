@@ -83,6 +83,44 @@ public sealed class TelegramSignalViewModel : ReactiveObject
 
     // ── public API ────────────────────────────────────────────────────────────
 
+    // Channel-sourced signals get synthetic, monotonically-decreasing negative ids so they
+    // never collide with the positive Telegram bot message ids used by SendSignal.
+    private long _incomingId = 0;
+
+    /// <summary>
+    /// Surfaces a signal parsed from a followed Telegram channel as a pending row.
+    /// Unlike <see cref="SendSignal"/> this needs no bot — the call originated from the
+    /// user's own account feed, so it just enqueues the row for accept/skip.
+    /// Returns the created row, or null if it was a duplicate / invalid.
+    /// </summary>
+    public TelegramSignalRowVM? AddIncomingChannelSignal(ParsedTelegramSignal signal, string channelTitle)
+    {
+        if (!signal.IsValid) return null;
+
+        var msgId = System.Threading.Interlocked.Decrement(ref _incomingId);
+        var pending = new TelegramPendingSignal
+        {
+            MessageId   = msgId,
+            Symbol      = signal.Symbol,
+            Side        = signal.Side,
+            Price       = signal.Entry ?? 0m,
+            Quantity    = 0m,
+            Description = TelegramChannelSignalMapper.DescribeSignal(signal, channelTitle)
+        };
+
+        _pending[msgId] = pending;
+
+        TelegramSignalRowVM? row = null;
+        Dispatcher.UIThread.Post(() =>
+        {
+            row = new TelegramSignalRowVM(pending, AcceptRow, SkipRow);
+            PendingRows.Insert(0, row);
+            RaiseCounts();
+        }, Avalonia.Threading.DispatcherPriority.Background);
+
+        return row;
+    }
+
     /// <summary>
     /// Sends a signal message to Telegram with [✅ Accept] [❌ Skip] buttons
     /// and registers it as a pending signal.
