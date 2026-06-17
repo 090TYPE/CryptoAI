@@ -29,6 +29,14 @@ public sealed class TapeRowVM
     public string QtyLabel   => Trade.Quantity.ToString("0.######");
     public string QuoteLabel => Trade.QuoteQty >= 1000m ? $"{Trade.QuoteQty / 1000m:0.0}K" : Trade.QuoteQty.ToString("0");
 
+    public string VenueLabel => Trade.Venue;
+    public string VenueBrush => Trade.Venue == "DEX" ? "#B084F5" : "#5AA9E6";
+
+    // CEX is anonymous; DEX carries the originating wallet — show a short form.
+    public string TraderLabel => Trade.Trader is { Length: > 10 } w
+        ? $"{w[..6]}…{w[^4..]}"
+        : Trade.Trader ?? "—";
+
     public string SideBrush  => Trade.Side == "SELL" ? "#FF6B6B" : "#3DDC84";
     public string RowBrush   => IsLarge ? "#1A2A3A" : "Transparent";
     public string Weight     => IsLarge ? "Bold" : "Normal";
@@ -37,8 +45,9 @@ public sealed class TapeRowVM
 // ── Master VM ─────────────────────────────────────────────────────────────────
 
 /// <summary>
-/// Live public-trade tape for a single symbol: shows every market participant's
-/// anonymous fills, highlights large prints and summarises buy/sell pressure.
+/// Live public-trade tape for one venue at a time. CEX shows a symbol's anonymous
+/// fills; DEX shows a pool's on-chain swaps (with the originating wallet). Highlights
+/// large prints and summarises buy/sell pressure.
 /// </summary>
 public sealed class MarketTapeViewModel : ReactiveObject, IDisposable
 {
@@ -46,28 +55,77 @@ public sealed class MarketTapeViewModel : ReactiveObject, IDisposable
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2.5);
 
     private readonly MarketTapeService _service;
-    private readonly HashSet<long> _seenIds = new();
+    private readonly HashSet<string> _seen = new();
 
     private System.Timers.Timer? _timer;
     private CancellationTokenSource? _cts;
     private bool _polling;
-    private long _maxSeenId;
 
     public ObservableCollection<TapeRowVM> Rows { get; } = [];
 
     public MarketTapeViewModel(MarketTapeService service)
     {
         _service = service;
-        RefreshCommand = ReactiveCommand.Create(() => { ResetFeed(); }, outputScheduler: App.UiScheduler);
+        RefreshCommand   = ReactiveCommand.Create(ResetFeed, outputScheduler: App.UiScheduler);
+        SelectCexCommand = ReactiveCommand.Create(() => SetVenue("CEX"), outputScheduler: App.UiScheduler);
+        SelectDexCommand = ReactiveCommand.Create(() => SetVenue("DEX"), outputScheduler: App.UiScheduler);
     }
 
-    public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> RefreshCommand { get; }
+    public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> RefreshCommand   { get; }
+    public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> SelectCexCommand { get; }
+    public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> SelectDexCommand { get; }
+
+    // ── venue ─────────────────────────────────────────────────────────────────
+
+    private string _venue = "CEX";
+    public string Venue
+    {
+        get => _venue;
+        private set => this.RaiseAndSetIfChanged(ref _venue, value);
+    }
+
+    public bool   IsCex          => Venue == "CEX";
+    public bool   IsDex          => Venue == "DEX";
+    public string CexTabBrush    => IsCex ? "#12293A" : "Transparent";
+    public string DexTabBrush    => IsDex ? "#12293A" : "Transparent";
+    public string CexTabFg       => IsCex ? "#21E6C1" : "#7A96AF";
+    public string DexTabFg       => IsDex ? "#B084F5" : "#7A96AF";
+
+    private void SetVenue(string venue)
+    {
+        if (Venue == venue) return;
+        Venue = venue;
+        this.RaisePropertyChanged(nameof(IsCex));
+        this.RaisePropertyChanged(nameof(IsDex));
+        this.RaisePropertyChanged(nameof(CexTabBrush));
+        this.RaisePropertyChanged(nameof(DexTabBrush));
+        this.RaisePropertyChanged(nameof(CexTabFg));
+        this.RaisePropertyChanged(nameof(DexTabFg));
+        ResetFeed();
+    }
+
+    // ── inputs ────────────────────────────────────────────────────────────────
 
     private string _symbol = "BTCUSDT";
     public string Symbol
     {
         get => _symbol;
         set => this.RaiseAndSetIfChanged(ref _symbol, value);
+    }
+
+    private string _network = "eth";
+    public string Network
+    {
+        get => _network;
+        set => this.RaiseAndSetIfChanged(ref _network, value);
+    }
+
+    // Default: Uniswap v3 WETH/USDC on Ethereum — a high-volume pool so the demo is lively.
+    private string _poolAddress = "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640";
+    public string PoolAddress
+    {
+        get => _poolAddress;
+        set => this.RaiseAndSetIfChanged(ref _poolAddress, value);
     }
 
     private decimal _largePrintThreshold = 50_000m;
@@ -124,15 +182,17 @@ public sealed class MarketTapeViewModel : ReactiveObject, IDisposable
 
     private void ResetFeed()
     {
-        _seenIds.Clear();
-        _maxSeenId = 0;
+        _seen.Clear();
         Rows.Clear();
-        StatusLabel = $"Loading {Symbol.ToUpperInvariant()}…";
+        StatusLabel = $"Loading {SourceLabel()}…";
         if (_timer is null)
         {
             Start();
         }
     }
+
+    private string SourceLabel() =>
+        IsDex ? $"{Network.ToLowerInvariant()} pool" : Symbol.ToUpperInvariant();
 
     // ── polling ─────────────────────────────────────────────────────────────────
 
@@ -141,17 +201,21 @@ public sealed class MarketTapeViewModel : ReactiveObject, IDisposable
         if (_polling) return; // skip overlapping ticks
         _polling = true;
         var token = _cts?.Token ?? CancellationToken.None;
-        var symbol = Symbol;
+        var venue = Venue;
 
         try
         {
-            var trades = await _service.GetRecentTradesAsync(symbol, 50, token).ConfigureAwait(false);
-            if (token.IsCancellationRequested) return;
+            var trades = venue == "DEX"
+                ? await _service.GetDexPoolTradesAsync(Network, PoolAddress, token).ConfigureAwait(false)
+                : await _service.GetRecentTradesAsync(Symbol, 50, token).ConfigureAwait(false);
 
-            // Only rows we have not shown yet, oldest-first so newest ends up on top.
+            if (token.IsCancellationRequested || venue != Venue) return;
+
+            // Only trades we have not shown yet, oldest-first so the newest ends up on top.
             var fresh = trades
-                .Where(t => t.Id > _maxSeenId && _seenIds.Add(t.Id))
-                .OrderBy(t => t.Id)
+                .Where(t => _seen.Add(t.DedupKey))
+                .OrderBy(t => t.TimeUtc)
+                .ThenBy(t => t.Id)
                 .ToList();
 
             var threshold = LargePrintThreshold;
@@ -160,7 +224,6 @@ public sealed class MarketTapeViewModel : ReactiveObject, IDisposable
             {
                 foreach (var t in fresh)
                 {
-                    if (t.Id > _maxSeenId) _maxSeenId = t.Id;
                     Rows.Insert(0, new TapeRowVM(t, threshold > 0m && t.QuoteQty >= threshold));
                 }
 
@@ -170,7 +233,7 @@ public sealed class MarketTapeViewModel : ReactiveObject, IDisposable
                 }
 
                 UpdateStats(threshold);
-                StatusLabel = $"{symbol.ToUpperInvariant()} · {Rows.Count} trades · live";
+                StatusLabel = $"{venue} · {SourceLabel()} · {Rows.Count} trades · live";
             });
         }
         catch (OperationCanceledException)

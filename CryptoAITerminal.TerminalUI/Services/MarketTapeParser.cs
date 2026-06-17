@@ -6,9 +6,9 @@ using System.Text.Json;
 namespace CryptoAITerminal.TerminalUI.Services;
 
 /// <summary>
-/// One anonymous public trade from the exchange tape (everyone's fills on a symbol).
-/// <see cref="Side"/> is the aggressor side: BUY when the taker lifted the ask,
-/// SELL when the taker hit the bid.
+/// One public trade from a venue tape. On CEX it is an anonymous fill (aggressor
+/// <see cref="Side"/>: BUY lifted the ask, SELL hit the bid). On DEX it is an on-chain
+/// swap, which additionally carries the originating wallet in <see cref="Trader"/>.
 /// </summary>
 public sealed record TapeTrade(
     long     Id,
@@ -16,7 +16,16 @@ public sealed record TapeTrade(
     string   Side,
     decimal  Price,
     decimal  Quantity,
-    decimal  QuoteQty);
+    decimal  QuoteQty,
+    string   Venue   = "CEX",
+    string?  Trader  = null,
+    string?  TxHash  = null)
+{
+    /// <summary>Stable per-trade key used to avoid showing the same trade twice.</summary>
+    public string DedupKey => Venue == "DEX"
+        ? (TxHash ?? Id.ToString())
+        : Id.ToString();
+}
 
 /// <summary>
 /// Pure parser for the Binance public recent-trades endpoint
