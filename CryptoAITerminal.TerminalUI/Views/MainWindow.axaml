@@ -726,8 +726,12 @@
 
     <Border IsVisible="{Binding IsPlaceholderSectionVisible}" Classes="Panel" Padding="26" ZIndex="5">
       <ScrollViewer Classes="PageScroll">
-        <StackPanel Spacing="18">
-          <TextBlock Classes="H1" Text="{Binding CurrentSectionTitle}" />
+        <!-- Spacing intentionally 0: every section UserControl below stays
+             always-visible (its inner panel toggles IsVisible), so any Spacing
+             here accumulates between ~23 zero-height wrappers and pushes the
+             active page down. Title gets its own margin instead. -->
+        <StackPanel Spacing="0">
+          <TextBlock Classes="H1" Text="{Binding CurrentSectionTitle}" Margin="0,0,0,16" />
 
           <views:RiskView />
 
