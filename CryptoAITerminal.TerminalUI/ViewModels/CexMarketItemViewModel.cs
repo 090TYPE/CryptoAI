@@ -344,6 +344,7 @@ public sealed class PriceSample
 public class OrderBookLevelViewModel : ReactiveObject
 {
     private bool _isSelected;
+    private bool _isLarge;
 
     public OrderBookLevelViewModel(decimal price, decimal quantity)
     {
@@ -353,6 +354,8 @@ public class OrderBookLevelViewModel : ReactiveObject
 
     public decimal Price { get; }
     public decimal Quantity { get; }
+    public decimal Notional => Price * Quantity;
+
     public bool IsSelected
     {
         get => _isSelected;
@@ -364,6 +367,23 @@ public class OrderBookLevelViewModel : ReactiveObject
         }
     }
 
+    /// <summary>True when this level is at/above the user's wall threshold.</summary>
+    public bool IsLarge
+    {
+        get => _isLarge;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isLarge, value);
+            this.RaisePropertyChanged(nameof(RowBackground));
+            this.RaisePropertyChanged(nameof(SizeFontWeight));
+            this.RaisePropertyChanged(nameof(WallIconVisible));
+        }
+    }
+
     public string PriceBrush => IsSelected ? "#F4B860" : "#F4F7FB";
-    public string RowBackground => IsSelected ? "#243241" : "Transparent";
+
+    // Selected tint wins; otherwise a warm wall tint when large.
+    public string RowBackground => IsSelected ? "#243241" : IsLarge ? "#3A2E12" : "Transparent";
+    public string SizeFontWeight => IsLarge ? "Bold" : "Normal";
+    public bool WallIconVisible => IsLarge;
 }
