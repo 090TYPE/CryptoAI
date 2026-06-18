@@ -879,6 +879,10 @@
                                Value="{Binding SelectedMarket.WallQtyThreshold}"
                                IsVisible="{Binding SelectedMarket.IsWallModeQty}"
                                ToolTip.Tip="Порог в объёме (базовый актив)" />
+                <TextBlock Text="{Binding SelectedMarket.WallImbalanceLabel}"
+                           Foreground="{Binding SelectedMarket.WallImbalanceBrush}"
+                           FontSize="12" TextWrapping="Wrap"
+                           IsVisible="{Binding SelectedMarket.HasWalls}" />
               </StackPanel>
             </Border>
             <Grid ColumnDefinitions="*,*" ColumnSpacing="10">

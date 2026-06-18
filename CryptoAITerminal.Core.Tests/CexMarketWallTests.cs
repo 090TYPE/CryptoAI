@@ -70,4 +70,15 @@ public class CexMarketWallTests
         Assert.True(vm.BidLevels[0].IsLarge);
         Assert.False(vm.AskLevels[0].IsLarge);
     }
+
+    [Fact]
+    public void Imbalance_sums_wall_notional_per_side()
+    {
+        var vm = new CexMarketItemViewModel("BTCUSDT") { WallMode = WallHighlightMode.Usd, WallUsdThreshold = 1000m };
+        vm.UpdateOrderBook(Book());
+
+        Assert.Equal(2000m, vm.BidWallUsd); // 100 * 20
+        Assert.Equal(1515m, vm.AskWallUsd); // 101 * 15
+        Assert.True(vm.HasWalls);
+    }
 }

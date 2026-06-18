@@ -28,6 +28,8 @@ public class CexMarketItemViewModel : ReactiveObject
     private decimal _wallQtyThreshold;
     private int _bidWallCount;
     private int _askWallCount;
+    private decimal _bidWallUsd;
+    private decimal _askWallUsd;
 
     public CexMarketItemViewModel(string symbol)
     {
@@ -91,6 +93,33 @@ public class CexMarketItemViewModel : ReactiveObject
     }
 
     public int TotalWallCount => BidWallCount + AskWallCount;
+
+    /// <summary>Total USD notional of bid (support) walls.</summary>
+    public decimal BidWallUsd
+    {
+        get => _bidWallUsd;
+        private set => this.RaiseAndSetIfChanged(ref _bidWallUsd, value);
+    }
+
+    /// <summary>Total USD notional of ask (resistance) walls.</summary>
+    public decimal AskWallUsd
+    {
+        get => _askWallUsd;
+        private set => this.RaiseAndSetIfChanged(ref _askWallUsd, value);
+    }
+
+    public bool HasWalls => BidWallUsd > 0m || AskWallUsd > 0m;
+
+    public string WallImbalanceLabel =>
+        $"Поддержка {FormatWallUsd(BidWallUsd)}  ·  Сопротивление {FormatWallUsd(AskWallUsd)}";
+
+    public string WallImbalanceBrush =>
+        BidWallUsd > AskWallUsd ? "#42F5B1" : AskWallUsd > BidWallUsd ? "#FF857B" : "#8FA3B8";
+
+    private static string FormatWallUsd(decimal usd) =>
+        usd >= 1_000_000m ? $"${usd / 1_000_000m:N2}M"
+        : usd >= 1_000m ? $"${usd / 1_000m:N1}K"
+        : $"${usd:N0}";
 
     public string Symbol { get; }
     public string BaseAssetSymbol => Symbol.EndsWith("USDT", StringComparison.OrdinalIgnoreCase)
@@ -277,14 +306,14 @@ public class CexMarketItemViewModel : ReactiveObject
             BidLevels,
             orderBook.Bids
                 .OrderByDescending(level => level.Price)
-                .Take(8)
+                .Take(50)
                 .Select(level => new OrderBookLevelViewModel(level.Price, level.Quantity)));
 
         ReplaceLevels(
             AskLevels,
             orderBook.Asks
                 .OrderBy(level => level.Price)
-                .Take(8)
+                .Take(50)
                 .Select(level => new OrderBookLevelViewModel(level.Price, level.Quantity)));
 
         ApplyWallHighlighting();
@@ -314,6 +343,8 @@ public class CexMarketItemViewModel : ReactiveObject
         LargeWalls.Clear();
         var bidWalls = 0;
         var askWalls = 0;
+        decimal bidUsd = 0m;
+        decimal askUsd = 0m;
 
         void Collect(ObservableCollection<OrderBookLevelViewModel> levels, bool isBid)
         {
@@ -324,7 +355,8 @@ public class CexMarketItemViewModel : ReactiveObject
                     level.Price, isBid,
                     OrderBookWallDetector.Intensity(level.Notional, maxNotional),
                     level.Notional, level.Quantity));
-                if (isBid) bidWalls++; else askWalls++;
+                if (isBid) { bidWalls++; bidUsd += level.Notional; }
+                else { askWalls++; askUsd += level.Notional; }
             }
         }
 
@@ -333,7 +365,12 @@ public class CexMarketItemViewModel : ReactiveObject
 
         BidWallCount = bidWalls;
         AskWallCount = askWalls;
+        BidWallUsd = bidUsd;
+        AskWallUsd = askUsd;
         this.RaisePropertyChanged(nameof(TotalWallCount));
+        this.RaisePropertyChanged(nameof(HasWalls));
+        this.RaisePropertyChanged(nameof(WallImbalanceLabel));
+        this.RaisePropertyChanged(nameof(WallImbalanceBrush));
     }
 
     private void RebuildChart()
