@@ -850,30 +850,36 @@
             </Grid>
 
             <Border Classes="TicketMetricCard" Margin="0,0,0,8">
-              <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto" ColumnSpacing="10">
-                <TextBlock Grid.Column="0" Text="Крупные заявки" VerticalAlignment="Center"
-                           Foreground="#8FA3B8" FontWeight="SemiBold" />
-                <Button Grid.Column="1" Content="USD"
-                        Command="{Binding SetWallModeCommand}" CommandParameter="Usd"
-                        Classes="GhostButton" Padding="10,4"
-                        IsEnabled="{Binding !SelectedMarket.IsWallModeUsd}" />
-                <Button Grid.Column="2" Content="Объём"
-                        Command="{Binding SetWallModeCommand}" CommandParameter="Qty"
-                        Classes="GhostButton" Padding="10,4"
-                        IsEnabled="{Binding !SelectedMarket.IsWallModeQty}" />
-                <NumericUpDown Grid.Column="3"
-                               Minimum="0" Increment="1000" FormatString="N0"
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Grid.Column="0" Text="Крупные заявки" VerticalAlignment="Center"
+                             Foreground="#8FA3B8" FontWeight="SemiBold" />
+                  <TextBlock Grid.Column="1" VerticalAlignment="Center" Foreground="#8FA3B8"
+                             Text="{Binding SelectedMarket.TotalWallCount, StringFormat=Стен: {0}}" />
+                </Grid>
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                  <Button Grid.Column="0" Content="USD"
+                          Command="{Binding SetWallModeCommand}" CommandParameter="Usd"
+                          Classes="GhostButton" Padding="10,6"
+                          HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                          IsEnabled="{Binding !SelectedMarket.IsWallModeUsd}" />
+                  <Button Grid.Column="1" Content="Объём"
+                          Command="{Binding SetWallModeCommand}" CommandParameter="Qty"
+                          Classes="GhostButton" Padding="10,6"
+                          HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                          IsEnabled="{Binding !SelectedMarket.IsWallModeQty}" />
+                </Grid>
+                <NumericUpDown Minimum="0" Increment="1000" FormatString="N0"
+                               HorizontalAlignment="Stretch"
                                Value="{Binding SelectedMarket.WallUsdThreshold}"
                                IsVisible="{Binding SelectedMarket.IsWallModeUsd}"
                                ToolTip.Tip="Порог в USD (цена × объём)" />
-                <NumericUpDown Grid.Column="3"
-                               Minimum="0" Increment="1" FormatString="N4"
+                <NumericUpDown Minimum="0" Increment="1" FormatString="N4"
+                               HorizontalAlignment="Stretch"
                                Value="{Binding SelectedMarket.WallQtyThreshold}"
                                IsVisible="{Binding SelectedMarket.IsWallModeQty}"
                                ToolTip.Tip="Порог в объёме (базовый актив)" />
-                <TextBlock Grid.Column="4" VerticalAlignment="Center" Foreground="#8FA3B8"
-                           Text="{Binding SelectedMarket.TotalWallCount, StringFormat=Стен: {0}}" />
-              </Grid>
+              </StackPanel>
             </Border>
             <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
               <Border Grid.Column="0" Classes="TicketMetricCard,OrderBookSideCard">
