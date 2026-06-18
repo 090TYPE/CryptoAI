@@ -90,6 +90,24 @@
             </StackPanel>
           </Border>
           <Button Classes="GhostButton"
+                  ToolTip.Tip="Уведомления"
+                  Padding="0"
+                  Width="32" Height="32"
+                  CornerRadius="17"
+                  BorderThickness="1"
+                  Margin="0,0,10,0"
+                  Click="OnOpenNotificationsClick">
+            <Panel>
+              <TextBlock Text="🔔" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="14" />
+              <Border IsVisible="{Binding HasNotifications}"
+                      Background="#FF6B6B" CornerRadius="7" MinWidth="14" Height="14"
+                      Padding="3,0" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0">
+                <TextBlock Text="{Binding NotificationCountLabel}" Foreground="White"
+                           FontSize="8" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+            </Panel>
+          </Button>
+          <Button Classes="GhostButton"
                   ToolTip.Tip="Settings"
                   Padding="0"
                   Width="32" Height="32"
@@ -920,7 +938,7 @@
       </Grid>
     </Border>
 
-    <!-- Alert toast notification overlay -->
+    <!-- Alert toast notification overlay (click to open the notification center) -->
     <Border IsVisible="{Binding IsToastVisible}"
             HorizontalAlignment="Right"
             VerticalAlignment="Bottom"
@@ -931,16 +949,81 @@
             BorderThickness="1"
             CornerRadius="8"
             MaxWidth="380"
-            ZIndex="100">
+            ZIndex="100"
+            Cursor="Hand"
+            PointerPressed="OnToastClick">
       <Border.Transitions>
         <Transitions>
           <DoubleTransition Property="Opacity" Duration="0:0:0.25" />
         </Transitions>
       </Border.Transitions>
       <StackPanel Spacing="4">
-        <TextBlock Text="Alert Fired" Foreground="#1FE6C2" FontSize="11" FontWeight="SemiBold" />
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Grid.Column="0" Text="Уведомление" Foreground="#1FE6C2" FontSize="11"
+                     FontWeight="SemiBold" VerticalAlignment="Center" />
+          <Button Grid.Column="1" Content="✕" Click="OnToastCloseClick"
+                  Background="Transparent" BorderThickness="0" Padding="6,0"
+                  Foreground="#8FA3B8" FontSize="13" ToolTip.Tip="Закрыть" />
+        </Grid>
         <TextBlock Text="{Binding ToastMessage}" Foreground="#E0E8F0" TextWrapping="Wrap" FontSize="13" />
+        <TextBlock Text="Нажмите, чтобы открыть все уведомления" Foreground="#5A7A90" FontSize="10" />
       </StackPanel>
+    </Border>
+
+    <!-- Notification center: full registry of fired notifications -->
+    <Border IsVisible="{Binding IsNotificationCenterVisible}"
+            Background="#CC04080D"
+            ZIndex="250">
+      <Border HorizontalAlignment="Right"
+              VerticalAlignment="Stretch"
+              Width="430"
+              Background="#0B1622"
+              BorderBrush="#1F3445"
+              BorderThickness="1,0,0,0"
+              Padding="18">
+        <Grid RowDefinitions="Auto,*,Auto" RowSpacing="12">
+          <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+            <TextBlock Grid.Column="0" Text="Уведомления" Foreground="#F4F7FB"
+                       FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Content="✕" Click="OnCloseNotificationsClick"
+                    Classes="GhostButton" Padding="10,4" ToolTip.Tip="Закрыть" />
+          </Grid>
+
+          <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Panel>
+              <TextBlock Text="Пока нет уведомлений"
+                         Foreground="#5A7A90" FontSize="13"
+                         HorizontalAlignment="Center" Margin="0,40,0,0"
+                         IsVisible="{Binding !HasNotifications}" />
+              <ItemsControl ItemsSource="{Binding Notifications}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:NotificationEntry">
+                    <Border Background="#0F1B28" BorderBrush="#1F3445" BorderThickness="1"
+                            CornerRadius="8" Padding="12,10" Margin="0,0,0,8"
+                            Cursor="Hand" PointerPressed="OnNotificationEntryClick">
+                      <StackPanel Spacing="4">
+                        <TextBlock Text="{Binding TimeLabel}" Foreground="#5A7A90" FontSize="11" />
+                        <TextBlock Text="{Binding Message}" Foreground="#E0E8F0"
+                                   FontSize="13" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding ActionLabel}" Foreground="#1FE6C2"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   IsVisible="{Binding HasAction}" />
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Panel>
+          </ScrollViewer>
+
+          <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
+            <TextBlock Grid.Column="0" Foreground="#5A7A90" VerticalAlignment="Center"
+                       Text="{Binding NotificationCountLabel, StringFormat=Всего: {0}}" />
+            <Button Grid.Column="1" Content="Очистить" Click="OnClearNotificationsClick"
+                    Classes="GhostButton" Padding="12,6" />
+          </Grid>
+        </Grid>
+      </Border>
     </Border>
 
     <!-- Update available banner -->

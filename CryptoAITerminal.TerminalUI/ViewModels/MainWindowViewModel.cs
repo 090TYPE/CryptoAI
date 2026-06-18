@@ -3350,17 +3350,118 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         private set => this.RaiseAndSetIfChanged(ref _isToastVisible, value);
     }
 
+    private bool _isNotificationCenterVisible;
+
+    /// <summary>Full registry of fired notifications, newest first.</summary>
+    public ObservableCollection<NotificationEntry> Notifications { get; } = [];
+
+    public bool IsNotificationCenterVisible
+    {
+        get => _isNotificationCenterVisible;
+        private set => this.RaiseAndSetIfChanged(ref _isNotificationCenterVisible, value);
+    }
+
+    public bool HasNotifications => Notifications.Count > 0;
+    public string NotificationCountLabel => Notifications.Count.ToString();
+
     private void ShowToast(string message)
     {
         Dispatcher.UIThread.Post(() =>
         {
+            Notifications.Insert(0, new NotificationEntry(message, DateTime.Now, ResolveNotificationSymbol(message)));
+            while (Notifications.Count > 200)
+            {
+                Notifications.RemoveAt(Notifications.Count - 1);
+            }
+            this.RaisePropertyChanged(nameof(HasNotifications));
+            this.RaisePropertyChanged(nameof(NotificationCountLabel));
+
             ToastMessage = message;
             IsToastVisible = true;
             _toastTimer?.Dispose();
             _toastTimer = System.Reactive.Linq.Observable
-                .Timer(TimeSpan.FromSeconds(5))
+                .Timer(TimeSpan.FromSeconds(12))
                 .Subscribe(_ => Dispatcher.UIThread.Post(() => IsToastVisible = false));
         });
+    }
+
+    /// <summary>Hide the current toast (✕ button) without clearing history.</summary>
+    public void DismissToast()
+    {
+        _toastTimer?.Dispose();
+        IsToastVisible = false;
+    }
+
+    /// <summary>Open the full notification registry (clicking a toast or the bell).</summary>
+    public void OpenNotificationCenter()
+    {
+        IsToastVisible = false;
+        IsNotificationCenterVisible = true;
+    }
+
+    public void CloseNotificationCenter() => IsNotificationCenterVisible = false;
+
+    public void ClearNotifications()
+    {
+        Notifications.Clear();
+        this.RaisePropertyChanged(nameof(HasNotifications));
+        this.RaisePropertyChanged(nameof(NotificationCountLabel));
+    }
+
+    /// <summary>
+    /// Best-effort: find a trading symbol mentioned in a notification message so the
+    /// registry entry can deep-link to that market. Prefers a full symbol (BTCUSDT)
+    /// then a standalone base ticker (BTC).
+    /// </summary>
+    private string? ResolveNotificationSymbol(string message)
+    {
+        if (string.IsNullOrEmpty(message))
+        {
+            return null;
+        }
+
+        var upper = message.ToUpperInvariant();
+
+        foreach (var market in Markets)
+        {
+            if (upper.Contains(market.Symbol, StringComparison.Ordinal))
+            {
+                return market.Symbol;
+            }
+        }
+
+        foreach (var market in Markets)
+        {
+            var baseAsset = market.BaseAssetSymbol.ToUpperInvariant();
+            if (baseAsset.Length >= 2 &&
+                System.Text.RegularExpressions.Regex.IsMatch(
+                    upper, $@"\b{System.Text.RegularExpressions.Regex.Escape(baseAsset)}\b"))
+            {
+                return market.Symbol;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Clicking a registry entry: jump to that market's Trading view.</summary>
+    public void ActivateNotification(NotificationEntry entry)
+    {
+        if (entry?.Symbol is null)
+        {
+            CloseNotificationCenter();
+            return;
+        }
+
+        var market = Markets.FirstOrDefault(m =>
+            string.Equals(m.Symbol, entry.Symbol, StringComparison.OrdinalIgnoreCase));
+        if (market is not null)
+        {
+            SelectedMarket = market;
+        }
+
+        SelectMainTab("trading");
+        CloseNotificationCenter();
     }
 
     private IExchangeGateway ActiveCexGateway => IsManualFuturesMode ? ActiveFuturesGateway : _gateway;
@@ -5236,17 +5337,17 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             OrderBook orderBook;
             try
             {
-                orderBook = await gateway.GetOrderBookAsync(market.Symbol, depth: 16);
+                orderBook = await gateway.GetOrderBookAsync(market.Symbol, depth: 50);
                 if (useFutures && !HasUsableOrderBook(orderBook))
                 {
                     AddLog($"Futures order book for {market.Symbol} returned no depth, using spot display fallback.");
-                    orderBook = await _gateway.GetOrderBookAsync(market.Symbol, depth: 16);
+                    orderBook = await _gateway.GetOrderBookAsync(market.Symbol, depth: 50);
                 }
             }
             catch (Exception ex) when (useFutures)
             {
                 AddLog($"Futures order book unavailable for {market.Symbol}, using spot display fallback: {ex.Message}");
-                orderBook = await _gateway.GetOrderBookAsync(market.Symbol, depth: 16);
+                orderBook = await _gateway.GetOrderBookAsync(market.Symbol, depth: 50);
             }
 
             await Dispatcher.UIThread.InvokeAsync(() =>

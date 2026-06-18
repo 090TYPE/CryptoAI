@@ -167,6 +167,39 @@ public partial class MainWindow : Window
         _localization.SetLanguage(UiLanguage.Russian);
     }
 
+    private void OnToastClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        ViewModel?.OpenNotificationCenter();
+    }
+
+    private void OnToastCloseClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel?.DismissToast();
+    }
+
+    private void OnOpenNotificationsClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel?.OpenNotificationCenter();
+    }
+
+    private void OnCloseNotificationsClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel?.CloseNotificationCenter();
+    }
+
+    private void OnClearNotificationsClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel?.ClearNotifications();
+    }
+
+    private void OnNotificationEntryClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        if (sender is Avalonia.Controls.Control { DataContext: NotificationEntry entry })
+        {
+            ViewModel?.ActivateNotification(entry);
+        }
+    }
+
     private void OnLadderWheelChanged(object? sender, PointerWheelEventArgs e)
     {
         if (ViewModel is null)
