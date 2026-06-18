@@ -62,6 +62,9 @@ CryptoAITerminal.LicenseBot/appsettings.json
 *.db-shm
 *.db-wal
 
+# Installer build output (the produced setup .exe is a release artifact, not source)
+installer/output/
+
 # Claude Code / environment cruft (not part of the .NET solution)
 node_modules/
 package.json
