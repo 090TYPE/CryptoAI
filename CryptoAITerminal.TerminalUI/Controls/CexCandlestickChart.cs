@@ -34,12 +34,16 @@ public class CexCandlestickChart : Control
     public static readonly StyledProperty<bool> ShowVolumeProfileProperty =
         AvaloniaProperty.Register<CexCandlestickChart, bool>(nameof(ShowVolumeProfile), defaultValue: true);
 
+    public static readonly StyledProperty<IReadOnlyList<BookWall>?> WallsProperty =
+        AvaloniaProperty.Register<CexCandlestickChart, IReadOnlyList<BookWall>?>(nameof(Walls));
+
     private const int MinimumVisibleCandles = 20;
     private const int DefaultRecentVisibleCandles = 180;
     private static readonly Dictionary<string, List<ChartDrawing>> PersistedDrawings = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly List<ChartDrawing> _drawings = [];
     private INotifyCollectionChanged? _subscribedCollection;
+    private INotifyCollectionChanged? _subscribedWalls;
     private IReadOnlyList<DexOhlcvPoint> _allCandles = Array.Empty<DexOhlcvPoint>();
     private IReadOnlyList<DexOhlcvPoint> _visibleCandles = Array.Empty<DexOhlcvPoint>();
     private Rect _chartBounds;
@@ -64,7 +68,7 @@ public class CexCandlestickChart : Control
 
     static CexCandlestickChart()
     {
-        AffectsRender<CexCandlestickChart>(CandlesProperty, ToolModeProperty, ClearDrawingsVersionProperty, ResetViewVersionProperty, PersistenceKeyProperty, ShowVwapProperty, ShowVolumeProfileProperty);
+        AffectsRender<CexCandlestickChart>(CandlesProperty, ToolModeProperty, ClearDrawingsVersionProperty, ResetViewVersionProperty, PersistenceKeyProperty, ShowVwapProperty, ShowVolumeProfileProperty, WallsProperty);
         FocusableProperty.OverrideDefaultValue<CexCandlestickChart>(true);
     }
 
@@ -110,6 +114,12 @@ public class CexCandlestickChart : Control
         set => SetValue(ShowVolumeProfileProperty, value);
     }
 
+    public IReadOnlyList<BookWall>? Walls
+    {
+        get => GetValue(WallsProperty);
+        set => SetValue(WallsProperty, value);
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -119,6 +129,13 @@ public class CexCandlestickChart : Control
             SubscribeToCandles();
             RefreshAllCandles();
             ResetViewWindowIfNeeded();
+            InvalidateVisual();
+            return;
+        }
+
+        if (change.Property == WallsProperty)
+        {
+            SubscribeToWalls();
             InvalidateVisual();
             return;
         }
@@ -205,6 +222,7 @@ public class CexCandlestickChart : Control
         if (ShowVolumeProfile) DrawVolumeProfile(context);
         if (ShowVwap) DrawVwap(context);
         DrawDrawings(context);
+        DrawWalls(context);
         DrawLastPriceMarker(context, _visibleCandles[^1].Close, MapY(_visibleCandles[^1].Close));
         DrawCrosshair(context);
     }
@@ -433,6 +451,26 @@ public class CexCandlestickChart : Control
             _subscribedCollection = notifyCollectionChanged;
             _subscribedCollection.CollectionChanged += OnCandlesCollectionChanged;
         }
+    }
+
+    private void SubscribeToWalls()
+    {
+        if (_subscribedWalls is not null)
+        {
+            _subscribedWalls.CollectionChanged -= OnWallsCollectionChanged;
+            _subscribedWalls = null;
+        }
+
+        if (Walls is INotifyCollectionChanged notify)
+        {
+            _subscribedWalls = notify;
+            _subscribedWalls.CollectionChanged += OnWallsCollectionChanged;
+        }
+    }
+
+    private void OnWallsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        InvalidateVisual();
     }
 
     private void RefreshAllCandles()
@@ -754,6 +792,44 @@ public class CexCandlestickChart : Control
             }
         }
     }
+
+    private void DrawWalls(DrawingContext context)
+    {
+        var walls = Walls;
+        if (walls is null || walls.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var wall in walls)
+        {
+            if (wall.Price < _minVisiblePrice || wall.Price > _maxVisiblePrice)
+            {
+                continue;
+            }
+
+            var y = MapY(wall.Price);
+            var rgb = wall.IsBid ? Color.Parse("#42F5B1") : Color.Parse("#FF6B6B");
+            var alpha = (byte)Math.Clamp(90d + (wall.Intensity * 130d), 0d, 255d);
+            var lineColor = new Color(alpha, rgb.R, rgb.G, rgb.B);
+            var pen = new Pen(new SolidColorBrush(lineColor), 1.5d + (wall.Intensity * 2.5d));
+            context.DrawLine(pen, new Point(_chartBounds.Left, y), new Point(_chartBounds.Right, y));
+
+            var label = new FormattedText(
+                FormatWallSize(wall.Quantity),
+                CultureInfo.InvariantCulture,
+                FlowDirection.LeftToRight,
+                new Typeface("Segoe UI", FontStyle.Normal, FontWeight.SemiBold),
+                10,
+                new SolidColorBrush(rgb));
+            context.DrawText(label, new Point(_chartBounds.Left + 6, y - 12));
+        }
+    }
+
+    private static string FormatWallSize(decimal qty) =>
+        qty >= 1000m
+            ? (qty / 1000m).ToString("N1", CultureInfo.InvariantCulture) + "K"
+            : qty.ToString("N2", CultureInfo.InvariantCulture);
 
     private void DrawRectangleShape(DrawingContext context, ChartAnchor start, ChartAnchor end, Pen pen)
     {
