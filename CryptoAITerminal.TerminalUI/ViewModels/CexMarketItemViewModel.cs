@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using Avalonia;
+using CryptoAITerminal.Core;
 using CryptoAITerminal.Core.Models;
 using ReactiveUI;
 
@@ -22,11 +23,74 @@ public class CexMarketItemViewModel : ReactiveObject
     private DateTime _lastUpdated;
     private string _selectedTimeframe = "1M";
     private bool _isFavorite;
+    private WallHighlightMode _wallMode = WallHighlightMode.Usd;
+    private decimal _wallUsdThreshold = 250_000m;
+    private decimal _wallQtyThreshold;
+    private int _bidWallCount;
+    private int _askWallCount;
 
     public CexMarketItemViewModel(string symbol)
     {
         Symbol = symbol;
     }
+
+    /// <summary>Large resting orders for the chart, rebuilt on every book update.</summary>
+    public ObservableCollection<BookWall> LargeWalls { get; } = [];
+
+    /// <summary>Invoked after the user changes mode/thresholds, so callers can persist.</summary>
+    public Action? WallSettingsChanged { get; set; }
+
+    public WallHighlightMode WallMode
+    {
+        get => _wallMode;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _wallMode, value);
+            this.RaisePropertyChanged(nameof(IsWallModeUsd));
+            this.RaisePropertyChanged(nameof(IsWallModeQty));
+            ApplyWallHighlighting();
+            WallSettingsChanged?.Invoke();
+        }
+    }
+
+    public bool IsWallModeUsd => WallMode == WallHighlightMode.Usd;
+    public bool IsWallModeQty => WallMode == WallHighlightMode.Qty;
+
+    public decimal WallUsdThreshold
+    {
+        get => _wallUsdThreshold;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _wallUsdThreshold, value);
+            ApplyWallHighlighting();
+            WallSettingsChanged?.Invoke();
+        }
+    }
+
+    public decimal WallQtyThreshold
+    {
+        get => _wallQtyThreshold;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _wallQtyThreshold, value);
+            ApplyWallHighlighting();
+            WallSettingsChanged?.Invoke();
+        }
+    }
+
+    public int BidWallCount
+    {
+        get => _bidWallCount;
+        private set => this.RaiseAndSetIfChanged(ref _bidWallCount, value);
+    }
+
+    public int AskWallCount
+    {
+        get => _askWallCount;
+        private set => this.RaiseAndSetIfChanged(ref _askWallCount, value);
+    }
+
+    public int TotalWallCount => BidWallCount + AskWallCount;
 
     public string Symbol { get; }
     public string BaseAssetSymbol => Symbol.EndsWith("USDT", StringComparison.OrdinalIgnoreCase)
@@ -223,7 +287,53 @@ public class CexMarketItemViewModel : ReactiveObject
                 .Take(8)
                 .Select(level => new OrderBookLevelViewModel(level.Price, level.Quantity)));
 
+        ApplyWallHighlighting();
         RaiseDerivedState();
+    }
+
+    private void ApplyWallHighlighting()
+    {
+        decimal maxNotional = 0m;
+
+        void Flag(ObservableCollection<OrderBookLevelViewModel> levels)
+        {
+            foreach (var level in levels)
+            {
+                level.IsLarge = OrderBookWallDetector.IsLarge(
+                    level.Price, level.Quantity, WallMode, WallUsdThreshold, WallQtyThreshold);
+                if (level.IsLarge && level.Notional > maxNotional)
+                {
+                    maxNotional = level.Notional;
+                }
+            }
+        }
+
+        Flag(BidLevels);
+        Flag(AskLevels);
+
+        LargeWalls.Clear();
+        var bidWalls = 0;
+        var askWalls = 0;
+
+        void Collect(ObservableCollection<OrderBookLevelViewModel> levels, bool isBid)
+        {
+            foreach (var level in levels)
+            {
+                if (!level.IsLarge) continue;
+                LargeWalls.Add(new BookWall(
+                    level.Price, isBid,
+                    OrderBookWallDetector.Intensity(level.Notional, maxNotional),
+                    level.Notional, level.Quantity));
+                if (isBid) bidWalls++; else askWalls++;
+            }
+        }
+
+        Collect(BidLevels, true);
+        Collect(AskLevels, false);
+
+        BidWallCount = bidWalls;
+        AskWallCount = askWalls;
+        this.RaisePropertyChanged(nameof(TotalWallCount));
     }
 
     private void RebuildChart()
