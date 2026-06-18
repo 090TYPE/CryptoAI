@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace CryptoAITerminal.TerminalUI.Services;
 
@@ -160,6 +164,23 @@ public sealed class UiLocalizationService
         ["Settings"] = "Настройки",
         ["Backtest"] = "Бэктест",
         ["Sniper Coins"] = "Снайпер монет",
+        // Sidebar navigation + header
+        ["Sniper"] = "Снайпер",
+        ["Positions"] = "Позиции",
+        ["Rules"] = "Правила",
+        ["Journal"] = "Журнал",
+        ["Funding"] = "Финансирование",
+        ["Arb"] = "Арбитраж",
+        ["Copy"] = "Копитрейдинг",
+        ["Stat Arb"] = "Стат-арбитраж",
+        ["News"] = "Новости",
+        ["On-Chain"] = "Ончейн",
+        ["Live Tape"] = "Лента сделок",
+        ["Liq Map"] = "Карта ликвидаций",
+        ["Gas"] = "Газ",
+        ["Router"] = "Маршрутизатор",
+        ["Scanner"] = "Сканер",
+        ["Portfolio / Wallet"] = "Портфель / Кошелёк",
         ["Crypto Copilot Workspace"] = "Рабочее пространство крипто-ассистента",
         ["A focused signal desk with local crypto chat, visual review, route context, and quick action prompts built around the live terminal state."] = "Центр сигналов с локальным крипто-чатом, визуальным разбором, контекстом маршрута и быстрыми действиями на основе текущего состояния терминала.",
         ["Chat"] = "Чат",
@@ -781,6 +802,25 @@ public sealed class UiLocalizationService
         ("Best params: ", "Лучшие параметры: ")
     ];
 
+    // ── AI-backed auto-translation (fills gaps the static dictionary misses) ─────
+    private static readonly string AiCachePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "CryptoAITerminal", "ru-ui-cache.json");
+
+    private readonly ConcurrentDictionary<string, string> _aiCache = LoadAiCache();
+    private readonly HashSet<string> _pending = new(StringComparer.Ordinal);
+    private readonly object _pendingLock = new();
+    private bool _flushScheduled;
+
+    /// <summary>
+    /// Optional batch translator (English→Russian). Set by the host when an AI key is
+    /// available. When null, unknown strings simply stay English.
+    /// </summary>
+    public Func<IReadOnlyList<string>, CancellationToken, Task<IReadOnlyList<string>?>>? AiTranslator { get; set; }
+
+    /// <summary>Raised after a batch of AI translations is cached so the UI can re-apply.</summary>
+    public event EventHandler? TranslationsUpdated;
+
     private UiLocalizationService()
     {
     }
@@ -832,6 +872,180 @@ public sealed class UiLocalizationService
             }
         }
 
+        // AI fallback: serve from cache, otherwise queue for background translation.
+        if (_aiCache.TryGetValue(text, out var cached))
+        {
+            return cached;
+        }
+
+        if (AiTranslator is not null && IsTranslatable(text))
+        {
+            Enqueue(text);
+        }
+
         return text;
+    }
+
+    /// <summary>True for strings worth sending to the translator (skips tickers, numbers, hashes, URLs).</summary>
+    private static bool IsTranslatable(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text) || text.Length < 2 || text.Length > 600)
+        {
+            return false;
+        }
+
+        var hasAsciiLetter = false;
+        foreach (var c in text)
+        {
+            // already Russian → nothing to do
+            if ((c >= 'А' && c <= 'я') || c == 'ё' || c == 'Ё')
+            {
+                return false;
+            }
+            if (!hasAsciiLetter && ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')))
+            {
+                hasAsciiLetter = true;
+            }
+        }
+        if (!hasAsciiLetter)
+        {
+            return false;
+        }
+
+        if (text.Contains("0x", StringComparison.Ordinal) ||
+            text.Contains("://", StringComparison.Ordinal) ||
+            text.Contains('{') || text.Contains('}'))
+        {
+            return false;
+        }
+
+        // A single ALL-CAPS / digit token with no spaces is almost always a ticker,
+        // acronym or id (BTCUSDT, ROE, TIF) — leave it as-is.
+        if (!text.Contains(' ') &&
+            text.All(c => char.IsUpper(c) || char.IsDigit(c) || c is '.' or '/' or '-' or '_'))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private void Enqueue(string text)
+    {
+        var schedule = false;
+        lock (_pendingLock)
+        {
+            if (_aiCache.ContainsKey(text))
+            {
+                return;
+            }
+            _pending.Add(text);
+            if (!_flushScheduled)
+            {
+                _flushScheduled = true;
+                schedule = true;
+            }
+        }
+        if (schedule)
+        {
+            _ = FlushLoopAsync();
+        }
+    }
+
+    private async Task FlushLoopAsync()
+    {
+        try
+        {
+            await Task.Delay(700).ConfigureAwait(false);
+            var translator = AiTranslator;
+
+            while (translator is not null)
+            {
+                List<string> batch;
+                lock (_pendingLock)
+                {
+                    batch = _pending.Where(t => !_aiCache.ContainsKey(t)).Take(20).ToList();
+                    foreach (var t in batch)
+                    {
+                        _pending.Remove(t);
+                    }
+                    if (batch.Count == 0)
+                    {
+                        _flushScheduled = false;
+                        return;
+                    }
+                }
+
+                IReadOnlyList<string>? result;
+                try
+                {
+                    result = await translator(batch, CancellationToken.None).ConfigureAwait(false);
+                }
+                catch
+                {
+                    result = null;
+                }
+
+                if (result is not null && result.Count == batch.Count)
+                {
+                    for (var i = 0; i < batch.Count; i++)
+                    {
+                        if (!string.IsNullOrWhiteSpace(result[i]))
+                        {
+                            _aiCache[batch[i]] = result[i];
+                        }
+                    }
+                    PersistAiCache();
+                    TranslationsUpdated?.Invoke(this, EventArgs.Empty);
+                }
+
+                await Task.Delay(150).ConfigureAwait(false);
+            }
+
+            lock (_pendingLock)
+            {
+                _flushScheduled = false;
+            }
+        }
+        catch
+        {
+            lock (_pendingLock)
+            {
+                _flushScheduled = false;
+            }
+        }
+    }
+
+    private void PersistAiCache()
+    {
+        try
+        {
+            var snapshot = new Dictionary<string, string>(_aiCache, StringComparer.Ordinal);
+            AtomicJsonFile.Write(AiCachePath, snapshot);
+        }
+        catch
+        {
+            // best-effort persistence
+        }
+    }
+
+    private static ConcurrentDictionary<string, string> LoadAiCache()
+    {
+        try
+        {
+            if (File.Exists(AiCachePath))
+            {
+                var loaded = AtomicJsonFile.Read<Dictionary<string, string>>(AiCachePath);
+                if (loaded is not null)
+                {
+                    return new ConcurrentDictionary<string, string>(loaded, StringComparer.Ordinal);
+                }
+            }
+        }
+        catch
+        {
+            // fall through to empty cache
+        }
+        return new ConcurrentDictionary<string, string>(StringComparer.Ordinal);
     }
 }

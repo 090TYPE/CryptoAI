@@ -64,6 +64,8 @@ public partial class MainWindow : Window
         _splashTimer.Tick += OnSplashTick;
         _localizationScanTimer.Tick += (_, _) => RunLocalizationScanTick();
         _localization.LanguageChanged += OnLanguageChanged;
+        _localization.AiTranslator = (batch, ct) => AiUiTranslator.TranslateAsync(batch, ct);
+        _localization.TranslationsUpdated += OnTranslationsUpdated;
         this.Closing += (s, e) =>
         {
             // Не разрешено реальное закрытие → скрываем в трей
@@ -80,6 +82,7 @@ public partial class MainWindow : Window
             _splashTimer.Stop();
             _localizationScanTimer.Stop();
             _localization.LanguageChanged -= OnLanguageChanged;
+            _localization.TranslationsUpdated -= OnTranslationsUpdated;
             foreach (var subscription in _localizationSubscriptions)
                 subscription.Dispose();
 
@@ -280,6 +283,16 @@ public partial class MainWindow : Window
         RefreshLanguageButtons();
         ApplyLocalizationToObservedControls();
         RearmLocalizationScan();
+    }
+
+    // Fresh AI translations arrived from the background translator — re-apply them.
+    private void OnTranslationsUpdated(object? sender, EventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            ApplyLocalizationToObservedControls();
+            RearmLocalizationScan();
+        });
     }
 
     /// <summary>
