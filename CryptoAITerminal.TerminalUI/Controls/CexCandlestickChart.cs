@@ -324,7 +324,13 @@ public class CexCandlestickChart : Control
 
         var position = e.GetPosition(this);
         _pointerPosition = position;
-        _pointerInsideChart = _chartBounds.Contains(position);
+        // Show the crosshair whenever the pointer is anywhere over the drawn chart
+        // (plot + price/time axes), not just the narrow plot rectangle. DrawCrosshair
+        // clamps the lines back into the plot, so the readout always follows the mouse.
+        _pointerInsideChart = position.X >= _chartBounds.Left
+            && position.X <= _priceBounds.Right
+            && position.Y >= _chartBounds.Top
+            && position.Y <= _timeBounds.Bottom;
 
         if (_isPanning && _allCandles.Count > _visibleCount)
         {
@@ -816,7 +822,7 @@ public class CexCandlestickChart : Control
             context.DrawLine(pen, new Point(_chartBounds.Left, y), new Point(_chartBounds.Right, y));
 
             var label = new FormattedText(
-                FormatWallSize(wall.Quantity),
+                wall.Price.ToString(GetPriceFormat(wall.Price), CultureInfo.InvariantCulture) + "  " + FormatWallSize(wall.Quantity),
                 CultureInfo.InvariantCulture,
                 FlowDirection.LeftToRight,
                 new Typeface("Segoe UI", FontStyle.Normal, FontWeight.SemiBold),
