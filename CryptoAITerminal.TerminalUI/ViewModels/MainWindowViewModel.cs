@@ -123,6 +123,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private bool _isWorkingOrderEvaluationRunning;
     private QuickBacktestSnapshot _quickBacktestSnapshot = QuickBacktestSnapshot.Empty;
     private readonly UiLocalizationService _localization = UiLocalizationService.Instance;
+    private readonly Services.BookWallSettingsStore _wallSettingsStore = new();
     private string _aiAssistantDraftPrompt = string.Empty;
     private string _aiAssistantStatusLabel = "LOCAL CRYPTO COPILOT";
     private string _aiAssistantStatusBrush = "#21E6C1";
@@ -147,6 +148,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         foreach (var symbol in DefaultSymbols)
         {
             var market = new CexMarketItemViewModel(symbol);
+            ConfigureWallSettings(market);
             market.PropertyChanged += OnMarketItemPropertyChanged;
             Markets.Add(market);
         }
@@ -1035,6 +1037,15 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         ApplyTemplate8Command = ReactiveCommand.Create(() => OrderTemplatesVM.ApplySlot(8), outputScheduler: App.UiScheduler);
         ApplyTemplate9Command = ReactiveCommand.Create(() => OrderTemplatesVM.ApplySlot(9), outputScheduler: App.UiScheduler);
 
+        // Wall mode — wires selected market's WallMode and persists via callback
+        SetWallModeCommand = ReactiveCommand.Create<string>(mode =>
+        {
+            if (SelectedMarket is null) return;
+            SelectedMarket.WallMode = string.Equals(mode, "Qty", System.StringComparison.OrdinalIgnoreCase)
+                ? Core.Models.WallHighlightMode.Qty
+                : Core.Models.WallHighlightMode.Usd;
+        }, outputScheduler: App.UiScheduler);
+
         // ── Advanced Trailing Stop ─────────────────────────────────────────
         // (already initialised via property initialiser; wire events)
         AdvancedTrailingVM.ArmRequested += () =>
@@ -1648,6 +1659,9 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> ApplyTemplate7Command { get; }
     public ReactiveCommand<Unit, Unit> ApplyTemplate8Command { get; }
     public ReactiveCommand<Unit, Unit> ApplyTemplate9Command { get; }
+
+    // ── Wall mode command (implemented in Task 7) ────────────────────────────
+    public ReactiveCommand<string, Unit> SetWallModeCommand { get; }
 
     public decimal TradeQuantity
     {
@@ -4903,6 +4917,24 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         }
 
         RefreshAiSignalStudioContext();
+    }
+
+    private void ConfigureWallSettings(CexMarketItemViewModel market)
+    {
+        var settings = _wallSettingsStore.Get(market.Symbol);
+        // Apply persisted values BEFORE wiring the callback so loading doesn't re-save.
+        market.WallUsdThreshold = settings.UsdThreshold;
+        market.WallQtyThreshold = settings.QtyThreshold;
+        market.WallMode = _wallSettingsStore.Mode;
+        market.WallSettingsChanged = () =>
+        {
+            _wallSettingsStore.Mode = market.WallMode;
+            _wallSettingsStore.Set(market.Symbol, new Core.Models.BookWallSettings
+            {
+                UsdThreshold = market.WallUsdThreshold,
+                QtyThreshold = market.WallQtyThreshold
+            });
+        };
     }
 
     private void OnMarketItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
