@@ -1035,6 +1035,9 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         ApplyTemplate8Command = ReactiveCommand.Create(() => OrderTemplatesVM.ApplySlot(8), outputScheduler: App.UiScheduler);
         ApplyTemplate9Command = ReactiveCommand.Create(() => OrderTemplatesVM.ApplySlot(9), outputScheduler: App.UiScheduler);
 
+        // Wall mode stub — implemented in Task 7
+        SetWallModeCommand = ReactiveCommand.Create<string>(_ => { }, outputScheduler: App.UiScheduler);
+
         // ── Advanced Trailing Stop ─────────────────────────────────────────
         // (already initialised via property initialiser; wire events)
         AdvancedTrailingVM.ArmRequested += () =>
@@ -1648,6 +1651,9 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> ApplyTemplate7Command { get; }
     public ReactiveCommand<Unit, Unit> ApplyTemplate8Command { get; }
     public ReactiveCommand<Unit, Unit> ApplyTemplate9Command { get; }
+
+    // ── Wall mode command (implemented in Task 7) ────────────────────────────
+    public ReactiveCommand<string, Unit> SetWallModeCommand { get; }
 
     public decimal TradeQuantity
     {

@@ -591,7 +591,8 @@
                                         ToolMode="{Binding SelectedChartTool}"
                                         PersistenceKey="{Binding SelectedTradingSymbol}"
                                         ClearDrawingsVersion="{Binding ChartClearDrawingsVersion}"
-                                        ResetViewVersion="{Binding ChartResetViewVersion}" />
+                                        ResetViewVersion="{Binding ChartResetViewVersion}"
+                                        Walls="{Binding SelectedMarket.LargeWalls}" />
             </Border>
           </StackPanel>
         </Border>
@@ -848,6 +849,32 @@
               </Border>
             </Grid>
 
+            <Border Classes="TicketMetricCard" Margin="0,0,0,8">
+              <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto" ColumnSpacing="10">
+                <TextBlock Grid.Column="0" Text="Крупные заявки" VerticalAlignment="Center"
+                           Foreground="#8FA3B8" FontWeight="SemiBold" />
+                <Button Grid.Column="1" Content="USD"
+                        Command="{Binding SetWallModeCommand}" CommandParameter="Usd"
+                        Classes="GhostButton" Padding="10,4"
+                        IsEnabled="{Binding !SelectedMarket.IsWallModeUsd}" />
+                <Button Grid.Column="2" Content="Объём"
+                        Command="{Binding SetWallModeCommand}" CommandParameter="Qty"
+                        Classes="GhostButton" Padding="10,4"
+                        IsEnabled="{Binding !SelectedMarket.IsWallModeQty}" />
+                <NumericUpDown Grid.Column="3"
+                               Minimum="0" Increment="1000" FormatString="N0"
+                               Value="{Binding SelectedMarket.WallUsdThreshold}"
+                               IsVisible="{Binding SelectedMarket.IsWallModeUsd}"
+                               ToolTip.Tip="Порог в USD (цена × объём)" />
+                <NumericUpDown Grid.Column="3"
+                               Minimum="0" Increment="1" FormatString="N4"
+                               Value="{Binding SelectedMarket.WallQtyThreshold}"
+                               IsVisible="{Binding SelectedMarket.IsWallModeQty}"
+                               ToolTip.Tip="Порог в объёме (базовый актив)" />
+                <TextBlock Grid.Column="4" VerticalAlignment="Center" Foreground="#8FA3B8"
+                           Text="{Binding SelectedMarket.TotalWallCount, StringFormat=Стен: {0}}" />
+              </Grid>
+            </Border>
             <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
               <Border Grid.Column="0" Classes="TicketMetricCard,OrderBookSideCard">
                 <StackPanel Spacing="10">
@@ -867,14 +894,19 @@
                         <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
                           <Button Classes="OrderBookRowButton,OrderBookBidRow"
                                   Padding="0"
+                                  Background="{Binding RowBackground}"
                                   Command="{Binding $parent[UserControl].DataContext.SelectBidPriceCommand}"
                                   CommandParameter="{Binding Price}">
-                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                              <TextBlock Text="{Binding Price, StringFormat={}{0:N2}}"
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6">
+                              <TextBlock Grid.Column="0" Text="🟩" FontSize="10"
+                                         VerticalAlignment="Center"
+                                         IsVisible="{Binding WallIconVisible}" />
+                              <TextBlock Grid.Column="1" Text="{Binding Price, StringFormat={}{0:N2}}"
                                          Foreground="#42F5B1"
                                          FontWeight="SemiBold" />
-                              <TextBlock Grid.Column="1"
+                              <TextBlock Grid.Column="2"
                                          Text="{Binding Quantity, StringFormat={}{0:N4}}"
+                                         FontWeight="{Binding SizeFontWeight}"
                                          HorizontalAlignment="Right" />
                             </Grid>
                           </Button>
@@ -903,14 +935,19 @@
                         <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
                           <Button Classes="OrderBookRowButton,OrderBookAskRow"
                                   Padding="0"
+                                  Background="{Binding RowBackground}"
                                   Command="{Binding $parent[UserControl].DataContext.SelectAskPriceCommand}"
                                   CommandParameter="{Binding Price}">
-                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                              <TextBlock Text="{Binding Price, StringFormat={}{0:N2}}"
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6">
+                              <TextBlock Grid.Column="0" Text="🟥" FontSize="10"
+                                         VerticalAlignment="Center"
+                                         IsVisible="{Binding WallIconVisible}" />
+                              <TextBlock Grid.Column="1" Text="{Binding Price, StringFormat={}{0:N2}}"
                                          Foreground="#FF857B"
                                          FontWeight="SemiBold" />
-                              <TextBlock Grid.Column="1"
+                              <TextBlock Grid.Column="2"
                                          Text="{Binding Quantity, StringFormat={}{0:N4}}"
+                                         FontWeight="{Binding SizeFontWeight}"
                                          HorizontalAlignment="Right" />
                             </Grid>
                           </Button>
