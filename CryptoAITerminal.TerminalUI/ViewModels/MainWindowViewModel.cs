@@ -746,6 +746,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                 FearGreed: SentimentVM.FearGreedValue,
                 TopPicks: picks);
         });
+        BriefingVM.BriefingReady += summary => ShowToast(summary);
 
         // AI pre-trade risk check — scores a proposed order against the open book.
         // Advisory only; never touches the live order path.
