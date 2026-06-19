@@ -32,6 +32,14 @@ namespace CryptoAITerminal.TerminalUI.ViewModels;
 public class MainWindowViewModel : ReactiveObject, IDisposable
 {
     private static readonly string[] DefaultSymbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT", "ADAUSDT", "DOGEUSDT", "AVAXUSDT", "LINKUSDT", "TRXUSDT", "LTCUSDT"];
+    private static readonly string[] KnownQuoteAssets = ["USDT", "USDC", "FDUSD", "TUSD", "BUSD", "BTC", "ETH", "BNB"];
+    private static readonly string CustomMarketsPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "CryptoAITerminal", "custom-markets.json");
+
+    private readonly List<string> _customMarketSymbols;
+    private string _newMarketSymbol = "";
+    private string _marketsStatus = "";
 
     private readonly BinanceGateway _gateway;
     private readonly BinanceFuturesGateway _futuresGateway;
@@ -145,7 +153,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
     public MainWindowViewModel()
     {
-        foreach (var symbol in DefaultSymbols)
+        _customMarketSymbols = LoadCustomMarketSymbols();
+        foreach (var symbol in DefaultSymbols.Concat(_customMarketSymbols))
         {
             var market = new CexMarketItemViewModel(symbol);
             ConfigureWallSettings(market);
@@ -200,7 +209,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         var okxApiSecret     = creds.OkxSecret;
         var okxApiPassphrase = creds.OkxPassphrase;
 
-        _gateway = new BinanceGateway(DefaultSymbols);
+        _gateway = new BinanceGateway(DefaultSymbols.Concat(_customMarketSymbols));
         _futuresGateway = new BinanceFuturesGateway(DefaultSymbols, binanceApiKey, binanceApiSecret);
         _router = new MarketOrderRouter(_gateway);
         _riskManager = new RiskManager.RiskManager(maxPositionSizeUsd: 1000, maxDailyLossUsd: 500);
@@ -1224,6 +1233,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         OpenMarketInTradingCommand = ReactiveCommand.Create<CexMarketItemViewModel>(OpenMarketInTrading, outputScheduler: App.UiScheduler);
         ToggleMarketFavoriteCommand = ReactiveCommand.Create<CexMarketItemViewModel>(ToggleMarketFavorite, outputScheduler: App.UiScheduler);
         RefreshMarketsCommand = ReactiveCommand.CreateFromTask(RefreshMarketsHubAsync, outputScheduler: App.UiScheduler);
+        AddCustomMarketCommand = ReactiveCommand.CreateFromTask(AddCustomMarketAsync, outputScheduler: App.UiScheduler);
+        RemoveMarketCommand = ReactiveCommand.Create<CexMarketItemViewModel>(RemoveCustomMarket, outputScheduler: App.UiScheduler);
         SafeLogoutCommand = ReactiveCommand.CreateFromTask(ExecuteSafeLogoutAsync, outputScheduler: App.UiScheduler);
         SendAiAssistantPromptCommand = ReactiveCommand.Create(SendAiAssistantPrompt, outputScheduler: App.UiScheduler);
         UseAiAssistantQuickPromptCommand = ReactiveCommand.Create<AiAssistantQuickPromptViewModel>(UseAiAssistantQuickPrompt, outputScheduler: App.UiScheduler);
@@ -1627,6 +1638,20 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<CexMarketItemViewModel, Unit> OpenMarketInTradingCommand { get; }
     public ReactiveCommand<CexMarketItemViewModel, Unit> ToggleMarketFavoriteCommand { get; }
     public ReactiveCommand<Unit, Unit> RefreshMarketsCommand { get; }
+    public ReactiveCommand<Unit, Unit> AddCustomMarketCommand { get; }
+    public ReactiveCommand<CexMarketItemViewModel, Unit> RemoveMarketCommand { get; }
+
+    public string NewMarketSymbol
+    {
+        get => _newMarketSymbol;
+        set => this.RaiseAndSetIfChanged(ref _newMarketSymbol, value);
+    }
+
+    public string MarketsStatus
+    {
+        get => _marketsStatus;
+        private set => this.RaiseAndSetIfChanged(ref _marketsStatus, value);
+    }
     public ReactiveCommand<Unit, Unit> SafeLogoutCommand { get; }
     public ReactiveCommand<Unit, Unit> SendAiAssistantPromptCommand { get; }
     public ReactiveCommand<AiAssistantQuickPromptViewModel, Unit> UseAiAssistantQuickPromptCommand { get; }
@@ -6526,6 +6551,95 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                       .ThenByDescending(market => Math.Abs(market.ChangePercent))
                       .ThenBy(market => market.SpreadPercent <= 0 ? decimal.MaxValue : market.SpreadPercent)
         };
+    }
+
+    private static string NormalizeMarketSymbol(string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return "";
+        var s = new string(input.Trim().ToUpperInvariant().Where(char.IsLetterOrDigit).ToArray());
+        if (s.Length == 0) return "";
+        // Append the default USDT quote unless the user already typed a known quote suffix.
+        if (!KnownQuoteAssets.Any(q => s.Length > q.Length && s.EndsWith(q, StringComparison.Ordinal)))
+            s += "USDT";
+        return s;
+    }
+
+    private async Task AddCustomMarketAsync()
+    {
+        var symbol = NormalizeMarketSymbol(NewMarketSymbol);
+        if (symbol.Length < 5)
+        {
+            MarketsStatus = "Введите тикер монеты (например PEPE или WIFUSDT).";
+            return;
+        }
+        if (Markets.Any(m => string.Equals(m.Symbol, symbol, StringComparison.OrdinalIgnoreCase)))
+        {
+            MarketsStatus = $"{symbol} уже в списке.";
+            return;
+        }
+
+        MarketsStatus = $"Добавляю {symbol}…";
+        bool ok;
+        try { ok = await _gateway.AddSymbolAsync(symbol); }
+        catch { ok = false; }
+        if (!ok)
+        {
+            MarketsStatus = $"{symbol} не найден на Binance — проверь тикер.";
+            return;
+        }
+
+        var market = new CexMarketItemViewModel(symbol);
+        ConfigureWallSettings(market);
+        market.PropertyChanged += OnMarketItemPropertyChanged;
+        Markets.Add(market);
+
+        if (!_customMarketSymbols.Contains(symbol, StringComparer.OrdinalIgnoreCase))
+        {
+            _customMarketSymbols.Add(symbol);
+            SaveCustomMarketSymbols();
+        }
+
+        RefreshMarketExplorerCollections();
+        RaiseMarketExplorerStateChanged();
+        SelectedMarket = market;
+        NewMarketSymbol = "";
+        MarketsStatus = $"{symbol} добавлен.";
+    }
+
+    private void RemoveCustomMarket(CexMarketItemViewModel market)
+    {
+        if (market is null) return;
+        if (!_customMarketSymbols.Contains(market.Symbol, StringComparer.OrdinalIgnoreCase))
+        {
+            MarketsStatus = "Стандартные монеты удалять нельзя.";
+            return;
+        }
+
+        market.PropertyChanged -= OnMarketItemPropertyChanged;
+        Markets.Remove(market);
+        _customMarketSymbols.RemoveAll(s => string.Equals(s, market.Symbol, StringComparison.OrdinalIgnoreCase));
+        SaveCustomMarketSymbols();
+        if (ReferenceEquals(SelectedMarket, market)) SelectedMarket = Markets.FirstOrDefault();
+        RefreshMarketExplorerCollections();
+        RaiseMarketExplorerStateChanged();
+        MarketsStatus = $"{market.Symbol} удалён (вернётся после перезапуска только если снова добавить).";
+    }
+
+    private static List<string> LoadCustomMarketSymbols()
+    {
+        try
+        {
+            if (File.Exists(CustomMarketsPath))
+                return Services.AtomicJsonFile.Read<List<string>>(CustomMarketsPath) ?? [];
+        }
+        catch { /* ignore corrupt cache */ }
+        return [];
+    }
+
+    private void SaveCustomMarketSymbols()
+    {
+        try { Services.AtomicJsonFile.Write(CustomMarketsPath, _customMarketSymbols); }
+        catch { /* best-effort */ }
     }
 
     private void RefreshMarketExplorerCollections()

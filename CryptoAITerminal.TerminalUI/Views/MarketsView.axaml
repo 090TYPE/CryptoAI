@@ -62,6 +62,21 @@
                 </StackPanel>
 
                 <StackPanel Spacing="6">
+                  <TextBlock Classes="Overline" Text="Add coin" />
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBox Grid.Column="0" Text="{Binding NewMarketSymbol}"
+                             PlaceholderText="PEPE, WIF, TONUSDT..." />
+                    <Button Grid.Column="1" Content="+ Add"
+                            Command="{Binding AddCustomMarketCommand}" />
+                  </Grid>
+                  <TextBlock Text="{Binding MarketsStatus}" Foreground="#8FA3B8"
+                             FontSize="11" TextWrapping="Wrap"
+                             IsVisible="{Binding MarketsStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <TextBlock Text="Тикер с Binance. Без суффикса добавится USDT (PEPE → PEPEUSDT)."
+                             Foreground="#5A7A90" FontSize="10" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <StackPanel Spacing="6">
                   <TextBlock Classes="Overline" Text="Sort" />
                   <ComboBox ItemsSource="{Binding MarketSortOptions}"
                             SelectedItem="{Binding SelectedMarketSortMode}" />
@@ -192,13 +207,19 @@
                                   <TextBlock Text="{Binding TrendLabel}"
                                              Foreground="{Binding TrendBrush}" />
                                 </StackPanel>
-                                <Button Grid.Column="2"
-                                        Content="{Binding FavoriteGlyph}"
-                                        Command="{Binding $parent[Window].DataContext.ToggleMarketFavoriteCommand}"
-                                        CommandParameter="{Binding .}"
-                                        Classes="GhostButton"
-                                        Foreground="{Binding FavoriteBrush}"
-                                        MinWidth="70" />
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
+                                  <Button Content="{Binding FavoriteGlyph}"
+                                          Command="{Binding $parent[Window].DataContext.ToggleMarketFavoriteCommand}"
+                                          CommandParameter="{Binding .}"
+                                          Classes="GhostButton"
+                                          Foreground="{Binding FavoriteBrush}"
+                                          MinWidth="70" />
+                                  <Button Content="✕"
+                                          Command="{Binding $parent[Window].DataContext.RemoveMarketCommand}"
+                                          CommandParameter="{Binding .}"
+                                          Classes="GhostButton"
+                                          ToolTip.Tip="Удалить (только добавленные монеты)" />
+                                </StackPanel>
                               </Grid>
 
                               <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="6">

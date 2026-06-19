@@ -12,7 +12,7 @@ public class BinanceGateway : IExchangeGateway
     private readonly BinanceRestClient _restClient;
     private readonly BinanceSocketClient _socketClient;
     private readonly Subject<MarketData> _marketDataSubject = new();
-    private readonly IReadOnlyList<string> _symbols;
+    private readonly List<string> _symbols;
 
     public IObservable<MarketData> MarketDataStream => _marketDataSubject;
     public IReadOnlyList<string> Symbols => _symbols;
@@ -23,7 +23,47 @@ public class BinanceGateway : IExchangeGateway
         _socketClient = new BinanceSocketClient();
         _symbols = (symbols ?? ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"])
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+            .ToList();
+    }
+
+    private void PublishTicker(string symbol, decimal bestBid, decimal bestAsk, decimal last,
+        decimal quoteVol, decimal changePct, decimal high, decimal low)
+    {
+        _marketDataSubject.OnNext(new MarketData
+        {
+            Symbol       = symbol,
+            BestBid      = bestBid,
+            BestAsk      = bestAsk,
+            LastPrice    = last,
+            Timestamp    = DateTime.UtcNow,
+            Volume24hUsd = quoteVol,
+            ChangePct24h = changePct,
+            High24h      = high,
+            Low24h       = low,
+        });
+    }
+
+    /// <summary>
+    /// Subscribe to one more symbol at runtime (used by the Markets page "add coin").
+    /// Returns false if Binance rejects the subscription (e.g. unknown symbol).
+    /// </summary>
+    public async Task<bool> AddSymbolAsync(string symbol)
+    {
+        if (string.IsNullOrWhiteSpace(symbol)) return false;
+        symbol = symbol.Trim().ToUpperInvariant();
+        if (_symbols.Contains(symbol, StringComparer.OrdinalIgnoreCase)) return true;
+
+        var sub = await _socketClient.SpotApi.ExchangeData.SubscribeToTickerUpdatesAsync(
+            new[] { symbol }, update =>
+            {
+                var d = update.Data;
+                PublishTicker(d.Symbol, d.BestBidPrice, d.BestAskPrice, d.LastPrice,
+                    d.QuoteVolume, d.PriceChangePercent, d.HighPrice, d.LowPrice);
+            });
+
+        if (!sub.Success) return false;
+        _symbols.Add(symbol);
+        return true;
     }
 
     public async Task ConnectAsync()
