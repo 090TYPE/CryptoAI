@@ -47,6 +47,63 @@
               </Border>
             </Grid>
 
+            <!-- Wallet watch — external wallets on-chain (notify + optional copy) -->
+            <Border Classes="Panel" Padding="16,12">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock Classes="H2" Text="Слежка за кошельками" />
+                    <TextBlock Text="{Binding CopyTradingVM.WatchStatus}" FontSize="11" Foreground="#8FA3B8" />
+                  </StackPanel>
+                  <Button Grid.Column="1" Classes="GhostButton" Content="Старт"
+                          Command="{Binding CopyTradingVM.StartWatchCommand}" Margin="0,0,8,0"
+                          IsVisible="{Binding !CopyTradingVM.IsWatching}" />
+                  <Button Grid.Column="2" Classes="GhostButton" Content="Стоп"
+                          Command="{Binding CopyTradingVM.StopWatchCommand}"
+                          IsVisible="{Binding CopyTradingVM.IsWatching}" />
+                </Grid>
+
+                <!-- Add wallet row -->
+                <Grid ColumnDefinitions="*,160,120,Auto" ColumnSpacing="8">
+                  <TextBox Grid.Column="0" Text="{Binding CopyTradingVM.NewWalletAddress}"
+                           PlaceholderText="Адрес кошелька (0x...)" FontFamily="Consolas" FontSize="12" />
+                  <TextBox Grid.Column="1" Text="{Binding CopyTradingVM.NewWalletLabel}"
+                           PlaceholderText="Метка (имя)" FontSize="12" />
+                  <ComboBox Grid.Column="2" ItemsSource="{Binding CopyTradingVM.ChainOptions}"
+                            SelectedItem="{Binding CopyTradingVM.SelectedWatchChain}" />
+                  <Button Grid.Column="3" Classes="GhostButton" Content="+ Добавить"
+                          Command="{Binding CopyTradingVM.AddWatchedWalletCommand}" />
+                </Grid>
+
+                <!-- Watched wallets list -->
+                <ItemsControl ItemsSource="{Binding CopyTradingVM.WatchedWallets}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:WatchedWalletItemViewModel">
+                      <Border Background="#0D1722" BorderBrush="#1F3445" BorderThickness="1"
+                              CornerRadius="8" Padding="12,8" Margin="0,0,0,6">
+                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                          <StackPanel Grid.Column="0" Spacing="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Summary}" Foreground="#E0E8F0" FontSize="12" />
+                            <TextBlock Text="{Binding Address}" Foreground="#5C6E82"
+                                       FontFamily="Consolas" FontSize="10" />
+                          </StackPanel>
+                          <CheckBox Grid.Column="1" Content="Копировать" IsChecked="{Binding Copy}"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Усиленный алерт «скопируй» при покупке (без авто-сделки)" />
+                          <Button Grid.Column="2" Classes="GhostButton" Content="✕"
+                                  Command="{Binding $parent[ItemsControl].DataContext.CopyTradingVM.RemoveWatchedWalletCommand}"
+                                  CommandParameter="{Binding}" VerticalAlignment="Center" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="Добавь чужие кошельки → жми «Старт». Будешь получать уведомления, что они покупают/продают. Галка «Копировать» = усиленный алерт (авто-исполнение сделок — в следующем обновлении)."
+                           Foreground="#5A7A90" FontSize="11" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
             <!-- Follower config (shown when Follower mode active) -->
             <Border Classes="Panel" Padding="16,12"
                     IsVisible="{Binding CopyTradingVM.IsFollower}">

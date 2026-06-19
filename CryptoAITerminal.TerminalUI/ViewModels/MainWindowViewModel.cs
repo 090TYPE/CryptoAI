@@ -587,6 +587,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         var copyFollowerSvc = new Services.CopyTradingFollowerService();
         CopyTradingVM = new CopyTradingViewModel(copyLeaderSvc, copyFollowerSvc);
         CopyTradingVM.SetFollowerGateway(_gateway);
+        CopyTradingVM.ToastRequested += ShowToast;
 
         // Statistical Arbitrage (Pairs Trading)
         StatArbVM = new StatArbViewModel(_gateway);
