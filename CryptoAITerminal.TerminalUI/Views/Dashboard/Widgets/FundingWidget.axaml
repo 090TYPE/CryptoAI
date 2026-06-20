@@ -1,0 +1,72 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.FundingWidget"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+  <StackPanel Spacing="8">
+
+    <!-- Summary KPI strip -->
+    <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
+      <StackPanel Grid.Column="0" Spacing="2">
+        <TextBlock Text="AVG RATE" Foreground="#5A7A90" FontSize="9" />
+        <TextBlock Text="{Binding FundingRateVM.AvgRateLabel}"
+                   FontSize="14" FontWeight="Bold" Foreground="#8B949E" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Spacing="2">
+        <TextBlock Text="EXTREMES" Foreground="#5A7A90" FontSize="9" />
+        <TextBlock Text="{Binding FundingRateVM.ExtremeCount}"
+                   FontSize="14" FontWeight="Bold" Foreground="#F4B860" />
+      </StackPanel>
+      <StackPanel Grid.Column="2" Spacing="2">
+        <TextBlock Text="BEST SHORT" Foreground="#5A7A90" FontSize="9" />
+        <TextBlock Text="{Binding FundingRateVM.TopBearishLabel}"
+                   FontSize="11" FontWeight="SemiBold" Foreground="#FF5D73" />
+      </StackPanel>
+      <StackPanel Grid.Column="3" Spacing="2">
+        <TextBlock Text="BEST LONG" Foreground="#5A7A90" FontSize="9" />
+        <TextBlock Text="{Binding FundingRateVM.TopBullishLabel}"
+                   FontSize="11" FontWeight="SemiBold" Foreground="#3DDC84" />
+      </StackPanel>
+    </Grid>
+
+    <!-- Table header -->
+    <Grid ColumnDefinitions="*,80,80,70,80" ColumnSpacing="6" Margin="0,2,0,0">
+      <TextBlock Grid.Column="0" Text="SYMBOL"  Foreground="#5A7A90" FontSize="9" FontWeight="Bold" />
+      <TextBlock Grid.Column="1" Text="RATE"    Foreground="#5A7A90" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="2" Text="ANNL."   Foreground="#5A7A90" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="3" Text="MARK $"  Foreground="#5A7A90" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="4" Text="NEXT"    Foreground="#5A7A90" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+    </Grid>
+
+    <!-- Rates list -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+      <ItemsControl ItemsSource="{Binding FundingRateVM.DisplayRates}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:FundingRateRowViewModel">
+            <Border Padding="0,4" BorderBrush="#12283A" BorderThickness="0,0,0,1">
+              <Grid ColumnDefinitions="*,80,80,70,80" ColumnSpacing="6">
+                <TextBlock Grid.Column="0" Text="{Binding Symbol}"
+                           Foreground="#C8D8E8" FontWeight="SemiBold" FontSize="11"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding FundingRatePct}"
+                           Foreground="{Binding RateColor}" FontWeight="Bold"
+                           HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="11" />
+                <TextBlock Grid.Column="2" Text="{Binding AnnualizedLabel}"
+                           Foreground="{Binding RateColor}"
+                           HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="10" />
+                <TextBlock Grid.Column="3" Text="{Binding MarkPriceLabel}"
+                           Foreground="#8B949E"
+                           HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="10" />
+                <TextBlock Grid.Column="4" Text="{Binding NextFundingLabel}"
+                           Foreground="#5A7080"
+                           HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="10" />
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+
+  </StackPanel>
+</UserControl>

@@ -18,6 +18,16 @@ public sealed class WidgetTemplateSelector : IDataTemplate
         "liq-heatmap"   => new LiqHeatmapWidget(),
         "order-book"    => new OrderBookWidget(),
         "sentiment"     => new SentimentWidget(),
+        // Phase 2 — market & portfolio widgets
+        "news"          => new NewsWidget(),
+        "positions"     => new PositionsWidget(),
+        "portfolio"     => new PortfolioWidget(),
+        "whales"        => new WhalesWidget(),
+        "funding"       => new FundingWidget(),
+        "analytics"     => new AnalyticsWidget(),
+        "scanner"       => new ScannerWidget(),
+        "gas"           => new GasWidget(),
+        "tape"          => new TapeWidget(),
         _               => new TextBlock { Text = "Unknown widget" },
     };
 }

@@ -1,0 +1,91 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.PositionsWidget"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+  <StackPanel Spacing="8">
+
+    <!-- Totals summary -->
+    <StackPanel Orientation="Horizontal" Spacing="12">
+      <TextBlock Text="{Binding AllPositionsVM.TotalPnlLabel}"
+                 Foreground="{Binding AllPositionsVM.TotalPnlBrush}"
+                 FontSize="18" FontWeight="Bold" />
+      <TextBlock Text="{Binding AllPositionsVM.TotalSizeLabel}"
+                 Foreground="#4A6880" FontSize="12" VerticalAlignment="Bottom" />
+      <TextBlock Text="{Binding AllPositionsVM.StatusLabel}"
+                 Foreground="#4A6880" FontSize="10" VerticalAlignment="Bottom" />
+    </StackPanel>
+
+    <!-- Table header -->
+    <Grid ColumnDefinitions="90,70,50,70,70,70,*" ColumnSpacing="6" Margin="0,2,0,0">
+      <TextBlock Grid.Column="0" Text="EXCHANGE" Classes="Overline" FontSize="10" VerticalAlignment="Center" />
+      <TextBlock Grid.Column="1" Text="SYMBOL"   Classes="Overline" FontSize="10" VerticalAlignment="Center" />
+      <TextBlock Grid.Column="2" Text="SIDE"     Classes="Overline" FontSize="10" VerticalAlignment="Center" />
+      <TextBlock Grid.Column="3" Text="ENTRY"    Classes="Overline" FontSize="10" VerticalAlignment="Center" />
+      <TextBlock Grid.Column="4" Text="SIZE"     Classes="Overline" FontSize="10" VerticalAlignment="Center" />
+      <TextBlock Grid.Column="5" Text="LEV/LIQ"  Classes="Overline" FontSize="10" VerticalAlignment="Center" />
+      <TextBlock Grid.Column="6" Text="PNL"      Classes="Overline" FontSize="10" VerticalAlignment="Center" />
+    </Grid>
+    <Border Height="1" Background="#17263A" />
+
+    <!-- Empty state -->
+    <Border IsVisible="{Binding AllPositionsVM.HasNoPositions}"
+            Background="#0A1018" CornerRadius="4" Padding="12,10">
+      <TextBlock Text="No open futures positions"
+                 Foreground="#4A6880" FontSize="12" HorizontalAlignment="Center" />
+    </Border>
+
+    <!-- Positions list -->
+    <ScrollViewer IsVisible="{Binding AllPositionsVM.HasPositions}"
+                  VerticalScrollBarVisibility="Auto">
+      <ItemsControl ItemsSource="{Binding AllPositionsVM.Rows}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="{x:Type vm:UnifiedPositionRowVM}">
+            <Border Background="#0A1018" CornerRadius="3" Padding="6,4" Margin="0,1">
+              <Grid ColumnDefinitions="90,70,50,70,70,70,*" ColumnSpacing="6">
+                <!-- Exchange badge -->
+                <Border Grid.Column="0" Background="#0F1721" CornerRadius="3" Padding="5,1"
+                        HorizontalAlignment="Left" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Exchange}"
+                             Foreground="{Binding ExchangeBrush}"
+                             FontSize="10" FontWeight="SemiBold" />
+                </Border>
+                <!-- Symbol -->
+                <TextBlock Grid.Column="1" Text="{Binding Symbol}"
+                           Foreground="#C8D8E8" FontSize="11" FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
+                <!-- Side -->
+                <Border Grid.Column="2" Background="#0F1721" CornerRadius="3" Padding="4,1"
+                        HorizontalAlignment="Left" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Side}"
+                             Foreground="{Binding SideBrush}"
+                             FontSize="10" FontWeight="Bold" />
+                </Border>
+                <!-- Entry price -->
+                <TextBlock Grid.Column="3" Text="{Binding EntryPriceLabel}"
+                           Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                <!-- Size -->
+                <StackPanel Grid.Column="4" VerticalAlignment="Center" Spacing="1">
+                  <TextBlock Text="{Binding SizeLabel}" Foreground="#C8D8E8" FontSize="11" />
+                  <TextBlock Text="{Binding NotionalLabel}" Foreground="#4A6880" FontSize="9" />
+                </StackPanel>
+                <!-- Leverage / Liq -->
+                <StackPanel Grid.Column="5" VerticalAlignment="Center" Spacing="1">
+                  <TextBlock Text="{Binding LeverageLabel}" Foreground="#8FA3B8" FontSize="11" />
+                  <TextBlock Text="{Binding LiqLabel}" Foreground="#FF6B6B" FontSize="9" />
+                </StackPanel>
+                <!-- PnL -->
+                <TextBlock Grid.Column="6" Text="{Binding PnlLabel}"
+                           Foreground="{Binding PnlBrush}"
+                           FontSize="12" FontWeight="Bold"
+                           VerticalAlignment="Center" />
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+
+  </StackPanel>
+</UserControl>

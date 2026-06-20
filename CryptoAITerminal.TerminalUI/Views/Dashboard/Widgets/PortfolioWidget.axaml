@@ -1,0 +1,73 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.PortfolioWidget"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+  <StackPanel Spacing="10">
+
+    <!-- Active session + live route KPIs -->
+    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+      <Border Grid.Column="0" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1"
+              CornerRadius="6" Padding="10,8">
+        <StackPanel Spacing="4">
+          <TextBlock Text="Active Session" Foreground="#8B949E" FontSize="10" />
+          <TextBlock Text="{Binding WalletVM.ActiveWalletBanner}"
+                     Foreground="#E0E8F0" FontSize="13" FontWeight="Bold" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding WalletVM.WalletReadinessLabel}"
+                     Foreground="{Binding WalletVM.WalletReadinessBrush}"
+                     FontSize="11" FontWeight="SemiBold" />
+        </StackPanel>
+      </Border>
+      <Border Grid.Column="1" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1"
+              CornerRadius="6" Padding="10,8">
+        <StackPanel Spacing="4">
+          <TextBlock Text="Native Balance" Foreground="#8B949E" FontSize="10" />
+          <TextBlock Text="{Binding WalletVM.NativeBalanceLabel}"
+                     Foreground="#14E0C1" FontSize="13" FontWeight="Bold" />
+          <TextBlock Text="{Binding WalletVM.RouteReadinessLabel}"
+                     Foreground="{Binding WalletVM.RouteReadinessBrush}"
+                     FontSize="11" FontWeight="SemiBold" />
+        </StackPanel>
+      </Border>
+    </Grid>
+
+    <!-- Portfolio Lens assets -->
+    <Border Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="6" Padding="10,8">
+      <StackPanel Spacing="6">
+        <TextBlock Text="Portfolio Lens" Foreground="#8B949E" FontSize="10" FontWeight="Bold" />
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <ItemsControl ItemsSource="{Binding WalletVM.Assets}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel Orientation="Horizontal" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:WalletAssetViewModel">
+                <Border Background="#0D1117"
+                        BorderBrush="#30363D"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="10,8"
+                        Width="180"
+                        Margin="0,0,8,8">
+                  <StackPanel Spacing="3">
+                    <TextBlock Text="{Binding Title}" Foreground="#8B949E" FontSize="10" />
+                    <TextBlock Text="{Binding Value}" FontSize="16" FontWeight="Bold" Foreground="#14E0C1" />
+                    <TextBlock Text="{Binding Subtitle}" Foreground="#8B949E" FontSize="10" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </StackPanel>
+    </Border>
+
+    <!-- Status -->
+    <TextBlock Text="{Binding WalletVM.StatusMessage}"
+               Foreground="#8FA3B8" FontSize="10" TextWrapping="Wrap" />
+
+  </StackPanel>
+</UserControl>

@@ -1,0 +1,103 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.AnalyticsWidget"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+  <StackPanel Spacing="8">
+
+    <!-- KPI cards -->
+    <Grid ColumnDefinitions="*,*,*,*,*,*" ColumnSpacing="6">
+      <Border Grid.Column="0" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+        <StackPanel Spacing="2">
+          <TextBlock Text="P&amp;L" Foreground="#5A7A90" FontSize="9" />
+          <TextBlock Text="{Binding PnlDashboardVM.TotalPnlLabel}"
+                     Foreground="{Binding PnlDashboardVM.TotalPnlBrush}"
+                     FontSize="13" FontWeight="SemiBold" />
+        </StackPanel>
+      </Border>
+      <Border Grid.Column="1" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+        <StackPanel Spacing="2">
+          <TextBlock Text="WIN RATE" Foreground="#5A7A90" FontSize="9" />
+          <TextBlock Text="{Binding PnlDashboardVM.WinRateLabel}" Foreground="#21E6C1" FontSize="13" FontWeight="SemiBold" />
+          <TextBlock Text="{Binding PnlDashboardVM.TradeCountLabel}" Foreground="#4D5F70" FontSize="9" />
+        </StackPanel>
+      </Border>
+      <Border Grid.Column="2" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+        <StackPanel Spacing="2">
+          <TextBlock Text="AVG WIN" Foreground="#5A7A90" FontSize="9" />
+          <TextBlock Text="{Binding PnlDashboardVM.AvgWinLabel}" Foreground="#3DDC84" FontSize="13" FontWeight="SemiBold" />
+        </StackPanel>
+      </Border>
+      <Border Grid.Column="3" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+        <StackPanel Spacing="2">
+          <TextBlock Text="AVG LOSS" Foreground="#5A7A90" FontSize="9" />
+          <TextBlock Text="{Binding PnlDashboardVM.AvgLossLabel}" Foreground="#FF5D73" FontSize="13" FontWeight="SemiBold" />
+        </StackPanel>
+      </Border>
+      <Border Grid.Column="4" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+        <StackPanel Spacing="2">
+          <TextBlock Text="DRAWDOWN" Foreground="#5A7A90" FontSize="9" />
+          <TextBlock Text="{Binding PnlDashboardVM.MaxDrawdownLabel}" Foreground="#F4B860" FontSize="13" FontWeight="SemiBold" />
+        </StackPanel>
+      </Border>
+      <Border Grid.Column="5" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+        <StackPanel Spacing="2">
+          <TextBlock Text="PROFIT F." Foreground="#5A7A90" FontSize="9" />
+          <TextBlock Text="{Binding PnlDashboardVM.ProfitFactorLabel}" Foreground="#A78BFA" FontSize="13" FontWeight="SemiBold" />
+        </StackPanel>
+      </Border>
+    </Grid>
+
+    <!-- Equity curve mini canvas -->
+    <Border Background="#070F18" CornerRadius="4" Height="80"
+            IsVisible="{Binding PnlDashboardVM.EquityCurveHasData}">
+      <Canvas Width="560" Height="70" VerticalAlignment="Center" HorizontalAlignment="Left">
+        <Path Fill="#33FF5D73" Stroke="Transparent"
+              Data="{Binding PnlDashboardVM.DrawdownPathData}" />
+        <Line StartPoint="0,0" EndPoint="560,0"
+              Stroke="#1A2E3A" StrokeThickness="1" StrokeDashArray="4,4">
+          <Line.RenderTransform>
+            <TranslateTransform Y="{Binding PnlDashboardVM.ZeroLineY}" />
+          </Line.RenderTransform>
+        </Line>
+        <Path Stroke="#21E6C1" StrokeThickness="1.5" Fill="Transparent"
+              Data="{Binding PnlDashboardVM.EquityCurvePathData}" />
+      </Canvas>
+    </Border>
+    <Border Background="#070F18" CornerRadius="4" Height="40"
+            IsVisible="{Binding PnlDashboardVM.EquityCurveIsEmpty}">
+      <TextBlock Text="No trade data yet."
+                 Foreground="#2A3D4F" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" />
+    </Border>
+
+    <!-- Recent trade history -->
+    <Grid ColumnDefinitions="100,*,60,50,70,70" ColumnSpacing="6" Margin="0,2,0,0">
+      <TextBlock Grid.Column="0" Text="DATE"   Foreground="#5A7A90" FontSize="9" FontWeight="Bold" />
+      <TextBlock Grid.Column="1" Text="SYMBOL" Foreground="#5A7A90" FontSize="9" FontWeight="Bold" />
+      <TextBlock Grid.Column="2" Text="SIDE"   Foreground="#5A7A90" FontSize="9" FontWeight="Bold" />
+      <TextBlock Grid.Column="3" Text="P&amp;L"   Foreground="#5A7A90" FontSize="9" FontWeight="Bold" />
+      <TextBlock Grid.Column="4" Text="P&amp;L %"  Foreground="#5A7A90" FontSize="9" FontWeight="Bold" />
+      <TextBlock Grid.Column="5" Text="EXIT"   Foreground="#5A7A90" FontSize="9" FontWeight="Bold" />
+    </Grid>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+      <ItemsControl ItemsSource="{Binding PnlDashboardVM.TradeRows}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:TradeRowViewModel">
+            <Border Padding="2,4" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
+              <Grid ColumnDefinitions="100,*,60,50,70,70" ColumnSpacing="6">
+                <TextBlock Grid.Column="0" Text="{Binding DateLabel}"  Foreground="#8FA3B8" FontSize="10" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding Symbol}"     Foreground="#C8D8E8" FontWeight="SemiBold" FontSize="10" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding Direction}"  Foreground="#8FA3B8" FontSize="10" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="3" Text="{Binding PnlLabel}"   Foreground="{Binding PnlBrush}" FontWeight="SemiBold" FontSize="10" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="4" Text="{Binding PnlPctLabel}" Foreground="{Binding PnlBrush}" FontSize="10" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="5" Text="{Binding ExitReason}" Foreground="#4D5F70" FontSize="9" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+
+  </StackPanel>
+</UserControl>
