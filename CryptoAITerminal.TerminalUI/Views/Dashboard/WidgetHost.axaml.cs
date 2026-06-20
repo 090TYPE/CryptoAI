@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -24,8 +25,6 @@ public partial class WidgetHost : UserControl
         set => SetValue(IsEditModeProperty, value);
     }
 
-    public ReactiveCommand<Unit, Unit> RemoveCommand { get; }
-
     private bool _dragging;
     private Point _dragStart;
     private int _startCol, _startRow;
@@ -33,7 +32,6 @@ public partial class WidgetHost : UserControl
     public WidgetHost()
     {
         AvaloniaXamlLoader.Load(this);
-        RemoveCommand = ReactiveCommand.Create(RemoveSelf);
 
         var handle = this.FindControl<TextBlock>("DragHandle")!;
         handle.PointerPressed += OnHandlePressed;
@@ -47,12 +45,38 @@ public partial class WidgetHost : UserControl
 
     private DashboardWidget? Widget => DataContext as DashboardWidget;
     private WidgetGridPanel? Grid => this.FindAncestorOfType<WidgetGridPanel>();
-    private DashboardLayoutViewModel? Layout =>
-        (this.FindAncestorOfType<Window>()?.DataContext as MainWindowViewModel)?.DashboardLayoutVM;
 
-    private void RemoveSelf()
+    // Walk the visual tree for the first ancestor whose DataContext is the MainWindowViewModel.
+    private MainWindowViewModel? MainVm =>
+        this.GetVisualAncestors()
+            .OfType<Control>()
+            .Select(c => c.DataContext)
+            .OfType<MainWindowViewModel>()
+            .FirstOrDefault();
+
+    private DashboardLayoutViewModel? Layout => MainVm?.DashboardLayoutVM;
+
+    // The widget body controls bind the MainWindowViewModel (SelectedMarket, SentimentVM, …),
+    // but each grid item's DataContext is its DashboardWidget. So build the body here and give
+    // it the MainWindowViewModel as DataContext explicitly. Done once attached, when ancestors exist.
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        if (Widget is { } w) Layout?.RemoveWidgetCommand.Execute(w).Subscribe();
+        base.OnAttachedToVisualTree(e);
+        BuildBody();
+    }
+
+    private bool _bodyBuilt;
+    private void BuildBody()
+    {
+        if (_bodyBuilt) return;
+        if (this.FindControl<ContentControl>("Body") is not { } body) return;
+        if (Widget is null || MainVm is null) return;
+
+        var content = new WidgetTemplateSelector().Build(Widget);
+        if (content is null) return;
+        content.DataContext = MainVm;
+        body.Content = content;
+        _bodyBuilt = true;
     }
 
     private void OnHandlePressed(object? sender, PointerPressedEventArgs e)

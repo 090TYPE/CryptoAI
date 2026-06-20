@@ -5,9 +5,6 @@
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.WidgetHost"
              x:DataType="vmd:DashboardWidget"
              x:CompileBindings="False">
-  <UserControl.Resources>
-    <dash:WidgetTemplateSelector x:Key="WidgetSelector" />
-  </UserControl.Resources>
   <Border Classes="Panel" Margin="0">
     <Grid RowDefinitions="Auto,*">
       <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,6">
@@ -17,10 +14,10 @@
         <TextBlock Grid.Column="1" Text="{Binding Title}" Classes="H2" />
         <Button Grid.Column="2" Content="✕" Classes="GhostButton"
                 IsVisible="{Binding $parent[dash:WidgetHost].IsEditMode}"
-                Command="{Binding $parent[dash:WidgetHost].RemoveCommand}" />
+                Command="{Binding $parent[ItemsControl].DataContext.DashboardLayoutVM.RemoveWidgetCommand}"
+                CommandParameter="{Binding}" />
       </Grid>
-      <ContentControl Grid.Row="1" Content="{Binding}"
-                      ContentTemplate="{StaticResource WidgetSelector}" />
+      <ContentControl Grid.Row="1" x:Name="Body" />
       <Thumb Grid.Row="1" x:Name="ResizeThumb" Width="16" Height="16"
              HorizontalAlignment="Right" VerticalAlignment="Bottom"
              Background="#7C5CFF" Cursor="BottomRightCorner"
