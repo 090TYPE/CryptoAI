@@ -484,7 +484,181 @@
     <TabItem Header="Активность · Диагностика">
       <ScrollViewer Classes="PageScroll">
         <StackPanel Spacing="16" Margin="4"><!-- ACTIVITY -->
-          <TextBlock Text="Activity placeholder" />
+
+          <Border Classes="Panel">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="H2" Text="Recent Activity" />
+              <Expander IsExpanded="True">
+                <Expander.Header>
+                  <TextBlock Text="Session Feed" FontWeight="Bold" />
+                </Expander.Header>
+                <ItemsControl ItemsSource="{Binding WalletVM.RecentActivity}" Margin="8,12,8,4">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Background="#0D1117"
+                              BorderBrush="#30363D"
+                              BorderThickness="1"
+                              CornerRadius="10"
+                              Padding="12"
+                              Margin="0,0,0,8">
+                        <TextBlock Text="{Binding .}" TextWrapping="Wrap" />
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </Expander>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="SoftPanel">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="Overline" Text="Solana Self-Test" />
+              <TextBlock Text="Run a safe end-to-end probe for the armed Solana session: wallet, RPC, blockhash, signing, memo simulation, Jupiter quote and signed swap simulation."
+                         Foreground="#8B949E"
+                         TextWrapping="Wrap" />
+              <Button Content="RUN SOLANA SELF-TEST"
+                      Command="{Binding WalletVM.RunSolanaDiagnosticsCommand}"
+                      IsEnabled="{Binding WalletVM.CanRunSolanaDiagnostics}"
+                      Width="220" />
+              <TextBlock Text="{Binding WalletVM.SolanaDiagnosticsSummary}"
+                         FontWeight="SemiBold"
+                         TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="SoftPanel"
+                  IsVisible="{Binding WalletVM.IsTronNetworkSelected}">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="Overline" Text="Tron Self-Test" />
+              <TextBlock Text="Run a safe Tron smoke-check for the armed session: wallet, RPC, TRC20 metadata, SunSwap quote and unsigned swap preview without broadcasting a trade."
+                         Foreground="#8B949E"
+                         TextWrapping="Wrap" />
+              <Button Content="RUN TRON SELF-TEST"
+                      Command="{Binding WalletVM.RunTronDiagnosticsCommand}"
+                      IsEnabled="{Binding WalletVM.CanRunTronDiagnostics}"
+                      Width="220" />
+              <TextBlock Text="{Binding WalletVM.TronDiagnosticsSummary}"
+                         FontWeight="SemiBold"
+                         TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="SoftPanel"
+                  IsVisible="{Binding WalletVM.IsTronNetworkSelected}">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="Overline" Text="Tron TRC20 Payments" />
+              <TextBlock Text="Send a real TRC20 transfer from the armed Tron session. The app creates the transaction, signs it locally, and broadcasts it through Tron RPC."
+                         Foreground="#8B949E"
+                         TextWrapping="Wrap" />
+              <WrapPanel Orientation="Horizontal">
+                <Button Content="USE USDC"
+                        Command="{Binding WalletVM.ApplyTronTokenPresetCommand}"
+                        CommandParameter="USDC"
+                        Background="{Binding WalletVM.TronUsdcPresetBackground}"
+                        Foreground="{Binding WalletVM.TronUsdcPresetForeground}"
+                        Width="120"
+                        Margin="0,0,8,8" />
+                <Button Content="USE USDT"
+                        Command="{Binding WalletVM.ApplyTronTokenPresetCommand}"
+                        CommandParameter="USDT"
+                        Background="{Binding WalletVM.TronUsdtPresetBackground}"
+                        Foreground="{Binding WalletVM.TronUsdtPresetForeground}"
+                        Width="120"
+                        Margin="0,0,8,8" />
+              </WrapPanel>
+              <TextBlock Text="{Binding WalletVM.TronTrc20BalanceLabel, StringFormat=Tracked token balance: {0}}"
+                         FontWeight="SemiBold"
+                         Foreground="#21E6C1" />
+              <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="10">
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Symbol" VerticalAlignment="Center" />
+                <TextBox Grid.Row="0" Grid.Column="1"
+                         Text="{Binding WalletVM.TronTrc20Symbol}"
+                         PlaceholderText="USDT" />
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Contract" VerticalAlignment="Center" />
+                <TextBox Grid.Row="1" Grid.Column="1"
+                         Text="{Binding WalletVM.TronTrc20ContractAddress}"
+                         PlaceholderText="TRC20 contract address" />
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Recipient" VerticalAlignment="Center" />
+                <TextBox Grid.Row="2" Grid.Column="1"
+                         Text="{Binding WalletVM.TronPaymentRecipient}"
+                         PlaceholderText="Recipient Tron address" />
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Amount" VerticalAlignment="Center" />
+                <NumericUpDown Grid.Row="3" Grid.Column="1"
+                               Value="{Binding WalletVM.TronTrc20Amount}"
+                               Increment="0.1"
+                               Minimum="0"
+                               FormatString="0.######" />
+
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="Fee Limit (TRX)" VerticalAlignment="Center" />
+                <NumericUpDown Grid.Row="4" Grid.Column="1"
+                               Value="{Binding WalletVM.TronFeeLimitTrx}"
+                               Increment="1"
+                               Minimum="1"
+                               FormatString="0.##" />
+              </Grid>
+              <Button Content="SEND TRC20"
+                      Command="{Binding WalletVM.SendTronPaymentCommand}"
+                      IsEnabled="{Binding WalletVM.CanSendTronPaymentLive}"
+                      ToolTip.Tip="{Binding WalletVM.TronPaymentBlockedReason}"
+                      Width="160" />
+              <TextBlock Text="{Binding WalletVM.TronPaymentBlockedReason}"
+                         Foreground="#F4B860"
+                         TextWrapping="Wrap"
+                         IsVisible="{Binding !WalletVM.CanSendTronPaymentLive}" />
+              <TextBlock Text="{Binding WalletVM.TronPaymentStatus}"
+                         FontWeight="SemiBold"
+                         TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="SoftPanel">
+            <StackPanel Spacing="10">
+              <TextBlock Text="Solana Diagnostic Trace" Foreground="#8B949E" />
+              <ScrollViewer Classes="PageScroll" MaxHeight="240">
+                <ItemsControl ItemsSource="{Binding WalletVM.SolanaDiagnosticSteps}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Background="#0D1117"
+                              BorderBrush="#30363D"
+                              BorderThickness="1"
+                              CornerRadius="10"
+                              Padding="12"
+                              Margin="0,0,0,8">
+                        <TextBlock Text="{Binding .}" TextWrapping="Wrap" />
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="SoftPanel"
+                  IsVisible="{Binding WalletVM.IsTronNetworkSelected}">
+            <StackPanel Spacing="10">
+              <TextBlock Text="Tron Diagnostic Trace" Foreground="#8B949E" />
+              <ScrollViewer Classes="PageScroll" MaxHeight="240">
+                <ItemsControl ItemsSource="{Binding WalletVM.TronDiagnosticSteps}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Background="#0D1117"
+                              BorderBrush="#30363D"
+                              BorderThickness="1"
+                              CornerRadius="10"
+                              Padding="12"
+                              Margin="0,0,0,8">
+                        <TextBlock Text="{Binding .}" TextWrapping="Wrap" />
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </StackPanel>
+          </Border>
+
         </StackPanel>
       </ScrollViewer>
     </TabItem>
