@@ -315,7 +315,169 @@
     <TabItem Header="Кошелёк">
       <ScrollViewer Classes="PageScroll">
         <StackPanel Spacing="16" Margin="4"><!-- WALLET -->
-          <TextBlock Text="Wallet placeholder" />
+
+          <!-- License activation -->
+          <Border Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="8" Padding="12">
+            <StackPanel Spacing="10">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Text="License" FontWeight="Bold" Foreground="#E0E8F0" VerticalAlignment="Center" />
+                <Border Grid.Column="1" Background="{Binding LicenseVM.StateBrush}" CornerRadius="3" Padding="7,2">
+                  <TextBlock Text="{Binding LicenseVM.StateLabel}" Foreground="#06121C" FontSize="11" FontWeight="Bold" />
+                </Border>
+              </Grid>
+              <TextBox Text="{Binding LicenseVM.KeyInput}" PlaceholderText="Paste activation key" />
+              <Button Content="Activate" Command="{Binding LicenseVM.ActivateCommand}"
+                      HorizontalAlignment="Stretch" Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
+              <TextBlock Text="{Binding LicenseVM.StatusMessage}" Foreground="#F4B860" FontSize="11" TextWrapping="Wrap" />
+              <TextBlock Foreground="#4A6880" FontSize="10" TextWrapping="Wrap"
+                         Text="Get a key from the Telegram bot. Your Machine ID is in Settings → License. No key? You stay in Demo mode." />
+            </StackPanel>
+          </Border>
+
+          <Expander IsExpanded="True">
+            <Expander.Header>
+              <TextBlock Text="Connection Studio" FontWeight="Bold" />
+            </Expander.Header>
+            <StackPanel Spacing="12" Margin="8,12,8,4">
+              <StackPanel Spacing="8">
+                <TextBlock Text="Wallet Provider" Foreground="#8B949E" />
+                <WrapPanel Orientation="Horizontal">
+                  <Button Content="METAMASK"
+                          Command="{Binding WalletVM.SelectProviderCommand}"
+                          CommandParameter="MetaMask"
+                          Width="110"
+                          Margin="0,0,8,8" />
+                  <Button Content="TRUST"
+                          Command="{Binding WalletVM.SelectProviderCommand}"
+                          CommandParameter="Trust Wallet"
+                          Width="110"
+                          Margin="0,0,8,8" />
+                  <Button Content="PHANTOM"
+                          Command="{Binding WalletVM.SelectProviderCommand}"
+                          CommandParameter="Phantom"
+                          Width="110"
+                          Margin="0,0,8,8" />
+                  <Button Content="TRONLINK"
+                          Command="{Binding WalletVM.SelectProviderCommand}"
+                          CommandParameter="TronLink"
+                          Width="110"
+                          Margin="0,0,8,8" />
+                </WrapPanel>
+                <TextBlock Text="{Binding WalletVM.SelectedProvider, StringFormat=Focused provider: {0}}"
+                           Foreground="#21E6C1"
+                           FontWeight="SemiBold" />
+              </StackPanel>
+
+              <StackPanel Spacing="8">
+                <TextBlock Text="Network" Foreground="#8B949E" />
+                <ComboBox ItemsSource="{Binding WalletVM.AvailableNetworks}"
+                          SelectedItem="{Binding WalletVM.SelectedNetwork}" />
+              </StackPanel>
+
+              <StackPanel Spacing="8">
+                <TextBlock Text="Wallet Address" Foreground="#8B949E" />
+                <TextBox Text="{Binding WalletVM.WalletAddressInput}"
+                         PlaceholderText="Paste wallet address for shared watch mode" />
+              </StackPanel>
+
+              <StackPanel Spacing="8">
+                <TextBlock Text="Private Key" Foreground="#8B949E" />
+                <TextBox Text="{Binding WalletVM.PrivateKeyInput}"
+                         PlaceholderText="EVM private key, Solana 64-byte keypair / 32-byte seed, or Tron 32-byte private key" />
+              </StackPanel>
+
+              <WrapPanel Orientation="Horizontal">
+                <Button Content="CONNECT WATCH"
+                        Command="{Binding WalletVM.ConnectWatchCommand}"
+                        Width="150"
+                        Margin="0,0,8,8" />
+                <Button Content="IMPORT FOR TRADING"
+                        Command="{Binding WalletVM.ImportPrivateKeyCommand}"
+                        Width="170"
+                        Margin="0,0,8,8" />
+                <Button Content="REFRESH"
+                        Command="{Binding WalletVM.RefreshWalletCommand}"
+                        Width="120"
+                        Margin="0,0,8,8" />
+                <Button Content="OPEN PROVIDER"
+                        Command="{Binding WalletVM.OpenProviderCommand}"
+                        Width="140"
+                        Margin="0,0,8,8" />
+                <Button Content="DISCONNECT"
+                        Command="{Binding WalletVM.DisconnectWalletCommand}"
+                        Width="130"
+                        Margin="0,0,8,8" />
+              </WrapPanel>
+            </StackPanel>
+          </Expander>
+
+          <Expander IsExpanded="True">
+            <Expander.Header>
+              <TextBlock Text="Security Notes" FontWeight="Bold" />
+            </Expander.Header>
+            <StackPanel Spacing="8" Margin="8,12,8,4">
+              <TextBlock Text="The key stays only in memory for this desktop session."
+                         Foreground="#F4B860"
+                         FontWeight="SemiBold"
+                         TextWrapping="Wrap" />
+              <TextBlock Text="Use watch mode for analytics and monitoring. Enable a trading session only when you are ready to execute on-chain actions."
+                         Foreground="#8B949E"
+                         TextWrapping="Wrap" />
+            </StackPanel>
+          </Expander>
+
+          <Expander IsExpanded="True">
+            <Expander.Header>
+              <TextBlock Text="Saved Wallets" FontWeight="Bold" />
+            </Expander.Header>
+            <StackPanel Spacing="10" Margin="8,12,8,4">
+              <Border Classes="SoftPanel">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="Overline" Text="Execution Matrix" />
+                  <TextBlock Text="{Binding WalletVM.NetworkExecutionMatrix}"
+                             FontWeight="SemiBold"
+                             TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+              <ScrollViewer Classes="PageScroll" MaxHeight="260">
+                <ItemsControl ItemsSource="{Binding WalletVM.SavedWallets}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:SavedWalletViewModel">
+                      <Border Classes="SoftPanel" Margin="0,0,0,8">
+                        <StackPanel Spacing="8">
+                          <TextBlock Text="{Binding DisplayAddress}" FontWeight="Bold" />
+                          <TextBlock Text="{Binding Summary}" Foreground="#8B949E" TextWrapping="Wrap" />
+                          <TextBlock Text="{Binding Note}" Foreground="#6E8196" TextWrapping="Wrap" />
+                          <WrapPanel Orientation="Horizontal">
+                            <Button Content="LOAD"
+                                    Command="{Binding $parent[Window].DataContext.WalletVM.LoadSavedWalletCommand}"
+                                    CommandParameter="{Binding .}"
+                                    Width="110"
+                                    Margin="0,0,10,0" />
+                            <Button Content="DELETE"
+                                    Command="{Binding $parent[Window].DataContext.WalletVM.DeleteSavedWalletCommand}"
+                                    CommandParameter="{Binding .}"
+                                    Width="110"
+                                    Classes="GhostButton" />
+                          </WrapPanel>
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </StackPanel>
+          </Expander>
+
+          <Border Classes="SoftPanel">
+            <StackPanel Spacing="6">
+              <TextBlock Text="Session Status" Foreground="#8B949E" />
+              <TextBlock Text="{Binding WalletVM.StatusMessage}"
+                         TextWrapping="Wrap"
+                         FontWeight="SemiBold" />
+            </StackPanel>
+          </Border>
+
         </StackPanel>
       </ScrollViewer>
     </TabItem>
