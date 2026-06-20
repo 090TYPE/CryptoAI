@@ -1,0 +1,100 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.SentimentWidget"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+  <Border Classes="Panel">
+    <StackPanel Spacing="12">
+      <!-- Header row -->
+      <Grid ColumnDefinitions="*,Auto,Auto">
+        <TextBlock Grid.Column="0" Classes="H2" Text="MARKET SENTIMENT" />
+        <TextBlock Grid.Column="1" Text="{Binding SentimentVM.StatusLabel}"
+                   Foreground="#8B949E" FontSize="12" VerticalAlignment="Center" Margin="0,0,10,0" />
+        <Button Grid.Column="2" Content="🧠 AI Read"
+                Command="{Binding SentimentVM.AnalyzeWithAiCommand}"
+                IsEnabled="{Binding !SentimentVM.InsightRunning}"
+                Foreground="#21E6C1" FontSize="11" />
+      </Grid>
+
+      <!-- AI Sentiment Insight -->
+      <Border Background="#04101A" CornerRadius="6" Padding="12,9"
+              IsVisible="{Binding SentimentVM.HasInsight}">
+        <StackPanel Spacing="5">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Grid.Column="0" Text="{Binding SentimentVM.InsightSignal}"
+                       Foreground="{Binding SentimentVM.InsightSignalBrush}" FontWeight="Bold" FontSize="13" />
+            <TextBlock Grid.Column="1" Text="{Binding SentimentVM.InsightSource}"
+                       Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" />
+          </Grid>
+          <TextBlock Text="{Binding SentimentVM.InsightSummary}" Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding SentimentVM.InsightBullets}" Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap"
+                     IsVisible="{Binding SentimentVM.InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Fear & Greed row -->
+      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+        <!-- Circle gauge -->
+        <Border Grid.Column="0"
+                Width="72" Height="72" CornerRadius="36"
+                BorderThickness="3"
+                BorderBrush="{Binding SentimentVM.FearGreedBrush}"
+                Background="#0D1B2A"
+                VerticalAlignment="Center">
+          <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="0">
+            <TextBlock Text="{Binding SentimentVM.FearGreedValue}"
+                       FontSize="22" FontWeight="Bold" Foreground="White"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding SentimentVM.FearGreedLabel}"
+                       FontSize="9" Foreground="#8B949E"
+                       HorizontalAlignment="Center" />
+          </StackPanel>
+        </Border>
+
+        <!-- Center info -->
+        <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+          <TextBlock Classes="Overline" Text="FEAR &amp; GREED INDEX" />
+
+          <!-- Long/Short bar -->
+          <StackPanel Spacing="4">
+            <Grid>
+              <!-- Background bar (short = red) -->
+              <Border Width="200" Height="6" Background="#33FF4444"
+                      CornerRadius="3" HorizontalAlignment="Left" />
+              <!-- Foreground bar (long = teal) -->
+              <Border Height="6" Background="#21E6C1"
+                      CornerRadius="3,0,0,3" HorizontalAlignment="Left"
+                      Width="{Binding SentimentVM.LongBarWidth}" />
+            </Grid>
+            <Grid ColumnDefinitions="*,*">
+              <TextBlock Grid.Column="0" Text="{Binding SentimentVM.LongLabel}"
+                         Foreground="#21E6C1" FontSize="12" />
+              <TextBlock Grid.Column="1" Text="{Binding SentimentVM.ShortLabel}"
+                         Foreground="#FF4444" FontSize="12"
+                         HorizontalAlignment="Right" />
+            </Grid>
+          </StackPanel>
+
+          <!-- Open Interest -->
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBlock Text="Open Interest:" Foreground="#8B949E" FontSize="12" />
+            <TextBlock Text="{Binding SentimentVM.OpenInterestLabel}"
+                       Foreground="White" FontSize="12" FontWeight="Bold" />
+            <TextBlock Text="{Binding SentimentVM.OpenInterestChangeLabel}"
+                       Foreground="{Binding SentimentVM.OpenInterestChangeBrush}"
+                       FontSize="12" />
+          </StackPanel>
+        </StackPanel>
+
+        <!-- Change badge -->
+        <Border Grid.Column="2" VerticalAlignment="Center" Padding="8,4"
+                Background="#0D1B2A" CornerRadius="6">
+          <TextBlock Text="{Binding SentimentVM.FearGreedChangeLabel}"
+                     Foreground="{Binding SentimentVM.FearGreedChangeBrush}"
+                     FontSize="14" FontWeight="Bold" />
+        </Border>
+      </Grid>
+    </StackPanel>
+  </Border>
+</UserControl>
