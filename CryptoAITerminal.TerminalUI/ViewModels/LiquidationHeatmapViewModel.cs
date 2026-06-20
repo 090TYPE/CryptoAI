@@ -21,7 +21,9 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
     private const double RW        = 1200.0; // canvas width
     private const double Cx        =  600.0; // center X (longs left, shorts right)
     private const double MaxHalf   =  590.0; // max half-bar width
-    private const double BarH      =   16.0; // bar height (thicker = more visible)
+    private const double BarH      =   18.0; // bar height (thicker = more visible)
+    private const double RightPad  =   24.0; // keep the longest bar off the right edge
+    private const double UsableW   = RW - RightPad;  // bars span 0 … UsableW
     private const double RH        =  460.0; // canvas height
     private const double RangeF    =   0.20; // ±20 % price range
     private const double LabelStep =  0.025; // axis label every 2.5 %
@@ -322,10 +324,16 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
             .ToList();
         if (inRange.Count == 0) return;
 
-        var maxL = (double)(inRange.Where(l => l.LongLiqUsd  > 0).Select(l => l.LongLiqUsd ).DefaultIfEmpty(1m).Max());
-        var maxS = (double)(inRange.Where(l => l.ShortLiqUsd > 0).Select(l => l.ShortLiqUsd).DefaultIfEmpty(1m).Max());
+        var maxL = (double)(inRange.Where(l => l.LongLiqUsd  > 0).Select(l => l.LongLiqUsd ).DefaultIfEmpty(0m).Max());
+        var maxS = (double)(inRange.Where(l => l.ShortLiqUsd > 0).Select(l => l.ShortLiqUsd).DefaultIfEmpty(0m).Max());
+        var maxAll = System.Math.Max(maxL, maxS);
+        if (maxAll <= 0)
+        {
+            LongBarsGeometry  = new StreamGeometry();
+            ShortBarsGeometry = new StreamGeometry();
+            return;
+        }
 
-        // Build StreamGeometry objects directly — no string parsing, no type conversion.
         var geoL = new StreamGeometry();
         var geoS = new StreamGeometry();
 
@@ -340,21 +348,21 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
 
                 if (_showLongs && lvl.LongLiqUsd > 0)
                 {
-                    var w = (double)lvl.LongLiqUsd / maxL * MaxHalf;
-                    ctxL.BeginFigure(new Point(Cx,     y),  isFilled: true);
-                    ctxL.LineTo(new Point(Cx - w, y));
-                    ctxL.LineTo(new Point(Cx - w, y2));
-                    ctxL.LineTo(new Point(Cx,     y2));
+                    var w = BarWidth((double)lvl.LongLiqUsd, maxAll, UsableW);
+                    ctxL.BeginFigure(new Point(0, y),  isFilled: true);
+                    ctxL.LineTo(new Point(w, y));
+                    ctxL.LineTo(new Point(w, y2));
+                    ctxL.LineTo(new Point(0, y2));
                     ctxL.EndFigure(true);
                 }
 
                 if (_showShorts && lvl.ShortLiqUsd > 0)
                 {
-                    var w = (double)lvl.ShortLiqUsd / maxS * MaxHalf;
-                    ctxS.BeginFigure(new Point(Cx,     y),  isFilled: true);
-                    ctxS.LineTo(new Point(Cx + w, y));
-                    ctxS.LineTo(new Point(Cx + w, y2));
-                    ctxS.LineTo(new Point(Cx,     y2));
+                    var w = BarWidth((double)lvl.ShortLiqUsd, maxAll, UsableW);
+                    ctxS.BeginFigure(new Point(0, y),  isFilled: true);
+                    ctxS.LineTo(new Point(w, y));
+                    ctxS.LineTo(new Point(w, y2));
+                    ctxS.LineTo(new Point(0, y2));
                     ctxS.EndFigure(true);
                 }
             }
