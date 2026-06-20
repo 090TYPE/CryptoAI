@@ -1504,6 +1504,11 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             ? gw
             : _futuresGateway;
 
+    /// <summary>Resolve an exchange-name key to a gateway, case-insensitive, falling back when absent.</summary>
+    public static Core.Interfaces.IExchangeGateway ResolveGateway(
+        IReadOnlyDictionary<string, Core.Interfaces.IExchangeGateway> map, string key, Core.Interfaces.IExchangeGateway fallback)
+        => !string.IsNullOrWhiteSpace(key) && map.TryGetValue(key, out var gw) ? gw : fallback;
+
     public bool IsScalpProfile => string.Equals(SelectedTradingProfile, "Scalp", StringComparison.OrdinalIgnoreCase);
     public bool IsCexTradingMode => SelectedTradingVenue == TradingVenueMode.Cex;
     public bool IsDexTradingMode => SelectedTradingVenue == TradingVenueMode.Dex;
