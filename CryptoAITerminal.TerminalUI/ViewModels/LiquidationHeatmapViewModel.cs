@@ -483,6 +483,23 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
     public static double BarWidth(double usd, double maxUsd, double usableWidth)
         => maxUsd <= 0 ? 0.0 : System.Math.Clamp(usd / maxUsd, 0.0, 1.0) * usableWidth;
 
+    /// <summary>Opacity for a band: floor 0.06 so tiny levels stay faintly visible, 1.0 at the max cluster.</summary>
+    public static double Intensity(double mag, double max)
+        => max <= 0 ? 0.0 : 0.06 + 0.94 * System.Math.Clamp(mag / max, 0.0, 1.0);
+
+    /// <summary>Given band top-Y values sorted top→bottom, produce contiguous (Y, Height) rects that tile [0, height].</summary>
+    public static IReadOnlyList<(double Y, double Height)> BuildBandRects(IReadOnlyList<double> sortedYs, double height)
+    {
+        var result = new List<(double, double)>(sortedYs.Count);
+        for (int i = 0; i < sortedYs.Count; i++)
+        {
+            var top = System.Math.Clamp(sortedYs[i], 0, height);
+            var bottom = i + 1 < sortedYs.Count ? System.Math.Clamp(sortedYs[i + 1], 0, height) : height;
+            result.Add((top, System.Math.Max(0, bottom - top)));
+        }
+        return result;
+    }
+
     // ── Formatters ────────────────────────────────────────────────────────────
 
     private static string FormatPrice(double p) =>
