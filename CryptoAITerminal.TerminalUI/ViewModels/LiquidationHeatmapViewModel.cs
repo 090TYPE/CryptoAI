@@ -471,6 +471,10 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
         IsProximityAlertActive = anyAlert;
     }
 
+    /// <summary>Bar length for a liquidation level: proportional to USD, clamped to the usable width.</summary>
+    public static double BarWidth(double usd, double maxUsd, double usableWidth)
+        => maxUsd <= 0 ? 0.0 : System.Math.Clamp(usd / maxUsd, 0.0, 1.0) * usableWidth;
+
     // ── Formatters ────────────────────────────────────────────────────────────
 
     private static string FormatPrice(double p) =>
