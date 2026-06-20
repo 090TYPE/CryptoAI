@@ -11,12 +11,26 @@
                  Margin="4,4,0,2" />
       <Viewbox Stretch="Fill">
         <Canvas Width="1200" Height="460">
-          <Path Data="{Binding LiquidationHeatmapVM.LongBarsGeometry}"
-                Fill="#5521E6C1" Stroke="#21E6C1" StrokeThickness="1" />
-          <Path Data="{Binding LiquidationHeatmapVM.ShortBarsGeometry}"
-                Fill="#55FF4444" Stroke="#FF4444" StrokeThickness="1" />
-          <Line StartPoint="600,0" EndPoint="600,460"
-                Stroke="#1E3A50" StrokeThickness="1" />
+          <!-- Heat bands — full-width, colour = side, opacity = magnitude -->
+          <ItemsControl ItemsSource="{Binding LiquidationHeatmapVM.HeatBands}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <Canvas Width="1200" Height="460" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.Styles>
+              <Style Selector="ContentPresenter">
+                <Setter Property="Canvas.Top" Value="{Binding Y}" />
+                <Setter Property="Canvas.Left" Value="0" />
+              </Style>
+            </ItemsControl.Styles>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:HeatBand">
+                <Rectangle Width="{Binding Width}" Height="{Binding Height}" Fill="{Binding Fill}"
+                           RadiusX="3" RadiusY="3" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
           <Path Data="{Binding LiquidationHeatmapVM.CurrentPriceGeometry}"
                 Stroke="#F4B860" StrokeThickness="2" StrokeDashArray="8,4" />
         </Canvas>

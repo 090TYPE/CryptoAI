@@ -21,7 +21,9 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
     private const double RW        = 1200.0; // canvas width
     private const double Cx        =  600.0; // center X (longs left, shorts right)
     private const double MaxHalf   =  590.0; // max half-bar width
-    private const double BarH      =   16.0; // bar height (thicker = more visible)
+    private const double BarH      =   18.0; // bar height (thicker = more visible)
+    private const double RightPad  =   24.0; // keep the longest bar off the right edge
+    private const double UsableW   = RW - RightPad;  // bars span 0 … UsableW
     private const double RH        =  460.0; // canvas height
     private const double RangeF    =   0.20; // ±20 % price range
     private const double LabelStep =  0.025; // axis label every 2.5 %
@@ -45,6 +47,7 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
     private bool     _showShorts      = true;
     private IReadOnlyList<LiquidationLevel> _levels      = [];
     private IReadOnlyList<PriceAxisLabel>   _priceLabels = [];
+    private IReadOnlyList<HeatBand>         _heatBands   = [];
 
     // ── Proximity alert state ─────────────────────────────────────────────────
     private const decimal AlertProximityPct  = 1.5m;  // alert when price is within 1.5% of a major cluster
@@ -124,6 +127,13 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
     {
         get => _priceLabels;
         private set => this.RaiseAndSetIfChanged(ref _priceLabels, value);
+    }
+
+    /// <summary>Full-width heat bands: one rectangle per liquidation level, colour encodes side, opacity encodes magnitude.</summary>
+    public IReadOnlyList<HeatBand> HeatBands
+    {
+        get => _heatBands;
+        private set => this.RaiseAndSetIfChanged(ref _heatBands, value);
     }
 
     /// <summary>Human-readable proximity alert message, empty when no alert.</summary>
@@ -322,46 +332,44 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
             .ToList();
         if (inRange.Count == 0) return;
 
-        var maxL = (double)(inRange.Where(l => l.LongLiqUsd  > 0).Select(l => l.LongLiqUsd ).DefaultIfEmpty(1m).Max());
-        var maxS = (double)(inRange.Where(l => l.ShortLiqUsd > 0).Select(l => l.ShortLiqUsd).DefaultIfEmpty(1m).Max());
+        var maxL = (double)(inRange.Where(l => l.LongLiqUsd  > 0).Select(l => l.LongLiqUsd ).DefaultIfEmpty(0m).Max());
+        var maxS = (double)(inRange.Where(l => l.ShortLiqUsd > 0).Select(l => l.ShortLiqUsd).DefaultIfEmpty(0m).Max());
+        var maxAll = System.Math.Max(maxL, maxS);
 
-        // Build StreamGeometry objects directly — no string parsing, no type conversion.
-        var geoL = new StreamGeometry();
-        var geoS = new StreamGeometry();
+        var ordered = inRange.OrderByDescending(l => l.Price).ToList();
+        var ys = ordered.Select(l => System.Math.Clamp(
+            (1.0 - ((double)l.Price - minPrice) / range) * RH, 0, RH)).ToList();
+        var rects = BuildBandRects(ys, RH);
 
-        using (var ctxL = geoL.Open())
-        using (var ctxS = geoS.Open())
+        // Clean volume-profile bars: left-anchored, width = magnitude, thin with a gap,
+        // brightness scaled so small levels stay faint and big clusters stand out.
+        const double MaxBarH = 11.0;  // thin uniform bars
+        var bands = new List<HeatBand>(ordered.Count);
+        for (int i = 0; i < ordered.Count && maxAll > 0; i++)
         {
-            foreach (var lvl in inRange)
-            {
-                // Y: higher price → smaller Y (top = maxPrice, bottom = minPrice)
-                var y  = (1.0 - ((double)lvl.Price - minPrice) / range) * RH;
-                var y2 = y + BarH;
+            var lvl = ordered[i];
+            var isShort = (double)lvl.Price >= (double)_currentPrice;
+            var mag = (double)(isShort ? lvl.ShortLiqUsd : lvl.LongLiqUsd);
+            if (mag <= 0) continue;
+            if (isShort && !_showShorts) continue;
+            if (!isShort && !_showLongs) continue;
 
-                if (_showLongs && lvl.LongLiqUsd > 0)
-                {
-                    var w = (double)lvl.LongLiqUsd / maxL * MaxHalf;
-                    ctxL.BeginFigure(new Point(Cx,     y),  isFilled: true);
-                    ctxL.LineTo(new Point(Cx - w, y));
-                    ctxL.LineTo(new Point(Cx - w, y2));
-                    ctxL.LineTo(new Point(Cx,     y2));
-                    ctxL.EndFigure(true);
-                }
+            var frac  = System.Math.Clamp(mag / maxAll, 0.0, 1.0);
+            var width = 6.0 + frac * (UsableW - 6.0);                 // width encodes magnitude
+            var alpha = (byte)System.Math.Clamp((0.45 + 0.55 * frac) * 255.0, 0, 255);
+            var color = isShort
+                ? Avalonia.Media.Color.FromArgb(alpha, 0xFF, 0x44, 0x44)
+                : Avalonia.Media.Color.FromArgb(alpha, 0x21, 0xE6, 0xC1);
+            var brush = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(color);
 
-                if (_showShorts && lvl.ShortLiqUsd > 0)
-                {
-                    var w = (double)lvl.ShortLiqUsd / maxS * MaxHalf;
-                    ctxS.BeginFigure(new Point(Cx,     y),  isFilled: true);
-                    ctxS.LineTo(new Point(Cx + w, y));
-                    ctxS.LineTo(new Point(Cx + w, y2));
-                    ctxS.LineTo(new Point(Cx,     y2));
-                    ctxS.EndFigure(true);
-                }
-            }
+            // Thin bar centred in the level's vertical slot (leaves gaps when slots are tall).
+            var slotY = rects[i].Y;
+            var slotH = rects[i].Height;
+            var barH  = System.Math.Min(slotH, MaxBarH);
+            var top   = slotY + System.Math.Max(0, (slotH - barH) / 2.0);
+            bands.Add(new HeatBand(top, barH, width, brush));
         }
-
-        LongBarsGeometry  = geoL;
-        ShortBarsGeometry = geoS;
+        HeatBands = bands;
 
         // Current-price horizontal line
         var py = (1.0 - ((double)_currentPrice - minPrice) / range) * RH;
@@ -471,6 +479,27 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
         IsProximityAlertActive = anyAlert;
     }
 
+    /// <summary>Bar length for a liquidation level: proportional to USD, clamped to the usable width.</summary>
+    public static double BarWidth(double usd, double maxUsd, double usableWidth)
+        => maxUsd <= 0 ? 0.0 : System.Math.Clamp(usd / maxUsd, 0.0, 1.0) * usableWidth;
+
+    /// <summary>Opacity for a band: floor 0.06 so tiny levels stay faintly visible, 1.0 at the max cluster.</summary>
+    public static double Intensity(double mag, double max)
+        => max <= 0 ? 0.0 : 0.06 + 0.94 * System.Math.Clamp(mag / max, 0.0, 1.0);
+
+    /// <summary>Given band top-Y values sorted top→bottom, produce contiguous (Y, Height) rects that tile [0, height].</summary>
+    public static IReadOnlyList<(double Y, double Height)> BuildBandRects(IReadOnlyList<double> sortedYs, double height)
+    {
+        var result = new List<(double, double)>(sortedYs.Count);
+        for (int i = 0; i < sortedYs.Count; i++)
+        {
+            var top = System.Math.Clamp(sortedYs[i], 0, height);
+            var bottom = i + 1 < sortedYs.Count ? System.Math.Clamp(sortedYs[i + 1], 0, height) : height;
+            result.Add((top, System.Math.Max(0, bottom - top)));
+        }
+        return result;
+    }
+
     // ── Formatters ────────────────────────────────────────────────────────────
 
     private static string FormatPrice(double p) =>
@@ -497,6 +526,9 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
 }
 
 public record PriceAxisLabel(string Text, double Y, bool IsCurrentPrice);
+
+/// <summary>A full-width horizontal heat band for the liquidation heatmap: colour encodes side, opacity encodes magnitude.</summary>
+public sealed record HeatBand(double Y, double Height, double Width, Avalonia.Media.IBrush Fill);
 
 /// <summary>A liquidation cluster line suitable for chart overlay rendering.</summary>
 /// <param name="Price">Price level of the cluster.</param>
