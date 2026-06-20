@@ -61,6 +61,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     // Last budget level shown, so a toast fires only when the level worsens (not every refresh).
     private RiskManager.RiskBudgetLevel _lastRiskBudgetLevel = RiskManager.RiskBudgetLevel.Ok;
     // Stored as fields so the Portfolio Rebalancer and Funding Arb can query all gateways
+    private IReadOnlyDictionary<string, Core.Interfaces.IExchangeGateway> _spotGatewaysMap = null!;
+    private string _selectedSpotExchange = "Binance";
     private readonly Core.Interfaces.IExchangeGateway _bybitSpotGateway     = null!;
     private readonly Core.Interfaces.IExchangeGateway _okxSpotGateway       = null!;
     private readonly Core.Interfaces.IExchangeGateway _bybitFuturesGateway  = null!;
@@ -245,6 +247,15 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         _okxFuturesGateway    = okxFutures;
         _kucoinSpotGateway    = kucoinSpot;
         _kucoinFuturesGateway = kucoinFutures;
+
+        // Spot order book / price / placement can target any of these (mirrors _futuresGatewaysMap).
+        _spotGatewaysMap = new Dictionary<string, Core.Interfaces.IExchangeGateway>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Binance"] = _gateway,
+            ["Bybit"]   = _bybitSpotGateway,
+            ["OKX"]     = _okxSpotGateway,
+            ["KuCoin"]  = _kucoinSpotGateway,
+        };
 
         // Non-Binance CEX + DEX custom markets: refreshed by REST polling, not the live socket.
         _dexScreener = new Gateway.DEX.DexScreenerClient();
@@ -1508,6 +1519,36 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public static Core.Interfaces.IExchangeGateway ResolveGateway(
         IReadOnlyDictionary<string, Core.Interfaces.IExchangeGateway> map, string key, Core.Interfaces.IExchangeGateway fallback)
         => !string.IsNullOrWhiteSpace(key) && map.TryGetValue(key, out var gw) ? gw : fallback;
+
+    public IReadOnlyList<string> SpotExchangeOptions { get; } = ["Binance", "Bybit", "OKX", "KuCoin"];
+
+    public string SelectedSpotExchange
+    {
+        get => _selectedSpotExchange;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _selectedSpotExchange, value);
+            this.RaisePropertyChanged(nameof(IsSpotPrivateApiReady));
+            this.RaisePropertyChanged(nameof(SpotPrivateApiStatusLabel));
+            this.RaisePropertyChanged(nameof(SpotPrivateApiStatusBrush));
+            this.RaisePropertyChanged(nameof(CexMarketModeSummary));
+            this.RaisePropertyChanged(nameof(TradingTerminalSummary));
+            RaiseCexActionStateChanged();
+            _ = RefreshSelectedOrderBookAsync();
+        }
+    }
+
+    private Core.Interfaces.IExchangeGateway ActiveSpotGateway =>
+        ResolveGateway(_spotGatewaysMap, _selectedSpotExchange, _gateway);
+
+    /// <summary>True only in spot CEX trading mode — controls the spot exchange picker's visibility.</summary>
+    public bool IsManualSpotMode => IsCexTradingMode && !IsManualFuturesMode;
+
+    public bool IsSpotPrivateApiReady => ActiveSpotGateway.HasPrivateApiCredentials;
+    public string SpotPrivateApiStatusLabel => IsSpotPrivateApiReady
+        ? $"{SelectedSpotExchange}: Private API Ready"
+        : $"{SelectedSpotExchange}: API keys missing";
+    public string SpotPrivateApiStatusBrush => IsSpotPrivateApiReady ? "#3DDC84" : "#F4B860";
 
     public bool IsScalpProfile => string.Equals(SelectedTradingProfile, "Scalp", StringComparison.OrdinalIgnoreCase);
     public bool IsCexTradingMode => SelectedTradingVenue == TradingVenueMode.Cex;
