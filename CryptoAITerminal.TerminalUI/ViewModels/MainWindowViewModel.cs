@@ -61,6 +61,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     // Last budget level shown, so a toast fires only when the level worsens (not every refresh).
     private RiskManager.RiskBudgetLevel _lastRiskBudgetLevel = RiskManager.RiskBudgetLevel.Ok;
     // Stored as fields so the Portfolio Rebalancer and Funding Arb can query all gateways
+    private IReadOnlyDictionary<string, Core.Interfaces.IExchangeGateway> _spotGatewaysMap = null!;
+    private string _selectedSpotExchange = "Binance";
     private readonly Core.Interfaces.IExchangeGateway _bybitSpotGateway     = null!;
     private readonly Core.Interfaces.IExchangeGateway _okxSpotGateway       = null!;
     private readonly Core.Interfaces.IExchangeGateway _bybitFuturesGateway  = null!;
@@ -245,6 +247,15 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         _okxFuturesGateway    = okxFutures;
         _kucoinSpotGateway    = kucoinSpot;
         _kucoinFuturesGateway = kucoinFutures;
+
+        // Spot order book / price / placement can target any of these (mirrors _futuresGatewaysMap).
+        _spotGatewaysMap = new Dictionary<string, Core.Interfaces.IExchangeGateway>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Binance"] = _gateway,
+            ["Bybit"]   = _bybitSpotGateway,
+            ["OKX"]     = _okxSpotGateway,
+            ["KuCoin"]  = _kucoinSpotGateway,
+        };
 
         // Non-Binance CEX + DEX custom markets: refreshed by REST polling, not the live socket.
         _dexScreener = new Gateway.DEX.DexScreenerClient();
@@ -1494,6 +1505,10 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             this.RaisePropertyChanged(nameof(IsFuturesPrivateApiReady));
             this.RaisePropertyChanged(nameof(FuturesPrivateApiStatusLabel));
             this.RaisePropertyChanged(nameof(FuturesPrivateApiStatusBrush));
+            this.RaisePropertyChanged(nameof(IsManualSpotMode));
+            this.RaisePropertyChanged(nameof(IsSpotPrivateApiReady));
+            this.RaisePropertyChanged(nameof(SpotPrivateApiStatusLabel));
+            this.RaisePropertyChanged(nameof(SpotPrivateApiStatusBrush));
             this.RaisePropertyChanged(nameof(CexMarketModeSummary));
             this.RaisePropertyChanged(nameof(TradingTerminalSummary));
         }
@@ -1503,6 +1518,41 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         _futuresGatewaysMap is not null && _futuresGatewaysMap.TryGetValue(_selectedFuturesExchange, out var gw)
             ? gw
             : _futuresGateway;
+
+    /// <summary>Resolve an exchange-name key to a gateway, case-insensitive, falling back when absent.</summary>
+    public static Core.Interfaces.IExchangeGateway ResolveGateway(
+        IReadOnlyDictionary<string, Core.Interfaces.IExchangeGateway> map, string key, Core.Interfaces.IExchangeGateway fallback)
+        => !string.IsNullOrWhiteSpace(key) && map.TryGetValue(key, out var gw) ? gw : fallback;
+
+    public IReadOnlyList<string> SpotExchangeOptions { get; } = ["Binance", "Bybit", "OKX", "KuCoin"];
+
+    public string SelectedSpotExchange
+    {
+        get => _selectedSpotExchange;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _selectedSpotExchange, value);
+            this.RaisePropertyChanged(nameof(IsSpotPrivateApiReady));
+            this.RaisePropertyChanged(nameof(SpotPrivateApiStatusLabel));
+            this.RaisePropertyChanged(nameof(SpotPrivateApiStatusBrush));
+            this.RaisePropertyChanged(nameof(CexMarketModeSummary));
+            this.RaisePropertyChanged(nameof(TradingTerminalSummary));
+            RaiseCexActionStateChanged();
+            _ = RefreshSelectedOrderBookAsync();
+        }
+    }
+
+    private Core.Interfaces.IExchangeGateway ActiveSpotGateway =>
+        ResolveGateway(_spotGatewaysMap, _selectedSpotExchange, _gateway);
+
+    /// <summary>True only in spot CEX trading mode — controls the spot exchange picker's visibility.</summary>
+    public bool IsManualSpotMode => IsCexTradingMode && !IsManualFuturesMode;
+
+    public bool IsSpotPrivateApiReady => ActiveSpotGateway.HasPrivateApiCredentials;
+    public string SpotPrivateApiStatusLabel => IsSpotPrivateApiReady
+        ? $"{SelectedSpotExchange}: Private API Ready"
+        : $"{SelectedSpotExchange}: API keys missing";
+    public string SpotPrivateApiStatusBrush => IsSpotPrivateApiReady ? "#3DDC84" : "#F4B860";
 
     public bool IsScalpProfile => string.Equals(SelectedTradingProfile, "Scalp", StringComparison.OrdinalIgnoreCase);
     public bool IsCexTradingMode => SelectedTradingVenue == TradingVenueMode.Cex;
@@ -3541,7 +3591,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         CloseNotificationCenter();
     }
 
-    private IExchangeGateway ActiveCexGateway => IsManualFuturesMode ? ActiveFuturesGateway : _gateway;
+    private IExchangeGateway ActiveCexGateway => IsManualFuturesMode ? ActiveFuturesGateway : ActiveSpotGateway;
     private string AiCustomPresetsStoragePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "CryptoAITerminal",
@@ -4361,7 +4411,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             }
         }
 
-        var router = new MarketOrderRouter(_gateway);
+        var router = new MarketOrderRouter(ActiveSpotGateway);
         return side == CryptoAITerminal.Core.Enums.OrderSide.Buy
             ? await router.BuyMarketAsync(SelectedTradingSymbol, quantity)
             : await router.SellMarketAsync(SelectedTradingSymbol, quantity);
@@ -5406,7 +5456,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private async Task RefreshOrderBookAsync(CexMarketItemViewModel market)
     {
         var useFutures = IsManualFuturesMode;
-        var gateway = useFutures ? (IExchangeGateway)_futuresGateway : _gateway;
+        var spotGateway = ActiveSpotGateway;
+        var gateway = useFutures ? ActiveFuturesGateway : spotGateway;
 
         await _orderBookRefreshLock.WaitAsync();
         try
@@ -5418,13 +5469,13 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                 if (useFutures && !HasUsableOrderBook(orderBook))
                 {
                     AddLog($"Futures order book for {market.Symbol} returned no depth, using spot display fallback.");
-                    orderBook = await _gateway.GetOrderBookAsync(market.Symbol, depth: 50);
+                    orderBook = await spotGateway.GetOrderBookAsync(market.Symbol, depth: 50);
                 }
             }
             catch (Exception ex) when (useFutures)
             {
                 AddLog($"Futures order book unavailable for {market.Symbol}, using spot display fallback: {ex.Message}");
-                orderBook = await _gateway.GetOrderBookAsync(market.Symbol, depth: 50);
+                orderBook = await spotGateway.GetOrderBookAsync(market.Symbol, depth: 50);
             }
 
             await Dispatcher.UIThread.InvokeAsync(() =>
@@ -5919,6 +5970,9 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(CurrentFuturesRoeLabel));
         this.RaisePropertyChanged(nameof(FuturesPrivateApiStatusLabel));
         this.RaisePropertyChanged(nameof(FuturesPrivateApiStatusBrush));
+        this.RaisePropertyChanged(nameof(IsSpotPrivateApiReady));
+        this.RaisePropertyChanged(nameof(SpotPrivateApiStatusLabel));
+        this.RaisePropertyChanged(nameof(SpotPrivateApiStatusBrush));
     }
 
     private void RaiseMarketExplorerStateChanged()
@@ -5949,6 +6003,11 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         if (IsManualFuturesMode && !IsFuturesPrivateApiReady)
         {
             return "Binance futures private API credentials are required for this live action.";
+        }
+
+        if (!IsManualFuturesMode && !IsSpotPrivateApiReady)
+        {
+            return $"Add API keys for {SelectedSpotExchange} in Settings to place spot orders.";
         }
 
         if (CurrentTradePrice <= 0m)

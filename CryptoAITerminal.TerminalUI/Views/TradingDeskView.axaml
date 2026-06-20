@@ -248,6 +248,16 @@
                         HorizontalAlignment="Stretch" />
             </StackPanel>
 
+            <StackPanel Spacing="6" IsVisible="{Binding IsManualSpotMode}">
+              <TextBlock Classes="Overline" Text="Exchange (spot)" />
+              <ComboBox ItemsSource="{Binding SpotExchangeOptions}"
+                        SelectedItem="{Binding SelectedSpotExchange}"
+                        HorizontalAlignment="Stretch" />
+              <TextBlock Text="{Binding SpotPrivateApiStatusLabel}"
+                         Foreground="{Binding SpotPrivateApiStatusBrush}"
+                         TextWrapping="Wrap" FontSize="11" />
+            </StackPanel>
+
             <Grid ColumnDefinitions="*,*" ColumnSpacing="8"
                   IsVisible="{Binding IsManualFuturesMode}">
               <StackPanel Grid.Column="0" Spacing="6">
