@@ -131,21 +131,12 @@
                         Stroke="#FF4444"
                         StrokeThickness="1" />
 
-                  <!-- Centre divider at X=600 -->
-                  <Line StartPoint="600,0" EndPoint="600,460"
-                        Stroke="#2A4A60" StrokeThickness="1.5" />
-
                   <!-- Current price dashed horizontal line -->
                   <Path Data="{Binding LiquidationHeatmapVM.CurrentPriceGeometry}"
                         Stroke="#F4B860"
                         StrokeThickness="2.5"
                         StrokeDashArray="8,4" />
 
-                  <!-- Column headers -->
-                  <TextBlock Canvas.Left="4"   Canvas.Top="4"
-                             Text="◀  LONGS" Foreground="#6021E6C1" FontSize="14" FontWeight="Bold" />
-                  <TextBlock Canvas.Left="610" Canvas.Top="4"
-                             Text="SHORTS  ▶" Foreground="#60FF4444" FontSize="14" FontWeight="Bold" />
                 </Canvas>
               </Border>
 
