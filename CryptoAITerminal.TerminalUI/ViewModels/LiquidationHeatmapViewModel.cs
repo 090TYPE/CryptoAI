@@ -47,6 +47,7 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
     private bool     _showShorts      = true;
     private IReadOnlyList<LiquidationLevel> _levels      = [];
     private IReadOnlyList<PriceAxisLabel>   _priceLabels = [];
+    private IReadOnlyList<HeatBand>         _heatBands   = [];
 
     // ── Proximity alert state ─────────────────────────────────────────────────
     private const decimal AlertProximityPct  = 1.5m;  // alert when price is within 1.5% of a major cluster
@@ -126,6 +127,13 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
     {
         get => _priceLabels;
         private set => this.RaiseAndSetIfChanged(ref _priceLabels, value);
+    }
+
+    /// <summary>Full-width heat bands: one rectangle per liquidation level, colour encodes side, opacity encodes magnitude.</summary>
+    public IReadOnlyList<HeatBand> HeatBands
+    {
+        get => _heatBands;
+        private set => this.RaiseAndSetIfChanged(ref _heatBands, value);
     }
 
     /// <summary>Human-readable proximity alert message, empty when no alert.</summary>
@@ -327,49 +335,30 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
         var maxL = (double)(inRange.Where(l => l.LongLiqUsd  > 0).Select(l => l.LongLiqUsd ).DefaultIfEmpty(0m).Max());
         var maxS = (double)(inRange.Where(l => l.ShortLiqUsd > 0).Select(l => l.ShortLiqUsd).DefaultIfEmpty(0m).Max());
         var maxAll = System.Math.Max(maxL, maxS);
-        if (maxAll <= 0)
+
+        var ordered = inRange.OrderByDescending(l => l.Price).ToList();
+        var ys = ordered.Select(l => System.Math.Clamp(
+            (1.0 - ((double)l.Price - minPrice) / range) * RH, 0, RH)).ToList();
+        var rects = BuildBandRects(ys, RH);
+
+        var bands = new List<HeatBand>(ordered.Count);
+        for (int i = 0; i < ordered.Count && maxAll > 0; i++)
         {
-            LongBarsGeometry  = new StreamGeometry();
-            ShortBarsGeometry = new StreamGeometry();
-            return;
+            var lvl = ordered[i];
+            var isShort = (double)lvl.Price >= (double)_currentPrice;
+            var mag = (double)(isShort ? lvl.ShortLiqUsd : lvl.LongLiqUsd);
+            if (mag <= 0) continue;
+            if (isShort && !_showShorts) continue;
+            if (!isShort && !_showLongs) continue;
+
+            var alpha = (byte)System.Math.Clamp(Intensity(mag, maxAll) * 255.0, 0, 255);
+            var color = isShort
+                ? Avalonia.Media.Color.FromArgb(alpha, 0xFF, 0x44, 0x44)
+                : Avalonia.Media.Color.FromArgb(alpha, 0x21, 0xE6, 0xC1);
+            var brush = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(color);
+            bands.Add(new HeatBand(rects[i].Y, rects[i].Height, brush));
         }
-
-        var geoL = new StreamGeometry();
-        var geoS = new StreamGeometry();
-
-        using (var ctxL = geoL.Open())
-        using (var ctxS = geoS.Open())
-        {
-            foreach (var lvl in inRange)
-            {
-                // Y: higher price → smaller Y (top = maxPrice, bottom = minPrice)
-                var y  = (1.0 - ((double)lvl.Price - minPrice) / range) * RH;
-                var y2 = y + BarH;
-
-                if (_showLongs && lvl.LongLiqUsd > 0)
-                {
-                    var w = BarWidth((double)lvl.LongLiqUsd, maxAll, UsableW);
-                    ctxL.BeginFigure(new Point(0, y),  isFilled: true);
-                    ctxL.LineTo(new Point(w, y));
-                    ctxL.LineTo(new Point(w, y2));
-                    ctxL.LineTo(new Point(0, y2));
-                    ctxL.EndFigure(true);
-                }
-
-                if (_showShorts && lvl.ShortLiqUsd > 0)
-                {
-                    var w = BarWidth((double)lvl.ShortLiqUsd, maxAll, UsableW);
-                    ctxS.BeginFigure(new Point(0, y),  isFilled: true);
-                    ctxS.LineTo(new Point(w, y));
-                    ctxS.LineTo(new Point(w, y2));
-                    ctxS.LineTo(new Point(0, y2));
-                    ctxS.EndFigure(true);
-                }
-            }
-        }
-
-        LongBarsGeometry  = geoL;
-        ShortBarsGeometry = geoS;
+        HeatBands = bands;
 
         // Current-price horizontal line
         var py = (1.0 - ((double)_currentPrice - minPrice) / range) * RH;
@@ -526,6 +515,9 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
 }
 
 public record PriceAxisLabel(string Text, double Y, bool IsCurrentPrice);
+
+/// <summary>A full-width horizontal heat band for the liquidation heatmap: colour encodes side, opacity encodes magnitude.</summary>
+public sealed record HeatBand(double Y, double Height, Avalonia.Media.IBrush Fill);
 
 /// <summary>A liquidation cluster line suitable for chart overlay rendering.</summary>
 /// <param name="Price">Price level of the cluster.</param>
