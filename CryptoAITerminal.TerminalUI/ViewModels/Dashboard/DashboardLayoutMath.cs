@@ -34,4 +34,13 @@ public static class DashboardLayoutMath
     private static bool Overlaps(WidgetPlacement a, WidgetPlacement b)
         => a.Col < b.Col + b.ColSpan && b.Col < a.Col + a.ColSpan
         && a.Row < b.Row + b.RowSpan && b.Row < a.Row + a.RowSpan;
+
+    /// <summary>Clamp a requested span to minimums and to the 12-column right edge for the given column.</summary>
+    public static (int ColSpan, int RowSpan) ClampSize(int col, int reqColSpan, int reqRowSpan)
+    {
+        int maxColSpan = Columns - col;
+        int colSpan = System.Math.Clamp(reqColSpan, MinColSpan, maxColSpan < MinColSpan ? MinColSpan : maxColSpan);
+        int rowSpan = System.Math.Max(reqRowSpan, MinRowSpan);
+        return (colSpan, rowSpan);
+    }
 }

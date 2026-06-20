@@ -20,4 +20,16 @@ public class DashboardLayoutMathTests
         }
         Assert.False(DashboardLayoutMath.HasOverlap(layout));
     }
+
+    [Theory]
+    [InlineData(0, 1, 0, 2, 1)]
+    [InlineData(0, 99, 99, 12, 99)]
+    [InlineData(10, 5, 3, 2, 3)]
+    public void ClampSize_keeps_widget_within_grid_and_minimums(
+        int col, int reqCol, int reqRow, int expCol, int expRow)
+    {
+        var (cs, rs) = DashboardLayoutMath.ClampSize(col, reqCol, reqRow);
+        Assert.Equal(expCol, cs);
+        Assert.Equal(expRow, rs);
+    }
 }
