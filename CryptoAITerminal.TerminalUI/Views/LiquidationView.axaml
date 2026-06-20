@@ -119,17 +119,20 @@
                 <Canvas Width="1200" Height="460"
                         HorizontalAlignment="Center" VerticalAlignment="Top">
 
-                  <!-- Long bars — teal, left of centre -->
-                  <Path Data="{Binding LiquidationHeatmapVM.LongBarsGeometry}"
-                        Fill="#CC21E6C1"
-                        Stroke="#21E6C1"
-                        StrokeThickness="1" />
-
-                  <!-- Short bars — red, right of centre -->
-                  <Path Data="{Binding LiquidationHeatmapVM.ShortBarsGeometry}"
-                        Fill="#CCFF4444"
-                        Stroke="#FF4444"
-                        StrokeThickness="1" />
+                  <!-- Heat bands — full-width, colour = side, opacity = magnitude -->
+                  <ItemsControl ItemsSource="{Binding LiquidationHeatmapVM.HeatBands}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <Canvas Width="1200" Height="460" />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:HeatBand">
+                        <Rectangle Width="1200" Height="{Binding Height}" Fill="{Binding Fill}"
+                                   Canvas.Top="{Binding Y}" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
 
                   <!-- Current price dashed horizontal line -->
                   <Path Data="{Binding LiquidationHeatmapVM.CurrentPriceGeometry}"
