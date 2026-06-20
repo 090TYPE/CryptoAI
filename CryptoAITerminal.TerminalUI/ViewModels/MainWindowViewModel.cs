@@ -3274,6 +3274,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public PortfolioRebalanceViewModel PortfolioRebalanceVM { get; private set; } = null!;
     public PnlDashboardViewModel      PnlDashboardVM      { get; private set; } = null!;
     public DashboardViewModel              DashboardVM          { get; private set; } = null!;
+    public ViewModels.Dashboard.DashboardLayoutViewModel DashboardLayoutVM { get; } = new();
     public ConfigurationProfileService    ProfileService       { get; } = new();
     public DexTradingViewModel DexTradingVM { get; }
     public WalletWorkspaceViewModel WalletVM { get; }
