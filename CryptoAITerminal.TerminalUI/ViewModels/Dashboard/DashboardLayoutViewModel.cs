@@ -34,6 +34,10 @@ public sealed class DashboardLayoutViewModel : ReactiveObject
     public ReactiveCommand<string, Unit> AddWidgetCommand { get; }
     public ReactiveCommand<DashboardWidget, Unit> RemoveWidgetCommand { get; }
     public ReactiveCommand<Unit, Unit> ResetLayoutCommand { get; }
+    public ReactiveCommand<DashboardWidget, Unit> WidenCommand { get; }
+    public ReactiveCommand<DashboardWidget, Unit> NarrowCommand { get; }
+    public ReactiveCommand<DashboardWidget, Unit> TallerCommand { get; }
+    public ReactiveCommand<DashboardWidget, Unit> ShorterCommand { get; }
 
     public DashboardLayoutViewModel()
     {
@@ -41,8 +45,19 @@ public sealed class DashboardLayoutViewModel : ReactiveObject
         AddWidgetCommand    = ReactiveCommand.Create<string>(AddWidget);
         RemoveWidgetCommand = ReactiveCommand.Create<DashboardWidget>(RemoveWidget);
         ResetLayoutCommand  = ReactiveCommand.Create(ResetLayout);
+        WidenCommand   = ReactiveCommand.Create<DashboardWidget>(w => StepResize(w, +1, 0));
+        NarrowCommand  = ReactiveCommand.Create<DashboardWidget>(w => StepResize(w, -1, 0));
+        TallerCommand  = ReactiveCommand.Create<DashboardWidget>(w => StepResize(w, 0, +1));
+        ShorterCommand = ReactiveCommand.Create<DashboardWidget>(w => StepResize(w, 0, -1));
 
         Load();
+    }
+
+    /// <summary>Grow/shrink a widget by whole cells (used by the header +/- buttons), clamped + persisted.</summary>
+    private void StepResize(DashboardWidget widget, int dCol, int dRow)
+    {
+        if (widget is null) return;
+        CommitResize(widget, widget.ColSpan + dCol, widget.RowSpan + dRow);
     }
 
     private void AddWidget(string key)
