@@ -1,0 +1,43 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.TrackedCoinsWidget"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+  <StackPanel Spacing="12">
+    <TextBlock Classes="H2" Text="Tracked Coins" />
+    <TextBlock Text="Loading markets…"
+               Foreground="#8B949E"
+               IsVisible="{Binding IsMarketLoading}" />
+
+    <ScrollViewer Classes="PageScroll" MaxHeight="640">
+      <ListBox ItemsSource="{Binding Markets}"
+               SelectedItem="{Binding SelectedMarket}">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:CexMarketItemViewModel">
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="4">
+              <TextBlock Grid.Row="0" Grid.Column="0"
+                         Text="{Binding DisplaySymbol}"
+                         FontWeight="Bold" />
+              <TextBlock Grid.Row="0" Grid.Column="1"
+                         Text="{Binding LastPrice, StringFormat=$ {0:N4}}"
+                         Foreground="#21E6C1" />
+              <TextBlock Grid.Row="1" Grid.Column="0"
+                         Text="{Binding BestBid, StringFormat=Bid: $ {0:N4}}"
+                         Foreground="#8B949E"
+                         FontSize="12" />
+              <TextBlock Grid.Row="1" Grid.Column="1"
+                         Text="{Binding BestAsk, StringFormat=Ask: $ {0:N4}}"
+                         Foreground="#8B949E"
+                         FontSize="12" />
+              <TextBlock Grid.Row="2" Grid.ColumnSpan="2"
+                         Text="{Binding LastUpdated, StringFormat=Updated: {0:HH:mm:ss}}"
+                         Foreground="#6E8196"
+                         FontSize="12" />
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </ScrollViewer>
+  </StackPanel>
+</UserControl>

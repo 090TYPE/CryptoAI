@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.OrderBookWidget"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+  <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+    <Border Classes="Panel" Grid.Column="0">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="H2" Text="Bids" />
+        <ScrollViewer Classes="PageScroll" MaxHeight="240">
+          <ItemsControl ItemsSource="{Binding SelectedMarket.BidLevels}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Grid.Column="0"
+                             Text="{Binding Price, StringFormat=$ {0:N4}}"
+                             Foreground="#3DDC84" />
+                  <TextBlock Grid.Column="1"
+                             Text="{Binding Quantity, StringFormat={}{0:N4}}"
+                             Foreground="#8B949E" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </StackPanel>
+    </Border>
+
+    <Border Classes="Panel" Grid.Column="1">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="H2" Text="Asks" />
+        <ScrollViewer Classes="PageScroll" MaxHeight="240">
+          <ItemsControl ItemsSource="{Binding SelectedMarket.AskLevels}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Grid.Column="0"
+                             Text="{Binding Price, StringFormat=$ {0:N4}}"
+                             Foreground="#FF6B6B" />
+                  <TextBlock Grid.Column="1"
+                             Text="{Binding Quantity, StringFormat={}{0:N4}}"
+                             Foreground="#8B949E" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </StackPanel>
+    </Border>
+  </Grid>
+</UserControl>

@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.LiqHeatmapWidget"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+  <Border Background="#04101A" CornerRadius="6" ClipToBounds="True"
+          ToolTip.Tip="Liquidation Heatmap — click 🔥 Liq Map for fullscreen">
+    <StackPanel>
+      <TextBlock Text="LIQ MAP" Foreground="#4A6070" FontSize="9" FontWeight="Bold"
+                 Margin="4,4,0,2" />
+      <Viewbox Stretch="Fill">
+        <Canvas Width="1200" Height="460">
+          <Path Data="{Binding LiquidationHeatmapVM.LongBarsGeometry}"
+                Fill="#5521E6C1" Stroke="#21E6C1" StrokeThickness="1" />
+          <Path Data="{Binding LiquidationHeatmapVM.ShortBarsGeometry}"
+                Fill="#55FF4444" Stroke="#FF4444" StrokeThickness="1" />
+          <Line StartPoint="600,0" EndPoint="600,460"
+                Stroke="#1E3A50" StrokeThickness="1" />
+          <Path Data="{Binding LiquidationHeatmapVM.CurrentPriceGeometry}"
+                Stroke="#F4B860" StrokeThickness="2" StrokeDashArray="8,4" />
+        </Canvas>
+      </Viewbox>
+    </StackPanel>
+  </Border>
+</UserControl>

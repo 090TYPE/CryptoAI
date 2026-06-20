@@ -1,0 +1,83 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.GasWidget"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+  <StackPanel Spacing="8">
+
+    <!-- Three-column gas cards -->
+    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+
+      <!-- Ethereum -->
+      <Border Grid.Column="0" Background="#0F1721" CornerRadius="5" Padding="10,8">
+        <StackPanel Spacing="6">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBlock Text="Ξ" FontSize="14" Foreground="#8FA3B8" FontWeight="Bold" VerticalAlignment="Center" />
+            <TextBlock Text="Ethereum" FontWeight="Bold" Foreground="#C8D8E8" FontSize="12" VerticalAlignment="Center" />
+          </StackPanel>
+          <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="4" RowSpacing="3">
+            <TextBlock Grid.Column="0" Grid.Row="0" Text="Slow"     Foreground="#5A7A90" FontSize="9" />
+            <TextBlock Grid.Column="1" Grid.Row="0" Text="Std"      Foreground="#5A7A90" FontSize="9" />
+            <TextBlock Grid.Column="2" Grid.Row="0" Text="Fast"     Foreground="#5A7A90" FontSize="9" />
+            <TextBlock Grid.Column="0" Grid.Row="1" Text="{Binding GasMonitorVM.EthSlowLabel}"
+                       Foreground="{Binding GasMonitorVM.EthSlowColor}" FontSize="13" FontWeight="Bold" />
+            <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding GasMonitorVM.EthStdLabel}"
+                       Foreground="{Binding GasMonitorVM.EthStdColor}" FontSize="13" FontWeight="Bold" />
+            <TextBlock Grid.Column="2" Grid.Row="1" Text="{Binding GasMonitorVM.EthFastLabel}"
+                       Foreground="{Binding GasMonitorVM.EthFastColor}" FontSize="13" FontWeight="Bold" />
+            <TextBlock Grid.Column="0" Grid.Row="2" Text="{Binding GasMonitorVM.EthSlowTimeLabel}"
+                       Foreground="#4A6880" FontSize="9" />
+            <TextBlock Grid.Column="1" Grid.Row="2" Text="{Binding GasMonitorVM.EthStdTimeLabel}"
+                       Foreground="#4A6880" FontSize="9" />
+            <TextBlock Grid.Column="2" Grid.Row="2" Text="{Binding GasMonitorVM.EthFastTimeLabel}"
+                       Foreground="#4A6880" FontSize="9" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- BSC -->
+      <Border Grid.Column="1" Background="#0F1721" CornerRadius="5" Padding="10,8">
+        <StackPanel Spacing="6">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBlock Text="⬡" FontSize="12" Foreground="#F0B90B" FontWeight="Bold" VerticalAlignment="Center" />
+            <TextBlock Text="BNB Chain" FontWeight="Bold" Foreground="#C8D8E8" FontSize="12" VerticalAlignment="Center" />
+          </StackPanel>
+          <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto" ColumnSpacing="4" RowSpacing="3">
+            <TextBlock Grid.Column="0" Grid.Row="0" Text="Slow"     Foreground="#5A7A90" FontSize="9" />
+            <TextBlock Grid.Column="1" Grid.Row="0" Text="Std"      Foreground="#5A7A90" FontSize="9" />
+            <TextBlock Grid.Column="2" Grid.Row="0" Text="Fast"     Foreground="#5A7A90" FontSize="9" />
+            <TextBlock Grid.Column="0" Grid.Row="1" Text="{Binding GasMonitorVM.BscSlowLabel}"
+                       Foreground="{Binding GasMonitorVM.BscSlowColor}" FontSize="13" FontWeight="Bold" />
+            <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding GasMonitorVM.BscStdLabel}"
+                       Foreground="{Binding GasMonitorVM.BscStdColor}" FontSize="13" FontWeight="Bold" />
+            <TextBlock Grid.Column="2" Grid.Row="1" Text="{Binding GasMonitorVM.BscFastLabel}"
+                       Foreground="{Binding GasMonitorVM.BscFastColor}" FontSize="13" FontWeight="Bold" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- Solana -->
+      <Border Grid.Column="2" Background="#0F1721" CornerRadius="5" Padding="10,8">
+        <StackPanel Spacing="6">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBlock Text="◎" FontSize="14" Foreground="#9B59B6" FontWeight="Bold" VerticalAlignment="Center" />
+            <TextBlock Text="Solana" FontWeight="Bold" Foreground="#C8D8E8" FontSize="12" VerticalAlignment="Center" />
+          </StackPanel>
+          <StackPanel Spacing="2">
+            <TextBlock Text="TPS" Foreground="#5A7A90" FontSize="9" />
+            <TextBlock Text="{Binding GasMonitorVM.SolanaTpsLabel}"
+                       Foreground="{Binding GasMonitorVM.SolanaColor}"
+                       FontSize="18" FontWeight="Bold" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+    </Grid>
+
+    <!-- Last updated -->
+    <TextBlock Text="{Binding GasMonitorVM.LastUpdatedLabel}"
+               Foreground="#4A6880" FontSize="9" HorizontalAlignment="Right" />
+
+  </StackPanel>
+</UserControl>

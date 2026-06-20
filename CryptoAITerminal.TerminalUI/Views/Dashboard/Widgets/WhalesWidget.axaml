@@ -1,0 +1,72 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:wt="clr-namespace:CryptoAITerminal.WhaleTracker.Models;assembly=CryptoAITerminal.WhaleTracker"
+             x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.WhalesWidget"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="False">
+  <StackPanel Spacing="8">
+
+    <!-- Stats row -->
+    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+      <Border Grid.Column="0" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+        <StackPanel Spacing="2">
+          <TextBlock Text="Min Transfer" Foreground="#5A7A90" FontSize="9" />
+          <TextBlock Text="{Binding WhaleTrackerVM.MinUsdValue, StringFormat='${0:N0}'}" Foreground="#21E6C1" FontSize="14" FontWeight="SemiBold" />
+        </StackPanel>
+      </Border>
+      <Border Grid.Column="1" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+        <StackPanel Spacing="2">
+          <TextBlock Text="Alerts" Foreground="#5A7A90" FontSize="9" />
+          <TextBlock Text="{Binding WhaleTrackerVM.TotalAlertsCount}" Foreground="#21E6C1" FontSize="14" FontWeight="SemiBold" />
+        </StackPanel>
+      </Border>
+      <Border Grid.Column="2" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+        <StackPanel Spacing="2">
+          <TextBlock Text="Labeled" Foreground="#5A7A90" FontSize="9" />
+          <TextBlock Text="{Binding WhaleTrackerVM.LabeledAlertsCount}" Foreground="#F4B860" FontSize="14" FontWeight="SemiBold" />
+        </StackPanel>
+      </Border>
+    </Grid>
+
+    <!-- Status bar -->
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <TextBlock Text="{Binding WhaleTrackerVM.KnownWalletCount, StringFormat='{}{0} wallets tracked'}"
+                 Foreground="#8FA3B8" FontSize="10" VerticalAlignment="Center" />
+    </StackPanel>
+
+    <!-- Live whale alerts list -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+      <ItemsControl ItemsSource="{Binding WhaleTrackerVM.RecentAlerts}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:WhaleAlertViewModel">
+            <Border Padding="8,6" Margin="0,1" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
+              <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
+                <!-- Chain badge -->
+                <Border Grid.Column="0" CornerRadius="3" Padding="4,1" Background="#0D1E2A" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding ChainBadge}" Foreground="{Binding ChainBrush}" FontSize="9" FontWeight="Bold" />
+                </Border>
+                <!-- Alert type -->
+                <Border Grid.Column="1" CornerRadius="3" Padding="4,1" Background="#0D1E2A" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding AlertBadge}" Foreground="{Binding AlertBrush}" FontSize="9" FontWeight="Bold" />
+                </Border>
+                <!-- Amount + description -->
+                <StackPanel Grid.Column="2" Spacing="1" VerticalAlignment="Center">
+                  <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="{Binding AmountLabel}" Foreground="#E8F4FF" FontWeight="SemiBold" FontSize="12" />
+                    <TextBlock Text="{Binding TokenSymbol}" Foreground="#8FA3B8" FontSize="10" />
+                  </StackPanel>
+                  <TextBlock Text="{Binding Description}" Foreground="#8FA3B8" FontSize="10" />
+                  <TextBlock Text="{Binding ActiveWalletLabel}" Foreground="#F4B860" FontSize="10" IsVisible="{Binding HasLabel}" />
+                </StackPanel>
+                <!-- Time -->
+                <TextBlock Grid.Column="3" Text="{Binding TimeLabel}" Foreground="#4D5F70" FontSize="10" VerticalAlignment="Center" />
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+
+  </StackPanel>
+</UserControl>
