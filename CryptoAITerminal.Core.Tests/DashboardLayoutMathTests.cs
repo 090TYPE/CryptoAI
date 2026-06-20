@@ -61,4 +61,35 @@ public class DashboardLayoutMathTests
         Assert.Equal(6, result.Col);
         Assert.Equal(0, result.Row);
     }
+
+    [Fact]
+    public void PlaceNew_drops_widget_at_first_free_row_in_col0()
+    {
+        var existing = new[]
+        {
+            new WidgetPlacement("a", 0, 0, 12, 2),
+            new WidgetPlacement("b", 0, 2, 12, 1),
+        };
+        var placed = DashboardLayoutMath.PlaceNew("c", colSpan: 6, rowSpan: 2, existing);
+        Assert.Equal("c", placed.Key);
+        Assert.Equal(0, placed.Col);
+        Assert.Equal(3, placed.Row);
+        Assert.False(DashboardLayoutMath.HasOverlap(new[] { existing[0], existing[1], placed }));
+    }
+
+    [Fact]
+    public void Sanitize_drops_unknown_keys_and_clamps_bad_spans()
+    {
+        var known = new System.Collections.Generic.HashSet<string> { "price-chart", "order-book" };
+        var loaded = new[]
+        {
+            new WidgetPlacement("price-chart", 0, 0, 99, 0),
+            new WidgetPlacement("ghost",       0, 0, 4, 2),
+        };
+        var clean = DashboardLayoutMath.Sanitize(loaded, known);
+        Assert.Single(clean);
+        Assert.Equal("price-chart", clean[0].Key);
+        Assert.True(clean[0].Col + clean[0].ColSpan <= DashboardLayoutMath.Columns);
+        Assert.True(clean[0].RowSpan >= DashboardLayoutMath.MinRowSpan);
+    }
 }

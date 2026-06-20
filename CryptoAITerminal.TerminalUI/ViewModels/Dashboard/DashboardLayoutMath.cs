@@ -62,4 +62,30 @@ public static class DashboardLayoutMath
 
         return candidate;
     }
+
+    /// <summary>Place a new widget at column 0, first row where it doesn't overlap anything.</summary>
+    public static WidgetPlacement PlaceNew(string key, int colSpan, int rowSpan, IReadOnlyList<WidgetPlacement> existing)
+    {
+        var (cs, rs) = ClampSize(0, colSpan, rowSpan);
+        var candidate = new WidgetPlacement(key, 0, 0, cs, rs);
+        while (existing.Any(o => Overlaps(candidate, o)))
+            candidate = candidate with { Row = candidate.Row + 1 };
+        return candidate;
+    }
+
+    /// <summary>Clean a loaded layout: drop unknown keys, clamp spans/positions into the grid.</summary>
+    public static IReadOnlyList<WidgetPlacement> Sanitize(
+        IReadOnlyList<WidgetPlacement> loaded, ISet<string> knownKeys)
+    {
+        var result = new List<WidgetPlacement>();
+        foreach (var w in loaded)
+        {
+            if (!knownKeys.Contains(w.Key)) continue;
+            var (cs, rs) = ClampSize(System.Math.Clamp(w.Col, 0, Columns - 1), w.ColSpan, w.RowSpan);
+            int col = ClampCol(w.Col, cs);
+            int row = ClampRow(w.Row);
+            result.Add(new WidgetPlacement(w.Key, col, row, cs, rs));
+        }
+        return result;
+    }
 }
