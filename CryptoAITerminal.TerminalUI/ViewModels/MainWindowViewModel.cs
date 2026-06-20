@@ -41,6 +41,17 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private string _newMarketSymbol = "";
     private string _marketsStatus = "";
 
+    // Extra (non-Binance CEX + DEX) custom markets fed by REST polling.
+    private static readonly string ExtMarketsPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "CryptoAITerminal", "custom-markets-ext.json");
+    private sealed record ExtMarketDto(string Exchange, string Symbol, string DexChain, string DexAddress);
+    private readonly List<ExtMarketDto> _extMarkets;
+    private CustomMarketPoller _customPoller = null!;
+    private Gateway.DEX.DexScreenerClient _dexScreener = null!;
+    private string _selectedMarketSource = "Binance";
+    private string _selectedDexChain = "ethereum";
+
     private readonly BinanceGateway _gateway;
     private readonly BinanceFuturesGateway _futuresGateway;
     private readonly MarketOrderRouter _router;
@@ -234,6 +245,21 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         _okxFuturesGateway    = okxFutures;
         _kucoinSpotGateway    = kucoinSpot;
         _kucoinFuturesGateway = kucoinFutures;
+
+        // Non-Binance CEX + DEX custom markets: refreshed by REST polling, not the live socket.
+        _dexScreener = new Gateway.DEX.DexScreenerClient();
+        _customPoller = new Services.CustomMarketPoller(
+            exchange => exchange switch
+            {
+                "Bybit"  => _bybitSpotGateway,
+                "OKX"    => _okxSpotGateway,
+                "KuCoin" => _kucoinSpotGateway,
+                _        => _gateway,
+            },
+            _dexScreener);
+        _extMarkets = LoadExtMarkets();
+        RestoreExtMarkets();
+        RefreshMarketExplorerCollections();
 
         // Multi-exchange futures gateway map — used by ActiveFuturesGateway property.
         _futuresGatewaysMap = new Dictionary<string, IExchangeGateway>(StringComparer.OrdinalIgnoreCase)
@@ -1652,6 +1678,29 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         get => _marketsStatus;
         private set => this.RaiseAndSetIfChanged(ref _marketsStatus, value);
     }
+
+    // Where a newly added coin comes from. "DEX" means "add a token by contract address".
+    public IReadOnlyList<string> MarketSourceOptions { get; } = ["Binance", "Bybit", "OKX", "KuCoin", "DEX"];
+    public string SelectedMarketSource
+    {
+        get => _selectedMarketSource;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _selectedMarketSource, value);
+            this.RaisePropertyChanged(nameof(IsDexSource));
+            this.RaisePropertyChanged(nameof(AddMarketHint));
+        }
+    }
+    public bool IsDexSource => string.Equals(SelectedMarketSource, "DEX", StringComparison.OrdinalIgnoreCase);
+    public IReadOnlyList<string> DexChainOptions { get; } = ["ethereum", "bsc", "base", "solana", "arbitrum", "polygon"];
+    public string SelectedDexChain
+    {
+        get => _selectedDexChain;
+        set => this.RaiseAndSetIfChanged(ref _selectedDexChain, value);
+    }
+    public string AddMarketHint => IsDexSource
+        ? "Вставь адрес контракта токена (0x… или адрес Solana)."
+        : "Введи тикер (например PEPE или WIFUSDT).";
     public ReactiveCommand<Unit, Unit> SafeLogoutCommand { get; }
     public ReactiveCommand<Unit, Unit> SendAiAssistantPromptCommand { get; }
     public ReactiveCommand<AiAssistantQuickPromptViewModel, Unit> UseAiAssistantQuickPromptCommand { get; }
@@ -6566,6 +6615,17 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
 
     private async Task AddCustomMarketAsync()
     {
+        if (IsDexSource)
+        {
+            await AddDexMarketAsync();
+            return;
+        }
+        if (!string.Equals(SelectedMarketSource, "Binance", StringComparison.OrdinalIgnoreCase))
+        {
+            await AddExtCexMarketAsync(SelectedMarketSource);
+            return;
+        }
+
         var symbol = NormalizeMarketSymbol(NewMarketSymbol);
         if (symbol.Length < 5)
         {
@@ -6606,9 +6666,151 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         MarketsStatus = $"{symbol} добавлен.";
     }
 
+    // Add a coin from another CEX (Bybit/OKX/KuCoin). Validated by pulling one order book;
+    // kept fresh by the REST poller rather than the Binance socket.
+    private async Task AddExtCexMarketAsync(string exchange)
+    {
+        var symbol = NormalizeMarketSymbol(NewMarketSymbol);
+        if (symbol.Length < 5)
+        {
+            MarketsStatus = "Введите тикер монеты (например PEPE или WIFUSDT).";
+            return;
+        }
+        if (Markets.Any(m => string.Equals(m.Symbol, symbol, StringComparison.OrdinalIgnoreCase)
+                             && string.Equals(m.Exchange, exchange, StringComparison.OrdinalIgnoreCase)))
+        {
+            MarketsStatus = $"{symbol} ({exchange}) уже в списке.";
+            return;
+        }
+
+        MarketsStatus = $"Проверяю {symbol} на {exchange}…";
+        var gateway = exchange switch
+        {
+            "Bybit"  => _bybitSpotGateway,
+            "OKX"    => _okxSpotGateway,
+            "KuCoin" => _kucoinSpotGateway,
+            _        => _gateway,
+        };
+        bool ok;
+        try
+        {
+            var book = await gateway.GetOrderBookAsync(symbol, 5);
+            ok = book.Bids.Count > 0 || book.Asks.Count > 0;
+        }
+        catch { ok = false; }
+        if (!ok)
+        {
+            MarketsStatus = $"{symbol} не найден на {exchange} — проверь тикер.";
+            return;
+        }
+
+        var market = new CexMarketItemViewModel(symbol, exchange);
+        ConfigureWallSettings(market);
+        market.PropertyChanged += OnMarketItemPropertyChanged;
+        Markets.Add(market);
+        _customPoller.AddCex(market, exchange, symbol);
+
+        _extMarkets.Add(new ExtMarketDto(exchange, symbol, "", ""));
+        SaveExtMarkets();
+
+        RefreshMarketExplorerCollections();
+        RaiseMarketExplorerStateChanged();
+        SelectedMarket = market;
+        NewMarketSymbol = "";
+        MarketsStatus = $"{symbol} ({exchange}) добавлен.";
+    }
+
+    // Add a DEX token by contract address. Price/volume come from DexScreener.
+    private async Task AddDexMarketAsync()
+    {
+        var address = (NewMarketSymbol ?? "").Trim();
+        if (address.Length < 8)
+        {
+            MarketsStatus = "Вставь адрес контракта токена (0x… или адрес Solana).";
+            return;
+        }
+        var chain = SelectedDexChain;
+        if (_extMarkets.Any(d => d.Exchange == "DEX"
+                                 && string.Equals(d.DexAddress, address, StringComparison.OrdinalIgnoreCase)))
+        {
+            MarketsStatus = "Этот токен уже добавлен.";
+            return;
+        }
+
+        MarketsStatus = "Ищу токен на DexScreener…";
+        Core.Models.DexTokenInfo? token;
+        try
+        {
+            var tokens = await _dexScreener.SearchTokensAsync(address);
+            token = tokens.FirstOrDefault(t => string.Equals(t.TokenAddress, address, StringComparison.OrdinalIgnoreCase)
+                                               && string.Equals(t.ChainId, chain, StringComparison.OrdinalIgnoreCase))
+                    ?? tokens.FirstOrDefault(t => string.Equals(t.TokenAddress, address, StringComparison.OrdinalIgnoreCase))
+                    ?? tokens.FirstOrDefault();
+        }
+        catch { token = null; }
+        if (token is null || token.PriceUsd <= 0m)
+        {
+            MarketsStatus = "Токен не найден — проверь адрес и сеть.";
+            return;
+        }
+
+        var resolvedChain = string.IsNullOrWhiteSpace(token.ChainId) ? chain : token.ChainId;
+        var resolvedAddress = string.IsNullOrWhiteSpace(token.TokenAddress) ? address : token.TokenAddress;
+        var displaySymbol = string.IsNullOrWhiteSpace(token.Symbol)
+            ? $"{resolvedChain.ToUpperInvariant()}·{resolvedAddress[..Math.Min(6, resolvedAddress.Length)]}"
+            : token.Symbol.ToUpperInvariant();
+        if (Markets.Any(m => m.IsDexMarket && string.Equals(m.Symbol, displaySymbol, StringComparison.OrdinalIgnoreCase)))
+            displaySymbol += "·" + resolvedAddress[^4..];
+
+        var market = new CexMarketItemViewModel(displaySymbol, $"DEX·{resolvedChain}");
+        ConfigureWallSettings(market);
+        market.PropertyChanged += OnMarketItemPropertyChanged;
+        market.UpdateMarketData(new Core.Models.MarketData
+        {
+            Symbol = displaySymbol,
+            BestBid = token.PriceUsd,
+            BestAsk = token.PriceUsd,
+            LastPrice = token.PriceUsd,
+            ChangePct24h = token.PriceChange24h,
+            Volume24hUsd = token.Volume24h,
+            Timestamp = DateTime.UtcNow,
+        });
+        Markets.Add(market);
+        _customPoller.AddDex(market, resolvedChain, resolvedAddress);
+
+        _extMarkets.Add(new ExtMarketDto("DEX", displaySymbol, resolvedChain, resolvedAddress));
+        SaveExtMarkets();
+
+        RefreshMarketExplorerCollections();
+        RaiseMarketExplorerStateChanged();
+        SelectedMarket = market;
+        NewMarketSymbol = "";
+        MarketsStatus = $"{displaySymbol} (DEX·{resolvedChain}) добавлен.";
+    }
+
     private void RemoveCustomMarket(CexMarketItemViewModel market)
     {
         if (market is null) return;
+
+        // Non-Binance CEX + DEX markets live in the ext list / poller.
+        var extDto = _extMarkets.FirstOrDefault(d =>
+            (d.Exchange == "DEX" && market.IsDexMarket && string.Equals(d.Symbol, market.Symbol, StringComparison.OrdinalIgnoreCase))
+            || (d.Exchange != "DEX" && string.Equals(d.Exchange, market.Exchange, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(d.Symbol, market.Symbol, StringComparison.OrdinalIgnoreCase)));
+        if (extDto is not null)
+        {
+            market.PropertyChanged -= OnMarketItemPropertyChanged;
+            _customPoller.Remove(market);
+            Markets.Remove(market);
+            _extMarkets.Remove(extDto);
+            SaveExtMarkets();
+            if (ReferenceEquals(SelectedMarket, market)) SelectedMarket = Markets.FirstOrDefault();
+            RefreshMarketExplorerCollections();
+            RaiseMarketExplorerStateChanged();
+            MarketsStatus = $"{market.Symbol} удалён.";
+            return;
+        }
+
         if (!_customMarketSymbols.Contains(market.Symbol, StringComparer.OrdinalIgnoreCase))
         {
             MarketsStatus = "Стандартные монеты удалять нельзя.";
@@ -6623,6 +6825,38 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         RefreshMarketExplorerCollections();
         RaiseMarketExplorerStateChanged();
         MarketsStatus = $"{market.Symbol} удалён (вернётся после перезапуска только если снова добавить).";
+    }
+
+    private void RestoreExtMarkets()
+    {
+        foreach (var dto in _extMarkets)
+        {
+            var isDex = string.Equals(dto.Exchange, "DEX", StringComparison.OrdinalIgnoreCase);
+            var exchangeTag = isDex ? $"DEX·{dto.DexChain}" : dto.Exchange;
+            var market = new CexMarketItemViewModel(dto.Symbol, exchangeTag);
+            ConfigureWallSettings(market);
+            market.PropertyChanged += OnMarketItemPropertyChanged;
+            Markets.Add(market);
+            if (isDex) _customPoller.AddDex(market, dto.DexChain, dto.DexAddress);
+            else       _customPoller.AddCex(market, dto.Exchange, dto.Symbol);
+        }
+    }
+
+    private static List<ExtMarketDto> LoadExtMarkets()
+    {
+        try
+        {
+            if (File.Exists(ExtMarketsPath))
+                return Services.AtomicJsonFile.Read<List<ExtMarketDto>>(ExtMarketsPath) ?? [];
+        }
+        catch { /* ignore corrupt cache */ }
+        return [];
+    }
+
+    private void SaveExtMarkets()
+    {
+        try { Services.AtomicJsonFile.Write(ExtMarketsPath, _extMarkets); }
+        catch { /* best-effort */ }
     }
 
     private static List<string> LoadCustomMarketSymbols()

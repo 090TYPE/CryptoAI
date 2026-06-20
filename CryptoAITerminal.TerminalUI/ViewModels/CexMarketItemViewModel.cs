@@ -31,10 +31,24 @@ public class CexMarketItemViewModel : ReactiveObject
     private decimal _bidWallUsd;
     private decimal _askWallUsd;
 
-    public CexMarketItemViewModel(string symbol)
+    public CexMarketItemViewModel(string symbol, string exchange = "Binance")
     {
         Symbol = symbol;
+        Exchange = exchange;
     }
+
+    /// <summary>Source exchange of this market: "Binance", "Bybit", "OKX", "KuCoin", or "DEX·{chain}".</summary>
+    public string Exchange { get; }
+    public bool IsDexMarket => Exchange.StartsWith("DEX", StringComparison.OrdinalIgnoreCase);
+    public string ExchangeBadge => Exchange.ToUpperInvariant();
+    public string ExchangeBadgeBrush => Exchange.ToLowerInvariant() switch
+    {
+        "binance" => "#F0B90B",
+        "bybit"   => "#F7A600",
+        "okx"     => "#8FA3B8",
+        "kucoin"  => "#24AE8F",
+        _         => "#7C5CFF"   // DEX
+    };
 
     /// <summary>Large resting orders for the chart, rebuilt on every book update.</summary>
     public ObservableCollection<BookWall> LargeWalls { get; } = [];

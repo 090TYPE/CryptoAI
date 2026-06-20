@@ -64,15 +64,24 @@
                 <StackPanel Spacing="6">
                   <TextBlock Classes="Overline" Text="Add coin" />
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <ComboBox Grid.Column="0" HorizontalAlignment="Stretch"
+                              ItemsSource="{Binding MarketSourceOptions}"
+                              SelectedItem="{Binding SelectedMarketSource}" />
+                    <ComboBox Grid.Column="1" Width="120"
+                              ItemsSource="{Binding DexChainOptions}"
+                              SelectedItem="{Binding SelectedDexChain}"
+                              IsVisible="{Binding IsDexSource}" />
+                  </Grid>
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                     <TextBox Grid.Column="0" Text="{Binding NewMarketSymbol}"
-                             PlaceholderText="PEPE, WIF, TONUSDT..." />
+                             PlaceholderText="PEPE, WIF, 0x... / адрес токена" />
                     <Button Grid.Column="1" Content="+ Add"
                             Command="{Binding AddCustomMarketCommand}" />
                   </Grid>
                   <TextBlock Text="{Binding MarketsStatus}" Foreground="#8FA3B8"
                              FontSize="11" TextWrapping="Wrap"
                              IsVisible="{Binding MarketsStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                  <TextBlock Text="Тикер с Binance. Без суффикса добавится USDT (PEPE → PEPEUSDT)."
+                  <TextBlock Text="{Binding AddMarketHint}"
                              Foreground="#5A7A90" FontSize="10" TextWrapping="Wrap" />
                 </StackPanel>
 
@@ -203,7 +212,17 @@
                                              FontWeight="Bold" />
                                 </Border>
                                 <StackPanel Grid.Column="1" Spacing="2">
-                                  <TextBlock Text="{Binding DisplaySymbol}" FontWeight="Bold" />
+                                  <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="{Binding DisplaySymbol}" FontWeight="Bold"
+                                               VerticalAlignment="Center" />
+                                    <Border Background="{Binding ExchangeBadgeBrush}"
+                                            CornerRadius="4" Padding="5,1"
+                                            VerticalAlignment="Center">
+                                      <TextBlock Text="{Binding ExchangeBadge}"
+                                                 Foreground="#0B0E14" FontSize="9"
+                                                 FontWeight="Bold" />
+                                    </Border>
+                                  </StackPanel>
                                   <TextBlock Text="{Binding TrendLabel}"
                                              Foreground="{Binding TrendBrush}" />
                                 </StackPanel>
