@@ -3587,7 +3587,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         CloseNotificationCenter();
     }
 
-    private IExchangeGateway ActiveCexGateway => IsManualFuturesMode ? ActiveFuturesGateway : _gateway;
+    private IExchangeGateway ActiveCexGateway => IsManualFuturesMode ? ActiveFuturesGateway : ActiveSpotGateway;
     private string AiCustomPresetsStoragePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "CryptoAITerminal",
@@ -4407,7 +4407,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             }
         }
 
-        var router = new MarketOrderRouter(_gateway);
+        var router = new MarketOrderRouter(ActiveSpotGateway);
         return side == CryptoAITerminal.Core.Enums.OrderSide.Buy
             ? await router.BuyMarketAsync(SelectedTradingSymbol, quantity)
             : await router.SellMarketAsync(SelectedTradingSymbol, quantity);
@@ -5452,7 +5452,8 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private async Task RefreshOrderBookAsync(CexMarketItemViewModel market)
     {
         var useFutures = IsManualFuturesMode;
-        var gateway = useFutures ? (IExchangeGateway)_futuresGateway : _gateway;
+        var spotGateway = ActiveSpotGateway;
+        var gateway = useFutures ? ActiveFuturesGateway : spotGateway;
 
         await _orderBookRefreshLock.WaitAsync();
         try
@@ -5464,13 +5465,13 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
                 if (useFutures && !HasUsableOrderBook(orderBook))
                 {
                     AddLog($"Futures order book for {market.Symbol} returned no depth, using spot display fallback.");
-                    orderBook = await _gateway.GetOrderBookAsync(market.Symbol, depth: 50);
+                    orderBook = await spotGateway.GetOrderBookAsync(market.Symbol, depth: 50);
                 }
             }
             catch (Exception ex) when (useFutures)
             {
                 AddLog($"Futures order book unavailable for {market.Symbol}, using spot display fallback: {ex.Message}");
-                orderBook = await _gateway.GetOrderBookAsync(market.Symbol, depth: 50);
+                orderBook = await spotGateway.GetOrderBookAsync(market.Symbol, depth: 50);
             }
 
             await Dispatcher.UIThread.InvokeAsync(() =>
