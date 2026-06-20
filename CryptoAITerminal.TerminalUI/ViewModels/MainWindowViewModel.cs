@@ -1505,6 +1505,10 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             this.RaisePropertyChanged(nameof(IsFuturesPrivateApiReady));
             this.RaisePropertyChanged(nameof(FuturesPrivateApiStatusLabel));
             this.RaisePropertyChanged(nameof(FuturesPrivateApiStatusBrush));
+            this.RaisePropertyChanged(nameof(IsManualSpotMode));
+            this.RaisePropertyChanged(nameof(IsSpotPrivateApiReady));
+            this.RaisePropertyChanged(nameof(SpotPrivateApiStatusLabel));
+            this.RaisePropertyChanged(nameof(SpotPrivateApiStatusBrush));
             this.RaisePropertyChanged(nameof(CexMarketModeSummary));
             this.RaisePropertyChanged(nameof(TradingTerminalSummary));
         }
@@ -5966,6 +5970,9 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(CurrentFuturesRoeLabel));
         this.RaisePropertyChanged(nameof(FuturesPrivateApiStatusLabel));
         this.RaisePropertyChanged(nameof(FuturesPrivateApiStatusBrush));
+        this.RaisePropertyChanged(nameof(IsSpotPrivateApiReady));
+        this.RaisePropertyChanged(nameof(SpotPrivateApiStatusLabel));
+        this.RaisePropertyChanged(nameof(SpotPrivateApiStatusBrush));
     }
 
     private void RaiseMarketExplorerStateChanged()
@@ -5996,6 +6003,11 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         if (IsManualFuturesMode && !IsFuturesPrivateApiReady)
         {
             return "Binance futures private API credentials are required for this live action.";
+        }
+
+        if (!IsManualFuturesMode && !IsSpotPrivateApiReady)
+        {
+            return $"Add API keys for {SelectedSpotExchange} in Settings to place spot orders.";
         }
 
         if (CurrentTradePrice <= 0m)
