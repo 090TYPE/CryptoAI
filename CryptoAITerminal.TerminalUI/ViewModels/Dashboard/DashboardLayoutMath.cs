@@ -43,4 +43,23 @@ public static class DashboardLayoutMath
         int rowSpan = System.Math.Max(reqRowSpan, MinRowSpan);
         return (colSpan, rowSpan);
     }
+
+    public static int ClampCol(int col, int colSpan)
+        => System.Math.Clamp(col, 0, System.Math.Max(0, Columns - colSpan));
+
+    public static int ClampRow(int row) => System.Math.Max(0, row);
+
+    /// <summary>Snap a dropped widget into the grid, then push its Row down until it no longer
+    /// overlaps any of <paramref name="others"/>.</summary>
+    public static WidgetPlacement ResolveDrop(WidgetPlacement moved, IReadOnlyList<WidgetPlacement> others)
+    {
+        int col = ClampCol(moved.Col, moved.ColSpan);
+        int row = ClampRow(moved.Row);
+        var candidate = moved with { Col = col, Row = row };
+
+        while (others.Any(o => Overlaps(candidate, o)))
+            candidate = candidate with { Row = candidate.Row + 1 };
+
+        return candidate;
+    }
 }

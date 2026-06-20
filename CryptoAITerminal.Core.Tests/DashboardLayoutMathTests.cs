@@ -32,4 +32,33 @@ public class DashboardLayoutMathTests
         Assert.Equal(expCol, cs);
         Assert.Equal(expRow, rs);
     }
+
+    [Fact]
+    public void ClampPosition_keeps_widget_inside_grid()
+    {
+        Assert.Equal(0, DashboardLayoutMath.ClampCol(-3, colSpan: 4));
+        Assert.Equal(8, DashboardLayoutMath.ClampCol(20, colSpan: 4));
+        Assert.Equal(0, DashboardLayoutMath.ClampRow(-5));
+    }
+
+    [Fact]
+    public void ResolveDrop_pushes_row_down_when_target_is_occupied()
+    {
+        var others = new[] { new WidgetPlacement("a", 0, 0, 6, 2) };
+        var moved  = new WidgetPlacement("b", 0, 0, 6, 2);
+        var result = DashboardLayoutMath.ResolveDrop(moved, others);
+        Assert.Equal(0, result.Col);
+        Assert.Equal(2, result.Row);
+        Assert.False(DashboardLayoutMath.HasOverlap(new[] { others[0], result }));
+    }
+
+    [Fact]
+    public void ResolveDrop_leaves_free_target_untouched()
+    {
+        var others = new[] { new WidgetPlacement("a", 0, 0, 6, 2) };
+        var moved  = new WidgetPlacement("b", 6, 0, 6, 2);
+        var result = DashboardLayoutMath.ResolveDrop(moved, others);
+        Assert.Equal(6, result.Col);
+        Assert.Equal(0, result.Row);
+    }
 }
