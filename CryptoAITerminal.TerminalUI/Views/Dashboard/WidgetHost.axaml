@@ -1,0 +1,30 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vmd="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels.Dashboard"
+             xmlns:dash="clr-namespace:CryptoAITerminal.TerminalUI.Views.Dashboard"
+             x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.WidgetHost"
+             x:DataType="vmd:DashboardWidget"
+             x:CompileBindings="False">
+  <UserControl.Resources>
+    <dash:WidgetTemplateSelector x:Key="WidgetSelector" />
+  </UserControl.Resources>
+  <Border Classes="Panel" Margin="0">
+    <Grid RowDefinitions="Auto,*">
+      <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,6">
+        <TextBlock Grid.Column="0" x:Name="DragHandle" Text="☰" Margin="0,0,8,0"
+                   Foreground="#8FA3B8" Cursor="SizeAll"
+                   IsVisible="{Binding $parent[dash:WidgetHost].IsEditMode}" />
+        <TextBlock Grid.Column="1" Text="{Binding Title}" Classes="H2" />
+        <Button Grid.Column="2" Content="✕" Classes="GhostButton"
+                IsVisible="{Binding $parent[dash:WidgetHost].IsEditMode}"
+                Command="{Binding $parent[dash:WidgetHost].RemoveCommand}" />
+      </Grid>
+      <ContentControl Grid.Row="1" Content="{Binding}"
+                      ContentTemplate="{StaticResource WidgetSelector}" />
+      <Thumb Grid.Row="1" x:Name="ResizeThumb" Width="16" Height="16"
+             HorizontalAlignment="Right" VerticalAlignment="Bottom"
+             Background="#7C5CFF" Cursor="BottomRightCorner"
+             IsVisible="{Binding $parent[dash:WidgetHost].IsEditMode}" />
+    </Grid>
+  </Border>
+</UserControl>
