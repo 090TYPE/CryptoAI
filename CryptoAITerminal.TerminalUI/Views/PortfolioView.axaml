@@ -9,7 +9,77 @@
     <TabItem Header="Обзор">
       <ScrollViewer Classes="PageScroll">
         <StackPanel Spacing="16" Margin="4"><!-- OVERVIEW -->
-          <TextBlock Text="Overview placeholder" />
+
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+            <Border Classes="Panel" Grid.Column="0">
+              <StackPanel Spacing="6">
+                <TextBlock Text="Active Session" Foreground="#8B949E" />
+                <TextBlock Classes="H2" Text="{Binding WalletVM.ActiveWalletBanner}" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding WalletVM.WalletReadinessLabel}"
+                           Foreground="{Binding WalletVM.WalletReadinessBrush}"
+                           FontWeight="Bold" />
+                <TextBlock Text="{Binding WalletVM.ConnectionSummary}" Foreground="#8B949E" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding WalletVM.WalletReadinessSummary}"
+                           Foreground="#8FA3B8"
+                           TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
+            <Border Classes="Panel" Grid.Column="1">
+              <StackPanel Spacing="6">
+                <TextBlock Text="Live Route" Foreground="#8B949E" />
+                <TextBlock Classes="H2" Text="{Binding WalletVM.NativeBalanceLabel}" />
+                <TextBlock Text="{Binding WalletVM.RouteReadinessLabel}"
+                           Foreground="{Binding WalletVM.RouteReadinessBrush}"
+                           FontWeight="Bold" />
+                <TextBlock Text="{Binding WalletVM.ExplorerUrl}" Foreground="#8B949E" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding WalletVM.RouteReadinessSummary}"
+                           Foreground="#8FA3B8"
+                           TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+          </Grid>
+
+          <Border Classes="Panel">
+            <StackPanel Spacing="12">
+              <TextBlock Classes="H2" Text="Portfolio Lens" />
+              <ItemsControl ItemsSource="{Binding WalletVM.Assets}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <WrapPanel Orientation="Horizontal" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:WalletAssetViewModel">
+                    <Border Background="#0D1117"
+                            BorderBrush="#30363D"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="14"
+                            Width="250"
+                            Margin="0,0,12,12">
+                      <StackPanel Spacing="6">
+                        <TextBlock Text="{Binding Title}" Foreground="#8B949E" />
+                        <TextBlock Text="{Binding Value}" FontSize="22" FontWeight="Bold" Foreground="#14E0C1" />
+                        <TextBlock Text="{Binding Subtitle}" Foreground="#8B949E" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="Panel">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="H2" Text="Wallet Capability" />
+              <TextBlock Text="{Binding WalletVM.WalletCapabilityText}"
+                         Foreground="#14E0C1"
+                         FontWeight="SemiBold"
+                         TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+
         </StackPanel>
       </ScrollViewer>
     </TabItem>
