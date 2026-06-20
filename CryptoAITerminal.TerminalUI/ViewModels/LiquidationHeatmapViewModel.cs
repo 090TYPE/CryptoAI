@@ -341,6 +341,9 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
             (1.0 - ((double)l.Price - minPrice) / range) * RH, 0, RH)).ToList();
         var rects = BuildBandRects(ys, RH);
 
+        // Clean volume-profile bars: left-anchored, width = magnitude, thin with a gap,
+        // brightness scaled so small levels stay faint and big clusters stand out.
+        const double MaxBarH = 11.0;  // thin uniform bars
         var bands = new List<HeatBand>(ordered.Count);
         for (int i = 0; i < ordered.Count && maxAll > 0; i++)
         {
@@ -351,12 +354,20 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
             if (isShort && !_showShorts) continue;
             if (!isShort && !_showLongs) continue;
 
-            var alpha = (byte)System.Math.Clamp(Intensity(mag, maxAll) * 255.0, 0, 255);
+            var frac  = System.Math.Clamp(mag / maxAll, 0.0, 1.0);
+            var width = 6.0 + frac * (UsableW - 6.0);                 // width encodes magnitude
+            var alpha = (byte)System.Math.Clamp((0.45 + 0.55 * frac) * 255.0, 0, 255);
             var color = isShort
                 ? Avalonia.Media.Color.FromArgb(alpha, 0xFF, 0x44, 0x44)
                 : Avalonia.Media.Color.FromArgb(alpha, 0x21, 0xE6, 0xC1);
             var brush = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(color);
-            bands.Add(new HeatBand(rects[i].Y, rects[i].Height, brush));
+
+            // Thin bar centred in the level's vertical slot (leaves gaps when slots are tall).
+            var slotY = rects[i].Y;
+            var slotH = rects[i].Height;
+            var barH  = System.Math.Min(slotH, MaxBarH);
+            var top   = slotY + System.Math.Max(0, (slotH - barH) / 2.0);
+            bands.Add(new HeatBand(top, barH, width, brush));
         }
         HeatBands = bands;
 
@@ -517,7 +528,7 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
 public record PriceAxisLabel(string Text, double Y, bool IsCurrentPrice);
 
 /// <summary>A full-width horizontal heat band for the liquidation heatmap: colour encodes side, opacity encodes magnitude.</summary>
-public sealed record HeatBand(double Y, double Height, Avalonia.Media.IBrush Fill);
+public sealed record HeatBand(double Y, double Height, double Width, Avalonia.Media.IBrush Fill);
 
 /// <summary>A liquidation cluster line suitable for chart overlay rendering.</summary>
 /// <param name="Price">Price level of the cluster.</param>

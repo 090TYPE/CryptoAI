@@ -134,7 +134,8 @@
                     </ItemsControl.Styles>
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="vm:HeatBand">
-                        <Rectangle Width="1200" Height="{Binding Height}" Fill="{Binding Fill}" />
+                        <Rectangle Width="{Binding Width}" Height="{Binding Height}" Fill="{Binding Fill}"
+                                   RadiusX="3" RadiusY="3" />
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
