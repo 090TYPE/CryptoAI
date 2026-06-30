@@ -4,18 +4,31 @@
 #  Собирает self-contained Windows-релиз и упаковывает в zip для отправки.
 #  Запуск:   .\build-release.ps1
 #  Опции:    .\build-release.ps1 -SkipClean       # без удаления bin/obj
-#            .\build-release.ps1 -SkipZip         # не упаковывать в архив
+#            .\build-release.ps1 -SkipPack        # не упаковывать через Velopack
 #            .\build-release.ps1 -Version 1.2.0   # своя версия в имени архива
 # ============================================================================
 
 [CmdletBinding()]
 param(
     [switch] $SkipClean,
-    [switch] $SkipZip,
-    [string] $Version = (Get-Date -Format 'yyyy-MM-dd')
+    [switch] $SkipPack,
+    [string] $Version = (Get-Date -Format 'yyyy-MM-dd'),
+    [switch] $PublishToGithub
 )
 
 $ErrorActionPreference = 'Stop'
+
+# Velopack CLI — installs once if absent.
+if (-not (Get-Command vpk -ErrorAction SilentlyContinue)) {
+    Write-Host 'Installing Velopack CLI (vpk)...' -ForegroundColor Yellow
+    & dotnet tool install -g vpk
+    $env:PATH = "$env:PATH;$env:USERPROFILE\.dotnet\tools"
+}
+
+# vpk requires a SemVer version. Warn if the (date-default) version isn't SemVer.
+if ($Version -notmatch '^\d+\.\d+\.\d+') {
+    Write-Host "[warn] -Version '$Version' is not SemVer; vpk needs e.g. 1.6.0. Pass -Version explicitly for releases." -ForegroundColor Yellow
+}
 
 # ── Paths ──────────────────────────────────────────────────────────────────
 $Root         = $PSScriptRoot
@@ -106,24 +119,40 @@ $publishSize = (Get-ChildItem $PublishDir -Recurse | Measure-Object -Property Le
 $publishMb   = [math]::Round($publishSize / 1MB, 1)
 Write-Host "  publish size: $publishMb MB"
 
-# ── 4. Package ─────────────────────────────────────────────────────────────
-if (-not $SkipZip) {
-    Write-Step 'Creating release archive'
+# ── 4. Pack (Velopack) ─────────────────────────────────────────────────────
+if (-not $SkipPack) {
+    Write-Step 'Packing release with Velopack (vpk)'
 
     if (-not (Test-Path $ReleaseDir)) { New-Item -ItemType Directory -Path $ReleaseDir | Out-Null }
-    if (Test-Path $ArchivePath)       { Remove-Item -Force $ArchivePath }
 
-    # Compress-Archive создаст архив, внутри которого папка CryptoAITerminal\...
-    Compress-Archive -Path $PublishDir -DestinationPath $ArchivePath -CompressionLevel Optimal
-    Assert-Success 'Compress-Archive'
+    & vpk pack `
+        --packId        CryptoAITerminal `
+        --packVersion   $Version `
+        --packDir       $PublishDir `
+        --mainExe       CryptoAITerminal.TerminalUI.exe `
+        --packTitle     'CryptoAI Terminal' `
+        --outputDir     $ReleaseDir
+    Assert-Success 'vpk pack'
 
-    $archiveSize = (Get-Item $ArchivePath).Length
-    $archiveMb   = [math]::Round($archiveSize / 1MB, 1)
-    Write-Host "  archive:      $ArchivePath"
-    Write-Host "  archive size: $archiveMb MB"
+    Write-Host "  Velopack output: $ReleaseDir" -ForegroundColor Green
+
+    if ($PublishToGithub) {
+        Write-Step 'Uploading release to GitHub (vpk upload github)'
+        if (-not $env:GITHUB_TOKEN) {
+            Write-Host '[FAIL] GITHUB_TOKEN env var required for -PublishToGithub' -ForegroundColor Red
+            exit 1
+        }
+        & vpk upload github `
+            --repoUrl     "https://github.com/090TYPE/CryptoAI" `
+            --token       $env:GITHUB_TOKEN `
+            --outputDir   $ReleaseDir `
+            --tag         "v$Version" `
+            --releaseName "v$Version"
+        Assert-Success 'vpk upload github'
+    }
 }
 else {
-    Write-Step 'Skipping archive (-SkipZip)'
+    Write-Step 'Skipping pack (-SkipPack)'
 }
 
 # ── 5. Summary ─────────────────────────────────────────────────────────────
@@ -132,14 +161,14 @@ Write-Step 'BUILD SUCCEEDED'
 Write-Host ''
 Write-Host '  Publish folder:' -ForegroundColor Green
 Write-Host "    $PublishDir"
-if (-not $SkipZip) {
+if (-not $SkipPack) {
     Write-Host ''
     Write-Host '  Ready to ship:' -ForegroundColor Green
-    Write-Host "    $ArchivePath"
+    Write-Host "    $ReleaseDir"
     Write-Host ''
     Write-Host '  Customer instructions:' -ForegroundColor Yellow
-    Write-Host '    1. Extract the archive to any folder.'
-    Write-Host '    2. Run CryptoAITerminal.TerminalUI.exe — no installer required.'
+    Write-Host '    1. Run Setup.exe from the release folder (installs to %LocalAppData%).'
+    Write-Host '    2. The app updates itself from then on — no manual downloads.'
     Write-Host '    3. Configure API keys via Settings tab or env vars (see README.md).'
 }
 Write-Host ''

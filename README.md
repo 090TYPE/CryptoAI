@@ -514,6 +514,16 @@ dotnet run
 
 ---
 
+## Updating
+
+Starting with v1.6.0 the app updates itself. Existing users: download `Setup.exe`
+from the latest [release](https://github.com/090TYPE/CryptoAI/releases) and run it
+once — it installs to `%LocalAppData%\CryptoAITerminal`. After that, when an update
+is available the app shows an "Обновить сейчас" button that downloads only the
+changed parts and restarts on the new version. No more manual downloads.
+
+---
+
 ## Безопасность
 
 - **Локальное хранение** — ключи только в `%LOCALAPPDATA%`, никаких облаков

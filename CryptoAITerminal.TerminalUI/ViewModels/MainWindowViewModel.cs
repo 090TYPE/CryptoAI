@@ -164,7 +164,10 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private static readonly Dictionary<string, Bitmap> AiStudioBitmapCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly JsonSerializerOptions AiPresetJsonOptions = new() { WriteIndented = true };
 
-    public MainWindowViewModel()
+    public MainWindowViewModel(
+        IAppUpdateService? updateService = null,
+        IReleaseNotesService? releaseNotes = null,
+        WhatsNewGate? whatsNewGate = null)
     {
         _customMarketSymbols = LoadCustomMarketSymbols();
         foreach (var symbol in DefaultSymbols.Concat(_customMarketSymbols))
@@ -1126,7 +1129,11 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         IsWelcomeVisible = IsFirstRun();
 
         // Background: check GitHub Releases for a newer version (non-blocking).
+        _updateService = updateService ?? new VelopackUpdateService();
+        _releaseNotes = releaseNotes ?? new ReleaseNotesService();
+        _whatsNewGate = whatsNewGate ?? new WhatsNewGate();
         StartUpdateCheck();
+        StartWhatsNewCheck();
 
         // License: gate live execution on a valid license; demo stays open always.
         LicenseVM.LicenseChanged += ApplyLicenseState;
@@ -1245,8 +1252,9 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         SelectMainTabCommand = ReactiveCommand.Create<string>(SelectMainTab, outputScheduler: App.UiScheduler);
         StartDemoCommand = ReactiveCommand.Create(StartDemoExploring, outputScheduler: App.UiScheduler);
         OpenApiKeysFromWelcomeCommand = ReactiveCommand.Create(OpenApiKeysFromWelcome, outputScheduler: App.UiScheduler);
-        OpenUpdateCommand = ReactiveCommand.Create(OpenUpdateUrl, outputScheduler: App.UiScheduler);
+        InstallUpdateCommand = ReactiveCommand.Create(StartUpdateDownload, outputScheduler: App.UiScheduler);
         DismissUpdateCommand = ReactiveCommand.Create(DismissUpdateBanner, outputScheduler: App.UiScheduler);
+        CloseWhatsNewCommand = ReactiveCommand.Create(CloseWhatsNew, outputScheduler: App.UiScheduler);
         SelectOrderSideCommand = ReactiveCommand.Create<string>(SelectOrderSide, outputScheduler: App.UiScheduler);
         PlacePrimaryOrderCommand = ReactiveCommand.CreateFromTask(PlacePrimaryOrderAsync, outputScheduler: App.UiScheduler);
         SelectTradeTimeframeCommand = ReactiveCommand.Create<string>(SelectTradeTimeframe, outputScheduler: App.UiScheduler);
@@ -1689,8 +1697,9 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<string, Unit> SelectMainTabCommand { get; }
     public ReactiveCommand<Unit, Unit> StartDemoCommand { get; }
     public ReactiveCommand<Unit, Unit> OpenApiKeysFromWelcomeCommand { get; }
-    public ReactiveCommand<Unit, Unit> OpenUpdateCommand { get; }
+    public ReactiveCommand<Unit, Unit> InstallUpdateCommand { get; }
     public ReactiveCommand<Unit, Unit> DismissUpdateCommand { get; }
+    public ReactiveCommand<Unit, Unit> CloseWhatsNewCommand { get; }
     public ReactiveCommand<string, Unit> SelectOrderSideCommand { get; }
     public ReactiveCommand<Unit, Unit> PlacePrimaryOrderCommand { get; }
     public ReactiveCommand<string, Unit> SelectTradeTimeframeCommand { get; }
@@ -3394,9 +3403,11 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     }
 
     // ── Update banner ────────────────────────────────────────────────────────
+    private readonly IAppUpdateService _updateService;
+    private readonly IReleaseNotesService _releaseNotes;
+    private readonly WhatsNewGate _whatsNewGate;
     private bool _isUpdateAvailable;
     private string _updateBannerText = "";
-    private string _updateUrl = "";
 
     public bool IsUpdateAvailable
     {
@@ -3410,29 +3421,109 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         private set => this.RaiseAndSetIfChanged(ref _updateBannerText, value);
     }
 
-    private void StartUpdateCheck()
+    private string _updateProgressText = "";
+    public string UpdateProgressText
     {
+        get => _updateProgressText;
+        private set => this.RaiseAndSetIfChanged(ref _updateProgressText, value);
+    }
+
+    private bool _isUpdateDownloading;
+    public bool IsUpdateDownloading
+    {
+        get => _isUpdateDownloading;
+        private set => this.RaiseAndSetIfChanged(ref _isUpdateDownloading, value);
+    }
+
+    // ── What's New overlay ───────────────────────────────────────────────────
+    private bool _isWhatsNewVisible;
+    public bool IsWhatsNewVisible
+    {
+        get => _isWhatsNewVisible;
+        private set => this.RaiseAndSetIfChanged(ref _isWhatsNewVisible, value);
+    }
+
+    private string _whatsNewVersion = "";
+    public string WhatsNewVersion
+    {
+        get => _whatsNewVersion;
+        private set => this.RaiseAndSetIfChanged(ref _whatsNewVersion, value);
+    }
+
+    private string _whatsNewMarkdown = "";
+    public string WhatsNewMarkdown
+    {
+        get => _whatsNewMarkdown;
+        private set => this.RaiseAndSetIfChanged(ref _whatsNewMarkdown, value);
+    }
+
+    private void StartWhatsNewCheck()
+    {
+        var current  = AppInfo.Version;
+        var lastSeen = _whatsNewGate.ReadLastSeen();
+        if (!WhatsNewGate.ShouldShow(lastSeen, current))
+        {
+            _whatsNewGate.WriteLastSeen(current); // advance marker; nothing to show
+            return;
+        }
         RunLoggedAsync(async () =>
         {
-            var result = await new UpdateCheckService().CheckAsync().ConfigureAwait(true);
+            try
+            {
+                var notes = await _releaseNotes.GetNotesAsync(current).ConfigureAwait(true);
+                if (!string.IsNullOrWhiteSpace(notes))
+                {
+                    WhatsNewVersion   = current;
+                    WhatsNewMarkdown  = notes;
+                    IsWhatsNewVisible = true;
+                }
+            }
+            finally
+            {
+                // Advance on success, empty body, AND timeout/cancel — the API is hit
+                // at most once per version. No external cancellation is plumbed here,
+                // so the only OperationCanceledException source is the internal timeout.
+                _whatsNewGate.WriteLastSeen(current);
+            }
+        }, "What's New check");
+    }
+
+    private void CloseWhatsNew() => IsWhatsNewVisible = false;
+
+    private void StartUpdateCheck()
+    {
+        if (!_updateService.IsSupported) return; // debug / unpacked: no self-update UI
+        RunLoggedAsync(async () =>
+        {
+            var result = await _updateService.CheckAsync().ConfigureAwait(true);
             if (!result.IsUpdateAvailable) return;
 
-            _updateUrl       = result.ReleaseUrl;
-            UpdateBannerText = $"Update available: v{result.LatestVersion} (you have v{result.CurrentVersion})";
+            UpdateBannerText  = $"Доступна версия v{result.LatestVersion} (у вас v{result.CurrentVersion})";
             IsUpdateAvailable = true;
         }, "Update check");
     }
 
-    private void OpenUpdateUrl()
+    private void StartUpdateDownload()
     {
-        IsUpdateAvailable = false;
-        if (string.IsNullOrWhiteSpace(_updateUrl)) return;
-        try
+        if (IsUpdateDownloading) return;
+        IsUpdateDownloading = true;
+        UpdateProgressText  = "Загрузка… 0%";
+        var progress = new Progress<int>(p => UpdateProgressText = $"Загрузка… {p}%");
+        RunLoggedAsync(async () =>
         {
-            System.Diagnostics.Process.Start(
-                new System.Diagnostics.ProcessStartInfo(_updateUrl) { UseShellExecute = true });
-        }
-        catch { /* best-effort */ }
+            var ok = await _updateService.DownloadAsync(progress).ConfigureAwait(true);
+            if (!ok)
+            {
+                IsUpdateDownloading = false;
+                UpdateProgressText  = "Не удалось загрузить обновление. Попробуйте позже.";
+                return;
+            }
+            UpdateProgressText = "Перезапуск…";
+            _updateService.ApplyAndRestart(); // does not return on success
+            // Only reached if apply failed to restart — recover the UI.
+            IsUpdateDownloading = false;
+            UpdateProgressText  = "Не удалось применить обновление. Попробуйте позже.";
+        }, "Update download");
     }
 
     private void DismissUpdateBanner() => IsUpdateAvailable = false;

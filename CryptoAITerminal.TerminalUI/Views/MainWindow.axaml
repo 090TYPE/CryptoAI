@@ -4,6 +4,7 @@
         xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
         xmlns:views="clr-namespace:CryptoAITerminal.TerminalUI.Views"
         xmlns:wt="clr-namespace:CryptoAITerminal.WhaleTracker.Models;assembly=CryptoAITerminal.WhaleTracker"
+        xmlns:md="https://github.com/whistyun/Markdown.Avalonia"
         x:Class="CryptoAITerminal.TerminalUI.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         x:Name="RootWindow"
@@ -1039,12 +1040,16 @@
             MaxWidth="420"
             ZIndex="100">
       <StackPanel Spacing="8">
-        <TextBlock Text="⬆ Update available" Foreground="#1FE6C2" FontSize="11" FontWeight="SemiBold" />
+        <TextBlock Text="⬆ Доступно обновление" Foreground="#1FE6C2" FontSize="11" FontWeight="SemiBold" />
         <TextBlock Text="{Binding UpdateBannerText}" Foreground="#E0E8F0" TextWrapping="Wrap" FontSize="13" />
+        <TextBlock Text="{Binding UpdateProgressText}" Foreground="#9FB2C4" FontSize="12"
+                   IsVisible="{Binding IsUpdateDownloading}" />
         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
-          <Button Content="Later" Command="{Binding DismissUpdateCommand}"
+          <Button Content="Позже" Command="{Binding DismissUpdateCommand}"
+                  IsEnabled="{Binding !IsUpdateDownloading}"
                   Padding="12,5" Background="Transparent" BorderBrush="#2C4257" BorderThickness="1" Foreground="#C5D2DE" />
-          <Button Content="Download" Command="{Binding OpenUpdateCommand}"
+          <Button Content="Обновить сейчас" Command="{Binding InstallUpdateCommand}"
+                  IsEnabled="{Binding !IsUpdateDownloading}"
                   Padding="14,5" Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
         </StackPanel>
       </StackPanel>
@@ -1159,6 +1164,28 @@
                     FontWeight="Bold" />
           </StackPanel>
         </StackPanel>
+      </Border>
+    </Border>
+
+    <!-- "What's New" after-update overlay -->
+    <Border IsVisible="{Binding IsWhatsNewVisible}"
+            Background="#CC050A12"
+            ZIndex="210">
+      <Border Width="600" MaxHeight="640"
+              HorizontalAlignment="Center" VerticalAlignment="Center"
+              Background="#0B1622" BorderBrush="#1FE6C2" BorderThickness="1"
+              CornerRadius="14" Padding="32,28">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top"
+                     Text="{Binding WhatsNewVersion, StringFormat='Что нового в v{0}'}"
+                     Foreground="#F0F6FC" FontSize="22" FontWeight="Bold"
+                     Margin="0,0,0,16" />
+          <Button DockPanel.Dock="Bottom"
+                  Content="Закрыть" Command="{Binding CloseWhatsNewCommand}"
+                  HorizontalAlignment="Right" Margin="0,16,0,0"
+                  Padding="20,10" Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
+          <md:MarkdownScrollViewer Markdown="{Binding WhatsNewMarkdown}" />
+        </DockPanel>
       </Border>
     </Border>
 

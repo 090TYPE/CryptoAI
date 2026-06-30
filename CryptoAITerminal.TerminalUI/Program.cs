@@ -7,6 +7,9 @@ class Program
 {
     public static void Main(string[] args)
     {
+        // Must be the very first thing: services Velopack install/update hook launches.
+        Velopack.VelopackApp.Build().Run();
+
         BuildAvaloniaApp()
             .StartWithClassicDesktopLifetime(args);
     }
