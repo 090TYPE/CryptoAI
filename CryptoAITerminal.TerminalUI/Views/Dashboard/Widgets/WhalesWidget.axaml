@@ -9,19 +9,19 @@
 
     <!-- Stats row -->
     <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
-      <Border Grid.Column="0" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border Grid.Column="0" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="Min Transfer" Foreground="#5A7A90" FontSize="9" />
           <TextBlock Text="{Binding WhaleTrackerVM.MinUsdValue, StringFormat='${0:N0}'}" Foreground="#21E6C1" FontSize="14" FontWeight="SemiBold" />
         </StackPanel>
       </Border>
-      <Border Grid.Column="1" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border Grid.Column="1" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="Alerts" Foreground="#5A7A90" FontSize="9" />
           <TextBlock Text="{Binding WhaleTrackerVM.TotalAlertsCount}" Foreground="#21E6C1" FontSize="14" FontWeight="SemiBold" />
         </StackPanel>
       </Border>
-      <Border Grid.Column="2" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border Grid.Column="2" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="Labeled" Foreground="#5A7A90" FontSize="9" />
           <TextBlock Text="{Binding WhaleTrackerVM.LabeledAlertsCount}" Foreground="#F4B860" FontSize="14" FontWeight="SemiBold" />

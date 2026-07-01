@@ -1,9 +1,12 @@
 using Avalonia;
+using Avalonia.Animation;
+using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using CryptoAITerminal.TerminalUI.Services;
@@ -41,6 +44,8 @@ public partial class MainWindow : Window
     private DateTime _splashStartedAt;
     private bool _splashCompleted;
     private bool _isApplyingLocalization;
+    private readonly DispatcherTimer _tickerTimer = new() { Interval = TimeSpan.FromMilliseconds(16) };
+    private double _tickerOffset;
 
     public MainWindowViewModel? ViewModel => DataContext as MainWindowViewModel;
 
@@ -123,8 +128,28 @@ public partial class MainWindow : Window
         }
         StartSplashSequence();
 
+        // Drive the top-bar ticker marquee.
+        _tickerTimer.Tick += TickerTick;
+        _tickerTimer.Start();
+
         // Single-key trading hotkeys (fire only when no text-input control is focused)
         AddHandler(KeyDownEvent, OnTradingHotkeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+    }
+
+    /// <summary>Continuously scrolls the top-bar ticker one frame at a time. The ticker
+    /// content is duplicated in XAML, so wrapping the offset at exactly half the strip
+    /// width produces a seamless, endless marquee.</summary>
+    private void TickerTick(object? sender, EventArgs e)
+    {
+        if (TickerStrip is not { } strip) return;
+        if (strip.RenderTransform is not TranslateTransform xform) return;
+
+        double half = strip.Bounds.Width / 2.0;
+        if (half <= 20) return; // markets not laid out yet
+
+        _tickerOffset -= 0.6; // ~36 px/sec at 60 fps
+        if (_tickerOffset <= -half) _tickerOffset += half; // seamless wrap
+        xform.X = _tickerOffset;
     }
 
     /// <summary>
@@ -168,6 +193,12 @@ public partial class MainWindow : Window
     private void OnSetRussianLanguageClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         _localization.SetLanguage(UiLanguage.Russian);
+    }
+
+    private void OnToggleSidebarClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (ViewModel is { } vm)
+            vm.IsSidebarCollapsed = !vm.IsSidebarCollapsed;
     }
 
     private void OnToastClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
@@ -328,10 +359,10 @@ public partial class MainWindow : Window
     private void RefreshLanguageButtons()
     {
         var isEnglish = _localization.CurrentLanguage == UiLanguage.English;
-        EnglishLanguageButton.Background = isEnglish ? Brush.Parse("#17373B") : Brush.Parse("#0F1721");
-        EnglishLanguageButton.Foreground = isEnglish ? Brush.Parse("#F4F7FB") : Brush.Parse("#8FA3B8");
-        RussianLanguageButton.Background = isEnglish ? Brush.Parse("#0F1721") : Brush.Parse("#17373B");
-        RussianLanguageButton.Foreground = isEnglish ? Brush.Parse("#8FA3B8") : Brush.Parse("#F4F7FB");
+        EnglishLanguageButton.Background = isEnglish ? Brush.Parse("#21E6C1") : Brush.Parse("Transparent");
+        EnglishLanguageButton.Foreground = isEnglish ? Brush.Parse("#04121C") : Brush.Parse("#3D5A72");
+        RussianLanguageButton.Background = isEnglish ? Brush.Parse("Transparent") : Brush.Parse("#21E6C1");
+        RussianLanguageButton.Foreground = isEnglish ? Brush.Parse("#3D5A72") : Brush.Parse("#04121C");
     }
 
     private void AttachLocalizationObservers()

@@ -10,7 +10,7 @@
     <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
 
       <!-- Ethereum -->
-      <Border Grid.Column="0" Background="#0F1721" CornerRadius="5" Padding="10,8">
+      <Border Grid.Column="0" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="10,8">
         <StackPanel Spacing="6">
           <StackPanel Orientation="Horizontal" Spacing="6">
             <TextBlock Text="Ξ" FontSize="14" Foreground="#8FA3B8" FontWeight="Bold" VerticalAlignment="Center" />
@@ -37,7 +37,7 @@
       </Border>
 
       <!-- BSC -->
-      <Border Grid.Column="1" Background="#0F1721" CornerRadius="5" Padding="10,8">
+      <Border Grid.Column="1" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="10,8">
         <StackPanel Spacing="6">
           <StackPanel Orientation="Horizontal" Spacing="6">
             <TextBlock Text="⬡" FontSize="12" Foreground="#F0B90B" FontWeight="Bold" VerticalAlignment="Center" />
@@ -58,7 +58,7 @@
       </Border>
 
       <!-- Solana -->
-      <Border Grid.Column="2" Background="#0F1721" CornerRadius="5" Padding="10,8">
+      <Border Grid.Column="2" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="10,8">
         <StackPanel Spacing="6">
           <StackPanel Orientation="Horizontal" Spacing="6">
             <TextBlock Text="◎" FontSize="14" Foreground="#9B59B6" FontWeight="Bold" VerticalAlignment="Center" />

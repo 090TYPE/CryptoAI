@@ -2,45 +2,51 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
   <Styles.Resources>
+    <!-- ============================================================
+         ПАЛИТРА — выровнена под референс-дизайн дашборда
+         bg #060D14 · карточка #07101A · бордер #152233 · 14px
+    ============================================================ -->
     <!-- Цвета фона -->
-    <SolidColorBrush x:Key="AppBg" Color="#081018" />
-    <SolidColorBrush x:Key="AppBg2" Color="#0D1722" />
+    <SolidColorBrush x:Key="AppBg" Color="#060D14" />
+    <SolidColorBrush x:Key="AppBg2" Color="#07101A" />
     <!-- Уровни поверхностей -->
-    <SolidColorBrush x:Key="Surface1" Color="#0E151E" />
-    <SolidColorBrush x:Key="Surface2" Color="#111924" />
-    <SolidColorBrush x:Key="Surface3" Color="#171F29" />
+    <SolidColorBrush x:Key="Surface0" Color="#060D14" />
+    <SolidColorBrush x:Key="Surface1" Color="#07101A" />
+    <SolidColorBrush x:Key="Surface2" Color="#0A1422" />
+    <SolidColorBrush x:Key="Surface3" Color="#0D1828" />
+    <!-- Вложенные панели (внутри карточек) -->
+    <SolidColorBrush x:Key="SurfaceInner" Color="#060D14" />
+    <SolidColorBrush x:Key="SurfaceInner2" Color="#0A131E" />
     <!-- Бордеры -->
-    <SolidColorBrush x:Key="PanelStroke" Color="#2A3645" />
-    <SolidColorBrush x:Key="PanelStrokeBright" Color="#35516A" />
-    <SolidColorBrush x:Key="PanelStrokeSubtle" Color="#1E2B38" />
+    <SolidColorBrush x:Key="PanelStroke" Color="#152233" />
+    <SolidColorBrush x:Key="PanelStrokeBright" Color="#22384F" />
+    <SolidColorBrush x:Key="PanelStrokeSubtle" Color="#111C28" />
     <!-- Текст -->
-    <SolidColorBrush x:Key="TextPrimary" Color="#F4F7FB" />
+    <SolidColorBrush x:Key="TextPrimary" Color="#E8F4FF" />
+    <SolidColorBrush x:Key="TextSecondary" Color="#D0E4F4" />
     <SolidColorBrush x:Key="TextMuted" Color="#8FA3B8" />
-    <SolidColorBrush x:Key="TextSoft" Color="#6E8196" />
+    <SolidColorBrush x:Key="TextSoft" Color="#5A7A94" />
+    <SolidColorBrush x:Key="TextDim" Color="#3D5A72" />
     <!-- Акценты -->
     <SolidColorBrush x:Key="Accent" Color="#21E6C1" />
-    <SolidColorBrush x:Key="AccentSoft" Color="#173D3D" />
+    <SolidColorBrush x:Key="AccentSoft" Color="#0E2A2A" />
     <SolidColorBrush x:Key="AccentBlue" Color="#5BC0FF" />
+    <SolidColorBrush x:Key="AccentPurple" Color="#A78BFA" />
     <!-- Статус -->
     <SolidColorBrush x:Key="Positive" Color="#3DDC84" />
     <SolidColorBrush x:Key="Negative" Color="#FF6B6B" />
     <SolidColorBrush x:Key="Warning" Color="#F4B860" />
 
     <!-- Устаревшие алиасы (обратная совместимость) -->
-    <SolidColorBrush x:Key="PanelBg" Color="#161E29" />
-    <SolidColorBrush x:Key="PanelBgAlt" Color="#0F1620" />
+    <SolidColorBrush x:Key="PanelBg" Color="#07101A" />
+    <SolidColorBrush x:Key="PanelBgAlt" Color="#060D14" />
   </Styles.Resources>
 
   <!-- ============================================================
        WINDOW
   ============================================================ -->
   <Style Selector="Window">
-    <Setter Property="Background">
-      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#071018" Offset="0" />
-        <GradientStop Color="#0E1622" Offset="1" />
-      </LinearGradientBrush>
-    </Setter>
+    <Setter Property="Background" Value="#060D14" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
     <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, Inter, Arial" />
   </Style>
@@ -59,8 +65,8 @@
   ============================================================ -->
 
   <Style Selector="Border.Surface0">
-    <Setter Property="Background" Value="#091018" />
-    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Background" Value="#060D14" />
+    <Setter Property="CornerRadius" Value="12" />
     <Setter Property="BorderBrush" Value="{DynamicResource PanelStrokeSubtle}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="Padding" Value="10" />
@@ -68,26 +74,18 @@
 
   <Style Selector="Border.Surface1">
     <Setter Property="Background" Value="{DynamicResource Surface1}" />
-    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="CornerRadius" Value="14" />
     <Setter Property="BorderBrush" Value="{DynamicResource PanelStroke}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="Padding" Value="14" />
   </Style>
 
   <Style Selector="Border.Surface2">
-    <Setter Property="Background">
-      <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#171F29" Offset="0" />
-        <GradientStop Color="#121922" Offset="1" />
-      </LinearGradientBrush>
-    </Setter>
-    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="Background" Value="#07101A" />
+    <Setter Property="CornerRadius" Value="14" />
     <Setter Property="BorderBrush" Value="{DynamicResource PanelStroke}" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="Padding" Value="18" />
-    <Setter Property="BoxShadow">
-      <BoxShadows>0 18 48 0 #33040A12</BoxShadows>
-    </Setter>
+    <Setter Property="Padding" Value="16" />
   </Style>
 
   <Style Selector="Border.Surface3">
@@ -122,21 +120,14 @@
     </Setter>
   </Style>
 
-  <!-- Алиасы для обратной совместимости с существующими View-файлами -->
+  <!-- Алиасы для обратной совместимости с существующими View-файлами.
+       Панель дашборда — плоская карточка в стиле референса. -->
   <Style Selector="Border.Panel">
-    <Setter Property="Background">
-      <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#171F29" Offset="0" />
-        <GradientStop Color="#121922" Offset="1" />
-      </LinearGradientBrush>
-    </Setter>
-    <Setter Property="CornerRadius" Value="18" />
-    <Setter Property="BorderBrush" Value="{DynamicResource PanelStroke}" />
+    <Setter Property="Background" Value="#07101A" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="BorderBrush" Value="#152233" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="Padding" Value="18" />
-    <Setter Property="BoxShadow">
-      <BoxShadows>0 18 48 0 #33040A12</BoxShadows>
-    </Setter>
+    <Setter Property="Padding" Value="14" />
   </Style>
 
   <Style Selector="Border.HeroPanel">
@@ -157,9 +148,9 @@
   </Style>
 
   <Style Selector="Border.SoftPanel">
-    <Setter Property="Background" Value="{DynamicResource Surface1}" />
-    <Setter Property="CornerRadius" Value="16" />
-    <Setter Property="BorderBrush" Value="#243241" />
+    <Setter Property="Background" Value="#07101A" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="BorderBrush" Value="#152233" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="Padding" Value="14" />
   </Style>
@@ -181,36 +172,52 @@
   </Style>
 
   <Style Selector="Border.SurfaceCard">
-    <Setter Property="Background" Value="{DynamicResource Surface1}" />
-    <Setter Property="CornerRadius" Value="16" />
-    <Setter Property="BorderBrush" Value="#26384A" />
+    <Setter Property="Background" Value="#07101A" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="BorderBrush" Value="#152233" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="Padding" Value="14" />
   </Style>
 
+  <!-- Сайдбар: плоская панель во всю высоту, только правая граница -->
   <Style Selector="Border.SidebarShell">
-    <Setter Property="Background">
-      <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#08111A" Offset="0" />
-        <GradientStop Color="#0A121D" Offset="1" />
-      </LinearGradientBrush>
-    </Setter>
-    <Setter Property="CornerRadius" Value="24" />
-    <Setter Property="BorderBrush" Value="#1E2B38" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="BoxShadow">
-      <BoxShadows>0 24 54 0 #33050A14</BoxShadows>
-    </Setter>
+    <Setter Property="Background" Value="#050C14" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="BorderBrush" Value="#0D1B27" />
+    <Setter Property="BorderThickness" Value="0,0,1,0" />
   </Style>
 
+  <!-- Топбар: плоская панель, только нижняя граница -->
   <Style Selector="Border.TopBarShell">
-    <Setter Property="Background" Value="#0B131D" />
-    <Setter Property="CornerRadius" Value="22" />
-    <Setter Property="BorderBrush" Value="#202E3C" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="BoxShadow">
-      <BoxShadows>0 18 44 0 #2A02070E</BoxShadows>
-    </Setter>
+    <Setter Property="Background" Value="#050C14" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="BorderBrush" Value="#0D1B27" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+  </Style>
+
+  <!-- Групповой заголовок в сайдбаре (TRADING, PORTFOLIO, …) -->
+  <Style Selector="TextBlock.SideNavGroup">
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="LetterSpacing" Value="1.4" />
+    <Setter Property="Foreground" Value="#4E7A96" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <!-- Тикер-элемент в топбаре -->
+  <Style Selector="Border.TickerItem">
+    <Setter Property="Padding" Value="12,0" />
+  </Style>
+
+  <!-- Пульсирующая точка статуса (CONNECTED / AI ON / сессия) -->
+  <Style Selector="Ellipse.PulseDot">
+    <Style.Animations>
+      <Animation Duration="0:0:1.8" IterationCount="INFINITE" Easing="SineEaseInOut">
+        <KeyFrame Cue="0%">   <Setter Property="Opacity" Value="1.0" /></KeyFrame>
+        <KeyFrame Cue="50%">  <Setter Property="Opacity" Value="0.3" /></KeyFrame>
+        <KeyFrame Cue="100%"> <Setter Property="Opacity" Value="1.0" /></KeyFrame>
+      </Animation>
+    </Style.Animations>
   </Style>
 
   <!-- ============================================================
@@ -282,41 +289,43 @@
   </Style>
 
   <Style Selector="Border.NavGlyph">
-    <Setter Property="Background" Value="#101C28" />
-    <Setter Property="BorderBrush" Value="#334659" />
+    <Setter Property="Background" Value="#07111A" />
+    <Setter Property="BorderBrush" Value="#132335" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="CornerRadius" Value="5" />
+  </Style>
+
+  <!-- Иконка меню: тонкая контурная (line-icon, как в примере).
+       Цвет наследуется от Foreground кнопки через привязку на каждой иконке. -->
+  <Style Selector="Path.NavIcon">
+    <Setter Property="StrokeThickness" Value="1.9" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="StrokeJoin" Value="Round" />
+    <Setter Property="Fill" Value="{x:Null}" />
   </Style>
 
   <Style Selector="Button.SideNavButton">
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-    <Setter Property="Padding" Value="10,11" />
-    <Setter Property="CornerRadius" Value="10" />
-    <Setter Property="BorderThickness" Value="1,0,0,0" />
+    <Setter Property="Padding" Value="8,7" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="BorderThickness" Value="0" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="Background" Value="Transparent" />
-    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="Foreground" Value="#5A7A94" />
     <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="MinHeight" Value="42" />
+    <Setter Property="MinHeight" Value="34" />
     <Setter Property="FontSize" Value="13" />
   </Style>
 
   <Style Selector="Button.SideNavButton:pointerover">
-    <Setter Property="Background" Value="#111E2B" />
-    <Setter Property="BorderBrush" Value="#1E3248" />
-    <Setter Property="Foreground" Value="#B8CCDE" />
+    <Setter Property="Background" Value="#0A1826" />
+    <Setter Property="Foreground" Value="#C8DCEF" />
   </Style>
 
-  <!-- Активный пункт меню — акцентная левая полоса -->
+  <!-- Активный пункт меню — плоская заливка -->
   <Style Selector="Button.SideNavButton.active">
-    <Setter Property="Background">
-      <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#14253A" Offset="0" />
-        <GradientStop Color="#0F1C2A" Offset="1" />
-      </LinearGradientBrush>
-    </Setter>
-    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
-    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    <Setter Property="Background" Value="#0B2030" />
+    <Setter Property="Foreground" Value="#D4EEFF" />
   </Style>
 
   <Style Selector="Button.SideUtilityButton">
@@ -1273,6 +1282,111 @@
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="999" />
     <Setter Property="Padding" Value="12,7" />
+  </Style>
+
+  <!-- ============================================================
+       ВИДЖЕТЫ ДАШБОРДА — общие стили в стиле референс-дизайна
+       (плоские тёмные карточки, моноширинные числа, бейджи)
+  ============================================================ -->
+
+  <!-- Заголовок виджета: мелкий, верхний регистр, приглушённый -->
+  <Style Selector="TextBlock.WidgetTitle">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="LetterSpacing" Value="1.2" />
+    <Setter Property="Foreground" Value="#8FA3B8" />
+  </Style>
+
+  <!-- Микро-подпись (метка над числом) -->
+  <Style Selector="TextBlock.StatLabel">
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="LetterSpacing" Value="0.8" />
+    <Setter Property="Foreground" Value="#5A7A94" />
+  </Style>
+
+  <!-- Моноширинное число (цены, объёмы) -->
+  <Style Selector="TextBlock.Mono">
+    <Setter Property="FontFamily" Value="Cascadia Code, Consolas, monospace" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+
+  <!-- Плоская стат-ячейка (внутри виджета) -->
+  <Style Selector="Border.StatCell">
+    <Setter Property="Background" Value="#060D14" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="BorderBrush" Value="#111C28" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="12,10" />
+  </Style>
+
+  <!-- Вложенная панель/таблица -->
+  <Style Selector="Border.InnerCard">
+    <Setter Property="Background" Value="#060D14" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="BorderBrush" Value="#111C28" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="10" />
+  </Style>
+
+  <!-- Бейдж-счётчик (напр. «8 coins») справа в шапке -->
+  <Style Selector="Border.CountBadge">
+    <Setter Property="Background" Value="#0A1422" />
+    <Setter Property="BorderBrush" Value="#152233" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Padding" Value="8,2" />
+  </Style>
+
+  <!-- Бейдж LIVE -->
+  <Style Selector="Border.LivePill">
+    <Setter Property="Background" Value="#0E2A2A" />
+    <Setter Property="BorderBrush" Value="#21E6C1" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Padding" Value="10,5" />
+  </Style>
+
+  <!-- Строка таблицы виджета (наведение подсвечивает) -->
+  <Style Selector="Border.WidgetRow">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="8,6" />
+  </Style>
+  <Style Selector="Border.WidgetRow:pointerover">
+    <Setter Property="Background" Value="#0B1626" />
+  </Style>
+
+  <!-- Кнопка таймфрейма графика (компактная) -->
+  <Style Selector="Button.TfButton">
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="MinHeight" Value="26" />
+    <Setter Property="Height" Value="26" />
+    <Setter Property="Padding" Value="10,0" />
+    <Setter Property="CornerRadius" Value="7" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Background" Value="#0A1422" />
+    <Setter Property="BorderBrush" Value="#152233" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Foreground" Value="#8FA3B8" />
+  </Style>
+  <Style Selector="Button.TfButton.active">
+    <Setter Property="Background" Value="#0E2A2A" />
+    <Setter Property="BorderBrush" Value="#21E6C1" />
+    <Setter Property="Foreground" Value="#21E6C1" />
+  </Style>
+
+  <!-- Маленькая «таблеточная» кнопка действия в виджете (Trade/Watch) -->
+  <Style Selector="Button.MiniPill">
+    <Setter Property="MinHeight" Value="24" />
+    <Setter Property="Padding" Value="10,3" />
+    <Setter Property="CornerRadius" Value="7" />
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Background" Value="#0A1422" />
+    <Setter Property="BorderBrush" Value="#22384F" />
+    <Setter Property="BorderThickness" Value="1" />
   </Style>
 
 </Styles>

@@ -8,7 +8,7 @@
 
     <!-- KPI cards -->
     <Grid ColumnDefinitions="*,*,*,*,*,*" ColumnSpacing="6">
-      <Border Grid.Column="0" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border Grid.Column="0" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="P&amp;L" Foreground="#5A7A90" FontSize="9" />
           <TextBlock Text="{Binding PnlDashboardVM.TotalPnlLabel}"
@@ -16,32 +16,32 @@
                      FontSize="13" FontWeight="SemiBold" />
         </StackPanel>
       </Border>
-      <Border Grid.Column="1" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border Grid.Column="1" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="WIN RATE" Foreground="#5A7A90" FontSize="9" />
           <TextBlock Text="{Binding PnlDashboardVM.WinRateLabel}" Foreground="#21E6C1" FontSize="13" FontWeight="SemiBold" />
           <TextBlock Text="{Binding PnlDashboardVM.TradeCountLabel}" Foreground="#4D5F70" FontSize="9" />
         </StackPanel>
       </Border>
-      <Border Grid.Column="2" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border Grid.Column="2" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="AVG WIN" Foreground="#5A7A90" FontSize="9" />
           <TextBlock Text="{Binding PnlDashboardVM.AvgWinLabel}" Foreground="#3DDC84" FontSize="13" FontWeight="SemiBold" />
         </StackPanel>
       </Border>
-      <Border Grid.Column="3" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border Grid.Column="3" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="AVG LOSS" Foreground="#5A7A90" FontSize="9" />
           <TextBlock Text="{Binding PnlDashboardVM.AvgLossLabel}" Foreground="#FF5D73" FontSize="13" FontWeight="SemiBold" />
         </StackPanel>
       </Border>
-      <Border Grid.Column="4" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border Grid.Column="4" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="DRAWDOWN" Foreground="#5A7A90" FontSize="9" />
           <TextBlock Text="{Binding PnlDashboardVM.MaxDrawdownLabel}" Foreground="#F4B860" FontSize="13" FontWeight="SemiBold" />
         </StackPanel>
       </Border>
-      <Border Grid.Column="5" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border Grid.Column="5" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="PROFIT F." Foreground="#5A7A90" FontSize="9" />
           <TextBlock Text="{Binding PnlDashboardVM.ProfitFactorLabel}" Foreground="#A78BFA" FontSize="13" FontWeight="SemiBold" />
@@ -50,7 +50,7 @@
     </Grid>
 
     <!-- Equity curve mini canvas -->
-    <Border Background="#070F18" CornerRadius="4" Height="80"
+    <Border Background="#060D14" CornerRadius="4" Height="80"
             IsVisible="{Binding PnlDashboardVM.EquityCurveHasData}">
       <Canvas Width="560" Height="70" VerticalAlignment="Center" HorizontalAlignment="Left">
         <Path Fill="#33FF5D73" Stroke="Transparent"
@@ -65,7 +65,7 @@
               Data="{Binding PnlDashboardVM.EquityCurvePathData}" />
       </Canvas>
     </Border>
-    <Border Background="#070F18" CornerRadius="4" Height="40"
+    <Border Background="#060D14" CornerRadius="4" Height="40"
             IsVisible="{Binding PnlDashboardVM.EquityCurveIsEmpty}">
       <TextBlock Text="No trade data yet."
                  Foreground="#2A3D4F" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" />

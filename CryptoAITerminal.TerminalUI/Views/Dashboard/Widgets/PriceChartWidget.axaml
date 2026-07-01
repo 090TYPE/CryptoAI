@@ -5,18 +5,73 @@
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.PriceChartWidget"
              x:DataType="vm:MainWindowViewModel"
              x:CompileBindings="False">
-  <Border Classes="SoftPanel">
-    <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
-      <TextBlock Grid.Row="0" Classes="H2" Text="Live Price Chart" />
-      <ctrl:CexPriceChart Grid.Row="1"
-                          Height="240"
-                          HorizontalAlignment="Stretch"
-                          VerticalAlignment="Stretch"
+  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="10">
+
+    <!-- Symbol + timeframe toolbar -->
+    <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
+      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <TextBlock Text="{Binding SelectedMarket.DisplaySymbol}" Foreground="#E8F4FF"
+                   FontWeight="Bold" FontSize="14" />
+        <TextBlock Classes="Mono" Text="{Binding SelectedMarket.LastPrice, StringFormat='{}{0:N2}'}"
+                   Foreground="#21E6C1" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" />
+        <TextBlock Text="{Binding SelectedMarket.ChangePercentLabel}"
+                   Foreground="{Binding SelectedMarket.ChangeBrush}" FontSize="12"
+                   FontWeight="SemiBold" VerticalAlignment="Center" />
+      </StackPanel>
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+        <Button Classes="TfButton" Content="1m"  Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1M"
+                Background="{Binding Timeframe1MBackground}"  Foreground="{Binding Timeframe1MForeground}" />
+        <Button Classes="TfButton" Content="5m"  Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="5M"
+                Background="{Binding Timeframe5MBackground}"  Foreground="{Binding Timeframe5MForeground}" />
+        <Button Classes="TfButton" Content="15m" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="15M"
+                Background="{Binding Timeframe15MBackground}" Foreground="{Binding Timeframe15MForeground}" />
+        <Button Classes="TfButton" Content="1H"  Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1H"
+                Background="{Binding Timeframe1HBackground}"  Foreground="{Binding Timeframe1HForeground}" />
+        <Button Classes="TfButton" Content="4H"  Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="4H"
+                Background="{Binding Timeframe4HBackground}"  Foreground="{Binding Timeframe4HForeground}" />
+        <Button Classes="TfButton" Content="1D"  Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1D"
+                Background="{Binding Timeframe1DBackground}"  Foreground="{Binding Timeframe1DForeground}" />
+      </StackPanel>
+    </Grid>
+
+    <!-- Chart -->
+    <Border Grid.Row="1" Background="#060D14" BorderBrush="#111C28" BorderThickness="1"
+            CornerRadius="10" Padding="6">
+      <ctrl:CexPriceChart HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                           Points="{Binding SelectedMarket.ChartPoints}"
                           IsPositiveTrend="{Binding SelectedMarket.IsPositiveTrend}" />
-      <TextBlock Grid.Row="2"
-                 Text="{Binding SelectedMarket.LastUpdated, StringFormat=Last tick: {0:dd.MM.yyyy HH:mm:ss}}"
-                 Foreground="#8B949E" />
+    </Border>
+
+    <!-- Metric chips -->
+    <Grid Grid.Row="2" ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
+      <Border Classes="StatCell" Grid.Column="0" Padding="10,7">
+        <StackPanel Spacing="1">
+          <TextBlock Classes="StatLabel" Text="24H HIGH" />
+          <TextBlock Classes="Mono" FontSize="12" FontWeight="SemiBold" Foreground="#3DDC84"
+                     Text="{Binding ChartHighLabel}" />
+        </StackPanel>
+      </Border>
+      <Border Classes="StatCell" Grid.Column="1" Padding="10,7">
+        <StackPanel Spacing="1">
+          <TextBlock Classes="StatLabel" Text="24H LOW" />
+          <TextBlock Classes="Mono" FontSize="12" FontWeight="SemiBold" Foreground="#FF6B6B"
+                     Text="{Binding ChartLowLabel}" />
+        </StackPanel>
+      </Border>
+      <Border Classes="StatCell" Grid.Column="2" Padding="10,7">
+        <StackPanel Spacing="1">
+          <TextBlock Classes="StatLabel" Text="VOLUME" />
+          <TextBlock Classes="Mono" FontSize="12" FontWeight="SemiBold" Foreground="#5BC0FF"
+                     Text="{Binding ChartVolumeLabel}" />
+        </StackPanel>
+      </Border>
+      <Border Classes="StatCell" Grid.Column="3" Padding="10,7">
+        <StackPanel Spacing="1">
+          <TextBlock Classes="StatLabel" Text="LAST TICK" />
+          <TextBlock Classes="Mono" FontSize="12" FontWeight="SemiBold" Foreground="#8FA3B8"
+                     Text="{Binding SelectedMarket.UpdatedLabel}" />
+        </StackPanel>
+      </Border>
     </Grid>
-  </Border>
+  </Grid>
 </UserControl>

@@ -2735,6 +2735,30 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         IsLogoutSectionVisible;
     public string CurrentSectionTitle => GetCurrentWorkspaceTitle();
     public string CurrentSectionDescription => GetCurrentWorkspaceDescription();
+
+    // ── Collapsible sidebar ─────────────────────────────────────────────
+    private bool _isSidebarCollapsed;
+    public bool IsSidebarCollapsed
+    {
+        get => _isSidebarCollapsed;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isSidebarCollapsed, value);
+            this.RaisePropertyChanged(nameof(IsSidebarLabelsVisible));
+            this.RaisePropertyChanged(nameof(SidebarWidth));
+            this.RaisePropertyChanged(nameof(SidebarToggleGlyph));
+        }
+    }
+
+    /// <summary>Labels/group headers/logo text are hidden when the sidebar is collapsed to icons.</summary>
+    public bool IsSidebarLabelsVisible => !_isSidebarCollapsed;
+
+    /// <summary>Animated width of the sidebar rail (icons-only vs full).</summary>
+    public double SidebarWidth => _isSidebarCollapsed ? 66.0 : 200.0;
+
+    /// <summary>Chevron glyph for the collapse toggle.</summary>
+    public string SidebarToggleGlyph => _isSidebarCollapsed ? "»" : "«";
+
     public string CurrentSectionRoadmap => GetCurrentWorkspaceRoadmap();
     public string RiskRuntimeStatusLabel => WalletVM.GlobalPaperOnlyMode ? "Protected by paper mode" : "Live risk guard active";
     public string RiskRuntimeStatusBrush => WalletVM.GlobalPaperOnlyMode ? "#F4B860" : "#3DDC84";
@@ -7110,10 +7134,10 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         SelectedTabIndex == tabIndex && !IsPlaceholderSectionVisible ? "#21E6C1" : "#7A96AF";
 
     private string GetShellSectionBackground(string sectionKey) =>
-        string.Equals(_selectedShellSection, sectionKey, StringComparison.OrdinalIgnoreCase) ? "#12293A" : "Transparent";
+        string.Equals(_selectedShellSection, sectionKey, StringComparison.OrdinalIgnoreCase) ? "#0B2030" : "Transparent";
 
     private string GetShellSectionForeground(string sectionKey) =>
-        string.Equals(_selectedShellSection, sectionKey, StringComparison.OrdinalIgnoreCase) ? "#21E6C1" : "#7A96AF";
+        string.Equals(_selectedShellSection, sectionKey, StringComparison.OrdinalIgnoreCase) ? "#D4EEFF" : "#5A7A94";
 
     private static string NormalizeSectionKey(string? raw) => raw?.Trim().ToLowerInvariant() switch
     {

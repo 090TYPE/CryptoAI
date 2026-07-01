@@ -8,7 +8,7 @@
 
     <!-- Active session + live route KPIs -->
     <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-      <Border Grid.Column="0" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1"
+      <Border Grid.Column="0" Background="#060D14" BorderBrush="#111C28" BorderThickness="1"
               CornerRadius="6" Padding="10,8">
         <StackPanel Spacing="4">
           <TextBlock Text="Active Session" Foreground="#8B949E" FontSize="10" />
@@ -19,7 +19,7 @@
                      FontSize="11" FontWeight="SemiBold" />
         </StackPanel>
       </Border>
-      <Border Grid.Column="1" Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1"
+      <Border Grid.Column="1" Background="#060D14" BorderBrush="#111C28" BorderThickness="1"
               CornerRadius="6" Padding="10,8">
         <StackPanel Spacing="4">
           <TextBlock Text="Native Balance" Foreground="#8B949E" FontSize="10" />
@@ -33,7 +33,7 @@
     </Grid>
 
     <!-- Portfolio Lens assets -->
-    <Border Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="6" Padding="10,8">
+    <Border Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="6" Padding="10,8">
       <StackPanel Spacing="6">
         <TextBlock Text="Portfolio Lens" Foreground="#8B949E" FontSize="10" FontWeight="Bold" />
         <ScrollViewer VerticalScrollBarVisibility="Auto">

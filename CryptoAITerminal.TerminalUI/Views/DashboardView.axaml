@@ -8,10 +8,22 @@
              x:DataType="vm:MainWindowViewModel"
              x:CompileBindings="False">
   <DockPanel LastChildFill="True">
-    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,0,0,12">
-      <TextBlock Grid.Column="0" Classes="H1" Text="Dashboard" VerticalAlignment="Center" />
-      <Button Grid.Column="1" Content="+ Добавить виджет" Margin="0,0,8,0"
-              IsVisible="{Binding DashboardLayoutVM.IsEditMode}">
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto,Auto" Margin="0,0,0,16">
+      <StackPanel Grid.Column="0" Spacing="4" VerticalAlignment="Center">
+        <TextBlock Classes="H1" Text="Dashboard" />
+        <TextBlock Classes="StatLabel"
+                   Text="{Binding DashboardLayoutVM.Widgets.Count, StringFormat='DEFAULT LAYOUT · {0} WIDGETS'}" />
+      </StackPanel>
+
+      <!-- LIVE indicator -->
+      <Border Grid.Column="1" Classes="LivePill" Margin="0,0,10,0" VerticalAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <Ellipse Width="7" Height="7" Fill="#21E6C1" VerticalAlignment="Center" />
+          <TextBlock Text="LIVE" Foreground="#21E6C1" FontSize="11" FontWeight="Bold" LetterSpacing="0.8" />
+        </StackPanel>
+      </Border>
+
+      <Button Grid.Column="2" Content="+ Widget" Margin="0,0,8,0" VerticalAlignment="Center">
         <Button.Flyout>
           <Flyout Placement="Bottom">
             <ScrollViewer MaxHeight="360">
@@ -31,10 +43,10 @@
           </Flyout>
         </Button.Flyout>
       </Button>
-      <Button Grid.Column="2" Content="↺ Сброс" Margin="0,0,8,0"
+      <Button Grid.Column="3" Content="↺ Reset" Margin="0,0,8,0" VerticalAlignment="Center"
               IsVisible="{Binding DashboardLayoutVM.IsEditMode}"
               Command="{Binding DashboardLayoutVM.ResetLayoutCommand}" />
-      <Button Grid.Column="3" Content="✎ Edit"
+      <Button Grid.Column="4" Content="✎ Edit Layout" Classes="AccentButton" VerticalAlignment="Center"
               Command="{Binding DashboardLayoutVM.ToggleEditCommand}" />
     </Grid>
 

@@ -7,12 +7,14 @@
              x:CompileBindings="False">
   <Border Classes="Panel" Margin="0">
     <Grid RowDefinitions="Auto,*">
-      <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,0,0,6">
+      <Grid Grid.Row="0" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,0,0,10">
         <TextBlock Grid.Column="0" x:Name="DragHandle" Text="☰" Margin="0,0,8,0"
                    Foreground="#8FA3B8" Cursor="SizeAll"
                    IsVisible="{Binding $parent[dash:WidgetHost].IsEditMode}" />
-        <TextBlock Grid.Column="1" Text="{Binding Title}" Classes="H2" VerticalAlignment="Center" />
-        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="3" Margin="0,0,6,0"
+        <Border Grid.Column="1" Width="3" Height="13" CornerRadius="2" Background="#21E6C1"
+                Margin="0,0,9,0" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="2" Text="{Binding Title}" Classes="WidgetTitle" VerticalAlignment="Center" />
+        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="3" Margin="0,0,6,0"
                     IsVisible="{Binding $parent[dash:WidgetHost].IsEditMode}">
           <Button Content="W−" FontSize="11" Padding="6,2" ToolTip.Tip="Уже"
                   Command="{Binding $parent[ItemsControl].DataContext.DashboardLayoutVM.NarrowCommand}"
@@ -27,7 +29,7 @@
                   Command="{Binding $parent[ItemsControl].DataContext.DashboardLayoutVM.TallerCommand}"
                   CommandParameter="{Binding}" />
         </StackPanel>
-        <Button Grid.Column="3" Content="✕" Classes="GhostButton"
+        <Button Grid.Column="4" Content="✕" Classes="GhostButton"
                 IsVisible="{Binding $parent[dash:WidgetHost].IsEditMode}"
                 Command="{Binding $parent[ItemsControl].DataContext.DashboardLayoutVM.RemoveWidgetCommand}"
                 CommandParameter="{Binding}" />

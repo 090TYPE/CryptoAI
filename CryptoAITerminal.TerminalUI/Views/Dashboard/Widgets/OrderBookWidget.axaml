@@ -4,49 +4,72 @@
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.OrderBookWidget"
              x:DataType="vm:MainWindowViewModel"
              x:CompileBindings="False">
-  <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
-    <Border Classes="Panel" Grid.Column="0">
-      <StackPanel Spacing="8">
-        <TextBlock Classes="H2" Text="Bids" />
-        <ScrollViewer Classes="PageScroll" MaxHeight="240">
-          <ItemsControl ItemsSource="{Binding SelectedMarket.BidLevels}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
-                <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock Grid.Column="0"
-                             Text="{Binding Price, StringFormat=$ {0:N4}}"
-                             Foreground="#3DDC84" />
-                  <TextBlock Grid.Column="1"
-                             Text="{Binding Quantity, StringFormat={}{0:N4}}"
-                             Foreground="#8B949E" />
-                </Grid>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-        </ScrollViewer>
-      </StackPanel>
-    </Border>
+  <Grid RowDefinitions="Auto,*">
 
-    <Border Classes="Panel" Grid.Column="1">
-      <StackPanel Spacing="8">
-        <TextBlock Classes="H2" Text="Asks" />
-        <ScrollViewer Classes="PageScroll" MaxHeight="240">
-          <ItemsControl ItemsSource="{Binding SelectedMarket.AskLevels}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
-                <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock Grid.Column="0"
-                             Text="{Binding Price, StringFormat=$ {0:N4}}"
-                             Foreground="#FF6B6B" />
-                  <TextBlock Grid.Column="1"
-                             Text="{Binding Quantity, StringFormat={}{0:N4}}"
-                             Foreground="#8B949E" />
+    <!-- Column header -->
+    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="8,0,8,6">
+      <TextBlock Grid.Column="0" Text="PRICE (USDT)" Classes="StatLabel" />
+      <TextBlock Grid.Column="1" Text="SIZE" Classes="StatLabel" />
+    </Grid>
+
+    <ScrollViewer Grid.Row="1" Classes="PageScroll">
+      <StackPanel Spacing="0">
+
+        <!-- Asks (highest → best ask nearest mid) -->
+        <ItemsControl ItemsSource="{Binding SelectedMarket.TopAsks}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
+              <Grid Height="20">
+                <Rectangle Fill="#22FF6B6B" Width="{Binding DepthWidth}" RadiusX="3" RadiusY="3"
+                           HorizontalAlignment="Right" Margin="0,1" />
+                <Grid ColumnDefinitions="*,Auto" Margin="8,0">
+                  <TextBlock Grid.Column="0" Classes="Mono" FontSize="11" Foreground="#FF6B6B"
+                             VerticalAlignment="Center"
+                             Text="{Binding Price, StringFormat='{}{0:N2}'}" />
+                  <TextBlock Grid.Column="1" Classes="Mono" FontSize="11" Foreground="#8FA3B8"
+                             VerticalAlignment="Center"
+                             Text="{Binding Quantity, StringFormat='{}{0:N4}'}" />
                 </Grid>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-        </ScrollViewer>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- Mid price band -->
+        <Border Background="#0C1E22" BorderBrush="#173B3B" BorderThickness="0,1"
+                Padding="8,7" Margin="0,3">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Grid.Column="0" Classes="Mono" FontSize="16" FontWeight="Bold" Foreground="#21E6C1"
+                       Text="{Binding SelectedMarket.MidPrice, StringFormat='{}{0:N2}'}" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+              <TextBlock Text="MID" Foreground="#5A7A94" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
+              <TextBlock Classes="Mono" FontSize="10" Foreground="#8FA3B8" VerticalAlignment="Center"
+                         Text="{Binding SelectedMarket.SpreadPercentLabel}" />
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <!-- Bids (best bid first) -->
+        <ItemsControl ItemsSource="{Binding SelectedMarket.TopBids}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
+              <Grid Height="20">
+                <Rectangle Fill="#223DDC84" Width="{Binding DepthWidth}" RadiusX="3" RadiusY="3"
+                           HorizontalAlignment="Right" Margin="0,1" />
+                <Grid ColumnDefinitions="*,Auto" Margin="8,0">
+                  <TextBlock Grid.Column="0" Classes="Mono" FontSize="11" Foreground="#3DDC84"
+                             VerticalAlignment="Center"
+                             Text="{Binding Price, StringFormat='{}{0:N2}'}" />
+                  <TextBlock Grid.Column="1" Classes="Mono" FontSize="11" Foreground="#8FA3B8"
+                             VerticalAlignment="Center"
+                             Text="{Binding Quantity, StringFormat='{}{0:N4}'}" />
+                </Grid>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
       </StackPanel>
-    </Border>
+    </ScrollViewer>
   </Grid>
 </UserControl>

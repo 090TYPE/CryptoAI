@@ -276,6 +276,15 @@ public class CexMarketItemViewModel : ReactiveObject
     public ObservableCollection<OrderBookLevelViewModel> BidLevels { get; } = [];
     public ObservableCollection<OrderBookLevelViewModel> AskLevels { get; } = [];
 
+    /// <summary>Best 9 bids, highest first — for the dashboard order-book ladder.</summary>
+    public IEnumerable<OrderBookLevelViewModel> TopBids => BidLevels.Take(9);
+
+    /// <summary>Best 9 asks, arranged highest→lowest so the best ask sits next to the mid price.</summary>
+    public IEnumerable<OrderBookLevelViewModel> TopAsks => AskLevels.Take(9).Reverse();
+
+    /// <summary>Mid price for the order-book ladder header.</summary>
+    public decimal MidPrice => BestBid > 0 && BestAsk > 0 ? (BestBid + BestAsk) / 2m : LastPrice;
+
     public string ChartPolylinePoints => string.Join(
         ' ',
         ChartPoints.Select(point =>
@@ -331,7 +340,19 @@ public class CexMarketItemViewModel : ReactiveObject
                 .Select(level => new OrderBookLevelViewModel(level.Price, level.Quantity)));
 
         ApplyWallHighlighting();
+        SetDepthFractions();
         RaiseDerivedState();
+    }
+
+    /// <summary>Normalise each level's size against the largest visible level for depth bars.</summary>
+    private void SetDepthFractions()
+    {
+        decimal maxQty = 0m;
+        foreach (var level in BidLevels.Take(9)) if (level.Quantity > maxQty) maxQty = level.Quantity;
+        foreach (var level in AskLevels.Take(9)) if (level.Quantity > maxQty) maxQty = level.Quantity;
+        if (maxQty <= 0m) maxQty = 1m;
+        foreach (var level in BidLevels) level.DepthFraction = (double)(level.Quantity / maxQty);
+        foreach (var level in AskLevels) level.DepthFraction = (double)(level.Quantity / maxQty);
     }
 
     private void ApplyWallHighlighting()
@@ -445,6 +466,9 @@ public class CexMarketItemViewModel : ReactiveObject
         this.RaisePropertyChanged(nameof(TrendBrush));
         this.RaisePropertyChanged(nameof(UpdatedLabel));
         this.RaisePropertyChanged(nameof(ChangeBrush));
+        this.RaisePropertyChanged(nameof(TopBids));
+        this.RaisePropertyChanged(nameof(TopAsks));
+        this.RaisePropertyChanged(nameof(MidPrice));
     }
 
     private IReadOnlyList<PriceSample> GetVisibleHistory()
@@ -516,6 +540,21 @@ public class OrderBookLevelViewModel : ReactiveObject
     public decimal Price { get; }
     public decimal Quantity { get; }
     public decimal Notional => Price * Quantity;
+
+    private double _depthFraction;
+    /// <summary>Size of this level relative to the largest visible level (0..1), for depth bars.</summary>
+    public double DepthFraction
+    {
+        get => _depthFraction;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _depthFraction, value);
+            this.RaisePropertyChanged(nameof(DepthWidth));
+        }
+    }
+
+    /// <summary>Depth-bar width in pixels (nominal 220px track).</summary>
+    public double DepthWidth => Math.Max(2d, DepthFraction * 220d);
 
     public bool IsSelected
     {

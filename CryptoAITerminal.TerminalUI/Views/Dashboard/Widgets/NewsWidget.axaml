@@ -7,7 +7,7 @@
   <StackPanel Spacing="8">
 
     <!-- AI Market Pulse summary -->
-    <Border Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1"
+    <Border Background="#060D14" BorderBrush="#111C28" BorderThickness="1"
             CornerRadius="6" Padding="10,8">
       <Grid ColumnDefinitions="Auto,*">
         <Border Grid.Column="0" Background="{Binding NewsFeedVM.PulseBrush}" CornerRadius="3" Padding="6,2">
