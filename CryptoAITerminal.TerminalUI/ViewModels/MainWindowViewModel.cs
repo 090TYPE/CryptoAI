@@ -311,7 +311,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         DcaBotVM = new DcaBotViewModel(_gateway, _bybitSpotGateway, _okxSpotGateway, _kucoinSpotGateway);
         DexTradingVM = new DexTradingViewModel(WalletVM);
         DexDeskVM = new DexDeskViewModel(DexTradingVM);
-        TradeAssistantVM = new AiTradeAssistantViewModel("CEX", () => TradingCandles, () => CurrentTradePrice, ApplyCexTradeSetup);
+        TradeAssistantVM = new AiTradeAssistantViewModel("CEX", () => TradingCandles, () => CurrentTradePrice, ApplyCexTradeSetup, armAlerts: ArmCexSetupAlerts);
         SniperVM = new SniperViewModel(WalletVM, _gateway, _futuresGateway, DefaultSymbols);
         _telegram = new TelegramNotificationService();
         _discord  = new DiscordWebhookNotificationService();
@@ -3450,6 +3450,34 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
 
         AddLog($"AI assistant applied {setup.Bias} setup — entry {setup.Entry}, TP {setup.TakeProfit}, SL {setup.StopLoss}, {setup.Leverage}x.");
+    }
+
+    /// <summary>Arm price alerts at the assistant setup's entry / target / stop.</summary>
+    private void ArmCexSetupAlerts(TradeSetup setup)
+    {
+        var symbol = SelectedTradingSymbol;
+        if (string.IsNullOrWhiteSpace(symbol))
+        {
+            return;
+        }
+
+        ArmSetupAlert(symbol, setup.Entry);
+        ArmSetupAlert(symbol, setup.TakeProfit);
+        ArmSetupAlert(symbol, setup.StopLoss);
+        AddLog($"Armed entry/TP/SL alerts for {symbol} from the AI setup.");
+    }
+
+    private void ArmSetupAlert(string symbol, decimal price)
+    {
+        if (price <= 0m)
+        {
+            return;
+        }
+
+        AlertsVM.NewAlertSymbol = symbol;
+        AlertsVM.NewAlertThreshold = price;
+        AlertsVM.SelectedCondition = price >= CurrentTradePrice ? "PriceAbove" : "PriceBelow";
+        AlertsVM.AddAlertCommand.Execute().Subscribe();
     }
     public SniperViewModel SniperVM { get; }
     public BacktestViewModel BacktestVM { get; }

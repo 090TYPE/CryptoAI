@@ -26,6 +26,7 @@ public sealed class AiTradeAssistantViewModel : ReactiveObject
     private readonly Func<decimal> _price;
     private readonly Func<decimal> _equity;
     private readonly Action<TradeSetup> _apply;
+    private readonly Action<TradeSetup>? _armAlerts;
     private readonly string _venueLabel;
     private readonly MarketInsightAiService _ai = new();
     private readonly DispatcherTimer _watchTimer;
@@ -39,6 +40,7 @@ public sealed class AiTradeAssistantViewModel : ReactiveObject
     private bool _riskOverridePrimed;
     private TradeSetup? _setup;
     private PreTradeRiskResult? _risk;
+    private TradeBacktestResult? _backtest;
     private string _statusMessage;
 
     public AiTradeAssistantViewModel(
@@ -46,13 +48,15 @@ public sealed class AiTradeAssistantViewModel : ReactiveObject
         Func<IReadOnlyList<DexOhlcvPoint>> candles,
         Func<decimal> price,
         Action<TradeSetup> apply,
-        Func<decimal>? equity = null)
+        Func<decimal>? equity = null,
+        Action<TradeSetup>? armAlerts = null)
     {
         _venueLabel = venueLabel;
         _candles = candles;
         _price = price;
         _equity = equity ?? (() => 0m);
         _apply = apply;
+        _armAlerts = armAlerts;
         _statusMessage = $"Tell me what you want, then Analyze the {venueLabel} chart.";
 
         SelectRiskCommand = ReactiveCommand.Create<string>(v => { if (!string.IsNullOrWhiteSpace(v)) RiskProfile = v; }, outputScheduler: App.UiScheduler);
@@ -61,6 +65,8 @@ public sealed class AiTradeAssistantViewModel : ReactiveObject
         AnalyzeCommand = ReactiveCommand.CreateFromTask(AnalyzeAsync, outputScheduler: App.UiScheduler);
         ApplyCommand = ReactiveCommand.Create(ApplySetup, outputScheduler: App.UiScheduler);
         ToggleWatchCommand = ReactiveCommand.Create(ToggleWatch, outputScheduler: App.UiScheduler);
+        BacktestCommand = ReactiveCommand.Create(RunBacktest, outputScheduler: App.UiScheduler);
+        ArmAlertsCommand = ReactiveCommand.Create(ArmAlerts, outputScheduler: App.UiScheduler);
 
         _watchTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(6) };
         _watchTimer.Tick += async (_, _) => await AnalyzeAsync();
@@ -97,6 +103,52 @@ public sealed class AiTradeAssistantViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> AnalyzeCommand { get; }
     public ReactiveCommand<Unit, Unit> ApplyCommand { get; }
     public ReactiveCommand<Unit, Unit> ToggleWatchCommand { get; }
+    public ReactiveCommand<Unit, Unit> BacktestCommand { get; }
+    public ReactiveCommand<Unit, Unit> ArmAlertsCommand { get; }
+
+    public bool CanArmAlerts => _armAlerts is not null;
+
+    private void RunBacktest()
+    {
+        var candles = _candles() ?? Array.Empty<DexOhlcvPoint>();
+        var result = AiTradeSetupBacktester.Run(candles, ParseRisk(_riskProfile), ParseHorizon(_horizon), ParseBias(_biasMode));
+        Backtest = result;
+        StatusMessage = result.Summary;
+    }
+
+    private void ArmAlerts()
+    {
+        if (_setup is null)
+        {
+            StatusMessage = "Analyze a setup first, then arm alerts.";
+            return;
+        }
+        if (_armAlerts is null)
+        {
+            return;
+        }
+
+        _armAlerts(_setup);
+        StatusMessage = "Armed price alerts at entry / target / stop.";
+    }
+
+    public TradeBacktestResult? Backtest
+    {
+        get => _backtest;
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _backtest, value);
+            this.RaisePropertyChanged(nameof(HasBacktest));
+            this.RaisePropertyChanged(nameof(BacktestSummary));
+            this.RaisePropertyChanged(nameof(BacktestWinRateLabel));
+            this.RaisePropertyChanged(nameof(BacktestExpectancyLabel));
+        }
+    }
+
+    public bool HasBacktest => _backtest is { Trades: > 0 };
+    public string BacktestSummary => _backtest?.Summary ?? string.Empty;
+    public string BacktestWinRateLabel => _backtest is null ? "--" : $"{_backtest.WinRate:P0}";
+    public string BacktestExpectancyLabel => _backtest is null ? "--" : $"{_backtest.Expectancy:+0.00;-0.00;0.00}R";
 
     private void ToggleWatch()
     {

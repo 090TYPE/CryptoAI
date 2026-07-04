@@ -69,6 +69,15 @@
 
       <Button Content="✦ ANALYZE CHART" Classes="TdPrimary dex" Height="38" Command="{Binding AnalyzeCommand}" />
 
+      <!-- Backtest the current rules over history -->
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+        <Button Grid.Column="0" Content="BACKTEST" Classes="TdSeg" Command="{Binding BacktestCommand}" Padding="10,5" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" IsVisible="{Binding HasBacktest}">
+          <TextBlock Text="{Binding BacktestWinRateLabel, StringFormat=win {0}}" Foreground="#3ddc84" FontSize="10" FontWeight="Bold" />
+          <TextBlock Text="{Binding BacktestExpectancyLabel}" Foreground="#a855f7" FontSize="10" FontWeight="Bold" />
+        </StackPanel>
+      </Grid>
+
       <!-- Result -->
       <Border Background="#07111a" BorderBrush="#1e2f45" BorderThickness="1" CornerRadius="8" Padding="10" IsVisible="{Binding HasSetup}">
         <StackPanel Spacing="7">
@@ -123,7 +132,11 @@
           <TextBlock Text="{Binding RationaleText}" Foreground="#8fa3b8" FontSize="10" TextWrapping="Wrap" LineHeight="15" />
           <TextBlock Text="{Binding RationaleSourceLabel}" Foreground="#5a7a94" FontSize="9" />
 
-          <Button Content="APPLY TO TICKET" Classes="TdPrimary dex" Height="34" Command="{Binding ApplyCommand}" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+            <Button Grid.Column="0" Content="APPLY TO TICKET" Classes="TdPrimary dex" Height="34" Command="{Binding ApplyCommand}" />
+            <Button Grid.Column="1" Content="⚑" Classes="TdSeg dex" Width="42" Height="34" Command="{Binding ArmAlertsCommand}"
+                    IsVisible="{Binding CanArmAlerts}" ToolTip.Tip="Arm price alerts at entry / target / stop" />
+          </Grid>
         </StackPanel>
       </Border>
 
