@@ -1583,7 +1583,15 @@
               <!-- Exchange selector (Hyperliquid / dYdX / GMX / Uniswap / Vertex) -->
               <Border Background="#0a0616" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="8" Padding="8">
                 <StackPanel Spacing="7">
-                  <TextBlock Classes="TdLabel" Text="EXCHANGE" />
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Classes="TdLabel" Text="EXCHANGE" VerticalAlignment="Center" />
+                    <Border Grid.Column="1" Background="#07221a" BorderBrush="#0e3a2a" BorderThickness="1" CornerRadius="999" Padding="7,1">
+                      <StackPanel Orientation="Horizontal" Spacing="4">
+                        <Ellipse Width="5" Height="5" Fill="#3ddc84" VerticalAlignment="Center" IsVisible="{Binding DexDeskVM.SelectedExchangeIsLive}" />
+                        <TextBlock Text="{Binding DexDeskVM.SelectedExchangeFeedLabel}" Foreground="#3ddc84" FontSize="8" FontWeight="Bold" />
+                      </StackPanel>
+                    </Border>
+                  </Grid>
                   <ItemsControl ItemsSource="{Binding DexDeskVM.Exchanges}">
                     <ItemsControl.ItemsPanel>
                       <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
@@ -1624,6 +1632,29 @@
                     </StackPanel>
                   </Grid>
                   <TextBlock Text="{Binding DexDeskVM.SelectedExchangeSettlement}" Foreground="#5a7a94" FontSize="9" />
+
+                  <!-- Live markets from the selected exchange -->
+                  <StackPanel Spacing="3" IsVisible="{Binding DexDeskVM.ShowExchangeMarkets}">
+                    <Border Height="1" Background="#0d1b27" />
+                    <Grid ColumnDefinitions="1.1*,1.2*,0.9*,1*" Margin="2,0">
+                      <TextBlock Text="MARKET" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+                      <TextBlock Grid.Column="1" Text="PRICE" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="2" Text="24H" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="3" Text="FUND" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding DexDeskVM.ExchangeMarkets}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:DexExchangeMarketViewModel">
+                          <Grid ColumnDefinitions="1.1*,1.2*,0.9*,1*" Height="16" Margin="2,0">
+                            <TextBlock Text="{Binding Symbol}" Foreground="#c8dcef" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding PriceLabel}" Foreground="#8fa3b8" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding ChangeLabel}" Foreground="{Binding ChangeBrush}" FontSize="9" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="3" Classes="TdNum" Text="{Binding FundingLabel}" Foreground="{Binding FundingBrush}" FontSize="9" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
                 </StackPanel>
               </Border>
 

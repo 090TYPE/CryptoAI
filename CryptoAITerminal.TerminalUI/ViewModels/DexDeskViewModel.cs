@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using CryptoAITerminal.Core.Trading;
 using CryptoAITerminal.TerminalUI.Services;
 using ReactiveUI;
@@ -22,19 +23,26 @@ public enum DexDeskMode
 public sealed class DexExchangeViewModel : ReactiveObject
 {
     private bool _isSelected;
+    private bool _isLive;
+    private string _vol;
+    private string _fundingRate;
+    private string _maxLev;
 
     public string Key { get; }
     public string Name { get; }
     public string DotBrush { get; }
     public string NameBrush { get; }
-    public string Vol { get; }
     public string Fee { get; }
     public string Type { get; }         // PERP / SWAP
     public string ChainBadge { get; }
     public string Settlement { get; }
     public string NetGas { get; }
-    public string FundingRate { get; }
-    public string MaxLev { get; }
+
+    // Live-updatable (start from the reference values, replaced by real API data).
+    public string Vol { get => _vol; set => this.RaiseAndSetIfChanged(ref _vol, value); }
+    public string FundingRate { get => _fundingRate; set => this.RaiseAndSetIfChanged(ref _fundingRate, value); }
+    public string MaxLev { get => _maxLev; set => this.RaiseAndSetIfChanged(ref _maxLev, value); }
+    public bool IsLive { get => _isLive; set => this.RaiseAndSetIfChanged(ref _isLive, value); }
 
     public bool IsSelected
     {
@@ -49,15 +57,38 @@ public sealed class DexExchangeViewModel : ReactiveObject
         Name = name;
         DotBrush = dot;
         NameBrush = nameBrush;
-        Vol = vol;
+        _vol = vol;
         Fee = fee;
         Type = type;
         ChainBadge = chainBadge;
         Settlement = settlement;
         NetGas = netGas;
-        FundingRate = fundingRate;
-        MaxLev = maxLev;
+        _fundingRate = fundingRate;
+        _maxLev = maxLev;
     }
+}
+
+/// <summary>One live market row for the selected DEX exchange.</summary>
+public sealed class DexExchangeMarketViewModel : ReactiveObject
+{
+    public DexExchangeMarketViewModel(DexExchangeMarket m)
+    {
+        Symbol = m.Symbol;
+        PriceLabel = m.Price >= 1000m ? $"{m.Price:N1}" : m.Price >= 1m ? $"{m.Price:N3}" : $"{m.Price:N5}";
+        ChangeLabel = $"{m.Change24hPct:+0.00;-0.00;0.00}%";
+        ChangeBrush = m.Change24hPct >= 0m ? "#3ddc84" : "#ff6b6b";
+        VolLabel = DexExchangeDataService.FormatUsdCompact(m.Volume24hUsd);
+        FundingLabel = $"{m.Funding8hPct:+0.###;-0.###;0}%";
+        FundingBrush = m.Funding8hPct >= 0m ? "#f4b860" : "#3ddc84";
+    }
+
+    public string Symbol { get; }
+    public string PriceLabel { get; }
+    public string ChangeLabel { get; }
+    public string ChangeBrush { get; }
+    public string VolLabel { get; }
+    public string FundingLabel { get; }
+    public string FundingBrush { get; }
 }
 
 /// <summary>A single gas-priority tier shown in the DEX ticket (real preference,
@@ -100,6 +131,8 @@ public sealed class DexGasTierViewModel : ReactiveObject
 public sealed class DexDeskViewModel : ReactiveObject, IDisposable
 {
     private readonly GasOracleService _gasOracle = new();
+    private readonly DexExchangeDataService _exchangeData = new();
+    private readonly DispatcherTimer _exchangeTimer;
     private DexDeskMode _mode = DexDeskMode.Swap;
     private string _selectedGasTierKey = "Standard";
     private string _selectedExchangeKey = "HYPERLIQUID";
@@ -145,6 +178,57 @@ public sealed class DexDeskViewModel : ReactiveObject, IDisposable
 
         Swap.PropertyChanged += OnSwapPropertyChanged;
         _ = RefreshGasAsync();
+
+        _exchangeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(15) };
+        _exchangeTimer.Tick += (_, _) => _ = RefreshExchangeAsync();
+        _exchangeTimer.Start();
+        _ = RefreshExchangeAsync();
+    }
+
+    // ── Live exchange market data (real API) ──────────────────────────────────
+    public ObservableCollection<DexExchangeMarketViewModel> ExchangeMarkets { get; } = new();
+    public bool ShowExchangeMarkets => ExchangeMarkets.Count > 0;
+    public bool SelectedExchangeIsLive => SelectedExchange?.IsLive ?? false;
+    public string SelectedExchangeFeedLabel => SelectedExchangeIsLive ? "LIVE" : "demo feed";
+
+    private async Task RefreshExchangeAsync()
+    {
+        var key = _selectedExchangeKey;
+        var stats = await _exchangeData.FetchAsync(key);
+
+        var ex = Exchanges.FirstOrDefault(e => string.Equals(e.Key, key, StringComparison.OrdinalIgnoreCase));
+        if (stats is null)
+        {
+            if (ex is not null)
+            {
+                ex.IsLive = false;
+            }
+            this.RaisePropertyChanged(nameof(SelectedExchangeIsLive));
+            this.RaisePropertyChanged(nameof(SelectedExchangeFeedLabel));
+            return;
+        }
+
+        if (ex is not null)
+        {
+            ex.Vol = DexExchangeDataService.FormatUsdCompact(stats.Vol24hUsd);
+            ex.FundingRate = $"{stats.RepFunding8hPct:+0.###;-0.###;0}%/8h";
+            if (stats.MaxLeverage > 0)
+            {
+                ex.MaxLev = $"{stats.MaxLeverage}×";
+            }
+            ex.IsLive = true;
+        }
+
+        ExchangeMarkets.Clear();
+        foreach (var m in stats.Markets)
+        {
+            ExchangeMarkets.Add(new DexExchangeMarketViewModel(m));
+        }
+
+        SyncExchangeSelection();
+        this.RaisePropertyChanged(nameof(ShowExchangeMarkets));
+        this.RaisePropertyChanged(nameof(SelectedExchangeIsLive));
+        this.RaisePropertyChanged(nameof(SelectedExchangeFeedLabel));
     }
 
     private void OnSwapPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -258,6 +342,10 @@ public sealed class DexDeskViewModel : ReactiveObject, IDisposable
         {
             Mode = string.Equals(ex.Type, "SWAP", StringComparison.OrdinalIgnoreCase) ? DexDeskMode.Swap : DexDeskMode.Perp;
         }
+
+        ExchangeMarkets.Clear();
+        this.RaisePropertyChanged(nameof(ShowExchangeMarkets));
+        _ = RefreshExchangeAsync();
     }
 
     private void SyncExchangeSelection()
@@ -366,6 +454,7 @@ public sealed class DexDeskViewModel : ReactiveObject, IDisposable
 
     public void Dispose()
     {
+        _exchangeTimer.Stop();
         Swap.PropertyChanged -= OnSwapPropertyChanged;
         Perp.Dispose();
     }
