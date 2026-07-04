@@ -42,6 +42,7 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
     private decimal _gridLower;
     private decimal _gridUpper;
     private int _gridLevels = 5;
+    private decimal _trailingDistance;
     private string _statusMessage = "Paper PERP desk ready. Arm an order to simulate a fill.";
 
     public DexPerpTradingViewModel(Func<decimal> anchorPrice, Func<string> symbol)
@@ -57,6 +58,8 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
         CloseCommand = ReactiveCommand.Create(() => { _engine.Close(); StatusMessage = "Position closed."; Republish(); }, outputScheduler: App.UiScheduler);
         ReverseCommand = ReactiveCommand.Create(() => { _engine.Reverse(); StatusMessage = "Position reversed."; Republish(); }, outputScheduler: App.UiScheduler);
         CancelOrderCommand = ReactiveCommand.Create<string>(id => { _engine.CancelOrder(id); Republish(); }, outputScheduler: App.UiScheduler);
+        ClosePartialCommand = ReactiveCommand.Create<string>(ClosePartial, outputScheduler: App.UiScheduler);
+        ArmTrailingCommand = ReactiveCommand.Create(ArmTrailing, outputScheduler: App.UiScheduler);
 
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _timer.Tick += (_, _) => OnTick();
@@ -166,6 +169,7 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
     public decimal GridLower { get => _gridLower; set => this.RaiseAndSetIfChanged(ref _gridLower, value); }
     public decimal GridUpper { get => _gridUpper; set => this.RaiseAndSetIfChanged(ref _gridUpper, value); }
     public int GridLevels { get => _gridLevels; set => this.RaiseAndSetIfChanged(ref _gridLevels, Math.Clamp(value, 2, 50)); }
+    public decimal TrailingDistance { get => _trailingDistance; set => this.RaiseAndSetIfChanged(ref _trailingDistance, Math.Max(0m, value)); }
 
     public string StatusMessage { get => _statusMessage; private set => this.RaiseAndSetIfChanged(ref _statusMessage, value); }
 
@@ -186,6 +190,39 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> CloseCommand { get; }
     public ReactiveCommand<Unit, Unit> ReverseCommand { get; }
     public ReactiveCommand<string, Unit> CancelOrderCommand { get; }
+    public ReactiveCommand<string, Unit> ClosePartialCommand { get; }
+    public ReactiveCommand<Unit, Unit> ArmTrailingCommand { get; }
+
+    private void ClosePartial(string? pct)
+    {
+        var fraction = pct switch { "25" => 0.25m, "50" => 0.5m, "75" => 0.75m, _ => 0m };
+        if (fraction <= 0m)
+        {
+            return;
+        }
+
+        _engine.ClosePartial(fraction);
+        StatusMessage = $"Closed {pct}% of the position.";
+        Republish();
+    }
+
+    private void ArmTrailing()
+    {
+        if (_engine.Position is null)
+        {
+            StatusMessage = "Open a position before arming a trailing stop.";
+            return;
+        }
+        if (_trailingDistance <= 0m)
+        {
+            StatusMessage = "Set a trailing distance above zero.";
+            return;
+        }
+
+        _engine.ArmTrailingStop(_trailingDistance);
+        StatusMessage = $"Trailing stop armed · {Format(_trailingDistance)} distance.";
+        Republish();
+    }
 
     private void PlaceOrder()
     {
@@ -266,6 +303,10 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
     public string FundingRateLabel => $"{_sim.FundingRate * 100m:+0.####;-0.####;0}%";
     public string FundingBrush => _sim.FundingRate >= 0m ? "#f4b860" : "#3ddc84";
     public string SettlementLabel => "every 8h (paper)";
+    public string FundingCountdownLabel => $"{Math.Max(0, 8 - _fundingCounter)}s";
+    public string FundingPaidLabel => $"{_engine.FundingPaid:+0.00;-0.00;0.00}";
+    public string TrailingStopLabel => _engine.Position is { TrailingDistance: > 0m } p ? Format(p.TrailingStopPrice) : "off";
+    public string EquityCurvePoints => BuildEquityCurve();
     public string EquityLabel => $"{_engine.AccountEquity:N2} USDT";
     public string RealizedPnlLabel => $"{_engine.RealizedPnl:+0.00;-0.00;0.00} USDT";
     public string RealizedPnlBrush => _engine.RealizedPnl >= 0m ? "#3ddc84" : "#ff6b6b";
@@ -352,6 +393,30 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(RoeLabel));
         this.RaisePropertyChanged(nameof(EstMarginLabel));
         this.RaisePropertyChanged(nameof(NotionalLabel));
+        this.RaisePropertyChanged(nameof(FundingCountdownLabel));
+        this.RaisePropertyChanged(nameof(FundingPaidLabel));
+        this.RaisePropertyChanged(nameof(TrailingStopLabel));
+        this.RaisePropertyChanged(nameof(EquityCurvePoints));
+    }
+
+    private string BuildEquityCurve()
+    {
+        var pts = _engine.EquityCurve;
+        if (pts.Count < 2)
+        {
+            return string.Empty;
+        }
+
+        var min = pts.Min();
+        var max = pts.Max();
+        var range = Math.Max(max - min, 0.0001m);
+        const double w = 300d, h = 34d;
+        return string.Join(' ', pts.Select((v, i) =>
+        {
+            var x = w * i / (pts.Count - 1);
+            var y = h - (double)((v - min) / range) * h;
+            return $"{x.ToString("0.#", CultureInfo.InvariantCulture)},{y.ToString("0.#", CultureInfo.InvariantCulture)}";
+        }));
     }
 
     private string Format(decimal price) => DexPerpFormat.Price(price);

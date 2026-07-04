@@ -1270,10 +1270,38 @@
                         Content="{Binding DexDeskVM.Perp.PlaceButtonText}" FontWeight="Bold" FontSize="13" />
 
                 <!-- Manage open position -->
-                <Grid ColumnDefinitions="*,*" ColumnSpacing="8" IsVisible="{Binding DexDeskVM.Perp.HasPosition}">
-                  <Button Grid.Column="0" Content="REVERSE" Classes="TdSeg dex" Command="{Binding DexDeskVM.Perp.ReverseCommand}" />
-                  <Button Grid.Column="1" Content="CLOSE" Classes="TdDanger" Padding="0,6" Command="{Binding DexDeskVM.Perp.CloseCommand}" />
-                </Grid>
+                <Border Classes="TdCard" IsVisible="{Binding DexDeskVM.Perp.HasPosition}">
+                  <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Classes="TdLabel" Text="MANAGE POSITION" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexDeskVM.Perp.RoeLabel}" Foreground="{Binding DexDeskVM.Perp.UpnlBrush}" FontWeight="Bold" FontSize="11" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="4">
+                      <Button Grid.Column="0" Content="CLOSE 25%" Classes="TdSeg fill" Command="{Binding DexDeskVM.Perp.ClosePartialCommand}" CommandParameter="25" />
+                      <Button Grid.Column="1" Content="50%" Classes="TdSeg fill" Command="{Binding DexDeskVM.Perp.ClosePartialCommand}" CommandParameter="50" />
+                      <Button Grid.Column="2" Content="75%" Classes="TdSeg fill" Command="{Binding DexDeskVM.Perp.ClosePartialCommand}" CommandParameter="75" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                      <NumericUpDown Value="{Binding DexDeskVM.Perp.TrailingDistance}" Increment="0.01" FormatString="0.####" Minimum="0" />
+                      <Button Grid.Column="1" Content="ARM TRAIL" Classes="TdSeg dex" Command="{Binding DexDeskVM.Perp.ArmTrailingCommand}" VerticalAlignment="Center" Padding="8,5" />
+                      <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding DexDeskVM.Perp.TrailingStopLabel}" Foreground="#f4b860" FontSize="10" VerticalAlignment="Center" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                      <Button Grid.Column="0" Content="REVERSE" Classes="TdSeg dex" Command="{Binding DexDeskVM.Perp.ReverseCommand}" />
+                      <Button Grid.Column="1" Content="CLOSE" Classes="TdDanger" Padding="0,6" Command="{Binding DexDeskVM.Perp.CloseCommand}" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                      <TextBlock Text="Funding in" Foreground="#3d5a72" FontSize="9" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexDeskVM.Perp.FundingCountdownLabel}" Foreground="#8fa3b8" FontSize="9" Margin="5,0,0,0" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Text="Funding paid" Foreground="#3d5a72" FontSize="9" VerticalAlignment="Center" Margin="0,0,5,0" />
+                      <TextBlock Grid.Column="3" Classes="TdNum" Text="{Binding DexDeskVM.Perp.FundingPaidLabel}" Foreground="#f4b860" FontSize="9" VerticalAlignment="Center" />
+                    </Grid>
+                  </StackPanel>
+                </Border>
 
                 <TextBlock Text="{Binding DexDeskVM.Perp.StatusMessage}" Foreground="#a855f7" TextWrapping="Wrap" FontSize="11" />
               </StackPanel>

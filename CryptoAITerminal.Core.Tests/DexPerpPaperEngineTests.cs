@@ -172,5 +172,47 @@ public class DexPerpPaperEngineTests
         e.AccrueFunding(fundingRate: 0.0001m); // long pays when positive
 
         Assert.True(e.RealizedPnl < before);
+        Assert.True(e.FundingPaid > 0m);
+    }
+
+    [Fact]
+    public void ClosePartial_Realises_Half_And_Keeps_Rest()
+    {
+        var e = NewEngine();
+        e.PlaceMarket(PerpSide.Long, 4m, 10, PerpMarginMode.Isolated, 100m);
+        e.Tick(120m); // +20/token
+
+        e.ClosePartial(0.5m);
+
+        Assert.NotNull(e.Position);
+        Assert.Equal(2m, e.Position!.Size);
+        Assert.Equal(40m, e.RealizedPnl); // (120-100)*2 closed
+    }
+
+    [Fact]
+    public void TrailingStop_Ratchets_Up_Then_Closes_Long_On_Pullback()
+    {
+        var e = NewEngine();
+        e.PlaceMarket(PerpSide.Long, 1m, 5, PerpMarginMode.Isolated, 100m);
+        e.ArmTrailingStop(distance: 5m); // stop starts at 95
+
+        e.Tick(120m); // stop ratchets up to 115
+        Assert.NotNull(e.Position);
+
+        e.Tick(114m); // pulls back through the trailed stop
+        Assert.Null(e.Position);
+        Assert.Contains(e.Fills, f => f.Kind == "TRAIL");
+        Assert.True(e.RealizedPnl > 0m); // locked in a profit
+    }
+
+    [Fact]
+    public void EquityCurve_Grows_And_Is_Bounded()
+    {
+        var e = NewEngine();
+        e.PlaceMarket(PerpSide.Long, 1m, 5, PerpMarginMode.Isolated, 100m);
+        for (var i = 0; i < 300; i++) e.Tick(100m + i % 10);
+
+        Assert.NotEmpty(e.EquityCurve);
+        Assert.True(e.EquityCurve.Count <= 240);
     }
 }

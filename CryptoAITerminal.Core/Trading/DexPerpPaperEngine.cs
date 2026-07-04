@@ -23,6 +23,8 @@ public sealed class DexPerpPosition
     public decimal Margin { get; internal set; }        // locked collateral (quote)
     public decimal MarkPrice { get; internal set; }
     public decimal LiquidationPrice { get; internal set; }
+    public decimal TrailingDistance { get; internal set; }   // 0 = no trailing stop
+    public decimal TrailingStopPrice { get; internal set; }
 
     public decimal Notional => Size * MarkPrice;
 
@@ -79,11 +81,17 @@ public sealed class DexPerpPaperEngine
         _mmr = maintenanceMarginRate;
     }
 
+    private readonly List<decimal> _equityCurve = new();
+
     public DexPerpPosition? Position { get; private set; }
     public IReadOnlyList<DexPerpWorkingOrder> WorkingOrders => _orders;
     public IReadOnlyList<DexPerpFill> Fills => _fills;
     public decimal RealizedPnl { get; private set; }
     public decimal StartingBalance => _startingBalance;
+    /// <summary>Cumulative funding cost (positive = net paid out).</summary>
+    public decimal FundingPaid { get; private set; }
+    /// <summary>Recent account-equity samples for a session equity curve.</summary>
+    public IReadOnlyList<decimal> EquityCurve => _equityCurve;
 
     /// <summary>Account equity = starting balance + realised + open uPnL.</summary>
     public decimal AccountEquity => _startingBalance + RealizedPnl + (Position?.UnrealizedPnl ?? 0m);
@@ -208,6 +216,51 @@ public sealed class DexPerpPaperEngine
         Position = null;
     }
 
+    /// <summary>Realise a fraction (0..1] of the open position at the mark, keeping the rest.</summary>
+    public void ClosePartial(decimal fraction)
+    {
+        if (Position is null)
+        {
+            return;
+        }
+
+        fraction = Math.Clamp(fraction, 0m, 1m);
+        if (fraction <= 0m)
+        {
+            return;
+        }
+        if (fraction >= 1m)
+        {
+            Close();
+            return;
+        }
+
+        var closeSize = Position.Size * fraction;
+        var pnlPerToken = Position.Side == PerpSide.Long
+            ? Position.MarkPrice - Position.EntryPrice
+            : Position.EntryPrice - Position.MarkPrice;
+
+        RealizedPnl += pnlPerToken * closeSize;
+        Position.Size -= closeSize;
+        Position.Margin *= 1m - fraction;
+        _fills.Add(new DexPerpFill(Position.Side, Position.MarkPrice, closeSize, "CLOSE", DateTime.UtcNow));
+    }
+
+    /// <summary>Attach a trailing stop <paramref name="distance"/> away from the mark; it
+    /// ratchets in the position's favour each tick and closes the trade if hit.</summary>
+    public void ArmTrailingStop(decimal distance)
+    {
+        if (Position is null || distance <= 0m)
+        {
+            return;
+        }
+
+        Position.TrailingDistance = distance;
+        Position.TrailingStopPrice = Position.Side == PerpSide.Long
+            ? Position.MarkPrice - distance
+            : Position.MarkPrice + distance;
+    }
+
     public void Reverse()
     {
         if (Position is null)
@@ -236,7 +289,9 @@ public sealed class DexPerpPaperEngine
         }
 
         var payment = fundingRate * Position.Notional;
-        RealizedPnl += Position.Side == PerpSide.Long ? -payment : payment;
+        var signed = Position.Side == PerpSide.Long ? -payment : payment;
+        RealizedPnl += signed;
+        FundingPaid += -signed;
     }
 
     // ── Tick: fire orders, mark, liquidate ────────────────────────────────────
@@ -260,11 +315,39 @@ public sealed class DexPerpPaperEngine
             }
         }
 
-        // 2. Mark the open position and check liquidation.
+        // 2. Mark the open position and check trailing stop / liquidation.
         if (Position is not null)
         {
             Position.MarkPrice = markPrice;
 
+            // Trailing stop ratchets in the trade's favour, then closes if breached.
+            if (Position.TrailingDistance > 0m)
+            {
+                if (Position.Side == PerpSide.Long)
+                {
+                    var candidate = markPrice - Position.TrailingDistance;
+                    if (candidate > Position.TrailingStopPrice) Position.TrailingStopPrice = candidate;
+                }
+                else
+                {
+                    var candidate = markPrice + Position.TrailingDistance;
+                    if (candidate < Position.TrailingStopPrice) Position.TrailingStopPrice = candidate;
+                }
+
+                var trailHit = Position.Side == PerpSide.Long
+                    ? markPrice <= Position.TrailingStopPrice
+                    : markPrice >= Position.TrailingStopPrice;
+                if (trailHit)
+                {
+                    RealizedPnl += Position.UnrealizedPnl;
+                    _fills.Add(new DexPerpFill(Position.Side, markPrice, Position.Size, "TRAIL", DateTime.UtcNow));
+                    Position = null;
+                }
+            }
+        }
+
+        if (Position is not null)
+        {
             var liquidated = Position.Side == PerpSide.Long
                 ? markPrice <= Position.LiquidationPrice
                 : markPrice >= Position.LiquidationPrice;
@@ -278,6 +361,12 @@ public sealed class DexPerpPaperEngine
         }
 
         _lastMarkPrice = markPrice;
+
+        _equityCurve.Add(AccountEquity);
+        if (_equityCurve.Count > 240)
+        {
+            _equityCurve.RemoveAt(0);
+        }
     }
 
     private static bool IsTriggered(DexPerpWorkingOrder order, decimal price) => order.Kind switch
