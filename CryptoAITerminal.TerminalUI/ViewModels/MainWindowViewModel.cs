@@ -5,6 +5,7 @@ using Avalonia.Threading;
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
+using CryptoAITerminal.Core.Trading;
 using CryptoAITerminal.Gateway.Binance;
 using CryptoAITerminal.Gateway.Bybit;
 using CryptoAITerminal.Gateway.KuCoin;
@@ -310,6 +311,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         DcaBotVM = new DcaBotViewModel(_gateway, _bybitSpotGateway, _okxSpotGateway, _kucoinSpotGateway);
         DexTradingVM = new DexTradingViewModel(WalletVM);
         DexDeskVM = new DexDeskViewModel(DexTradingVM);
+        TradeAssistantVM = new AiTradeAssistantViewModel("CEX", () => TradingCandles, () => CurrentTradePrice, ApplyCexTradeSetup);
         SniperVM = new SniperViewModel(WalletVM, _gateway, _futuresGateway, DefaultSymbols);
         _telegram = new TelegramNotificationService();
         _discord  = new DiscordWebhookNotificationService();
@@ -3430,7 +3432,25 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public ConfigurationProfileService    ProfileService       { get; } = new();
     public DexTradingViewModel DexTradingVM { get; }
     public DexDeskViewModel DexDeskVM { get; }
+    public AiTradeAssistantViewModel TradeAssistantVM { get; }
     public WalletWorkspaceViewModel WalletVM { get; }
+
+    /// <summary>Apply an AI-assistant setup to the live CEX order ticket.</summary>
+    private void ApplyCexTradeSetup(TradeSetup setup)
+    {
+        SelectedOrderSide = setup.Bias == "LONG" ? "BUY" : "SELL";
+        SelectedOrderType = "Limit";
+        LimitPrice = setup.Entry;
+        TakeProfitPrice = setup.TakeProfit;
+        StopLossPrice = setup.StopLoss;
+        WalletVM.GlobalPositionSizingPercent = setup.SizePercent;
+        if (IsManualFuturesMode)
+        {
+            ManualFuturesLeverage = setup.Leverage;
+        }
+
+        AddLog($"AI assistant applied {setup.Bias} setup — entry {setup.Entry}, TP {setup.TakeProfit}, SL {setup.StopLoss}, {setup.Leverage}x.");
+    }
     public SniperViewModel SniperVM { get; }
     public BacktestViewModel BacktestVM { get; }
     public AlertsViewModel AlertsVM { get; }

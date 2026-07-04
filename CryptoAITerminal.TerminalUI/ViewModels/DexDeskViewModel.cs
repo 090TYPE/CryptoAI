@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
+using CryptoAITerminal.Core.Trading;
 using ReactiveUI;
 
 namespace CryptoAITerminal.TerminalUI.ViewModels;
@@ -52,6 +53,7 @@ public sealed class DexDeskViewModel : ReactiveObject, IDisposable
 
     public DexTradingViewModel Swap { get; }
     public DexPerpTradingViewModel Perp { get; }
+    public AiTradeAssistantViewModel Assistant { get; }
 
     public DexDeskViewModel(DexTradingViewModel swap)
     {
@@ -59,6 +61,11 @@ public sealed class DexDeskViewModel : ReactiveObject, IDisposable
         Perp = new DexPerpTradingViewModel(
             anchorPrice: () => Swap.SelectedToken?.PriceUsd ?? 0m,
             symbol: () => Swap.SelectedToken?.TokenInfo.Symbol ?? "TOKEN");
+        Assistant = new AiTradeAssistantViewModel(
+            venueLabel: "DEX",
+            candles: () => Swap.ChartCandles,
+            price: () => _mode == DexDeskMode.Perp ? Perp.MarkPrice : (Swap.SelectedToken?.PriceUsd ?? 0m),
+            apply: ApplyDexSetup);
 
         GasTiers = new ObservableCollection<DexGasTierViewModel>
         {
@@ -170,6 +177,36 @@ public sealed class DexDeskViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> ToggleMevCommand { get; }
 
     private void ToggleMev() => MevProtectionEnabled = !_mevProtectionEnabled;
+
+    /// <summary>Apply an AI-assistant setup to the active DEX ticket (PERP fully; SWAP
+    /// maps the sizing suggestion onto the buy-amount preset).</summary>
+    private void ApplyDexSetup(TradeSetup setup)
+    {
+        if (_mode == DexDeskMode.Perp)
+        {
+            Perp.Side = setup.Bias == "LONG" ? "Long" : "Short";
+            Perp.OrderType = "Limit";
+            Perp.TriggerPrice = setup.Entry;
+            Perp.TakeProfit = setup.TakeProfit;
+            Perp.StopLoss = setup.StopLoss;
+            Perp.Leverage = setup.Leverage;
+
+            var price = Perp.MarkPrice > 0m ? Perp.MarkPrice : setup.Entry;
+            if (price > 0m)
+            {
+                var notional = Perp.Equity * (setup.SizePercent / 100m) * setup.Leverage;
+                Perp.SizeTokens = Math.Round(notional / price, 4, MidpointRounding.AwayFromZero);
+            }
+        }
+        else
+        {
+            var preset = setup.SizePercent >= 75m ? "100"
+                : setup.SizePercent >= 50m ? "75"
+                : setup.SizePercent >= 25m ? "50"
+                : "25";
+            Swap.ApplyBuyBalancePresetCommand.Execute(preset).Subscribe();
+        }
+    }
 
     public void Dispose() => Perp.Dispose();
 }

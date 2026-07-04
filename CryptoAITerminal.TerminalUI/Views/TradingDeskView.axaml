@@ -3,6 +3,7 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              xmlns:conv="clr-namespace:CryptoAITerminal.TerminalUI.Converters"
+             xmlns:views="clr-namespace:CryptoAITerminal.TerminalUI.Views"
              x:Class="CryptoAITerminal.TerminalUI.Views.TradingDeskView"
              x:DataType="vm:MainWindowViewModel"
              FontFamily="{StaticResource FontDisplay}">
@@ -642,6 +643,7 @@
 
         <!-- ══ RIGHT RAIL (seamless aside) ══ -->
         <Border Grid.Column="4" Background="#050c14">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
           <StackPanel>
 
             <!-- Exchange selector tabs -->
@@ -858,7 +860,11 @@
                 </ItemsControl>
               </StackPanel>
             </Grid>
+
+            <!-- AI Trade Assistant -->
+            <views:AiTradeAssistantView DataContext="{Binding TradeAssistantVM}" Margin="10,4,10,10" />
           </StackPanel>
+          </ScrollViewer>
         </Border>
       </Grid>
       </Grid>
@@ -1686,6 +1692,9 @@
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
               </StackPanel>
+
+              <!-- AI Trade Assistant (both modes) -->
+              <views:AiTradeAssistantView DataContext="{Binding DexDeskVM.Assistant}" />
             </StackPanel>
           </ScrollViewer>
         </Grid>

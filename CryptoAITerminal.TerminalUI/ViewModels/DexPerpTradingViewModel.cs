@@ -251,6 +251,11 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
     public ObservableCollection<DexPerpOrderRowViewModel> Orders { get; } = new();
     public ObservableCollection<DexPerpFillRowViewModel> FillsRows { get; } = new();
 
+    /// <summary>Current simulated mark price (for the AI assistant / external readers).</summary>
+    public decimal MarkPrice => _sim.Mark;
+    /// <summary>Current paper account equity.</summary>
+    public decimal Equity => _engine.AccountEquity;
+
     public bool ShowPositionsPlaceholder => Positions.Count == 0;
     public bool ShowOrdersPlaceholder => Orders.Count == 0;
     public bool ShowFillsPlaceholder => FillsRows.Count == 0;
