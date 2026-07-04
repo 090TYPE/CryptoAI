@@ -430,10 +430,15 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         {
             this.RaiseAndSetIfChanged(ref _slippagePercent, Math.Max(0.1m, Math.Min(50m, value)));
             this.RaisePropertyChanged(nameof(SlippageSummary));
+            this.RaisePropertyChanged(nameof(SlippagePresetKey));
             QueueBuyQuote();
         }
     }
     public string SlippageSummary => $"Slippage: {_slippagePercent:0.##}% — router will revert if output drops below this tolerance.";
+
+    /// <summary>Preset key ("0.1"/"0.5"/"1.0"/"3.0") for driving the active style on the
+    /// slippage preset buttons via StringEqualsConverter. Non-preset values match nothing.</summary>
+    public string SlippagePresetKey => _slippagePercent.ToString("0.0", CultureInfo.InvariantCulture);
 
     public string BuyQuoteLabel
     {
@@ -643,6 +648,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<string, Unit> ApplySellBalancePresetCommand { get; }
     public ReactiveCommand<Unit, Unit> RefreshTokenBalanceCommand { get; }
     public ReactiveCommand<string, Unit> SelectChartRangeCommand { get; }
+    public ReactiveCommand<string, Unit> SelectSlippagePresetCommand { get; }
 
     public DexTokenAiVerdictViewModel TokenVerdict { get; } = new();
     public ReactiveCommand<Unit, Unit> DeepScanTokenCommand { get; }
@@ -663,6 +669,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         ApplySellBalancePresetCommand = ReactiveCommand.Create<string>(ApplySellBalancePreset, outputScheduler: App.UiScheduler);
         RefreshTokenBalanceCommand = ReactiveCommand.CreateFromTask(RefreshTokenBalanceAsync, outputScheduler: App.UiScheduler);
         SelectChartRangeCommand = ReactiveCommand.CreateFromTask<string>(SelectChartRangeAsync, outputScheduler: App.UiScheduler);
+        SelectSlippagePresetCommand = ReactiveCommand.Create<string>(ApplySlippagePreset, outputScheduler: App.UiScheduler);
         DeepScanTokenCommand = ReactiveCommand.CreateFromTask(DeepScanTokenAsync, outputScheduler: App.UiScheduler);
 
         _refreshTimer = new DispatcherTimer
@@ -1144,6 +1151,14 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
         BuyAmountBnb = RoundBuyAmount(AvailableSpendableQuoteBalance * ratio);
         StatusMessage = $"Buy amount set to {preset}% of available {SelectedQuoteAssetSymbol}: {BuyAmountBnb:0.######}.";
+    }
+
+    private void ApplySlippagePreset(string? preset)
+    {
+        if (decimal.TryParse(preset, NumberStyles.Any, CultureInfo.InvariantCulture, out var value) && value > 0m)
+        {
+            SlippagePercent = value;
+        }
     }
 
     private decimal RoundBuyAmount(decimal amount)

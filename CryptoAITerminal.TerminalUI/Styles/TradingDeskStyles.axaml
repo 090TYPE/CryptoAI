@@ -1,0 +1,235 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    Trading-desk design system — faithful to the reference mockup.
+    Palette: near-black panels (#050c14 / #07111a), thin cool borders,
+    teal accent (#21e6c1), tight 5-8px radii. Fonts: Space Grotesk (UI) +
+    DM Mono (numeric). Scoped via Td* classes so other screens are untouched.
+  -->
+
+  <!-- ── Panels & cards ─────────────────────────────────────────────── -->
+  <Style Selector="Border.TdPanel">
+    <Setter Property="Background" Value="#050c14" />
+    <Setter Property="BorderBrush" Value="#0d1b27" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="14" />
+  </Style>
+
+  <Style Selector="Border.TdCard">
+    <Setter Property="Background" Value="#07111a" />
+    <Setter Property="BorderBrush" Value="#152535" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="12" />
+  </Style>
+
+  <Style Selector="Border.TdCardTight">
+    <Setter Property="Background" Value="#07111a" />
+    <Setter Property="BorderBrush" Value="#152535" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="8,6" />
+  </Style>
+
+  <Style Selector="Border.TdMid">
+    <Setter Property="Background" Value="#0a1622" />
+    <Setter Property="BorderBrush" Value="#152535" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="8,5" />
+  </Style>
+
+  <Style Selector="Border.TdPill">
+    <Setter Property="Background" Value="#07221a" />
+    <Setter Property="BorderBrush" Value="#0e3a2a" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Padding" Value="10,3" />
+  </Style>
+
+  <!-- ── Typography ─────────────────────────────────────────────────── -->
+  <Style Selector="TextBlock.TdLabel">
+    <Setter Property="Foreground" Value="#5a7a94" />
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="LetterSpacing" Value="0.6" />
+  </Style>
+
+  <Style Selector="TextBlock.TdSub">
+    <Setter Property="Foreground" Value="#8fa3b8" />
+    <Setter Property="FontSize" Value="11" />
+  </Style>
+
+  <Style Selector="TextBlock.TdH2">
+    <Setter Property="Foreground" Value="#e8f4ff" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+
+  <Style Selector="TextBlock.TdNum">
+    <Setter Property="FontFamily" Value="{DynamicResource FontMono}" />
+    <Setter Property="Foreground" Value="#c8dcef" />
+  </Style>
+
+  <!-- ── Segmented buttons ──────────────────────────────────────────── -->
+  <Style Selector="Button.TdSeg">
+    <Setter Property="Background" Value="#07111a" />
+    <Setter Property="BorderBrush" Value="#1e3248" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Foreground" Value="#8fa3b8" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="10,7" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.TdSeg:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#0a1a26" />
+    <Setter Property="BorderBrush" Value="#2d4a5e" />
+  </Style>
+  <Style Selector="Button.TdSeg.active:not(.amber):not(.buy):not(.sell):not(.dex)">
+    <Setter Property="Background" Value="#07221a" />
+    <Setter Property="BorderBrush" Value="#21e6c1" />
+    <Setter Property="Foreground" Value="#21e6c1" />
+  </Style>
+  <Style Selector="Button.TdSeg.active:not(.amber):not(.buy):not(.sell):not(.dex):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#092a20" />
+    <Setter Property="BorderBrush" Value="#21e6c1" />
+  </Style>
+
+  <!-- ── DEX purple accent (venue / mode / gas / slippage segments) ──────── -->
+  <Style Selector="Button.TdSeg.active.dex">
+    <Setter Property="Background" Value="#150a20" />
+    <Setter Property="BorderBrush" Value="#6a2a9a" />
+    <Setter Property="Foreground" Value="#a855f7" />
+  </Style>
+  <Style Selector="Button.TdSeg.active.dex:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#1c0d2b" />
+    <Setter Property="BorderBrush" Value="#6a2a9a" />
+  </Style>
+
+  <!-- purple badge chip (SWAP·DEX / PERP·DEX) -->
+  <Style Selector="Border.TdDexBadge">
+    <Setter Property="Background" Value="#150a20" />
+    <Setter Property="BorderBrush" Value="#3a1f6e" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="6,1" />
+  </Style>
+
+  <!-- purple primary (DEX execute) -->
+  <Style Selector="Button.TdPrimary.dex">
+    <Setter Property="Background" Value="#a855f7" />
+    <Setter Property="Foreground" Value="#0a0212" />
+  </Style>
+  <Style Selector="Button.TdPrimary.dex:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#b968ff" />
+  </Style>
+  <Style Selector="Button.TdPrimary.dex:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#2a1540" />
+  </Style>
+  <!-- compact toolbar variant -->
+  <Style Selector="Button.TdSeg.mini">
+    <Setter Property="Padding" Value="5,4" />
+    <Setter Property="FontSize" Value="9" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+
+  <!-- full-width ticket segment (zero side padding so labels fit narrow columns) -->
+  <Style Selector="Button.TdSeg.fill">
+    <Setter Property="Padding" Value="0,5" />
+    <Setter Property="FontSize" Value="9" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+
+  <!-- left-aligned stacked segment (order type / market mode) -->
+  <Style Selector="Button.TdSeg.left">
+    <Setter Property="Padding" Value="8,5" />
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+  </Style>
+
+  <!-- seamless BUY/SELL side toggle (inside one bordered, clipped container) -->
+  <Style Selector="Button.TdSide">
+    <Setter Property="Background" Value="#07111a" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Foreground" Value="#5a7a94" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontWeight" Value="ExtraBold" />
+    <Setter Property="Padding" Value="0,11" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.TdSide.active.buy">
+    <Setter Property="Background" Value="#0d2b1a" />
+    <Setter Property="Foreground" Value="#3ddc84" />
+  </Style>
+  <Style Selector="Button.TdSide.active.sell">
+    <Setter Property="Background" Value="#2b0d0d" />
+    <Setter Property="Foreground" Value="#ff6b6b" />
+  </Style>
+
+  <!-- transparent inline field (limit price / TP / SL / slippage) -->
+  <Style Selector="TextBox.TdInput">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="FontFamily" Value="{DynamicResource FontMono}" />
+    <Setter Property="CaretBrush" Value="#c8dcef" />
+  </Style>
+  <Style Selector="TextBox.TdInput /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <!-- amber variant (leverage / futures mode) -->
+  <Style Selector="Button.TdSeg.active.amber">
+    <Setter Property="Background" Value="#1a1000" />
+    <Setter Property="BorderBrush" Value="#f4b860" />
+    <Setter Property="Foreground" Value="#f4b860" />
+  </Style>
+  <!-- buy / sell variants -->
+  <Style Selector="Button.TdSeg.active.buy">
+    <Setter Property="Background" Value="#07221a" />
+    <Setter Property="BorderBrush" Value="#3ddc84" />
+    <Setter Property="Foreground" Value="#3ddc84" />
+  </Style>
+  <Style Selector="Button.TdSeg.active.sell">
+    <Setter Property="Background" Value="#200a0a" />
+    <Setter Property="BorderBrush" Value="#ff6b6b" />
+    <Setter Property="Foreground" Value="#ff6b6b" />
+  </Style>
+
+  <!-- Big primary side button -->
+  <Style Selector="Button.TdPrimary">
+    <Setter Property="Background" Value="#21e6c1" />
+    <Setter Property="Foreground" Value="#051018" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="7" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.TdPrimary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#2ff2cd" />
+  </Style>
+  <Style Selector="Button.TdPrimary:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#123a33" />
+  </Style>
+
+  <Style Selector="Button.TdDanger">
+    <Setter Property="Background" Value="#200a0a" />
+    <Setter Property="BorderBrush" Value="#3a1414" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Foreground" Value="#ff6b6b" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+</Styles>
