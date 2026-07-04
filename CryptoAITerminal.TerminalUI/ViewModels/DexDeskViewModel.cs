@@ -1,8 +1,11 @@
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Reactive;
+using System.Threading.Tasks;
 using CryptoAITerminal.Core.Trading;
+using CryptoAITerminal.TerminalUI.Services;
 using ReactiveUI;
 
 namespace CryptoAITerminal.TerminalUI.ViewModels;
@@ -19,10 +22,16 @@ public enum DexDeskMode
 public sealed class DexGasTierViewModel : ReactiveObject
 {
     private bool _isSelected;
+    private string _gweiLabel;
 
     public string Key { get; }
     public string Label { get; }
-    public string GweiLabel { get; }
+
+    public string GweiLabel
+    {
+        get => _gweiLabel;
+        set => this.RaiseAndSetIfChanged(ref _gweiLabel, value);
+    }
 
     public bool IsSelected
     {
@@ -34,7 +43,7 @@ public sealed class DexGasTierViewModel : ReactiveObject
     {
         Key = key;
         Label = label;
-        GweiLabel = gweiLabel;
+        _gweiLabel = gweiLabel;
     }
 }
 
@@ -47,6 +56,7 @@ public sealed class DexGasTierViewModel : ReactiveObject
 /// </summary>
 public sealed class DexDeskViewModel : ReactiveObject, IDisposable
 {
+    private readonly GasOracleService _gasOracle = new();
     private DexDeskMode _mode = DexDeskMode.Swap;
     private string _selectedGasTierKey = "Standard";
     private bool _mevProtectionEnabled = true;
@@ -68,20 +78,56 @@ public sealed class DexDeskViewModel : ReactiveObject, IDisposable
             apply: ApplyDexSetup,
             equity: () => _mode == DexDeskMode.Perp ? Perp.Equity : 0m);
 
-        GasTiers = new ObservableCollection<DexGasTierViewModel>
-        {
-            new("Slow",     "SLOW",     "3 gwei"),
-            new("Standard", "STANDARD", "5 gwei"),
-            new("Fast",     "FAST",     "9 gwei"),
-            new("Instant",  "INSTANT",  "15 gwei"),
-        };
+        GasTiers = new ObservableCollection<DexGasTierViewModel>(
+            GasOracleService.BuildTiers(GasOracleService.DefaultBaseGwei(MapChain(Swap.SelectedChainFilter)))
+                .Select(t => new DexGasTierViewModel(t.Key, t.Label, $"{t.Gwei:0.###} gwei")));
 
         SelectModeCommand = ReactiveCommand.Create<string>(SelectMode, outputScheduler: App.UiScheduler);
         SelectGasTierCommand = ReactiveCommand.Create<string>(SelectGasTier, outputScheduler: App.UiScheduler);
         ToggleMevCommand = ReactiveCommand.Create(ToggleMev, outputScheduler: App.UiScheduler);
 
         SyncGasTierSelection();
+
+        Swap.PropertyChanged += OnSwapPropertyChanged;
+        _ = RefreshGasAsync();
     }
+
+    private void OnSwapPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(DexTradingViewModel.SelectedChainFilter))
+        {
+            _ = RefreshGasAsync();
+        }
+    }
+
+    private async Task RefreshGasAsync()
+    {
+        var chain = MapChain(Swap.SelectedChainFilter);
+        var live = await _gasOracle.FetchBaseGweiAsync(chain).ConfigureAwait(true);
+        var baseGwei = live ?? GasOracleService.DefaultBaseGwei(chain);
+        var tiers = GasOracleService.BuildTiers(baseGwei);
+
+        foreach (var tier in tiers)
+        {
+            var vm = GasTiers.FirstOrDefault(g => string.Equals(g.Key, tier.Key, StringComparison.OrdinalIgnoreCase));
+            if (vm is not null)
+            {
+                vm.GweiLabel = $"{tier.Gwei:0.###} gwei";
+            }
+        }
+
+        this.RaisePropertyChanged(nameof(SelectedGasTierGweiLabel));
+    }
+
+    private static string MapChain(string? filter) => filter?.Trim().ToLowerInvariant() switch
+    {
+        "bsc" => "bsc",
+        "ethereum" => "ethereum",
+        "base" => "base",
+        "arbitrum" => "arbitrum",
+        "polygon" => "polygon",
+        _ => "ethereum",
+    };
 
     // ── Venue sub-mode ────────────────────────────────────────────────────────
     public DexDeskMode Mode
@@ -209,5 +255,9 @@ public sealed class DexDeskViewModel : ReactiveObject, IDisposable
         }
     }
 
-    public void Dispose() => Perp.Dispose();
+    public void Dispose()
+    {
+        Swap.PropertyChanged -= OnSwapPropertyChanged;
+        Perp.Dispose();
+    }
 }

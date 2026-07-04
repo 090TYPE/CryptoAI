@@ -3,8 +3,10 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Reactive;
+using System.Threading.Tasks;
 using Avalonia.Threading;
 using CryptoAITerminal.Core.Trading;
+using CryptoAITerminal.TerminalUI.Services;
 using ReactiveUI;
 
 namespace CryptoAITerminal.TerminalUI.ViewModels;
@@ -21,6 +23,7 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
     private readonly Func<decimal> _anchorPrice;
     private readonly Func<string> _symbol;
     private readonly DexPerpPaperEngine _engine = new(startingBalance: 10_000m);
+    private readonly DexPerpSessionStore _store = new();
     private DexPerpMarketSimulator _sim;
     private readonly DispatcherTimer _timer;
 
@@ -28,6 +31,8 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
     private string _lastSymbol = string.Empty;
     private int _fundingCounter;
     private int _lastFillCount;
+    private int _lastSavedFills = -1;
+    private int _lastSavedOrders = -1;
 
     private string _side = "Long";
     private string _orderType = "Market";
@@ -50,6 +55,14 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
         _anchorPrice = anchorPrice;
         _symbol = symbol;
         _sim = new DexPerpMarketSimulator(ResolveAnchor());
+
+        // Restore a prior paper session; anchor the mark to the restored position so it
+        // isn't marked against a stale/empty spot price on the first tick.
+        _engine.LoadSnapshot(_store.Load());
+        if (_engine.Position is { MarkPrice: > 0m } restored)
+        {
+            _sim = new DexPerpMarketSimulator(restored.MarkPrice);
+        }
 
         SelectSideCommand = ReactiveCommand.Create<string>(v => { if (!string.IsNullOrWhiteSpace(v)) Side = v; }, outputScheduler: App.UiScheduler);
         SelectOrderTypeCommand = ReactiveCommand.Create<string>(v => { if (!string.IsNullOrWhiteSpace(v)) OrderType = v; }, outputScheduler: App.UiScheduler);
@@ -222,6 +235,7 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
         _engine.ArmTrailingStop(_trailingDistance);
         StatusMessage = $"Trailing stop armed · {Format(_trailingDistance)} distance.";
         Republish();
+        SaveSession();
     }
 
     private void PlaceOrder()
@@ -397,6 +411,20 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(FundingPaidLabel));
         this.RaisePropertyChanged(nameof(TrailingStopLabel));
         this.RaisePropertyChanged(nameof(EquityCurvePoints));
+
+        // Persist on any structural change (a new fill or working-order set).
+        if (_engine.Fills.Count != _lastSavedFills || _engine.WorkingOrders.Count != _lastSavedOrders)
+        {
+            _lastSavedFills = _engine.Fills.Count;
+            _lastSavedOrders = _engine.WorkingOrders.Count;
+            SaveSession();
+        }
+    }
+
+    private void SaveSession()
+    {
+        var snapshot = _engine.Export();
+        _ = Task.Run(() => _store.Save(snapshot));
     }
 
     private string BuildEquityCurve()

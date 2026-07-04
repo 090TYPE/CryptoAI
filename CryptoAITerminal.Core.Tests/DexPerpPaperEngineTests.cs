@@ -215,4 +215,40 @@ public class DexPerpPaperEngineTests
         Assert.NotEmpty(e.EquityCurve);
         Assert.True(e.EquityCurve.Count <= 240);
     }
+
+    [Fact]
+    public void Snapshot_RoundTrips_Position_Orders_Fills()
+    {
+        var e = NewEngine();
+        e.PlaceMarket(PerpSide.Long, 2m, 10, PerpMarginMode.Isolated, 100m);
+        e.PlaceLimit(PerpSide.Long, 90m, 1m, 5, PerpMarginMode.Isolated);
+        e.Tick(110m);
+
+        var restored = NewEngine();
+        restored.LoadSnapshot(e.Export());
+
+        Assert.NotNull(restored.Position);
+        Assert.Equal(e.Position!.Size, restored.Position!.Size);
+        Assert.Equal(e.Position.EntryPrice, restored.Position.EntryPrice);
+        Assert.Equal(e.RealizedPnl, restored.RealizedPnl);
+        Assert.Equal(e.WorkingOrders.Count, restored.WorkingOrders.Count);
+        Assert.Equal(e.Fills.Count, restored.Fills.Count);
+    }
+
+    [Fact]
+    public void Snapshot_Serializes_To_Json_AndBack()
+    {
+        var e = NewEngine();
+        e.PlaceMarket(PerpSide.Short, 1m, 5, PerpMarginMode.Cross, 50m);
+
+        var json = System.Text.Json.JsonSerializer.Serialize(e.Export());
+        var snap = System.Text.Json.JsonSerializer.Deserialize<DexPerpEngineSnapshot>(json);
+
+        var restored = NewEngine();
+        restored.LoadSnapshot(snap);
+
+        Assert.NotNull(restored.Position);
+        Assert.Equal(PerpSide.Short, restored.Position!.Side);
+        Assert.Equal(1m, restored.Position.Size);
+    }
 }

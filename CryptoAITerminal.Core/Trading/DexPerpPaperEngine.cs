@@ -445,6 +445,83 @@ public sealed class DexPerpPaperEngine
         _fills.Add(new DexPerpFill(side, price, sizeTokens, kind, DateTime.UtcNow));
     }
 
+    // ── Persistence ───────────────────────────────────────────────────────────
+
+    /// <summary>Serializable snapshot of the whole engine state.</summary>
+    public DexPerpEngineSnapshot Export() => new()
+    {
+        RealizedPnl = RealizedPnl,
+        FundingPaid = FundingPaid,
+        IdSeq = _idSeq,
+        Position = Position is null ? null : new DexPerpPositionDto
+        {
+            Side = Position.Side,
+            Size = Position.Size,
+            EntryPrice = Position.EntryPrice,
+            Leverage = Position.Leverage,
+            MarginMode = Position.MarginMode,
+            Margin = Position.Margin,
+            MarkPrice = Position.MarkPrice,
+            LiquidationPrice = Position.LiquidationPrice,
+            TrailingDistance = Position.TrailingDistance,
+            TrailingStopPrice = Position.TrailingStopPrice,
+        },
+        Orders = _orders.Select(o => new DexPerpOrderDto
+        {
+            Id = o.Id, Side = o.Side, Kind = o.Kind, TriggerPrice = o.TriggerPrice,
+            SizeTokens = o.SizeTokens, Leverage = o.Leverage, MarginMode = o.MarginMode,
+            CreatedUtc = o.CreatedUtc, PlanId = o.PlanId,
+        }).ToList(),
+        Fills = _fills.Select(f => new DexPerpFillDto
+        {
+            Side = f.Side, Price = f.Price, SizeTokens = f.SizeTokens, Kind = f.Kind, TimeUtc = f.TimeUtc,
+        }).ToList(),
+    };
+
+    /// <summary>Restore engine state from a snapshot (replaces current state).</summary>
+    public void LoadSnapshot(DexPerpEngineSnapshot? s)
+    {
+        if (s is null)
+        {
+            return;
+        }
+
+        RealizedPnl = s.RealizedPnl;
+        FundingPaid = s.FundingPaid;
+        _idSeq = s.IdSeq;
+
+        Position = s.Position is null ? null : new DexPerpPosition
+        {
+            Side = s.Position.Side,
+            Size = s.Position.Size,
+            EntryPrice = s.Position.EntryPrice,
+            Leverage = s.Position.Leverage,
+            MarginMode = s.Position.MarginMode,
+            Margin = s.Position.Margin,
+            MarkPrice = s.Position.MarkPrice,
+            LiquidationPrice = s.Position.LiquidationPrice,
+            TrailingDistance = s.Position.TrailingDistance,
+            TrailingStopPrice = s.Position.TrailingStopPrice,
+        };
+
+        _orders.Clear();
+        foreach (var o in s.Orders)
+        {
+            _orders.Add(new DexPerpWorkingOrder
+            {
+                Id = o.Id, Side = o.Side, Kind = o.Kind, TriggerPrice = o.TriggerPrice,
+                SizeTokens = o.SizeTokens, Leverage = o.Leverage, MarginMode = o.MarginMode,
+                CreatedUtc = o.CreatedUtc, PlanId = o.PlanId, Status = PerpOrderStatus.Working,
+            });
+        }
+
+        _fills.Clear();
+        foreach (var f in s.Fills)
+        {
+            _fills.Add(new DexPerpFill(f.Side, f.Price, f.SizeTokens, f.Kind, f.TimeUtc));
+        }
+    }
+
     private decimal LiquidationPrice(PerpSide side, decimal entry, int leverage)
     {
         var inv = 1m / leverage;
@@ -462,4 +539,52 @@ public sealed class DexPerpPaperEngine
         }
         return result;
     }
+}
+
+// ── Serializable snapshot DTOs (public setters for System.Text.Json) ──────────
+
+public sealed class DexPerpEngineSnapshot
+{
+    public decimal RealizedPnl { get; set; }
+    public decimal FundingPaid { get; set; }
+    public int IdSeq { get; set; }
+    public DexPerpPositionDto? Position { get; set; }
+    public List<DexPerpOrderDto> Orders { get; set; } = new();
+    public List<DexPerpFillDto> Fills { get; set; } = new();
+}
+
+public sealed class DexPerpPositionDto
+{
+    public PerpSide Side { get; set; }
+    public decimal Size { get; set; }
+    public decimal EntryPrice { get; set; }
+    public int Leverage { get; set; }
+    public PerpMarginMode MarginMode { get; set; }
+    public decimal Margin { get; set; }
+    public decimal MarkPrice { get; set; }
+    public decimal LiquidationPrice { get; set; }
+    public decimal TrailingDistance { get; set; }
+    public decimal TrailingStopPrice { get; set; }
+}
+
+public sealed class DexPerpOrderDto
+{
+    public string Id { get; set; } = string.Empty;
+    public PerpSide Side { get; set; }
+    public PerpOrderKind Kind { get; set; }
+    public decimal TriggerPrice { get; set; }
+    public decimal SizeTokens { get; set; }
+    public int Leverage { get; set; }
+    public PerpMarginMode MarginMode { get; set; }
+    public DateTime CreatedUtc { get; set; }
+    public string? PlanId { get; set; }
+}
+
+public sealed class DexPerpFillDto
+{
+    public PerpSide Side { get; set; }
+    public decimal Price { get; set; }
+    public decimal SizeTokens { get; set; }
+    public string Kind { get; set; } = string.Empty;
+    public DateTime TimeUtc { get; set; }
 }
