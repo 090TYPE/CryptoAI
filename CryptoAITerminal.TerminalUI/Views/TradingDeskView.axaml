@@ -1580,12 +1580,50 @@
               <TextBlock Classes="TdH2" Text="DEX Market" IsVisible="{Binding DexDeskVM.IsSwapMode}" />
               <TextBlock Classes="TdH2" Text="Order Book · Position" IsVisible="{Binding DexDeskVM.IsPerpMode}" />
 
-              <!-- Exchange / network selector (the DEX trading venue) -->
-              <Border Background="#0a0616" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="8" Padding="10,8">
-                <StackPanel Spacing="5">
-                  <TextBlock Classes="TdLabel" Text="EXCHANGE · NETWORK" />
-                  <ComboBox ItemsSource="{Binding WalletVM.AvailableNetworks}" SelectedItem="{Binding WalletVM.SelectedNetwork}" HorizontalAlignment="Stretch" />
-                  <TextBlock Classes="TdSub" Text="{Binding DexTradingVM.ActiveDexRouterLabel, StringFormat=Router: {0}}" FontSize="9" TextWrapping="Wrap" />
+              <!-- Exchange selector (Hyperliquid / dYdX / GMX / Uniswap / Vertex) -->
+              <Border Background="#0a0616" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="8" Padding="8">
+                <StackPanel Spacing="7">
+                  <TextBlock Classes="TdLabel" Text="EXCHANGE" />
+                  <ItemsControl ItemsSource="{Binding DexDeskVM.Exchanges}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:DexExchangeViewModel">
+                        <Button Classes="TdSeg dex" Margin="0,0,4,4" Padding="8,5" CornerRadius="6"
+                                Classes.active="{Binding IsSelected}"
+                                Command="{Binding $parent[ItemsControl].DataContext.DexDeskVM.SelectExchangeCommand}"
+                                CommandParameter="{Binding Key}"
+                                ToolTip.Tip="{Binding Settlement}">
+                          <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Ellipse Width="7" Height="7" Fill="{Binding DotBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Name}" Foreground="{Binding NameBrush}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Vol}" Foreground="#5a7a94" FontSize="8" VerticalAlignment="Center" />
+                          </StackPanel>
+                        </Button>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+
+                  <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="6">
+                    <StackPanel Spacing="1">
+                      <TextBlock Text="CHAIN" Foreground="#3d5a72" FontSize="8" />
+                      <TextBlock Text="{Binding DexDeskVM.SelectedExchangeChainBadge}" Foreground="#a855f7" FontSize="9" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="1">
+                      <TextBlock Text="FEE" Foreground="#3d5a72" FontSize="8" />
+                      <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.SelectedExchangeFee}" Foreground="#f4b860" FontSize="9" FontWeight="Bold" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="1">
+                      <TextBlock Text="FUNDING" Foreground="#3d5a72" FontSize="8" />
+                      <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.SelectedExchangeFunding}" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Spacing="1">
+                      <TextBlock Text="MAX LEV" Foreground="#3d5a72" FontSize="8" />
+                      <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.SelectedExchangeMaxLev}" Foreground="#c8dcef" FontSize="9" FontWeight="Bold" />
+                    </StackPanel>
+                  </Grid>
+                  <TextBlock Text="{Binding DexDeskVM.SelectedExchangeSettlement}" Foreground="#5a7a94" FontSize="9" />
                 </StackPanel>
               </Border>
 

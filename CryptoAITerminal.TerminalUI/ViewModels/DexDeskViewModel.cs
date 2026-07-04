@@ -17,6 +17,49 @@ public enum DexDeskMode
     Perp
 }
 
+/// <summary>A selectable DEX exchange / protocol (Hyperliquid, dYdX, GMX, …) with the
+/// venue metadata shown in the reference mock.</summary>
+public sealed class DexExchangeViewModel : ReactiveObject
+{
+    private bool _isSelected;
+
+    public string Key { get; }
+    public string Name { get; }
+    public string DotBrush { get; }
+    public string NameBrush { get; }
+    public string Vol { get; }
+    public string Fee { get; }
+    public string Type { get; }         // PERP / SWAP
+    public string ChainBadge { get; }
+    public string Settlement { get; }
+    public string NetGas { get; }
+    public string FundingRate { get; }
+    public string MaxLev { get; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => this.RaiseAndSetIfChanged(ref _isSelected, value);
+    }
+
+    public DexExchangeViewModel(string key, string name, string dot, string nameBrush, string vol, string fee,
+        string type, string chainBadge, string settlement, string netGas, string fundingRate, string maxLev)
+    {
+        Key = key;
+        Name = name;
+        DotBrush = dot;
+        NameBrush = nameBrush;
+        Vol = vol;
+        Fee = fee;
+        Type = type;
+        ChainBadge = chainBadge;
+        Settlement = settlement;
+        NetGas = netGas;
+        FundingRate = fundingRate;
+        MaxLev = maxLev;
+    }
+}
+
 /// <summary>A single gas-priority tier shown in the DEX ticket (real preference,
 /// consumed by the paper engine to model network cost).</summary>
 public sealed class DexGasTierViewModel : ReactiveObject
@@ -59,6 +102,7 @@ public sealed class DexDeskViewModel : ReactiveObject, IDisposable
     private readonly GasOracleService _gasOracle = new();
     private DexDeskMode _mode = DexDeskMode.Swap;
     private string _selectedGasTierKey = "Standard";
+    private string _selectedExchangeKey = "HYPERLIQUID";
     private bool _mevProtectionEnabled = true;
 
     public DexTradingViewModel Swap { get; }
@@ -82,11 +126,22 @@ public sealed class DexDeskViewModel : ReactiveObject, IDisposable
             GasOracleService.BuildTiers(GasOracleService.DefaultBaseGwei(MapChain(Swap.SelectedChainFilter)))
                 .Select(t => new DexGasTierViewModel(t.Key, t.Label, $"{t.Gwei:0.###} gwei")));
 
+        Exchanges = new ObservableCollection<DexExchangeViewModel>
+        {
+            new("HYPERLIQUID", "Hyperliquid", "#1a9aff", "#4ab6ff", "$1.2B", "0.02%", "PERP", "HyperEVM L1", "On-chain perpetuals", "$0 (gasless)", "+0.008%/8h", "50×"),
+            new("DYDX",        "dYdX v4",     "#6966ff", "#8a87ff", "$380M", "0.05%", "PERP", "Cosmos Chain", "Cosmos app-chain", "~$0.01", "+0.011%/8h", "25×"),
+            new("GMX",         "GMX v2",      "#1bbf8d", "#21e6c1", "$210M", "0.01%", "PERP", "Arbitrum One", "GLP pool backed", "~$0.40", "+0.006%/8h", "100×"),
+            new("UNISWAP",     "Uniswap V3",  "#ff007a", "#ff4da6", "$840M", "0.30%", "SWAP", "Ethereum", "AMM swap", "~$8.20", "N/A", "N/A"),
+            new("VERTEX",      "Vertex",      "#f4b860", "#f4c87e", "$95M",  "0.02%", "PERP", "Arbitrum One", "CLOB on-chain", "~$0.20", "+0.009%/8h", "20×"),
+        };
+
         SelectModeCommand = ReactiveCommand.Create<string>(SelectMode, outputScheduler: App.UiScheduler);
         SelectGasTierCommand = ReactiveCommand.Create<string>(SelectGasTier, outputScheduler: App.UiScheduler);
+        SelectExchangeCommand = ReactiveCommand.Create<string>(SelectExchange, outputScheduler: App.UiScheduler);
         ToggleMevCommand = ReactiveCommand.Create(ToggleMev, outputScheduler: App.UiScheduler);
 
         SyncGasTierSelection();
+        SyncExchangeSelection();
 
         Swap.PropertyChanged += OnSwapPropertyChanged;
         _ = RefreshGasAsync();
@@ -168,6 +223,60 @@ public sealed class DexDeskViewModel : ReactiveObject, IDisposable
         Mode = string.Equals(mode, "PERP", StringComparison.OrdinalIgnoreCase)
             ? DexDeskMode.Perp
             : DexDeskMode.Swap;
+    }
+
+    // ── DEX exchange selector (Hyperliquid / dYdX / GMX / Uniswap / Vertex) ────
+    public ObservableCollection<DexExchangeViewModel> Exchanges { get; }
+    public ReactiveCommand<string, Unit> SelectExchangeCommand { get; }
+
+    public DexExchangeViewModel? SelectedExchange =>
+        Exchanges.FirstOrDefault(e => string.Equals(e.Key, _selectedExchangeKey, StringComparison.OrdinalIgnoreCase));
+
+    public string SelectedExchangeName => SelectedExchange?.Name ?? "--";
+    public string SelectedExchangeChainBadge => SelectedExchange?.ChainBadge ?? "--";
+    public string SelectedExchangeFee => SelectedExchange?.Fee ?? "--";
+    public string SelectedExchangeVol => SelectedExchange?.Vol ?? "--";
+    public string SelectedExchangeFunding => SelectedExchange?.FundingRate ?? "--";
+    public string SelectedExchangeMaxLev => SelectedExchange?.MaxLev ?? "--";
+    public string SelectedExchangeSettlement => SelectedExchange?.Settlement ?? "--";
+    public string SelectedExchangeNetGas => SelectedExchange?.NetGas ?? "--";
+    public string SelectedExchangeType => SelectedExchange?.Type ?? "--";
+
+    private void SelectExchange(string? key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return;
+        }
+
+        _selectedExchangeKey = key;
+        SyncExchangeSelection();
+
+        // Switch SWAP/PERP to match the chosen exchange's product, like the reference.
+        var ex = SelectedExchange;
+        if (ex is not null)
+        {
+            Mode = string.Equals(ex.Type, "SWAP", StringComparison.OrdinalIgnoreCase) ? DexDeskMode.Swap : DexDeskMode.Perp;
+        }
+    }
+
+    private void SyncExchangeSelection()
+    {
+        foreach (var ex in Exchanges)
+        {
+            ex.IsSelected = string.Equals(ex.Key, _selectedExchangeKey, StringComparison.OrdinalIgnoreCase);
+        }
+
+        this.RaisePropertyChanged(nameof(SelectedExchange));
+        this.RaisePropertyChanged(nameof(SelectedExchangeName));
+        this.RaisePropertyChanged(nameof(SelectedExchangeChainBadge));
+        this.RaisePropertyChanged(nameof(SelectedExchangeFee));
+        this.RaisePropertyChanged(nameof(SelectedExchangeVol));
+        this.RaisePropertyChanged(nameof(SelectedExchangeFunding));
+        this.RaisePropertyChanged(nameof(SelectedExchangeMaxLev));
+        this.RaisePropertyChanged(nameof(SelectedExchangeSettlement));
+        this.RaisePropertyChanged(nameof(SelectedExchangeNetGas));
+        this.RaisePropertyChanged(nameof(SelectedExchangeType));
     }
 
     // ── Gas priority ──────────────────────────────────────────────────────────
