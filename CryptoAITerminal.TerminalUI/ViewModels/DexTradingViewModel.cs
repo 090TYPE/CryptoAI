@@ -124,6 +124,13 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             this.RaisePropertyChanged(nameof(DexGuardDetail));
             this.RaisePropertyChanged(nameof(SelectedTokenTitle));
             this.RaisePropertyChanged(nameof(SelectedTokenSubtitle));
+            this.RaisePropertyChanged(nameof(DexProtocolLabel));
+            this.RaisePropertyChanged(nameof(DexChainBadge));
+            this.RaisePropertyChanged(nameof(DexMarketCapLabel));
+            this.RaisePropertyChanged(nameof(DexFees24hLabel));
+            this.RaisePropertyChanged(nameof(DexUtilizationLabel));
+            this.RaisePropertyChanged(nameof(DexChange24hLabel));
+            this.RaisePropertyChanged(nameof(DexChange24hBrush));
             this.RaisePropertyChanged(nameof(IsSelectedPairCompatible));
             this.RaisePropertyChanged(nameof(PairCompatibilityMessage));
             this.RaisePropertyChanged(nameof(ManualBuyBlockedReason));
@@ -553,6 +560,18 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         : SelectedToken.TokenInfo.LiquidityUsd > 0
             ? $"$ {SelectedToken.TokenInfo.LiquidityUsd:N0}"
             : "--";
+
+    // ── Pool / exchange labels for the mock's DEX right rail (real-derived) ────
+    public string DexProtocolLabel => string.IsNullOrWhiteSpace(SelectedToken?.TokenInfo.DexId) ? "--" : SelectedToken!.TokenInfo.DexId.ToUpperInvariant();
+    public string DexChainBadge => string.IsNullOrWhiteSpace(SelectedToken?.TokenInfo.ChainId) ? "--" : SelectedToken!.TokenInfo.ChainId.ToUpperInvariant();
+    public string DexPairFeeLabel => "0.30%"; // default AMM tier shown on the info strip
+    public string DexMarketCapLabel => SelectedToken is { TokenInfo.MarketCap: > 0 } ? $"$ {SelectedToken.TokenInfo.MarketCap:N0}" : "--";
+    public string DexFees24hLabel => SelectedToken is { TokenInfo.Volume24h: > 0 } ? $"$ {SelectedToken.TokenInfo.Volume24h * 0.003m:N0}" : "--";
+    public string DexUtilizationLabel => SelectedToken is { TokenInfo.LiquidityUsd: > 0 } tk
+        ? $"{Math.Min(999m, tk.TokenInfo.Volume24h / tk.TokenInfo.LiquidityUsd * 100m):N0}%"
+        : "--";
+    public string DexChange24hLabel => SelectedToken is null ? "--" : $"{SelectedToken.TokenInfo.PriceChange24h:+0.00;-0.00;0.00}%";
+    public string DexChange24hBrush => (SelectedToken?.TokenInfo.PriceChange24h ?? 0m) >= 0m ? "#3ddc84" : "#ff6b6b";
 
     private static string FormatPrice(decimal price) => price switch
     {

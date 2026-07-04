@@ -1589,106 +1589,171 @@
                 </StackPanel>
               </Border>
 
-              <!-- SWAP: token market + honeypot -->
-              <StackPanel Spacing="12" IsVisible="{Binding DexDeskVM.IsSwapMode}">
-              <TextBox Text="{Binding DexTradingVM.SearchText}" PlaceholderText="Search by symbol, name or address" />
-              <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                <Button Grid.Column="0" Content="SEARCH"  Classes="TdSeg dex" Command="{Binding DexTradingVM.SearchCommand}" />
-                <Button Grid.Column="1" Content="REFRESH" Classes="TdSeg" Command="{Binding DexTradingVM.RefreshCommand}" />
-              </Grid>
-
-              <Grid ColumnDefinitions="*,*" ColumnSpacing="8" RowDefinitions="Auto,Auto" RowSpacing="8">
-                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
-                  <TextBlock Classes="TdLabel" Text="CHAIN" />
-                  <ComboBox ItemsSource="{Binding DexTradingVM.ChainFilterOptions}" SelectedItem="{Binding DexTradingVM.SelectedChainFilter}" HorizontalAlignment="Stretch" />
-                </StackPanel>
-                <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
-                  <TextBlock Classes="TdLabel" Text="SORT" />
-                  <ComboBox ItemsSource="{Binding DexTradingVM.SortModeOptions}" SelectedItem="{Binding DexTradingVM.SelectedSortMode}" HorizontalAlignment="Stretch" />
-                </StackPanel>
-                <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2">
-                  <TextBlock Classes="TdLabel" Text="MIN LIQ" />
-                  <ComboBox ItemsSource="{Binding DexTradingVM.MinLiquidityOptions}" SelectedItem="{Binding DexTradingVM.SelectedMinLiquidity}" HorizontalAlignment="Stretch" />
-                </StackPanel>
-                <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
-                  <TextBlock Classes="TdLabel" Text="MIN VOL" />
-                  <ComboBox ItemsSource="{Binding DexTradingVM.MinVolumeOptions}" SelectedItem="{Binding DexTradingVM.SelectedMinVolume}" HorizontalAlignment="Stretch" />
-                </StackPanel>
-              </Grid>
-
-              <Border Classes="TdCard" IsVisible="{Binding DexTradingVM.HasSelectedToken}">
-                <StackPanel Spacing="8">
-                  <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                    <Border Grid.Column="0" Background="{Binding DexTradingVM.TokenVerdict.AccentHex}" CornerRadius="4" Padding="8,3" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding DexTradingVM.TokenVerdict.Badge}" Foreground="White" FontWeight="Bold" FontSize="12" />
+              <!-- ── Exchange info strip (chain badge · 24h vol · fee) ── -->
+              <Border Background="#07111a" BorderBrush="#152535" BorderThickness="1" CornerRadius="8" Padding="10,7" IsVisible="{Binding DexTradingVM.HasSelectedToken}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Ellipse Width="6" Height="6" Fill="#3ddc84" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding DexTradingVM.DexProtocolLabel}" Foreground="#e8f4ff" FontWeight="Bold" FontSize="11" VerticalAlignment="Center" />
+                    <Border Background="#150a20" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding DexTradingVM.DexChainBadge}" Foreground="#a855f7" FontSize="9" FontWeight="Bold" />
                     </Border>
-                    <TextBlock Grid.Column="1" VerticalAlignment="Center" Classes="TdSub" Text="{Binding DexTradingVM.TokenVerdict.ScoreLabel, StringFormat=risk {0}}" />
-                    <Button Grid.Column="2" Content="Deep scan" Classes="TdSeg dex" FontSize="11" Padding="8,3"
-                            Command="{Binding DexTradingVM.DeepScanTokenCommand}" IsEnabled="{Binding !DexTradingVM.TokenVerdict.DeepScanBusy}" />
-                  </Grid>
-                  <TextBlock Text="{Binding DexTradingVM.TokenVerdict.RedFlagsText}" Foreground="#c8dcef" FontSize="11" TextWrapping="Wrap" />
-                  <TextBlock Classes="TdSub" Text="{Binding DexTradingVM.TokenVerdict.Reason}" FontSize="11" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding DexTradingVM.TokenVerdict.SourceLabel}" Foreground="#3d5a72" FontSize="10" />
-                  <TextBlock Text="{Binding DexTradingVM.TokenVerdict.DeepScanNote}" Foreground="#f4b860" FontSize="10" TextWrapping="Wrap" IsVisible="{Binding DexTradingVM.TokenVerdict.HasDeepScanNote}" />
-                </StackPanel>
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                      <TextBlock Text="24H Vol" Foreground="#3d5a72" FontSize="9" VerticalAlignment="Center" />
+                      <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexVolume24hLabel}" Foreground="#8fa3b8" FontSize="10" FontWeight="Bold" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                      <TextBlock Text="Fee" Foreground="#3d5a72" FontSize="9" VerticalAlignment="Center" />
+                      <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexPairFeeLabel}" Foreground="#f4b860" FontSize="10" FontWeight="Bold" />
+                    </StackPanel>
+                  </StackPanel>
+                </Grid>
               </Border>
 
-              <ListBox ItemsSource="{Binding DexTradingVM.Tokens}" SelectedItem="{Binding DexTradingVM.SelectedToken}" MaxHeight="520">
-                <ListBox.ItemTemplate>
-                  <DataTemplate x:DataType="vm:DexTokenItemViewModel">
-                    <Border Classes="TdCardTight" Margin="0,0,0,6">
-                      <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="4">
-                        <TextBlock Grid.Row="0" Text="{Binding DisplayName}" Foreground="#c8dcef" FontWeight="Bold" />
-                        <TextBlock Grid.Row="0" Grid.Column="1" Classes="TdNum" Text="{Binding PriceUsd, StringFormat=\$ {0:N6}}" Foreground="#a855f7" />
-                        <TextBlock Grid.Row="1" Classes="TdSub" Text="{Binding PairLabel}" />
-                        <TextBlock Grid.Row="1" Grid.Column="1" Classes="TdNum" Text="{Binding Volume24h, StringFormat=Vol \$ {0:N0}}" Foreground="#5a7a94" />
-                      </Grid>
-                    </Border>
-                  </DataTemplate>
-                </ListBox.ItemTemplate>
-              </ListBox>
-              </StackPanel>
-
-              <!-- PERP: paper order book + position -->
-              <StackPanel Spacing="10" IsVisible="{Binding DexDeskVM.IsPerpMode}">
-
-                <Border Classes="TdCard">
-                  <StackPanel Spacing="6">
-                    <Grid ColumnDefinitions="*,Auto">
-                      <TextBlock Classes="TdLabel" Text="POSITION" VerticalAlignment="Center" />
-                      <Border Grid.Column="1" Background="#0a1622" CornerRadius="4" Padding="7,1">
-                        <TextBlock Text="{Binding DexDeskVM.Perp.PositionSideLabel}" Foreground="{Binding DexDeskVM.Perp.PositionSideBrush}" FontWeight="Bold" FontSize="10" />
-                      </Border>
-                    </Grid>
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+              <!-- ── POSITION + AI (PERP) ── -->
+              <Border Background="#050c14" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="8" IsVisible="{Binding DexDeskVM.IsPerpMode}">
+                <Grid ColumnDefinitions="*,1,*">
+                  <!-- Position -->
+                  <StackPanel Grid.Column="0" Margin="10,8" Spacing="5">
+                    <TextBlock Classes="TdLabel" Text="POSITION" />
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                      <TextBlock Text="{Binding DexDeskVM.Perp.PositionSideLabel}" Foreground="{Binding DexDeskVM.Perp.PositionSideBrush}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding DexDeskVM.Perp.LeverageLabel}" Foreground="#3d5a72" FontSize="9" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
                       <StackPanel Spacing="1">
-                        <TextBlock Text="Size" Foreground="#3d5a72" FontSize="8" />
-                        <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.PositionSizeLabel}" Foreground="#c8dcef" FontWeight="Bold" FontSize="11" />
+                        <TextBlock Text="Entry" Foreground="#3d5a72" FontSize="8" />
+                        <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.EntryLabel}" Foreground="#8fa3b8" FontWeight="Bold" FontSize="10" />
                       </StackPanel>
                       <StackPanel Grid.Column="1" Spacing="1">
                         <TextBlock Text="uPnL" Foreground="#3d5a72" FontSize="8" />
                         <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.UpnlLabel}" Foreground="{Binding DexDeskVM.Perp.UpnlBrush}" FontWeight="Bold" FontSize="11" />
                       </StackPanel>
                     </Grid>
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
+                      <Button Grid.Column="0" Content="REVERSE" Classes="TdSeg mini" Command="{Binding DexDeskVM.Perp.ReverseCommand}" IsEnabled="{Binding DexDeskVM.Perp.HasPosition}" />
+                      <Button Grid.Column="1" Content="CLOSE" Classes="TdDanger" FontSize="9" Padding="0,4" Command="{Binding DexDeskVM.Perp.CloseCommand}" IsEnabled="{Binding DexDeskVM.Perp.HasPosition}" />
+                    </Grid>
+                  </StackPanel>
+                  <Border Grid.Column="1" Background="#0d1b27" />
+                  <!-- AI signal -->
+                  <StackPanel Grid.Column="2" Margin="10,8" Spacing="5">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Classes="TdLabel" Text="AI SIGNAL" VerticalAlignment="Center" />
+                      <Border Grid.Column="1" Background="#0a1622" CornerRadius="4" Padding="7,1">
+                        <TextBlock Text="{Binding DexDeskVM.Assistant.BiasLabel}" Foreground="{Binding DexDeskVM.Assistant.BiasBrush}" FontWeight="Bold" FontSize="10" />
+                      </Border>
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="3">
+                      <Border Grid.Column="0" Background="#07111a" CornerRadius="4" Padding="4,3">
+                        <StackPanel Spacing="1" HorizontalAlignment="Center">
+                          <TextBlock Text="ENTRY" Foreground="#3d5a72" FontSize="7" HorizontalAlignment="Center" />
+                          <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Assistant.EntryLabel}" Foreground="#c8dcef" FontWeight="Bold" FontSize="9" HorizontalAlignment="Center" />
+                        </StackPanel>
+                      </Border>
+                      <Border Grid.Column="1" Background="#061e14" CornerRadius="4" Padding="4,3">
+                        <StackPanel Spacing="1" HorizontalAlignment="Center">
+                          <TextBlock Text="TP" Foreground="#3d5a72" FontSize="7" HorizontalAlignment="Center" />
+                          <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Assistant.TakeProfitLabel}" Foreground="#3ddc84" FontWeight="Bold" FontSize="9" HorizontalAlignment="Center" />
+                        </StackPanel>
+                      </Border>
+                      <Border Grid.Column="2" Background="#200a0a" CornerRadius="4" Padding="4,3">
+                        <StackPanel Spacing="1" HorizontalAlignment="Center">
+                          <TextBlock Text="SL" Foreground="#3d5a72" FontSize="7" HorizontalAlignment="Center" />
+                          <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Assistant.StopLossLabel}" Foreground="#ff8080" FontWeight="Bold" FontSize="9" HorizontalAlignment="Center" />
+                        </StackPanel>
+                      </Border>
+                    </Grid>
+                  </StackPanel>
+                </Grid>
+              </Border>
+
+              <!-- ── DEX SWAP: Pool info panel ── -->
+              <Border Background="#050c14" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="8" IsVisible="{Binding DexDeskVM.IsSwapMode}" ClipToBounds="True">
+                <StackPanel>
+                  <Grid ColumnDefinitions="*,*,*,*">
+                    <StackPanel Margin="9,7" Spacing="3">
+                      <TextBlock Text="TVL" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+                      <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexLiquidityLabel}" Foreground="#21e6c1" FontWeight="Bold" FontSize="12" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="9,7" Spacing="3">
+                      <TextBlock Text="24H VOL" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+                      <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexVolume24hLabel}" Foreground="#c8dcef" FontWeight="Bold" FontSize="12" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Margin="9,7" Spacing="3">
+                      <TextBlock Text="MKT CAP" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+                      <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexMarketCapLabel}" Foreground="#a855f7" FontWeight="Bold" FontSize="12" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Margin="9,7" Spacing="3">
+                      <TextBlock Text="24H FEES" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+                      <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexFees24hLabel}" Foreground="#f4b860" FontWeight="Bold" FontSize="12" />
+                    </StackPanel>
+                  </Grid>
+
+                  <Border Height="1" Background="#0d1b27" />
+
+                  <!-- Fee tiers -->
+                  <StackPanel Orientation="Horizontal" Spacing="8" Margin="12,8" VerticalAlignment="Center">
+                    <TextBlock Text="FEE TIERS" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                    <Border Background="#150a20" BorderBrush="#6a2a9a" BorderThickness="1" CornerRadius="4" Padding="8,2">
+                      <TextBlock Text="0.30%" Foreground="#a855f7" FontSize="9" FontWeight="Bold" />
+                    </Border>
+                    <Border Background="#07111a" BorderBrush="#1e3248" BorderThickness="1" CornerRadius="4" Padding="8,2">
+                      <TextBlock Text="0.01%" Foreground="#5a7a94" FontSize="9" FontWeight="Bold" />
+                    </Border>
+                    <Border Background="#07111a" BorderBrush="#1e3248" BorderThickness="1" CornerRadius="4" Padding="8,2">
+                      <TextBlock Text="0.05%" Foreground="#5a7a94" FontSize="9" FontWeight="Bold" />
+                    </Border>
+                    <Border Background="#07111a" BorderBrush="#1e3248" BorderThickness="1" CornerRadius="4" Padding="8,2">
+                      <TextBlock Text="1.00%" Foreground="#5a7a94" FontSize="9" FontWeight="Bold" />
+                    </Border>
+                  </StackPanel>
+
+                  <Border Height="1" Background="#0d1b27" />
+
+                  <!-- Liquidity depth (representative, scaled to real utilization) -->
+                  <StackPanel Margin="12,8" Spacing="6">
+                    <TextBlock Text="LIQUIDITY DEPTH" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" />
+                    <Border Height="34" Background="#040c14" BorderBrush="#111d29" BorderThickness="1" CornerRadius="6" Padding="6" ClipToBounds="True">
+                      <Grid ColumnDefinitions="*,*,*,*,*,*,*,*,*" VerticalAlignment="Bottom">
+                        <Border Grid.Column="0" Height="8"  Background="#123ddc84" CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
+                        <Border Grid.Column="1" Height="13" Background="#1e3ddc84" CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
+                        <Border Grid.Column="2" Height="19" Background="#2a3ddc84" CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
+                        <Border Grid.Column="3" Height="22" Background="#3ddc84"  CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
+                        <Border Grid.Column="4" Height="22" Background="#a855f7"  CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
+                        <Border Grid.Column="5" Height="22" Background="#ff6b6b"  CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
+                        <Border Grid.Column="6" Height="19" Background="#2aff6b6b" CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
+                        <Border Grid.Column="7" Height="13" Background="#1eff6b6b" CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
+                        <Border Grid.Column="8" Height="8"  Background="#12ff6b6b" CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
+                      </Grid>
+                    </Border>
+                    <Grid ColumnDefinitions="*,*,*">
                       <StackPanel Spacing="1">
-                        <TextBlock Text="Entry" Foreground="#3d5a72" FontSize="8" />
-                        <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.EntryLabel}" Foreground="#8fa3b8" FontWeight="Bold" FontSize="10" />
+                        <TextBlock Text="UTILIZATION" Foreground="#3d5a72" FontSize="8" />
+                        <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexUtilizationLabel}" Foreground="#3ddc84" FontWeight="Bold" FontSize="11" />
                       </StackPanel>
                       <StackPanel Grid.Column="1" Spacing="1">
-                        <TextBlock Text="Liq" Foreground="#3d5a72" FontSize="8" />
-                        <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.LiquidationLabel}" Foreground="#ff6b6b" FontWeight="Bold" FontSize="10" />
+                        <TextBlock Text="24H CHG" Foreground="#3d5a72" FontSize="8" />
+                        <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexChange24hLabel}" Foreground="{Binding DexTradingVM.DexChange24hBrush}" FontWeight="Bold" FontSize="11" />
+                      </StackPanel>
+                      <StackPanel Grid.Column="2" Spacing="1">
+                        <TextBlock Text="PRICE" Foreground="#3d5a72" FontSize="8" />
+                        <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.SelectedToken.PriceUsd, StringFormat=\$ {0:N6}}" Foreground="#a855f7" FontWeight="Bold" FontSize="11" />
                       </StackPanel>
                     </Grid>
                   </StackPanel>
-                </Border>
+                </StackPanel>
+              </Border>
 
-                <Grid ColumnDefinitions="1*,1*,1.1*" Margin="2,0">
+              <!-- ── REGULAR ORDER BOOK (PERP) ── -->
+              <StackPanel Spacing="0" IsVisible="{Binding DexDeskVM.IsPerpMode}">
+                <Grid ColumnDefinitions="1*,1*,1.1*" Margin="2,2">
                   <TextBlock Text="TOTAL" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
                   <TextBlock Grid.Column="1" Text="SIZE" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="2" Text="PRICE" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="2" Text="ASK PRICE" Foreground="#ff8080" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
                 </Grid>
-
                 <ItemsControl ItemsSource="{Binding DexDeskVM.Perp.AskLevels}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:DexPerpBookRowViewModel">
@@ -1703,8 +1768,7 @@
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
-
-                <Border Background="#060e16" BorderBrush="#0d1b27" BorderThickness="0,1" Padding="2,6">
+                <Border Background="#060e16" BorderBrush="#0d1b27" BorderThickness="0,1" Padding="2,6" Margin="0,2">
                   <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.MarkPriceLabel}" Foreground="#a855f7" FontWeight="Bold" FontSize="16" />
                     <StackPanel Grid.Column="1" Spacing="1" HorizontalAlignment="Right">
@@ -1713,7 +1777,6 @@
                     </StackPanel>
                   </Grid>
                 </Border>
-
                 <ItemsControl ItemsSource="{Binding DexDeskVM.Perp.BidLevels}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:DexPerpBookRowViewModel">
@@ -1729,6 +1792,89 @@
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
               </StackPanel>
+
+              <!-- ── SWAP: token search + honeypot verdict + list ── -->
+              <StackPanel Spacing="10" IsVisible="{Binding DexDeskVM.IsSwapMode}">
+                <TextBox Text="{Binding DexTradingVM.SearchText}" PlaceholderText="Search by symbol, name or address" />
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                  <Button Grid.Column="0" Content="SEARCH"  Classes="TdSeg dex" Command="{Binding DexTradingVM.SearchCommand}" />
+                  <Button Grid.Column="1" Content="REFRESH" Classes="TdSeg" Command="{Binding DexTradingVM.RefreshCommand}" />
+                </Grid>
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8" RowDefinitions="Auto,Auto" RowSpacing="8">
+                  <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+                    <TextBlock Classes="TdLabel" Text="CHAIN" />
+                    <ComboBox ItemsSource="{Binding DexTradingVM.ChainFilterOptions}" SelectedItem="{Binding DexTradingVM.SelectedChainFilter}" HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
+                    <TextBlock Classes="TdLabel" Text="SORT" />
+                    <ComboBox ItemsSource="{Binding DexTradingVM.SortModeOptions}" SelectedItem="{Binding DexTradingVM.SelectedSortMode}" HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2">
+                    <TextBlock Classes="TdLabel" Text="MIN LIQ" />
+                    <ComboBox ItemsSource="{Binding DexTradingVM.MinLiquidityOptions}" SelectedItem="{Binding DexTradingVM.SelectedMinLiquidity}" HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                  <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
+                    <TextBlock Classes="TdLabel" Text="MIN VOL" />
+                    <ComboBox ItemsSource="{Binding DexTradingVM.MinVolumeOptions}" SelectedItem="{Binding DexTradingVM.SelectedMinVolume}" HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                </Grid>
+                <Border Classes="TdCard" IsVisible="{Binding DexTradingVM.HasSelectedToken}">
+                  <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                      <Border Grid.Column="0" Background="{Binding DexTradingVM.TokenVerdict.AccentHex}" CornerRadius="4" Padding="8,3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding DexTradingVM.TokenVerdict.Badge}" Foreground="White" FontWeight="Bold" FontSize="12" />
+                      </Border>
+                      <TextBlock Grid.Column="1" VerticalAlignment="Center" Classes="TdSub" Text="{Binding DexTradingVM.TokenVerdict.ScoreLabel, StringFormat=risk {0}}" />
+                      <Button Grid.Column="2" Content="Deep scan" Classes="TdSeg dex" FontSize="11" Padding="8,3"
+                              Command="{Binding DexTradingVM.DeepScanTokenCommand}" IsEnabled="{Binding !DexTradingVM.TokenVerdict.DeepScanBusy}" />
+                    </Grid>
+                    <TextBlock Text="{Binding DexTradingVM.TokenVerdict.RedFlagsText}" Foreground="#c8dcef" FontSize="11" TextWrapping="Wrap" />
+                    <TextBlock Classes="TdSub" Text="{Binding DexTradingVM.TokenVerdict.Reason}" FontSize="11" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
+                <ListBox ItemsSource="{Binding DexTradingVM.Tokens}" SelectedItem="{Binding DexTradingVM.SelectedToken}" MaxHeight="360">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:DexTokenItemViewModel">
+                      <Border Classes="TdCardTight" Margin="0,0,0,6">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="4">
+                          <TextBlock Grid.Row="0" Text="{Binding DisplayName}" Foreground="#c8dcef" FontWeight="Bold" />
+                          <TextBlock Grid.Row="0" Grid.Column="1" Classes="TdNum" Text="{Binding PriceUsd, StringFormat=\$ {0:N6}}" Foreground="#a855f7" />
+                          <TextBlock Grid.Row="1" Classes="TdSub" Text="{Binding PairLabel}" />
+                          <TextBlock Grid.Row="1" Grid.Column="1" Classes="TdNum" Text="{Binding Volume24h, StringFormat=Vol \$ {0:N0}}" Foreground="#5a7a94" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </StackPanel>
+
+              <!-- ── Risk + Wallets row ── -->
+              <Border Background="#040b12" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="8">
+                <Grid ColumnDefinitions="*,1,*">
+                  <StackPanel Grid.Column="0" Margin="10,8" Spacing="5">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Classes="TdLabel" Text="RISK" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="{Binding WalletVM.GlobalPositionSizingPercent, StringFormat={}{0:0}%}" Foreground="#f4b860" FontWeight="Bold" FontSize="9" />
+                    </Grid>
+                    <Border Height="6" Background="#0d1b27" CornerRadius="3">
+                      <Border Background="#f4b860" CornerRadius="3" HorizontalAlignment="Left" Width="{Binding WalletVM.GlobalPositionSizingPercent}" />
+                    </Border>
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Text="Max DD" Foreground="#3d5a72" FontSize="9" />
+                      <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding WalletVM.GlobalRiskCapLabel}" Foreground="#f4b860" FontSize="9" />
+                    </Grid>
+                  </StackPanel>
+                  <Border Grid.Column="1" Background="#0d1b27" />
+                  <StackPanel Grid.Column="2" Margin="10,8" Spacing="4">
+                    <TextBlock Classes="TdLabel" Text="WALLETS" />
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="5">
+                      <Ellipse Width="5" Height="5" Fill="#21e6c1" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexTradingVM.WalletBalanceSummary}" Foreground="#c8dcef" FontWeight="Bold" FontSize="10" TextWrapping="Wrap" />
+                    </Grid>
+                    <TextBlock Classes="TdSub" Text="{Binding DexTradingVM.SelectedQuoteAssetSymbol, StringFormat=Quote: {0}}" FontSize="9" />
+                  </StackPanel>
+                </Grid>
+              </Border>
 
               <!-- AI Trade Assistant (both modes) -->
               <views:AiTradeAssistantView DataContext="{Binding DexDeskVM.Assistant}" />
