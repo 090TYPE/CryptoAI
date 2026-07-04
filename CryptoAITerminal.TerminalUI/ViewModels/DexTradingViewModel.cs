@@ -309,6 +309,8 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     public string WalletSessionSummary => _walletWorkspace.ActiveWalletBanner;
     public string WalletBalanceSummary => _walletWorkspace.NativeBalanceLabel;
     public string WalletTradeStatus => _walletWorkspace.WalletCapabilityText;
+    /// <summary>Live DEX routers on the active network (the DEX "exchange" for this venue).</summary>
+    public string ActiveDexRouterLabel => _walletWorkspace.ActiveDexGateway?.SupportedDexesLabel ?? "no live router";
     public string GlobalQuoteModeLabel => _walletWorkspace.GlobalQuoteAssetModeLabel;
     public string GlobalQuoteModeBrush => _walletWorkspace.GlobalQuoteAssetModeBrush;
     public string GlobalQuoteSummary => _walletWorkspace.GlobalQuoteAssetSummary;
@@ -1703,6 +1705,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             this.RaisePropertyChanged(nameof(WalletSessionSummary));
             this.RaisePropertyChanged(nameof(WalletBalanceSummary));
             this.RaisePropertyChanged(nameof(WalletTradeStatus));
+            this.RaisePropertyChanged(nameof(ActiveDexRouterLabel));
             this.RaisePropertyChanged(nameof(GlobalQuoteModeLabel));
             this.RaisePropertyChanged(nameof(GlobalQuoteModeBrush));
             this.RaisePropertyChanged(nameof(GlobalQuoteSummary));

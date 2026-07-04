@@ -1580,6 +1580,15 @@
               <TextBlock Classes="TdH2" Text="DEX Market" IsVisible="{Binding DexDeskVM.IsSwapMode}" />
               <TextBlock Classes="TdH2" Text="Order Book · Position" IsVisible="{Binding DexDeskVM.IsPerpMode}" />
 
+              <!-- Exchange / network selector (the DEX trading venue) -->
+              <Border Background="#0a0616" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="8" Padding="10,8">
+                <StackPanel Spacing="5">
+                  <TextBlock Classes="TdLabel" Text="EXCHANGE · NETWORK" />
+                  <ComboBox ItemsSource="{Binding WalletVM.AvailableNetworks}" SelectedItem="{Binding WalletVM.SelectedNetwork}" HorizontalAlignment="Stretch" />
+                  <TextBlock Classes="TdSub" Text="{Binding DexTradingVM.ActiveDexRouterLabel, StringFormat=Router: {0}}" FontSize="9" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+
               <!-- SWAP: token market + honeypot -->
               <StackPanel Spacing="12" IsVisible="{Binding DexDeskVM.IsSwapMode}">
               <TextBox Text="{Binding DexTradingVM.SearchText}" PlaceholderText="Search by symbol, name or address" />
