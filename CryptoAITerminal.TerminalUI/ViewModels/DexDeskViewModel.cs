@@ -44,17 +44,21 @@ public sealed class DexGasTierViewModel : ReactiveObject
 /// keeps driving the real spot-swap execution. Kept separate so the already large
 /// swap view model stays focused. The paper-perp surface is added in a later phase.
 /// </summary>
-public sealed class DexDeskViewModel : ReactiveObject
+public sealed class DexDeskViewModel : ReactiveObject, IDisposable
 {
     private DexDeskMode _mode = DexDeskMode.Swap;
     private string _selectedGasTierKey = "Standard";
     private bool _mevProtectionEnabled = true;
 
     public DexTradingViewModel Swap { get; }
+    public DexPerpTradingViewModel Perp { get; }
 
     public DexDeskViewModel(DexTradingViewModel swap)
     {
         Swap = swap ?? throw new ArgumentNullException(nameof(swap));
+        Perp = new DexPerpTradingViewModel(
+            anchorPrice: () => Swap.SelectedToken?.PriceUsd ?? 0m,
+            symbol: () => Swap.SelectedToken?.TokenInfo.Symbol ?? "TOKEN");
 
         GasTiers = new ObservableCollection<DexGasTierViewModel>
         {
@@ -82,6 +86,7 @@ public sealed class DexDeskViewModel : ReactiveObject
             this.RaisePropertyChanged(nameof(IsSwapMode));
             this.RaisePropertyChanged(nameof(IsPerpMode));
             this.RaisePropertyChanged(nameof(SymbolTypeLabel));
+            Perp.SetActive(_mode == DexDeskMode.Perp);
         }
     }
 
@@ -165,4 +170,6 @@ public sealed class DexDeskViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> ToggleMevCommand { get; }
 
     private void ToggleMev() => MevProtectionEnabled = !_mevProtectionEnabled;
+
+    public void Dispose() => Perp.Dispose();
 }
