@@ -22,7 +22,8 @@ public sealed record TradeSetup(
     int Leverage,
     decimal SizePercent,
     int Confidence,       // 0..100
-    string Rationale);
+    string Rationale,
+    int Confluence = 0);  // 0..100 multi-lookback trend agreement
 
 /// <summary>
 /// Deterministic trade-setup builder that reads recent candles and the user's stated
@@ -39,7 +40,8 @@ public static class AiTradeSetupPlanner
         TradeBiasMode biasMode,
         TradeRiskProfile risk,
         TradeHorizon horizon,
-        string? intent = null)
+        string? intent = null,
+        decimal riskPercentPerTrade = 0m)
     {
         if (candles is null || candles.Count < 3)
         {
@@ -120,6 +122,16 @@ public static class AiTradeSetupPlanner
             stop = entry * 0.5m;
         }
 
+        // Risk-based sizing: if the user states a per-trade risk %, size so that being
+        // stopped out costs ~that % of the account — independent of leverage/equity.
+        if (riskPercentPerTrade > 0m && stopDistance > 0m)
+        {
+            sizePercent = Math.Clamp(riskPercentPerTrade * (entry / stopDistance), 1m, 100m);
+        }
+
+        // Confluence: agreement of fast/mid/slow moving averages with the chosen bias.
+        var confluence = TrendConfluence(closes, isLong);
+
         // Confidence: trend strength, rewarded when the bias agrees with the trend.
         var aligned = isLong == trendUp;
         var baseConfidence = 52m + Math.Min(trendStrength * 900m, 34m);
@@ -137,7 +149,25 @@ public static class AiTradeSetupPlanner
             Leverage: leverage,
             SizePercent: sizePercent,
             Confidence: confidence,
-            Rationale: rationale);
+            Rationale: rationale,
+            Confluence: confluence);
+    }
+
+    /// <summary>0..100 agreement of fast (5) / mid (13) / slow (34) SMAs with the bias.</summary>
+    private static int TrendConfluence(IReadOnlyList<decimal> closes, bool isLong)
+    {
+        decimal Ma(int win)
+        {
+            var w = Math.Min(win, closes.Count);
+            return closes.Skip(closes.Count - w).Average();
+        }
+
+        var fast = Ma(5);
+        var mid = Ma(13);
+        var slow = Ma(34);
+        var upVotes = (fast >= mid ? 1 : 0) + (mid >= slow ? 1 : 0);
+        var agree = isLong ? upVotes : 2 - upVotes;   // 0..2
+        return 50 + agree * 25;                        // 50 / 75 / 100
     }
 
     private static bool? ResolveIntentBias(string? intent)

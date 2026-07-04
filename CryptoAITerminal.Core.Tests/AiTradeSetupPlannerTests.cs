@@ -94,6 +94,27 @@ public class AiTradeSetupPlannerTests
     }
 
     [Fact]
+    public void RiskBased_Sizing_Shrinks_When_Stop_Is_Wider()
+    {
+        var candles = Series(Enumerable.Range(0, 30).Select(i => 100m + i));
+        var scalp = AiTradeSetupPlanner.Build(candles, 130m, TradeBiasMode.Long, TradeRiskProfile.Balanced, TradeHorizon.Scalp, riskPercentPerTrade: 1m)!;
+        var position = AiTradeSetupPlanner.Build(candles, 130m, TradeBiasMode.Long, TradeRiskProfile.Balanced, TradeHorizon.Position, riskPercentPerTrade: 1m)!;
+
+        // A wider stop (Position horizon) with the same 1% risk budget → smaller size.
+        Assert.True(position.SizePercent < scalp.SizePercent);
+        Assert.InRange(scalp.SizePercent, 1m, 100m);
+    }
+
+    [Fact]
+    public void Confluence_Is_High_In_Clean_Uptrend_And_Bounded()
+    {
+        var candles = Series(Enumerable.Range(0, 40).Select(i => 100m + i)); // strong, clean uptrend
+        var s = AiTradeSetupPlanner.Build(candles, 140m, TradeBiasMode.Long, TradeRiskProfile.Balanced, TradeHorizon.Swing)!;
+        Assert.InRange(s.Confluence, 0, 100);
+        Assert.Equal(100, s.Confluence); // long bias agrees with fast>mid>slow
+    }
+
+    [Fact]
     public void Confidence_Is_Within_Bounds()
     {
         var candles = Series(Enumerable.Range(0, 30).Select(i => 100m + (decimal)Math.Sin(i) * 3m));

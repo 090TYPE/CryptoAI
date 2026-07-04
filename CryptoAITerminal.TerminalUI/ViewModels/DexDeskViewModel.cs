@@ -65,7 +65,8 @@ public sealed class DexDeskViewModel : ReactiveObject, IDisposable
             venueLabel: "DEX",
             candles: () => Swap.ChartCandles,
             price: () => _mode == DexDeskMode.Perp ? Perp.MarkPrice : (Swap.SelectedToken?.PriceUsd ?? 0m),
-            apply: ApplyDexSetup);
+            apply: ApplyDexSetup,
+            equity: () => _mode == DexDeskMode.Perp ? Perp.Equity : 0m);
 
         GasTiers = new ObservableCollection<DexGasTierViewModel>
         {

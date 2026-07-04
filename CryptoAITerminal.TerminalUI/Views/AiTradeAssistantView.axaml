@@ -56,6 +56,17 @@
         </Grid>
       </StackPanel>
 
+      <!-- Risk budget + watch -->
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+        <StackPanel Spacing="2">
+          <TextBlock Classes="TdLabel" Text="RISK % / TRADE (0 = AUTO)" />
+          <NumericUpDown Value="{Binding RiskPercentPerTrade}" Increment="0.25" Minimum="0" Maximum="20" FormatString="0.##" />
+        </StackPanel>
+        <Button Grid.Column="1" Content="{Binding WatchLabel}" Classes="TdSeg dex" Width="88" Height="34" VerticalAlignment="Bottom"
+                Classes.active="{Binding WatchMode}" Command="{Binding ToggleWatchCommand}"
+                ToolTip.Tip="Re-analyze automatically as new candles arrive" />
+      </Grid>
+
       <Button Content="✦ ANALYZE CHART" Classes="TdPrimary dex" Height="38" Command="{Binding AnalyzeCommand}" />
 
       <!-- Result -->
@@ -100,7 +111,17 @@
 
           <ProgressBar Minimum="0" Maximum="100" Value="{Binding ConfidenceValue}" Height="4" Foreground="#a855f7" Background="#152535" />
 
+          <!-- Risk gate + confluence -->
+          <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding HasRisk}">
+            <Border Background="#0a1622" CornerRadius="4" Padding="7,2">
+              <TextBlock Text="{Binding RiskVerdictLabel}" Foreground="{Binding RiskVerdictBrush}" FontWeight="Bold" FontSize="10" />
+            </Border>
+            <TextBlock Grid.Column="2" Text="{Binding ConfluenceLabel, StringFormat=confluence {0}}" Foreground="#8fa3b8" FontSize="10" VerticalAlignment="Center" />
+          </Grid>
+          <TextBlock Text="{Binding RiskReasonsText}" Foreground="#8a97a8" FontSize="9" TextWrapping="Wrap" IsVisible="{Binding HasRisk}" />
+
           <TextBlock Text="{Binding RationaleText}" Foreground="#8fa3b8" FontSize="10" TextWrapping="Wrap" LineHeight="15" />
+          <TextBlock Text="{Binding RationaleSourceLabel}" Foreground="#5a7a94" FontSize="9" />
 
           <Button Content="APPLY TO TICKET" Classes="TdPrimary dex" Height="34" Command="{Binding ApplyCommand}" />
         </StackPanel>
