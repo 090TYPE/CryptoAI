@@ -57,8 +57,14 @@ public sealed class DexExchangeDataService
                     resp.EnsureSuccessStatusCode();
                     return ParseDydx(await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false));
                 }
+                case "UNISWAP":
+                {
+                    using var resp = await Http.GetAsync("https://api.geckoterminal.com/api/v2/networks/eth/dexes/uniswap_v3/pools?page=1", ct).ConfigureAwait(false);
+                    resp.EnsureSuccessStatusCode();
+                    return ParseGeckoTerminalPools(await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false), "UNISWAP");
+                }
                 default:
-                    return null; // GMX / Uniswap / Vertex: no wired public feed yet
+                    return null; // GMX / Vertex: perp/CLOB feeds need bespoke integration
             }
         }
         catch
@@ -146,6 +152,49 @@ public sealed class DexExchangeDataService
             return null;
         }
     }
+
+    /// <summary>Parse GeckoTerminal pool list (AMM SWAP venues, e.g. Uniswap V3).</summary>
+    public static DexExchangeLiveStats? ParseGeckoTerminalPools(string json, string key)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            var markets = new List<DexExchangeMarket>();
+            foreach (var pool in data.EnumerateArray())
+            {
+                if (!pool.TryGetProperty("attributes", out var a))
+                {
+                    continue;
+                }
+
+                var name = a.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
+                var parts = name.Split(" / ", StringSplitOptions.RemoveEmptyEntries);
+                var baseSym = parts.Length > 0 ? parts[0].Trim() : name;
+                var quoteSym = parts.Length > 1 ? parts[1].Split(' ')[0] : "";
+                var symbol = quoteSym.Length > 0 ? $"{baseSym}/{quoteSym}" : baseSym;
+
+                var price = DecStr(a, "base_token_price_usd");
+                var chg = NestedH24(a, "price_change_percentage");
+                var vol = NestedH24(a, "volume_usd");
+                markets.Add(new DexExchangeMarket(symbol, price, chg, vol, 0m, 0));
+            }
+
+            return Aggregate(key, markets);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static decimal NestedH24(JsonElement a, string prop) =>
+        a.TryGetProperty(prop, out var o) && o.ValueKind == JsonValueKind.Object && o.TryGetProperty("h24", out var h) &&
+        decimal.TryParse(h.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var d) ? d : 0m;
 
     private static DexExchangeLiveStats? Aggregate(string key, List<DexExchangeMarket> markets)
     {

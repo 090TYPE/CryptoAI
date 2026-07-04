@@ -211,10 +211,13 @@ public sealed class DexDeskViewModel : ReactiveObject, IDisposable
         if (ex is not null)
         {
             ex.Vol = DexExchangeDataService.FormatUsdCompact(stats.Vol24hUsd);
-            ex.FundingRate = $"{stats.RepFunding8hPct:+0.###;-0.###;0}%/8h";
-            if (stats.MaxLeverage > 0)
+            if (!string.Equals(ex.Type, "SWAP", StringComparison.OrdinalIgnoreCase))
             {
-                ex.MaxLev = $"{stats.MaxLeverage}×";
+                ex.FundingRate = $"{stats.RepFunding8hPct:+0.###;-0.###;0}%/8h";
+                if (stats.MaxLeverage > 0)
+                {
+                    ex.MaxLev = $"{stats.MaxLeverage}×";
+                }
             }
             ex.IsLive = true;
         }

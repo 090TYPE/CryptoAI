@@ -60,11 +60,33 @@ public class DexExchangeDataServiceTests
         Assert.True(stats.Vol24hUsd > 34_000_000m);
     }
 
+    private const string GeckoJson = """
+    {"data":[
+      {"attributes":{"name":"USDC / WETH 0.01%","base_token_price_usd":"1.0004","price_change_percentage":{"h24":"0.17"},"volume_usd":{"h24":"27343208.56"}}},
+      {"attributes":{"name":"WETH / USDT 0.30%","base_token_price_usd":"1793.5","price_change_percentage":{"h24":"-1.20"},"volume_usd":{"h24":"11000000.0"}}}
+    ]}
+    """;
+
+    [Fact]
+    public void ParseGeckoTerminalPools_Builds_Uniswap_Markets()
+    {
+        var stats = DexExchangeDataService.ParseGeckoTerminalPools(GeckoJson, "UNISWAP");
+
+        Assert.NotNull(stats);
+        Assert.Equal("UNISWAP", stats!.Key);
+        var top = stats.Markets.First(); // highest volume first
+        Assert.Equal("USDC/WETH", top.Symbol);
+        Assert.True(top.Volume24hUsd > 27_000_000m);
+        Assert.True(stats.Vol24hUsd > 38_000_000m);
+        Assert.Contains(stats.Markets, m => m.Symbol == "WETH/USDT" && m.Change24hPct < 0m);
+    }
+
     [Fact]
     public void Parse_Rejects_Bad_Json()
     {
         Assert.Null(DexExchangeDataService.ParseHyperliquid("{}"));
         Assert.Null(DexExchangeDataService.ParseDydx("[]"));
+        Assert.Null(DexExchangeDataService.ParseGeckoTerminalPools("{}", "UNISWAP"));
     }
 
     [Theory]

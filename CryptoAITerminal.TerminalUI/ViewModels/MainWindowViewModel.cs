@@ -5195,6 +5195,35 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             ? SelectedMarket
             : Markets.FirstOrDefault(item => string.Equals(item.Symbol, market.Symbol, StringComparison.OrdinalIgnoreCase)) ?? market;
 
+        // DEX token → open the DEX terminal (SWAP) with this token pre-selected.
+        if (targetMarket is not null && targetMarket.IsDexMarket)
+        {
+            if (SelectedTradingVenue != TradingVenueMode.Dex)
+            {
+                SelectTradingVenue("DEX");
+            }
+
+            DexDeskVM.SelectModeCommand.Execute("SWAP").Subscribe();
+
+            var dto = _extMarkets.FirstOrDefault(d =>
+                string.Equals(d.Exchange, "DEX", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(d.Symbol, targetMarket.Symbol, StringComparison.OrdinalIgnoreCase));
+
+            if (dto is not null && !string.IsNullOrWhiteSpace(dto.DexAddress))
+            {
+                _ = DexTradingVM.SelectTokenByAddressAsync(dto.DexAddress, targetMarket.BaseAssetSymbol);
+            }
+            else
+            {
+                DexTradingVM.SearchText = targetMarket.BaseAssetSymbol;
+                DexTradingVM.SearchCommand.Execute().Subscribe();
+            }
+
+            SelectMainTab("trading");
+            AddLog($"Opened {targetMarket.Symbol} on the DEX desk from Markets.");
+            return;
+        }
+
         if (SelectedTradingVenue != TradingVenueMode.Cex)
         {
             SelectTradingVenue("CEX");

@@ -840,6 +840,56 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         }
     }
 
+    /// <summary>Open a specific token in the DEX list by contract address (used by the
+    /// Markets → Trade hand-off). Loads it via search if it isn't already listed and
+    /// selects it, keeping the search context so it stays visible on auto-refresh.</summary>
+    public async Task SelectTokenByAddressAsync(string tokenAddress, string? symbolHint = null)
+    {
+        if (string.IsNullOrWhiteSpace(tokenAddress))
+        {
+            return;
+        }
+
+        var existing = Tokens.FirstOrDefault(t => string.Equals(t.TokenAddress, tokenAddress, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+        {
+            SelectedToken = existing;
+            return;
+        }
+
+        SearchText = string.IsNullOrWhiteSpace(symbolHint) ? tokenAddress : symbolHint;
+        await SearchAsync();
+
+        var found = Tokens.FirstOrDefault(t => string.Equals(t.TokenAddress, tokenAddress, StringComparison.OrdinalIgnoreCase));
+        if (found is null)
+        {
+            // Filters or the search view may not surface it — fetch by address and inject.
+            try
+            {
+                var results = await _dexClient.SearchTokensAsync(tokenAddress);
+                var match = results.FirstOrDefault(t => string.Equals(t.TokenAddress, tokenAddress, StringComparison.OrdinalIgnoreCase))
+                            ?? results.FirstOrDefault();
+                if (match is not null)
+                {
+                    var item = new DexTokenItemViewModel();
+                    item.Update(match);
+                    Tokens.Insert(0, item);
+                    found = item;
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Could not open token: {ex.Message}";
+            }
+        }
+
+        if (found is not null)
+        {
+            SelectedToken = found;
+            StatusMessage = $"Opened {found.DisplayName} from Markets.";
+        }
+    }
+
     private async Task RefreshAsync()
     {
         var chainId = ChainIdForFilter(_selectedChainFilter);
