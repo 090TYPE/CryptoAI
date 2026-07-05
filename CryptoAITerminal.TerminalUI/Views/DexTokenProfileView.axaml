@@ -24,7 +24,7 @@
     <StackPanel Spacing="10" Margin="0,12,0,0">
 
       <!-- Header / banner image -->
-      <Border CornerRadius="8" ClipToBounds="True" Height="84" Background="#07111a" IsVisible="{Binding TokenMeta.HasBanner}">
+      <Border CornerRadius="8" ClipToBounds="True" Height="128" Background="#07111a" IsVisible="{Binding TokenMeta.HasBanner}">
         <Image Source="{Binding TokenMeta.Banner}" Stretch="UniformToFill" />
       </Border>
 

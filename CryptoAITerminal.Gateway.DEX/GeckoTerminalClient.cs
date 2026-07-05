@@ -159,6 +159,66 @@ public class GeckoTerminalClient
         }
     }
 
+    /// <summary>Live pool activity — 24h buy/sell counts and the recent market-trade tape.</summary>
+    public async Task<DexPoolActivity?> GetPoolActivityAsync(
+        string network, string poolAddress, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(network) || string.IsNullOrWhiteSpace(poolAddress))
+        {
+            return null;
+        }
+
+        var activity = new DexPoolActivity();
+        try
+        {
+            using var poolResp = await _httpClient.GetAsync($"networks/{network}/pools/{poolAddress}", cancellationToken);
+            if (poolResp.IsSuccessStatusCode)
+            {
+                await using var ps = await poolResp.Content.ReadAsStreamAsync(cancellationToken);
+                using var pdoc = await JsonDocument.ParseAsync(ps, default, cancellationToken);
+                if (pdoc.RootElement.TryGetProperty("data", out var pd) && pd.TryGetProperty("attributes", out var pa)
+                    && pa.TryGetProperty("transactions", out var tx) && tx.TryGetProperty("h24", out var h24))
+                {
+                    activity.Buys24h = LongProp(h24, "buys");
+                    activity.Sells24h = LongProp(h24, "sells");
+                    activity.Buyers24h = LongProp(h24, "buyers");
+                    activity.Sellers24h = LongProp(h24, "sellers");
+                }
+            }
+        }
+        catch { /* counts optional */ }
+
+        try
+        {
+            using var tradesResp = await _httpClient.GetAsync($"networks/{network}/pools/{poolAddress}/trades", cancellationToken);
+            if (tradesResp.IsSuccessStatusCode)
+            {
+                await using var ts = await tradesResp.Content.ReadAsStreamAsync(cancellationToken);
+                using var tdoc = await JsonDocument.ParseAsync(ts, default, cancellationToken);
+                if (tdoc.RootElement.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+                {
+                    var trades = new List<DexTradeTick>();
+                    foreach (var t in data.EnumerateArray())
+                    {
+                        if (!t.TryGetProperty("attributes", out var a)) continue;
+                        var side = Str(a, "kind");
+                        var amount = NumProp(a, "volume_in_usd");
+                        var tsUtc = DateTime.TryParse(Str(a, "block_timestamp"), CultureInfo.InvariantCulture,
+                            DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var dt) ? dt : DateTime.UtcNow;
+                        trades.Add(new DexTradeTick(side, amount, Str(a, "tx_hash"), tsUtc));
+                    }
+                    activity.Trades = trades;
+                }
+            }
+        }
+        catch { /* trades optional */ }
+
+        return activity.Trades.Count == 0 && activity.Buys24h == 0 && activity.Sells24h == 0 ? null : activity;
+    }
+
+    private static long LongProp(JsonElement e, string prop) =>
+        e.TryGetProperty(prop, out var p) && p.ValueKind == JsonValueKind.Number && p.TryGetInt64(out var l) ? l : 0L;
+
     private static decimal NumProp(JsonElement e, string prop)
     {
         if (!e.TryGetProperty(prop, out var p)) return 0m;

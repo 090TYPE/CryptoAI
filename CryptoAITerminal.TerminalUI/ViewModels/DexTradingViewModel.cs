@@ -68,6 +68,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     private string _tokenBalanceLabel = string.Empty;
     private bool _isTokenBalanceLoading;
     private readonly DispatcherTimer _quoteDebounceTimer;
+    private readonly DispatcherTimer _activityTimer;
 
     private const double ChartWidth = 620;
     private const double ChartHeight = 240;
@@ -147,6 +148,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             _ = RefreshTokenBalanceAsync();
             _ = RefreshTokenVerdictAsync(value);
             _ = RefreshTokenMetadataAsync(value);
+            _ = RefreshActivityAsync(value);
         }
     }
 
@@ -669,6 +671,66 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     public ObservableCollection<DexTradeRecordViewModel> RecentDexTrades { get; } = new();
     public bool ShowDexTradesPlaceholder => RecentDexTrades.Count == 0;
 
+    // ── Live market flow (buys/sells + trade tape) for the selected token ──────
+    public ObservableCollection<DexMarketTradeViewModel> RecentMarketTrades { get; } = new();
+    private long _buys24h;
+    private long _sells24h;
+    private string _activityPool = string.Empty;
+
+    public bool ShowMarketTradesPlaceholder => RecentMarketTrades.Count == 0;
+    public string Buys24hLabel => _buys24h > 0 ? _buys24h.ToString("N0") : "—";
+    public string Sells24hLabel => _sells24h > 0 ? _sells24h.ToString("N0") : "—";
+    public double BuyPercent => (_buys24h + _sells24h) > 0 ? (double)_buys24h / (_buys24h + _sells24h) * 100.0 : 50.0;
+    public double SellPercent => 100.0 - BuyPercent;
+    public string BuySellRatioLabel => (_buys24h + _sells24h) > 0 ? $"{BuyPercent:0}% buy / {SellPercent:0}% sell" : "—";
+
+    private async Task RefreshActivityAsync(DexTokenItemViewModel? token)
+    {
+        token ??= SelectedToken;
+        if (token is null)
+        {
+            return;
+        }
+
+        var address = token.TokenInfo.TokenAddress;
+        var network = MapGeckoNetwork(token.TokenInfo.ChainId);
+        var pool = token.TokenInfo.PairAddress;
+        if (string.IsNullOrWhiteSpace(network) || string.IsNullOrWhiteSpace(pool))
+        {
+            return;
+        }
+
+        DexPoolActivity? activity = null;
+        try { activity = await _geckoTerminalClient.GetPoolActivityAsync(network, pool); }
+        catch { activity = null; }
+
+        if (SelectedToken is null || !string.Equals(SelectedToken.TokenInfo.TokenAddress, address, StringComparison.OrdinalIgnoreCase))
+        {
+            return; // selection changed while fetching
+        }
+        if (activity is null)
+        {
+            return;
+        }
+
+        _buys24h = activity.Buys24h;
+        _sells24h = activity.Sells24h;
+        _activityPool = pool;
+
+        RecentMarketTrades.Clear();
+        foreach (var tick in activity.Trades.Take(40))
+        {
+            RecentMarketTrades.Add(new DexMarketTradeViewModel(tick));
+        }
+
+        this.RaisePropertyChanged(nameof(Buys24hLabel));
+        this.RaisePropertyChanged(nameof(Sells24hLabel));
+        this.RaisePropertyChanged(nameof(BuyPercent));
+        this.RaisePropertyChanged(nameof(SellPercent));
+        this.RaisePropertyChanged(nameof(BuySellRatioLabel));
+        this.RaisePropertyChanged(nameof(ShowMarketTradesPlaceholder));
+    }
+
     private void AddTradeRecord(string side, string symbol, decimal amount, decimal price, string txHash, bool success)
     {
         var record = new DexTradeRecordViewModel(side, symbol, amount, price, txHash, success, DateTime.UtcNow);
@@ -787,6 +849,10 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             await RefreshBuyQuoteAsync();
         };
 
+        _activityTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(12) };
+        _activityTimer.Tick += async (_, _) => await RefreshActivityAsync(null);
+        _activityTimer.Start();
+
         RefreshQuoteAssetOptions();
         EnsureValidQuoteAssetSelection();
         ApplyGlobalDexSizingIfReady();
@@ -868,6 +934,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         _refreshTimer.Stop();
         _chartDebounceTimer.Stop();
         _quoteDebounceTimer.Stop();
+        _activityTimer.Stop();
         _walletWorkspace.PropertyChanged -= OnWalletWorkspacePropertyChanged;
         _securityScanner.Dispose();
     }
@@ -2153,6 +2220,25 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
     private sealed record LocalChartRequest(TimeSpan BucketSize, TimeSpan Lookback, int MaxCandles);
     private sealed record GeckoChartRequest(string Timeframe, int Aggregate, int Limit);
+}
+
+/// <summary>One live market-trade row (all traders, from the pool tape).</summary>
+public sealed class DexMarketTradeViewModel
+{
+    public DexMarketTradeViewModel(DexTradeTick t)
+    {
+        IsBuy = string.Equals(t.Side, "buy", StringComparison.OrdinalIgnoreCase);
+        SideLabel = IsBuy ? "BUY" : "SELL";
+        SideBrush = IsBuy ? "#3ddc84" : "#ff6b6b";
+        AmountLabel = t.AmountUsd >= 1000m ? $"${t.AmountUsd / 1000m:0.#}K" : $"${t.AmountUsd:0}";
+        TimeLabel = t.TimeUtc.ToLocalTime().ToString("HH:mm:ss");
+    }
+
+    public bool IsBuy { get; }
+    public string SideLabel { get; }
+    public string SideBrush { get; }
+    public string AmountLabel { get; }
+    public string TimeLabel { get; }
 }
 
 public sealed class DexTradeRecordViewModel : ReactiveObject
