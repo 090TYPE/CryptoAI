@@ -677,6 +677,66 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     private long _sells24h;
     private string _activityPool = string.Empty;
 
+    // ── Anti-rug monitor (liquidity drop / whale sell / volume spike) ──────────
+    public ObservableCollection<DexTokenAlertViewModel> TokenAlerts { get; } = new();
+    public bool HasTokenAlerts => TokenAlerts.Count > 0;
+    private string _alertAddress = string.Empty;
+    private decimal _prevLiquidity;
+    private decimal _prevVolume;
+    private DateTime _lastTradeUtc = DateTime.MinValue;
+
+    private void CheckAntiRug(DexTokenItemViewModel token, DexPoolActivity activity)
+    {
+        var addr = token.TokenInfo.TokenAddress;
+        var liq = token.TokenInfo.LiquidityUsd;
+        var vol = token.TokenInfo.Volume24h;
+
+        if (!string.Equals(addr, _alertAddress, StringComparison.OrdinalIgnoreCase))
+        {
+            // New token — establish baselines and clear the previous token's alerts.
+            _alertAddress = addr;
+            _prevLiquidity = liq;
+            _prevVolume = vol;
+            _lastTradeUtc = activity.Trades.Count > 0 ? activity.Trades.Max(t => t.TimeUtc) : DateTime.UtcNow;
+            TokenAlerts.Clear();
+            this.RaisePropertyChanged(nameof(HasTokenAlerts));
+            return;
+        }
+
+        if (_prevLiquidity > 0m && liq > 0m && liq < _prevLiquidity * 0.7m)
+        {
+            AddAlert("⚠", $"Liquidity dropped {(1m - liq / _prevLiquidity) * 100m:0}% (${_prevLiquidity:N0} → ${liq:N0})", "#ff6b6b");
+        }
+        if (_prevVolume > 0m && vol > _prevVolume * 1.5m)
+        {
+            AddAlert("📈", $"Volume spike +{(vol / _prevVolume - 1m) * 100m:0}% (${vol:N0} 24h)", "#f4b860");
+        }
+        if (liq > 0m) _prevLiquidity = liq;
+        if (vol > 0m) _prevVolume = vol;
+
+        var whaleUsd = Math.Max(5000m, liq * 0.01m);
+        var newest = _lastTradeUtc;
+        foreach (var t in activity.Trades.Where(t => t.TimeUtc > _lastTradeUtc))
+        {
+            if (string.Equals(t.Side, "sell", StringComparison.OrdinalIgnoreCase) && t.AmountUsd >= whaleUsd)
+            {
+                AddAlert("🐳", $"Whale SELL ${t.AmountUsd:N0}", "#ff6b6b");
+            }
+            if (t.TimeUtc > newest) newest = t.TimeUtc;
+        }
+        _lastTradeUtc = newest;
+    }
+
+    private void AddAlert(string icon, string message, string brush)
+    {
+        TokenAlerts.Insert(0, new DexTokenAlertViewModel(icon, message, brush, DateTime.Now));
+        while (TokenAlerts.Count > 30)
+        {
+            TokenAlerts.RemoveAt(TokenAlerts.Count - 1);
+        }
+        this.RaisePropertyChanged(nameof(HasTokenAlerts));
+    }
+
     public bool ShowMarketTradesPlaceholder => RecentMarketTrades.Count == 0;
     public string Buys24hLabel => _buys24h > 0 ? _buys24h.ToString("N0") : "—";
     public string Sells24hLabel => _sells24h > 0 ? _sells24h.ToString("N0") : "—";
@@ -722,6 +782,8 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         {
             RecentMarketTrades.Add(new DexMarketTradeViewModel(tick));
         }
+
+        CheckAntiRug(token, activity);
 
         this.RaisePropertyChanged(nameof(Buys24hLabel));
         this.RaisePropertyChanged(nameof(Sells24hLabel));
@@ -2271,6 +2333,23 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
     private sealed record LocalChartRequest(TimeSpan BucketSize, TimeSpan Lookback, int MaxCandles);
     private sealed record GeckoChartRequest(string Timeframe, int Aggregate, int Limit);
+}
+
+/// <summary>One anti-rug alert (liquidity drop / whale sell / volume spike).</summary>
+public sealed class DexTokenAlertViewModel
+{
+    public DexTokenAlertViewModel(string icon, string message, string brush, DateTime timeLocal)
+    {
+        Icon = icon;
+        Message = message;
+        Brush = brush;
+        TimeLabel = timeLocal.ToString("HH:mm:ss");
+    }
+
+    public string Icon { get; }
+    public string Message { get; }
+    public string Brush { get; }
+    public string TimeLabel { get; }
 }
 
 /// <summary>One live market-trade row (all traders, from the pool tape).</summary>

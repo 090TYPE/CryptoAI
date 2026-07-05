@@ -10,6 +10,25 @@
 
   <StackPanel Spacing="10" Margin="0,12,0,0">
 
+    <!-- Anti-rug alerts -->
+    <Border Background="#160c0c" BorderBrush="#3a1414" BorderThickness="1" CornerRadius="8" Padding="8" IsVisible="{Binding HasTokenAlerts}">
+      <StackPanel Spacing="4">
+        <TextBlock Text="⚠ ANTI-RUG ALERTS" Foreground="#ff8a65" FontSize="9" FontWeight="Bold" LetterSpacing="0.6" />
+        <ItemsControl ItemsSource="{Binding TokenAlerts}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:DexTokenAlertViewModel">
+              <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,1">
+                <TextBlock Text="{Binding Icon}" FontSize="11" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding Message}" Foreground="{Binding Brush}" FontSize="10" Margin="6,0" VerticalAlignment="Center" TextWrapping="Wrap" />
+                <TextBlock Grid.Column="2" Text="{Binding TimeLabel}" Foreground="#5a7a94" FontSize="9" VerticalAlignment="Center" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+    <TextBlock Classes="TdSub" Text="Monitoring liquidity, whale sells &amp; volume for rug signals…" FontSize="9" IsVisible="{Binding !HasTokenAlerts}" />
+
     <!-- Buys / Sells 24h -->
     <Grid ColumnDefinitions="*,*">
       <StackPanel Spacing="2">
