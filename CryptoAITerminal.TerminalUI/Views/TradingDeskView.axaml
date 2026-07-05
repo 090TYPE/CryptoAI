@@ -1465,65 +1465,7 @@
                   </TabItem>
 
                   <TabItem Header="Token">
-                    <ScrollViewer Margin="0,12,0,0" VerticalScrollBarVisibility="Auto" MaxHeight="300">
-                      <StackPanel Spacing="10">
-                        <!-- Header / banner image -->
-                        <Border CornerRadius="8" ClipToBounds="True" Height="86" Background="#07111a" IsVisible="{Binding DexTradingVM.TokenMeta.HasBanner}">
-                          <Image Source="{Binding DexTradingVM.TokenMeta.Banner}" Stretch="UniformToFill" />
-                        </Border>
-
-                        <!-- Identity -->
-                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                          <Border Width="46" Height="46" CornerRadius="10" ClipToBounds="True" Background="#150a20" BorderBrush="#3a1f6e" BorderThickness="1">
-                            <Panel>
-                              <TextBlock Text="◈" Foreground="#a855f7" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !DexTradingVM.TokenMeta.HasLogo}" />
-                              <Image Source="{Binding DexTradingVM.TokenMeta.Logo}" Stretch="UniformToFill" IsVisible="{Binding DexTradingVM.TokenMeta.HasLogo}" />
-                            </Panel>
-                          </Border>
-                          <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                              <TextBlock Text="{Binding DexTradingVM.TokenMeta.Name}" Foreground="#e8f4ff" FontWeight="Bold" FontSize="15" VerticalAlignment="Center" />
-                              <TextBlock Text="{Binding DexTradingVM.TokenMeta.Symbol}" Foreground="#a855f7" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" />
-                              <Border Background="#07221a" CornerRadius="4" Padding="6,1" VerticalAlignment="Center" IsVisible="{Binding DexTradingVM.TokenMeta.IsVerified}">
-                                <TextBlock Text="✔ VERIFIED" Foreground="#3ddc84" FontSize="8" FontWeight="Bold" />
-                              </Border>
-                            </StackPanel>
-                            <TextBlock Classes="TdSub" Text="{Binding DexTradingVM.TokenMeta.CategoriesLabel}" FontSize="10" IsVisible="{Binding DexTradingVM.TokenMeta.HasCategories}" />
-                          </StackPanel>
-                          <Border Grid.Column="2" Background="#0a1622" CornerRadius="4" Padding="8,3" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding DexTradingVM.TokenMeta.HoneypotLabel}" Foreground="{Binding DexTradingVM.TokenMeta.HoneypotBrush}" FontWeight="Bold" FontSize="9" />
-                          </Border>
-                        </Grid>
-
-                        <!-- Contract -->
-                        <Border Classes="TdCard">
-                          <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                            <TextBlock Text="CONTRACT" Classes="TdLabel" VerticalAlignment="Center" />
-                            <TextBox Grid.Column="1" Text="{Binding DexTradingVM.TokenMeta.ContractAddress}" IsReadOnly="True" Classes="TdInput" Foreground="#c8dcef" FontSize="11" VerticalContentAlignment="Center" />
-                            <Button Grid.Column="2" Content="Explorer ↗" Classes="TdSeg dex" Padding="8,4" Command="{Binding DexTradingVM.TokenMeta.OpenExplorerCommand}" />
-                          </Grid>
-                        </Border>
-
-                        <!-- Community / socials -->
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                          <Button Content="🌐 Website"  Classes="TdSeg" Padding="9,4" Command="{Binding DexTradingVM.TokenMeta.OpenWebsiteCommand}"  IsVisible="{Binding DexTradingVM.TokenMeta.HasWebsite}" />
-                          <Button Content="𝕏 Twitter"   Classes="TdSeg" Padding="9,4" Command="{Binding DexTradingVM.TokenMeta.OpenTwitterCommand}"  IsVisible="{Binding DexTradingVM.TokenMeta.HasTwitter}" />
-                          <Button Content="✈ Telegram"  Classes="TdSeg" Padding="9,4" Command="{Binding DexTradingVM.TokenMeta.OpenTelegramCommand}" IsVisible="{Binding DexTradingVM.TokenMeta.HasTelegram}" />
-                          <Button Content="💬 Discord"  Classes="TdSeg" Padding="9,4" Command="{Binding DexTradingVM.TokenMeta.OpenDiscordCommand}"  IsVisible="{Binding DexTradingVM.TokenMeta.HasDiscord}" />
-                        </StackPanel>
-
-                        <!-- Stats -->
-                        <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
-                          <Border Classes="TdCard"><StackPanel Spacing="2"><TextBlock Classes="TdLabel" Text="HOLDERS" /><TextBlock Classes="TdNum" Text="{Binding DexTradingVM.TokenMeta.HoldersLabel}" Foreground="#21e6c1" FontWeight="Bold" /></StackPanel></Border>
-                          <Border Grid.Column="1" Classes="TdCard"><StackPanel Spacing="2"><TextBlock Classes="TdLabel" Text="GT SCORE" /><TextBlock Classes="TdNum" Text="{Binding DexTradingVM.TokenMeta.GtScoreLabel}" Foreground="#a855f7" FontWeight="Bold" /></StackPanel></Border>
-                          <Border Grid.Column="2" Classes="TdCard"><StackPanel Spacing="2"><TextBlock Classes="TdLabel" Text="LIQUIDITY" /><TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexLiquidityLabel}" Foreground="#c8dcef" FontWeight="Bold" /></StackPanel></Border>
-                          <Border Grid.Column="3" Classes="TdCard"><StackPanel Spacing="2"><TextBlock Classes="TdLabel" Text="MKT CAP" /><TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexMarketCapLabel}" Foreground="#c8dcef" FontWeight="Bold" /></StackPanel></Border>
-                        </Grid>
-
-                        <!-- Description -->
-                        <TextBlock Text="{Binding DexTradingVM.TokenMeta.Description}" Foreground="#8fa3b8" FontSize="11" TextWrapping="Wrap" LineHeight="16" />
-                      </StackPanel>
-                    </ScrollViewer>
+                    <views:DexTokenProfileView DataContext="{Binding DexTradingVM}" />
                   </TabItem>
                 </TabControl>
 
@@ -1628,6 +1570,10 @@
                       <TextBlock Text="No fills yet. Paper executions will appear here."
                                  Foreground="#5a7a94" IsVisible="{Binding DexDeskVM.Perp.ShowFillsPlaceholder}" />
                     </StackPanel>
+                  </TabItem>
+
+                  <TabItem Header="Token">
+                    <views:DexTokenProfileView DataContext="{Binding DexTradingVM}" />
                   </TabItem>
                 </TabControl>
               </StackPanel>

@@ -131,6 +131,12 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             this.RaisePropertyChanged(nameof(DexUtilizationLabel));
             this.RaisePropertyChanged(nameof(DexChange24hLabel));
             this.RaisePropertyChanged(nameof(DexChange24hBrush));
+            this.RaisePropertyChanged(nameof(DexChange5mLabel));
+            this.RaisePropertyChanged(nameof(DexChange5mBrush));
+            this.RaisePropertyChanged(nameof(DexChange1hLabel));
+            this.RaisePropertyChanged(nameof(DexChange1hBrush));
+            this.RaisePropertyChanged(nameof(DexPriceUsdLabel));
+            this.RaisePropertyChanged(nameof(DexPairLabel));
             this.RaisePropertyChanged(nameof(IsSelectedPairCompatible));
             this.RaisePropertyChanged(nameof(PairCompatibilityMessage));
             this.RaisePropertyChanged(nameof(ManualBuyBlockedReason));
@@ -614,6 +620,12 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         : "--";
     public string DexChange24hLabel => SelectedToken is null ? "--" : $"{SelectedToken.TokenInfo.PriceChange24h:+0.00;-0.00;0.00}%";
     public string DexChange24hBrush => (SelectedToken?.TokenInfo.PriceChange24h ?? 0m) >= 0m ? "#3ddc84" : "#ff6b6b";
+    public string DexChange5mLabel => SelectedToken is null ? "--" : $"{SelectedToken.TokenInfo.PriceChange5m:+0.00;-0.00;0.00}%";
+    public string DexChange5mBrush => (SelectedToken?.TokenInfo.PriceChange5m ?? 0m) >= 0m ? "#3ddc84" : "#ff6b6b";
+    public string DexChange1hLabel => SelectedToken is null ? "--" : $"{SelectedToken.TokenInfo.PriceChange1h:+0.00;-0.00;0.00}%";
+    public string DexChange1hBrush => (SelectedToken?.TokenInfo.PriceChange1h ?? 0m) >= 0m ? "#3ddc84" : "#ff6b6b";
+    public string DexPriceUsdLabel => SelectedToken is { TokenInfo.PriceUsd: > 0 } t ? $"$ {t.TokenInfo.PriceUsd:N6}" : "--";
+    public string DexPairLabel => SelectedToken is null ? "--" : $"{SelectedToken.TokenInfo.Symbol}/{SelectedToken.TokenInfo.QuoteSymbol}";
 
     private static string FormatPrice(decimal price) => price switch
     {

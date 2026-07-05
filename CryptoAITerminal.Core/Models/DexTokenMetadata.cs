@@ -27,4 +27,9 @@ public sealed class DexTokenMetadata
     public bool? IsHoneypot { get; set; }
     public string Categories { get; set; } = string.Empty;
     public string CoingeckoId { get; set; } = string.Empty;
+
+    public decimal DeveloperHoldingPercentage { get; set; }
+    public string MintAuthority { get; set; } = string.Empty;
+    public string FreezeAuthority { get; set; } = string.Empty;
+    public string DeveloperAddress { get; set; } = string.Empty;
 }

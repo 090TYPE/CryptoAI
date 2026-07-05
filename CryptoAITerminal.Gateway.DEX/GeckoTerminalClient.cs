@@ -98,6 +98,13 @@ public class GeckoTerminalClient
                 GtScore = a.TryGetProperty("gt_score", out var gs) && gs.ValueKind == JsonValueKind.Number ? gs.GetDecimal() : 0m,
                 GtVerified = a.TryGetProperty("gt_verified", out var gv) && gv.ValueKind == JsonValueKind.True,
                 IsHoneypot = a.TryGetProperty("is_honeypot", out var hp) ? hp.ValueKind == JsonValueKind.True : null,
+                MintAuthority = Str(a, "mint_authority"),
+                FreezeAuthority = Str(a, "freeze_authority"),
+                DeveloperAddress = Str(a, "developer_address"),
+                DeveloperHoldingPercentage = a.TryGetProperty("developer_holding_percentage", out var dh)
+                    ? (dh.ValueKind == JsonValueKind.Number ? dh.GetDecimal()
+                        : dh.ValueKind == JsonValueKind.String && decimal.TryParse(dh.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var dv) ? dv : 0m)
+                    : 0m,
             };
 
             var twitter = Str(a, "twitter_handle");

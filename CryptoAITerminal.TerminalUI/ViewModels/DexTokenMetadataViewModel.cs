@@ -35,6 +35,7 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
         OpenTelegramCommand = ReactiveCommand.Create(() => Open(_meta?.Telegram), outputScheduler: App.UiScheduler);
         OpenDiscordCommand = ReactiveCommand.Create(() => Open(_meta?.Discord), outputScheduler: App.UiScheduler);
         OpenExplorerCommand = ReactiveCommand.Create(() => Open(ExplorerUrl), outputScheduler: App.UiScheduler);
+        OpenCoingeckoCommand = ReactiveCommand.Create(() => Open(CoingeckoUrl), outputScheduler: App.UiScheduler);
     }
 
     public ReactiveCommand<Unit, Unit> OpenWebsiteCommand { get; }
@@ -42,6 +43,7 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> OpenTelegramCommand { get; }
     public ReactiveCommand<Unit, Unit> OpenDiscordCommand { get; }
     public ReactiveCommand<Unit, Unit> OpenExplorerCommand { get; }
+    public ReactiveCommand<Unit, Unit> OpenCoingeckoCommand { get; }
 
     public bool IsLoading { get => _isLoading; private set => this.RaiseAndSetIfChanged(ref _isLoading, value); }
 
@@ -68,6 +70,35 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
 
     public string HoneypotLabel => _meta?.IsHoneypot switch { true => "HONEYPOT", false => "NOT A HONEYPOT", _ => "UNKNOWN" };
     public string HoneypotBrush => _meta?.IsHoneypot switch { true => "#ff6b6b", false => "#3ddc84", _ => "#8fa3b8" };
+
+    public bool HasDeveloperHolding => _meta is { DeveloperHoldingPercentage: > 0m };
+    public string DeveloperHoldingLabel => _meta is { DeveloperHoldingPercentage: > 0m } m ? $"{m.DeveloperHoldingPercentage:0.##}%" : "—";
+    public string DeveloperHoldingBrush => (_meta?.DeveloperHoldingPercentage ?? 0m) >= 10m ? "#ff6b6b"
+        : (_meta?.DeveloperHoldingPercentage ?? 0m) >= 3m ? "#f4b860" : "#3ddc84";
+
+    public bool HasSecurity => HasAuth(_meta?.MintAuthority) || HasAuth(_meta?.FreezeAuthority);
+    public string MintAuthorityLabel => AuthLabel(_meta?.MintAuthority);
+    public string MintAuthorityBrush => AuthBrush(_meta?.MintAuthority);
+    public string FreezeAuthorityLabel => AuthLabel(_meta?.FreezeAuthority);
+    public string FreezeAuthorityBrush => AuthBrush(_meta?.FreezeAuthority);
+
+    public bool HasCoingecko => !string.IsNullOrWhiteSpace(_meta?.CoingeckoId);
+    public string CoingeckoUrl => HasCoingecko ? $"https://www.coingecko.com/en/coins/{_meta!.CoingeckoId}" : string.Empty;
+
+    private static bool HasAuth(string? v) => !string.IsNullOrWhiteSpace(v);
+    private static string AuthLabel(string? v) => (v ?? "").Trim().ToLowerInvariant() switch
+    {
+        "yes" or "true" => "active",
+        "no" or "false" => "renounced",
+        "" => "n/a",
+        _ => v!,
+    };
+    private static string AuthBrush(string? v) => (v ?? "").Trim().ToLowerInvariant() switch
+    {
+        "no" or "false" or "" => "#3ddc84",
+        "yes" or "true" => "#ff6b6b",
+        _ => "#f4b860",
+    };
 
     public Bitmap? Logo { get => _logo; private set { this.RaiseAndSetIfChanged(ref _logo, value); this.RaisePropertyChanged(nameof(HasLogo)); } }
     public bool HasLogo => _logo is not null;
@@ -104,6 +135,9 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
             if (_meta is { Holders: > 0 }) lines.Add($"Holders: {_meta.Holders:N0}");
             if (_meta is { GtScore: > 0 }) lines.Add($"GT score: {_meta.GtScore:0}/100{(IsVerified ? " (verified)" : "")}");
             if (_meta?.IsHoneypot is not null) lines.Add($"Honeypot check: {HoneypotLabel}");
+            if (HasDeveloperHolding) lines.Add($"Developer holdings: {DeveloperHoldingLabel}");
+            if (HasAuth(_meta?.MintAuthority)) lines.Add($"Mint authority: {MintAuthorityLabel}");
+            if (HasAuth(_meta?.FreezeAuthority)) lines.Add($"Freeze authority: {FreezeAuthorityLabel}");
             if (HasCategories) lines.Add($"Categories: {_meta!.Categories}");
             if (HasWebsite) lines.Add($"Website: {_meta!.Website}");
             if (HasTwitter) lines.Add($"Twitter: {_meta!.Twitter}");
@@ -210,6 +244,16 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
         this.RaisePropertyChanged(nameof(IsVerified));
         this.RaisePropertyChanged(nameof(HoneypotLabel));
         this.RaisePropertyChanged(nameof(HoneypotBrush));
+        this.RaisePropertyChanged(nameof(HasDeveloperHolding));
+        this.RaisePropertyChanged(nameof(DeveloperHoldingLabel));
+        this.RaisePropertyChanged(nameof(DeveloperHoldingBrush));
+        this.RaisePropertyChanged(nameof(HasSecurity));
+        this.RaisePropertyChanged(nameof(MintAuthorityLabel));
+        this.RaisePropertyChanged(nameof(MintAuthorityBrush));
+        this.RaisePropertyChanged(nameof(FreezeAuthorityLabel));
+        this.RaisePropertyChanged(nameof(FreezeAuthorityBrush));
+        this.RaisePropertyChanged(nameof(HasCoingecko));
+        this.RaisePropertyChanged(nameof(CoingeckoUrl));
         this.RaisePropertyChanged(nameof(ExplorerUrl));
         this.RaisePropertyChanged(nameof(AiContextText));
     }
