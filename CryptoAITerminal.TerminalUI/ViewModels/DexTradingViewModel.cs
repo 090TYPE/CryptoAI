@@ -154,18 +154,30 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     /// the selected token — shown in the Token panel and fed into the AI context.</summary>
     public DexTokenMetadataViewModel TokenMeta { get; } = new();
 
+    private string _metaAddress = string.Empty;
+
     private async Task RefreshTokenMetadataAsync(DexTokenItemViewModel? token)
     {
         if (token is null)
         {
+            _metaAddress = string.Empty;
             TokenMeta.Clear();
             return;
         }
 
         var chain = token.TokenInfo.ChainId;
         var address = token.TokenInfo.TokenAddress;
-        var network = MapGeckoNetwork(chain);
 
+        // The token list auto-refreshes every few seconds, re-selecting a *new* instance
+        // of the same token. Only (re)load the profile when the contract actually changes —
+        // otherwise the images would flash to null and reload on every tick.
+        if (string.Equals(address, _metaAddress, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+        _metaAddress = address ?? string.Empty;
+
+        var network = MapGeckoNetwork(chain);
         DexTokenMetadata? meta = null;
         if (!string.IsNullOrWhiteSpace(network) && !string.IsNullOrWhiteSpace(address))
         {
@@ -173,9 +185,9 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             catch { meta = null; }
         }
 
-        if (!ReferenceEquals(SelectedToken, token))
+        if (!string.Equals(address, _metaAddress, StringComparison.OrdinalIgnoreCase))
         {
-            return; // selection changed while fetching
+            return; // a newer token was selected while fetching
         }
 
         // Fall back to the basic pair info when the profile endpoint has nothing.
