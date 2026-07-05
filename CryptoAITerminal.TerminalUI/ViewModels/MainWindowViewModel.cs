@@ -767,6 +767,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                 var pulse = $"{NewsFeedVM.PulseLabel} (score {NewsFeedVM.PulseScore}). {NewsFeedVM.PulseDetail}";
                 if (!string.IsNullOrWhiteSpace(NewsFeedVM.AiDigest))
                     pulse += $" Digest [{NewsFeedVM.AiDigestBias}]: {NewsFeedVM.AiDigest}";
+                var tokenCtx = DexTradingVM.TokenMeta.AiContextText;
+                if (!string.IsNullOrWhiteSpace(tokenCtx))
+                    pulse += "\n\n[Selected DEX token profile]\n" + tokenCtx;
                 return pulse;
             }));
         CopilotVM = new CopilotViewModel(copilotData);

@@ -140,7 +140,49 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             _ = RefreshQuoteAssetBalanceAsync();
             _ = RefreshTokenBalanceAsync();
             _ = RefreshTokenVerdictAsync(value);
+            _ = RefreshTokenMetadataAsync(value);
         }
+    }
+
+    /// <summary>Full profile (contract, community, logo/header, description, holders) of
+    /// the selected token — shown in the Token panel and fed into the AI context.</summary>
+    public DexTokenMetadataViewModel TokenMeta { get; } = new();
+
+    private async Task RefreshTokenMetadataAsync(DexTokenItemViewModel? token)
+    {
+        if (token is null)
+        {
+            TokenMeta.Clear();
+            return;
+        }
+
+        var chain = token.TokenInfo.ChainId;
+        var address = token.TokenInfo.TokenAddress;
+        var network = MapGeckoNetwork(chain);
+
+        DexTokenMetadata? meta = null;
+        if (!string.IsNullOrWhiteSpace(network) && !string.IsNullOrWhiteSpace(address))
+        {
+            try { meta = await _geckoTerminalClient.GetTokenInfoAsync(network, address); }
+            catch { meta = null; }
+        }
+
+        if (!ReferenceEquals(SelectedToken, token))
+        {
+            return; // selection changed while fetching
+        }
+
+        // Fall back to the basic pair info when the profile endpoint has nothing.
+        meta ??= new DexTokenMetadata
+        {
+            Address = address,
+            Name = token.TokenInfo.Name,
+            Symbol = token.TokenInfo.Symbol,
+            ChainId = chain,
+        };
+        meta.ChainId = chain;
+
+        await TokenMeta.ApplyAsync(meta, chain, address);
     }
 
     public bool HasSelectedToken => SelectedToken is not null;

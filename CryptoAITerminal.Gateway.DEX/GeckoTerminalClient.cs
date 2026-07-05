@@ -58,6 +58,85 @@ public class GeckoTerminalClient
             .ToList();
     }
 
+    /// <summary>Fetch rich token profile info (image, banner, socials, description,
+    /// holders, security signals). Returns null when unavailable.</summary>
+    public async Task<DexTokenMetadata?> GetTokenInfoAsync(
+        string network, string tokenAddress, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(network) || string.IsNullOrWhiteSpace(tokenAddress))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var response = await _httpClient.GetAsync(
+                $"networks/{network}/tokens/{tokenAddress}/info", cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var doc = await JsonDocument.ParseAsync(stream, default, cancellationToken);
+            if (!doc.RootElement.TryGetProperty("data", out var data) ||
+                !data.TryGetProperty("attributes", out var a))
+            {
+                return null;
+            }
+
+            var meta = new DexTokenMetadata
+            {
+                Address = Str(a, "address"),
+                Name = Str(a, "name"),
+                Symbol = Str(a, "symbol"),
+                ImageUrl = ValidImage(Str(a, "image_url")),
+                BannerImageUrl = ValidImage(Str(a, "banner_image_url")),
+                Description = Str(a, "description"),
+                Discord = Str(a, "discord_url"),
+                CoingeckoId = Str(a, "coingecko_coin_id"),
+                GtScore = a.TryGetProperty("gt_score", out var gs) && gs.ValueKind == JsonValueKind.Number ? gs.GetDecimal() : 0m,
+                GtVerified = a.TryGetProperty("gt_verified", out var gv) && gv.ValueKind == JsonValueKind.True,
+                IsHoneypot = a.TryGetProperty("is_honeypot", out var hp) ? hp.ValueKind == JsonValueKind.True : null,
+            };
+
+            var twitter = Str(a, "twitter_handle");
+            if (twitter.Length > 0) meta.Twitter = $"https://twitter.com/{twitter.TrimStart('@')}";
+            var telegram = Str(a, "telegram_handle");
+            if (telegram.Length > 0) meta.Telegram = $"https://t.me/{telegram.TrimStart('@')}";
+
+            if (a.TryGetProperty("websites", out var ws) && ws.ValueKind == JsonValueKind.Array && ws.GetArrayLength() > 0)
+            {
+                meta.Website = ws[0].GetString() ?? string.Empty;
+            }
+
+            if (a.TryGetProperty("holders", out var h))
+            {
+                if (h.ValueKind == JsonValueKind.Object && h.TryGetProperty("count", out var hc) && hc.ValueKind == JsonValueKind.Number)
+                    meta.Holders = hc.GetInt64();
+                else if (h.ValueKind == JsonValueKind.Number)
+                    meta.Holders = h.GetInt64();
+            }
+
+            if (a.TryGetProperty("categories", out var cats) && cats.ValueKind == JsonValueKind.Array)
+            {
+                meta.Categories = string.Join(", ", cats.EnumerateArray().Select(c => c.GetString()).Where(s => !string.IsNullOrWhiteSpace(s)));
+            }
+
+            return meta;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string Str(JsonElement e, string prop) =>
+        e.TryGetProperty(prop, out var p) && p.ValueKind == JsonValueKind.String ? p.GetString() ?? string.Empty : string.Empty;
+
+    private static string ValidImage(string url) =>
+        string.IsNullOrWhiteSpace(url) || url.Contains("missing", StringComparison.OrdinalIgnoreCase) ? string.Empty : url;
+
     private static decimal ParseDecimal(JsonElement element)
     {
         return element.ValueKind switch
