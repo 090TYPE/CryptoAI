@@ -1969,6 +1969,30 @@
                   <Button Grid.Column="1" Content="🔥 TREND" Classes="TdSeg dex" Command="{Binding DexTradingVM.LoadTrendingCommand}" Classes.active="{Binding DexTradingVM.IsTrendingMode}" />
                   <Button Grid.Column="2" Content="REFRESH" Classes="TdSeg" Command="{Binding DexTradingVM.RefreshCommand}" />
                 </Grid>
+
+                <Button Content="★ WATCH SELECTED" Classes="TdSeg dex" HorizontalAlignment="Stretch"
+                        Classes.active="{Binding DexTradingVM.IsSelectedWatched}" Command="{Binding DexTradingVM.ToggleWatchlistCommand}"
+                        IsEnabled="{Binding DexTradingVM.HasSelectedToken}" />
+
+                <StackPanel Spacing="4" IsVisible="{Binding DexTradingVM.HasWatchlist}">
+                  <TextBlock Classes="TdLabel" Text="★ WATCHLIST" />
+                  <ItemsControl ItemsSource="{Binding DexTradingVM.WatchlistItems}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:DexWatchItemViewModel">
+                        <Border Classes="TdCardTight" Margin="0,0,0,4">
+                          <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="6">
+                            <Button Grid.Column="0" Content="{Binding Symbol}" Classes="TdSeg dex" FontSize="10" Padding="8,3" HorizontalAlignment="Left"
+                                    Command="{Binding $parent[ItemsControl].DataContext.DexTradingVM.OpenWatchlistCommand}" CommandParameter="{Binding TokenAddress}" />
+                            <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding PriceLabel}" Foreground="#c8dcef" FontSize="10" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding ChangeLabel}" Foreground="{Binding ChangeBrush}" FontSize="9" VerticalAlignment="Center" Margin="4,0" />
+                            <Button Grid.Column="3" Content="✕" Classes="TdSeg mini" Command="{Binding $parent[ItemsControl].DataContext.DexTradingVM.RemoveWatchlistCommand}" CommandParameter="{Binding TokenAddress}" />
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="8" RowDefinitions="Auto,Auto" RowSpacing="8">
                   <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
                     <TextBlock Classes="TdLabel" Text="CHAIN" />

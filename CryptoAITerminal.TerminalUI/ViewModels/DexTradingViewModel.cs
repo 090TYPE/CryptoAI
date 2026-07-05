@@ -151,6 +151,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             _ = RefreshTokenVerdictAsync(value);
             _ = RefreshTokenMetadataAsync(value);
             _ = RefreshActivityAsync(value);
+            this.RaisePropertyChanged(nameof(IsSelectedWatched));
         }
     }
 
@@ -802,8 +803,8 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     /// still fire. Fetches each distinct order token's price and ticks it.</summary>
     private async Task PollKeeperAsync()
     {
-        var addresses = _keeper.WorkingOrders
-            .Select(o => o.TokenAddress)
+        var addresses = _keeper.WorkingOrders.Select(o => o.TokenAddress)
+            .Concat(WatchlistItems.Select(w => w.TokenAddress))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
         if (addresses.Count == 0)
@@ -817,14 +818,17 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         {
             if (string.Equals(addr, selected, StringComparison.OrdinalIgnoreCase))
             {
-                continue; // already ticked on the fast selected-token path
+                continue; // already ticked / priced on the fast selected-token path
             }
 
             decimal price = 0m;
+            decimal change = 0m;
             try
             {
                 var results = await _dexClient.SearchTokensAsync(addr);
-                price = results.FirstOrDefault(t => string.Equals(t.TokenAddress, addr, StringComparison.OrdinalIgnoreCase))?.PriceUsd ?? 0m;
+                var match = results.FirstOrDefault(t => string.Equals(t.TokenAddress, addr, StringComparison.OrdinalIgnoreCase));
+                price = match?.PriceUsd ?? 0m;
+                change = match?.PriceChange24h ?? 0m;
             }
             catch { price = 0m; }
 
@@ -832,6 +836,9 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             {
                 continue;
             }
+
+            var watch = WatchlistItems.FirstOrDefault(w => string.Equals(w.TokenAddress, addr, StringComparison.OrdinalIgnoreCase));
+            watch?.Update(price, change);
 
             var fired = _keeper.Tick(addr, price);
             foreach (var order in fired)
@@ -880,6 +887,77 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             AddTradeRecord(order.Side == KeeperSide.Buy ? "BUY" : "SELL", order.Symbol,
                 order.Side == KeeperSide.Buy ? order.AmountUsd : order.AmountTokens, order.TriggerPrice, string.Empty, false);
             KeeperStatus = $"Keeper execution failed: {ex.Message}";
+        }
+    }
+
+    // ── Watchlist (favourite tokens, persisted) ───────────────────────────────
+    private readonly DexWatchlistStore _watchlistStore = new();
+    public ObservableCollection<DexWatchItemViewModel> WatchlistItems { get; } = new();
+    public bool HasWatchlist => WatchlistItems.Count > 0;
+    public bool IsSelectedWatched => SelectedToken is not null &&
+        WatchlistItems.Any(w => string.Equals(w.TokenAddress, SelectedToken.TokenAddress, StringComparison.OrdinalIgnoreCase));
+
+    public ReactiveCommand<Unit, Unit> ToggleWatchlistCommand { get; private set; } = null!;
+    public ReactiveCommand<string, Unit> RemoveWatchlistCommand { get; private set; } = null!;
+    public ReactiveCommand<string, Unit> OpenWatchlistCommand { get; private set; } = null!;
+
+    private void ToggleWatchlist()
+    {
+        var t = SelectedToken;
+        if (t is null) return;
+
+        var existing = WatchlistItems.FirstOrDefault(w => string.Equals(w.TokenAddress, t.TokenAddress, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+        {
+            WatchlistItems.Remove(existing);
+        }
+        else
+        {
+            var item = new DexWatchItemViewModel(t.TokenInfo.ChainId, t.TokenAddress, t.TokenInfo.Symbol);
+            item.Update(t.TokenInfo.PriceUsd, t.TokenInfo.PriceChange24h);
+            WatchlistItems.Add(item);
+        }
+        SaveWatchlist();
+        this.RaisePropertyChanged(nameof(HasWatchlist));
+        this.RaisePropertyChanged(nameof(IsSelectedWatched));
+    }
+
+    private void RemoveWatchlist(string address)
+    {
+        var existing = WatchlistItems.FirstOrDefault(w => string.Equals(w.TokenAddress, address, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+        {
+            WatchlistItems.Remove(existing);
+            SaveWatchlist();
+            this.RaisePropertyChanged(nameof(HasWatchlist));
+            this.RaisePropertyChanged(nameof(IsSelectedWatched));
+        }
+    }
+
+    private void SaveWatchlist()
+    {
+        var snapshot = WatchlistItems.Select(w => new DexWatchEntry(w.ChainId, w.TokenAddress, w.Symbol)).ToList();
+        _ = Task.Run(() => _watchlistStore.Save(snapshot));
+    }
+
+    private void LoadWatchlist()
+    {
+        foreach (var e in _watchlistStore.Load())
+        {
+            WatchlistItems.Add(new DexWatchItemViewModel(e.ChainId, e.TokenAddress, e.Symbol));
+        }
+        this.RaisePropertyChanged(nameof(HasWatchlist));
+    }
+
+    private void UpdateWatchlistFromTokens()
+    {
+        foreach (var w in WatchlistItems)
+        {
+            var t = Tokens.FirstOrDefault(x => string.Equals(x.TokenAddress, w.TokenAddress, StringComparison.OrdinalIgnoreCase));
+            if (t is not null)
+            {
+                w.Update(t.TokenInfo.PriceUsd, t.TokenInfo.PriceChange24h);
+            }
         }
     }
 
@@ -1196,6 +1274,10 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         SelectKeeperOrderTypeCommand = ReactiveCommand.Create<string>(v => { if (!string.IsNullOrWhiteSpace(v)) KeeperOrderType = v; }, outputScheduler: App.UiScheduler);
         ArmKeeperOrderCommand = ReactiveCommand.Create<string>(ArmKeeperOrder, outputScheduler: App.UiScheduler);
         CancelKeeperOrderCommand = ReactiveCommand.Create<string>(id => { _keeper.Cancel(id); RefreshKeeperOrders(); SaveKeeper(); }, outputScheduler: App.UiScheduler);
+        ToggleWatchlistCommand = ReactiveCommand.Create(ToggleWatchlist, outputScheduler: App.UiScheduler);
+        RemoveWatchlistCommand = ReactiveCommand.Create<string>(RemoveWatchlist, outputScheduler: App.UiScheduler);
+        OpenWatchlistCommand = ReactiveCommand.CreateFromTask<string>(addr => SelectTokenByAddressAsync(addr), outputScheduler: App.UiScheduler);
+        LoadWatchlist();
         DeepScanTokenCommand = ReactiveCommand.CreateFromTask(DeepScanTokenAsync, outputScheduler: App.UiScheduler);
 
         _refreshTimer = new DispatcherTimer
@@ -1550,6 +1632,8 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             RaiseSelectedTokenMarketLabels();
             TickKeeper();
         }
+
+        UpdateWatchlistFromTokens();
 
         StatusMessage = Tokens.Count == 0
             ? (_loadedTokens.Count == 0 ? "No tokens found." : "No tokens match filters.")
@@ -2628,6 +2712,38 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
     private sealed record LocalChartRequest(TimeSpan BucketSize, TimeSpan Lookback, int MaxCandles);
     private sealed record GeckoChartRequest(string Timeframe, int Aggregate, int Limit);
+}
+
+/// <summary>One watchlist token row with a live price.</summary>
+public sealed class DexWatchItemViewModel : ReactiveObject
+{
+    private decimal _price;
+    private decimal _change24h;
+
+    public DexWatchItemViewModel(string chainId, string tokenAddress, string symbol)
+    {
+        ChainId = chainId;
+        TokenAddress = tokenAddress;
+        Symbol = string.IsNullOrWhiteSpace(symbol) ? "?" : symbol;
+    }
+
+    public string ChainId { get; }
+    public string TokenAddress { get; }
+    public string Symbol { get; }
+    public string ChainBadge => string.IsNullOrWhiteSpace(ChainId) ? "" : ChainId.ToUpperInvariant();
+
+    public string PriceLabel => _price > 0m ? $"$ {DexPerpFormat.Price(_price)}" : "—";
+    public string ChangeLabel => _price > 0m ? $"{_change24h:+0.0;-0.0;0}%" : "";
+    public string ChangeBrush => _change24h >= 0m ? "#3ddc84" : "#ff6b6b";
+
+    public void Update(decimal price, decimal change24h)
+    {
+        _price = price;
+        _change24h = change24h;
+        this.RaisePropertyChanged(nameof(PriceLabel));
+        this.RaisePropertyChanged(nameof(ChangeLabel));
+        this.RaisePropertyChanged(nameof(ChangeBrush));
+    }
 }
 
 /// <summary>One active keeper (conditional) order row.</summary>
