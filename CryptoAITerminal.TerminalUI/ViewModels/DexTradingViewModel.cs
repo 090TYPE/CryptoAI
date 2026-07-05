@@ -525,6 +525,74 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         private set => this.RaiseAndSetIfChanged(ref _buyQuoteBrush, value);
     }
 
+    // ── Aggregator (OpenOcean) best-route swap preview ────────────────────────
+    private readonly DexAggregatorService _aggregator = new();
+    private string _aggOutputLabel = string.Empty;
+    private string _aggImpactLabel = "—";
+    private string _aggImpactBrush = "#8fa3b8";
+    private string _aggRouteLabel = "—";
+    public string AggOutputLabel { get => _aggOutputLabel; private set { this.RaiseAndSetIfChanged(ref _aggOutputLabel, value); this.RaisePropertyChanged(nameof(HasAggQuote)); } }
+    public string AggImpactLabel { get => _aggImpactLabel; private set => this.RaiseAndSetIfChanged(ref _aggImpactLabel, value); }
+    public string AggImpactBrush { get => _aggImpactBrush; private set => this.RaiseAndSetIfChanged(ref _aggImpactBrush, value); }
+    public string AggRouteLabel { get => _aggRouteLabel; private set => this.RaiseAndSetIfChanged(ref _aggRouteLabel, value); }
+    public bool HasAggQuote => !string.IsNullOrEmpty(_aggOutputLabel);
+
+    private async Task RefreshAggregatorQuoteAsync(DexTokenItemViewModel? token, decimal amount, string quoteSymbol)
+    {
+        void Clear()
+        {
+            AggOutputLabel = string.Empty;
+            AggImpactLabel = "—";
+            AggRouteLabel = "—";
+        }
+
+        if (token is null || amount <= 0m)
+        {
+            Clear();
+            return;
+        }
+
+        var slug = DexAggregatorService.ChainSlug(token.TokenInfo.ChainId);
+        if (slug is null)
+        {
+            Clear(); // non-EVM (e.g. Solana) — aggregator preview not wired here
+            return;
+        }
+
+        string inToken;
+        if (IsNativeQuoteMode(quoteSymbol))
+        {
+            inToken = DexAggregatorService.NativePlaceholder;
+        }
+        else
+        {
+            var asset = DexQuoteAssetCatalog.Find(_walletWorkspace.SelectedNetwork, quoteSymbol);
+            if (asset is null || string.IsNullOrWhiteSpace(asset.ContractAddress))
+            {
+                Clear();
+                return;
+            }
+            inToken = asset.ContractAddress;
+        }
+
+        var quote = await _aggregator.GetQuoteAsync(slug, inToken, token.TokenAddress, amount);
+        if (!ReferenceEquals(SelectedToken, token))
+        {
+            return;
+        }
+        if (quote is null)
+        {
+            Clear();
+            return;
+        }
+
+        AggOutputLabel = $"≈ {quote.OutTokens:0.######} {token.TokenInfo.Symbol}";
+        AggImpactLabel = quote.PriceImpact;
+        AggImpactBrush = quote.PriceImpact.TrimStart().StartsWith("-") ? "#3ddc84"
+            : quote.PriceImpact.Contains('%') && double.TryParse(quote.PriceImpact.TrimEnd('%'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var p) && p >= 2 ? "#ff6b6b" : "#f4b860";
+        AggRouteLabel = quote.Route;
+    }
+
     public decimal TokenBalance
     {
         get => _tokenBalance;
@@ -2424,6 +2492,9 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         var selectedToken = await RunOnUiAsync(() => SelectedToken);
         var buyAmount = await RunOnUiAsync(() => BuyAmountBnb);
         var quoteSymbol = await RunOnUiAsync(() => SelectedQuoteAssetSymbol);
+
+        // Best-route aggregator preview (independent of the wallet gateway).
+        await RefreshAggregatorQuoteAsync(selectedToken, buyAmount, quoteSymbol);
 
         if (gateway is null || selectedToken is null || buyAmount <= 0m)
         {

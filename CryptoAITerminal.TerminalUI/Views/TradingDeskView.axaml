@@ -1061,10 +1061,27 @@
                 <!-- Swap preview -->
                 <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="9" Padding="10">
                   <StackPanel Spacing="5">
-                    <TextBlock Classes="TdLabel" Text="SWAP PREVIEW" />
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Classes="TdLabel" Text="SWAP PREVIEW" VerticalAlignment="Center" />
+                      <Border Grid.Column="1" Background="#150a20" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="4" Padding="6,1" IsVisible="{Binding DexTradingVM.HasAggQuote}">
+                        <TextBlock Text="BEST ROUTE" Foreground="#a855f7" FontSize="8" FontWeight="Bold" />
+                      </Border>
+                    </Grid>
                     <Grid ColumnDefinitions="Auto,*">
                       <TextBlock Text="Est. output" Foreground="#3d5a72" FontSize="10" />
                       <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexTradingVM.BuyQuoteLabel}" Foreground="{Binding DexTradingVM.BuyQuoteBrush}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" TextAlignment="Right" TextWrapping="Wrap" />
+                    </Grid>
+                    <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding DexTradingVM.HasAggQuote}">
+                      <TextBlock Text="Aggregator out" Foreground="#3d5a72" FontSize="10" />
+                      <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexTradingVM.AggOutputLabel}" Foreground="#21e6c1" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" TextAlignment="Right" TextWrapping="Wrap" />
+                    </Grid>
+                    <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding DexTradingVM.HasAggQuote}">
+                      <TextBlock Text="Price impact" Foreground="#3d5a72" FontSize="10" />
+                      <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexTradingVM.AggImpactLabel}" Foreground="{Binding DexTradingVM.AggImpactBrush}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding DexTradingVM.HasAggQuote}">
+                      <TextBlock Text="Route via" Foreground="#3d5a72" FontSize="10" />
+                      <TextBlock Grid.Column="1" Text="{Binding DexTradingVM.AggRouteLabel}" Foreground="#a855f7" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" />
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*">
                       <TextBlock Text="Route" Foreground="#3d5a72" FontSize="10" />
