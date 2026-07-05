@@ -80,6 +80,25 @@
         </StackPanel>
       </Border>
 
+      <!-- ══ HOLDER DISTRIBUTION (whale concentration) ══ -->
+      <TextBlock Classes="TdLabel" Text="HOLDER DISTRIBUTION" IsVisible="{Binding TokenMeta.HasDistribution}" />
+      <Border Classes="TdCard" IsVisible="{Binding TokenMeta.HasDistribution}">
+        <StackPanel Spacing="7">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <TextBlock Classes="row" Text="Top 10 hold" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="{Binding TokenMeta.ConcentrationVerdict}" Foreground="{Binding TokenMeta.Top10Brush}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBlock Grid.Column="2" Classes="val" Text="{Binding TokenMeta.Top10Label}" Foreground="{Binding TokenMeta.Top10Brush}" FontSize="14" />
+          </Grid>
+          <ProgressBar Minimum="0" Maximum="100" Value="{Binding TokenMeta.Top10Percent}" Height="8" Foreground="{Binding TokenMeta.Top10Brush}" Background="#152535" CornerRadius="4" />
+          <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="6">
+            <StackPanel Spacing="1"><TextBlock Classes="TdLabel" Text="TOP 10" /><TextBlock Classes="TdNum" Text="{Binding TokenMeta.Top10Label}" Foreground="{Binding TokenMeta.Top10Brush}" FontWeight="Bold" /></StackPanel>
+            <StackPanel Grid.Column="1" Spacing="1"><TextBlock Classes="TdLabel" Text="11–30" /><TextBlock Classes="TdNum" Text="{Binding TokenMeta.Dist1130Label}" Foreground="#c8dcef" FontWeight="Bold" /></StackPanel>
+            <StackPanel Grid.Column="2" Spacing="1"><TextBlock Classes="TdLabel" Text="31–50" /><TextBlock Classes="TdNum" Text="{Binding TokenMeta.Dist3150Label}" Foreground="#c8dcef" FontWeight="Bold" /></StackPanel>
+            <StackPanel Grid.Column="3" Spacing="1"><TextBlock Classes="TdLabel" Text="REST" /><TextBlock Classes="TdNum" Text="{Binding TokenMeta.DistRestLabel}" Foreground="#3ddc84" FontWeight="Bold" /></StackPanel>
+          </Grid>
+        </StackPanel>
+      </Border>
+
       <!-- ══ PROFILE SUMMARY ══ -->
       <TextBlock Classes="TdLabel" Text="PROFILE SUMMARY" />
       <Border Classes="TdCard">

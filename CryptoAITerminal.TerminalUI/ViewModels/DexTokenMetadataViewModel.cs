@@ -91,6 +91,23 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
     public bool HasCoingecko => !string.IsNullOrWhiteSpace(_meta?.CoingeckoId);
     public string CoingeckoUrl => HasCoingecko ? $"https://www.coingecko.com/en/coins/{_meta!.CoingeckoId}" : string.Empty;
 
+    // ── Holder distribution (whale concentration) ─────────────────────────────
+    public bool HasDistribution => (_meta?.HoldersTop10Pct ?? 0m) > 0m;
+    public double Top10Percent => (double)(_meta?.HoldersTop10Pct ?? 0m);
+    public string Top10Label => HasDistribution ? $"{_meta!.HoldersTop10Pct:0.#}%" : "—";
+    public string Top10Brush => (_meta?.HoldersTop10Pct ?? 0m) >= 50m ? "#ff6b6b"
+        : (_meta?.HoldersTop10Pct ?? 0m) >= 30m ? "#f4b860" : "#3ddc84";
+    public string Dist1130Label => HasDistribution ? $"{_meta!.Holders11To30Pct:0.#}%" : "—";
+    public string Dist3150Label => HasDistribution ? $"{_meta!.Holders31To50Pct:0.#}%" : "—";
+    public string DistRestLabel => HasDistribution ? $"{_meta!.HoldersRestPct:0.#}%" : "—";
+    public string ConcentrationVerdict => (_meta?.HoldersTop10Pct ?? 0m) switch
+    {
+        >= 50m => "HIGH CONCENTRATION",
+        >= 30m => "MODERATE",
+        > 0m => "WELL DISTRIBUTED",
+        _ => "—",
+    };
+
     // ── Profile / supply / misc (Solscan-style fields) ────────────────────────
     public string DecimalsLabel => _meta is { Decimals: > 0 } ? _meta.Decimals.ToString() : "—";
     public string CurrentSupplyLabel => _meta is { TotalSupply: > 0m } ? _meta.TotalSupply.ToString("N0", CultureInfo.InvariantCulture) : "—";
@@ -193,6 +210,7 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
             if (_meta is { Fdv: > 0m }) lines.Add($"FDV: {FdvLabel}, market cap {MarketCapLabel}");
             if (HasCreator) lines.Add($"Creator/deployer: {_meta!.DeveloperAddress}");
             if (_meta is { Holders: > 0 }) lines.Add($"Holders: {_meta.Holders:N0}");
+            if (HasDistribution) lines.Add($"Top-10 holders own {Top10Label} ({ConcentrationVerdict}); 11-30: {Dist1130Label}, 31-50: {Dist3150Label}, rest: {DistRestLabel}");
             if (_meta is { GtScore: > 0 }) lines.Add($"GT score: {_meta.GtScore:0}/100{(IsVerified ? " (verified)" : "")}");
             if (_meta?.IsHoneypot is not null) lines.Add($"Honeypot check: {HoneypotLabel}");
             if (HasDeveloperHolding) lines.Add($"Developer holdings: {DeveloperHoldingLabel}");
@@ -314,6 +332,14 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
         this.RaisePropertyChanged(nameof(FreezeAuthorityBrush));
         this.RaisePropertyChanged(nameof(HasCoingecko));
         this.RaisePropertyChanged(nameof(CoingeckoUrl));
+        this.RaisePropertyChanged(nameof(HasDistribution));
+        this.RaisePropertyChanged(nameof(Top10Percent));
+        this.RaisePropertyChanged(nameof(Top10Label));
+        this.RaisePropertyChanged(nameof(Top10Brush));
+        this.RaisePropertyChanged(nameof(Dist1130Label));
+        this.RaisePropertyChanged(nameof(Dist3150Label));
+        this.RaisePropertyChanged(nameof(DistRestLabel));
+        this.RaisePropertyChanged(nameof(ConcentrationVerdict));
         this.RaisePropertyChanged(nameof(DecimalsLabel));
         this.RaisePropertyChanged(nameof(CurrentSupplyLabel));
         this.RaisePropertyChanged(nameof(FdvLabel));

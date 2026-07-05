@@ -37,4 +37,10 @@ public sealed class DexTokenMetadata
     public decimal TotalSupply { get; set; }   // normalized (human-readable) circulating/total supply
     public decimal Fdv { get; set; }
     public decimal MarketCap { get; set; }
+
+    // Holder distribution (whale concentration), % of supply held by each cohort.
+    public decimal HoldersTop10Pct { get; set; }
+    public decimal Holders11To30Pct { get; set; }
+    public decimal Holders31To50Pct { get; set; }
+    public decimal HoldersRestPct { get; set; }
 }

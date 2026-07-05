@@ -124,6 +124,14 @@ public class GeckoTerminalClient
                     meta.Holders = hc.GetInt64();
                 else if (h.ValueKind == JsonValueKind.Number)
                     meta.Holders = h.GetInt64();
+
+                if (h.ValueKind == JsonValueKind.Object && h.TryGetProperty("distribution_percentage", out var dist) && dist.ValueKind == JsonValueKind.Object)
+                {
+                    meta.HoldersTop10Pct = NumProp(dist, "top_10");
+                    meta.Holders11To30Pct = NumProp(dist, "11_30");
+                    meta.Holders31To50Pct = NumProp(dist, "31_50");
+                    meta.HoldersRestPct = NumProp(dist, "rest");
+                }
             }
 
             if (a.TryGetProperty("categories", out var cats) && cats.ValueKind == JsonValueKind.Array)
