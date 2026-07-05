@@ -63,8 +63,14 @@ public sealed class DexExchangeDataService
                     resp.EnsureSuccessStatusCode();
                     return ParseGeckoTerminalPools(await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false), "UNISWAP");
                 }
+                case "GMX":
+                {
+                    using var resp = await Http.GetAsync("https://arbitrum-api.gmxinfra.io/prices/24h", ct).ConfigureAwait(false);
+                    resp.EnsureSuccessStatusCode();
+                    return ParseGmx24h(await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false));
+                }
                 default:
-                    return null; // GMX / Vertex: perp/CLOB feeds need bespoke integration
+                    return null; // Vertex: CLOB gateway not reachable / needs bespoke integration
             }
         }
         catch
@@ -190,6 +196,59 @@ public sealed class DexExchangeDataService
         {
             return null;
         }
+    }
+
+    /// <summary>Parse GMX v2 <c>/prices/24h</c> (human prices + 24h open/close per token).</summary>
+    public static DexExchangeLiveStats? ParseGmx24h(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            var markets = new List<DexExchangeMarket>();
+            foreach (var t in doc.RootElement.EnumerateArray())
+            {
+                var sym = t.TryGetProperty("tokenSymbol", out var s) ? s.GetString() ?? "" : "";
+                if (sym.Length == 0 || sym.Contains('_') || sym.Contains('.'))
+                {
+                    continue; // skip deprecated / synthetic entries
+                }
+
+                var open = Num(t, "open");
+                var close = Num(t, "close");
+                if (close <= 0m)
+                {
+                    continue;
+                }
+
+                var chg = open > 0m ? (close - open) / open * 100m : 0m;
+                markets.Add(new DexExchangeMarket(sym, close, chg, 0m, 0m, 0));
+            }
+
+            // GMX has no public 24h volume here — keep markets order (Aggregate sorts by 0 vol → stable).
+            return Aggregate("GMX", markets);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static decimal Num(JsonElement e, string prop)
+    {
+        if (!e.TryGetProperty(prop, out var p))
+        {
+            return 0m;
+        }
+        if (p.ValueKind == JsonValueKind.Number && p.TryGetDecimal(out var d))
+        {
+            return d;
+        }
+        return p.ValueKind == JsonValueKind.String && decimal.TryParse(p.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var s) ? s : 0m;
     }
 
     private static decimal NestedH24(JsonElement a, string prop) =>

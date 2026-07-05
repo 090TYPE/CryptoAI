@@ -81,6 +81,27 @@ public class DexExchangeDataServiceTests
         Assert.Contains(stats.Markets, m => m.Symbol == "WETH/USDT" && m.Change24hPct < 0m);
     }
 
+    private const string Gmx24hJson = """
+    [
+      {"tokenSymbol":"BTC","high":63500,"low":61900,"open":62227.0,"close":63374.0},
+      {"tokenSymbol":"ETH","high":1810,"low":1740,"open":1747.0,"close":1796.5},
+      {"tokenSymbol":"APE_deprecated","high":1,"low":1,"open":1,"close":1}
+    ]
+    """;
+
+    [Fact]
+    public void ParseGmx24h_Builds_Markets_From_HumanPrices_AndSkipsDeprecated()
+    {
+        var stats = DexExchangeDataService.ParseGmx24h(Gmx24hJson);
+
+        Assert.NotNull(stats);
+        Assert.Equal("GMX", stats!.Key);
+        Assert.DoesNotContain(stats.Markets, m => m.Symbol.Contains('_'));
+        var btc = stats.Markets.First(m => m.Symbol == "BTC");
+        Assert.Equal(63374.0m, btc.Price);
+        Assert.True(btc.Change24hPct > 0m); // 63374 > 62227
+    }
+
     [Fact]
     public void Parse_Rejects_Bad_Json()
     {
