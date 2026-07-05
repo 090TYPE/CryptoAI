@@ -47,8 +47,19 @@ public sealed class DexExchangeViewModel : ReactiveObject
     public bool IsSelected
     {
         get => _isSelected;
-        set => this.RaiseAndSetIfChanged(ref _isSelected, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isSelected, value);
+            this.RaisePropertyChanged(nameof(TabBackground));
+            this.RaisePropertyChanged(nameof(TabBorderBrush));
+            this.RaisePropertyChanged(nameof(TabNameBrush));
+        }
     }
+
+    // CEX-style venue-tab brushes (purple accent for DEX).
+    public string TabBackground => _isSelected ? "#150a20" : "#07111a";
+    public string TabBorderBrush => _isSelected ? "#a855f7" : "#152535";
+    public string TabNameBrush => _isSelected ? "#f4f7fb" : "#9bafc5";
 
     public DexExchangeViewModel(string key, string name, string dot, string nameBrush, string vol, string fee,
         string type, string chainBadge, string settlement, string netGas, string fundingRate, string maxLev)
