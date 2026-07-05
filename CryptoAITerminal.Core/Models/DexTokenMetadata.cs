@@ -32,4 +32,9 @@ public sealed class DexTokenMetadata
     public string MintAuthority { get; set; } = string.Empty;
     public string FreezeAuthority { get; set; } = string.Empty;
     public string DeveloperAddress { get; set; } = string.Empty;
+
+    public int Decimals { get; set; }
+    public decimal TotalSupply { get; set; }   // normalized (human-readable) circulating/total supply
+    public decimal Fdv { get; set; }
+    public decimal MarketCap { get; set; }
 }

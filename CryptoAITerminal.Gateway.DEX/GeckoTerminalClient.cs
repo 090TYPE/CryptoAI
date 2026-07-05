@@ -101,6 +101,7 @@ public class GeckoTerminalClient
                 MintAuthority = Str(a, "mint_authority"),
                 FreezeAuthority = Str(a, "freeze_authority"),
                 DeveloperAddress = Str(a, "developer_address"),
+                Decimals = a.TryGetProperty("decimals", out var dc) && dc.ValueKind == JsonValueKind.Number ? dc.GetInt32() : 0,
                 DeveloperHoldingPercentage = a.TryGetProperty("developer_holding_percentage", out var dh)
                     ? (dh.ValueKind == JsonValueKind.Number ? dh.GetDecimal()
                         : dh.ValueKind == JsonValueKind.String && decimal.TryParse(dh.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var dv) ? dv : 0m)
@@ -130,12 +131,39 @@ public class GeckoTerminalClient
                 meta.Categories = string.Join(", ", cats.EnumerateArray().Select(c => c.GetString()).Where(s => !string.IsNullOrWhiteSpace(s)));
             }
 
+            // The main token endpoint carries supply / fdv / market cap (the /info one does not).
+            try
+            {
+                using var tokResp = await _httpClient.GetAsync($"networks/{network}/tokens/{tokenAddress}", cancellationToken);
+                if (tokResp.IsSuccessStatusCode)
+                {
+                    await using var ts = await tokResp.Content.ReadAsStreamAsync(cancellationToken);
+                    using var tdoc = await JsonDocument.ParseAsync(ts, default, cancellationToken);
+                    if (tdoc.RootElement.TryGetProperty("data", out var td) && td.TryGetProperty("attributes", out var ta))
+                    {
+                        meta.TotalSupply = NumProp(ta, "normalized_total_supply");
+                        meta.Fdv = NumProp(ta, "fdv_usd");
+                        meta.MarketCap = NumProp(ta, "market_cap_usd");
+                        if (meta.Decimals == 0 && ta.TryGetProperty("decimals", out var td2) && td2.ValueKind == JsonValueKind.Number)
+                            meta.Decimals = td2.GetInt32();
+                    }
+                }
+            }
+            catch { /* supply/fdv optional */ }
+
             return meta;
         }
         catch
         {
             return null;
         }
+    }
+
+    private static decimal NumProp(JsonElement e, string prop)
+    {
+        if (!e.TryGetProperty(prop, out var p)) return 0m;
+        if (p.ValueKind == JsonValueKind.Number && p.TryGetDecimal(out var n)) return n;
+        return p.ValueKind == JsonValueKind.String && decimal.TryParse(p.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var s) ? s : 0m;
     }
 
     private static string Str(JsonElement e, string prop) =>

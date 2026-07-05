@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Reactive;
 using System.Threading.Tasks;
@@ -36,7 +39,10 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
         OpenDiscordCommand = ReactiveCommand.Create(() => Open(_meta?.Discord), outputScheduler: App.UiScheduler);
         OpenExplorerCommand = ReactiveCommand.Create(() => Open(ExplorerUrl), outputScheduler: App.UiScheduler);
         OpenCoingeckoCommand = ReactiveCommand.Create(() => Open(CoingeckoUrl), outputScheduler: App.UiScheduler);
+        OpenCreatorCommand = ReactiveCommand.Create(() => Open(CreatorUrl), outputScheduler: App.UiScheduler);
     }
+
+    public ReactiveCommand<Unit, Unit> OpenCreatorCommand { get; }
 
     public ReactiveCommand<Unit, Unit> OpenWebsiteCommand { get; }
     public ReactiveCommand<Unit, Unit> OpenTwitterCommand { get; }
@@ -85,6 +91,56 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
     public bool HasCoingecko => !string.IsNullOrWhiteSpace(_meta?.CoingeckoId);
     public string CoingeckoUrl => HasCoingecko ? $"https://www.coingecko.com/en/coins/{_meta!.CoingeckoId}" : string.Empty;
 
+    // ── Profile / supply / misc (Solscan-style fields) ────────────────────────
+    public string DecimalsLabel => _meta is { Decimals: > 0 } ? _meta.Decimals.ToString() : "—";
+    public string CurrentSupplyLabel => _meta is { TotalSupply: > 0m } ? _meta.TotalSupply.ToString("N0", CultureInfo.InvariantCulture) : "—";
+    public string FdvLabel => _meta is { Fdv: > 0m } ? Compact(_meta.Fdv) : "—";
+    public string MarketCapLabel => _meta is { MarketCap: > 0m } ? Compact(_meta.MarketCap) : "—";
+
+    public string TokenStandardLabel => _chainId.ToLowerInvariant() switch
+    {
+        "solana" => "SPL Token",
+        "bsc" => "BEP-20",
+        "tron" => "TRC-20",
+        "" => "—",
+        _ => "ERC-20",
+    };
+
+    public bool HasCreator => !string.IsNullOrWhiteSpace(_meta?.DeveloperAddress);
+    public string CreatorShort => ShortId(_meta?.DeveloperAddress);
+    public string CreatorUrl => AddressExplorer(_meta?.DeveloperAddress);
+
+    public IReadOnlyList<string> Tags => string.IsNullOrWhiteSpace(_meta?.Categories)
+        ? Array.Empty<string>()
+        : _meta!.Categories.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries).Take(8).ToList();
+    public bool HasTags => Tags.Count > 0;
+
+    private static string Compact(decimal v)
+    {
+        var ci = CultureInfo.InvariantCulture;
+        return v switch
+        {
+            >= 1_000_000_000m => "$" + (v / 1_000_000_000m).ToString("0.##", ci) + "B",
+            >= 1_000_000m => "$" + (v / 1_000_000m).ToString("0.##", ci) + "M",
+            >= 1_000m => "$" + (v / 1_000m).ToString("0.##", ci) + "K",
+            _ => "$" + v.ToString("0.##", ci),
+        };
+    }
+
+    private static string ShortId(string? a) =>
+        string.IsNullOrWhiteSpace(a) ? "—" : a!.Length > 12 ? $"{a[..6]}…{a[^4..]}" : a;
+
+    private string AddressExplorer(string? a) => string.IsNullOrWhiteSpace(a) ? string.Empty : _chainId.ToLowerInvariant() switch
+    {
+        "ethereum" or "eth" => $"https://etherscan.io/address/{a}",
+        "bsc" => $"https://bscscan.com/address/{a}",
+        "base" => $"https://basescan.org/address/{a}",
+        "arbitrum" => $"https://arbiscan.io/address/{a}",
+        "polygon" => $"https://polygonscan.com/address/{a}",
+        "solana" => $"https://solscan.io/account/{a}",
+        _ => $"https://dexscreener.com/{_chainId}/{a}",
+    };
+
     private static bool HasAuth(string? v) => !string.IsNullOrWhiteSpace(v);
     private static string AuthLabel(string? v) => (v ?? "").Trim().ToLowerInvariant() switch
     {
@@ -132,6 +188,10 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
                 $"Contract: {_contractAddress}",
             };
             if (HasDescription) lines.Add($"About: {_meta!.Description}");
+            lines.Add($"Standard: {TokenStandardLabel}, decimals {DecimalsLabel}");
+            if (_meta is { TotalSupply: > 0m }) lines.Add($"Current supply: {CurrentSupplyLabel}");
+            if (_meta is { Fdv: > 0m }) lines.Add($"FDV: {FdvLabel}, market cap {MarketCapLabel}");
+            if (HasCreator) lines.Add($"Creator/deployer: {_meta!.DeveloperAddress}");
             if (_meta is { Holders: > 0 }) lines.Add($"Holders: {_meta.Holders:N0}");
             if (_meta is { GtScore: > 0 }) lines.Add($"GT score: {_meta.GtScore:0}/100{(IsVerified ? " (verified)" : "")}");
             if (_meta?.IsHoneypot is not null) lines.Add($"Honeypot check: {HoneypotLabel}");
@@ -254,6 +314,16 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
         this.RaisePropertyChanged(nameof(FreezeAuthorityBrush));
         this.RaisePropertyChanged(nameof(HasCoingecko));
         this.RaisePropertyChanged(nameof(CoingeckoUrl));
+        this.RaisePropertyChanged(nameof(DecimalsLabel));
+        this.RaisePropertyChanged(nameof(CurrentSupplyLabel));
+        this.RaisePropertyChanged(nameof(FdvLabel));
+        this.RaisePropertyChanged(nameof(MarketCapLabel));
+        this.RaisePropertyChanged(nameof(TokenStandardLabel));
+        this.RaisePropertyChanged(nameof(HasCreator));
+        this.RaisePropertyChanged(nameof(CreatorShort));
+        this.RaisePropertyChanged(nameof(CreatorUrl));
+        this.RaisePropertyChanged(nameof(Tags));
+        this.RaisePropertyChanged(nameof(HasTags));
         this.RaisePropertyChanged(nameof(ExplorerUrl));
         this.RaisePropertyChanged(nameof(AiContextText));
     }
