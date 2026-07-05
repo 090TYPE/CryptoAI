@@ -160,8 +160,9 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     {
         if (token is null)
         {
-            _metaAddress = string.Empty;
-            TokenMeta.Clear();
+            // Transient null: rebuilding the token list momentarily clears the ListBox
+            // selection every refresh. Keep the current profile and address so it doesn't
+            // reload — a real re-selection with a different contract handles switching.
             return;
         }
 
