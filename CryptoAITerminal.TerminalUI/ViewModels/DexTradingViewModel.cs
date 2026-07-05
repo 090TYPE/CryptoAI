@@ -997,7 +997,9 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
                 LastUpdatedLocal = DateTime.Now;
             });
 
-            await RunOnUiAsync(QueueChartReload);
+            // NOTE: do not reload the chart on every list refresh — that redrew the chart
+            // from scratch every few seconds (nice live candles → empty cache flicker). The
+            // chart reloads on token selection and timeframe change, which is enough.
         }
         catch (Exception ex)
         {
@@ -1018,22 +1020,86 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             ChainIdForFilter(_selectedChainFilter),
             ThresholdValue(_selectedMinLiquidity),
             ThresholdValue(_selectedMinVolume),
-            SortModeKey(_selectedSortMode));
+            SortModeKey(_selectedSortMode)).ToList();
 
-        Tokens.Clear();
-        foreach (var token in filtered)
+        // Reconcile the list IN PLACE (update / move / add / remove individual rows) instead
+        // of Clear()+rebuild. Clearing dropped the ListBox selection to null every auto-
+        // refresh, which re-ran the SelectedToken setter — reloading the chart (nice live
+        // candles → cleared to an empty cache) and the token profile (banner flicker). In
+        // place, the selected instance survives, so nothing reloads on a routine refresh.
+
+        var keep = new HashSet<string>(filtered.Select(t => t.TokenAddress), StringComparer.OrdinalIgnoreCase);
+        for (var i = Tokens.Count - 1; i >= 0; i--)
         {
-            var item = new DexTokenItemViewModel();
-            item.Update(token);
-            Tokens.Add(item);
+            if (!keep.Contains(Tokens[i].TokenAddress))
+            {
+                Tokens.RemoveAt(i);
+            }
         }
 
-        SelectedToken = Tokens.FirstOrDefault(t => string.Equals(t.TokenAddress, previousTokenAddress, StringComparison.OrdinalIgnoreCase))
-            ?? Tokens.FirstOrDefault();
+        for (var i = 0; i < filtered.Count; i++)
+        {
+            var info = filtered[i];
+            var k = -1;
+            for (var j = 0; j < Tokens.Count; j++)
+            {
+                if (string.Equals(Tokens[j].TokenAddress, info.TokenAddress, StringComparison.OrdinalIgnoreCase))
+                {
+                    k = j;
+                    break;
+                }
+            }
+
+            if (k < 0)
+            {
+                var item = new DexTokenItemViewModel();
+                item.Update(info);
+                Tokens.Insert(Math.Min(i, Tokens.Count), item);
+            }
+            else
+            {
+                Tokens[k].Update(info);
+                if (k != i && i < Tokens.Count)
+                {
+                    Tokens.Move(k, i);
+                }
+            }
+        }
+
+        // Only (re)select when nothing is selected or the current selection dropped out.
+        if (SelectedToken is null || !keep.Contains(SelectedToken.TokenAddress))
+        {
+            SelectedToken = Tokens.FirstOrDefault(t => string.Equals(t.TokenAddress, previousTokenAddress, StringComparison.OrdinalIgnoreCase))
+                ?? Tokens.FirstOrDefault();
+        }
+        else
+        {
+            // Same token stays selected — refresh the derived header labels in place so the
+            // live price/liquidity update without re-running the heavy chart/profile reload.
+            RaiseSelectedTokenMarketLabels();
+        }
 
         StatusMessage = Tokens.Count == 0
             ? (_loadedTokens.Count == 0 ? "No tokens found." : "No tokens match filters.")
             : _lastLoadSuccessMessage;
+    }
+
+    private void RaiseSelectedTokenMarketLabels()
+    {
+        this.RaisePropertyChanged(nameof(SelectedToken));
+        this.RaisePropertyChanged(nameof(DexPriceUsdLabel));
+        this.RaisePropertyChanged(nameof(DexChange5mLabel));
+        this.RaisePropertyChanged(nameof(DexChange5mBrush));
+        this.RaisePropertyChanged(nameof(DexChange1hLabel));
+        this.RaisePropertyChanged(nameof(DexChange1hBrush));
+        this.RaisePropertyChanged(nameof(DexChange24hLabel));
+        this.RaisePropertyChanged(nameof(DexChange24hBrush));
+        this.RaisePropertyChanged(nameof(DexLiquidityLabel));
+        this.RaisePropertyChanged(nameof(DexVolume24hLabel));
+        this.RaisePropertyChanged(nameof(DexMarketCapLabel));
+        this.RaisePropertyChanged(nameof(DexFees24hLabel));
+        this.RaisePropertyChanged(nameof(DexUtilizationLabel));
+        this.RaisePropertyChanged(nameof(DexPairLabel));
     }
 
     private static string? ChainIdForFilter(string display) => display switch
