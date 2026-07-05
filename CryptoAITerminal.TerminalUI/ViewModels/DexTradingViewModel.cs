@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Threading;
 using CryptoAITerminal.Core.Models;
+using CryptoAITerminal.Core.Trading;
 using CryptoAITerminal.Gateway.DEX;
 using CryptoAITerminal.TerminalUI.Services;
 using ReactiveUI;
@@ -602,6 +603,157 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         return string.Empty;
     }
 
+    // ── Keeper: real conditional orders (limit / stop / TP-SL / trailing / DCA) ─
+    private readonly DexKeeperEngine _keeper = new();
+    public ObservableCollection<DexKeeperOrderViewModel> KeeperOrders { get; } = new();
+    public bool ShowKeeperPlaceholder => KeeperOrders.Count == 0;
+
+    private string _keeperOrderType = "Limit"; // Limit / Stop / Trailing / DCA
+    private decimal _keeperTriggerPrice;
+    private decimal _keeperTrailingPct = 10m;
+    private int _keeperDcaLegs = 3;
+    private decimal _keeperDcaStepPct = 5m;
+    private string _keeperStatus = "Arm a conditional order — the keeper watches price and executes it.";
+
+    public string KeeperOrderType
+    {
+        get => _keeperOrderType;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _keeperOrderType, value);
+            this.RaisePropertyChanged(nameof(IsKeeperLimit));
+            this.RaisePropertyChanged(nameof(IsKeeperStop));
+            this.RaisePropertyChanged(nameof(IsKeeperTrailing));
+            this.RaisePropertyChanged(nameof(IsKeeperDca));
+            this.RaisePropertyChanged(nameof(KeeperNeedsTrigger));
+        }
+    }
+    public bool IsKeeperLimit => Is(_keeperOrderType, "Limit");
+    public bool IsKeeperStop => Is(_keeperOrderType, "Stop");
+    public bool IsKeeperTrailing => Is(_keeperOrderType, "Trailing");
+    public bool IsKeeperDca => Is(_keeperOrderType, "DCA");
+    public bool KeeperNeedsTrigger => IsKeeperLimit || IsKeeperStop || IsKeeperDca;
+    private static bool Is(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+
+    public decimal KeeperTriggerPrice { get => _keeperTriggerPrice; set => this.RaiseAndSetIfChanged(ref _keeperTriggerPrice, value); }
+    public decimal KeeperTrailingPct { get => _keeperTrailingPct; set => this.RaiseAndSetIfChanged(ref _keeperTrailingPct, Math.Max(0.1m, value)); }
+    public int KeeperDcaLegs { get => _keeperDcaLegs; set => this.RaiseAndSetIfChanged(ref _keeperDcaLegs, Math.Clamp(value, 2, 20)); }
+    public decimal KeeperDcaStepPct { get => _keeperDcaStepPct; set => this.RaiseAndSetIfChanged(ref _keeperDcaStepPct, Math.Max(0.1m, value)); }
+    public string KeeperStatus { get => _keeperStatus; private set => this.RaiseAndSetIfChanged(ref _keeperStatus, value); }
+
+    public ReactiveCommand<string, Unit> SelectKeeperOrderTypeCommand { get; private set; } = null!;
+    public ReactiveCommand<string, Unit> ArmKeeperOrderCommand { get; private set; } = null!;
+    public ReactiveCommand<string, Unit> CancelKeeperOrderCommand { get; private set; } = null!;
+
+    private void ArmKeeperOrder(string? side)
+    {
+        var token = SelectedToken;
+        if (token is null)
+        {
+            KeeperStatus = "Select a token first.";
+            return;
+        }
+
+        var isBuy = string.Equals(side, "BUY", StringComparison.OrdinalIgnoreCase);
+        var keeperSide = isBuy ? KeeperSide.Buy : KeeperSide.Sell;
+        var trigger = _keeperTriggerPrice > 0m ? _keeperTriggerPrice : token.TokenInfo.PriceUsd;
+
+        switch (_keeperOrderType.ToUpperInvariant())
+        {
+            case "DCA":
+                var legs = _keeper.CreateDca(token.TokenAddress, token.TokenInfo.ChainId, token.TokenInfo.Symbol,
+                    BuyAmountBnb, _keeperDcaLegs, trigger, _keeperDcaStepPct);
+                KeeperStatus = $"DCA armed: {legs.Count} buy legs from {FormatPrice(trigger)}.";
+                break;
+            case "TRAILING":
+                _keeper.Add(new DexKeeperOrder
+                {
+                    TokenAddress = token.TokenAddress, ChainId = token.TokenInfo.ChainId, Symbol = token.TokenInfo.Symbol,
+                    Kind = KeeperOrderKind.Trailing, Side = KeeperSide.Sell,
+                    TriggerPrice = token.TokenInfo.PriceUsd, TrailingDistancePct = _keeperTrailingPct, AmountTokens = SellAmountTokens,
+                });
+                KeeperStatus = $"Trailing stop armed: {_keeperTrailingPct:0.##}% below peak.";
+                break;
+            default: // Limit / Stop
+                _keeper.Add(new DexKeeperOrder
+                {
+                    TokenAddress = token.TokenAddress, ChainId = token.TokenInfo.ChainId, Symbol = token.TokenInfo.Symbol,
+                    Kind = IsKeeperStop ? KeeperOrderKind.Stop : KeeperOrderKind.Limit, Side = keeperSide,
+                    TriggerPrice = trigger, AmountUsd = BuyAmountBnb, AmountTokens = SellAmountTokens,
+                });
+                KeeperStatus = $"{_keeperOrderType} {side} armed @ {FormatPrice(trigger)}.";
+                break;
+        }
+
+        RefreshKeeperOrders();
+    }
+
+    private void RefreshKeeperOrders()
+    {
+        KeeperOrders.Clear();
+        foreach (var o in _keeper.WorkingOrders)
+        {
+            KeeperOrders.Add(new DexKeeperOrderViewModel(o));
+        }
+        this.RaisePropertyChanged(nameof(ShowKeeperPlaceholder));
+    }
+
+    private void TickKeeper()
+    {
+        var token = SelectedToken;
+        if (token is null || token.TokenInfo.PriceUsd <= 0m || _keeper.WorkingOrders.All(o => !string.Equals(o.TokenAddress, token.TokenAddress, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        var fired = _keeper.Tick(token.TokenAddress, token.TokenInfo.PriceUsd);
+        if (fired.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var order in fired)
+        {
+            _keeper.Remove(order);
+            _ = ExecuteKeeperOrderAsync(order);
+        }
+        RefreshKeeperOrders();
+    }
+
+    private async Task ExecuteKeeperOrderAsync(DexKeeperOrder order)
+    {
+        var gateway = _walletWorkspace.ActiveDexGateway;
+        var dexId = Tokens.FirstOrDefault(t => string.Equals(t.TokenAddress, order.TokenAddress, StringComparison.OrdinalIgnoreCase))?.TokenInfo.DexId;
+
+        // Gated: only broadcast when a live, chain-matched, guard-approved route exists.
+        var reason = "paper mode";
+        if (gateway is null || !_walletWorkspace.CanTradeChainId(order.ChainId) ||
+            !_walletWorkspace.TryApproveLiveExecution("DEX keeper", out reason))
+        {
+            AddTradeRecord(order.Side == KeeperSide.Buy ? "BUY" : "SELL", order.Symbol,
+                order.Side == KeeperSide.Buy ? order.AmountUsd : order.AmountTokens, order.TriggerPrice, "PAPER-KEEPER", true);
+            KeeperStatus = $"Keeper (paper): {order.Kind} {order.Side} {order.Symbol} fired @ {FormatPrice(order.TriggerPrice)}. {reason}";
+            return;
+        }
+
+        try
+        {
+            var slippage = SlippagePercent;
+            string tx = order.Side == KeeperSide.Buy
+                ? await gateway.BuyTokenAsync(order.TokenAddress, order.AmountUsd, slippagePercent: slippage, dexId: dexId, spendAssetSymbol: null)
+                : await gateway.SellTokenAsync(order.TokenAddress, order.AmountTokens, slippagePercent: slippage, dexId: dexId, receiveAssetSymbol: null);
+            AddTradeRecord(order.Side == KeeperSide.Buy ? "BUY" : "SELL", order.Symbol,
+                order.Side == KeeperSide.Buy ? order.AmountUsd : order.AmountTokens, order.TriggerPrice, tx, true);
+            KeeperStatus = $"Keeper executed {order.Kind} {order.Side} {order.Symbol}: {tx}";
+        }
+        catch (Exception ex)
+        {
+            AddTradeRecord(order.Side == KeeperSide.Buy ? "BUY" : "SELL", order.Symbol,
+                order.Side == KeeperSide.Buy ? order.AmountUsd : order.AmountTokens, order.TriggerPrice, string.Empty, false);
+            KeeperStatus = $"Keeper execution failed: {ex.Message}";
+        }
+    }
+
     public bool HasChartData => ChartCandles.Count > 0;
     public string ChartPolylinePoints => string.Join(
         ' ',
@@ -912,6 +1064,9 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         SelectSlippagePresetCommand = ReactiveCommand.Create<string>(ApplySlippagePreset, outputScheduler: App.UiScheduler);
         ToggleDexIndicatorCommand = ReactiveCommand.Create<string>(ToggleDexIndicator, outputScheduler: App.UiScheduler);
         LoadTrendingCommand = ReactiveCommand.CreateFromTask(LoadTrendingAsync, outputScheduler: App.UiScheduler);
+        SelectKeeperOrderTypeCommand = ReactiveCommand.Create<string>(v => { if (!string.IsNullOrWhiteSpace(v)) KeeperOrderType = v; }, outputScheduler: App.UiScheduler);
+        ArmKeeperOrderCommand = ReactiveCommand.Create<string>(ArmKeeperOrder, outputScheduler: App.UiScheduler);
+        CancelKeeperOrderCommand = ReactiveCommand.Create<string>(id => { _keeper.Cancel(id); RefreshKeeperOrders(); }, outputScheduler: App.UiScheduler);
         DeepScanTokenCommand = ReactiveCommand.CreateFromTask(DeepScanTokenAsync, outputScheduler: App.UiScheduler);
 
         _refreshTimer = new DispatcherTimer
@@ -1257,6 +1412,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             // Same token stays selected — refresh the derived header labels in place so the
             // live price/liquidity update without re-running the heavy chart/profile reload.
             RaiseSelectedTokenMarketLabels();
+            TickKeeper();
         }
 
         StatusMessage = Tokens.Count == 0
@@ -2333,6 +2489,32 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
     private sealed record LocalChartRequest(TimeSpan BucketSize, TimeSpan Lookback, int MaxCandles);
     private sealed record GeckoChartRequest(string Timeframe, int Aggregate, int Limit);
+}
+
+/// <summary>One active keeper (conditional) order row.</summary>
+public sealed class DexKeeperOrderViewModel
+{
+    public DexKeeperOrderViewModel(DexKeeperOrder o)
+    {
+        Id = o.Id;
+        var side = o.Side == KeeperSide.Buy ? "BUY" : "SELL";
+        TypeLabel = o.PlanId is not null && o.PlanId.StartsWith("DCA", StringComparison.OrdinalIgnoreCase)
+            ? $"DCA {side}"
+            : $"{o.Kind.ToString().ToUpperInvariant()} {side}";
+        SideBrush = o.Side == KeeperSide.Buy ? "#3ddc84" : "#ff6b6b";
+        Symbol = o.Symbol;
+        TriggerLabel = o.Kind == KeeperOrderKind.Trailing
+            ? $"−{o.TrailingDistancePct:0.##}%"
+            : DexPerpFormat.Price(o.TriggerPrice);
+        AmountLabel = o.Side == KeeperSide.Buy ? $"${o.AmountUsd:0.##}" : $"{o.AmountTokens:0.####}";
+    }
+
+    public string Id { get; }
+    public string TypeLabel { get; }
+    public string SideBrush { get; }
+    public string Symbol { get; }
+    public string TriggerLabel { get; }
+    public string AmountLabel { get; }
 }
 
 /// <summary>One anti-rug alert (liquidity drop / whale sell / volume spike).</summary>

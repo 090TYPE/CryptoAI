@@ -1106,6 +1106,50 @@
                   <TextBlock Classes="TdSub" Text="{Binding DexTradingVM.WalletTradeStatus}" TextWrapping="Wrap" />
                   <TextBlock Text="{Binding DexTradingVM.StatusMessage}" Foreground="#14e0c1" TextWrapping="Wrap" FontSize="11" />
                 </StackPanel>
+
+                <!-- Automated orders (keeper) -->
+                <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="9" Padding="10">
+                  <StackPanel Spacing="7">
+                    <TextBlock Classes="TdLabel" Text="AUTOMATED ORDERS (KEEPER)" />
+                    <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="4">
+                      <Button Grid.Column="0" Content="LIMIT" Classes="TdSeg dex fill" Command="{Binding DexTradingVM.SelectKeeperOrderTypeCommand}" CommandParameter="Limit"    Classes.active="{Binding DexTradingVM.IsKeeperLimit}" />
+                      <Button Grid.Column="1" Content="STOP"  Classes="TdSeg dex fill" Command="{Binding DexTradingVM.SelectKeeperOrderTypeCommand}" CommandParameter="Stop"     Classes.active="{Binding DexTradingVM.IsKeeperStop}" />
+                      <Button Grid.Column="2" Content="TRAIL" Classes="TdSeg dex fill" Command="{Binding DexTradingVM.SelectKeeperOrderTypeCommand}" CommandParameter="Trailing" Classes.active="{Binding DexTradingVM.IsKeeperTrailing}" />
+                      <Button Grid.Column="3" Content="DCA"   Classes="TdSeg dex fill" Command="{Binding DexTradingVM.SelectKeeperOrderTypeCommand}" CommandParameter="DCA"      Classes.active="{Binding DexTradingVM.IsKeeperDca}" />
+                    </Grid>
+                    <StackPanel Spacing="4" IsVisible="{Binding DexTradingVM.KeeperNeedsTrigger}">
+                      <TextBlock Classes="TdLabel" Text="TRIGGER PRICE (USD)" />
+                      <NumericUpDown Value="{Binding DexTradingVM.KeeperTriggerPrice}" Increment="0.0001" FormatString="0.######" Minimum="0" />
+                    </StackPanel>
+                    <StackPanel Spacing="4" IsVisible="{Binding DexTradingVM.IsKeeperTrailing}">
+                      <TextBlock Classes="TdLabel" Text="TRAIL DISTANCE %" />
+                      <NumericUpDown Value="{Binding DexTradingVM.KeeperTrailingPct}" Increment="0.5" FormatString="0.##" Minimum="0.1" />
+                    </StackPanel>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6" IsVisible="{Binding DexTradingVM.IsKeeperDca}">
+                      <StackPanel Spacing="4"><TextBlock Classes="TdLabel" Text="LEGS" /><NumericUpDown Value="{Binding DexTradingVM.KeeperDcaLegs}" Increment="1" FormatString="0" Minimum="2" Maximum="20" /></StackPanel>
+                      <StackPanel Grid.Column="1" Spacing="4"><TextBlock Classes="TdLabel" Text="STEP %" /><NumericUpDown Value="{Binding DexTradingVM.KeeperDcaStepPct}" Increment="0.5" FormatString="0.##" Minimum="0.1" /></StackPanel>
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                      <Button Grid.Column="0" Content="ARM BUY"  Classes="TdSeg dex" Command="{Binding DexTradingVM.ArmKeeperOrderCommand}" CommandParameter="BUY" />
+                      <Button Grid.Column="1" Content="ARM SELL" Classes="TdDanger" Padding="0,5" Command="{Binding DexTradingVM.ArmKeeperOrderCommand}" CommandParameter="SELL" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding DexTradingVM.KeeperOrders}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:DexKeeperOrderViewModel">
+                          <Border Classes="TdCardTight" Margin="0,0,0,4">
+                            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="6">
+                              <TextBlock Text="{Binding TypeLabel}" Foreground="{Binding SideBrush}" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding TriggerLabel}" Foreground="#c8dcef" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding AmountLabel}" Foreground="#8fa3b8" FontSize="9" VerticalAlignment="Center" Margin="6,0" />
+                              <Button Grid.Column="3" Content="✕" Classes="TdSeg mini" Command="{Binding $parent[ItemsControl].DataContext.DexTradingVM.CancelKeeperOrderCommand}" CommandParameter="{Binding Id}" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{Binding DexTradingVM.KeeperStatus}" Foreground="#8fa3b8" FontSize="10" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
               </StackPanel>
 
               <!-- ─ PERP TICKET (paper engine) ─ -->
