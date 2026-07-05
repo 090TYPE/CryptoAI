@@ -1903,9 +1903,10 @@
               <!-- ── SWAP: token search + honeypot verdict + list ── -->
               <StackPanel Spacing="10" IsVisible="{Binding DexDeskVM.IsSwapMode}">
                 <TextBox Text="{Binding DexTradingVM.SearchText}" PlaceholderText="Search by symbol, name or address" />
-                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
                   <Button Grid.Column="0" Content="SEARCH"  Classes="TdSeg dex" Command="{Binding DexTradingVM.SearchCommand}" />
-                  <Button Grid.Column="1" Content="REFRESH" Classes="TdSeg" Command="{Binding DexTradingVM.RefreshCommand}" />
+                  <Button Grid.Column="1" Content="🔥 TREND" Classes="TdSeg dex" Command="{Binding DexTradingVM.LoadTrendingCommand}" Classes.active="{Binding DexTradingVM.IsTrendingMode}" />
+                  <Button Grid.Column="2" Content="REFRESH" Classes="TdSeg" Command="{Binding DexTradingVM.RefreshCommand}" />
                 </Grid>
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="8" RowDefinitions="Auto,Auto" RowSpacing="8">
                   <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">

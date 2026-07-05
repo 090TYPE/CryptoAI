@@ -795,6 +795,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     private bool _showDexBollinger;
     private bool _showDexRsi;
     private bool _showDexVwap;
+    private bool _trendingMode;
     public bool ShowDexMa20 { get => _showDexMa20; set => this.RaiseAndSetIfChanged(ref _showDexMa20, value); }
     public bool ShowDexMa50 { get => _showDexMa50; set => this.RaiseAndSetIfChanged(ref _showDexMa50, value); }
     public bool ShowDexBollinger { get => _showDexBollinger; set => this.RaiseAndSetIfChanged(ref _showDexBollinger, value); }
@@ -816,6 +817,8 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> RefreshCommand { get; }
     public ReactiveCommand<Unit, Unit> SearchCommand { get; }
     public ReactiveCommand<string, Unit> ToggleDexIndicatorCommand { get; }
+    public ReactiveCommand<Unit, Unit> LoadTrendingCommand { get; }
+    public bool IsTrendingMode => _trendingMode;
     public ReactiveCommand<Unit, Unit> BuyCommand { get; }
     public ReactiveCommand<Unit, Unit> SellCommand { get; }
     public ReactiveCommand<Unit, Unit> UseMaxBuyAmountCommand { get; }
@@ -846,6 +849,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         SelectChartRangeCommand = ReactiveCommand.CreateFromTask<string>(SelectChartRangeAsync, outputScheduler: App.UiScheduler);
         SelectSlippagePresetCommand = ReactiveCommand.Create<string>(ApplySlippagePreset, outputScheduler: App.UiScheduler);
         ToggleDexIndicatorCommand = ReactiveCommand.Create<string>(ToggleDexIndicator, outputScheduler: App.UiScheduler);
+        LoadTrendingCommand = ReactiveCommand.CreateFromTask(LoadTrendingAsync, outputScheduler: App.UiScheduler);
         DeepScanTokenCommand = ReactiveCommand.CreateFromTask(DeepScanTokenAsync, outputScheduler: App.UiScheduler);
 
         _refreshTimer = new DispatcherTimer
@@ -980,10 +984,29 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         return await Dispatcher.UIThread.InvokeAsync(action);
     }
 
+    private async Task LoadTrendingAsync()
+    {
+        _trendingMode = true;
+        this.RaisePropertyChanged(nameof(IsTrendingMode));
+        var chainId = ChainIdForFilter(_selectedChainFilter) ?? "ethereum";
+        var network = MapGeckoNetwork(chainId);
+        if (string.IsNullOrWhiteSpace(network))
+        {
+            network = "eth";
+        }
+        await LoadTokensAsync(() => _geckoTerminalClient.GetTrendingTokensAsync(network), "🔥 Trending pools loaded.");
+    }
+
     private async Task AutoRefreshAsync()
     {
         if (IsLoading)
         {
+            return;
+        }
+
+        if (_trendingMode)
+        {
+            await LoadTrendingAsync();
             return;
         }
 
@@ -1052,6 +1075,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
     private async Task RefreshAsync()
     {
+        if (_trendingMode) { _trendingMode = false; this.RaisePropertyChanged(nameof(IsTrendingMode)); }
         var chainId = ChainIdForFilter(_selectedChainFilter);
         if (!string.IsNullOrEmpty(chainId))
         {
@@ -1066,6 +1090,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
     private async Task SearchAsync()
     {
+        if (_trendingMode) { _trendingMode = false; this.RaisePropertyChanged(nameof(IsTrendingMode)); }
         await LoadTokensAsync(() => _dexClient.SearchTokensAsync(SearchText), $"Search refreshed for '{SearchText}'.");
     }
 

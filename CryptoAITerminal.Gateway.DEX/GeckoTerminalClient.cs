@@ -167,6 +167,79 @@ public class GeckoTerminalClient
         }
     }
 
+    /// <summary>Trending pools on a network, mapped to token rows for the DEX list.</summary>
+    public async Task<IReadOnlyList<DexTokenInfo>> GetTrendingTokensAsync(
+        string network, CancellationToken cancellationToken = default)
+    {
+        var result = new List<DexTokenInfo>();
+        if (string.IsNullOrWhiteSpace(network))
+        {
+            return result;
+        }
+
+        try
+        {
+            using var resp = await _httpClient.GetAsync($"networks/{network}/trending_pools?page=1", cancellationToken);
+            if (!resp.IsSuccessStatusCode)
+            {
+                return result;
+            }
+
+            await using var stream = await resp.Content.ReadAsStreamAsync(cancellationToken);
+            using var doc = await JsonDocument.ParseAsync(stream, default, cancellationToken);
+            if (!doc.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
+            {
+                return result;
+            }
+
+            foreach (var pool in data.EnumerateArray())
+            {
+                if (!pool.TryGetProperty("attributes", out var a)) continue;
+
+                var name = Str(a, "name");
+                var parts = name.Split(" / ", StringSplitOptions.RemoveEmptyEntries);
+                var baseSym = parts.Length > 0 ? parts[0].Trim() : name;
+                var quoteSym = parts.Length > 1 ? parts[1].Split(' ')[0] : string.Empty;
+
+                var baseTokenId = string.Empty;
+                var dexId = string.Empty;
+                if (pool.TryGetProperty("relationships", out var rel))
+                {
+                    if (rel.TryGetProperty("base_token", out var bt) && bt.TryGetProperty("data", out var btd))
+                        baseTokenId = btd.TryGetProperty("id", out var bid) ? bid.GetString() ?? "" : "";
+                    if (rel.TryGetProperty("dex", out var dx) && dx.TryGetProperty("data", out var dxd))
+                        dexId = dxd.TryGetProperty("id", out var did) ? did.GetString() ?? "" : "";
+                }
+
+                var prefix = network + "_";
+                var tokenAddress = baseTokenId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                    ? baseTokenId[prefix.Length..]
+                    : baseTokenId;
+
+                result.Add(new DexTokenInfo
+                {
+                    ChainId = network,
+                    PairAddress = Str(a, "address"),
+                    TokenAddress = tokenAddress,
+                    Symbol = baseSym,
+                    Name = baseSym,
+                    QuoteSymbol = quoteSym,
+                    DexId = dexId,
+                    PriceUsd = NumProp(a, "base_token_price_usd"),
+                    Volume24h = NestedH24(a, "volume_usd"),
+                    LiquidityUsd = NumProp(a, "reserve_in_usd"),
+                    PriceChange24h = NestedH24(a, "price_change_percentage"),
+                });
+            }
+        }
+        catch
+        {
+            // return whatever parsed
+        }
+
+        return result;
+    }
+
     /// <summary>Live pool activity — 24h buy/sell counts and the recent market-trade tape.</summary>
     public async Task<DexPoolActivity?> GetPoolActivityAsync(
         string network, string poolAddress, CancellationToken cancellationToken = default)
@@ -223,6 +296,12 @@ public class GeckoTerminalClient
 
         return activity.Trades.Count == 0 && activity.Buys24h == 0 && activity.Sells24h == 0 ? null : activity;
     }
+
+    private static decimal NestedH24(JsonElement e, string prop) =>
+        e.TryGetProperty(prop, out var o) && o.ValueKind == JsonValueKind.Object && o.TryGetProperty("h24", out var h)
+            ? (h.ValueKind == JsonValueKind.Number && h.TryGetDecimal(out var hn) ? hn
+                : h.ValueKind == JsonValueKind.String && decimal.TryParse(h.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var hs) ? hs : 0m)
+            : 0m;
 
     private static long LongProp(JsonElement e, string prop) =>
         e.TryGetProperty(prop, out var p) && p.ValueKind == JsonValueKind.Number && p.TryGetInt64(out var l) ? l : 0L;
