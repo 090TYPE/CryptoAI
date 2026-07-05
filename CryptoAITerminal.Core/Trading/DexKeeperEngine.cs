@@ -60,6 +60,17 @@ public sealed class DexKeeperEngine
         return order;
     }
 
+    /// <summary>Restore persisted working orders (keeps their ids; bumps the id sequence).</summary>
+    public void LoadOrders(IEnumerable<DexKeeperOrder>? orders)
+    {
+        if (orders is null) return;
+        foreach (var o in orders.Where(o => o.Status == KeeperOrderStatus.Working))
+        {
+            _orders.Add(o);
+            if (o.Id.Length > 1 && int.TryParse(o.Id.AsSpan(1), out var n) && n > _seq) _seq = n;
+        }
+    }
+
     public void Cancel(string id)
     {
         var o = _orders.FirstOrDefault(x => x.Id == id);

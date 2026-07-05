@@ -70,6 +70,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     private bool _isTokenBalanceLoading;
     private readonly DispatcherTimer _quoteDebounceTimer;
     private readonly DispatcherTimer _activityTimer;
+    private readonly DispatcherTimer _keeperTimer;
 
     private const double ChartWidth = 620;
     private const double ChartHeight = 240;
@@ -605,6 +606,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
     // ── Keeper: real conditional orders (limit / stop / TP-SL / trailing / DCA) ─
     private readonly DexKeeperEngine _keeper = new();
+    private readonly DexKeeperStore _keeperStore = new();
     public ObservableCollection<DexKeeperOrderViewModel> KeeperOrders { get; } = new();
     public bool ShowKeeperPlaceholder => KeeperOrders.Count == 0;
 
@@ -686,6 +688,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         }
 
         RefreshKeeperOrders();
+        SaveKeeper();
     }
 
     private void RefreshKeeperOrders()
@@ -718,6 +721,64 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             _ = ExecuteKeeperOrderAsync(order);
         }
         RefreshKeeperOrders();
+        SaveKeeper();
+    }
+
+    private void SaveKeeper()
+    {
+        var snapshot = _keeper.WorkingOrders.ToList();
+        _ = Task.Run(() => _keeperStore.Save(snapshot));
+    }
+
+    /// <summary>Background price poll so keeper orders on tokens you're not currently viewing
+    /// still fire. Fetches each distinct order token's price and ticks it.</summary>
+    private async Task PollKeeperAsync()
+    {
+        var addresses = _keeper.WorkingOrders
+            .Select(o => o.TokenAddress)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (addresses.Count == 0)
+        {
+            return;
+        }
+
+        var selected = SelectedToken?.TokenAddress;
+        var anyFired = false;
+        foreach (var addr in addresses)
+        {
+            if (string.Equals(addr, selected, StringComparison.OrdinalIgnoreCase))
+            {
+                continue; // already ticked on the fast selected-token path
+            }
+
+            decimal price = 0m;
+            try
+            {
+                var results = await _dexClient.SearchTokensAsync(addr);
+                price = results.FirstOrDefault(t => string.Equals(t.TokenAddress, addr, StringComparison.OrdinalIgnoreCase))?.PriceUsd ?? 0m;
+            }
+            catch { price = 0m; }
+
+            if (price <= 0m)
+            {
+                continue;
+            }
+
+            var fired = _keeper.Tick(addr, price);
+            foreach (var order in fired)
+            {
+                anyFired = true;
+                _keeper.Remove(order);
+                await ExecuteKeeperOrderAsync(order);
+            }
+        }
+
+        if (anyFired)
+        {
+            RefreshKeeperOrders();
+            SaveKeeper();
+        }
     }
 
     private async Task ExecuteKeeperOrderAsync(DexKeeperOrder order)
@@ -1066,7 +1127,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         LoadTrendingCommand = ReactiveCommand.CreateFromTask(LoadTrendingAsync, outputScheduler: App.UiScheduler);
         SelectKeeperOrderTypeCommand = ReactiveCommand.Create<string>(v => { if (!string.IsNullOrWhiteSpace(v)) KeeperOrderType = v; }, outputScheduler: App.UiScheduler);
         ArmKeeperOrderCommand = ReactiveCommand.Create<string>(ArmKeeperOrder, outputScheduler: App.UiScheduler);
-        CancelKeeperOrderCommand = ReactiveCommand.Create<string>(id => { _keeper.Cancel(id); RefreshKeeperOrders(); }, outputScheduler: App.UiScheduler);
+        CancelKeeperOrderCommand = ReactiveCommand.Create<string>(id => { _keeper.Cancel(id); RefreshKeeperOrders(); SaveKeeper(); }, outputScheduler: App.UiScheduler);
         DeepScanTokenCommand = ReactiveCommand.CreateFromTask(DeepScanTokenAsync, outputScheduler: App.UiScheduler);
 
         _refreshTimer = new DispatcherTimer
@@ -1099,6 +1160,12 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         _activityTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(12) };
         _activityTimer.Tick += async (_, _) => await RefreshActivityAsync(null);
         _activityTimer.Start();
+
+        _keeper.LoadOrders(_keeperStore.Load());
+        RefreshKeeperOrders();
+        _keeperTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(15) };
+        _keeperTimer.Tick += async (_, _) => await PollKeeperAsync();
+        _keeperTimer.Start();
 
         RefreshQuoteAssetOptions();
         EnsureValidQuoteAssetSelection();
@@ -1182,6 +1249,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         _chartDebounceTimer.Stop();
         _quoteDebounceTimer.Stop();
         _activityTimer.Stop();
+        _keeperTimer.Stop();
         _walletWorkspace.PropertyChanged -= OnWalletWorkspacePropertyChanged;
         _securityScanner.Dispose();
     }
