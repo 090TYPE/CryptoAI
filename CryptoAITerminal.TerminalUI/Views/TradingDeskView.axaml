@@ -1354,8 +1354,24 @@
                   <TextBlock Grid.Column="2" Classes="TdSub" Text="{Binding DexTradingVM.ChartSource}" VerticalAlignment="Center" TextAlignment="Right" />
                 </Grid>
 
+                <!-- Indicators -->
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                  <TextBlock Classes="TdLabel" Text="IND" VerticalAlignment="Center" Margin="0,0,4,0" />
+                  <Button Content="MA20" Classes="TdSeg dex mini" Command="{Binding DexTradingVM.ToggleDexIndicatorCommand}" CommandParameter="MA20" Classes.active="{Binding DexTradingVM.ShowDexMa20}" />
+                  <Button Content="MA50" Classes="TdSeg dex mini" Command="{Binding DexTradingVM.ToggleDexIndicatorCommand}" CommandParameter="MA50" Classes.active="{Binding DexTradingVM.ShowDexMa50}" />
+                  <Button Content="BB"   Classes="TdSeg dex mini" Command="{Binding DexTradingVM.ToggleDexIndicatorCommand}" CommandParameter="BB"   Classes.active="{Binding DexTradingVM.ShowDexBollinger}" />
+                  <Button Content="RSI"  Classes="TdSeg dex mini" Command="{Binding DexTradingVM.ToggleDexIndicatorCommand}" CommandParameter="RSI"  Classes.active="{Binding DexTradingVM.ShowDexRsi}" />
+                  <Button Content="VWAP" Classes="TdSeg dex mini" Command="{Binding DexTradingVM.ToggleDexIndicatorCommand}" CommandParameter="VWAP" Classes.active="{Binding DexTradingVM.ShowDexVwap}" />
+                </StackPanel>
+
                 <Border Background="#040c14" BorderBrush="#111d29" BorderThickness="1" CornerRadius="8" Padding="6">
-                  <ctrl:CexCandlestickChart Height="320" Candles="{Binding DexTradingVM.ChartCandles}" />
+                  <ctrl:CexCandlestickChart Height="320" Candles="{Binding DexTradingVM.ChartCandles}"
+                                            ShowMa20="{Binding DexTradingVM.ShowDexMa20}"
+                                            ShowMa50="{Binding DexTradingVM.ShowDexMa50}"
+                                            ShowBollinger="{Binding DexTradingVM.ShowDexBollinger}"
+                                            ShowRsi="{Binding DexTradingVM.ShowDexRsi}"
+                                            ShowVwap="{Binding DexTradingVM.ShowDexVwap}"
+                                            PersistenceKey="{Binding DexTradingVM.SelectedToken.TokenAddress}" />
                 </Border>
 
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">

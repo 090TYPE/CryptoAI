@@ -789,8 +789,33 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         }
     }
 
+    // ── DEX chart indicators (reuse the CEX candlestick control's overlays) ────
+    private bool _showDexMa20 = true;
+    private bool _showDexMa50;
+    private bool _showDexBollinger;
+    private bool _showDexRsi;
+    private bool _showDexVwap;
+    public bool ShowDexMa20 { get => _showDexMa20; set => this.RaiseAndSetIfChanged(ref _showDexMa20, value); }
+    public bool ShowDexMa50 { get => _showDexMa50; set => this.RaiseAndSetIfChanged(ref _showDexMa50, value); }
+    public bool ShowDexBollinger { get => _showDexBollinger; set => this.RaiseAndSetIfChanged(ref _showDexBollinger, value); }
+    public bool ShowDexRsi { get => _showDexRsi; set => this.RaiseAndSetIfChanged(ref _showDexRsi, value); }
+    public bool ShowDexVwap { get => _showDexVwap; set => this.RaiseAndSetIfChanged(ref _showDexVwap, value); }
+
+    private void ToggleDexIndicator(string? indicator)
+    {
+        switch (indicator?.ToUpperInvariant())
+        {
+            case "MA20": ShowDexMa20 = !ShowDexMa20; break;
+            case "MA50": ShowDexMa50 = !ShowDexMa50; break;
+            case "BB": ShowDexBollinger = !ShowDexBollinger; break;
+            case "RSI": ShowDexRsi = !ShowDexRsi; break;
+            case "VWAP": ShowDexVwap = !ShowDexVwap; break;
+        }
+    }
+
     public ReactiveCommand<Unit, Unit> RefreshCommand { get; }
     public ReactiveCommand<Unit, Unit> SearchCommand { get; }
+    public ReactiveCommand<string, Unit> ToggleDexIndicatorCommand { get; }
     public ReactiveCommand<Unit, Unit> BuyCommand { get; }
     public ReactiveCommand<Unit, Unit> SellCommand { get; }
     public ReactiveCommand<Unit, Unit> UseMaxBuyAmountCommand { get; }
@@ -820,6 +845,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         RefreshTokenBalanceCommand = ReactiveCommand.CreateFromTask(RefreshTokenBalanceAsync, outputScheduler: App.UiScheduler);
         SelectChartRangeCommand = ReactiveCommand.CreateFromTask<string>(SelectChartRangeAsync, outputScheduler: App.UiScheduler);
         SelectSlippagePresetCommand = ReactiveCommand.Create<string>(ApplySlippagePreset, outputScheduler: App.UiScheduler);
+        ToggleDexIndicatorCommand = ReactiveCommand.Create<string>(ToggleDexIndicator, outputScheduler: App.UiScheduler);
         DeepScanTokenCommand = ReactiveCommand.CreateFromTask(DeepScanTokenAsync, outputScheduler: App.UiScheduler);
 
         _refreshTimer = new DispatcherTimer
