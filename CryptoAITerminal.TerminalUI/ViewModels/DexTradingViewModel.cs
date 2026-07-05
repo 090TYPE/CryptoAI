@@ -854,6 +854,8 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             RefreshKeeperOrders();
             SaveKeeper();
         }
+
+        await RefreshPortfolioAsync();
     }
 
     private async Task ExecuteKeeperOrderAsync(DexKeeperOrder order)
@@ -959,6 +961,69 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
                 w.Update(t.TokenInfo.PriceUsd, t.TokenInfo.PriceChange24h);
             }
         }
+    }
+
+    // ── DEX portfolio (wallet holdings valued live) ───────────────────────────
+    public ObservableCollection<DexHoldingViewModel> PortfolioHoldings { get; } = new();
+    public bool ShowPortfolioPlaceholder => PortfolioHoldings.Count == 0;
+    private decimal _portfolioTotal;
+    public string PortfolioTotalLabel => _portfolioTotal > 0m ? $"$ {_portfolioTotal:N2}" : "—";
+    public string PortfolioNativeLabel => WalletBalanceSummary;
+    public ReactiveCommand<Unit, Unit> RefreshPortfolioCommand { get; private set; } = null!;
+
+    private async Task RefreshPortfolioAsync()
+    {
+        var gateway = _walletWorkspace.ActiveDexGateway;
+        if (gateway is null || !_walletWorkspace.CanUseDexTradingOnSelectedNetwork)
+        {
+            PortfolioHoldings.Clear();
+            _portfolioTotal = 0m;
+            this.RaisePropertyChanged(nameof(PortfolioTotalLabel));
+            this.RaisePropertyChanged(nameof(PortfolioNativeLabel));
+            this.RaisePropertyChanged(nameof(ShowPortfolioPlaceholder));
+            return;
+        }
+
+        // Candidates: the selected token + watchlist tokens on the wallet's active chain.
+        var candidates = new List<(string Addr, string Sym, decimal Price)>();
+        if (SelectedToken is not null && _walletWorkspace.CanTradeChainId(SelectedToken.TokenInfo.ChainId))
+        {
+            candidates.Add((SelectedToken.TokenAddress, SelectedToken.TokenInfo.Symbol, SelectedToken.TokenInfo.PriceUsd));
+        }
+        foreach (var w in WatchlistItems.Where(w => _walletWorkspace.CanTradeChainId(w.ChainId)))
+        {
+            candidates.Add((w.TokenAddress, w.Symbol, w.PriceValue));
+        }
+        candidates = candidates
+            .GroupBy(c => c.Addr, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
+            .ToList();
+
+        var holdings = new List<DexHoldingViewModel>();
+        decimal total = 0m;
+        foreach (var c in candidates)
+        {
+            decimal balance = 0m;
+            try { balance = await gateway.GetTokenBalanceAsync(c.Addr); }
+            catch { balance = 0m; }
+            if (balance <= 0m)
+            {
+                continue;
+            }
+            var value = c.Price > 0m ? balance * c.Price : 0m;
+            total += value;
+            holdings.Add(new DexHoldingViewModel(c.Sym, balance, value));
+        }
+
+        PortfolioHoldings.Clear();
+        foreach (var h in holdings.OrderByDescending(h => h.ValueUsd))
+        {
+            PortfolioHoldings.Add(h);
+        }
+        _portfolioTotal = total;
+        this.RaisePropertyChanged(nameof(PortfolioTotalLabel));
+        this.RaisePropertyChanged(nameof(PortfolioNativeLabel));
+        this.RaisePropertyChanged(nameof(ShowPortfolioPlaceholder));
     }
 
     public bool HasChartData => ChartCandles.Count > 0;
@@ -1277,6 +1342,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         ToggleWatchlistCommand = ReactiveCommand.Create(ToggleWatchlist, outputScheduler: App.UiScheduler);
         RemoveWatchlistCommand = ReactiveCommand.Create<string>(RemoveWatchlist, outputScheduler: App.UiScheduler);
         OpenWatchlistCommand = ReactiveCommand.CreateFromTask<string>(addr => SelectTokenByAddressAsync(addr), outputScheduler: App.UiScheduler);
+        RefreshPortfolioCommand = ReactiveCommand.CreateFromTask(RefreshPortfolioAsync, outputScheduler: App.UiScheduler);
         LoadWatchlist();
         DeepScanTokenCommand = ReactiveCommand.CreateFromTask(DeepScanTokenAsync, outputScheduler: App.UiScheduler);
 
@@ -2714,6 +2780,23 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     private sealed record GeckoChartRequest(string Timeframe, int Aggregate, int Limit);
 }
 
+/// <summary>One wallet holding row in the DEX portfolio.</summary>
+public sealed class DexHoldingViewModel
+{
+    public DexHoldingViewModel(string symbol, decimal balance, decimal valueUsd)
+    {
+        Symbol = string.IsNullOrWhiteSpace(symbol) ? "?" : symbol;
+        BalanceLabel = balance.ToString("0.######");
+        ValueUsd = valueUsd;
+        ValueLabel = valueUsd > 0m ? $"$ {valueUsd:N2}" : "—";
+    }
+
+    public string Symbol { get; }
+    public string BalanceLabel { get; }
+    public decimal ValueUsd { get; }
+    public string ValueLabel { get; }
+}
+
 /// <summary>One watchlist token row with a live price.</summary>
 public sealed class DexWatchItemViewModel : ReactiveObject
 {
@@ -2732,6 +2815,7 @@ public sealed class DexWatchItemViewModel : ReactiveObject
     public string Symbol { get; }
     public string ChainBadge => string.IsNullOrWhiteSpace(ChainId) ? "" : ChainId.ToUpperInvariant();
 
+    public decimal PriceValue => _price;
     public string PriceLabel => _price > 0m ? $"$ {DexPerpFormat.Price(_price)}" : "—";
     public string ChangeLabel => _price > 0m ? $"{_change24h:+0.0;-0.0;0}%" : "";
     public string ChangeBrush => _change24h >= 0m ? "#3ddc84" : "#ff6b6b";

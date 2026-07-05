@@ -1547,6 +1547,9 @@
                   <TabItem Header="Flow">
                     <views:DexMarketFlowView DataContext="{Binding DexTradingVM}" />
                   </TabItem>
+                  <TabItem Header="Portfolio">
+                    <views:DexPortfolioView DataContext="{Binding DexTradingVM}" />
+                  </TabItem>
                 </TabControl>
 
                 <!-- PERP blotter (paper) -->
@@ -1657,6 +1660,9 @@
                   </TabItem>
                   <TabItem Header="Flow">
                     <views:DexMarketFlowView DataContext="{Binding DexTradingVM}" />
+                  </TabItem>
+                  <TabItem Header="Portfolio">
+                    <views:DexPortfolioView DataContext="{Binding DexTradingVM}" />
                   </TabItem>
                 </TabControl>
               </StackPanel>
