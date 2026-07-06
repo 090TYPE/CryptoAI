@@ -1020,8 +1020,53 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     public string PortfolioNativeLabel => WalletBalanceSummary;
     public ReactiveCommand<Unit, Unit> RefreshPortfolioCommand { get; private set; } = null!;
 
+    // Optional Covalent (GoldRush) key → cross-chain holdings + USD value across all wired chains.
+    // When empty, the portfolio stays in keyless single-chain mode (selected + watchlist tokens).
+    private readonly DexPortfolioKeyStore _portfolioKeyStore = new();
+    private readonly PortfolioAggregatorService _portfolioAgg = new();
+    private string _portfolioApiKey = string.Empty;
+    public string PortfolioApiKey
+    {
+        get => _portfolioApiKey;
+        set
+        {
+            var v = (value ?? string.Empty).Trim();
+            this.RaiseAndSetIfChanged(ref _portfolioApiKey, v);
+            _portfolioKeyStore.Save(v);
+            this.RaisePropertyChanged(nameof(PortfolioModeLabel));
+        }
+    }
+    public string PortfolioModeLabel => string.IsNullOrWhiteSpace(_portfolioApiKey)
+        ? "Single-chain (keyless) · add a Covalent key for all chains + USD value"
+        : "Cross-chain via Covalent · all wired networks";
+
     private async Task RefreshPortfolioAsync()
     {
+        // Cross-chain path: a Covalent key values every holding across all wired chains in one sweep.
+        if (!string.IsNullOrWhiteSpace(_portfolioApiKey))
+        {
+            var address = _walletWorkspace.ConnectedAddress;
+            if (!string.IsNullOrWhiteSpace(address) && EvmWalletClient.IsValidAddress(address))
+            {
+                var rows = await _portfolioAgg.GetAllHoldingsAsync(_portfolioApiKey, address);
+                await RunOnUiAsync(() =>
+                {
+                    PortfolioHoldings.Clear();
+                    decimal crossTotal = 0m;
+                    foreach (var h in rows)
+                    {
+                        crossTotal += h.ValueUsd;
+                        PortfolioHoldings.Add(new DexHoldingViewModel($"{h.Symbol} · {h.Chain}", h.Balance, h.ValueUsd));
+                    }
+                    _portfolioTotal = crossTotal;
+                    this.RaisePropertyChanged(nameof(PortfolioTotalLabel));
+                    this.RaisePropertyChanged(nameof(PortfolioNativeLabel));
+                    this.RaisePropertyChanged(nameof(ShowPortfolioPlaceholder));
+                });
+                return;
+            }
+        }
+
         var gateway = _walletWorkspace.ActiveDexGateway;
         if (gateway is null || !_walletWorkspace.CanUseDexTradingOnSelectedNetwork)
         {
@@ -1393,6 +1438,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         OpenWatchlistCommand = ReactiveCommand.CreateFromTask<string>(addr => SelectTokenByAddressAsync(addr), outputScheduler: App.UiScheduler);
         RefreshPortfolioCommand = ReactiveCommand.CreateFromTask(RefreshPortfolioAsync, outputScheduler: App.UiScheduler);
         RefreshLivePerpCommand = ReactiveCommand.CreateFromTask(RefreshLivePerpAccountAsync, outputScheduler: App.UiScheduler);
+        _portfolioApiKey = _portfolioKeyStore.Load();
         LoadWatchlist();
         DeepScanTokenCommand = ReactiveCommand.CreateFromTask(DeepScanTokenAsync, outputScheduler: App.UiScheduler);
 

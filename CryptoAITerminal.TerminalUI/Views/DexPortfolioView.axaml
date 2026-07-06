@@ -25,6 +25,13 @@
       </Grid>
     </Border>
 
+    <StackPanel Spacing="3">
+      <TextBlock Classes="TdLabel" Text="COVALENT (GOLDRUSH) API KEY — OPTIONAL" />
+      <TextBox Text="{Binding PortfolioApiKey}" Watermark="paste key for cross-chain holdings + USD value"
+               PasswordChar="•" FontSize="10" Background="#0a1420" BorderBrush="#1c2f42" Foreground="#c8dcef" />
+      <TextBlock Text="{Binding PortfolioModeLabel}" Foreground="#5a7a94" FontSize="9" TextWrapping="Wrap" />
+    </StackPanel>
+
     <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="10" Margin="2,0">
       <TextBlock Classes="TdLabel" Text="TOKEN" />
       <TextBlock Grid.Column="1" Classes="TdLabel" Text="BALANCE" HorizontalAlignment="Right" />
