@@ -47,6 +47,20 @@ public sealed class HyperliquidPerpClient
     private const string MainnetInfoUrl = "https://api.hyperliquid.xyz/info";
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(12) };
 
+    private readonly bool _enableLiveOrders;
+    private readonly bool _testnet;
+
+    /// <param name="enableLiveOrders">
+    /// Must be explicitly true to send real orders. Leave false (default) until the signing
+    /// pipeline has been validated on a funded Hyperliquid testnet account.
+    /// </param>
+    /// <param name="testnet">Target the testnet exchange (default) rather than mainnet.</param>
+    public HyperliquidPerpClient(bool enableLiveOrders = false, bool testnet = true)
+    {
+        _enableLiveOrders = enableLiveOrders;
+        _testnet = testnet;
+    }
+
     /// <summary>Fetches a wallet's live perp account state. Returns Empty on any failure.</summary>
     public async Task<HyperliquidAccountState> GetAccountStateAsync(string walletAddress, CancellationToken ct = default)
     {
@@ -149,12 +163,23 @@ public sealed class HyperliquidPerpClient
         bool reduceOnly, string tif = "Gtc")
     {
         var inv = CultureInfo.InvariantCulture;
-        var px = limitPrice.ToString("0.########", inv);
-        var sz = size.ToString("0.########", inv);
+        return BuildOrderActionJsonExact(
+            assetIndex, isBuy,
+            limitPrice.ToString("0.########", inv), size.ToString("0.########", inv),
+            reduceOnly, tif);
+    }
+
+    /// <summary>
+    /// Same wire JSON but taking already-formatted price/size strings, so the JSON posted to
+    /// /exchange is byte-consistent with the strings fed into the msgpack that was signed.
+    /// </summary>
+    public static string BuildOrderActionJsonExact(
+        int assetIndex, bool isBuy, string limitPx, string size, bool reduceOnly, string tif = "Gtc")
+    {
         var b = isBuy ? "true" : "false";
         var r = reduceOnly ? "true" : "false";
         return "{\"type\":\"order\",\"orders\":[{" +
-               $"\"a\":{assetIndex},\"b\":{b},\"p\":\"{px}\",\"s\":\"{sz}\",\"r\":{r}," +
+               $"\"a\":{assetIndex},\"b\":{b},\"p\":\"{limitPx}\",\"s\":\"{size}\",\"r\":{r}," +
                $"\"t\":{{\"limit\":{{\"tif\":\"{tif}\"}}}}}}],\"grouping\":\"na\"}}";
     }
 
@@ -166,14 +191,25 @@ public sealed class HyperliquidPerpClient
     /// validated on a funded Hyperliquid testnet account before any customer build can send it.
     /// Until then this throws instead of firing an unproven signed order.
     /// </summary>
-    public Task<string> PlaceOrderAsync(
+    public async Task<string> PlaceOrderAsync(
         string walletPrivateKey, int assetIndex, bool isBuy, decimal limitPrice,
         decimal size, bool reduceOnly, string tif = "Gtc", CancellationToken ct = default)
     {
-        throw new NotSupportedException(
-            "Hyperliquid live order placement is not enabled in this build. The order payload builder " +
-            "is ready, but the action-hash/EIP-712 signing must first be validated against a funded " +
-            "testnet account to guarantee no mis-signed order can move real funds.");
+        if (!_enableLiveOrders)
+        {
+            throw new NotSupportedException(
+                "Hyperliquid live order placement is disabled in this build. The full signing pipeline " +
+                "(msgpack action-hash + EIP-712) is implemented, but keep it off until validated against a " +
+                "funded testnet account so no mis-signed order can move real funds. Construct the client with " +
+                "enableLiveOrders:true (and testnet:true first) once validated.");
+        }
+
+        var inv = CultureInfo.InvariantCulture;
+        var px = limitPrice.ToString("0.########", inv);
+        var sz = size.ToString("0.########", inv);
+        var nonce = BuildNonce();
+        var client = new HyperliquidExchangeClient(_testnet);
+        return await client.SubmitOrderAsync(walletPrivateKey, assetIndex, isBuy, px, sz, reduceOnly, tif, nonce, ct);
     }
 
     private static string? Str(JsonElement obj, string name) =>
