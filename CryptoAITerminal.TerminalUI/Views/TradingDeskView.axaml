@@ -1670,6 +1670,9 @@
                   <TabItem Header="Portfolio">
                     <views:DexPortfolioView DataContext="{Binding DexTradingVM}" />
                   </TabItem>
+                  <TabItem Header="Live Acct">
+                    <views:DexLivePerpAccountView DataContext="{Binding DexTradingVM}" />
+                  </TabItem>
                 </TabControl>
               </StackPanel>
             </Border>

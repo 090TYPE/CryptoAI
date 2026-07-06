@@ -1,0 +1,56 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             x:Class="CryptoAITerminal.TerminalUI.Views.DexLivePerpAccountView"
+             x:DataType="vm:DexTradingViewModel"
+             FontFamily="{StaticResource FontDisplay}">
+  <UserControl.Styles>
+    <StyleInclude Source="avares://CryptoAITerminal.TerminalUI/Styles/TradingDeskStyles.axaml" />
+  </UserControl.Styles>
+
+  <StackPanel Spacing="10" Margin="0,12,0,0">
+
+    <Grid ColumnDefinitions="*,Auto">
+      <StackPanel Spacing="2">
+        <TextBlock Classes="TdLabel" Text="LIVE ON-CHAIN PERPS · HYPERLIQUID" />
+        <TextBlock Text="{Binding LivePerpSummary}" Foreground="#c8dcef" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap" />
+      </StackPanel>
+      <Button Grid.Column="1" Content="↻ Refresh" Classes="TdSeg dex" Padding="10,5" VerticalAlignment="Center" Command="{Binding RefreshLivePerpCommand}" />
+    </Grid>
+
+    <Border Background="#150a20" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="6" Padding="8,5">
+      <TextBlock Foreground="#a855f7" FontSize="9" TextWrapping="Wrap"
+                 Text="Read-only: your real Hyperliquid positions for the connected wallet. Live order placement stays gated until validated on a funded testnet — paper PERP remains the default execution engine." />
+    </Border>
+
+    <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8" Margin="2,0" IsVisible="{Binding HasLivePerpPositions}">
+      <TextBlock Classes="TdLabel" Text="MARKET" />
+      <TextBlock Grid.Column="1" Classes="TdLabel" Text="SIZE" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="2" Classes="TdLabel" Text="ENTRY" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="3" Classes="TdLabel" Text="LIQ" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="4" Classes="TdLabel" Text="uPnL" HorizontalAlignment="Right" />
+    </Grid>
+
+    <ItemsControl ItemsSource="{Binding LivePerpPositions}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:HyperliquidPositionViewModel">
+          <Border Classes="TdCardTight" Margin="0,0,0,5">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
+              <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Coin}" Foreground="#e8f4ff" FontWeight="Bold" FontSize="11" />
+                <Border Background="#0d1b12" CornerRadius="3" Padding="4,0">
+                  <TextBlock Text="{Binding Side}" Foreground="{Binding SideBrush}" FontSize="8" FontWeight="Bold" />
+                </Border>
+                <TextBlock Text="{Binding LeverageLabel}" Foreground="#5a7a94" FontSize="8" VerticalAlignment="Center" />
+              </StackPanel>
+              <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding SizeLabel}" Foreground="#c8dcef" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding EntryLabel}" Foreground="#8fa3b8" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="3" Classes="TdNum" Text="{Binding LiqLabel}" Foreground="#ff9f45" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="4" Classes="TdNum" Text="{Binding PnlLabel}" Foreground="{Binding PnlBrush}" FontWeight="Bold" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </StackPanel>
+</UserControl>

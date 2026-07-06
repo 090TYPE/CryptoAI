@@ -865,6 +865,46 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         }
 
         await RefreshPortfolioAsync();
+        await RefreshLivePerpAccountAsync();
+    }
+
+    // ── Live on-chain perp account (Hyperliquid, keyless read) ────────────────
+    private readonly HyperliquidPerpClient _hlClient = new();
+    public ObservableCollection<HyperliquidPositionViewModel> LivePerpPositions { get; } = new();
+    private string _livePerpSummary = "Connect an EVM wallet to read live Hyperliquid perp positions.";
+    public string LivePerpSummary { get => _livePerpSummary; private set => this.RaiseAndSetIfChanged(ref _livePerpSummary, value); }
+    private bool _hasLivePerpPositions;
+    public bool HasLivePerpPositions { get => _hasLivePerpPositions; private set => this.RaiseAndSetIfChanged(ref _hasLivePerpPositions, value); }
+    public ReactiveCommand<Unit, Unit> RefreshLivePerpCommand { get; private set; } = null!;
+
+    private async Task RefreshLivePerpAccountAsync()
+    {
+        var address = _walletWorkspace.ConnectedAddress;
+        if (string.IsNullOrWhiteSpace(address) || !EvmWalletClient.IsValidAddress(address))
+        {
+            await RunOnUiAsync(() =>
+            {
+                LivePerpPositions.Clear();
+                HasLivePerpPositions = false;
+                LivePerpSummary = "Connect an EVM wallet to read live Hyperliquid perp positions.";
+            });
+            return;
+        }
+
+        var state = await _hlClient.GetAccountStateAsync(address);
+        await RunOnUiAsync(() =>
+        {
+            LivePerpPositions.Clear();
+            foreach (var p in state.Positions)
+            {
+                LivePerpPositions.Add(new HyperliquidPositionViewModel(p));
+            }
+
+            HasLivePerpPositions = LivePerpPositions.Count > 0;
+            LivePerpSummary = state.AccountValueUsd > 0m || state.Positions.Count > 0
+                ? $"Acct $ {state.AccountValueUsd:N2} · margin $ {state.TotalMarginUsedUsd:N2} · free $ {state.WithdrawableUsd:N2}"
+                : "No open Hyperliquid perp positions on the connected wallet.";
+        });
     }
 
     private async Task ExecuteKeeperOrderAsync(DexKeeperOrder order)
@@ -1352,6 +1392,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         RemoveWatchlistCommand = ReactiveCommand.Create<string>(RemoveWatchlist, outputScheduler: App.UiScheduler);
         OpenWatchlistCommand = ReactiveCommand.CreateFromTask<string>(addr => SelectTokenByAddressAsync(addr), outputScheduler: App.UiScheduler);
         RefreshPortfolioCommand = ReactiveCommand.CreateFromTask(RefreshPortfolioAsync, outputScheduler: App.UiScheduler);
+        RefreshLivePerpCommand = ReactiveCommand.CreateFromTask(RefreshLivePerpAccountAsync, outputScheduler: App.UiScheduler);
         LoadWatchlist();
         DeepScanTokenCommand = ReactiveCommand.CreateFromTask(DeepScanTokenAsync, outputScheduler: App.UiScheduler);
 
@@ -2819,6 +2860,35 @@ public sealed class DexHoldingViewModel
     public string Symbol { get; }
     public string BalanceLabel { get; }
     public decimal ValueUsd { get; }
+    public string ValueLabel { get; }
+}
+
+/// <summary>One live on-chain Hyperliquid perp position row.</summary>
+public sealed class HyperliquidPositionViewModel
+{
+    public HyperliquidPositionViewModel(HyperliquidPosition p)
+    {
+        Coin = p.Coin;
+        Side = p.Side;
+        SideBrush = p.IsLong ? "#21e6c1" : "#ff5c7c";
+        SizeLabel = Math.Abs(p.Size).ToString("0.######");
+        EntryLabel = p.EntryPrice > 0m ? $"$ {p.EntryPrice:0.####}" : "—";
+        LiqLabel = p.LiquidationPrice > 0m ? $"$ {p.LiquidationPrice:0.####}" : "—";
+        LeverageLabel = $"{p.Leverage}x {p.LeverageType}";
+        PnlLabel = (p.UnrealizedPnl >= 0m ? "+$ " : "-$ ") + Math.Abs(p.UnrealizedPnl).ToString("N2");
+        PnlBrush = p.UnrealizedPnl >= 0m ? "#21e6c1" : "#ff5c7c";
+        ValueLabel = $"$ {p.PositionValueUsd:N2}";
+    }
+
+    public string Coin { get; }
+    public string Side { get; }
+    public string SideBrush { get; }
+    public string SizeLabel { get; }
+    public string EntryLabel { get; }
+    public string LiqLabel { get; }
+    public string LeverageLabel { get; }
+    public string PnlLabel { get; }
+    public string PnlBrush { get; }
     public string ValueLabel { get; }
 }
 
