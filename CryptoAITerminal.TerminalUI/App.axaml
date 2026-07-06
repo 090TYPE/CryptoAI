@@ -4,6 +4,31 @@
              x:Class="CryptoAITerminal.TerminalUI.App">
 	<Application.Resources>
 		<conv:BoolToColorConverter x:Key="BoolToColorConverter"/>
+		<conv:StarRatioConverter x:Key="StarRatioConverter"/>
+
+		<!-- Portfolio desk: per-row dynamic accent colours (hex/argb/rgba strings → Brush). -->
+		<conv:StringToBrushConverter x:Key="StringToBrush"/>
+		<!-- Portfolio desk: 0–100 percent → star GridLength for proportional fill bars. -->
+		<conv:PercentToStarConverter x:Key="PercentToStar"/>
+
+		<!-- Markets board: active pill / sort / segment / timeframe highlighting.
+		     Bound value = selected key; ConverterParameter = this element's key. -->
+		<conv:KeyMatchBrushConverter x:Key="PillActiveText"
+		                             ActiveBrush="#21E6C1" InactiveBrush="#3D5A72" />
+		<conv:KeyMatchBrushConverter x:Key="SegActiveText"
+		                             ActiveBrush="#21E6C1" InactiveBrush="#5A7A94" />
+		<conv:KeyMatchBrushConverter x:Key="SegActiveBg"
+		                             ActiveBrush="#0E2A2A" InactiveBrush="Transparent" />
+		<conv:KeyMatchBrushConverter x:Key="TfActiveText"
+		                             ActiveBrush="#21E6C1" InactiveBrush="#8FA3B8" />
+		<conv:KeyMatchBrushConverter x:Key="TfActiveBg"
+		                             ActiveBrush="#0E2A2A" InactiveBrush="#0A1422" />
+		<conv:KeyMatchBrushConverter x:Key="TfActiveBorder"
+		                             ActiveBrush="#21E6C1" InactiveBrush="#152233" />
+
+		<!-- Reference typefaces (bundled from Assets/Fonts) -->
+		<FontFamily x:Key="FontDisplay">avares://CryptoAITerminal.TerminalUI/Assets/Fonts/SpaceGrotesk.ttf#Space Grotesk</FontFamily>
+		<FontFamily x:Key="FontMono">avares://CryptoAITerminal.TerminalUI/Assets/Fonts/DMMono-Regular.ttf#DM Mono</FontFamily>
 	</Application.Resources>
 	<Application.Styles>
 		<FluentTheme />

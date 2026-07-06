@@ -1147,10 +1147,11 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         // License: gate live execution on a valid license; demo stays open always.
         LicenseVM.LicenseChanged += ApplyLicenseState;
         ApplyLicenseState(LicenseVM.Snapshot);
-        // Trial expired → surface activation immediately (but never on the very
-        // first run, where the welcome overlay greets the user instead).
+        // Trial expired → open Settings (which now hosts activation) immediately
+        // (but never on the very first run, where the welcome overlay greets the
+        // user instead).
         if (LicenseVM.Snapshot.IsExpired && !IsWelcomeVisible)
-            LicenseVM.IsVisible = true;
+            SelectMainTab("settings");
 
         _marketDataSubscription = _gateway.MarketDataStream.Subscribe(data =>
         {

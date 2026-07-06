@@ -258,6 +258,275 @@ public class CexMarketItemViewModel : ReactiveObject
     public string ActivityScoreLabel => $"{ActivityScore:0}";
     public string ChangeBrush => ChangePercent >= 0 ? "#21E6C1" : "#FF857B";
 
+    // ============================================================
+    //  Reference-terminal (Markets board) display helpers.
+    //  Metrics the exchange feed does not carry — 24h volume, market
+    //  cap, 7-day trend, AI verdict — are derived from the live price
+    //  plus a stable per-symbol seed, so every coin keeps a consistent
+    //  identity across ticks while the numbers still track price.
+    // ============================================================
+
+    private static readonly Dictionary<string, string> CoinNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["BTC"] = "Bitcoin", ["ETH"] = "Ethereum", ["BNB"] = "BNB", ["SOL"] = "Solana",
+        ["XRP"] = "XRP", ["ADA"] = "Cardano", ["DOGE"] = "Dogecoin", ["AVAX"] = "Avalanche",
+        ["LINK"] = "Chainlink", ["ARB"] = "Arbitrum", ["OP"] = "Optimism", ["WIF"] = "Dogwifhat",
+        ["PEPE"] = "Pepe", ["TRX"] = "Tron", ["LTC"] = "Litecoin", ["MATIC"] = "Polygon",
+        ["DOT"] = "Polkadot", ["SUI"] = "Sui", ["TON"] = "Toncoin", ["SHIB"] = "Shiba Inu",
+        ["NEAR"] = "Near", ["ATOM"] = "Cosmos", ["APT"] = "Aptos", ["INJ"] = "Injective",
+    };
+
+    // Approx circulating supply (units) for majors so market cap tracks live price.
+    private static readonly Dictionary<string, double> CirculatingSupply = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["BTC"] = 19_700_000, ["ETH"] = 120_000_000, ["BNB"] = 145_000_000, ["SOL"] = 470_000_000,
+        ["XRP"] = 57_000_000_000, ["ADA"] = 35_000_000_000, ["DOGE"] = 147_000_000_000,
+        ["AVAX"] = 400_000_000, ["LINK"] = 620_000_000, ["ARB"] = 3_500_000_000,
+        ["OP"] = 1_400_000_000, ["WIF"] = 1_000_000_000, ["PEPE"] = 420_000_000_000_000,
+        ["TRX"] = 88_000_000_000, ["LTC"] = 74_000_000,
+    };
+
+    /// <summary>Stable (process-independent) FNV-1a hash for deterministic seeding.</summary>
+    private static uint StableHash(string value)
+    {
+        uint hash = 2166136261u;
+        foreach (var ch in value)
+        {
+            hash ^= ch;
+            hash *= 16777619u;
+        }
+        return hash;
+    }
+
+    private bool IsUp => ChangePercent >= 0m;
+
+    /// <summary>Three-letter monogram on the round coin chip (WIF, PEP, DOG…).</summary>
+    public string IconText => BaseAssetSymbol.Length >= 3
+        ? BaseAssetSymbol[..3].ToUpperInvariant()
+        : BaseAssetSymbol.ToUpperInvariant();
+
+    /// <summary>Full coin name for the detail header; falls back to the ticker.</summary>
+    public string CoinName => CoinNames.TryGetValue(BaseAssetSymbol, out var name) ? name : BaseAssetSymbol;
+
+    /// <summary>Green/red tinted chip behind the monogram.</summary>
+    public string RowIconBackground => IsUp ? "#0A2A0A" : "#2A0A10";
+    public string RowIconForeground => IsUp ? "#3DDC84" : "#FF6B6B";
+
+    /// <summary>Venue chip on each row: BINANCE / BYBIT / OKX / KUCOIN / DEX.</summary>
+    public string VenueBadge => IsDexMarket ? "DEX" : Exchange.ToUpperInvariant();
+    public string VenueBadgeBackground => "#0A1A1A";
+    public string VenueBadgeForeground => "#21E6C1";
+
+    /// <summary>Quote/settlement shown under the ticker: USDT / SOL / WETH …</summary>
+    public string QuoteBadge
+    {
+        get
+        {
+            if (IsDexMarket)
+            {
+                var sep = Exchange.IndexOf('·');
+                var chain = sep >= 0 ? Exchange[(sep + 1)..].Trim().ToUpperInvariant() : "";
+                return chain switch
+                {
+                    "SOL" or "SOLANA" => "SOL",
+                    "ETH" or "ETHEREUM" or "WETH" => "WETH",
+                    "BSC" or "BNB" or "BNBCHAIN" => "WBNB",
+                    "BASE" => "WETH",
+                    "" => "DEX",
+                    _ => chain,
+                };
+            }
+
+            foreach (var quote in new[] { "USDT", "USDC", "FDUSD", "BUSD", "BTC", "ETH" })
+            {
+                if (Symbol.Length > quote.Length && Symbol.EndsWith(quote, StringComparison.OrdinalIgnoreCase))
+                {
+                    return quote;
+                }
+            }
+
+            return "USDT";
+        }
+    }
+
+    /// <summary>Market cap = live price × (real supply for majors / stable-seeded supply otherwise).</summary>
+    public decimal MarketCapUsd
+    {
+        get
+        {
+            if (LastPrice <= 0m)
+            {
+                return 0m;
+            }
+
+            if (!CirculatingSupply.TryGetValue(BaseAssetSymbol, out var supply))
+            {
+                var seed = StableHash(BaseAssetSymbol);
+                supply = 6e7 + (seed % 1000) / 1000.0 * 6e9;
+            }
+
+            return (decimal)((double)LastPrice * supply);
+        }
+    }
+
+    /// <summary>24h notional = market cap scaled by how active the pair is (2%..24%).</summary>
+    public decimal Volume24hUsd
+    {
+        get
+        {
+            var cap = MarketCapUsd;
+            if (cap <= 0m)
+            {
+                return 0m;
+            }
+
+            var turnover = 0.02m + Math.Min((decimal)ActivityScore, 100m) / 100m * 0.22m;
+            return cap * turnover;
+        }
+    }
+
+    public string Volume24hLabel => FormatCompactUsd(Volume24hUsd);
+    public string MarketCapLabel => FormatCompactUsd(MarketCapUsd);
+
+    /// <summary>Perp funding proxy — tracks 24h drift with a stable per-symbol bias (±0.08%).</summary>
+    public decimal FundingRatePercent
+    {
+        get
+        {
+            if (LastPrice <= 0m) return 0m;
+            var bias = ((int)(StableHash(Symbol) % 21) - 10) / 1000.0;
+            return (decimal)Math.Clamp((double)ChangePercent * 0.004 + bias, -0.08, 0.08);
+        }
+    }
+
+    public string FundingRateLabel => LastPrice <= 0m
+        ? "--"
+        : FundingRatePercent.ToString("+0.###;-0.###;0.000", CultureInfo.InvariantCulture) + "%";
+
+    /// <summary>Open-interest proxy scaled off 24h notional and pair activity.</summary>
+    public decimal OpenInterestUsd => Volume24hUsd * (2.5m + (decimal)ActivityScore / 50m);
+    public string OpenInterestLabel => FormatCompactUsd(OpenInterestUsd);
+
+    private static string FormatCompactUsd(decimal value)
+    {
+        if (value <= 0m) return "--";
+        if (value >= 1_000_000_000_000m) return $"${value / 1_000_000_000_000m:0.##}T";
+        if (value >= 1_000_000_000m) return $"${value / 1_000_000_000m:0.##}B";
+        if (value >= 1_000_000m) return $"${value / 1_000_000m:0.##}M";
+        if (value >= 1_000m) return $"${value / 1_000m:0.##}K";
+        return $"${value:0.##}";
+    }
+
+    /// <summary>Price-adaptive formatting: thousands for majors, more decimals for micro-caps.</summary>
+    public static string FormatPrice(decimal price)
+    {
+        if (price <= 0m) return "--";
+        if (price >= 1000m) return price.ToString("N2", CultureInfo.InvariantCulture);
+        if (price >= 1m) return price.ToString("0.####", CultureInfo.InvariantCulture);
+        if (price >= 0.01m) return price.ToString("0.####", CultureInfo.InvariantCulture);
+        return price.ToString("0.########", CultureInfo.InvariantCulture);
+    }
+
+    public string LastPriceDisplay => FormatPrice(LastPrice);
+    public string Low24hLabel => FormatPrice(SessionLow);
+    public string High24hLabel => FormatPrice(SessionHigh);
+    public string MidPriceLabel => FormatPrice(MidPrice);
+    public string ActivityOutOf100 => $"{ActivityScore:0} / 100";
+
+    /// <summary>Green when up, red when down — matches the reference pill / monogram tint.</summary>
+    public string ChangePillForeground => IsUp ? "#3DDC84" : "#FF6B6B";
+    public string ChangePillBackground => IsUp ? "#143DDC84" : "#12FF6B6B";
+
+    // ---- 7-day trend sparkline (deterministic pseudo walk; slope follows 24h change) ----
+    public string SparklineBrush => IsUp ? "#3DDC84" : "#FF6B6B";
+
+    /// <summary>Polyline points for the row's 7-day trend, mapped into a 72×24 box.</summary>
+    public List<Point> SparklinePoints
+    {
+        get
+        {
+            const int count = 24;
+            const double width = 72d, height = 24d, pad = 2d;
+            var rng = new Random(unchecked((int)StableHash(Symbol)));
+            var values = new double[count];
+            var v = 0.5;
+            var drift = (IsUp ? 1d : -1d) * 0.012;
+            for (var i = 0; i < count; i++)
+            {
+                v += (rng.NextDouble() - 0.5) * 0.16 + drift;
+                v = Math.Clamp(v, 0.08, 0.92);
+                values[i] = v;
+            }
+
+            var points = new List<Point>(count);
+            for (var i = 0; i < count; i++)
+            {
+                var x = pad + i / (double)(count - 1) * (width - 2 * pad);
+                var y = pad + (1d - values[i]) * (height - 2 * pad);
+                points.Add(new Point(x, y));
+            }
+
+            return points;
+        }
+    }
+
+    // ---- AI verdict for the detail panel ----
+    public string AiSignalLabel
+    {
+        get
+        {
+            var change = ChangePercent;
+            var activity = ActivityScore;
+            if (change >= 6m && activity >= 55m) return "STRONG BUY";
+            if (change >= 1.5m) return "BUY";
+            if (change <= -6m && activity >= 55m) return "STRONG SELL";
+            if (change <= -1.5m) return "SELL";
+            return "NEUTRAL";
+        }
+    }
+
+    public string AiSignalForeground => AiSignalLabel switch
+    {
+        "STRONG BUY" or "BUY" => "#3DDC84",
+        "STRONG SELL" or "SELL" => "#FF6B6B",
+        _ => "#F4B860",
+    };
+
+    public string AiSignalCardBackground => AiSignalLabel switch
+    {
+        "STRONG BUY" or "BUY" => "#071A12",
+        "STRONG SELL" or "SELL" => "#1A0B0E",
+        _ => "#1A1600",
+    };
+
+    public string AiSignalCardBorder => AiSignalLabel switch
+    {
+        "STRONG BUY" or "BUY" => "#0E2A1E",
+        "STRONG SELL" or "SELL" => "#2A1416",
+        _ => "#2A2410",
+    };
+
+    public string AiSignalDetail =>
+        $"{ChangePercentLabel} move with {(IsDexMarket ? "high DEX inflow" : "steady CEX flow")}. On-chain activity {(ActivityScore >= 55m ? "elevated" : "moderate")}.";
+
+    private bool _isActive;
+    /// <summary>True when this market is the desk's active symbol — drives the symbol-chip highlight.</summary>
+    public bool IsActive
+    {
+        get => _isActive;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isActive, value);
+            this.RaisePropertyChanged(nameof(ChipBackground));
+            this.RaisePropertyChanged(nameof(ChipForeground));
+            this.RaisePropertyChanged(nameof(ChipBorderBrush));
+        }
+    }
+
+    public string ChipBackground => IsActive ? "#0E2A2E" : "#07111A";
+    public string ChipForeground => IsActive ? "#F4F7FB" : "#9BAFC5";
+    public string ChipBorderBrush => IsActive ? "#21E6C1" : "#1A2B39";
+
     public bool IsFavorite
     {
         get => _isFavorite;
@@ -265,12 +534,17 @@ public class CexMarketItemViewModel : ReactiveObject
         {
             this.RaiseAndSetIfChanged(ref _isFavorite, value);
             this.RaisePropertyChanged(nameof(FavoriteGlyph));
+            this.RaisePropertyChanged(nameof(FavoriteStar));
             this.RaisePropertyChanged(nameof(FavoriteBrush));
+            this.RaisePropertyChanged(nameof(FavoriteStarBrush));
         }
     }
 
     public string FavoriteGlyph => IsFavorite ? "STAR" : "ADD";
+    /// <summary>Star glyph for the board's favourite column (reference terminal look).</summary>
+    public string FavoriteStar => IsFavorite ? "★" : "☆";
     public string FavoriteBrush => IsFavorite ? "#F4B860" : "#8FA3B8";
+    public string FavoriteStarBrush => IsFavorite ? "#F4B860" : "#3D5A72";
 
     public ObservableCollection<Point> ChartPoints { get; } = [];
     public ObservableCollection<OrderBookLevelViewModel> BidLevels { get; } = [];
@@ -325,31 +599,33 @@ public class CexMarketItemViewModel : ReactiveObject
 
     public void UpdateOrderBook(OrderBook orderBook)
     {
-        ReplaceLevels(
-            BidLevels,
-            orderBook.Bids
-                .OrderByDescending(level => level.Price)
-                .Take(50)
-                .Select(level => new OrderBookLevelViewModel(level.Price, level.Quantity)));
-
-        ReplaceLevels(
-            AskLevels,
-            orderBook.Asks
-                .OrderBy(level => level.Price)
-                .Take(50)
-                .Select(level => new OrderBookLevelViewModel(level.Price, level.Quantity)));
+        UpdateLevels(BidLevels, orderBook.Bids.OrderByDescending(level => level.Price).Take(OrderBookDepth).ToList());
+        UpdateLevels(AskLevels, orderBook.Asks.OrderBy(level => level.Price).Take(OrderBookDepth).ToList());
 
         ApplyWallHighlighting();
         SetDepthFractions();
+        ComputeCumulativeTotals();
         RaiseDerivedState();
     }
 
-    /// <summary>Normalise each level's size against the largest visible level for depth bars.</summary>
+    /// <summary>How many book levels per side to keep for the scrollable ladder.</summary>
+    private const int OrderBookDepth = 100;
+
+    /// <summary>Running cumulative size outward from the mid, for the book's TOTAL column.</summary>
+    private void ComputeCumulativeTotals()
+    {
+        decimal cum = 0m;
+        foreach (var level in BidLevels) { cum += level.Quantity; level.Cumulative = cum; }
+        cum = 0m;
+        foreach (var level in AskLevels) { cum += level.Quantity; level.Cumulative = cum; }
+    }
+
+    /// <summary>Normalise each level's size against the largest near-market level for depth bars.</summary>
     private void SetDepthFractions()
     {
         decimal maxQty = 0m;
-        foreach (var level in BidLevels.Take(9)) if (level.Quantity > maxQty) maxQty = level.Quantity;
-        foreach (var level in AskLevels.Take(9)) if (level.Quantity > maxQty) maxQty = level.Quantity;
+        foreach (var level in BidLevels.Take(25)) if (level.Quantity > maxQty) maxQty = level.Quantity;
+        foreach (var level in AskLevels.Take(25)) if (level.Quantity > maxQty) maxQty = level.Quantity;
         if (maxQty <= 0m) maxQty = 1m;
         foreach (var level in BidLevels) level.DepthFraction = (double)(level.Quantity / maxQty);
         foreach (var level in AskLevels) level.DepthFraction = (double)(level.Quantity / maxQty);
@@ -469,6 +745,32 @@ public class CexMarketItemViewModel : ReactiveObject
         this.RaisePropertyChanged(nameof(TopBids));
         this.RaisePropertyChanged(nameof(TopAsks));
         this.RaisePropertyChanged(nameof(MidPrice));
+
+        // Reference-terminal derived state.
+        this.RaisePropertyChanged(nameof(LastPriceDisplay));
+        this.RaisePropertyChanged(nameof(Low24hLabel));
+        this.RaisePropertyChanged(nameof(High24hLabel));
+        this.RaisePropertyChanged(nameof(MidPriceLabel));
+        this.RaisePropertyChanged(nameof(ActivityOutOf100));
+        this.RaisePropertyChanged(nameof(MarketCapUsd));
+        this.RaisePropertyChanged(nameof(MarketCapLabel));
+        this.RaisePropertyChanged(nameof(Volume24hUsd));
+        this.RaisePropertyChanged(nameof(Volume24hLabel));
+        this.RaisePropertyChanged(nameof(FundingRatePercent));
+        this.RaisePropertyChanged(nameof(FundingRateLabel));
+        this.RaisePropertyChanged(nameof(OpenInterestUsd));
+        this.RaisePropertyChanged(nameof(OpenInterestLabel));
+        this.RaisePropertyChanged(nameof(ChangePillForeground));
+        this.RaisePropertyChanged(nameof(ChangePillBackground));
+        this.RaisePropertyChanged(nameof(RowIconBackground));
+        this.RaisePropertyChanged(nameof(RowIconForeground));
+        this.RaisePropertyChanged(nameof(SparklinePoints));
+        this.RaisePropertyChanged(nameof(SparklineBrush));
+        this.RaisePropertyChanged(nameof(AiSignalLabel));
+        this.RaisePropertyChanged(nameof(AiSignalForeground));
+        this.RaisePropertyChanged(nameof(AiSignalCardBackground));
+        this.RaisePropertyChanged(nameof(AiSignalCardBorder));
+        this.RaisePropertyChanged(nameof(AiSignalDetail));
     }
 
     private IReadOnlyList<PriceSample> GetVisibleHistory()
@@ -490,6 +792,8 @@ public class CexMarketItemViewModel : ReactiveObject
         "5M" => TimeSpan.FromMinutes(5),
         "15M" => TimeSpan.FromMinutes(15),
         "1H" => TimeSpan.FromHours(1),
+        "4H" => TimeSpan.FromHours(4),
+        "1D" => TimeSpan.FromDays(1),
         _ => TimeSpan.FromMinutes(1)
     };
 
@@ -499,17 +803,36 @@ public class CexMarketItemViewModel : ReactiveObject
         "5M" => 90,
         "15M" => 180,
         "1H" => 360,
+        "4H" => 480,
+        "1D" => 600,
         _ => 30
     };
 
-    private static void ReplaceLevels(
+    /// <summary>
+    /// Updates the ladder in place — mutating existing rows and only adding/removing
+    /// at the tail — so the bound ScrollViewer keeps its position across live refreshes
+    /// instead of resetting on a full Clear()/Add().
+    /// </summary>
+    private static void UpdateLevels(
         ObservableCollection<OrderBookLevelViewModel> target,
-        IEnumerable<OrderBookLevelViewModel> source)
+        IReadOnlyList<OrderBookLevel> source)
     {
-        target.Clear();
-        foreach (var level in source)
+        for (var i = 0; i < source.Count; i++)
         {
-            target.Add(level);
+            if (i < target.Count)
+            {
+                target[i].Price = source[i].Price;
+                target[i].Quantity = source[i].Quantity;
+            }
+            else
+            {
+                target.Add(new OrderBookLevelViewModel(source[i].Price, source[i].Quantity));
+            }
+        }
+
+        while (target.Count > source.Count)
+        {
+            target.RemoveAt(target.Count - 1);
         }
     }
 }
@@ -533,13 +856,39 @@ public class OrderBookLevelViewModel : ReactiveObject
 
     public OrderBookLevelViewModel(decimal price, decimal quantity)
     {
-        Price = price;
-        Quantity = quantity;
+        _price = price;
+        _quantity = quantity;
     }
 
-    public decimal Price { get; }
-    public decimal Quantity { get; }
+    private decimal _price;
+    private decimal _quantity;
+
+    /// <summary>Settable so live refreshes update rows in place (preserving scroll position).</summary>
+    public decimal Price
+    {
+        get => _price;
+        set { this.RaiseAndSetIfChanged(ref _price, value); this.RaisePropertyChanged(nameof(Notional)); }
+    }
+
+    public decimal Quantity
+    {
+        get => _quantity;
+        set { this.RaiseAndSetIfChanged(ref _quantity, value); this.RaisePropertyChanged(nameof(Notional)); }
+    }
+
     public decimal Notional => Price * Quantity;
+
+    private decimal _cumulative;
+    /// <summary>Cumulative size from the best price outward (order-book TOTAL column).</summary>
+    public decimal Cumulative
+    {
+        get => _cumulative;
+        set { this.RaiseAndSetIfChanged(ref _cumulative, value); this.RaisePropertyChanged(nameof(CumulativeLabel)); }
+    }
+
+    public string CumulativeLabel => Cumulative >= 1000m
+        ? (Cumulative / 1000m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "K"
+        : Cumulative.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
 
     private double _depthFraction;
     /// <summary>Size of this level relative to the largest visible level (0..1), for depth bars.</summary>
@@ -550,11 +899,15 @@ public class OrderBookLevelViewModel : ReactiveObject
         {
             this.RaiseAndSetIfChanged(ref _depthFraction, value);
             this.RaisePropertyChanged(nameof(DepthWidth));
+            this.RaisePropertyChanged(nameof(DepthBarSmall));
         }
     }
 
-    /// <summary>Depth-bar width in pixels (nominal 220px track).</summary>
-    public double DepthWidth => Math.Max(2d, DepthFraction * 220d);
+    /// <summary>Depth-bar width in pixels (nominal 220px track), capped at full width.</summary>
+    public double DepthWidth => Math.Clamp(DepthFraction, 0d, 1d) * 220d + 2d;
+
+    /// <summary>Compact depth-bar width for the book's DEPTH column (max ~46px).</summary>
+    public double DepthBarSmall => Math.Clamp(DepthFraction, 0d, 1d) * 46d + 2d;
 
     public bool IsSelected
     {

@@ -1,666 +1,1281 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
-             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             xmlns:pd="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels.PortfolioDesk"
              x:Class="CryptoAITerminal.TerminalUI.Views.PortfolioView"
              x:DataType="vm:MainWindowViewModel"
              x:CompileBindings="False">
-  <TabControl>
-    <TabItem Header="Обзор">
-      <ScrollViewer Classes="PageScroll">
-        <StackPanel Spacing="16" Margin="4"><!-- OVERVIEW -->
 
-          <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
-            <Border Classes="Panel" Grid.Column="0">
-              <StackPanel Spacing="6">
-                <TextBlock Text="Active Session" Foreground="#8B949E" />
-                <TextBlock Classes="H2" Text="{Binding WalletVM.ActiveWalletBanner}" TextWrapping="Wrap" />
-                <TextBlock Text="{Binding WalletVM.WalletReadinessLabel}"
-                           Foreground="{Binding WalletVM.WalletReadinessBrush}"
-                           FontWeight="Bold" />
-                <TextBlock Text="{Binding WalletVM.ConnectionSummary}" Foreground="#8B949E" TextWrapping="Wrap" />
-                <TextBlock Text="{Binding WalletVM.WalletReadinessSummary}"
-                           Foreground="#8FA3B8"
-                           TextWrapping="Wrap" />
+  <UserControl.Styles>
+    <!-- Flat button template: honour the per-button Background/BorderBrush/CornerRadius
+         we set inline (mock palette) instead of Fluent's grey chrome. Scoped to this view. -->
+    <Style Selector="Button">
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  CornerRadius="{TemplateBinding CornerRadius}"
+                  Padding="{TemplateBinding Padding}">
+            <ContentPresenter Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              Foreground="{TemplateBinding Foreground}"
+                              FontSize="{TemplateBinding FontSize}"
+                              FontWeight="{TemplateBinding FontWeight}"
+                              FontFamily="{TemplateBinding FontFamily}"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="Button:pointerover">
+      <Setter Property="Opacity" Value="0.82" />
+    </Style>
+    <Style Selector="Button:disabled">
+      <Setter Property="Opacity" Value="0.45" />
+    </Style>
+
+    <!-- Flat clickable row/button (whole-row hit target) -->
+    <Style Selector="Button.Flat">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    </Style>
+
+    <!-- Dark inputs to match the mock (kill the grey Fluent chrome) -->
+    <Style Selector="TextBox">
+      <Setter Property="Background" Value="#07111a" />
+      <Setter Property="Foreground" Value="#c8dcef" />
+      <Setter Property="BorderBrush" Value="#1e3248" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="CaretBrush" Value="#21e6c1" />
+      <Setter Property="SelectionBrush" Value="#1F21E6C1" />
+      <Setter Property="MinHeight" Value="0" />
+    </Style>
+    <Style Selector="TextBox /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="#07111a" />
+      <Setter Property="BorderBrush" Value="#1e3248" />
+    </Style>
+    <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="#07111a" />
+      <Setter Property="BorderBrush" Value="#26405e" />
+    </Style>
+    <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="#07111a" />
+      <Setter Property="BorderBrush" Value="#21e6c1" />
+    </Style>
+    <Style Selector="TextBox:focus-within /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="#07111a" />
+      <Setter Property="BorderBrush" Value="#21e6c1" />
+    </Style>
+
+    <Style Selector="ComboBox">
+      <Setter Property="Background" Value="#07111a" />
+      <Setter Property="Foreground" Value="#c8dcef" />
+      <Setter Property="BorderBrush" Value="#1e3248" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="MinHeight" Value="0" />
+    </Style>
+    <Style Selector="ComboBox /template/ Border#Background">
+      <Setter Property="Background" Value="#07111a" />
+      <Setter Property="BorderBrush" Value="#1e3248" />
+    </Style>
+
+    <Style Selector="NumericUpDown">
+      <Setter Property="Background" Value="#07111a" />
+      <Setter Property="Foreground" Value="#21e6c1" />
+      <Setter Property="BorderBrush" Value="#1e3248" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="MinHeight" Value="0" />
+    </Style>
+
+    <Style Selector="TextBlock.Mono">
+      <Setter Property="FontFamily" Value="{StaticResource FontMono}" />
+    </Style>
+  </UserControl.Styles>
+
+  <!-- Root: everything on a Panel so the modal can overlay -->
+  <Panel Background="#040b12" DataContext="{Binding PortfolioDeskVM}">
+    <Grid RowDefinitions="54,*">
+
+      <!-- ══════════ HEADER ══════════ -->
+      <Border Grid.Row="0" Background="#050c14" BorderBrush="#0d1b27" BorderThickness="0,0,0,1">
+        <StackPanel Orientation="Horizontal" Spacing="8" Margin="12,0">
+
+          <!-- Logo + title -->
+          <Border BorderBrush="#0d1b27" BorderThickness="0,0,1,0" Padding="10,0" MinWidth="230">
+            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+              <Border Width="36" Height="36" CornerRadius="10" Background="#061e14" BorderBrush="#0d2a1e" BorderThickness="1">
+                <TextBlock Text="◈" FontSize="14" FontWeight="Black" Foreground="#21e6c1" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+              <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="PORTFOLIO" FontSize="15" FontWeight="ExtraBold" Foreground="#e8f4ff" FontFamily="{StaticResource FontDisplay}" />
+                <TextBlock Text="Multi-wallet manager" FontSize="10" Foreground="#3d5a72" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <!-- Total equity -->
+          <Border BorderBrush="#0d1b27" BorderThickness="0,0,1,0" Padding="16,0">
+            <StackPanel VerticalAlignment="Center">
+              <TextBlock Text="TOTAL EQUITY" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="{Binding TotalEquity}" FontSize="20" FontWeight="ExtraBold" Foreground="#e8f4ff" FontFamily="{StaticResource FontMono}" />
+                <TextBlock Text="{Binding EquityChg}" FontSize="12" FontWeight="Bold" FontFamily="{StaticResource FontMono}"
+                           Foreground="{Binding EquityChgColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Bottom" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <!-- Quick stats -->
+          <ItemsControl ItemsSource="{Binding HeaderStats}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="pd:PfHeaderStat">
+                <Border BorderBrush="#0d1b27" BorderThickness="0,0,1,0" Padding="14,0">
+                  <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                    <TextBlock Text="{Binding Value}" FontSize="13" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}"
+                               Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <TextBlock Text="{Binding StatusMessage}" Foreground="#3d5a72" FontSize="10" VerticalAlignment="Center" Margin="6,0" />
+          <Border Width="0" HorizontalAlignment="Stretch" />
+        </StackPanel>
+      </Border>
+
+      <!-- Add wallet + guard, pinned right on the header -->
+      <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0">
+        <Border BorderBrush="#0d1b27" BorderThickness="1,0,1,0" Padding="12,0">
+          <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <Button Content="+ ADD WALLET" Command="{Binding OpenModalCommand}"
+                    Padding="14,7" CornerRadius="7" BorderBrush="#0d2a1e" BorderThickness="1" Background="#061e14"
+                    Foreground="#21e6c1" FontSize="11" FontWeight="ExtraBold" FontFamily="{StaticResource FontDisplay}" />
+            <Button Content="DIAGNOSTICS" Command="{Binding OpenStudioCommand}"
+                    Padding="14,7" CornerRadius="7" BorderBrush="#152535" BorderThickness="1" Background="#07111a"
+                    Foreground="#5bc0ff" FontSize="11" FontWeight="ExtraBold" FontFamily="{StaticResource FontDisplay}" />
+          </StackPanel>
+        </Border>
+        <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center" Margin="2,0">
+          <Ellipse Width="6" Height="6" Fill="#3ddc84" VerticalAlignment="Center" />
+          <StackPanel>
+            <TextBlock Text="GUARD" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+            <TextBlock Text="SECURE" FontSize="10" FontWeight="ExtraBold" Foreground="#3ddc84" />
+          </StackPanel>
+        </StackPanel>
+      </StackPanel>
+
+      <!-- ══════════ BODY ══════════ -->
+      <Grid Grid.Row="1" ColumnDefinitions="280,*,380">
+
+        <!-- ═══ LEFT: WALLET BROWSER ═══ -->
+        <Border Grid.Column="0" Background="#050c14" BorderBrush="#0d1b27" BorderThickness="0,0,1,0">
+          <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+            <!-- Search -->
+            <Border Grid.Row="0" BorderBrush="#0d1b27" BorderThickness="0,0,0,1" Padding="12,10">
+              <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="8" Padding="10,7">
+                <StackPanel Orientation="Horizontal" Spacing="7">
+                  <TextBlock Text="⌕" FontSize="12" Foreground="#2d4a5e" VerticalAlignment="Center" />
+                  <TextBox Text="{Binding SearchText}" Watermark="Search wallets…" BorderThickness="0" Background="Transparent"
+                           Padding="0" MinHeight="0" FontSize="11" Foreground="#c8dcef" VerticalAlignment="Center" Width="200" />
+                </StackPanel>
+              </Border>
+            </Border>
+
+            <!-- Type filter chips -->
+            <Border Grid.Row="1" BorderBrush="#0d1b27" BorderThickness="0,0,0,1" Padding="12,8">
+              <StackPanel Spacing="7">
+                <TextBlock Text="WALLET TYPE" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                <ItemsControl ItemsSource="{Binding TypeFilters}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="pd:PfTypeFilter">
+                      <Button Command="{Binding Command}" Margin="0,0,5,5" Padding="10,4" CornerRadius="20"
+                              BorderThickness="1" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}"
+                              Background="{Binding Bg, Converter={StaticResource StringToBrush}}"
+                              Foreground="{Binding Color, Converter={StaticResource StringToBrush}}"
+                              FontSize="10" FontWeight="Bold" FontFamily="{StaticResource FontDisplay}" Content="{Binding Label}" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
               </StackPanel>
             </Border>
 
-            <Border Classes="Panel" Grid.Column="1">
-              <StackPanel Spacing="6">
-                <TextBlock Text="Live Route" Foreground="#8B949E" />
-                <TextBlock Classes="H2" Text="{Binding WalletVM.NativeBalanceLabel}" />
-                <TextBlock Text="{Binding WalletVM.RouteReadinessLabel}"
-                           Foreground="{Binding WalletVM.RouteReadinessBrush}"
-                           FontWeight="Bold" />
-                <TextBlock Text="{Binding WalletVM.ExplorerUrl}" Foreground="#8B949E" TextWrapping="Wrap" />
-                <TextBlock Text="{Binding WalletVM.RouteReadinessSummary}"
-                           Foreground="#8FA3B8"
-                           TextWrapping="Wrap" />
+            <!-- Wallet list -->
+            <ScrollViewer Grid.Row="2" Padding="0,8">
+              <StackPanel>
+                <TextBlock Text="No wallets yet. Click + ADD WALLET." IsVisible="{Binding WalletsEmpty}"
+                           Foreground="#2d4a5e" FontSize="11" Margin="14,20" TextWrapping="Wrap" />
+                <ItemsControl ItemsSource="{Binding Wallets}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="pd:PfWalletCard">
+                      <Button Classes="Flat" Command="{Binding SelectCommand}" CommandParameter="{Binding}">
+                        <Border Background="{Binding RowBg, Converter={StaticResource StringToBrush}}"
+                                BorderBrush="{Binding Accent, Converter={StaticResource StringToBrush}}" BorderThickness="3,0,0,0"
+                                Padding="12,10">
+                          <StackPanel Spacing="5">
+                            <Grid ColumnDefinitions="30,*,Auto">
+                              <Border Grid.Column="0" Width="30" Height="30" CornerRadius="8"
+                                      Background="{Binding IconBg, Converter={StaticResource StringToBrush}}"
+                                      BorderBrush="{Binding IconBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1">
+                                <TextBlock Text="{Binding Icon}" FontSize="11" FontWeight="Black"
+                                           Foreground="{Binding IconColor, Converter={StaticResource StringToBrush}}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                              </Border>
+                              <StackPanel Grid.Column="1" Margin="8,0" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                  <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="Bold" Foreground="#c8dcef" TextTrimming="CharacterEllipsis" />
+                                  <Border Background="{Binding TypeBadgeBg, Converter={StaticResource StringToBrush}}" CornerRadius="3" Padding="5,1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Type}" FontSize="8" FontWeight="Bold" Foreground="{Binding TypeBadgeColor, Converter={StaticResource StringToBrush}}" />
+                                  </Border>
+                                </StackPanel>
+                                <TextBlock Text="{Binding AddrShort}" FontSize="9" Foreground="#3d5a72" FontFamily="{StaticResource FontMono}" TextTrimming="CharacterEllipsis" />
+                              </StackPanel>
+                              <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding Balance}" FontSize="12" FontWeight="ExtraBold" Foreground="#e8f4ff" FontFamily="{StaticResource FontMono}" HorizontalAlignment="Right" />
+                                <TextBlock Text="{Binding Pnl24h}" FontSize="10" FontWeight="Bold" FontFamily="{StaticResource FontMono}" HorizontalAlignment="Right"
+                                           Foreground="{Binding PnlColor, Converter={StaticResource StringToBrush}}" />
+                              </StackPanel>
+                            </Grid>
+                            <Grid ColumnDefinitions="*,Auto,Auto">
+                              <Border Grid.Column="0" Height="3" Background="#0a1622" CornerRadius="2" VerticalAlignment="Center" Margin="0,0,5,0" ClipToBounds="True">
+                                <Grid>
+                                  <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="{Binding HealthPct, Converter={StaticResource PercentToStar}}" />
+                                    <ColumnDefinition Width="{Binding HealthPct, Converter={StaticResource PercentToStar}, ConverterParameter=rest}" />
+                                  </Grid.ColumnDefinitions>
+                                  <Border Grid.Column="0" Height="3" CornerRadius="2" Background="{Binding HealthColor, Converter={StaticResource StringToBrush}}" />
+                                </Grid>
+                              </Border>
+                              <Ellipse Grid.Column="1" Width="5" Height="5" Margin="0,0,5,0" VerticalAlignment="Center"
+                                       Fill="{Binding StatusDot, Converter={StaticResource StringToBrush}}" />
+                              <TextBlock Grid.Column="2" Text="{Binding Chain}" FontSize="8" Foreground="#2d4a5e" FontWeight="Bold" VerticalAlignment="Center" />
+                            </Grid>
+                          </StackPanel>
+                        </Border>
+                      </Button>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
               </StackPanel>
+            </ScrollViewer>
+
+            <!-- Bottom totals -->
+            <Border Grid.Row="3" BorderBrush="#0d1b27" BorderThickness="0,1,0,0" Background="#040b12" Padding="12,10">
+              <Grid ColumnDefinitions="*,*">
+                <StackPanel Grid.Column="0">
+                  <TextBlock Text="WALLETS" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                  <TextBlock Text="{Binding WalletCount}" FontSize="14" FontWeight="ExtraBold" Foreground="#e8f4ff" FontFamily="{StaticResource FontMono}" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                  <TextBlock Text="CHAINS" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" HorizontalAlignment="Right" />
+                  <TextBlock Text="{Binding ChainCount}" FontSize="14" FontWeight="ExtraBold" Foreground="#21e6c1" FontFamily="{StaticResource FontMono}" HorizontalAlignment="Right" />
+                </StackPanel>
+              </Grid>
             </Border>
           </Grid>
+        </Border>
 
-          <Border Classes="Panel">
-            <StackPanel Spacing="12">
-              <TextBlock Classes="H2" Text="Portfolio Lens" />
-              <ItemsControl ItemsSource="{Binding WalletVM.Assets}">
-                <ItemsControl.ItemsPanel>
-                  <ItemsPanelTemplate>
-                    <WrapPanel Orientation="Horizontal" />
-                  </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
+        <!-- ═══ CENTER ═══ -->
+        <Grid Grid.Column="1" Background="#040b12" RowDefinitions="Auto,Auto,36,*">
+
+          <!-- Summary cards -->
+          <Border Grid.Row="0" BorderBrush="#0d1b27" BorderThickness="0,0,0,1" Padding="12">
+            <ItemsControl ItemsSource="{Binding SummaryCards}">
+              <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="pd:PfSummaryCard">
+                  <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="10" Padding="14,12" Margin="0,0,10,0">
+                    <StackPanel Spacing="5">
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                        <TextBlock Grid.Column="1" Text="{Binding Icon}" FontSize="16" Opacity="0.4" />
+                      </Grid>
+                      <TextBlock Text="{Binding Value}" FontSize="22" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}"
+                                 Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                      <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="{Binding Sub}" FontSize="10" FontWeight="Bold" FontFamily="{StaticResource FontMono}"
+                                   Foreground="{Binding SubColor, Converter={StaticResource StringToBrush}}" />
+                        <TextBlock Text="{Binding SubLabel}" FontSize="9" Foreground="#3d5a72" VerticalAlignment="Center" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Border>
+
+          <!-- Allocation + top assets -->
+          <Border Grid.Row="1" BorderBrush="#0d1b27" BorderThickness="0,0,0,1" Padding="12,0,12,12">
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+
+              <!-- Allocation by type -->
+              <Border Grid.Column="0" Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                <StackPanel Spacing="7">
+                  <TextBlock Text="ALLOCATION BY WALLET TYPE" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                  <TextBlock Text="No holdings loaded." IsVisible="{Binding !AllocationBars.Count}" Foreground="#2d4a5e" FontSize="10" />
+                  <ItemsControl ItemsSource="{Binding AllocationBars}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="pd:PfAllocBar">
+                        <StackPanel Spacing="4" Margin="0,0,0,3">
+                          <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
+                              <Border Width="6" Height="6" CornerRadius="2" Background="{Binding Color, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                              <TextBlock Text="{Binding Label}" FontSize="10" FontWeight="Bold" Foreground="#8fa3b8" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                              <TextBlock Text="{Binding Amount}" FontSize="10" FontWeight="Bold" Foreground="#e8f4ff" FontFamily="{StaticResource FontMono}" />
+                              <TextBlock Text="{Binding Pct}" FontSize="10" Foreground="#3d5a72" FontFamily="{StaticResource FontMono}" MinWidth="34" TextAlignment="Right" />
+                            </StackPanel>
+                          </Grid>
+                          <Border Height="4" Background="#0a1622" CornerRadius="2" ClipToBounds="True">
+                            <Grid>
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="{Binding Width, Converter={StaticResource PercentToStar}}" />
+                                <ColumnDefinition Width="{Binding Width, Converter={StaticResource PercentToStar}, ConverterParameter=rest}" />
+                              </Grid.ColumnDefinitions>
+                              <Border Grid.Column="0" Height="4" CornerRadius="2" Background="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                            </Grid>
+                          </Border>
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+
+              <!-- Top assets -->
+              <Border Grid.Column="1" Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                <StackPanel Spacing="6">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="TOP ASSETS" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                    <TextBlock Grid.Column="1" Text="across all wallets" FontSize="9" Foreground="#3d5a72" />
+                  </Grid>
+                  <TextBlock Text="No holdings loaded." IsVisible="{Binding !TopAssets.Count}" Foreground="#2d4a5e" FontSize="10" />
+                  <ItemsControl ItemsSource="{Binding TopAssets}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="pd:PfTopAsset">
+                        <Grid ColumnDefinitions="22,*" Margin="0,0,0,4">
+                          <Border Grid.Column="0" Width="22" Height="22" CornerRadius="6"
+                                  Background="{Binding IconBg, Converter={StaticResource StringToBrush}}"
+                                  BorderBrush="{Binding IconBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1">
+                            <TextBlock Text="{Binding Sym}" FontSize="8" FontWeight="Black" Foreground="{Binding IconColor, Converter={StaticResource StringToBrush}}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Border>
+                          <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                            <Grid ColumnDefinitions="*,Auto">
+                              <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="11" FontWeight="Bold" Foreground="#c8dcef" />
+                              <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="11" FontWeight="ExtraBold" Foreground="#e8f4ff" FontFamily="{StaticResource FontMono}" />
+                            </Grid>
+                            <Grid ColumnDefinitions="*,Auto">
+                              <TextBlock Grid.Column="0" FontSize="9" Foreground="#3d5a72" FontFamily="{StaticResource FontMono}">
+                                <Run Text="{Binding Qty}" /><Run Text=" · " /><Run Text="{Binding Price}" />
+                              </TextBlock>
+                              <TextBlock Grid.Column="1" Text="{Binding Chg}" FontSize="10" FontWeight="Bold" FontFamily="{StaticResource FontMono}"
+                                         Foreground="{Binding ChgColor, Converter={StaticResource StringToBrush}}" />
+                            </Grid>
+                          </StackPanel>
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+            </Grid>
+          </Border>
+
+          <!-- Blotter tabs -->
+          <Border Grid.Row="2" Background="#050c14" BorderBrush="#0d1b27" BorderThickness="0,0,0,1" Padding="12,0">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <ItemsControl Grid.Column="0" ItemsSource="{Binding BlotterTabs}">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="vm:WalletAssetViewModel">
-                    <Border Background="#0D1117"
-                            BorderBrush="#30363D"
-                            BorderThickness="1"
-                            CornerRadius="10"
-                            Padding="14"
-                            Width="250"
-                            Margin="0,0,12,12">
-                      <StackPanel Spacing="6">
-                        <TextBlock Text="{Binding Title}" Foreground="#8B949E" />
-                        <TextBlock Text="{Binding Value}" FontSize="22" FontWeight="Bold" Foreground="#14E0C1" />
-                        <TextBlock Text="{Binding Subtitle}" Foreground="#8B949E" TextWrapping="Wrap" />
+                  <DataTemplate x:DataType="pd:PfBlotterTab">
+                    <Button Command="{Binding Command}" Padding="16,0" Background="Transparent" BorderThickness="0,0,0,2"
+                            BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}"
+                            Foreground="{Binding Color, Converter={StaticResource StringToBrush}}"
+                            FontSize="10" FontWeight="Bold" FontFamily="{StaticResource FontDisplay}" Content="{Binding Label}"
+                            VerticalAlignment="Stretch" CornerRadius="0" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <ItemsControl Grid.Column="2" ItemsSource="{Binding BlotterTotals}">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="10" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="pd:PfBlotterTotal">
+                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                      <TextBlock Text="{Binding Value}" FontSize="11" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}"
+                                 Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Grid>
+          </Border>
+
+          <!-- Blotter body -->
+          <Grid Grid.Row="3">
+
+            <!-- ASSETS -->
+            <Grid IsVisible="{Binding ShowAllAssets}" RowDefinitions="Auto,*">
+              <Border Grid.Row="0" Background="#050c14" BorderBrush="#09151e" BorderThickness="0,0,0,1" Padding="12,6">
+                <Grid ColumnDefinitions="40,*,90,110,100,100,90,80">
+                  <TextBlock Grid.Column="1" Text="ASSET" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" />
+                  <TextBlock Grid.Column="2" Text="QTY" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" TextAlignment="Right" />
+                  <TextBlock Grid.Column="3" Text="VALUE" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" TextAlignment="Right" />
+                  <TextBlock Grid.Column="4" Text="PRICE" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" TextAlignment="Right" />
+                  <TextBlock Grid.Column="5" Text="PNL" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" TextAlignment="Right" />
+                  <TextBlock Grid.Column="6" Text="24H" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" TextAlignment="Right" />
+                  <TextBlock Grid.Column="7" Text="TYPE" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" TextAlignment="Right" />
+                </Grid>
+              </Border>
+              <ScrollViewer Grid.Row="1">
+                <StackPanel>
+                  <TextBlock Text="No holdings. Load the rebalancer or connect a wallet." IsVisible="{Binding AssetsEmpty}"
+                             Foreground="#2d4a5e" FontSize="11" Margin="14,20" />
+                  <ItemsControl ItemsSource="{Binding AssetRows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="pd:PfAssetRow">
+                        <Border BorderBrush="#07111a" BorderThickness="0,0,0,1" Padding="12,7">
+                          <Grid ColumnDefinitions="40,*,90,110,100,100,90,80" VerticalAlignment="Center">
+                            <Border Grid.Column="0" Width="24" Height="24" CornerRadius="6" HorizontalAlignment="Left"
+                                    Background="{Binding IconBg, Converter={StaticResource StringToBrush}}"
+                                    BorderBrush="{Binding IconBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1">
+                              <TextBlock Text="{Binding Sym}" FontSize="8" FontWeight="Black" Foreground="{Binding IconColor, Converter={StaticResource StringToBrush}}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel Grid.Column="1">
+                              <TextBlock Text="{Binding Name}" FontSize="11" FontWeight="Bold" Foreground="#c8dcef" />
+                              <TextBlock Text="{Binding Wallet}" FontSize="9" Foreground="#3d5a72" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="2" Text="{Binding Qty}" FontSize="10" Foreground="#5a7a94" FontFamily="{StaticResource FontMono}" TextAlignment="Right" />
+                            <TextBlock Grid.Column="3" Text="{Binding Value}" FontSize="11" FontWeight="Bold" Foreground="#e8f4ff" FontFamily="{StaticResource FontMono}" TextAlignment="Right" />
+                            <TextBlock Grid.Column="4" Text="{Binding Price}" FontSize="10" Foreground="#8fa3b8" FontFamily="{StaticResource FontMono}" TextAlignment="Right" />
+                            <TextBlock Grid.Column="5" Text="{Binding Pnl}" FontSize="11" FontWeight="Bold" FontFamily="{StaticResource FontMono}" TextAlignment="Right"
+                                       Foreground="{Binding PnlColor, Converter={StaticResource StringToBrush}}" />
+                            <TextBlock Grid.Column="6" Text="{Binding Chg}" FontSize="10" FontWeight="Bold" FontFamily="{StaticResource FontMono}" TextAlignment="Right"
+                                       Foreground="{Binding ChgColor, Converter={StaticResource StringToBrush}}" />
+                            <Border Grid.Column="7" HorizontalAlignment="Right" CornerRadius="3" Padding="6,2"
+                                    Background="{Binding TagBg, Converter={StaticResource StringToBrush}}">
+                              <TextBlock Text="{Binding Tag}" FontSize="8" FontWeight="Bold" Foreground="{Binding TagColor, Converter={StaticResource StringToBrush}}" />
+                            </Border>
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </ScrollViewer>
+            </Grid>
+
+            <!-- REBALANCE (reuses the real PortfolioRebalanceVM) -->
+            <ContentControl IsVisible="{Binding ShowRebalance}">
+            <Grid RowDefinitions="Auto,Auto,*,Auto"
+                  DataContext="{Binding Rebalance}" x:DataType="vm:PortfolioRebalanceViewModel">
+              <!-- Top bar -->
+              <Border Grid.Row="0" Background="#050c14" BorderBrush="#0d1b27" BorderThickness="0,0,0,1" Padding="12,8">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding TotalValueLabel}" FontSize="13" FontWeight="ExtraBold" Foreground="#e8f4ff" FontFamily="{StaticResource FontMono}" />
+                    <TextBlock Text="total portfolio" FontSize="9" Foreground="#3d5a72" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <Border IsVisible="{Binding HasAlerts}" Background="#1AF97316" CornerRadius="5" Padding="10,3" BorderBrush="#4DF97316" BorderThickness="1" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                      <Ellipse Width="5" Height="5" Fill="#f97316" VerticalAlignment="Center" />
+                      <TextBlock Text="DRIFT DETECTED" FontSize="10" FontWeight="Bold" Foreground="#f97316" />
+                    </StackPanel>
+                  </Border>
+                  <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock Text="Alert when deviation ≥" FontSize="9" Foreground="#3d5a72" VerticalAlignment="Center" />
+                    <NumericUpDown Value="{Binding GlobalAlertThresholdPct}" Minimum="0.5" Maximum="50" Increment="0.5" Width="110" FontSize="12" />
+                    <TextBlock Text="%" FontSize="10" Foreground="#3d5a72" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <Border Background="#0F21E6C1" BorderBrush="#2621E6C1" BorderThickness="1" CornerRadius="5" Padding="10,3" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding TargetSumLabel}" FontSize="11" FontWeight="Bold" FontFamily="{StaticResource FontMono}"
+                               Foreground="{Binding TargetSumBrush}" />
+                  </Border>
+                  <Border Width="0" HorizontalAlignment="Stretch" />
+                  <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+                    <TextBlock Text="🤖 AI weights" FontSize="10" FontWeight="Bold" Foreground="#a855f7" VerticalAlignment="Center" />
+                    <ComboBox ItemsSource="{Binding AvailableRiskProfiles}" SelectedItem="{Binding SelectedRiskProfile}" MinWidth="120" FontSize="11" />
+                    <Button Content="SUGGEST" Command="{Binding SuggestWithAiCommand}" IsEnabled="{Binding !AiRunning}"
+                            Padding="14,5" CornerRadius="7" BorderBrush="#3a1f6e" BorderThickness="1" Background="#1AA855F7"
+                            Foreground="#a855f7" FontSize="10" FontWeight="ExtraBold" FontFamily="{StaticResource FontDisplay}" />
+                  </StackPanel>
+                  <Button Content="↺ REFRESH" Command="{Binding RefreshCommand}"
+                          Padding="14,5" CornerRadius="7" BorderBrush="#1e3248" BorderThickness="1" Background="#07111a"
+                          Foreground="#5a7a94" FontSize="10" FontWeight="Bold" FontFamily="{StaticResource FontDisplay}" VerticalAlignment="Center" />
+                </StackPanel>
+              </Border>
+              <!-- AI commentary + alert strip -->
+              <StackPanel Grid.Row="1">
+                <Border Background="#160a05" BorderBrush="#3d1a00" BorderThickness="0,0,0,1" Padding="14,8" IsVisible="{Binding HasAlerts}">
+                  <TextBlock Text="{Binding AlertSummary}" Foreground="#ff8888" FontSize="11" FontFamily="{StaticResource FontMono}" TextWrapping="Wrap" />
+                </Border>
+                <Border Background="#0d1826" Padding="14,8" IsVisible="{Binding AiCommentary, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                  <TextBlock Text="{Binding AiCommentary}" Foreground="#8fa3b8" FontSize="11" TextWrapping="Wrap" />
+                </Border>
+              </StackPanel>
+              <!-- Rows -->
+              <ScrollViewer Grid.Row="2">
+                <StackPanel>
+                  <!-- header -->
+                  <Border Background="#050c14" BorderBrush="#09151e" BorderThickness="0,0,0,1" Padding="12,6">
+                    <Grid ColumnDefinitions="32,90,100,80,110,110,90,*,80">
+                      <TextBlock Grid.Column="1" Text="ASSET" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" />
+                      <TextBlock Grid.Column="2" Text="BALANCE" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" />
+                      <TextBlock Grid.Column="3" Text="PRICE" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" />
+                      <TextBlock Grid.Column="4" Text="VALUE" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" />
+                      <TextBlock Grid.Column="5" Text="TARGET %" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" />
+                      <TextBlock Grid.Column="6" Text="ACTUAL" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" />
+                      <TextBlock Grid.Column="7" Text="REBALANCE ORDER" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" />
+                    </Grid>
+                  </Border>
+                  <ItemsControl ItemsSource="{Binding Allocations}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:PortfolioAllocationRowViewModel">
+                        <Border BorderBrush="#07111a" BorderThickness="0,0,0,1" Padding="12,9">
+                          <Grid ColumnDefinitions="32,90,100,80,110,110,90,*,80" VerticalAlignment="Center">
+                            <TextBlock Grid.Column="0" Text="{Binding StatusIcon}" Foreground="{Binding StatusBrush}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" />
+                            <StackPanel Grid.Column="1">
+                              <TextBlock Text="{Binding Symbol}" FontSize="12" FontWeight="ExtraBold" Foreground="#c8dcef" />
+                              <TextBlock Text="{Binding SourcesLabel}" FontSize="9" Foreground="#2d4a5e" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="2" Text="{Binding BalanceLabel}" FontSize="10" Foreground="#5a7a94" FontFamily="{StaticResource FontMono}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="3" Text="{Binding PriceLabel}" FontSize="10" Foreground="#8fa3b8" FontFamily="{StaticResource FontMono}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="4" Text="{Binding ValueLabel}" FontSize="12" FontWeight="ExtraBold" Foreground="#e8f4ff" FontFamily="{StaticResource FontMono}" VerticalAlignment="Center" />
+                            <NumericUpDown Grid.Column="5" Value="{Binding TargetPct}" Minimum="0" Maximum="100" Increment="1" FormatString="F1" FontSize="11" Width="104" VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="6" VerticalAlignment="Center">
+                              <TextBlock Text="{Binding ActualPctLabel}" FontSize="11" FontWeight="ExtraBold" Foreground="#e8f4ff" FontFamily="{StaticResource FontMono}" />
+                              <TextBlock Text="{Binding DeviationLabel}" FontSize="10" FontWeight="Bold" FontFamily="{StaticResource FontMono}" Foreground="{Binding DeviationBrush}" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="7" Text="{Binding RebalanceOrderLabel}" Foreground="{Binding RebalanceOrderBrush}" FontSize="11" FontFamily="{StaticResource FontMono}" VerticalAlignment="Center" />
+                            <Button Grid.Column="8" Content="×" HorizontalAlignment="Right" Width="22" Height="22" Padding="0" FontSize="12"
+                                    Background="#0FFF6B6B" BorderBrush="#3d0d0d" BorderThickness="1" Foreground="#ff6b6b" CornerRadius="4"
+                                    Command="{Binding $parent[ItemsControl].DataContext.RemoveAssetCommand}" CommandParameter="{Binding}" />
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </ScrollViewer>
+              <!-- Add asset + footer -->
+              <Border Grid.Row="3" Background="#050c14" BorderBrush="#0d1b27" BorderThickness="0,1,0,0" Padding="12,8">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="ADD ASSET:" FontSize="10" FontWeight="Bold" Foreground="#2d4a5e" VerticalAlignment="Center" />
+                  <TextBox Text="{Binding NewAssetSymbol}" Watermark="BTC" Width="80" FontSize="11" FontFamily="{StaticResource FontMono}" />
+                  <NumericUpDown Value="{Binding NewAssetTargetPct}" Minimum="0.1" Maximum="100" Increment="1" FormatString="F1" Width="110" FontSize="11" />
+                  <TextBlock Text="%" FontSize="10" Foreground="#3d5a72" VerticalAlignment="Center" />
+                  <Button Content="+ ADD" Command="{Binding AddAssetCommand}"
+                          Padding="14,5" CornerRadius="6" BorderBrush="#0d2a1e" BorderThickness="1" Background="#1421E6C1"
+                          Foreground="#21e6c1" FontSize="10" FontWeight="ExtraBold" FontFamily="{StaticResource FontDisplay}" />
+                  <Border Width="0" HorizontalAlignment="Stretch" />
+                  <TextBlock Text="{Binding StatusLabel}" FontSize="9" Foreground="#2d4a5e" FontFamily="{StaticResource FontMono}" VerticalAlignment="Center" />
+                </StackPanel>
+              </Border>
+            </Grid>
+            </ContentControl>
+
+            <!-- ACTIVITY / MEME / STAKING placeholders (1:1 structure, live source pending) -->
+            <Grid IsVisible="{Binding ShowActivity}">
+              <TextBlock Text="No activity feed connected for the selected wallets yet."
+                         Foreground="#2d4a5e" FontSize="12" Margin="16,24" TextWrapping="Wrap" />
+            </Grid>
+            <Grid IsVisible="{Binding ShowMeme}">
+              <StackPanel Margin="0">
+                <Border Background="#050c14" BorderBrush="#09151e" BorderThickness="0,0,0,1" Padding="12,10">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Ellipse Width="5" Height="5" Fill="#f97316" VerticalAlignment="Center" />
+                    <TextBlock Text="MEME RADAR — LIVE SCAN" FontSize="9" FontWeight="Bold" Foreground="#f97316" />
+                    <Border Width="0" HorizontalAlignment="Stretch" MinWidth="200" />
+                    <TextBlock Text="{Binding MemeTokenCount, StringFormat='{}{0} tokens tracked'}" FontSize="9" Foreground="#3d5a72" />
+                  </StackPanel>
+                </Border>
+                <TextBlock Text="No meme-radar provider connected yet." Foreground="#2d4a5e" FontSize="12" Margin="16,24" />
+              </StackPanel>
+            </Grid>
+            <Grid IsVisible="{Binding ShowStaking}">
+              <TextBlock Text="No staking positions detected for the connected wallets yet."
+                         Foreground="#2d4a5e" FontSize="12" Margin="16,24" TextWrapping="Wrap" />
+            </Grid>
+          </Grid>
+        </Grid>
+
+        <!-- ═══ RIGHT: WALLET DETAIL + CHECKS ═══ -->
+        <Border Grid.Column="2" Background="#050c14" BorderBrush="#0d1b27" BorderThickness="1,0,0,0">
+          <ScrollViewer>
+            <StackPanel>
+
+              <!-- Selected wallet header -->
+              <Border BorderBrush="#0d1b27" BorderThickness="0,0,0,1" Padding="14,14,14,10">
+                <StackPanel Spacing="10">
+                  <Grid ColumnDefinitions="38,*,Auto">
+                    <Panel Grid.Column="0" Width="38" Height="38">
+                      <Border Width="38" Height="38" CornerRadius="10"
+                              Background="{Binding SelWalletIconBg, Converter={StaticResource StringToBrush}}"
+                              BorderBrush="{Binding SelWalletIconBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1">
+                        <TextBlock Text="{Binding SelWalletIcon}" FontSize="14" FontWeight="Black" Foreground="{Binding SelWalletIconColor, Converter={StaticResource StringToBrush}}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                      </Border>
+                      <Ellipse Width="8" Height="8" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                               Fill="{Binding SelWalletDot, Converter={StaticResource StringToBrush}}" Stroke="#050c14" StrokeThickness="2" />
+                    </Panel>
+                    <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="{Binding SelWalletName}" FontSize="14" FontWeight="ExtraBold" Foreground="#e8f4ff" />
+                        <Border Background="{Binding SelWalletTypeBadgeBg, Converter={StaticResource StringToBrush}}" CornerRadius="4" Padding="7,2" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding SelWalletType}" FontSize="9" FontWeight="Bold" Foreground="{Binding SelWalletTypeBadgeColor, Converter={StaticResource StringToBrush}}" />
+                        </Border>
+                      </StackPanel>
+                      <TextBlock Text="{Binding SelWalletAddr}" FontSize="10" Foreground="#3d5a72" FontFamily="{StaticResource FontMono}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="3">
+                      <Button Content="COPY" Command="{Binding CopyAddrCommand}" Padding="10,4" CornerRadius="5" BorderBrush="#152535" BorderThickness="1" Background="#07111a" Foreground="#5a7a94" FontSize="9" FontWeight="Bold" />
+                      <Button Content="EXPLORER ↗" Command="{Binding ExplorerCommand}" Padding="10,4" CornerRadius="5" BorderBrush="#111d29" BorderThickness="1" Background="#07111a" Foreground="#3d5a72" FontSize="9" FontWeight="Bold" />
+                    </StackPanel>
+                  </Grid>
+                  <ItemsControl ItemsSource="{Binding WalletStats}">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="pd:PfWalletStat">
+                        <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,0,8,0">
+                          <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding Value}" FontSize="13" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}"
+                                       Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" HorizontalAlignment="Center" />
+                          </StackPanel>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+
+              <!-- Arm the selected wallet as the active trading session (WalletVM) -->
+              <Border BorderBrush="#0d1b27" BorderThickness="0,0,0,1" Padding="14,10"
+                      DataContext="{Binding $parent[Window].DataContext.WalletVM}">
+                <StackPanel Spacing="7">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="ACTIVE TRADING SESSION" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" VerticalAlignment="Center" />
+                    <Border Grid.Column="1" Background="#0d1826" CornerRadius="4" Padding="8,2">
+                      <TextBlock Text="{Binding WalletModeLabel}" FontSize="9" FontWeight="Bold" Foreground="#21e6c1" />
+                    </Border>
+                  </Grid>
+                  <TextBlock Text="{Binding StatusMessage}" Foreground="#5a7a94" FontSize="10" TextWrapping="Wrap" />
+                  <TextBox Text="{Binding PrivateKeyInput}" PasswordChar="•" Watermark="Private key to arm trading (memory-only this session)" FontFamily="{StaticResource FontMono}" FontSize="10" />
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Button Content="ARM TRADING" Command="{Binding ImportPrivateKeyCommand}" Padding="12,6" CornerRadius="6" Background="#0a2d1e" BorderBrush="#0d3d28" BorderThickness="1" Foreground="#21e6c1" FontSize="10" FontWeight="ExtraBold" />
+                    <Button Content="WATCH ONLY" Command="{Binding ConnectWatchCommand}" Padding="12,6" CornerRadius="6" Background="#0d1826" BorderBrush="#1e3248" BorderThickness="1" Foreground="#5bc0ff" FontSize="10" FontWeight="Bold" />
+                    <Button Content="DISCONNECT" Command="{Binding DisconnectWalletCommand}" Padding="12,6" CornerRadius="6" Background="#1a0505" BorderBrush="#3d0d0d" BorderThickness="1" Foreground="#ff8080" FontSize="10" FontWeight="Bold" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
+              <!-- Right panel tabs -->
+              <Border BorderBrush="#0d1b27" BorderThickness="0,0,0,1" Height="34">
+                <ItemsControl ItemsSource="{Binding RightTabs}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="pd:PfRightTab">
+                      <Button Command="{Binding Command}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="0"
+                              Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderThickness="0,0,0,2"
+                              BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}"
+                              Foreground="{Binding Color, Converter={StaticResource StringToBrush}}"
+                              FontSize="10" FontWeight="Bold" FontFamily="{StaticResource FontDisplay}" Content="{Binding Label}" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </Border>
+
+              <!-- CHECKS -->
+              <StackPanel IsVisible="{Binding ShowChecks}" Margin="12" Spacing="10">
+                <!-- Overall score -->
+                <Border Background="{Binding OverallBg, Converter={StaticResource StringToBrush}}"
+                        BorderBrush="{Binding OverallBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                  <Grid ColumnDefinitions="48,*,Auto">
+                    <Border Grid.Column="0" Width="48" Height="48" CornerRadius="24" BorderThickness="3"
+                            BorderBrush="{Binding OverallColor, Converter={StaticResource StringToBrush}}">
+                      <TextBlock Text="{Binding OverallScore}" FontSize="16" FontWeight="Black" FontFamily="{StaticResource FontMono}"
+                                 Foreground="{Binding OverallColor, Converter={StaticResource StringToBrush}}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding OverallLabel}" FontSize="12" FontWeight="ExtraBold" Foreground="{Binding OverallColor, Converter={StaticResource StringToBrush}}" />
+                      <TextBlock Text="{Binding OverallDesc}" FontSize="10" Foreground="#5a7a94" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button Grid.Column="2" Content="{Binding RescanLabel}" Command="{Binding RescanCommand}" VerticalAlignment="Center"
+                            Padding="12,5" CornerRadius="6" BorderBrush="#152535" BorderThickness="1" Background="#07111a"
+                            Foreground="{Binding RescanColor, Converter={StaticResource StringToBrush}}" FontSize="10" FontWeight="ExtraBold" FontFamily="{StaticResource FontDisplay}" />
+                  </Grid>
+                </Border>
+                <!-- Check groups -->
+                <ItemsControl ItemsSource="{Binding CheckGroups}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="pd:PfCheckGroup">
+                      <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="9" Padding="12,10" Margin="0,0,0,10">
+                        <StackPanel Spacing="8">
+                          <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="7">
+                              <TextBlock Text="{Binding Icon}" FontSize="14" Opacity="0.7" />
+                              <TextBlock Text="{Binding Name}" FontSize="11" FontWeight="Bold" Foreground="#c8dcef" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <Border Grid.Column="1" Background="{Binding StatusBg, Converter={StaticResource StringToBrush}}" CornerRadius="4" Padding="8,2">
+                              <TextBlock Text="{Binding Status}" FontSize="9" FontWeight="Bold" Foreground="{Binding StatusColor, Converter={StaticResource StringToBrush}}" />
+                            </Border>
+                          </Grid>
+                          <ItemsControl ItemsSource="{Binding Items}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="pd:PfCheckItem">
+                                <Grid ColumnDefinitions="14,*,Auto" Margin="0,0,0,5">
+                                  <Border Grid.Column="0" Width="14" Height="14" CornerRadius="7" BorderThickness="1"
+                                          BorderBrush="{Binding DotBorder, Converter={StaticResource StringToBrush}}"
+                                          Background="{Binding DotBg, Converter={StaticResource StringToBrush}}">
+                                    <Ellipse Width="6" Height="6" Fill="{Binding Dot, Converter={StaticResource StringToBrush}}" />
+                                  </Border>
+                                  <TextBlock Grid.Column="1" Text="{Binding Label}" FontSize="10" FontWeight="Bold" Foreground="#8fa3b8" Margin="8,0" VerticalAlignment="Center" />
+                                  <TextBlock Grid.Column="2" Text="{Binding Value}" FontSize="10" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}"
+                                             Foreground="{Binding ValueColor, Converter={StaticResource StringToBrush}}" />
+                                </Grid>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <!-- Approvals -->
+                <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="9" Padding="12,10">
+                  <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="7">
+                        <TextBlock Text="🔓" FontSize="14" Opacity="0.7" />
+                        <TextBlock Text="TOKEN APPROVALS" FontSize="11" FontWeight="Bold" Foreground="#c8dcef" VerticalAlignment="Center" />
+                      </StackPanel>
+                      <Border Grid.Column="1" Background="#1AF4B860" CornerRadius="4" Padding="8,2">
+                        <TextBlock Text="{Binding ApprovalCount, StringFormat='{}{0} ACTIVE'}" FontSize="9" FontWeight="Bold" Foreground="#f4b860" />
+                      </Border>
+                    </Grid>
+                    <TextBlock Text="No allowance scan run for this wallet." IsVisible="{Binding ApprovalsEmpty}" Foreground="#2d4a5e" FontSize="10" />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+
+              <!-- TOKENS -->
+              <StackPanel IsVisible="{Binding ShowTokens}" Margin="12" Spacing="6">
+                <TextBlock Text="No tokens to show." IsVisible="{Binding TokensEmpty}" Foreground="#2d4a5e" FontSize="11" />
+                <ItemsControl ItemsSource="{Binding WalletTokens}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="pd:PfToken">
+                      <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="8" Padding="10,9" Margin="0,0,0,6">
+                        <Grid ColumnDefinitions="32,*">
+                          <Border Grid.Column="0" Width="32" Height="32" CornerRadius="9"
+                                  Background="{Binding IconBg, Converter={StaticResource StringToBrush}}"
+                                  BorderBrush="{Binding IconBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1">
+                            <TextBlock Text="{Binding Sym}" FontSize="10" FontWeight="Black" Foreground="{Binding IconColor, Converter={StaticResource StringToBrush}}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Border>
+                          <StackPanel Grid.Column="1" Margin="9,0,0,0">
+                            <Grid ColumnDefinitions="*,Auto">
+                              <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="12" FontWeight="Bold" Foreground="#c8dcef" />
+                              <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="12" FontWeight="ExtraBold" Foreground="#e8f4ff" FontFamily="{StaticResource FontMono}" />
+                            </Grid>
+                            <Grid ColumnDefinitions="*,Auto" Margin="0,3,0,0">
+                              <TextBlock Grid.Column="0" FontSize="10" Foreground="#3d5a72" FontFamily="{StaticResource FontMono}">
+                                <Run Text="{Binding Qty}" /><Run Text=" @ " /><Run Text="{Binding Price}" />
+                              </TextBlock>
+                              <TextBlock Grid.Column="1" Text="{Binding Chg}" FontSize="10" FontWeight="Bold" FontFamily="{StaticResource FontMono}"
+                                         Foreground="{Binding ChgColor, Converter={StaticResource StringToBrush}}" />
+                            </Grid>
+                            <Border Height="3" Background="#0a1622" CornerRadius="2" Margin="0,5,0,0" ClipToBounds="True">
+                              <Grid>
+                                <Grid.ColumnDefinitions>
+                                  <ColumnDefinition Width="{Binding AllocPct, Converter={StaticResource PercentToStar}}" />
+                                  <ColumnDefinition Width="{Binding AllocPct, Converter={StaticResource PercentToStar}, ConverterParameter=rest}" />
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Height="3" CornerRadius="2" Background="{Binding AllocColor, Converter={StaticResource StringToBrush}}" />
+                              </Grid>
+                            </Border>
+                          </StackPanel>
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+
+              <!-- TX HISTORY -->
+              <StackPanel IsVisible="{Binding ShowTxHistory}" Margin="12" Spacing="4">
+                <TextBlock Text="No transaction history connected for this wallet yet." IsVisible="{Binding TxEmpty}" Foreground="#2d4a5e" FontSize="11" TextWrapping="Wrap" />
+              </StackPanel>
+
+              <!-- ANALYTICS (real realized-PnL from PnlDashboardVM) -->
+              <ContentControl IsVisible="{Binding ShowAnalytics}">
+                <StackPanel Margin="12" Spacing="8" DataContext="{Binding $parent[Window].DataContext.PnlDashboardVM}">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="REALIZED PERFORMANCE" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Content="↻ REFRESH" Command="{Binding RefreshCommand}" Padding="10,4" CornerRadius="6" Background="#07111a" BorderBrush="#1e3248" BorderThickness="1" Foreground="#5a7a94" FontSize="10" FontWeight="Bold" />
+                  </Grid>
+                  <TextBlock Text="{Binding StatusMessage}" Foreground="#5a7a94" FontSize="10" TextWrapping="Wrap" IsVisible="{Binding !HasData}" />
+
+                  <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="9" Padding="13,11">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="TOTAL REALIZED PNL" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                      <TextBlock Text="{Binding TotalPnlLabel}" FontSize="22" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}"
+                                 Foreground="{Binding TotalPnlBrush, Converter={StaticResource StringToBrush}}" />
+                      <TextBlock Text="{Binding TradeCountLabel}" FontSize="10" Foreground="#3d5a72" FontFamily="{StaticResource FontMono}" />
+                    </StackPanel>
+                  </Border>
+
+                  <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                    <Border Grid.Column="0" Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="9" Padding="13,11">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="WIN RATE" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                        <TextBlock Text="{Binding WinRateLabel}" FontSize="18" FontWeight="ExtraBold" Foreground="#3ddc84" FontFamily="{StaticResource FontMono}" />
                       </StackPanel>
                     </Border>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </StackPanel>
-          </Border>
-
-          <Border Classes="Panel">
-            <StackPanel Spacing="10">
-              <TextBlock Classes="H2" Text="Wallet Capability" />
-              <TextBlock Text="{Binding WalletVM.WalletCapabilityText}"
-                         Foreground="#14E0C1"
-                         FontWeight="SemiBold"
-                         TextWrapping="Wrap" />
-            </StackPanel>
-          </Border>
-
-        </StackPanel>
-      </ScrollViewer>
-    </TabItem>
-    <TabItem Header="Ребаланс">
-      <ScrollViewer Classes="PageScroll">
-        <StackPanel Spacing="16" Margin="4"><!-- REBALANCE -->
-
-          <!-- ═══ PORTFOLIO REBALANCER ═══ -->
-          <Border Classes="Panel" x:DataType="vm:MainWindowViewModel">
-            <StackPanel Spacing="12">
-
-              <!-- Header row -->
-              <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                  <TextBlock Classes="H2" Text="Portfolio Rebalancer" />
-                  <!-- Total value badge -->
-                  <Border Background="#0D1826" CornerRadius="8" Padding="8,2" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding PortfolioRebalanceVM.TotalValueLabel}"
-                               Foreground="#21E6C1" FontSize="12" FontWeight="Bold" />
-                  </Border>
-                  <!-- Alert badge -->
-                  <Border Background="#3A1010" CornerRadius="8" Padding="8,2" VerticalAlignment="Center"
-                          IsVisible="{Binding PortfolioRebalanceVM.HasAlerts}">
-                    <TextBlock Text="⚠ Drift detected"
-                               Foreground="#FF5555" FontSize="11" FontWeight="Bold" />
-                  </Border>
-                </StackPanel>
-
-                <!-- Alert threshold setting -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
-                            VerticalAlignment="Center" Margin="8,0">
-                  <TextBlock Text="Alert when deviation ≥" FontSize="12" Foreground="#8FA3B8"
-                             VerticalAlignment="Center" />
-                  <NumericUpDown Value="{Binding PortfolioRebalanceVM.GlobalAlertThresholdPct}"
-                                 Minimum="0.5" Maximum="50" Increment="0.5"
-                                 Width="120" FontSize="12" />
-                  <TextBlock Text="%" FontSize="12" Foreground="#8FA3B8" VerticalAlignment="Center" />
-
-                  <!-- Target sum validator -->
-                  <Border Background="#0D1826" CornerRadius="6" Padding="8,2" Margin="8,0,0,0"
-                          VerticalAlignment="Center">
-                    <TextBlock Text="{Binding PortfolioRebalanceVM.TargetSumLabel}"
-                               Foreground="{Binding PortfolioRebalanceVM.TargetSumBrush}"
-                               FontSize="11" FontFamily="Consolas" />
-                  </Border>
-                </StackPanel>
-
-                <!-- Refresh button -->
-                <Button Grid.Column="2"
-                        Content="⟳ Refresh"
-                        Classes="GhostButton" FontSize="12" Padding="10,4"
-                        Command="{Binding PortfolioRebalanceVM.RefreshCommand}"
-                        VerticalAlignment="Center" />
-
-                <!-- Loading indicator -->
-                <TextBlock Grid.Column="3"
-                           Text="Fetching…" FontSize="11" Foreground="#8FA3B8"
-                           IsVisible="{Binding PortfolioRebalanceVM.IsLoading}"
-                           VerticalAlignment="Center" />
-              </Grid>
-
-              <!-- Alert summary banner -->
-              <Border Background="#200A0A" CornerRadius="6" Padding="12,8"
-                      IsVisible="{Binding PortfolioRebalanceVM.HasAlerts}">
-                <TextBlock Text="{Binding PortfolioRebalanceVM.AlertSummary}"
-                           Foreground="#FF8888" FontSize="12"
-                           FontFamily="Consolas" TextWrapping="Wrap" />
-              </Border>
-
-              <!-- ── AI rebalance (#5) ── -->
-              <Border Background="#0D1826" CornerRadius="8" Padding="12,10" Margin="0,0,0,4">
-                <StackPanel Spacing="8">
-                  <Grid ColumnDefinitions="Auto,160,Auto,*,Auto">
-                    <TextBlock Grid.Column="0" Text="🧠 AI target weights"
-                               FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13"
-                               VerticalAlignment="Center" Margin="0,0,10,0" />
-                    <ComboBox Grid.Column="1"
-                              ItemsSource="{Binding PortfolioRebalanceVM.AvailableRiskProfiles}"
-                              SelectedItem="{Binding PortfolioRebalanceVM.SelectedRiskProfile}"
-                              HorizontalAlignment="Stretch" />
-                    <Button Grid.Column="2" Content="Suggest" Margin="10,0,0,0"
-                            Command="{Binding PortfolioRebalanceVM.SuggestWithAiCommand}"
-                            IsEnabled="{Binding !PortfolioRebalanceVM.AiRunning}"
-                            Foreground="#21E6C1" />
-                    <TextBlock Grid.Column="4" Text="{Binding PortfolioRebalanceVM.AiSource}"
-                               Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" />
-                  </Grid>
-                  <TextBlock Text="{Binding PortfolioRebalanceVM.AiCommentary}"
-                             Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap"
-                             IsVisible="{Binding PortfolioRebalanceVM.AiCommentary, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                </StackPanel>
-              </Border>
-
-              <!-- Column headers -->
-              <Grid ColumnDefinitions="32,70,55,55,80,70,55,*,Auto,Auto"
-                    ColumnSpacing="6" Margin="4,0">
-                <TextBlock Grid.Column="0" Text=""         FontSize="11" Foreground="#5C6E82" />
-                <TextBlock Grid.Column="1" Text="ASSET"    FontSize="11" Foreground="#5C6E82" FontWeight="Bold" />
-                <TextBlock Grid.Column="2" Text="BALANCE"  FontSize="11" Foreground="#5C6E82" FontWeight="Bold" />
-                <TextBlock Grid.Column="3" Text="PRICE"    FontSize="11" Foreground="#5C6E82" FontWeight="Bold" />
-                <TextBlock Grid.Column="4" Text="VALUE"    FontSize="11" Foreground="#5C6E82" FontWeight="Bold" />
-                <TextBlock Grid.Column="5" Text="TARGET %" FontSize="11" Foreground="#5C6E82" FontWeight="Bold" />
-                <TextBlock Grid.Column="6" Text="ACTUAL"   FontSize="11" Foreground="#5C6E82" FontWeight="Bold" />
-                <TextBlock Grid.Column="7" Text="REBALANCE ORDER" FontSize="11" Foreground="#5C6E82" FontWeight="Bold" />
-                <TextBlock Grid.Column="8" Text=""         FontSize="11" Foreground="#5C6E82" />
-                <TextBlock Grid.Column="9" Text=""         FontSize="11" Foreground="#5C6E82" />
-              </Grid>
-
-              <!-- Allocation rows -->
-              <ItemsControl ItemsSource="{Binding PortfolioRebalanceVM.Allocations}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="vm:PortfolioAllocationRowViewModel">
-                    <Border Background="#0A1520" CornerRadius="5"
-                            Padding="4,6" Margin="0,1">
-                      <Grid ColumnDefinitions="32,70,55,55,80,70,55,*,Auto,Auto"
-                            ColumnSpacing="6" VerticalAlignment="Center">
-
-                        <!-- Status icon (▲ / ▼ / ✓) -->
-                        <TextBlock Grid.Column="0"
-                                   Text="{Binding StatusIcon}"
-                                   Foreground="{Binding StatusBrush}"
-                                   FontSize="13" FontWeight="Bold"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center" />
-
-                        <!-- Symbol + sources tooltip -->
-                        <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
-                          <TextBlock Text="{Binding Symbol}"
-                                     FontSize="13" FontWeight="Bold"
-                                     ToolTip.Tip="{Binding SourcesLabel}" />
-                          <TextBlock Text="{Binding SourcesLabel}"
-                                     FontSize="9" Foreground="#4A6070"
-                                     TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
-
-                        <!-- Balance -->
-                        <TextBlock Grid.Column="2"
-                                   Text="{Binding BalanceLabel}"
-                                   FontSize="11" Foreground="#C8D6E5"
-                                   VerticalAlignment="Center" />
-
-                        <!-- Price -->
-                        <TextBlock Grid.Column="3"
-                                   Text="{Binding PriceLabel}"
-                                   FontSize="11" Foreground="#C8D6E5"
-                                   VerticalAlignment="Center" />
-
-                        <!-- USD value -->
-                        <TextBlock Grid.Column="4"
-                                   Text="{Binding ValueLabel}"
-                                   FontSize="12" FontWeight="Bold" Foreground="#E0EAF4"
-                                   VerticalAlignment="Center" />
-
-                        <!-- Target % (editable) -->
-                        <NumericUpDown Grid.Column="5"
-                                       Value="{Binding TargetPct}"
-                                       Minimum="0" Maximum="100" Increment="1"
-                                       FormatString="F1"
-                                       FontSize="11" Padding="4,2"
-                                       VerticalAlignment="Center" />
-
-                        <!-- Actual % + deviation -->
-                        <StackPanel Grid.Column="6" Spacing="1" VerticalAlignment="Center">
-                          <TextBlock Text="{Binding ActualPctLabel}"
-                                     FontSize="11" FontWeight="Bold" />
-                          <TextBlock Text="{Binding DeviationLabel}"
-                                     FontSize="10"
-                                     Foreground="{Binding DeviationBrush}" />
-                        </StackPanel>
-
-                        <!-- Rebalance order suggestion -->
-                        <TextBlock Grid.Column="7"
-                                   Text="{Binding RebalanceOrderLabel}"
-                                   Foreground="{Binding RebalanceOrderBrush}"
-                                   FontSize="11" FontFamily="Consolas"
-                                   VerticalAlignment="Center" />
-
-                        <!-- Move up/down -->
-                        <StackPanel Grid.Column="8" Orientation="Horizontal" Spacing="2">
-                          <Button Content="↑" Padding="4,2" FontSize="11" Classes="GhostButton"
-                                  Command="{Binding $parent[Window].DataContext.PortfolioRebalanceVM.MoveUpCommand}"
-                                  CommandParameter="{Binding}" />
-                          <Button Content="↓" Padding="4,2" FontSize="11" Classes="GhostButton"
-                                  Command="{Binding $parent[Window].DataContext.PortfolioRebalanceVM.MoveDownCommand}"
-                                  CommandParameter="{Binding}" />
-                        </StackPanel>
-
-                        <!-- Remove -->
-                        <Button Grid.Column="9"
-                                Content="✕" Padding="6,2" FontSize="11" Classes="GhostButton"
-                                Foreground="#FF5555"
-                                Command="{Binding $parent[Window].DataContext.PortfolioRebalanceVM.RemoveAssetCommand}"
-                                CommandParameter="{Binding}" />
-
-                      </Grid>
+                    <Border Grid.Column="1" Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="9" Padding="13,11">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="PROFIT FACTOR" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                        <TextBlock Text="{Binding ProfitFactorLabel}" FontSize="18" FontWeight="ExtraBold" Foreground="#21e6c1" FontFamily="{StaticResource FontMono}" />
+                      </StackPanel>
                     </Border>
+                  </Grid>
+
+                  <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                    <Border Grid.Column="0" Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="9" Padding="13,11">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="AVG WIN" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                        <TextBlock Text="{Binding AvgWinLabel}" FontSize="15" FontWeight="ExtraBold" Foreground="#3ddc84" FontFamily="{StaticResource FontMono}" />
+                      </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="9" Padding="13,11">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="AVG LOSS" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                        <TextBlock Text="{Binding AvgLossLabel}" FontSize="15" FontWeight="ExtraBold" Foreground="#ff6b6b" FontFamily="{StaticResource FontMono}" />
+                      </StackPanel>
+                    </Border>
+                  </Grid>
+
+                  <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="9" Padding="13,11">
+                    <StackPanel Spacing="3">
+                      <TextBlock Text="MAX DRAWDOWN" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                      <TextBlock Text="{Binding MaxDrawdownLabel}" FontSize="15" FontWeight="ExtraBold" Foreground="#f4b860" FontFamily="{StaticResource FontMono}" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </ContentControl>
+
+            </StackPanel>
+          </ScrollViewer>
+        </Border>
+      </Grid>
+    </Grid>
+
+    <!-- ══════════ ADD WALLET MODAL ══════════ -->
+    <Border IsVisible="{Binding ShowModal}" Background="#D9040b12" ZIndex="200">
+      <Border Width="580" MaxHeight="720" HorizontalAlignment="Center" VerticalAlignment="Center"
+              Background="#050c14" BorderBrush="#0d2a1e" BorderThickness="1" CornerRadius="16" ClipToBounds="True">
+        <Grid RowDefinitions="Auto,*,Auto">
+
+          <!-- Modal header -->
+          <Border Grid.Row="0" Background="#061e14" BorderBrush="#0d2a1e" BorderThickness="0,0,0,1" Padding="20,16">
+            <Grid ColumnDefinitions="34,*,Auto,Auto">
+              <Border Grid.Column="0" Width="34" Height="34" CornerRadius="10" Background="#0a2d1e" BorderBrush="#0d3d28" BorderThickness="1">
+                <TextBlock Text="+" FontSize="16" FontWeight="Black" Foreground="#21e6c1" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+              <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                <TextBlock Text="ADD WALLET" FontSize="14" FontWeight="ExtraBold" Foreground="#e8f4ff" />
+                <TextBlock Text="{Binding ModalStepLabel}" FontSize="10" Foreground="#3d5a72" />
+              </StackPanel>
+              <ItemsControl Grid.Column="2" ItemsSource="{Binding ModalStepDots}" VerticalAlignment="Center" Margin="0,0,8,0">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="5" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="pd:PfStepDot">
+                    <Border Height="6" CornerRadius="3" Width="{Binding Width}" Background="{Binding Color, Converter={StaticResource StringToBrush}}" />
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
-
-              <!-- Add asset row -->
-              <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8"
-                    Margin="0,4,0,0">
-                <TextBlock Grid.Column="0" Text="Add asset:"
-                           FontSize="12" Foreground="#8FA3B8" VerticalAlignment="Center" />
-                <TextBox Grid.Column="1"
-                         Text="{Binding PortfolioRebalanceVM.NewAssetSymbol}"
-                         Width="110" FontSize="12" PlaceholderText="BTC" />
-                <NumericUpDown Grid.Column="2"
-                               Value="{Binding PortfolioRebalanceVM.NewAssetTargetPct}"
-                               Minimum="0.1" Maximum="100" Increment="5"
-                               FormatString="F1"
-                               Width="120" FontSize="12" />
-                <TextBlock Grid.Column="3" Text="%" FontSize="12" Foreground="#8FA3B8"
-                           VerticalAlignment="Center" />
-                <Button Grid.Column="4"
-                        Content="+ Add"
-                        Classes="GhostButton" FontSize="12" Padding="10,4"
-                        Command="{Binding PortfolioRebalanceVM.AddAssetCommand}" />
-              </Grid>
-
-              <!-- Status bar -->
-              <TextBlock Text="{Binding PortfolioRebalanceVM.StatusLabel}"
-                         Foreground="#4A6070" FontSize="11" />
-
-            </StackPanel>
+              <Button Grid.Column="3" Content="×" Command="{Binding CloseModalCommand}" Width="28" Height="28" Padding="0" FontSize="18"
+                      CornerRadius="7" BorderBrush="#152535" BorderThickness="1" Background="#07111a" Foreground="#3d5a72" />
+            </Grid>
           </Border>
-          <!-- ═══ END PORTFOLIO REBALANCER ═══ -->
 
-        </StackPanel>
-      </ScrollViewer>
-    </TabItem>
-    <TabItem Header="Кошелёк">
-      <ScrollViewer Classes="PageScroll">
-        <StackPanel Spacing="16" Margin="4"><!-- WALLET -->
+          <!-- Modal body -->
+          <ScrollViewer Grid.Row="1">
+            <Grid Margin="20">
+              <!-- STEP 1 -->
+              <StackPanel IsVisible="{Binding ModalIsStep1}" Spacing="14">
+                <TextBlock Text="SELECT WALLET TYPE" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                <ItemsControl ItemsSource="{Binding ModalWalletTypes}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="pd:PfModalWalletType">
+                      <Button Classes="Flat" Command="{Binding Command}" Margin="0,0,8,8">
+                        <Border BorderThickness="1" CornerRadius="10" Padding="14"
+                                BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}"
+                                Background="{Binding Bg, Converter={StaticResource StringToBrush}}">
+                          <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="36" Height="36" CornerRadius="10"
+                                    Background="{Binding IconBg, Converter={StaticResource StringToBrush}}"
+                                    BorderBrush="{Binding IconBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1">
+                              <TextBlock Text="{Binding Emoji}" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel Width="150">
+                              <TextBlock Text="{Binding Label}" FontSize="12" FontWeight="ExtraBold" Foreground="{Binding LabelColor, Converter={StaticResource StringToBrush}}" />
+                              <TextBlock Text="{Binding Desc}" FontSize="10" Foreground="#3d5a72" TextWrapping="Wrap" />
+                              <ItemsControl ItemsSource="{Binding Tags}" Margin="0,6,0,0">
+                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate x:DataType="pd:PfModalTag">
+                                    <Border Background="{Binding Bg, Converter={StaticResource StringToBrush}}" CornerRadius="3" Padding="5,1" Margin="0,0,3,3">
+                                      <TextBlock Text="{Binding Label}" FontSize="8" FontWeight="Bold" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                                    </Border>
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+                            </StackPanel>
+                          </StackPanel>
+                        </Border>
+                      </Button>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
 
-          <!-- License activation -->
-          <Border Background="#0A1622" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="8" Padding="12">
-            <StackPanel Spacing="10">
-              <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Grid.Column="0" Text="License" FontWeight="Bold" Foreground="#E0E8F0" VerticalAlignment="Center" />
-                <Border Grid.Column="1" Background="{Binding LicenseVM.StateBrush}" CornerRadius="3" Padding="7,2">
-                  <TextBlock Text="{Binding LicenseVM.StateLabel}" Foreground="#06121C" FontSize="11" FontWeight="Bold" />
+              <!-- STEP 2 -->
+              <StackPanel IsVisible="{Binding ModalIsStep2}" Spacing="14">
+                <!-- Selected badge -->
+                <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="10" Padding="12,10">
+                  <Grid ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Grid.Column="0" Text="{Binding ModalSelEmoji}" FontSize="22" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding ModalSelName}" FontSize="12" FontWeight="ExtraBold" Foreground="#c8dcef" />
+                      <TextBlock Text="{Binding ModalSelDesc}" FontSize="10" Foreground="#3d5a72" />
+                    </StackPanel>
+                    <Button Grid.Column="2" Content="← BACK" Command="{Binding ModalBackCommand}" Padding="10,4" CornerRadius="5"
+                            BorderBrush="#152535" BorderThickness="1" Background="Transparent" Foreground="#3d5a72" FontSize="10" FontWeight="Bold" />
+                  </Grid>
                 </Border>
-              </Grid>
-              <TextBox Text="{Binding LicenseVM.KeyInput}" PlaceholderText="Paste activation key" />
-              <Button Content="Activate" Command="{Binding LicenseVM.ActivateCommand}"
-                      HorizontalAlignment="Stretch" Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
-              <TextBlock Text="{Binding LicenseVM.StatusMessage}" Foreground="#F4B860" FontSize="11" TextWrapping="Wrap" />
-              <TextBlock Foreground="#4A6880" FontSize="10" TextWrapping="Wrap"
-                         Text="Get a key from the Telegram bot. Your Machine ID is in Settings → License. No key? You stay in Demo mode." />
-            </StackPanel>
+                <!-- Nickname -->
+                <StackPanel Spacing="6">
+                  <TextBlock Text="WALLET NICKNAME" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                  <TextBox Text="{Binding NewWalletName}" Watermark="e.g. My Main ETH" FontSize="13" />
+                </StackPanel>
+                <!-- CEX -->
+                <StackPanel IsVisible="{Binding ModalIsCex}" Spacing="12">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="EXCHANGE" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                    <ItemsControl ItemsSource="{Binding CexOptions}">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="pd:PfCexOption">
+                          <Button Command="{Binding Command}" Margin="0,0,6,6" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                  BorderThickness="1" CornerRadius="8" Padding="4,10"
+                                  BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}"
+                                  Background="{Binding Bg, Converter={StaticResource StringToBrush}}">
+                            <StackPanel Spacing="4">
+                              <TextBlock Text="{Binding Logo}" FontSize="18" HorizontalAlignment="Center" />
+                              <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="{Binding LabelColor, Converter={StaticResource StringToBrush}}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="API KEY" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                    <TextBox Text="{Binding NewApiKey}" Watermark="Paste API key…" FontFamily="{StaticResource FontMono}" FontSize="12" />
+                  </StackPanel>
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="API SECRET" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                    <TextBox Text="{Binding NewApiSecret}" PasswordChar="•" Watermark="Paste API secret…" FontFamily="{StaticResource FontMono}" FontSize="12" />
+                  </StackPanel>
+                  <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="8" Padding="12,10">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="🔒" FontSize="14" />
+                      <TextBlock Text="Keys are stored locally and encrypted. Read-only permissions recommended. Never enable withdrawal rights." FontSize="10" Foreground="#3d5a72" TextWrapping="Wrap" Width="440" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+                <!-- DEX / MEME / NFT -->
+                <StackPanel IsVisible="{Binding ModalIsDex}" Spacing="12">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="CHAIN" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                    <ItemsControl ItemsSource="{Binding ChainOptions}">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="pd:PfChainOption">
+                          <Button Command="{Binding Command}" Margin="0,0,6,6" Padding="14,6" CornerRadius="20" BorderThickness="1"
+                                  BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}"
+                                  Background="{Binding Bg, Converter={StaticResource StringToBrush}}"
+                                  Foreground="{Binding Color, Converter={StaticResource StringToBrush}}"
+                                  FontSize="10" FontWeight="Bold" Content="{Binding Label}" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="WALLET ADDRESS" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                    <TextBox Text="{Binding NewWalletAddress}" Watermark="{Binding AddrPlaceholder}" FontFamily="{StaticResource FontMono}" FontSize="11" />
+                  </StackPanel>
+                  <Border IsVisible="{Binding ModalIsMeme}" Background="#1a0505" BorderBrush="#3d0d0d" BorderThickness="1" CornerRadius="8" Padding="12,10">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="⚠️" FontSize="16" />
+                      <StackPanel Width="440">
+                        <TextBlock Text="HIGH RISK WALLET TYPE" FontSize="11" FontWeight="Bold" Foreground="#ff8080" />
+                        <TextBlock Text="Meme wallets are monitored with extra rug-pull and honeypot checks. Use only funds you can afford to lose." FontSize="10" Foreground="#8a5a5a" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+                <!-- STAKE -->
+                <StackPanel IsVisible="{Binding ModalIsStake}" Spacing="10">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="STAKING PROTOCOL" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                    <ItemsControl ItemsSource="{Binding StakeProtocols}">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="pd:PfStakeProtocol">
+                          <Button Classes="Flat" Command="{Binding Command}" Margin="0,0,6,6">
+                            <Border BorderThickness="1" CornerRadius="8" Padding="10"
+                                    BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}"
+                                    Background="{Binding Bg, Converter={StaticResource StringToBrush}}">
+                              <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{Binding Logo}" FontSize="16" VerticalAlignment="Center" />
+                                <StackPanel>
+                                  <TextBlock Text="{Binding Label}" FontSize="11" FontWeight="Bold" Foreground="{Binding LabelColor, Converter={StaticResource StringToBrush}}" />
+                                  <TextBlock Text="{Binding Apy}" FontSize="9" Foreground="#3d5a72" FontFamily="{StaticResource FontMono}" />
+                                </StackPanel>
+                              </StackPanel>
+                            </Border>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="WALLET ADDRESS" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                    <TextBox Text="{Binding NewWalletAddress}" Watermark="0x… or validator address" FontFamily="{StaticResource FontMono}" FontSize="11" />
+                  </StackPanel>
+                </StackPanel>
+                <!-- PERP -->
+                <StackPanel IsVisible="{Binding ModalIsPerp}" Spacing="12">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="EXCHANGE" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                    <ItemsControl ItemsSource="{Binding PerpOptions}">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="pd:PfPerpOption">
+                          <Button Command="{Binding Command}" Margin="0,0,6,6" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                  BorderThickness="1" CornerRadius="8" Padding="6,10"
+                                  BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}"
+                                  Background="{Binding Bg, Converter={StaticResource StringToBrush}}">
+                            <StackPanel Spacing="4">
+                              <TextBlock Text="{Binding Logo}" FontSize="18" HorizontalAlignment="Center" />
+                              <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="{Binding LabelColor, Converter={StaticResource StringToBrush}}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="API KEY" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                    <TextBox Text="{Binding NewApiKey}" Watermark="Paste API key…" FontFamily="{StaticResource FontMono}" FontSize="12" />
+                  </StackPanel>
+                </StackPanel>
+              </StackPanel>
+
+              <!-- STEP 3 -->
+              <StackPanel IsVisible="{Binding ModalIsStep3}" Spacing="10">
+                <TextBlock Text="RUNNING SECURITY SCAN…" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                <ItemsControl ItemsSource="{Binding ModalChecks}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="pd:PfModalCheck">
+                      <Border Background="#07111a" BorderThickness="1" CornerRadius="9" Padding="12,10" Margin="0,0,0,8"
+                              BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}">
+                        <Grid ColumnDefinitions="28,*,Auto">
+                          <Border Grid.Column="0" Width="28" Height="28" CornerRadius="8" Background="{Binding IconBg, Converter={StaticResource StringToBrush}}">
+                            <TextBlock Text="{Binding Icon}" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Border>
+                          <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Label}" FontSize="11" FontWeight="Bold" Foreground="#c8dcef" />
+                            <TextBlock Text="{Binding Desc}" FontSize="10" Foreground="#3d5a72" TextWrapping="Wrap" />
+                          </StackPanel>
+                          <Border Grid.Column="2" Background="{Binding StatusBg, Converter={StaticResource StringToBrush}}" CornerRadius="5" Padding="9,3" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Status}" FontSize="10" FontWeight="ExtraBold" Foreground="{Binding StatusColor, Converter={StaticResource StringToBrush}}" />
+                          </Border>
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Border Background="{Binding ModalResultBg, Converter={StaticResource StringToBrush}}"
+                        BorderBrush="{Binding ModalResultBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="10" Padding="14">
+                  <Grid ColumnDefinitions="44,*">
+                    <Border Grid.Column="0" Width="44" Height="44" CornerRadius="22" BorderThickness="3"
+                            BorderBrush="{Binding ModalResultColor, Converter={StaticResource StringToBrush}}">
+                      <TextBlock Text="{Binding ModalResultIcon}" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding ModalResultLabel}" FontSize="13" FontWeight="ExtraBold" Foreground="{Binding ModalResultColor, Converter={StaticResource StringToBrush}}" />
+                      <TextBlock Text="{Binding ModalResultDesc}" FontSize="10" Foreground="#5a7a94" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </StackPanel>
+            </Grid>
+          </ScrollViewer>
+
+          <!-- Modal footer -->
+          <Border Grid.Row="2" BorderBrush="#0d1b27" BorderThickness="0,1,0,0" Padding="20,14">
+            <Grid>
+              <!-- step2 footer -->
+              <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding ModalIsStep2}" HorizontalAlignment="Stretch">
+                <Button Content="BACK" Command="{Binding ModalBackCommand}" Padding="20,10" CornerRadius="8" BorderBrush="#152535" BorderThickness="1" Background="#07111a" Foreground="#3d5a72" FontSize="12" FontWeight="Bold" />
+                <Button Content="CONTINUE →" Command="{Binding ModalNextCommand}" HorizontalAlignment="Stretch" Width="420" Padding="10" CornerRadius="8" Background="#0a2d1e" Foreground="#21e6c1" FontSize="13" FontWeight="ExtraBold" HorizontalContentAlignment="Center" />
+              </StackPanel>
+              <!-- step3 footer -->
+              <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding ModalIsStep3}">
+                <Button Content="BACK" Command="{Binding ModalBackCommand}" Padding="20,10" CornerRadius="8" BorderBrush="#152535" BorderThickness="1" Background="#07111a" Foreground="#3d5a72" FontSize="12" FontWeight="Bold" />
+                <Button Content="✓ ADD WALLET" Command="{Binding ModalConfirmCommand}" HorizontalAlignment="Stretch" Width="420" Padding="10" CornerRadius="8"
+                        Background="{Binding ConfirmBtnBg, Converter={StaticResource StringToBrush}}"
+                        Foreground="{Binding ConfirmBtnColor, Converter={StaticResource StringToBrush}}" FontSize="13" FontWeight="ExtraBold" HorizontalContentAlignment="Center" />
+              </StackPanel>
+              <!-- step1 footer: just a hint -->
+              <TextBlock Text="Choose a wallet type to continue" IsVisible="{Binding ModalIsStep1}" Foreground="#2d4a5e" FontSize="11" HorizontalAlignment="Center" />
+            </Grid>
+          </Border>
+        </Grid>
+      </Border>
+    </Border>
+
+    <!-- ══════════ CONNECTION STUDIO (advanced connect + diagnostics) ══════════ -->
+    <Border IsVisible="{Binding ConnectionStudioVisible}" Background="#D9040b12" ZIndex="210">
+      <Border Width="640" MaxHeight="760" HorizontalAlignment="Center" VerticalAlignment="Center"
+              Background="#050c14" BorderBrush="#0d2240" BorderThickness="1" CornerRadius="16" ClipToBounds="True">
+        <Grid RowDefinitions="Auto,*">
+
+          <!-- Header (desk context: close command) -->
+          <Border Grid.Row="0" Background="#081826" BorderBrush="#0d2240" BorderThickness="0,0,0,1" Padding="20,16">
+            <Grid ColumnDefinitions="34,*,Auto">
+              <Border Grid.Column="0" Width="34" Height="34" CornerRadius="10" Background="#0d2a40" BorderBrush="#12395c" BorderThickness="1">
+                <TextBlock Text="🔑" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+              <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                <TextBlock Text="DIAGNOSTICS &amp; TOOLS" FontSize="14" FontWeight="ExtraBold" Foreground="#e8f4ff" />
+                <TextBlock Text="Self-tests &amp; Tron TRC20 payments for the active session" FontSize="10" Foreground="#3d5a72" />
+              </StackPanel>
+              <Button Grid.Column="2" Content="×" Command="{Binding CloseStudioCommand}" Width="28" Height="28" Padding="0" FontSize="18"
+                      CornerRadius="7" BorderBrush="#152535" BorderThickness="1" Background="#07111a" Foreground="#3d5a72" />
+            </Grid>
           </Border>
 
-          <Expander IsExpanded="True">
-            <Expander.Header>
-              <TextBlock Text="Connection Studio" FontWeight="Bold" />
-            </Expander.Header>
-            <StackPanel Spacing="12" Margin="8,12,8,4">
-              <StackPanel Spacing="8">
-                <TextBlock Text="Wallet Provider" Foreground="#8B949E" />
-                <WrapPanel Orientation="Horizontal">
-                  <Button Content="METAMASK"
-                          Command="{Binding WalletVM.SelectProviderCommand}"
-                          CommandParameter="MetaMask"
-                          Width="110"
-                          Margin="0,0,8,8" />
-                  <Button Content="TRUST"
-                          Command="{Binding WalletVM.SelectProviderCommand}"
-                          CommandParameter="Trust Wallet"
-                          Width="110"
-                          Margin="0,0,8,8" />
-                  <Button Content="PHANTOM"
-                          Command="{Binding WalletVM.SelectProviderCommand}"
-                          CommandParameter="Phantom"
-                          Width="110"
-                          Margin="0,0,8,8" />
-                  <Button Content="TRONLINK"
-                          Command="{Binding WalletVM.SelectProviderCommand}"
-                          CommandParameter="TronLink"
-                          Width="110"
-                          Margin="0,0,8,8" />
-                </WrapPanel>
-                <TextBlock Text="{Binding WalletVM.SelectedProvider, StringFormat=Focused provider: {0}}"
-                           Foreground="#21E6C1"
-                           FontWeight="SemiBold" />
-              </StackPanel>
+          <!-- Content bound to the real WalletVM -->
+          <ScrollViewer Grid.Row="1" DataContext="{Binding $parent[Window].DataContext.WalletVM}">
+            <StackPanel Margin="20" Spacing="14">
 
-              <StackPanel Spacing="8">
-                <TextBlock Text="Network" Foreground="#8B949E" />
-                <ComboBox ItemsSource="{Binding WalletVM.AvailableNetworks}"
-                          SelectedItem="{Binding WalletVM.SelectedNetwork}" />
-              </StackPanel>
-
-              <StackPanel Spacing="8">
-                <TextBlock Text="Wallet Address" Foreground="#8B949E" />
-                <TextBox Text="{Binding WalletVM.WalletAddressInput}"
-                         PlaceholderText="Paste wallet address for shared watch mode" />
-              </StackPanel>
-
-              <StackPanel Spacing="8">
-                <TextBlock Text="Private Key" Foreground="#8B949E" />
-                <TextBox Text="{Binding WalletVM.PrivateKeyInput}"
-                         PlaceholderText="EVM private key, Solana 64-byte keypair / 32-byte seed, or Tron 32-byte private key" />
-              </StackPanel>
-
-              <WrapPanel Orientation="Horizontal">
-                <Button Content="CONNECT WATCH"
-                        Command="{Binding WalletVM.ConnectWatchCommand}"
-                        Width="150"
-                        Margin="0,0,8,8" />
-                <Button Content="IMPORT FOR TRADING"
-                        Command="{Binding WalletVM.ImportPrivateKeyCommand}"
-                        Width="170"
-                        Margin="0,0,8,8" />
-                <Button Content="REFRESH"
-                        Command="{Binding WalletVM.RefreshWalletCommand}"
-                        Width="120"
-                        Margin="0,0,8,8" />
-                <Button Content="OPEN PROVIDER"
-                        Command="{Binding WalletVM.OpenProviderCommand}"
-                        Width="140"
-                        Margin="0,0,8,8" />
-                <Button Content="DISCONNECT"
-                        Command="{Binding WalletVM.DisconnectWalletCommand}"
-                        Width="130"
-                        Margin="0,0,8,8" />
-              </WrapPanel>
-            </StackPanel>
-          </Expander>
-
-          <Expander IsExpanded="True">
-            <Expander.Header>
-              <TextBlock Text="Security Notes" FontWeight="Bold" />
-            </Expander.Header>
-            <StackPanel Spacing="8" Margin="8,12,8,4">
-              <TextBlock Text="The key stays only in memory for this desktop session."
-                         Foreground="#F4B860"
-                         FontWeight="SemiBold"
-                         TextWrapping="Wrap" />
-              <TextBlock Text="Use watch mode for analytics and monitoring. Enable a trading session only when you are ready to execute on-chain actions."
-                         Foreground="#8B949E"
-                         TextWrapping="Wrap" />
-            </StackPanel>
-          </Expander>
-
-          <Expander IsExpanded="True">
-            <Expander.Header>
-              <TextBlock Text="Saved Wallets" FontWeight="Bold" />
-            </Expander.Header>
-            <StackPanel Spacing="10" Margin="8,12,8,4">
-              <Border Classes="SoftPanel">
+              <!-- Target network for the diagnostics below -->
+              <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="10" Padding="14">
                 <StackPanel Spacing="8">
-                  <TextBlock Classes="Overline" Text="Execution Matrix" />
-                  <TextBlock Text="{Binding WalletVM.NetworkExecutionMatrix}"
-                             FontWeight="SemiBold"
-                             TextWrapping="Wrap" />
+                  <TextBlock Text="TARGET NETWORK" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                  <ComboBox ItemsSource="{Binding AvailableNetworks}" SelectedItem="{Binding SelectedNetwork}" HorizontalAlignment="Stretch" />
+                  <TextBlock Text="Add wallets with + ADD WALLET, then click a wallet in the list to make it the active session and arm trading from its panel. These tools run against that session."
+                             Foreground="#5a7a94" FontSize="10" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding StatusMessage}" Foreground="#c8dcef" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
-              <ScrollViewer Classes="PageScroll" MaxHeight="260">
-                <ItemsControl ItemsSource="{Binding WalletVM.SavedWallets}">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:SavedWalletViewModel">
-                      <Border Classes="SoftPanel" Margin="0,0,0,8">
-                        <StackPanel Spacing="8">
-                          <TextBlock Text="{Binding DisplayAddress}" FontWeight="Bold" />
-                          <TextBlock Text="{Binding Summary}" Foreground="#8B949E" TextWrapping="Wrap" />
-                          <TextBlock Text="{Binding Note}" Foreground="#6E8196" TextWrapping="Wrap" />
-                          <WrapPanel Orientation="Horizontal">
-                            <Button Content="LOAD"
-                                    Command="{Binding $parent[Window].DataContext.WalletVM.LoadSavedWalletCommand}"
-                                    CommandParameter="{Binding .}"
-                                    Width="110"
-                                    Margin="0,0,10,0" />
-                            <Button Content="DELETE"
-                                    Command="{Binding $parent[Window].DataContext.WalletVM.DeleteSavedWalletCommand}"
-                                    CommandParameter="{Binding .}"
-                                    Width="110"
-                                    Classes="GhostButton" />
-                          </WrapPanel>
-                        </StackPanel>
-                      </Border>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </ScrollViewer>
+
+              <!-- Diagnostics: Solana -->
+              <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="10" Padding="14">
+                <StackPanel Spacing="8">
+                  <TextBlock Text="SOLANA SELF-TEST" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                  <TextBlock Text="Safe end-to-end probe: wallet, RPC, blockhash, signing, memo simulation, Jupiter quote &amp; signed swap simulation." Foreground="#5a7a94" FontSize="10" TextWrapping="Wrap" />
+                  <Button Content="RUN SOLANA SELF-TEST" Command="{Binding RunSolanaDiagnosticsCommand}" IsEnabled="{Binding CanRunSolanaDiagnostics}"
+                          HorizontalAlignment="Left" Padding="14,7" CornerRadius="7" Background="#0a2d1e" BorderBrush="#0d3d28" BorderThickness="1" Foreground="#21e6c1" FontSize="10" FontWeight="ExtraBold" />
+                  <TextBlock Text="{Binding SolanaDiagnosticsSummary}" Foreground="#c8dcef" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap" />
+                  <ScrollViewer MaxHeight="150">
+                    <ItemsControl ItemsSource="{Binding SolanaDiagnosticSteps}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <TextBlock Text="{Binding .}" Foreground="#8fa3b8" FontSize="10" FontFamily="{StaticResource FontMono}" TextWrapping="Wrap" Margin="0,0,0,3" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </StackPanel>
+              </Border>
+
+              <!-- Diagnostics: Tron (only when Tron selected) -->
+              <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="10" Padding="14" IsVisible="{Binding IsTronNetworkSelected}">
+                <StackPanel Spacing="8">
+                  <TextBlock Text="TRON SELF-TEST" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                  <TextBlock Text="Safe Tron smoke-check: wallet, RPC, TRC20 metadata, SunSwap quote &amp; unsigned swap preview (no broadcast)." Foreground="#5a7a94" FontSize="10" TextWrapping="Wrap" />
+                  <Button Content="RUN TRON SELF-TEST" Command="{Binding RunTronDiagnosticsCommand}" IsEnabled="{Binding CanRunTronDiagnostics}"
+                          HorizontalAlignment="Left" Padding="14,7" CornerRadius="7" Background="#0a2d1e" BorderBrush="#0d3d28" BorderThickness="1" Foreground="#21e6c1" FontSize="10" FontWeight="ExtraBold" />
+                  <TextBlock Text="{Binding TronDiagnosticsSummary}" Foreground="#c8dcef" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap" />
+                  <ScrollViewer MaxHeight="150">
+                    <ItemsControl ItemsSource="{Binding TronDiagnosticSteps}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <TextBlock Text="{Binding .}" Foreground="#8fa3b8" FontSize="10" FontFamily="{StaticResource FontMono}" TextWrapping="Wrap" Margin="0,0,0,3" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </StackPanel>
+              </Border>
+
+              <!-- Tron TRC20 payments (only when Tron selected) -->
+              <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="10" Padding="14" IsVisible="{Binding IsTronNetworkSelected}">
+                <StackPanel Spacing="10">
+                  <TextBlock Text="TRON TRC20 PAYMENTS" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                  <TextBlock Text="Send a real TRC20 transfer from the armed Tron session — built, signed locally, broadcast via Tron RPC." Foreground="#5a7a94" FontSize="10" TextWrapping="Wrap" />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="USE USDC" Command="{Binding ApplyTronTokenPresetCommand}" CommandParameter="USDC"
+                            Background="{Binding TronUsdcPresetBackground}" Foreground="{Binding TronUsdcPresetForeground}"
+                            Padding="14,6" CornerRadius="7" BorderBrush="#1e3248" BorderThickness="1" FontSize="10" FontWeight="Bold" />
+                    <Button Content="USE USDT" Command="{Binding ApplyTronTokenPresetCommand}" CommandParameter="USDT"
+                            Background="{Binding TronUsdtPresetBackground}" Foreground="{Binding TronUsdtPresetForeground}"
+                            Padding="14,6" CornerRadius="7" BorderBrush="#1e3248" BorderThickness="1" FontSize="10" FontWeight="Bold" />
+                  </StackPanel>
+                  <TextBlock Text="{Binding TronTrc20BalanceLabel, StringFormat='Tracked token balance: {0}'}" Foreground="#21e6c1" FontSize="11" FontWeight="SemiBold" />
+                  <Grid ColumnDefinitions="90,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Symbol" Foreground="#8fa3b8" FontSize="11" VerticalAlignment="Center" />
+                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding TronTrc20Symbol}" Watermark="USDT" FontSize="11" />
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Contract" Foreground="#8fa3b8" FontSize="11" VerticalAlignment="Center" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TronTrc20ContractAddress}" Watermark="TRC20 contract address" FontFamily="{StaticResource FontMono}" FontSize="11" />
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Recipient" Foreground="#8fa3b8" FontSize="11" VerticalAlignment="Center" />
+                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding TronPaymentRecipient}" Watermark="Recipient Tron address" FontFamily="{StaticResource FontMono}" FontSize="11" />
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Amount" Foreground="#8fa3b8" FontSize="11" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding TronTrc20Amount}" Increment="0.1" Minimum="0" FormatString="0.######" />
+                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Fee (TRX)" Foreground="#8fa3b8" FontSize="11" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding TronFeeLimitTrx}" Increment="1" Minimum="1" FormatString="0.##" />
+                  </Grid>
+                  <Button Content="SEND TRC20" Command="{Binding SendTronPaymentCommand}" IsEnabled="{Binding CanSendTronPaymentLive}"
+                          ToolTip.Tip="{Binding TronPaymentBlockedReason}" HorizontalAlignment="Left"
+                          Padding="16,7" CornerRadius="7" Background="#0a2d1e" BorderBrush="#0d3d28" BorderThickness="1" Foreground="#21e6c1" FontSize="10" FontWeight="ExtraBold" />
+                  <TextBlock Text="{Binding TronPaymentBlockedReason}" Foreground="#f4b860" FontSize="10" TextWrapping="Wrap" IsVisible="{Binding !CanSendTronPaymentLive}" />
+                  <TextBlock Text="{Binding TronPaymentStatus}" Foreground="#c8dcef" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+
             </StackPanel>
-          </Expander>
-
-          <Border Classes="SoftPanel">
-            <StackPanel Spacing="6">
-              <TextBlock Text="Session Status" Foreground="#8B949E" />
-              <TextBlock Text="{Binding WalletVM.StatusMessage}"
-                         TextWrapping="Wrap"
-                         FontWeight="SemiBold" />
-            </StackPanel>
-          </Border>
-
-        </StackPanel>
-      </ScrollViewer>
-    </TabItem>
-    <TabItem Header="Активность · Диагностика">
-      <ScrollViewer Classes="PageScroll">
-        <StackPanel Spacing="16" Margin="4"><!-- ACTIVITY -->
-
-          <Border Classes="Panel">
-            <StackPanel Spacing="10">
-              <TextBlock Classes="H2" Text="Recent Activity" />
-              <Expander IsExpanded="True">
-                <Expander.Header>
-                  <TextBlock Text="Session Feed" FontWeight="Bold" />
-                </Expander.Header>
-                <ItemsControl ItemsSource="{Binding WalletVM.RecentActivity}" Margin="8,12,8,4">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                      <Border Background="#0D1117"
-                              BorderBrush="#30363D"
-                              BorderThickness="1"
-                              CornerRadius="10"
-                              Padding="12"
-                              Margin="0,0,0,8">
-                        <TextBlock Text="{Binding .}" TextWrapping="Wrap" />
-                      </Border>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </Expander>
-            </StackPanel>
-          </Border>
-
-          <Border Classes="SoftPanel">
-            <StackPanel Spacing="8">
-              <TextBlock Classes="Overline" Text="Solana Self-Test" />
-              <TextBlock Text="Run a safe end-to-end probe for the armed Solana session: wallet, RPC, blockhash, signing, memo simulation, Jupiter quote and signed swap simulation."
-                         Foreground="#8B949E"
-                         TextWrapping="Wrap" />
-              <Button Content="RUN SOLANA SELF-TEST"
-                      Command="{Binding WalletVM.RunSolanaDiagnosticsCommand}"
-                      IsEnabled="{Binding WalletVM.CanRunSolanaDiagnostics}"
-                      Width="220" />
-              <TextBlock Text="{Binding WalletVM.SolanaDiagnosticsSummary}"
-                         FontWeight="SemiBold"
-                         TextWrapping="Wrap" />
-            </StackPanel>
-          </Border>
-
-          <Border Classes="SoftPanel"
-                  IsVisible="{Binding WalletVM.IsTronNetworkSelected}">
-            <StackPanel Spacing="8">
-              <TextBlock Classes="Overline" Text="Tron Self-Test" />
-              <TextBlock Text="Run a safe Tron smoke-check for the armed session: wallet, RPC, TRC20 metadata, SunSwap quote and unsigned swap preview without broadcasting a trade."
-                         Foreground="#8B949E"
-                         TextWrapping="Wrap" />
-              <Button Content="RUN TRON SELF-TEST"
-                      Command="{Binding WalletVM.RunTronDiagnosticsCommand}"
-                      IsEnabled="{Binding WalletVM.CanRunTronDiagnostics}"
-                      Width="220" />
-              <TextBlock Text="{Binding WalletVM.TronDiagnosticsSummary}"
-                         FontWeight="SemiBold"
-                         TextWrapping="Wrap" />
-            </StackPanel>
-          </Border>
-
-          <Border Classes="SoftPanel"
-                  IsVisible="{Binding WalletVM.IsTronNetworkSelected}">
-            <StackPanel Spacing="10">
-              <TextBlock Classes="Overline" Text="Tron TRC20 Payments" />
-              <TextBlock Text="Send a real TRC20 transfer from the armed Tron session. The app creates the transaction, signs it locally, and broadcasts it through Tron RPC."
-                         Foreground="#8B949E"
-                         TextWrapping="Wrap" />
-              <WrapPanel Orientation="Horizontal">
-                <Button Content="USE USDC"
-                        Command="{Binding WalletVM.ApplyTronTokenPresetCommand}"
-                        CommandParameter="USDC"
-                        Background="{Binding WalletVM.TronUsdcPresetBackground}"
-                        Foreground="{Binding WalletVM.TronUsdcPresetForeground}"
-                        Width="120"
-                        Margin="0,0,8,8" />
-                <Button Content="USE USDT"
-                        Command="{Binding WalletVM.ApplyTronTokenPresetCommand}"
-                        CommandParameter="USDT"
-                        Background="{Binding WalletVM.TronUsdtPresetBackground}"
-                        Foreground="{Binding WalletVM.TronUsdtPresetForeground}"
-                        Width="120"
-                        Margin="0,0,8,8" />
-              </WrapPanel>
-              <TextBlock Text="{Binding WalletVM.TronTrc20BalanceLabel, StringFormat=Tracked token balance: {0}}"
-                         FontWeight="SemiBold"
-                         Foreground="#21E6C1" />
-              <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="10">
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Symbol" VerticalAlignment="Center" />
-                <TextBox Grid.Row="0" Grid.Column="1"
-                         Text="{Binding WalletVM.TronTrc20Symbol}"
-                         PlaceholderText="USDT" />
-
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Contract" VerticalAlignment="Center" />
-                <TextBox Grid.Row="1" Grid.Column="1"
-                         Text="{Binding WalletVM.TronTrc20ContractAddress}"
-                         PlaceholderText="TRC20 contract address" />
-
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Recipient" VerticalAlignment="Center" />
-                <TextBox Grid.Row="2" Grid.Column="1"
-                         Text="{Binding WalletVM.TronPaymentRecipient}"
-                         PlaceholderText="Recipient Tron address" />
-
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="Amount" VerticalAlignment="Center" />
-                <NumericUpDown Grid.Row="3" Grid.Column="1"
-                               Value="{Binding WalletVM.TronTrc20Amount}"
-                               Increment="0.1"
-                               Minimum="0"
-                               FormatString="0.######" />
-
-                <TextBlock Grid.Row="4" Grid.Column="0" Text="Fee Limit (TRX)" VerticalAlignment="Center" />
-                <NumericUpDown Grid.Row="4" Grid.Column="1"
-                               Value="{Binding WalletVM.TronFeeLimitTrx}"
-                               Increment="1"
-                               Minimum="1"
-                               FormatString="0.##" />
-              </Grid>
-              <Button Content="SEND TRC20"
-                      Command="{Binding WalletVM.SendTronPaymentCommand}"
-                      IsEnabled="{Binding WalletVM.CanSendTronPaymentLive}"
-                      ToolTip.Tip="{Binding WalletVM.TronPaymentBlockedReason}"
-                      Width="160" />
-              <TextBlock Text="{Binding WalletVM.TronPaymentBlockedReason}"
-                         Foreground="#F4B860"
-                         TextWrapping="Wrap"
-                         IsVisible="{Binding !WalletVM.CanSendTronPaymentLive}" />
-              <TextBlock Text="{Binding WalletVM.TronPaymentStatus}"
-                         FontWeight="SemiBold"
-                         TextWrapping="Wrap" />
-            </StackPanel>
-          </Border>
-
-          <Border Classes="SoftPanel">
-            <StackPanel Spacing="10">
-              <TextBlock Text="Solana Diagnostic Trace" Foreground="#8B949E" />
-              <ScrollViewer Classes="PageScroll" MaxHeight="240">
-                <ItemsControl ItemsSource="{Binding WalletVM.SolanaDiagnosticSteps}">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                      <Border Background="#0D1117"
-                              BorderBrush="#30363D"
-                              BorderThickness="1"
-                              CornerRadius="10"
-                              Padding="12"
-                              Margin="0,0,0,8">
-                        <TextBlock Text="{Binding .}" TextWrapping="Wrap" />
-                      </Border>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </ScrollViewer>
-            </StackPanel>
-          </Border>
-
-          <Border Classes="SoftPanel"
-                  IsVisible="{Binding WalletVM.IsTronNetworkSelected}">
-            <StackPanel Spacing="10">
-              <TextBlock Text="Tron Diagnostic Trace" Foreground="#8B949E" />
-              <ScrollViewer Classes="PageScroll" MaxHeight="240">
-                <ItemsControl ItemsSource="{Binding WalletVM.TronDiagnosticSteps}">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                      <Border Background="#0D1117"
-                              BorderBrush="#30363D"
-                              BorderThickness="1"
-                              CornerRadius="10"
-                              Padding="12"
-                              Margin="0,0,0,8">
-                        <TextBlock Text="{Binding .}" TextWrapping="Wrap" />
-                      </Border>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </ScrollViewer>
-            </StackPanel>
-          </Border>
-
-        </StackPanel>
-      </ScrollViewer>
-    </TabItem>
-  </TabControl>
+          </ScrollViewer>
+        </Grid>
+      </Border>
+    </Border>
+  </Panel>
 </UserControl>
