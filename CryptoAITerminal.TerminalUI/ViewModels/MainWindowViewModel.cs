@@ -3731,7 +3731,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     {
         Dispatcher.UIThread.Post(() =>
         {
-            Notifications.Insert(0, new NotificationEntry(message, DateTime.Now, ResolveNotificationSymbol(message)));
+            var (symbol, address, chain) = ResolveNotificationTarget(message);
+            Notifications.Insert(0, new NotificationEntry(message, DateTime.Now, symbol, address, chain));
             while (Notifications.Count > 200)
             {
                 Notifications.RemoveAt(Notifications.Count - 1);
@@ -3772,24 +3773,50 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     }
 
     /// <summary>
-    /// Best-effort: find a trading symbol mentioned in a notification message so the
-    /// registry entry can deep-link to that market. Prefers a full symbol (BTCUSDT)
-    /// then a standalone base ticker (BTC).
+    /// Best-effort deep-link resolver: from a notification message, work out which token it is
+    /// about so clicking it can open that token in trading. Covers every notification source
+    /// because they all funnel through <see cref="ShowToast"/>. Resolution order (most precise
+    /// first): an on-chain address in the text → a DEX token by ticker (gives address + chain) →
+    /// a CEX/DEX market symbol. Returns (symbol, tokenAddress, chain), any of which may be null.
     /// </summary>
-    private string? ResolveNotificationSymbol(string message)
+    private (string? Symbol, string? Address, string? Chain) ResolveNotificationTarget(string message)
     {
         if (string.IsNullOrEmpty(message))
         {
-            return null;
+            return (null, null, null);
+        }
+
+        // 1) Explicit EVM contract address in the message → open by address (most precise).
+        var evm = System.Text.RegularExpressions.Regex.Match(message, @"0x[0-9a-fA-F]{40}");
+        if (evm.Success)
+        {
+            var addr = evm.Value;
+            // If that address is in the current DEX list, we also know its chain + ticker.
+            var listed = DexTradingVM.Tokens.FirstOrDefault(t =>
+                string.Equals(t.TokenAddress, addr, StringComparison.OrdinalIgnoreCase));
+            return (listed?.TokenInfo.Symbol, addr, listed?.TokenInfo.ChainId);
         }
 
         var upper = message.ToUpperInvariant();
 
+        // 2) A DEX token by ticker → gives its address + chain so any token opens on the DEX desk.
+        foreach (var token in DexTradingVM.Tokens)
+        {
+            var sym = token.TokenInfo.Symbol?.ToUpperInvariant();
+            if (!string.IsNullOrEmpty(sym) && sym.Length >= 2 &&
+                System.Text.RegularExpressions.Regex.IsMatch(
+                    upper, $@"\b{System.Text.RegularExpressions.Regex.Escape(sym)}\b"))
+            {
+                return (token.TokenInfo.Symbol, token.TokenAddress, token.TokenInfo.ChainId);
+            }
+        }
+
+        // 3) A CEX/DEX market symbol (full symbol first, then base ticker).
         foreach (var market in Markets)
         {
             if (upper.Contains(market.Symbol, StringComparison.Ordinal))
             {
-                return market.Symbol;
+                return (market.Symbol, null, null);
             }
         }
 
@@ -3800,31 +3827,80 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                 System.Text.RegularExpressions.Regex.IsMatch(
                     upper, $@"\b{System.Text.RegularExpressions.Regex.Escape(baseAsset)}\b"))
             {
-                return market.Symbol;
+                return (market.Symbol, null, null);
             }
         }
 
-        return null;
+        return (null, null, null);
     }
 
-    /// <summary>Clicking a registry entry: jump to that market's Trading view.</summary>
+    /// <summary>
+    /// Clicking a registry entry opens the token it refers to in trading — a DEX token by address
+    /// on the DEX desk, or a CEX/DEX market symbol via the shared open-in-trading path.
+    /// </summary>
     public void ActivateNotification(NotificationEntry entry)
     {
-        if (entry?.Symbol is null)
+        if (entry is null)
         {
             CloseNotificationCenter();
             return;
         }
 
-        var market = Markets.FirstOrDefault(m =>
-            string.Equals(m.Symbol, entry.Symbol, StringComparison.OrdinalIgnoreCase));
-        if (market is not null)
+        // Most precise: an on-chain address → open that exact token on the DEX desk (any token).
+        if (!string.IsNullOrEmpty(entry.TokenAddress))
         {
-            SelectedMarket = market;
+            OpenDexTokenInTrading(entry.TokenAddress!, entry.Symbol);
+            CloseNotificationCenter();
+            return;
         }
 
+        // A symbol that matches a known market → reuse the CEX/DEX open-in-trading routing.
+        if (!string.IsNullOrEmpty(entry.Symbol))
+        {
+            var market = Markets.FirstOrDefault(m =>
+                string.Equals(m.Symbol, entry.Symbol, StringComparison.OrdinalIgnoreCase));
+            if (market is not null)
+            {
+                OpenMarketInTrading(market);
+                CloseNotificationCenter();
+                return;
+            }
+        }
+
+        // Fallback: at least surface the Trading view.
         SelectMainTab("trading");
         CloseNotificationCenter();
+    }
+
+    /// <summary>
+    /// Clicking the toast: if the latest notification is about a token, jump straight to it in
+    /// trading; otherwise open the full notification center.
+    /// </summary>
+    public void ActivateToast()
+    {
+        var latest = Notifications.FirstOrDefault();
+        if (latest is { HasAction: true })
+        {
+            IsToastVisible = false;
+            ActivateNotification(latest);
+            return;
+        }
+
+        OpenNotificationCenter();
+    }
+
+    /// <summary>Switches to the DEX desk (SWAP) and selects the given token by address.</summary>
+    private void OpenDexTokenInTrading(string address, string? symbol)
+    {
+        if (SelectedTradingVenue != TradingVenueMode.Dex)
+        {
+            SelectTradingVenue("DEX");
+        }
+
+        DexDeskVM.SelectModeCommand.Execute("SWAP").Subscribe();
+        _ = DexTradingVM.SelectTokenByAddressAsync(address, symbol);
+        SelectMainTab("trading");
+        AddLog($"Opened token {symbol ?? address} on the DEX desk from a notification.");
     }
 
     private IExchangeGateway ActiveCexGateway => IsManualFuturesMode ? ActiveFuturesGateway : ActiveSpotGateway;

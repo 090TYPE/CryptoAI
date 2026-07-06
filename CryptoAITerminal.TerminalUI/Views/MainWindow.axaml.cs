@@ -203,7 +203,7 @@ public partial class MainWindow : Window
 
     private void OnToastClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
-        ViewModel?.OpenNotificationCenter();
+        ViewModel?.ActivateToast();
     }
 
     private void OnToastCloseClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)

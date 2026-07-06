@@ -486,9 +486,7 @@
         </ScrollViewer>
       </TabItem>
       <TabItem Header="AI Signals">
-        <ScrollViewer Classes="PageScroll">
-          <views:AiSignalsView />
-        </ScrollViewer>
+        <views:AiSignalsView />
       </TabItem>
 <TabItem>
         <TabItem.Header>
@@ -1090,7 +1088,7 @@
                   Foreground="#8FA3B8" FontSize="13" ToolTip.Tip="Закрыть" />
         </Grid>
         <TextBlock Text="{Binding ToastMessage}" Foreground="#E0E8F0" TextWrapping="Wrap" FontSize="13" />
-        <TextBlock Text="Нажмите, чтобы открыть все уведомления" Foreground="#5A7A90" FontSize="10" />
+        <TextBlock Text="Нажмите, чтобы открыть токен в трейдинге" Foreground="#5A7A90" FontSize="10" />
       </StackPanel>
     </Border>
 
