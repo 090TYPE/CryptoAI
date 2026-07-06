@@ -602,6 +602,39 @@ public class DEXGateway : IDexTradeGateway, ISupportsAggregatorSwap
             Math.Clamp(slippagePercent, 0.05m, 50m), effectiveGasGwei, ct);
     }
 
+    /// <summary>
+    /// Sells <paramref name="tokenAddress"/> along the aggregator's best route, receiving native or
+    /// the given quote asset (e.g. USDT) straight to the wallet. Real build+sign+send through the
+    /// account-bound Web3.
+    /// </summary>
+    public async Task<AggregatorSwapResult> ExecuteAggregatorSellAsync(
+        string tokenAddress, decimal tokenAmount, decimal slippagePercent,
+        string? receiveAssetSymbol, decimal gasPriceGwei, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(tokenAddress))
+        {
+            throw new ArgumentException("Token address is required for aggregator sells.", nameof(tokenAddress));
+        }
+
+        if (tokenAmount <= 0m)
+        {
+            throw new ArgumentOutOfRangeException(nameof(tokenAmount), "Token amount must be greater than zero.");
+        }
+
+        var slug = AggregatorSwapExecutor.NetworkSlug(NetworkName)
+                   ?? throw new NotSupportedException($"OpenOcean aggregator routing is not wired for {NetworkName}.");
+
+        var receiveAsset = ResolveQuoteAsset(receiveAssetSymbol);
+        var outToken = receiveAsset is null ? AggregatorSwapExecutor.NativePlaceholder : receiveAsset.ContractAddress!;
+        var tokenDecimals = await GetTokenDecimalsAsync(tokenAddress);
+
+        var effectiveGasGwei = gasPriceGwei > 0m ? gasPriceGwei : 5m;
+        var executor = new AggregatorSwapExecutor();
+        return await executor.ExecuteAsync(
+            _web3, _account.Address, slug, tokenAddress, tokenDecimals, tokenAmount, outToken,
+            Math.Clamp(slippagePercent, 0.05m, 50m), effectiveGasGwei, ct);
+    }
+
     public Task<string> SellTokenAsync(string tokenAddress, decimal tokenAmountToSell, decimal slippagePercent = 5) =>
         SellTokenAsync(tokenAddress, tokenAmountToSell, slippagePercent, null, null);
 

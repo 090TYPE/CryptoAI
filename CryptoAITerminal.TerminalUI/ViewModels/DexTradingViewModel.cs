@@ -2100,11 +2100,27 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        var (sellAmount, quoteAssetSymbol, slippage) = await RunOnUiAsync(() => (SellAmountTokens, SelectedQuoteAssetSymbol, SlippagePercent));
+        var (sellAmount, quoteAssetSymbol, slippage, wantsBestRoute) = await RunOnUiAsync(() => (SellAmountTokens, SelectedQuoteAssetSymbol, SlippagePercent, UseBestRouteSwap));
 
         try
         {
             var receiveAssetSymbol = IsNativeQuoteMode(quoteAssetSymbol) || string.Equals(quoteAssetSymbol, dexGateway.NativeSymbol, StringComparison.OrdinalIgnoreCase) ? null : quoteAssetSymbol;
+
+            // Best route sells the token straight into the chosen quote asset (USDT by default),
+            // routing across every DEX so any token converts back to USDT on the wallet.
+            if (wantsBestRoute && dexGateway is ISupportsAggregatorSwap agg && agg.SupportsAggregatorSwap)
+            {
+                var res = await agg.ExecuteAggregatorSellAsync(selectedToken.TokenAddress, sellAmount, slippage, receiveAssetSymbol, gasPriceGwei: 0m);
+                await RunOnUiAsync(() =>
+                {
+                    StatusMessage = res.Success
+                        ? $"Best-route sell filled → {(receiveAssetSymbol ?? dexGateway.NativeSymbol)} ({res.Route}): {res.TxHash}"
+                        : $"Best-route sell reverted: {res.TxHash}";
+                    AddTradeRecord("SELL", selectedToken.DisplayName, sellAmount, selectedToken.TokenInfo.PriceUsd, res.TxHash, res.Success);
+                });
+                return;
+            }
+
             var transactionHash = await dexGateway.SellTokenAsync(selectedToken.TokenAddress, sellAmount, slippagePercent: slippage, dexId: selectedToken.TokenInfo.DexId, receiveAssetSymbol: receiveAssetSymbol);
             await RunOnUiAsync(() =>
             {
@@ -2220,14 +2236,10 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             return true;
         }
 
-        if (string.Equals(tokenInfo.QuoteSymbol, SelectedQuoteAssetSymbol, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        return string.Equals(_walletWorkspace.SelectedNetwork, "Base", StringComparison.OrdinalIgnoreCase) &&
-               string.Equals(SelectedQuoteAssetSymbol, "USDT", StringComparison.OrdinalIgnoreCase) &&
-               string.Equals(tokenInfo.QuoteSymbol, "USDC", StringComparison.OrdinalIgnoreCase);
+        // A stable quote (USDT/USDC) buys and sells any token via the best-route aggregator or a
+        // wrapped-native hop, so a direct token/stable pool is not required — every token on a
+        // supported network can be traded against the selected stable.
+        return DexQuoteAssetCatalog.Find(_walletWorkspace.SelectedNetwork, SelectedQuoteAssetSymbol) is not null;
     }
 
     private async Task RefreshQuoteAssetBalanceAsync()

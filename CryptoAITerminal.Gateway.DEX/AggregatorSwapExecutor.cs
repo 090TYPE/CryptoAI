@@ -238,4 +238,9 @@ public interface ISupportsAggregatorSwap
     Task<AggregatorSwapResult> ExecuteAggregatorBuyAsync(
         string tokenAddress, decimal spendAmount, decimal slippagePercent,
         string? spendAssetSymbol, decimal gasPriceGwei, CancellationToken ct = default);
+
+    /// <summary>Sells a token along the aggregator's best route, receiving the given asset (e.g. USDT).</summary>
+    Task<AggregatorSwapResult> ExecuteAggregatorSellAsync(
+        string tokenAddress, decimal tokenAmount, decimal slippagePercent,
+        string? receiveAssetSymbol, decimal gasPriceGwei, CancellationToken ct = default);
 }
