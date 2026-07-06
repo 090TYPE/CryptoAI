@@ -538,6 +538,15 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     public string AggRouteLabel { get => _aggRouteLabel; private set => this.RaiseAndSetIfChanged(ref _aggRouteLabel, value); }
     public bool HasAggQuote => !string.IsNullOrEmpty(_aggOutputLabel);
 
+    // When on, manual buys route through the aggregator's best cross-DEX path (real build+sign+send)
+    // instead of the gateway's single-DEX router. Falls back automatically if the chain/gateway can't.
+    private bool _useBestRouteSwap = true;
+    public bool UseBestRouteSwap
+    {
+        get => _useBestRouteSwap;
+        set => this.RaiseAndSetIfChanged(ref _useBestRouteSwap, value);
+    }
+
     private async Task RefreshAggregatorQuoteAsync(DexTokenItemViewModel? token, decimal amount, string quoteSymbol)
     {
         void Clear()
@@ -1837,9 +1846,25 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         }
 
         var slippage = await RunOnUiAsync(() => SlippagePercent);
+        var wantsBestRoute = await RunOnUiAsync(() => UseBestRouteSwap);
         try
         {
             var spendAssetSymbol = IsNativeQuoteMode(quoteAssetSymbol) || string.Equals(quoteAssetSymbol, dexGateway.NativeSymbol, StringComparison.OrdinalIgnoreCase) ? null : quoteAssetSymbol;
+
+            if (wantsBestRoute && dexGateway is ISupportsAggregatorSwap agg && agg.SupportsAggregatorSwap)
+            {
+                // OpenOcean returns the effective gasPrice with the tx; the quote param is advisory only.
+                var res = await agg.ExecuteAggregatorBuyAsync(selectedToken.TokenAddress, buyAmount, slippage, spendAssetSymbol, gasPriceGwei: 0m);
+                await RunOnUiAsync(() =>
+                {
+                    StatusMessage = res.Success
+                        ? $"Best-route buy filled ({res.Route}): {res.TxHash}"
+                        : $"Best-route buy reverted: {res.TxHash}";
+                    AddTradeRecord("BUY", selectedToken.DisplayName, buyAmount, selectedToken.TokenInfo.PriceUsd, res.TxHash, res.Success);
+                });
+                return;
+            }
+
             var transactionHash = await dexGateway.BuyTokenAsync(selectedToken.TokenAddress, buyAmount, slippagePercent: slippage, dexId: selectedToken.TokenInfo.DexId, spendAssetSymbol: spendAssetSymbol);
             await RunOnUiAsync(() =>
             {

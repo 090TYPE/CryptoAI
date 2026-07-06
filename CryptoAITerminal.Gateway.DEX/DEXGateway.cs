@@ -208,7 +208,7 @@ public sealed record DexGatewayNetworkDefinition(
     string DefaultDexId,
     IReadOnlyDictionary<string, DexRouterDefinition> RoutersByDexId);
 
-public class DEXGateway : IDexTradeGateway
+public class DEXGateway : IDexTradeGateway, ISupportsAggregatorSwap
 {
     private static readonly IReadOnlyDictionary<string, DexGatewayNetworkDefinition> NetworkDefinitions =
         new Dictionary<string, DexGatewayNetworkDefinition>(StringComparer.OrdinalIgnoreCase)
@@ -554,6 +554,52 @@ public class DEXGateway : IDexTradeGateway
     {
         var result = await ExecuteConfirmedBuyAsync(new DexBuyExecutionRequest(tokenAddress, nativeAmountToSpend, slippagePercent, dexId, spendAssetSymbol));
         return result.TransactionHash;
+    }
+
+    /// <summary>True when the OpenOcean aggregator is wired for this network.</summary>
+    public bool SupportsAggregatorSwap => AggregatorSwapExecutor.NetworkSlug(NetworkName) is not null;
+
+    /// <summary>
+    /// Buys <paramref name="tokenAddress"/> along the aggregator's best cross-DEX route
+    /// (OpenOcean), spending native or the given quote asset. Real build+sign+send through
+    /// the account-bound Web3 — the key never leaves this gateway.
+    /// </summary>
+    public async Task<AggregatorSwapResult> ExecuteAggregatorBuyAsync(
+        string tokenAddress, decimal spendAmount, decimal slippagePercent,
+        string? spendAssetSymbol, decimal gasPriceGwei, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(tokenAddress))
+        {
+            throw new ArgumentException("Token address is required for aggregator buys.", nameof(tokenAddress));
+        }
+
+        if (spendAmount <= 0m)
+        {
+            throw new ArgumentOutOfRangeException(nameof(spendAmount), "Spend amount must be greater than zero.");
+        }
+
+        var slug = AggregatorSwapExecutor.NetworkSlug(NetworkName)
+                   ?? throw new NotSupportedException($"OpenOcean aggregator routing is not wired for {NetworkName}.");
+
+        string inToken;
+        int inDecimals;
+        var quoteAsset = ResolveQuoteAsset(spendAssetSymbol);
+        if (quoteAsset is null)
+        {
+            inToken = AggregatorSwapExecutor.NativePlaceholder;
+            inDecimals = 18;
+        }
+        else
+        {
+            inToken = quoteAsset.ContractAddress!;
+            inDecimals = await GetTokenDecimalsAsync(inToken);
+        }
+
+        var effectiveGasGwei = gasPriceGwei > 0m ? gasPriceGwei : 5m;
+        var executor = new AggregatorSwapExecutor();
+        return await executor.ExecuteAsync(
+            _web3, _account.Address, slug, inToken, inDecimals, spendAmount, tokenAddress,
+            Math.Clamp(slippagePercent, 0.05m, 50m), effectiveGasGwei, ct);
     }
 
     public Task<string> SellTokenAsync(string tokenAddress, decimal tokenAmountToSell, decimal slippagePercent = 5) =>

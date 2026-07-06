@@ -1109,6 +1109,12 @@
                   </Grid>
                 </Border>
 
+                <!-- Best-route execution toggle -->
+                <CheckBox IsChecked="{Binding DexTradingVM.UseBestRouteSwap}" Padding="6,0,0,0"
+                          ToolTip.Tip="When on, BUY routes through the aggregator's best cross-DEX path (real build + sign + send). Falls back to the direct router if the chain/wallet can't route.">
+                  <TextBlock Text="Execute BUY via best route (aggregator)" Foreground="#8fa3b8" FontSize="10" VerticalAlignment="Center" />
+                </CheckBox>
+
                 <!-- Execute -->
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
                   <Button Grid.Column="0" Content="BUY TOKEN" Classes="TdPrimary dex" Height="46"
