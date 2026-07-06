@@ -5535,6 +5535,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         };
     }
 
+    private Avalonia.Threading.DispatcherTimer? _marketExplorerRefreshTimer;
+    private bool _marketExplorerRefreshDirty;
+
     private void OnMarketItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(CexMarketItemViewModel.LastPrice) or
@@ -5546,8 +5549,35 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             nameof(CexMarketItemViewModel.ActivityScore) or
             nameof(CexMarketItemViewModel.IsFavorite))
         {
-            RefreshMarketExplorerCollections();
-            RaiseMarketExplorerStateChanged();
+            // Coalesce: a full explorer re-sort + stats recompute is O(N). Running it synchronously
+            // on every market's every price tick is O(N²) per wave and, with hundreds of markets
+            // streaming, saturates the UI thread and hangs the app. Throttle to at most once per
+            // window instead — the analytics stay fresh without blocking the dispatcher.
+            _marketExplorerRefreshDirty = true;
+            if (_marketExplorerRefreshTimer is null)
+            {
+                _marketExplorerRefreshTimer = new Avalonia.Threading.DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(400)
+                };
+                _marketExplorerRefreshTimer.Tick += (_, _) =>
+                {
+                    if (!_marketExplorerRefreshDirty)
+                    {
+                        _marketExplorerRefreshTimer!.Stop();
+                        return;
+                    }
+
+                    _marketExplorerRefreshDirty = false;
+                    RefreshMarketExplorerCollections();
+                    RaiseMarketExplorerStateChanged();
+                };
+            }
+
+            if (!_marketExplorerRefreshTimer.IsEnabled)
+            {
+                _marketExplorerRefreshTimer.Start();
+            }
         }
     }
 
