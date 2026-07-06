@@ -45,17 +45,21 @@ public sealed record HyperliquidAccountState(
 public sealed class HyperliquidPerpClient
 {
     private const string MainnetInfoUrl = "https://api.hyperliquid.xyz/info";
+    private const string TestnetInfoUrl = "https://api.hyperliquid-testnet.xyz/info";
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(12) };
 
     private readonly bool _enableLiveOrders;
     private readonly bool _testnet;
 
+    private string InfoUrl => _testnet ? TestnetInfoUrl : MainnetInfoUrl;
+
     /// <param name="enableLiveOrders">
     /// Must be explicitly true to send real orders. Leave false (default) until the signing
     /// pipeline has been validated on a funded Hyperliquid testnet account.
     /// </param>
-    /// <param name="testnet">Target the testnet exchange (default) rather than mainnet.</param>
-    public HyperliquidPerpClient(bool enableLiveOrders = false, bool testnet = true)
+    /// <param name="testnet">Target the testnet exchange/info instead of mainnet. Reads default to
+    /// mainnet (real positions); pass true when validating order signing against the testnet.</param>
+    public HyperliquidPerpClient(bool enableLiveOrders = false, bool testnet = false)
     {
         _enableLiveOrders = enableLiveOrders;
         _testnet = testnet;
@@ -73,7 +77,7 @@ public sealed class HyperliquidPerpClient
         {
             var body = $"{{\"type\":\"clearinghouseState\",\"user\":\"{walletAddress}\"}}";
             using var content = new StringContent(body, Encoding.UTF8, "application/json");
-            using var resp = await Http.PostAsync(MainnetInfoUrl, content, ct).ConfigureAwait(false);
+            using var resp = await Http.PostAsync(InfoUrl, content, ct).ConfigureAwait(false);
             if (!resp.IsSuccessStatusCode)
             {
                 return HyperliquidAccountState.Empty;
@@ -85,6 +89,64 @@ public sealed class HyperliquidPerpClient
         {
             return HyperliquidAccountState.Empty;
         }
+    }
+
+    /// <summary>
+    /// Resolves a coin symbol (e.g. "ETH") to its Hyperliquid asset index by reading the perp
+    /// universe from the <c>meta</c> endpoint. Returns -1 when unknown/unavailable.
+    /// </summary>
+    public async Task<int> GetAssetIndexAsync(string coin, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(coin))
+        {
+            return -1;
+        }
+
+        try
+        {
+            using var content = new StringContent("{\"type\":\"meta\"}", Encoding.UTF8, "application/json");
+            using var resp = await Http.PostAsync(InfoUrl, content, ct).ConfigureAwait(false);
+            if (!resp.IsSuccessStatusCode)
+            {
+                return -1;
+            }
+
+            return ParseAssetIndex(await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false), coin);
+        }
+        catch
+        {
+            return -1;
+        }
+    }
+
+    /// <summary>Pure parser: index of <paramref name="coin"/> in the meta universe (-1 if absent).</summary>
+    public static int ParseAssetIndex(string metaJson, string coin)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(metaJson);
+            if (!doc.RootElement.TryGetProperty("universe", out var universe) || universe.ValueKind != JsonValueKind.Array)
+            {
+                return -1;
+            }
+
+            var i = 0;
+            foreach (var asset in universe.EnumerateArray())
+            {
+                if (asset.TryGetProperty("name", out var n) && n.ValueKind == JsonValueKind.String &&
+                    string.Equals(n.GetString(), coin, StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+                i++;
+            }
+        }
+        catch
+        {
+            // malformed → not found
+        }
+
+        return -1;
     }
 
     /// <summary>Pure parser for a Hyperliquid clearinghouseState response.</summary>

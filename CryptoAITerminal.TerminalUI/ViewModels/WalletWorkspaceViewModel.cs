@@ -600,6 +600,16 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
         GetCurrentNetwork().SupportsDexTrading &&
         ActiveDexGateway is not null;
 
+    /// <summary>
+    /// Returns the in-session EVM private key for signing off-chain venue actions (e.g. Hyperliquid
+    /// perp orders), only when an EVM trading wallet is active and not read-only. Never persisted or
+    /// logged; lives only for the session. Returns null otherwise.
+    /// </summary>
+    public string? TryGetEvmSigningKey() =>
+        !IsReadOnly && ActiveDexGateway is DEXGateway && !string.IsNullOrWhiteSpace(_sessionPrivateKey)
+            ? _sessionPrivateKey
+            : null;
+
     public bool IsTronNetworkSelected => string.Equals(SelectedNetwork, "Tron", StringComparison.OrdinalIgnoreCase);
 
     public bool CanUseTronPayments =>

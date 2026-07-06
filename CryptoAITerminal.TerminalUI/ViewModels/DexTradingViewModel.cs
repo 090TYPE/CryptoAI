@@ -869,7 +869,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     }
 
     // ── Live on-chain perp account (Hyperliquid, keyless read) ────────────────
-    private readonly HyperliquidPerpClient _hlClient = new();
+    private readonly HyperliquidPerpClient _hlClient = new(enableLiveOrders: false, testnet: false);
     public ObservableCollection<HyperliquidPositionViewModel> LivePerpPositions { get; } = new();
     private string _livePerpSummary = "Connect an EVM wallet to read live Hyperliquid perp positions.";
     public string LivePerpSummary { get => _livePerpSummary; private set => this.RaiseAndSetIfChanged(ref _livePerpSummary, value); }
@@ -905,6 +905,93 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
                 ? $"Acct $ {state.AccountValueUsd:N2} · margin $ {state.TotalMarginUsedUsd:N2} · free $ {state.WithdrawableUsd:N2}"
                 : "No open Hyperliquid perp positions on the connected wallet.";
         });
+    }
+
+    // ── Live Hyperliquid order placement (gated, OFF by default) ───────────────
+    private readonly HyperliquidSettingsStore _hlSettingsStore = new();
+    private bool _hlEnableLiveOrders;
+    private bool _hlTestnet = true;
+    public bool HlEnableLiveOrders
+    {
+        get => _hlEnableLiveOrders;
+        set { this.RaiseAndSetIfChanged(ref _hlEnableLiveOrders, value); PersistHlSettings(); this.RaisePropertyChanged(nameof(HlOrderModeLabel)); }
+    }
+    public bool HlTestnet
+    {
+        get => _hlTestnet;
+        set { this.RaiseAndSetIfChanged(ref _hlTestnet, value); PersistHlSettings(); this.RaisePropertyChanged(nameof(HlOrderModeLabel)); }
+    }
+    public string HlOrderModeLabel => !_hlEnableLiveOrders
+        ? "Live orders OFF — validate on testnet first (see docs), then enable."
+        : _hlTestnet ? "LIVE orders ON · TESTNET" : "LIVE orders ON · MAINNET (real funds)";
+
+    private string _hlCoin = "ETH";
+    public string HlCoin { get => _hlCoin; set => this.RaiseAndSetIfChanged(ref _hlCoin, (value ?? string.Empty).Trim().ToUpperInvariant()); }
+    private bool _hlIsBuy = true;
+    public bool HlIsBuy { get => _hlIsBuy; set => this.RaiseAndSetIfChanged(ref _hlIsBuy, value); }
+    private decimal _hlSize;
+    public decimal HlSize { get => _hlSize; set => this.RaiseAndSetIfChanged(ref _hlSize, value); }
+    private decimal _hlLimitPrice;
+    public decimal HlLimitPrice { get => _hlLimitPrice; set => this.RaiseAndSetIfChanged(ref _hlLimitPrice, value); }
+    private string _hlOrderStatus = string.Empty;
+    public string HlOrderStatus { get => _hlOrderStatus; private set => this.RaiseAndSetIfChanged(ref _hlOrderStatus, value); }
+    public ReactiveCommand<Unit, Unit> PlaceHyperliquidOrderCommand { get; private set; } = null!;
+
+    private void PersistHlSettings() => _hlSettingsStore.Save(new HyperliquidSettings(_hlEnableLiveOrders, _hlTestnet));
+
+    private async Task PlaceHyperliquidOrderAsync()
+    {
+        if (!_hlEnableLiveOrders)
+        {
+            HlOrderStatus = "Live orders are OFF. Validate signing on testnet, then enable.";
+            return;
+        }
+
+        var (coin, isBuy, size, price, testnet) = (_hlCoin, _hlIsBuy, _hlSize, _hlLimitPrice, _hlTestnet);
+        if (string.IsNullOrWhiteSpace(coin) || size <= 0m || price <= 0m)
+        {
+            HlOrderStatus = "Set a coin, a positive size and a limit price.";
+            return;
+        }
+
+        var key = _walletWorkspace.TryGetEvmSigningKey();
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            HlOrderStatus = "Import a trade-enabled EVM wallet (not watch mode) to sign Hyperliquid orders.";
+            return;
+        }
+
+        if (!testnet && !_walletWorkspace.TryApproveLiveExecution("Hyperliquid mainnet perp order", out var reason))
+        {
+            HlOrderStatus = reason;
+            return;
+        }
+
+        HlOrderStatus = $"Resolving {coin} on {(testnet ? "testnet" : "mainnet")}…";
+        try
+        {
+            var resolver = new HyperliquidPerpClient(enableLiveOrders: false, testnet: testnet);
+            var assetIndex = await resolver.GetAssetIndexAsync(coin);
+            if (assetIndex < 0)
+            {
+                HlOrderStatus = $"Unknown Hyperliquid market '{coin}'.";
+                return;
+            }
+
+            var client = new HyperliquidPerpClient(enableLiveOrders: true, testnet: testnet);
+            var response = await client.PlaceOrderAsync(key!, assetIndex, isBuy, price, size, reduceOnly: false);
+            var ok = response.Contains("\"status\":\"ok\"", StringComparison.OrdinalIgnoreCase);
+            HlOrderStatus = ok
+                ? $"{(isBuy ? "BUY" : "SELL")} {size} {coin} @ {price} sent ({(testnet ? "testnet" : "mainnet")}). Accepted."
+                : $"Rejected: {Trim(response, 180)}";
+            await RefreshLivePerpAccountAsync();
+        }
+        catch (Exception ex)
+        {
+            HlOrderStatus = $"Order failed: {ex.Message}";
+        }
+
+        static string Trim(string s, int n) => s.Length <= n ? s : s[..n] + "…";
     }
 
     private async Task ExecuteKeeperOrderAsync(DexKeeperOrder order)
@@ -1438,7 +1525,11 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         OpenWatchlistCommand = ReactiveCommand.CreateFromTask<string>(addr => SelectTokenByAddressAsync(addr), outputScheduler: App.UiScheduler);
         RefreshPortfolioCommand = ReactiveCommand.CreateFromTask(RefreshPortfolioAsync, outputScheduler: App.UiScheduler);
         RefreshLivePerpCommand = ReactiveCommand.CreateFromTask(RefreshLivePerpAccountAsync, outputScheduler: App.UiScheduler);
+        PlaceHyperliquidOrderCommand = ReactiveCommand.CreateFromTask(PlaceHyperliquidOrderAsync, outputScheduler: App.UiScheduler);
         _portfolioApiKey = _portfolioKeyStore.Load();
+        var hlSettings = _hlSettingsStore.Load();
+        _hlEnableLiveOrders = hlSettings.EnableLiveOrders;
+        _hlTestnet = hlSettings.Testnet;
         LoadWatchlist();
         DeepScanTokenCommand = ReactiveCommand.CreateFromTask(DeepScanTokenAsync, outputScheduler: App.UiScheduler);
 

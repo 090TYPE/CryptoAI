@@ -69,12 +69,25 @@ public sealed class HyperliquidExchangeClient
         };
     }
 
-    /// <summary>Signs the action hash and returns the r/s/v split Hyperliquid expects.</summary>
-    public HyperliquidSignature SignConnectionId(string privateKey, byte[] connectionId)
+    /// <summary>Signs the action hash and returns the full 65-byte hex signature.</summary>
+    public string SignConnectionIdRaw(string privateKey, byte[] connectionId)
     {
         var typed = BuildTypedData(connectionId, _testnet);
-        var signature = new Eip712TypedDataSigner().SignTypedDataV4(typed, new EthECKey(privateKey));
-        return SplitSignature(signature);
+        return new Eip712TypedDataSigner().SignTypedDataV4(typed, new EthECKey(privateKey));
+    }
+
+    /// <summary>Signs the action hash and returns the r/s/v split Hyperliquid expects.</summary>
+    public HyperliquidSignature SignConnectionId(string privateKey, byte[] connectionId)
+        => SplitSignature(SignConnectionIdRaw(privateKey, connectionId));
+
+    /// <summary>
+    /// Recovers the signer address from a signature over the given connection id — used to prove
+    /// the EIP-712 typed-data hashing is correct offline (recovered address must equal the signer).
+    /// </summary>
+    public string RecoverSigner(byte[] connectionId, string signatureHex)
+    {
+        var typed = BuildTypedData(connectionId, _testnet);
+        return new Eip712TypedDataSigner().RecoverFromSignatureV4(typed, signatureHex);
     }
 
     /// <summary>Splits a 65-byte hex signature into r, s and v (27/28).</summary>
