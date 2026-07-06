@@ -594,19 +594,63 @@
               <TextBlock Text="No activity feed connected for the selected wallets yet."
                          Foreground="#2d4a5e" FontSize="12" Margin="16,24" TextWrapping="Wrap" />
             </Grid>
-            <Grid IsVisible="{Binding ShowMeme}">
-              <StackPanel Margin="0">
-                <Border Background="#050c14" BorderBrush="#09151e" BorderThickness="0,0,0,1" Padding="12,10">
-                  <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Ellipse Width="5" Height="5" Fill="#f97316" VerticalAlignment="Center" />
-                    <TextBlock Text="MEME RADAR — LIVE SCAN" FontSize="9" FontWeight="Bold" Foreground="#f97316" />
-                    <Border Width="0" HorizontalAlignment="Stretch" MinWidth="200" />
-                    <TextBlock Text="{Binding MemeTokenCount, StringFormat='{}{0} tokens tracked'}" FontSize="9" Foreground="#3d5a72" />
-                  </StackPanel>
+            <ContentControl IsVisible="{Binding ShowMeme}">
+              <Grid RowDefinitions="Auto,Auto,*" DataContext="{Binding $parent[Window].DataContext.DexTrendingVM}" x:DataType="vm:DexTrendingViewModel">
+                <!-- Live-scan strip -->
+                <Border Grid.Row="0" Background="#050c14" BorderBrush="#09151e" BorderThickness="0,0,0,1" Padding="12,9">
+                  <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
+                    <Ellipse Grid.Column="0" Width="5" Height="5" Fill="#f97316" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBlock Grid.Column="1" Text="MEME RADAR — LIVE SCAN" FontSize="9" FontWeight="Bold" Foreground="#f97316" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="3" Text="{Binding TotalCount, StringFormat='{}{0} tokens'}" FontSize="9" Foreground="#3d5a72" VerticalAlignment="Center" Margin="0,0,10,0" />
+                    <Button Grid.Column="4" Content="↻ SCAN" Command="{Binding RefreshCommand}" IsEnabled="{Binding !IsLoading}"
+                            Padding="12,4" CornerRadius="6" Background="#07111a" BorderBrush="#1e3248" BorderThickness="1" Foreground="#f97316" FontSize="10" FontWeight="Bold" />
+                  </Grid>
                 </Border>
-                <TextBlock Text="No meme-radar provider connected yet." Foreground="#2d4a5e" FontSize="12" Margin="16,24" />
-              </StackPanel>
-            </Grid>
+                <!-- Header -->
+                <Border Grid.Row="1" Background="#050c14" BorderBrush="#09151e" BorderThickness="0,0,0,1" Padding="12,6">
+                  <Grid ColumnDefinitions="28,*,90,70,90,90,70,80,56">
+                    <TextBlock Grid.Column="1" Text="TOKEN" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" />
+                    <TextBlock Grid.Column="2" Text="PRICE" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" TextAlignment="Right" />
+                    <TextBlock Grid.Column="3" Text="24H" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" TextAlignment="Right" />
+                    <TextBlock Grid.Column="4" Text="MCAP" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" TextAlignment="Right" />
+                    <TextBlock Grid.Column="5" Text="LIQUIDITY" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" TextAlignment="Right" />
+                    <TextBlock Grid.Column="6" Text="SECURITY" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" TextAlignment="Center" />
+                    <TextBlock Grid.Column="7" Text="SIGNAL" FontSize="8" FontWeight="Bold" Foreground="#2d4a5e" TextAlignment="Right" />
+                  </Grid>
+                </Border>
+                <!-- Rows -->
+                <ScrollViewer Grid.Row="2">
+                  <StackPanel>
+                    <TextBlock Text="No trending tokens yet — hit SCAN." IsVisible="{Binding HasNoFilteredTokens}" Foreground="#2d4a5e" FontSize="12" Margin="16,20" />
+                    <ItemsControl ItemsSource="{Binding FilteredTokens}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:DexTokenRowViewModel">
+                          <Border BorderBrush="#07111a" BorderThickness="0,0,0,1" Padding="12,7">
+                            <Grid ColumnDefinitions="28,*,90,70,90,90,70,80,56" VerticalAlignment="Center">
+                              <Border Grid.Column="0" Width="24" Height="24" CornerRadius="12" Background="#0a1622" BorderBrush="#111d29" BorderThickness="1">
+                                <TextBlock Text="{Binding ChainIcon}" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                              </Border>
+                              <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                                <TextBlock Text="{Binding Symbol}" FontSize="11" FontWeight="Bold" Foreground="#c8dcef" />
+                                <TextBlock Text="{Binding Name}" FontSize="9" Foreground="#3d5a72" TextTrimming="CharacterEllipsis" />
+                              </StackPanel>
+                              <TextBlock Grid.Column="2" Text="{Binding PriceLabel}" FontSize="10" Foreground="#e8f4ff" FontFamily="{StaticResource FontMono}" TextAlignment="Right" />
+                              <TextBlock Grid.Column="3" Text="{Binding PriceChangeLabel}" FontSize="10" FontWeight="Bold" Foreground="{Binding PriceChangeBrush}" FontFamily="{StaticResource FontMono}" TextAlignment="Right" />
+                              <TextBlock Grid.Column="4" Text="{Binding MarketCapLabel}" FontSize="10" Foreground="#8fa3b8" FontFamily="{StaticResource FontMono}" TextAlignment="Right" />
+                              <TextBlock Grid.Column="5" Text="{Binding LiquidityLabel}" FontSize="10" Foreground="#5a7a94" FontFamily="{StaticResource FontMono}" TextAlignment="Right" />
+                              <TextBlock Grid.Column="6" Text="{Binding SecurityScore}" FontSize="11" FontWeight="Bold" Foreground="#21e6c1" FontFamily="{StaticResource FontMono}" TextAlignment="Center" />
+                              <TextBlock Grid.Column="7" Text="{Binding SecurityBadge}" FontSize="9" FontWeight="Bold" Foreground="#f4b860" TextAlignment="Right" VerticalAlignment="Center" />
+                              <Button Grid.Column="8" Content="OPEN" Command="{Binding $parent[ItemsControl].DataContext.OpenInSniperCommand}" CommandParameter="{Binding}"
+                                      Padding="8,3" CornerRadius="5" Background="#061e14" BorderBrush="#0d2a1e" BorderThickness="1" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </ScrollViewer>
+              </Grid>
+            </ContentControl>
             <Grid IsVisible="{Binding ShowStaking}">
               <TextBlock Text="No staking positions detected for the connected wallets yet."
                          Foreground="#2d4a5e" FontSize="12" Margin="16,24" TextWrapping="Wrap" />
