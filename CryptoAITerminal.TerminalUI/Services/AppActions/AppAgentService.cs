@@ -103,6 +103,8 @@ public sealed class AppAgentService
         "and (with the user's confirmation) fill tickets, arm and place orders, set alerts, apply signals, and configure bots. " +
         "Use read/navigation tools freely. For any mutating tool, the app will ask the user to approve unless auto mode is on — " +
         "call the tool and tell the user what you proposed. Never claim an order filled unless the tool result says it did. " +
+        "Understand and act on instructions in any language, including Russian. ALWAYS reply in the same language the user " +
+        "wrote in — if they write in Russian, answer in Russian; if in English, answer in English. " +
         "Be concise. Not financial advice.";
 
     private static string SafePreview(IAppAction a, JsonElement args)

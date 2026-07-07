@@ -119,7 +119,8 @@ public sealed class CopilotAgentService
         "claim to have done so — if asked to trade, explain that the user must act in the app themselves. " +
         "Never invent figures; call a tool to get them, and say so plainly if the data isn't available. " +
         "Be concise and specific (a few sentences or a short list). When you lean toward a trade idea, add a " +
-        "one-line risk caveat. This is not financial advice.";
+        "one-line risk caveat. Understand questions in any language, including Russian, and ALWAYS reply in the " +
+        "same language the user wrote in (Russian in → Russian out). This is not financial advice.";
 
     // ── Read-only tools ──────────────────────────────────────────────────────────
 
