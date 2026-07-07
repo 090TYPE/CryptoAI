@@ -56,4 +56,56 @@ public class GuardedContextTests
         await g.GetBalanceUsdtAsync(CancellationToken.None);
         Assert.Contains("GetBalance", inner.Calls);
     }
+
+    [Fact]
+    public void Paper_arm_limit_does_not_call_inner()
+    {
+        var inner = new FakeAppActionContext { CurrentSymbol = "BTCUSDT" };
+        var rails = new AgentGuardrails { LiveEnabled = false, MaxTrades = 5 };
+        var g = new GuardedAppActionContext(inner, rails);
+
+        var r = g.ArmLimit(true);
+
+        Assert.True(r.Success);
+        Assert.DoesNotContain("ArmLimit:buy", inner.Calls);
+        Assert.Equal(1, rails.TradeCount);
+    }
+
+    [Fact]
+    public void Live_arm_limit_delegates_to_inner()
+    {
+        var inner = new FakeAppActionContext { CurrentSymbol = "BTCUSDT" };
+        var rails = new AgentGuardrails { LiveEnabled = true, MaxTrades = 5 };
+        var g = new GuardedAppActionContext(inner, rails);
+
+        g.ArmLimit(true);
+
+        Assert.Contains("ArmLimit:buy", inner.Calls);
+    }
+
+    [Fact]
+    public void Arm_limit_blocked_when_allowlist_excludes_symbol()
+    {
+        var inner = new FakeAppActionContext { CurrentSymbol = "ETHUSDT" };
+        var rails = new AgentGuardrails { LiveEnabled = true, AllowedSymbols = new[] { "BTCUSDT" } };
+        var g = new GuardedAppActionContext(inner, rails);
+
+        var r = g.ArmLimit(true);
+
+        Assert.False(r.Success);
+        Assert.DoesNotContain("ArmLimit:buy", inner.Calls);
+    }
+
+    [Fact]
+    public void Paper_arm_stop_loss_does_not_call_inner()
+    {
+        var inner = new FakeAppActionContext { CurrentSymbol = "BTCUSDT" };
+        var rails = new AgentGuardrails { LiveEnabled = false };
+        var g = new GuardedAppActionContext(inner, rails);
+
+        var r = g.ArmStopLoss();
+
+        Assert.True(r.Success);
+        Assert.DoesNotContain("ArmSl", inner.Calls);
+    }
 }

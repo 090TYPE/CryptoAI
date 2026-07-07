@@ -41,9 +41,34 @@ public sealed class GuardedAppActionContext : IAppActionContext
     public AppActionResult SetLimitPrice(decimal p) => _inner.SetLimitPrice(p);
     public AppActionResult SetTakeProfit(decimal p) => _inner.SetTakeProfit(p);
     public AppActionResult SetStopLoss(decimal p) => _inner.SetStopLoss(p);
-    public AppActionResult ArmLimit(bool isBuy) => _inner.ArmLimit(isBuy);
-    public AppActionResult ArmTakeProfit() => _inner.ArmTakeProfit();
-    public AppActionResult ArmStopLoss() => _inner.ArmStopLoss();
+    // Arming a LIMIT opens exposure → full guardrail (count + allowlist + stop) and paper-sim.
+    // Budget is not enforced here (notional isn't available synchronously) — documented v1 limit, same as DEX.
+    public AppActionResult ArmLimit(bool isBuy)
+    {
+        if (!_rails.TryAuthorize(_inner.CurrentSymbol, 0m, out var reason))
+            return AppActionResult.Fail($"guardrail blocked: {reason}");
+        if (!_rails.LiveEnabled)
+            return AppActionResult.Ok($"PAPER: simulated arm LIMIT {(isBuy ? "buy" : "sell")} {_inner.CurrentSymbol}");
+        return _inner.ArmLimit(isBuy);
+    }
+
+    // TP/SL reduce risk → not counted against MaxTrades, but must NOT place real orders in PAPER,
+    // and must not run after the session has stopped.
+    public AppActionResult ArmTakeProfit()
+    {
+        if (_rails.Stopped) return AppActionResult.Fail($"guardrail blocked: {_rails.StopReason}");
+        return !_rails.LiveEnabled
+            ? AppActionResult.Ok($"PAPER: simulated take-profit on {_inner.CurrentSymbol}")
+            : _inner.ArmTakeProfit();
+    }
+
+    public AppActionResult ArmStopLoss()
+    {
+        if (_rails.Stopped) return AppActionResult.Fail($"guardrail blocked: {_rails.StopReason}");
+        return !_rails.LiveEnabled
+            ? AppActionResult.Ok($"PAPER: simulated stop-loss on {_inner.CurrentSymbol}")
+            : _inner.ArmStopLoss();
+    }
     public AppActionResult SetPerpLiveMode(bool live) => _inner.SetPerpLiveMode(live);
     public Task<AppActionResult> ApplySignalToTicketAsync(string symbol, string side, CancellationToken ct) => _inner.ApplySignalToTicketAsync(symbol, side, ct);
     public AppActionResult AddPriceAlert(string symbol, decimal price, bool above) => _inner.AddPriceAlert(symbol, price, above);

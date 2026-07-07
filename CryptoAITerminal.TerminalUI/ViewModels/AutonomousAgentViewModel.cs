@@ -169,6 +169,7 @@ public sealed class AutonomousAgentViewModel : ReactiveObject
         if (!_agent.UsesLiveModel)
         {
             AppendStatus("Add a Claude/OpenAI API key in the AI Bot panel before arming the autonomous agent.");
+            _liveConsented = false; // reset so a later LIVE arm re-consents
             return;
         }
 
