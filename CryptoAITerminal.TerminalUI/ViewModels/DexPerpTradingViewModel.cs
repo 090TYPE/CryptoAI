@@ -16,7 +16,11 @@ namespace CryptoAITerminal.TerminalUI.ViewModels;
 /// and a <see cref="DexPerpMarketSimulator"/>; a 1s timer advances the mark price, ticks
 /// the engine (firing resting orders, marking the position, checking liquidation) and
 /// republishes bindable state. The mark is anchored to the real spot price of the token
-/// selected in the SWAP list. Everything here is paper — no value leaves the app.
+/// selected in the SWAP list.
+///
+/// Two modes: PAPER (default) simulates everything locally; LIVE routes Market/Limit
+/// orders to the real, wallet-gated Hyperliquid venue via the injected delegate. Advanced
+/// order types (DCA / Grid / Stop / trailing) stay paper-only — no venue runs them natively.
 /// </summary>
 public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
 {
@@ -26,6 +30,14 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
     private readonly DexPerpSessionStore _store = new();
     private DexPerpMarketSimulator _sim;
     private readonly DispatcherTimer _timer;
+
+    // ── Live execution bridge (real Hyperliquid perps via the SWAP view model) ──
+    // Null when no live venue is wired; otherwise routes Market/Limit orders to the
+    // real, wallet-gated Hyperliquid pipeline. Advanced order types stay paper-only.
+    private readonly Func<bool>? _liveReady;
+    private readonly Func<bool>? _liveTestnet;
+    private readonly Func<string, bool, decimal, decimal, bool, Task<string>>? _placeLiveOrder;
+    private bool _isLiveTrading;
 
     private bool _isActive;
     private string _lastSymbol = string.Empty;
@@ -50,10 +62,18 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
     private decimal _trailingDistance;
     private string _statusMessage = "Paper PERP desk ready. Arm an order to simulate a fill.";
 
-    public DexPerpTradingViewModel(Func<decimal> anchorPrice, Func<string> symbol)
+    public DexPerpTradingViewModel(
+        Func<decimal> anchorPrice,
+        Func<string> symbol,
+        Func<bool>? liveReady = null,
+        Func<bool>? liveTestnet = null,
+        Func<string, bool, decimal, decimal, bool, Task<string>>? placeLiveOrder = null)
     {
         _anchorPrice = anchorPrice;
         _symbol = symbol;
+        _liveReady = liveReady;
+        _liveTestnet = liveTestnet;
+        _placeLiveOrder = placeLiveOrder;
         _sim = new DexPerpMarketSimulator(ResolveAnchor());
 
         // Restore a prior paper session; anchor the mark to the restored position so it
@@ -73,6 +93,7 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
         CancelOrderCommand = ReactiveCommand.Create<string>(id => { _engine.CancelOrder(id); Republish(); }, outputScheduler: App.UiScheduler);
         ClosePartialCommand = ReactiveCommand.Create<string>(ClosePartial, outputScheduler: App.UiScheduler);
         ArmTrailingCommand = ReactiveCommand.Create(ArmTrailing, outputScheduler: App.UiScheduler);
+        ToggleLiveTradingCommand = ReactiveCommand.Create(ToggleLiveTrading, outputScheduler: App.UiScheduler);
 
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _timer.Tick += (_, _) => OnTick();
@@ -186,10 +207,74 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
 
     public string StatusMessage { get => _statusMessage; private set => this.RaiseAndSetIfChanged(ref _statusMessage, value); }
 
-    public string PlaceButtonText => IsMarket ? $"OPEN {Side.ToUpperInvariant()} (MARKET)"
-        : IsGrid ? "DEPLOY GRID"
-        : IsDca ? "ARM DCA LADDER"
-        : $"ARM {OrderType.ToUpperInvariant()} {Side.ToUpperInvariant()}";
+    // ── Live vs paper mode ─────────────────────────────────────────────────────
+    /// <summary>True when a real perp venue (Hyperliquid) is wired into this desk.</summary>
+    public bool SupportsLiveTrading => _placeLiveOrder is not null;
+
+    /// <summary>When on, Market/Limit orders route to the REAL Hyperliquid venue instead of the paper engine.</summary>
+    public bool IsLiveTrading
+    {
+        get => _isLiveTrading;
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _isLiveTrading, value);
+            this.RaisePropertyChanged(nameof(ModeBadge));
+            this.RaisePropertyChanged(nameof(ModeBadgeBrush));
+            this.RaisePropertyChanged(nameof(IsPaperTrading));
+            this.RaisePropertyChanged(nameof(PlaceButtonText));
+        }
+    }
+
+    public bool IsPaperTrading => !_isLiveTrading;
+
+    /// <summary>Unmistakable PAPER / LIVE indicator for the desk header.</summary>
+    public string ModeBadge => !_isLiveTrading
+        ? "PAPER"
+        : (_liveTestnet?.Invoke() ?? true) ? "LIVE · TESTNET" : "LIVE · MAINNET";
+
+    public string ModeBadgeBrush => !_isLiveTrading
+        ? "#f4b860"
+        : (_liveTestnet?.Invoke() ?? true) ? "#3ddc84" : "#ff6b6b";
+
+    public ReactiveCommand<Unit, Unit> ToggleLiveTradingCommand { get; }
+
+    private void ToggleLiveTrading()
+    {
+        if (_isLiveTrading)
+        {
+            IsLiveTrading = false;
+            StatusMessage = "Switched to PAPER. Orders now simulate only.";
+            return;
+        }
+
+        if (!SupportsLiveTrading)
+        {
+            StatusMessage = "No live perp venue is wired into this desk.";
+            return;
+        }
+
+        if (!(_liveReady?.Invoke() ?? false))
+        {
+            StatusMessage = "Enable Hyperliquid live orders and import a trade-enabled EVM wallet in the SWAP panel first.";
+            return;
+        }
+
+        IsLiveTrading = true;
+        StatusMessage = $"LIVE mode armed on {ModeBadge}. Market/Limit route to Hyperliquid; DCA/Grid/Stop stay paper.";
+    }
+
+    public string PlaceButtonText
+    {
+        get
+        {
+            var venue = _isLiveTrading ? "LIVE" : "PAPER";
+            return IsMarket ? $"OPEN {Side.ToUpperInvariant()} (MARKET · {venue})"
+                : IsLimit ? $"{(_isLiveTrading ? "SEND" : "ARM")} LIMIT {Side.ToUpperInvariant()} · {venue}"
+                : IsGrid ? "DEPLOY GRID (PAPER)"
+                : IsDca ? "ARM DCA LADDER (PAPER)"
+                : $"ARM {OrderType.ToUpperInvariant()} {Side.ToUpperInvariant()} (PAPER)";
+        }
+    }
 
     public decimal EstMargin => _leverage <= 0 ? 0m : _sizeTokens * _sim.Mark / _leverage;
     public string EstMarginLabel => $"{EstMargin:N2} USDT";
@@ -246,6 +331,13 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
             return;
         }
 
+        // ── LIVE mode: Market/Limit route to the real Hyperliquid venue ─────────
+        if (_isLiveTrading)
+        {
+            _ = PlaceLiveOrderAsync();
+            return;
+        }
+
         var side = IsLong ? PerpSide.Long : PerpSide.Short;
         var margin = IsCross ? PerpMarginMode.Cross : PerpMarginMode.Isolated;
         var mark = _sim.Mark;
@@ -280,6 +372,60 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
         }
 
         Republish();
+    }
+
+    /// <summary>
+    /// Routes the current ticket to the real Hyperliquid venue. Only Market and Limit are
+    /// supported on-chain; DCA / Grid / Stop remain paper-only (no venue executes them natively).
+    /// Hyperliquid fills via an aggressive limit, so Market uses the live spot anchor as its price.
+    /// </summary>
+    private async Task PlaceLiveOrderAsync()
+    {
+        if (_placeLiveOrder is null)
+        {
+            StatusMessage = "No live perp venue is wired into this desk.";
+            return;
+        }
+
+        if (!(_liveReady?.Invoke() ?? false))
+        {
+            StatusMessage = "Hyperliquid live orders are not ready — enable them and import a trade-enabled wallet in the SWAP panel.";
+            IsLiveTrading = false;
+            return;
+        }
+
+        if (!IsMarket && !IsLimit)
+        {
+            StatusMessage = $"{OrderType} is paper-only. In LIVE mode use Market or Limit (venue has no native {OrderType}).";
+            return;
+        }
+
+        var coin = _symbol();
+        if (string.IsNullOrWhiteSpace(coin) || string.Equals(coin, "TOKEN", StringComparison.OrdinalIgnoreCase))
+        {
+            StatusMessage = "Select a token first so its perp market can be resolved.";
+            return;
+        }
+
+        var anchor = ResolveAnchor();
+        var price = IsLimit && _triggerPrice > 0m ? _triggerPrice : anchor;
+        if (price <= 0m)
+        {
+            StatusMessage = "No live reference price yet — try again once the market loads.";
+            return;
+        }
+
+        var isBuy = IsLong;
+        StatusMessage = $"Sending LIVE {(isBuy ? "LONG" : "SHORT")} {_sizeTokens} {coin} @ {Format(price)} to Hyperliquid…";
+        try
+        {
+            var result = await _placeLiveOrder(coin, isBuy, _sizeTokens, price, /*reduceOnly*/ false);
+            StatusMessage = $"[{ModeBadge}] {result}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Live order failed: {ex.Message}";
+        }
     }
 
     private void ArmTpSl(PerpSide side, PerpMarginMode margin)

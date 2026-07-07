@@ -437,32 +437,47 @@ public class CexMarketItemViewModel : ReactiveObject
     public string ChangePillForeground => IsUp ? "#3DDC84" : "#FF6B6B";
     public string ChangePillBackground => IsUp ? "#143DDC84" : "#12FF6B6B";
 
-    // ---- 7-day trend sparkline (deterministic pseudo walk; slope follows 24h change) ----
+    // ---- Trend sparkline (REAL: last live price samples mapped into a 72×24 box) ----
     public string SparklineBrush => IsUp ? "#3DDC84" : "#FF6B6B";
 
-    /// <summary>Polyline points for the row's 7-day trend, mapped into a 72×24 box.</summary>
+    /// <summary>How many trailing real price samples the sparkline draws.</summary>
+    private const int SparklineMaxPoints = 32;
+
+    /// <summary>True only when there is enough real price history to draw a truthful sparkline.</summary>
+    public bool ShowSparkline => _priceHistory.Count >= 2;
+
+    /// <summary>
+    /// Polyline points for the row's trend, mapped into a 72×24 box. Built from the
+    /// real accumulated <see cref="_priceHistory"/> closes (min/max normalised) — never
+    /// fabricated. Empty when there is not yet enough real data (<see cref="ShowSparkline"/>).
+    /// </summary>
     public List<Point> SparklinePoints
     {
         get
         {
-            const int count = 24;
             const double width = 72d, height = 24d, pad = 2d;
-            var rng = new Random(unchecked((int)StableHash(Symbol)));
-            var values = new double[count];
-            var v = 0.5;
-            var drift = (IsUp ? 1d : -1d) * 0.012;
-            for (var i = 0; i < count; i++)
+
+            var samples = _priceHistory.Count > SparklineMaxPoints
+                ? _priceHistory.GetRange(_priceHistory.Count - SparklineMaxPoints, SparklineMaxPoints)
+                : _priceHistory;
+
+            if (samples.Count < 2)
             {
-                v += (rng.NextDouble() - 0.5) * 0.16 + drift;
-                v = Math.Clamp(v, 0.08, 0.92);
-                values[i] = v;
+                return [];
             }
 
-            var points = new List<Point>(count);
-            for (var i = 0; i < count; i++)
+            var prices = samples.Select(s => (double)s.Price).ToList();
+            var min = prices.Min();
+            var max = prices.Max();
+            var span = max - min;
+
+            var points = new List<Point>(prices.Count);
+            for (var i = 0; i < prices.Count; i++)
             {
-                var x = pad + i / (double)(count - 1) * (width - 2 * pad);
-                var y = pad + (1d - values[i]) * (height - 2 * pad);
+                var x = pad + i / (double)(prices.Count - 1) * (width - 2 * pad);
+                // Flat history → centre line; otherwise scale into the padded box.
+                var norm = span > 0 ? (prices[i] - min) / span : 0.5;
+                var y = pad + (1d - norm) * (height - 2 * pad);
                 points.Add(new Point(x, y));
             }
 
@@ -766,6 +781,7 @@ public class CexMarketItemViewModel : ReactiveObject
         this.RaisePropertyChanged(nameof(RowIconForeground));
         this.RaisePropertyChanged(nameof(SparklinePoints));
         this.RaisePropertyChanged(nameof(SparklineBrush));
+        this.RaisePropertyChanged(nameof(ShowSparkline));
         this.RaisePropertyChanged(nameof(AiSignalLabel));
         this.RaisePropertyChanged(nameof(AiSignalForeground));
         this.RaisePropertyChanged(nameof(AiSignalCardBackground));

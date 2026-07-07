@@ -415,7 +415,7 @@
                        HorizontalAlignment="Right" />
             <TextBlock Grid.Column="5" Text="MKT CAP" Classes="cap" VerticalAlignment="Center"
                        HorizontalAlignment="Right" />
-            <TextBlock Grid.Column="6" Text="7D TREND" Classes="cap" VerticalAlignment="Center"
+            <TextBlock Grid.Column="6" Text="TREND" Classes="cap" VerticalAlignment="Center"
                        HorizontalAlignment="Center" />
           </Grid>
         </Border>
@@ -489,10 +489,10 @@
                                Classes="mono" FontSize="11" Foreground="#5A7A94"
                                HorizontalAlignment="Right" VerticalAlignment="Center" />
 
-                    <!-- 7d trend -->
+                    <!-- Live trend (real accumulated price samples) -->
                     <Viewbox Grid.Column="6" Width="72" Height="24"
                              HorizontalAlignment="Center" VerticalAlignment="Center"
-                             Stretch="None">
+                             Stretch="None" IsVisible="{Binding ShowSparkline}">
                       <Polyline Points="{Binding SparklinePoints}"
                                 Stroke="{Binding SparklineBrush}"
                                 StrokeThickness="1.4"

@@ -1332,6 +1332,17 @@
                   </StackPanel>
                 </Border>
 
+                <!-- PAPER / LIVE mode toggle (LIVE routes Market/Limit to real Hyperliquid) -->
+                <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding DexDeskVM.Perp.SupportsLiveTrading}">
+                  <Border Background="#0a1622" CornerRadius="4" Padding="8,3" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding DexDeskVM.Perp.ModeBadge}"
+                               Foreground="{Binding DexDeskVM.Perp.ModeBadgeBrush}" FontWeight="Bold" FontSize="11" />
+                  </Border>
+                  <Button Grid.Column="2" Classes="TdSeg dex" Padding="10,5"
+                          Command="{Binding DexDeskVM.Perp.ToggleLiveTradingCommand}"
+                          Content="PAPER / LIVE" FontSize="10" FontWeight="Bold" />
+                </Grid>
+
                 <!-- Place -->
                 <Button Command="{Binding DexDeskVM.Perp.PlaceOrderCommand}" Classes="TdPrimary dex" Height="48"
                         Content="{Binding DexDeskVM.Perp.PlaceButtonText}" FontWeight="Bold" FontSize="13" />

@@ -1323,6 +1323,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
         InitializeTradingDesk();
         SelectedMarket = Markets.FirstOrDefault();
+        LoadSoftwareWorkingOrders();
         InitializeAiSignalStudio();
         RefreshQuickBacktestSnapshot();
         RaiseTimeframeStateChanged();
@@ -4751,6 +4752,11 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
 
         RaiseWorkingOrdersCollectionChanged();
+        if (!order.IsExchangeManaged)
+        {
+            InvalidateSoftwarePositionCache(order);
+            PersistSoftwareWorkingOrders();
+        }
         if (!suppressLog)
         {
             AddLog($"Canceled {order.KindLabel} at {order.TriggerLabel}.");
@@ -4987,11 +4993,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        var order = WorkingOrderViewModel.CreateLimit(OrderSide.Buy, SelectedTradingSymbol, TradeQuantity, LimitPrice, SelectedTimeInForce);
+        var order = WorkingOrderViewModel.CreateLimit(OrderSide.Buy, SelectedTradingSymbol, TradeQuantity, LimitPrice, SelectedTimeInForce, SelectedSpotExchange);
         order.AttachCancel(() => CancelSingleOrder(order));
         WorkingOrders.Add(order);
         RaiseWorkingOrdersCollectionChanged();
-        AddLog($"BUY LIMIT armed at {LimitPrice:N2} for {TradeQuantity:0.0000} {BaseAssetSymbol}.");
+        PersistSoftwareWorkingOrders();
+        AddLog($"BUY LIMIT armed at {LimitPrice:N2} for {TradeQuantity:0.0000} {BaseAssetSymbol} on {SelectedSpotExchange}.");
     }
 
     private void PlaceSellLimit()
@@ -5008,11 +5015,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        var order = WorkingOrderViewModel.CreateLimit(OrderSide.Sell, SelectedTradingSymbol, Math.Min(TradeQuantity, Math.Max(PositionQuantity, TradeQuantity)), LimitPrice, SelectedTimeInForce);
+        var order = WorkingOrderViewModel.CreateLimit(OrderSide.Sell, SelectedTradingSymbol, Math.Min(TradeQuantity, Math.Max(PositionQuantity, TradeQuantity)), LimitPrice, SelectedTimeInForce, SelectedSpotExchange);
         order.AttachCancel(() => CancelSingleOrder(order));
         WorkingOrders.Add(order);
         RaiseWorkingOrdersCollectionChanged();
-        AddLog($"SELL LIMIT armed at {LimitPrice:N2} for {order.Quantity:0.0000} {BaseAssetSymbol}.");
+        PersistSoftwareWorkingOrders();
+        AddLog($"SELL LIMIT armed at {LimitPrice:N2} for {order.Quantity:0.0000} {BaseAssetSymbol} on {SelectedSpotExchange}.");
     }
 
     private void ArmTakeProfit()
@@ -5029,11 +5037,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        var order = WorkingOrderViewModel.CreateProtection(WorkingOrderKind.TakeProfit, SelectedTradingSymbol, Math.Abs(PositionQuantity), TakeProfitPrice);
+        var order = WorkingOrderViewModel.CreateProtection(WorkingOrderKind.TakeProfit, SelectedTradingSymbol, Math.Abs(PositionQuantity), TakeProfitPrice, SelectedSpotExchange);
         order.AttachCancel(() => CancelSingleOrder(order));
         WorkingOrders.Add(order);
         RaiseWorkingOrdersCollectionChanged();
-        AddLog($"Take-profit armed at {TakeProfitPrice:N2}.");
+        PersistSoftwareWorkingOrders();
+        AddLog($"Take-profit armed at {TakeProfitPrice:N2} on {SelectedSpotExchange}.");
     }
 
     private void ArmStopLoss()
@@ -5050,11 +5059,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        var order = WorkingOrderViewModel.CreateProtection(WorkingOrderKind.StopLoss, SelectedTradingSymbol, Math.Abs(PositionQuantity), StopLossPrice);
+        var order = WorkingOrderViewModel.CreateProtection(WorkingOrderKind.StopLoss, SelectedTradingSymbol, Math.Abs(PositionQuantity), StopLossPrice, SelectedSpotExchange);
         order.AttachCancel(() => CancelSingleOrder(order));
         WorkingOrders.Add(order);
         RaiseWorkingOrdersCollectionChanged();
-        AddLog($"Stop-loss armed at {StopLossPrice:N2}.");
+        PersistSoftwareWorkingOrders();
+        AddLog($"Stop-loss armed at {StopLossPrice:N2} on {SelectedSpotExchange}.");
     }
 
     private void CancelAllOrders()
@@ -5925,29 +5935,144 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
     }
 
+    // ── Multi-symbol software working-order engine ────────────────────────────
+    // Each software (non-exchange-managed) order is evaluated against ITS OWN symbol's
+    // live price and its OWN captured spot exchange, so a stop/limit armed on one symbol
+    // keeps protecting it while the desk is viewing a different symbol. Exchange-managed
+    // orders rest on the venue and are left untouched here.
+
+    private readonly Dictionary<string, (decimal Qty, DateTime AtUtc)> _softwarePositionCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly TimeSpan SoftwarePositionCacheTtl = TimeSpan.FromSeconds(15);
+
     private async Task EvaluateWorkingOrdersAsync()
     {
-        var bestBid   = SelectedMarket?.BestBid > 0 ? SelectedMarket!.BestBid : CurrentTradePrice;
-        var bestAsk   = SelectedMarket?.BestAsk > 0 ? SelectedMarket!.BestAsk : CurrentTradePrice;
-        var lastPrice = CurrentTradePrice;
+        var lastPriceActive = CurrentTradePrice;
 
-        // ── Advanced Trailing Stop tick ───────────────────────────────────────
-        if (AdvancedTrailingVM.IsArmed && lastPrice > 0)
+        // ── Advanced Trailing Stop tick (active symbol only) ──────────────────
+        if (AdvancedTrailingVM.IsArmed && lastPriceActive > 0)
         {
             var candleSnap = TradingCandles.ToList();
-            AdvancedTrailingVM.OnPriceTick(lastPrice, candleSnap);
+            AdvancedTrailingVM.OnPriceTick(lastPriceActive, candleSnap);
         }
 
-        if (SelectedMarket is null || WorkingOrders.Count == 0)
+        if (WorkingOrders.Count == 0)
             return;
 
-        var triggered = WorkingOrders
-            .Where(order => order.Symbol == SelectedTradingSymbol &&
-                            order.ShouldTrigger(bestBid, bestAsk, lastPrice, PositionQuantity))
-            .ToList();
+        var candidates = WorkingOrders.Where(order => !order.IsExchangeManaged).ToList();
+        if (candidates.Count == 0)
+            return;
+
+        var triggered = new List<WorkingOrderViewModel>();
+        foreach (var order in candidates)
+        {
+            var quote = ResolveLiveQuoteForSymbol(order.Symbol);
+            if (quote is null)
+                continue; // no live price yet — never fabricate a trigger
+
+            var (bid, ask, last) = quote.Value;
+            var positionQty = await ResolveSoftwarePositionQuantityAsync(order);
+            if (order.ShouldTrigger(bid, ask, last, positionQty))
+                triggered.Add(order);
+        }
 
         foreach (var order in triggered)
             await ExecuteWorkingOrderAsync(order);
+    }
+
+    /// <summary>Live (bid, ask, last) for a symbol from its market row; null when unknown.
+    /// Uses the desk's fast path for the active symbol, else the Markets row for that symbol.</summary>
+    private (decimal Bid, decimal Ask, decimal Last)? ResolveLiveQuoteForSymbol(string symbol)
+    {
+        if (string.Equals(symbol, SelectedTradingSymbol, StringComparison.OrdinalIgnoreCase))
+        {
+            var aBid = SelectedMarket?.BestBid > 0 ? SelectedMarket!.BestBid : CurrentTradePrice;
+            var aAsk = SelectedMarket?.BestAsk > 0 ? SelectedMarket!.BestAsk : CurrentTradePrice;
+            var aLast = CurrentTradePrice;
+            return aLast > 0 || aBid > 0 || aAsk > 0 ? (aBid, aAsk, aLast) : null;
+        }
+
+        var row = Markets.FirstOrDefault(m =>
+            string.Equals(m.Symbol, symbol, StringComparison.OrdinalIgnoreCase) && !m.IsDexMarket);
+        if (row is null)
+            return null;
+
+        var last = row.LastPrice > 0 ? row.LastPrice : row.MidPrice;
+        var bid = row.BestBid > 0 ? row.BestBid : last;
+        var ask = row.BestAsk > 0 ? row.BestAsk : last;
+        if (last <= 0 && bid <= 0 && ask <= 0)
+            return null;
+        return (bid, ask, last);
+    }
+
+    /// <summary>Open size backing a SELL/TP/SL software order. Active spot symbol uses the
+    /// live desk position; a foreign symbol uses its spot base-asset balance (authoritative).
+    /// BUY limits do not depend on position.</summary>
+    private async Task<decimal> ResolveSoftwarePositionQuantityAsync(WorkingOrderViewModel order)
+    {
+        if (order.Kind == WorkingOrderKind.LimitBuy)
+            return 0m;
+
+        if (string.Equals(order.Symbol, SelectedTradingSymbol, StringComparison.OrdinalIgnoreCase) && !IsManualFuturesMode)
+            return PositionQuantity;
+
+        return await GetCachedSpotBaseBalanceAsync(order.ExecutionExchange, order.Symbol);
+    }
+
+    private async Task<decimal> GetCachedSpotBaseBalanceAsync(string exchangeName, string symbol)
+    {
+        var key = $"{exchangeName}|{symbol}";
+        if (_softwarePositionCache.TryGetValue(key, out var cached) &&
+            DateTime.UtcNow - cached.AtUtc < SoftwarePositionCacheTtl)
+            return cached.Qty;
+
+        var qty = 0m;
+        try
+        {
+            var gateway = ResolveSpotGatewayByName(exchangeName);
+            if (gateway is not null)
+                qty = await gateway.GetBalanceAsync(BaseAssetOf(symbol));
+        }
+        catch (Exception ex)
+        {
+            AddLog($"Working-order balance check failed for {symbol} on {exchangeName}: {ex.Message}");
+        }
+
+        _softwarePositionCache[key] = (qty, DateTime.UtcNow);
+        return qty;
+    }
+
+    private void InvalidateSoftwarePositionCache(WorkingOrderViewModel order) =>
+        _softwarePositionCache.Remove($"{order.ExecutionExchange}|{order.Symbol}");
+
+    private Core.Interfaces.IExchangeGateway? ResolveSpotGatewayByName(string exchangeName)
+    {
+        if (!string.IsNullOrWhiteSpace(exchangeName) && _spotGatewaysMap is not null &&
+            _spotGatewaysMap.TryGetValue(exchangeName, out var gateway))
+            return gateway;
+        return ActiveSpotGateway;
+    }
+
+    private static readonly string[] SpotQuoteAssets = ["USDT", "USDC", "FDUSD", "BUSD", "TUSD", "DAI", "USD"];
+
+    private static string BaseAssetOf(string symbol)
+    {
+        foreach (var quote in SpotQuoteAssets)
+        {
+            if (symbol.EndsWith(quote, StringComparison.OrdinalIgnoreCase) && symbol.Length > quote.Length)
+                return symbol[..^quote.Length];
+        }
+        return symbol;
+    }
+
+    private async Task<Order> PlaceSpotMarketOrderForSymbolAsync(
+        string exchangeName, CryptoAITerminal.Core.Enums.OrderSide side, string symbol, decimal quantity)
+    {
+        var gateway = ResolveSpotGatewayByName(exchangeName)
+            ?? throw new InvalidOperationException($"No spot gateway available for {exchangeName}.");
+        var router = new MarketOrderRouter(gateway);
+        return side == CryptoAITerminal.Core.Enums.OrderSide.Buy
+            ? await router.BuyMarketAsync(symbol, quantity)
+            : await router.SellMarketAsync(symbol, quantity);
     }
 
     private async Task ExecuteWorkingOrderAsync(WorkingOrderViewModel order)
@@ -5959,82 +6084,161 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
         WorkingOrders.Remove(order);
         this.RaisePropertyChanged(nameof(WorkingOrdersCountLabel));
+        PersistSoftwareWorkingOrders();
 
-        switch (order.Kind)
+        // Only the active spot symbol drives the single-symbol desk position/PnL state.
+        var isActiveSpot = string.Equals(order.Symbol, SelectedTradingSymbol, StringComparison.OrdinalIgnoreCase) && !IsManualFuturesMode;
+
+        try
         {
-            case WorkingOrderKind.LimitBuy:
+            if (order.Kind == WorkingOrderKind.LimitBuy)
             {
-                if (!WalletVM.TryApproveLiveExecution("CEX working buy order", out var buyExecutionReason))
+                if (!WalletVM.TryApproveLiveExecution("CEX working buy order", out var buyReason))
                 {
-                    AddLog(buyExecutionReason);
-                    break;
+                    AddLog(buyReason);
+                    return;
                 }
 
-                var result = await PlaceCexMarketOrderAsync(CryptoAITerminal.Core.Enums.OrderSide.Buy, order.Quantity);
-                await SyncManualExecutionStateAsync(CryptoAITerminal.Core.Enums.OrderSide.Buy, order.TriggerPrice > 0 ? order.TriggerPrice : CurrentTradePrice, result.Quantity);
-                AddLog($"BUY LIMIT filled at {order.TriggerPrice:N2}.");
-                break;
+                var result = await PlaceSpotMarketOrderForSymbolAsync(
+                    order.ExecutionExchange, CryptoAITerminal.Core.Enums.OrderSide.Buy, order.Symbol, order.Quantity);
+                if (isActiveSpot)
+                    await SyncManualExecutionStateAsync(CryptoAITerminal.Core.Enums.OrderSide.Buy, order.TriggerPrice > 0 ? order.TriggerPrice : CurrentTradePrice, result.Quantity);
+                InvalidateSoftwarePositionCache(order);
+                AddLog($"BUY LIMIT filled at {order.TriggerPrice:N2} for {order.Symbol} on {order.ExecutionExchange}.");
+                return;
             }
-            case WorkingOrderKind.LimitSell:
+
+            // SELL / TAKE PROFIT / STOP LOSS — all reduce a spot holding.
+            var approvalLabel = order.Kind switch
             {
-                if (!WalletVM.TryApproveLiveExecution("CEX working sell order", out var sellExecutionReason))
-                {
-                    AddLog(sellExecutionReason);
-                    break;
-                }
-
-                var quantity = Math.Min(order.Quantity, PositionQuantity > 0 ? PositionQuantity : order.Quantity);
-                if (quantity <= 0)
-                {
-                    AddLog("SELL LIMIT removed because there is no position to reduce.");
-                    break;
-                }
-
-                var result = await PlaceCexMarketOrderAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, quantity, reduceOnly: IsManualFuturesMode);
-                await SyncManualExecutionStateAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, order.TriggerPrice > 0 ? order.TriggerPrice : CurrentTradePrice, result.Quantity);
-                AddLog($"SELL LIMIT filled at {order.TriggerPrice:N2}.");
-                break;
-            }
-            case WorkingOrderKind.TakeProfit:
+                WorkingOrderKind.LimitSell => "CEX working sell order",
+                WorkingOrderKind.TakeProfit => "CEX take-profit order",
+                _ => "CEX stop-loss order"
+            };
+            if (!WalletVM.TryApproveLiveExecution(approvalLabel, out var sellReason))
             {
-                if (!WalletVM.TryApproveLiveExecution("CEX take-profit order", out var tpExecutionReason))
-                {
-                    AddLog(tpExecutionReason);
-                    break;
-                }
-
-                var quantity = Math.Min(order.Quantity, PositionQuantity);
-                if (quantity <= 0)
-                {
-                    AddLog("Take-profit removed because the position is already flat.");
-                    break;
-                }
-
-                var result = await PlaceCexMarketOrderAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, quantity, reduceOnly: IsManualFuturesMode);
-                await SyncManualExecutionStateAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, order.TriggerPrice > 0 ? order.TriggerPrice : CurrentTradePrice, result.Quantity);
-                AddLog($"TAKE PROFIT triggered at {order.TriggerPrice:N2}.");
-                break;
+                AddLog(sellReason);
+                return;
             }
-            case WorkingOrderKind.StopLoss:
+
+            var available = isActiveSpot
+                ? PositionQuantity
+                : await GetCachedSpotBaseBalanceAsync(order.ExecutionExchange, order.Symbol);
+            if (available <= 0)
             {
-                if (!WalletVM.TryApproveLiveExecution("CEX stop-loss order", out var slExecutionReason))
-                {
-                    AddLog(slExecutionReason);
-                    break;
-                }
-
-                var quantity = Math.Min(order.Quantity, PositionQuantity);
-                if (quantity <= 0)
-                {
-                    AddLog("Stop-loss removed because the position is already flat.");
-                    break;
-                }
-
-                var result = await PlaceCexMarketOrderAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, quantity, reduceOnly: IsManualFuturesMode);
-                await SyncManualExecutionStateAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, order.TriggerPrice > 0 ? order.TriggerPrice : CurrentTradePrice, result.Quantity);
-                AddLog($"STOP LOSS triggered at {order.TriggerPrice:N2}.");
-                break;
+                AddLog($"{order.KindLabel} removed for {order.Symbol}: no {BaseAssetOf(order.Symbol)} balance to sell.");
+                return;
             }
+
+            var quantity = Math.Min(order.Quantity, available);
+            if (quantity <= 0)
+            {
+                AddLog($"{order.KindLabel} removed for {order.Symbol}: resolved quantity is zero.");
+                return;
+            }
+
+            var sellResult = await PlaceSpotMarketOrderForSymbolAsync(
+                order.ExecutionExchange, CryptoAITerminal.Core.Enums.OrderSide.Sell, order.Symbol, quantity);
+            if (isActiveSpot)
+                await SyncManualExecutionStateAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, order.TriggerPrice > 0 ? order.TriggerPrice : CurrentTradePrice, sellResult.Quantity);
+            InvalidateSoftwarePositionCache(order);
+            AddLog($"{order.KindLabel} triggered at {order.TriggerPrice:N2} for {order.Symbol} on {order.ExecutionExchange}.");
+        }
+        catch (Exception ex)
+        {
+            AddLog($"{order.KindLabel} execution failed for {order.Symbol}: {ex.Message}");
+        }
+    }
+
+    // ── Software working-order persistence (survive app restart) ──────────────
+
+    private static readonly string SoftwareWorkingOrdersPath = System.IO.Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "CryptoAITerminal", "software-working-orders.json");
+
+    private bool _softwareWorkingOrdersLoaded;
+
+    private sealed class PersistedWorkingOrder
+    {
+        public string Kind { get; set; } = "";
+        public string Symbol { get; set; } = "";
+        public decimal Quantity { get; set; }
+        public decimal TriggerPrice { get; set; }
+        public string TimeInForce { get; set; } = "GTC";
+        public string ExecutionExchange { get; set; } = "";
+        public DateTime CreatedAtLocal { get; set; }
+    }
+
+    private void PersistSoftwareWorkingOrders()
+    {
+        try
+        {
+            var snapshot = WorkingOrders
+                .Where(order => !order.IsExchangeManaged)
+                .Select(order => new PersistedWorkingOrder
+                {
+                    Kind = order.Kind.ToString(),
+                    Symbol = order.Symbol,
+                    Quantity = order.Quantity,
+                    TriggerPrice = order.TriggerPrice,
+                    TimeInForce = order.TimeInForce,
+                    ExecutionExchange = order.ExecutionExchange,
+                    CreatedAtLocal = order.CreatedAtLocal
+                })
+                .ToList();
+
+            Services.AtomicJsonFile.Write(SoftwareWorkingOrdersPath, snapshot);
+        }
+        catch (Exception ex)
+        {
+            AddLog($"Could not save working orders: {ex.Message}");
+        }
+    }
+
+    private void LoadSoftwareWorkingOrders()
+    {
+        if (_softwareWorkingOrdersLoaded)
+            return;
+        _softwareWorkingOrdersLoaded = true;
+
+        List<PersistedWorkingOrder>? saved;
+        try
+        {
+            if (!System.IO.File.Exists(SoftwareWorkingOrdersPath))
+                return;
+            saved = Services.AtomicJsonFile.Read<List<PersistedWorkingOrder>>(SoftwareWorkingOrdersPath);
+        }
+        catch (Exception ex)
+        {
+            AddLog($"Could not load saved working orders: {ex.Message}");
+            return;
+        }
+
+        if (saved is null || saved.Count == 0)
+            return;
+
+        var restored = 0;
+        foreach (var persisted in saved)
+        {
+            if (!Enum.TryParse<WorkingOrderKind>(persisted.Kind, out var kind))
+                continue;
+            if (string.IsNullOrWhiteSpace(persisted.Symbol) || persisted.TriggerPrice <= 0 || persisted.Quantity <= 0)
+                continue;
+
+            var order = WorkingOrderViewModel.Restore(
+                kind, persisted.Symbol, persisted.Quantity, persisted.TriggerPrice,
+                persisted.TimeInForce,
+                string.IsNullOrWhiteSpace(persisted.ExecutionExchange) ? SelectedSpotExchange : persisted.ExecutionExchange,
+                persisted.CreatedAtLocal == default ? DateTime.Now : persisted.CreatedAtLocal);
+            order.AttachCancel(() => CancelSingleOrder(order));
+            WorkingOrders.Add(order);
+            restored++;
+        }
+
+        if (restored > 0)
+        {
+            RaiseWorkingOrdersCollectionChanged();
+            AddLog($"Restored {restored} saved working order(s) from the previous session.");
         }
     }
 
@@ -9417,7 +9621,8 @@ public sealed class WorkingOrderViewModel
         string statusLabel = "New",
         DateTime? createdAtLocal = null,
         bool reduceOnly = false,
-        string exchangeType = "")
+        string exchangeType = "",
+        string executionExchange = "")
     {
         Id = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
         Kind = kind;
@@ -9431,6 +9636,7 @@ public sealed class WorkingOrderViewModel
         CreatedAtLocal = createdAtLocal ?? DateTime.Now;
         ReduceOnly = reduceOnly;
         ExchangeType = exchangeType;
+        ExecutionExchange = executionExchange;
     }
 
     public string Id { get; }
@@ -9444,6 +9650,9 @@ public sealed class WorkingOrderViewModel
     public string ExplicitStatusLabel { get; }
     public bool ReduceOnly { get; }
     public string ExchangeType { get; }
+    /// <summary>Spot exchange this software order must execute on (captured at arm time,
+    /// so it stays correct even if the desk's active exchange/mode later changes).</summary>
+    public string ExecutionExchange { get; }
     public bool IsExchangeManaged => !string.IsNullOrWhiteSpace(ExchangeOrderId);
     public DateTime CreatedAtLocal { get; }
     public string IdLabel => $"#{Id}";
@@ -9474,11 +9683,15 @@ public sealed class WorkingOrderViewModel
     public ReactiveCommand<Unit, Unit> CancelCommand => ReactiveCommand.Create(() => _cancel?.Invoke());
     public string SideBrush => Kind is WorkingOrderKind.LimitBuy ? "#3DDC84" : "#FF6B6B";
 
-    public static WorkingOrderViewModel CreateLimit(OrderSide side, string symbol, decimal quantity, decimal price, string timeInForce) =>
-        new(side == OrderSide.Buy ? WorkingOrderKind.LimitBuy : WorkingOrderKind.LimitSell, symbol, quantity, price, timeInForce);
+    public static WorkingOrderViewModel CreateLimit(OrderSide side, string symbol, decimal quantity, decimal price, string timeInForce, string executionExchange = "") =>
+        new(side == OrderSide.Buy ? WorkingOrderKind.LimitBuy : WorkingOrderKind.LimitSell, symbol, quantity, price, timeInForce, executionExchange: executionExchange);
 
-    public static WorkingOrderViewModel CreateProtection(WorkingOrderKind kind, string symbol, decimal quantity, decimal price) =>
-        new(kind, symbol, quantity, price, "GTC");
+    public static WorkingOrderViewModel CreateProtection(WorkingOrderKind kind, string symbol, decimal quantity, decimal price, string executionExchange = "") =>
+        new(kind, symbol, quantity, price, "GTC", executionExchange: executionExchange);
+
+    /// <summary>Rehydrate a persisted software working order (keeps its original id/created time).</summary>
+    public static WorkingOrderViewModel Restore(WorkingOrderKind kind, string symbol, decimal quantity, decimal price, string timeInForce, string executionExchange, DateTime createdAtLocal) =>
+        new(kind, symbol, quantity, price, string.IsNullOrWhiteSpace(timeInForce) ? "GTC" : timeInForce, createdAtLocal: createdAtLocal, executionExchange: executionExchange);
 
     public static WorkingOrderViewModel CreateExchangeProtection(WorkingOrderKind kind, string symbol, decimal quantity, decimal price, string exchangeOrderId, decimal filledQuantity = 0m, string statusLabel = "Live", DateTime? createdAtLocal = null, bool reduceOnly = true, string exchangeType = "") =>
         new(kind, symbol, quantity, price, "GTC", exchangeOrderId, filledQuantity, statusLabel, createdAtLocal, reduceOnly, exchangeType);

@@ -968,27 +968,69 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         }
 
         HlOrderStatus = $"Resolving {coin} on {(testnet ? "testnet" : "mainnet")}…";
+        HlOrderStatus = await SendHyperliquidOrderAsync(coin, isBuy, size, price, reduceOnly: false);
+    }
+
+    /// <summary>
+    /// True when a live Hyperliquid order could be signed right now: live orders enabled and
+    /// a trade-enabled EVM wallet is imported. Used by the PERP desk's live-mode gate.
+    /// </summary>
+    public bool CanPlaceLiveHyperliquid =>
+        _hlEnableLiveOrders && !string.IsNullOrWhiteSpace(_walletWorkspace.TryGetEvmSigningKey());
+
+    /// <summary>Whether live Hyperliquid orders currently target testnet (safe default) vs mainnet.</summary>
+    public bool HlIsTestnet => _hlTestnet;
+
+    /// <summary>
+    /// Places one live Hyperliquid perp order using the shared, gated pipeline (wallet signing,
+    /// mainnet risk approval, testnet default). Returns a human-readable status string. This is the
+    /// single real-execution entry point reused by both the SWAP-side ticket and the PERP desk.
+    /// </summary>
+    public async Task<string> SendHyperliquidOrderAsync(string coin, bool isBuy, decimal size, decimal price, bool reduceOnly)
+    {
+        coin = (coin ?? string.Empty).Trim().ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(coin) || size <= 0m || price <= 0m)
+        {
+            return "Set a coin, a positive size and a positive price.";
+        }
+
+        if (!_hlEnableLiveOrders)
+        {
+            return "Live orders are OFF. Validate signing on testnet, then enable.";
+        }
+
+        var key = _walletWorkspace.TryGetEvmSigningKey();
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return "Import a trade-enabled EVM wallet (not watch mode) to sign Hyperliquid orders.";
+        }
+
+        var testnet = _hlTestnet;
+        if (!testnet && !_walletWorkspace.TryApproveLiveExecution("Hyperliquid mainnet perp order", out var reason))
+        {
+            return reason;
+        }
+
         try
         {
             var resolver = new HyperliquidPerpClient(enableLiveOrders: false, testnet: testnet);
             var assetIndex = await resolver.GetAssetIndexAsync(coin);
             if (assetIndex < 0)
             {
-                HlOrderStatus = $"Unknown Hyperliquid market '{coin}'.";
-                return;
+                return $"Unknown Hyperliquid market '{coin}'.";
             }
 
             var client = new HyperliquidPerpClient(enableLiveOrders: true, testnet: testnet);
-            var response = await client.PlaceOrderAsync(key!, assetIndex, isBuy, price, size, reduceOnly: false);
+            var response = await client.PlaceOrderAsync(key!, assetIndex, isBuy, price, size, reduceOnly: reduceOnly);
             var ok = response.Contains("\"status\":\"ok\"", StringComparison.OrdinalIgnoreCase);
-            HlOrderStatus = ok
-                ? $"{(isBuy ? "BUY" : "SELL")} {size} {coin} @ {price} sent ({(testnet ? "testnet" : "mainnet")}). Accepted."
-                : $"Rejected: {Trim(response, 180)}";
             await RefreshLivePerpAccountAsync();
+            return ok
+                ? $"{(isBuy ? "BUY" : "SELL")}{(reduceOnly ? " (reduce)" : "")} {size} {coin} @ {price} sent ({(testnet ? "testnet" : "mainnet")}). Accepted."
+                : $"Rejected: {Trim(response, 180)}";
         }
         catch (Exception ex)
         {
-            HlOrderStatus = $"Order failed: {ex.Message}";
+            return $"Order failed: {ex.Message}";
         }
 
         static string Trim(string s, int n) => s.Length <= n ? s : s[..n] + "…";

@@ -158,7 +158,11 @@ public sealed class DexDeskViewModel : ReactiveObject, IDisposable
         Swap = swap ?? throw new ArgumentNullException(nameof(swap));
         Perp = new DexPerpTradingViewModel(
             anchorPrice: () => Swap.SelectedToken?.PriceUsd ?? 0m,
-            symbol: () => Swap.SelectedToken?.TokenInfo.Symbol ?? "TOKEN");
+            symbol: () => Swap.SelectedToken?.TokenInfo.Symbol ?? "TOKEN",
+            liveReady: () => Swap.CanPlaceLiveHyperliquid,
+            liveTestnet: () => Swap.HlIsTestnet,
+            placeLiveOrder: (coin, isBuy, size, price, reduceOnly) =>
+                Swap.SendHyperliquidOrderAsync(coin, isBuy, size, price, reduceOnly));
         Assistant = new AiTradeAssistantViewModel(
             venueLabel: "DEX",
             candles: () => Swap.ChartCandles,
