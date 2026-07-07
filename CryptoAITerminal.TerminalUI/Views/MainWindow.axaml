@@ -486,9 +486,7 @@
         </ScrollViewer>
       </TabItem>
       <TabItem Header="AI Signals">
-        <ScrollViewer Classes="PageScroll">
-          <views:AiSignalsView />
-        </ScrollViewer>
+        <views:AiSignalsView />
       </TabItem>
 <TabItem>
         <TabItem.Header>
@@ -1090,7 +1088,7 @@
                   Foreground="#8FA3B8" FontSize="13" ToolTip.Tip="Закрыть" />
         </Grid>
         <TextBlock Text="{Binding ToastMessage}" Foreground="#E0E8F0" TextWrapping="Wrap" FontSize="13" />
-        <TextBlock Text="Нажмите, чтобы открыть все уведомления" Foreground="#5A7A90" FontSize="10" />
+        <TextBlock Text="Нажмите, чтобы открыть токен в трейдинге" Foreground="#5A7A90" FontSize="10" />
       </StackPanel>
     </Border>
 
@@ -1187,37 +1185,9 @@
       <StackPanel Orientation="Horizontal" Spacing="10">
         <TextBlock Text="{Binding LicenseVM.StateLabel}" Foreground="{Binding LicenseVM.StateBrush}"
                    FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
-        <Button Content="Activate" Command="{Binding LicenseVM.OpenCommand}"
+        <Button Content="Activate" Command="{Binding SelectMainTabCommand}" CommandParameter="settings"
                 Padding="10,3" Background="#1FE6C2" Foreground="#06121C" FontSize="11" FontWeight="Bold" />
       </StackPanel>
-    </Border>
-
-    <!-- License activation overlay -->
-    <Border IsVisible="{Binding LicenseVM.IsVisible}" Background="#CC050A12" ZIndex="220">
-      <Border Width="560" HorizontalAlignment="Center" VerticalAlignment="Center"
-              Background="#0B1622" BorderBrush="#1FE6C2" BorderThickness="1"
-              CornerRadius="14" Padding="32,28">
-        <StackPanel Spacing="16">
-          <TextBlock Text="License activation" Foreground="#F0F6FC" FontSize="22" FontWeight="Bold" />
-          <StackPanel Orientation="Horizontal" Spacing="10">
-            <Border Background="{Binding LicenseVM.StateBrush}" CornerRadius="3" Padding="8,3">
-              <TextBlock Text="{Binding LicenseVM.StateLabel}" Foreground="#06121C" FontSize="12" FontWeight="Bold" />
-            </Border>
-          </StackPanel>
-          <TextBlock Text="{Binding LicenseVM.DetailLabel}" Foreground="#9FB2C4" FontSize="13" TextWrapping="Wrap" />
-          <TextBox Text="{Binding LicenseVM.KeyInput}" PlaceholderText="Paste license key"
-                   Background="#0A1018" Foreground="#C8D8E8" Height="34" AcceptsReturn="False" />
-          <TextBlock Text="{Binding LicenseVM.StatusMessage}" Foreground="#F4B860" FontSize="12" TextWrapping="Wrap" />
-          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
-            <TextBlock Grid.Column="0" Text="{Binding LicenseVM.MachineId, StringFormat='Machine ID: {0}'}"
-                       Foreground="#48586A" FontSize="10" VerticalAlignment="Center" />
-            <Button Grid.Column="1" Content="Close" Command="{Binding LicenseVM.CloseCommand}"
-                    Padding="16,9" Background="Transparent" BorderBrush="#2C4257" BorderThickness="1" Foreground="#C5D2DE" />
-            <Button Grid.Column="2" Content="Activate" Command="{Binding LicenseVM.ActivateCommand}"
-                    Padding="18,9" Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
-          </Grid>
-        </StackPanel>
-      </Border>
     </Border>
 
     <!-- First-run Welcome / Demo overlay -->

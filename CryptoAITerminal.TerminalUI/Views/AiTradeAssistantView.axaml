@@ -1,0 +1,146 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             x:Class="CryptoAITerminal.TerminalUI.Views.AiTradeAssistantView"
+             x:DataType="vm:AiTradeAssistantViewModel"
+             FontFamily="{StaticResource FontDisplay}">
+  <UserControl.Styles>
+    <StyleInclude Source="avares://CryptoAITerminal.TerminalUI/Styles/TradingDeskStyles.axaml" />
+  </UserControl.Styles>
+
+  <Border Background="#0a0616" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="10" Padding="12">
+    <StackPanel Spacing="9">
+
+      <!-- Header -->
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <TextBlock Text="✦" Foreground="#a855f7" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" Text="AI TRADE ASSISTANT" Foreground="#e8f4ff" FontSize="12" FontWeight="Bold" Margin="7,0,0,0" VerticalAlignment="Center" />
+        <Border Grid.Column="2" Classes="TdDexBadge" VerticalAlignment="Center">
+          <TextBlock Text="{Binding ConfidenceLabel}" Foreground="#a855f7" FontSize="9" FontWeight="Bold" />
+        </Border>
+      </Grid>
+
+      <!-- Intent -->
+      <StackPanel Spacing="4">
+        <TextBlock Classes="TdLabel" Text="WHAT DO YOU WANT?" />
+        <TextBox Text="{Binding Intent}" PlaceholderText="e.g. safe swing long / быстрый скальп / шорт по тренду" FontSize="11" />
+      </StackPanel>
+
+      <!-- Risk -->
+      <StackPanel Spacing="4">
+        <TextBlock Classes="TdLabel" Text="RISK" />
+        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="4">
+          <Button Grid.Column="0" Content="CONS"  Classes="TdSeg fill" Classes.active="{Binding IsRiskConservative}" Command="{Binding SelectRiskCommand}" CommandParameter="Conservative" />
+          <Button Grid.Column="1" Content="BAL"   Classes="TdSeg fill" Classes.active="{Binding IsRiskBalanced}"     Command="{Binding SelectRiskCommand}" CommandParameter="Balanced" />
+          <Button Grid.Column="2" Content="AGGR"  Classes="TdSeg fill" Classes.active="{Binding IsRiskAggressive}"   Command="{Binding SelectRiskCommand}" CommandParameter="Aggressive" />
+        </Grid>
+      </StackPanel>
+
+      <!-- Horizon -->
+      <StackPanel Spacing="4">
+        <TextBlock Classes="TdLabel" Text="HORIZON" />
+        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="4">
+          <Button Grid.Column="0" Content="SCALP" Classes="TdSeg fill" Classes.active="{Binding IsHorizonScalp}"    Command="{Binding SelectHorizonCommand}" CommandParameter="Scalp" />
+          <Button Grid.Column="1" Content="SWING" Classes="TdSeg fill" Classes.active="{Binding IsHorizonSwing}"    Command="{Binding SelectHorizonCommand}" CommandParameter="Swing" />
+          <Button Grid.Column="2" Content="POS"   Classes="TdSeg fill" Classes.active="{Binding IsHorizonPosition}" Command="{Binding SelectHorizonCommand}" CommandParameter="Position" />
+        </Grid>
+      </StackPanel>
+
+      <!-- Bias -->
+      <StackPanel Spacing="4">
+        <TextBlock Classes="TdLabel" Text="BIAS" />
+        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="4">
+          <Button Grid.Column="0" Content="AUTO"  Classes="TdSeg fill" Classes.active="{Binding IsBiasAuto}"  Command="{Binding SelectBiasCommand}" CommandParameter="Auto" />
+          <Button Grid.Column="1" Content="LONG"  Classes="TdSeg fill buy"  Classes.active="{Binding IsBiasLong}"  Command="{Binding SelectBiasCommand}" CommandParameter="Long" />
+          <Button Grid.Column="2" Content="SHORT" Classes="TdSeg fill sell" Classes.active="{Binding IsBiasShort}" Command="{Binding SelectBiasCommand}" CommandParameter="Short" />
+        </Grid>
+      </StackPanel>
+
+      <!-- Risk budget + watch -->
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+        <StackPanel Spacing="2">
+          <TextBlock Classes="TdLabel" Text="RISK % / TRADE (0 = AUTO)" />
+          <NumericUpDown Value="{Binding RiskPercentPerTrade}" Increment="0.25" Minimum="0" Maximum="20" FormatString="0.##" />
+        </StackPanel>
+        <Button Grid.Column="1" Content="{Binding WatchLabel}" Classes="TdSeg dex" Width="88" Height="34" VerticalAlignment="Bottom"
+                Classes.active="{Binding WatchMode}" Command="{Binding ToggleWatchCommand}"
+                ToolTip.Tip="Re-analyze automatically as new candles arrive" />
+      </Grid>
+
+      <Button Content="✦ ANALYZE CHART" Classes="TdPrimary dex" Height="38" Command="{Binding AnalyzeCommand}" />
+
+      <!-- Backtest the current rules over history -->
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+        <Button Grid.Column="0" Content="BACKTEST" Classes="TdSeg" Command="{Binding BacktestCommand}" Padding="10,5" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" IsVisible="{Binding HasBacktest}">
+          <TextBlock Text="{Binding BacktestWinRateLabel, StringFormat=win {0}}" Foreground="#3ddc84" FontSize="10" FontWeight="Bold" />
+          <TextBlock Text="{Binding BacktestExpectancyLabel}" Foreground="#a855f7" FontSize="10" FontWeight="Bold" />
+        </StackPanel>
+      </Grid>
+
+      <!-- Result -->
+      <Border Background="#07111a" BorderBrush="#1e2f45" BorderThickness="1" CornerRadius="8" Padding="10" IsVisible="{Binding HasSetup}">
+        <StackPanel Spacing="7">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <Border Background="#0a1622" CornerRadius="4" Padding="8,2">
+              <TextBlock Text="{Binding BiasLabel}" Foreground="{Binding BiasBrush}" FontWeight="Bold" FontSize="12" />
+            </Border>
+            <TextBlock Grid.Column="2" Text="{Binding RiskRewardLabel}" Foreground="#a855f7" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" />
+          </Grid>
+
+          <Grid ColumnDefinitions="*,*,*" ColumnSpacing="6">
+            <StackPanel Spacing="1">
+              <TextBlock Classes="TdLabel" Text="ENTRY" />
+              <TextBlock Classes="TdNum" Text="{Binding EntryLabel}" Foreground="#c8dcef" FontWeight="Bold" FontSize="11" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="1">
+              <TextBlock Classes="TdLabel" Text="TARGET" />
+              <TextBlock Classes="TdNum" Text="{Binding TakeProfitLabel}" Foreground="#3ddc84" FontWeight="Bold" FontSize="11" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="1">
+              <TextBlock Classes="TdLabel" Text="STOP" />
+              <TextBlock Classes="TdNum" Text="{Binding StopLossLabel}" Foreground="#ff6b6b" FontWeight="Bold" FontSize="11" />
+            </StackPanel>
+          </Grid>
+
+          <Grid ColumnDefinitions="*,*,*" ColumnSpacing="6">
+            <StackPanel Spacing="1">
+              <TextBlock Classes="TdLabel" Text="LEVERAGE" />
+              <TextBlock Classes="TdNum" Text="{Binding LeverageLabel}" Foreground="#f4b860" FontWeight="Bold" FontSize="11" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="1">
+              <TextBlock Classes="TdLabel" Text="SIZE" />
+              <TextBlock Classes="TdNum" Text="{Binding SizeLabel}" Foreground="#c8dcef" FontWeight="Bold" FontSize="11" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="1">
+              <TextBlock Classes="TdLabel" Text="CONFIDENCE" />
+              <TextBlock Classes="TdNum" Text="{Binding ConfidenceLabel}" Foreground="#a855f7" FontWeight="Bold" FontSize="11" />
+            </StackPanel>
+          </Grid>
+
+          <ProgressBar Minimum="0" Maximum="100" Value="{Binding ConfidenceValue}" Height="4" Foreground="#a855f7" Background="#152535" />
+
+          <!-- Risk gate + confluence -->
+          <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding HasRisk}">
+            <Border Background="#0a1622" CornerRadius="4" Padding="7,2">
+              <TextBlock Text="{Binding RiskVerdictLabel}" Foreground="{Binding RiskVerdictBrush}" FontWeight="Bold" FontSize="10" />
+            </Border>
+            <TextBlock Grid.Column="2" Text="{Binding ConfluenceLabel, StringFormat=confluence {0}}" Foreground="#8fa3b8" FontSize="10" VerticalAlignment="Center" />
+          </Grid>
+          <TextBlock Text="{Binding RiskReasonsText}" Foreground="#8a97a8" FontSize="9" TextWrapping="Wrap" IsVisible="{Binding HasRisk}" />
+
+          <TextBlock Text="{Binding RationaleText}" Foreground="#8fa3b8" FontSize="10" TextWrapping="Wrap" LineHeight="15" />
+          <TextBlock Text="{Binding RationaleSourceLabel}" Foreground="#5a7a94" FontSize="9" />
+
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+            <Button Grid.Column="0" Content="APPLY TO TICKET" Classes="TdPrimary dex" Height="34" Command="{Binding ApplyCommand}" />
+            <Button Grid.Column="1" Content="⚑" Classes="TdSeg dex" Width="42" Height="34" Command="{Binding ArmAlertsCommand}"
+                    IsVisible="{Binding CanArmAlerts}" ToolTip.Tip="Arm price alerts at entry / target / stop" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <TextBlock Text="{Binding StatusMessage}" Foreground="#a855f7" FontSize="10" TextWrapping="Wrap" />
+    </StackPanel>
+  </Border>
+</UserControl>

@@ -58,6 +58,267 @@ public class GeckoTerminalClient
             .ToList();
     }
 
+    /// <summary>Fetch rich token profile info (image, banner, socials, description,
+    /// holders, security signals). Returns null when unavailable.</summary>
+    public async Task<DexTokenMetadata?> GetTokenInfoAsync(
+        string network, string tokenAddress, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(network) || string.IsNullOrWhiteSpace(tokenAddress))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var response = await _httpClient.GetAsync(
+                $"networks/{network}/tokens/{tokenAddress}/info", cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var doc = await JsonDocument.ParseAsync(stream, default, cancellationToken);
+            if (!doc.RootElement.TryGetProperty("data", out var data) ||
+                !data.TryGetProperty("attributes", out var a))
+            {
+                return null;
+            }
+
+            var meta = new DexTokenMetadata
+            {
+                Address = Str(a, "address"),
+                Name = Str(a, "name"),
+                Symbol = Str(a, "symbol"),
+                ImageUrl = ValidImage(Str(a, "image_url")),
+                BannerImageUrl = ValidImage(Str(a, "banner_image_url")),
+                Description = Str(a, "description"),
+                Discord = Str(a, "discord_url"),
+                CoingeckoId = Str(a, "coingecko_coin_id"),
+                GtScore = a.TryGetProperty("gt_score", out var gs) && gs.ValueKind == JsonValueKind.Number ? gs.GetDecimal() : 0m,
+                GtVerified = a.TryGetProperty("gt_verified", out var gv) && gv.ValueKind == JsonValueKind.True,
+                IsHoneypot = a.TryGetProperty("is_honeypot", out var hp) ? hp.ValueKind == JsonValueKind.True : null,
+                MintAuthority = Str(a, "mint_authority"),
+                FreezeAuthority = Str(a, "freeze_authority"),
+                DeveloperAddress = Str(a, "developer_address"),
+                Decimals = a.TryGetProperty("decimals", out var dc) && dc.ValueKind == JsonValueKind.Number ? dc.GetInt32() : 0,
+                DeveloperHoldingPercentage = a.TryGetProperty("developer_holding_percentage", out var dh)
+                    ? (dh.ValueKind == JsonValueKind.Number ? dh.GetDecimal()
+                        : dh.ValueKind == JsonValueKind.String && decimal.TryParse(dh.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var dv) ? dv : 0m)
+                    : 0m,
+            };
+
+            var twitter = Str(a, "twitter_handle");
+            if (twitter.Length > 0) meta.Twitter = $"https://twitter.com/{twitter.TrimStart('@')}";
+            var telegram = Str(a, "telegram_handle");
+            if (telegram.Length > 0) meta.Telegram = $"https://t.me/{telegram.TrimStart('@')}";
+
+            if (a.TryGetProperty("websites", out var ws) && ws.ValueKind == JsonValueKind.Array && ws.GetArrayLength() > 0)
+            {
+                meta.Website = ws[0].GetString() ?? string.Empty;
+            }
+
+            if (a.TryGetProperty("holders", out var h))
+            {
+                if (h.ValueKind == JsonValueKind.Object && h.TryGetProperty("count", out var hc) && hc.ValueKind == JsonValueKind.Number)
+                    meta.Holders = hc.GetInt64();
+                else if (h.ValueKind == JsonValueKind.Number)
+                    meta.Holders = h.GetInt64();
+
+                if (h.ValueKind == JsonValueKind.Object && h.TryGetProperty("distribution_percentage", out var dist) && dist.ValueKind == JsonValueKind.Object)
+                {
+                    meta.HoldersTop10Pct = NumProp(dist, "top_10");
+                    meta.Holders11To30Pct = NumProp(dist, "11_30");
+                    meta.Holders31To50Pct = NumProp(dist, "31_50");
+                    meta.HoldersRestPct = NumProp(dist, "rest");
+                }
+            }
+
+            if (a.TryGetProperty("categories", out var cats) && cats.ValueKind == JsonValueKind.Array)
+            {
+                meta.Categories = string.Join(", ", cats.EnumerateArray().Select(c => c.GetString()).Where(s => !string.IsNullOrWhiteSpace(s)));
+            }
+
+            // The main token endpoint carries supply / fdv / market cap (the /info one does not).
+            try
+            {
+                using var tokResp = await _httpClient.GetAsync($"networks/{network}/tokens/{tokenAddress}", cancellationToken);
+                if (tokResp.IsSuccessStatusCode)
+                {
+                    await using var ts = await tokResp.Content.ReadAsStreamAsync(cancellationToken);
+                    using var tdoc = await JsonDocument.ParseAsync(ts, default, cancellationToken);
+                    if (tdoc.RootElement.TryGetProperty("data", out var td) && td.TryGetProperty("attributes", out var ta))
+                    {
+                        meta.TotalSupply = NumProp(ta, "normalized_total_supply");
+                        meta.Fdv = NumProp(ta, "fdv_usd");
+                        meta.MarketCap = NumProp(ta, "market_cap_usd");
+                        if (meta.Decimals == 0 && ta.TryGetProperty("decimals", out var td2) && td2.ValueKind == JsonValueKind.Number)
+                            meta.Decimals = td2.GetInt32();
+                    }
+                }
+            }
+            catch { /* supply/fdv optional */ }
+
+            return meta;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Trending pools on a network, mapped to token rows for the DEX list.</summary>
+    public async Task<IReadOnlyList<DexTokenInfo>> GetTrendingTokensAsync(
+        string network, CancellationToken cancellationToken = default)
+    {
+        var result = new List<DexTokenInfo>();
+        if (string.IsNullOrWhiteSpace(network))
+        {
+            return result;
+        }
+
+        try
+        {
+            using var resp = await _httpClient.GetAsync($"networks/{network}/trending_pools?page=1", cancellationToken);
+            if (!resp.IsSuccessStatusCode)
+            {
+                return result;
+            }
+
+            await using var stream = await resp.Content.ReadAsStreamAsync(cancellationToken);
+            using var doc = await JsonDocument.ParseAsync(stream, default, cancellationToken);
+            if (!doc.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
+            {
+                return result;
+            }
+
+            foreach (var pool in data.EnumerateArray())
+            {
+                if (!pool.TryGetProperty("attributes", out var a)) continue;
+
+                var name = Str(a, "name");
+                var parts = name.Split(" / ", StringSplitOptions.RemoveEmptyEntries);
+                var baseSym = parts.Length > 0 ? parts[0].Trim() : name;
+                var quoteSym = parts.Length > 1 ? parts[1].Split(' ')[0] : string.Empty;
+
+                var baseTokenId = string.Empty;
+                var dexId = string.Empty;
+                if (pool.TryGetProperty("relationships", out var rel))
+                {
+                    if (rel.TryGetProperty("base_token", out var bt) && bt.TryGetProperty("data", out var btd))
+                        baseTokenId = btd.TryGetProperty("id", out var bid) ? bid.GetString() ?? "" : "";
+                    if (rel.TryGetProperty("dex", out var dx) && dx.TryGetProperty("data", out var dxd))
+                        dexId = dxd.TryGetProperty("id", out var did) ? did.GetString() ?? "" : "";
+                }
+
+                var prefix = network + "_";
+                var tokenAddress = baseTokenId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                    ? baseTokenId[prefix.Length..]
+                    : baseTokenId;
+
+                result.Add(new DexTokenInfo
+                {
+                    ChainId = network,
+                    PairAddress = Str(a, "address"),
+                    TokenAddress = tokenAddress,
+                    Symbol = baseSym,
+                    Name = baseSym,
+                    QuoteSymbol = quoteSym,
+                    DexId = dexId,
+                    PriceUsd = NumProp(a, "base_token_price_usd"),
+                    Volume24h = NestedH24(a, "volume_usd"),
+                    LiquidityUsd = NumProp(a, "reserve_in_usd"),
+                    PriceChange24h = NestedH24(a, "price_change_percentage"),
+                });
+            }
+        }
+        catch
+        {
+            // return whatever parsed
+        }
+
+        return result;
+    }
+
+    /// <summary>Live pool activity — 24h buy/sell counts and the recent market-trade tape.</summary>
+    public async Task<DexPoolActivity?> GetPoolActivityAsync(
+        string network, string poolAddress, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(network) || string.IsNullOrWhiteSpace(poolAddress))
+        {
+            return null;
+        }
+
+        var activity = new DexPoolActivity();
+        try
+        {
+            using var poolResp = await _httpClient.GetAsync($"networks/{network}/pools/{poolAddress}", cancellationToken);
+            if (poolResp.IsSuccessStatusCode)
+            {
+                await using var ps = await poolResp.Content.ReadAsStreamAsync(cancellationToken);
+                using var pdoc = await JsonDocument.ParseAsync(ps, default, cancellationToken);
+                if (pdoc.RootElement.TryGetProperty("data", out var pd) && pd.TryGetProperty("attributes", out var pa)
+                    && pa.TryGetProperty("transactions", out var tx) && tx.TryGetProperty("h24", out var h24))
+                {
+                    activity.Buys24h = LongProp(h24, "buys");
+                    activity.Sells24h = LongProp(h24, "sells");
+                    activity.Buyers24h = LongProp(h24, "buyers");
+                    activity.Sellers24h = LongProp(h24, "sellers");
+                }
+            }
+        }
+        catch { /* counts optional */ }
+
+        try
+        {
+            using var tradesResp = await _httpClient.GetAsync($"networks/{network}/pools/{poolAddress}/trades", cancellationToken);
+            if (tradesResp.IsSuccessStatusCode)
+            {
+                await using var ts = await tradesResp.Content.ReadAsStreamAsync(cancellationToken);
+                using var tdoc = await JsonDocument.ParseAsync(ts, default, cancellationToken);
+                if (tdoc.RootElement.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+                {
+                    var trades = new List<DexTradeTick>();
+                    foreach (var t in data.EnumerateArray())
+                    {
+                        if (!t.TryGetProperty("attributes", out var a)) continue;
+                        var side = Str(a, "kind");
+                        var amount = NumProp(a, "volume_in_usd");
+                        var tsUtc = DateTime.TryParse(Str(a, "block_timestamp"), CultureInfo.InvariantCulture,
+                            DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var dt) ? dt : DateTime.UtcNow;
+                        trades.Add(new DexTradeTick(side, amount, Str(a, "tx_hash"), tsUtc));
+                    }
+                    activity.Trades = trades;
+                }
+            }
+        }
+        catch { /* trades optional */ }
+
+        return activity.Trades.Count == 0 && activity.Buys24h == 0 && activity.Sells24h == 0 ? null : activity;
+    }
+
+    private static decimal NestedH24(JsonElement e, string prop) =>
+        e.TryGetProperty(prop, out var o) && o.ValueKind == JsonValueKind.Object && o.TryGetProperty("h24", out var h)
+            ? (h.ValueKind == JsonValueKind.Number && h.TryGetDecimal(out var hn) ? hn
+                : h.ValueKind == JsonValueKind.String && decimal.TryParse(h.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var hs) ? hs : 0m)
+            : 0m;
+
+    private static long LongProp(JsonElement e, string prop) =>
+        e.TryGetProperty(prop, out var p) && p.ValueKind == JsonValueKind.Number && p.TryGetInt64(out var l) ? l : 0L;
+
+    private static decimal NumProp(JsonElement e, string prop)
+    {
+        if (!e.TryGetProperty(prop, out var p)) return 0m;
+        if (p.ValueKind == JsonValueKind.Number && p.TryGetDecimal(out var n)) return n;
+        return p.ValueKind == JsonValueKind.String && decimal.TryParse(p.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var s) ? s : 0m;
+    }
+
+    private static string Str(JsonElement e, string prop) =>
+        e.TryGetProperty(prop, out var p) && p.ValueKind == JsonValueKind.String ? p.GetString() ?? string.Empty : string.Empty;
+
+    private static string ValidImage(string url) =>
+        string.IsNullOrWhiteSpace(url) || url.Contains("missing", StringComparison.OrdinalIgnoreCase) ? string.Empty : url;
+
     private static decimal ParseDecimal(JsonElement element)
     {
         return element.ValueKind switch

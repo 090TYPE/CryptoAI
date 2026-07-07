@@ -1,0 +1,71 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             x:Class="CryptoAITerminal.TerminalUI.Views.DexMarketFlowView"
+             x:DataType="vm:DexTradingViewModel"
+             FontFamily="{StaticResource FontDisplay}">
+  <UserControl.Styles>
+    <StyleInclude Source="avares://CryptoAITerminal.TerminalUI/Styles/TradingDeskStyles.axaml" />
+  </UserControl.Styles>
+
+  <StackPanel Spacing="10" Margin="0,12,0,0">
+
+    <!-- Anti-rug alerts -->
+    <Border Background="#160c0c" BorderBrush="#3a1414" BorderThickness="1" CornerRadius="8" Padding="8" IsVisible="{Binding HasTokenAlerts}">
+      <StackPanel Spacing="4">
+        <TextBlock Text="⚠ ANTI-RUG ALERTS" Foreground="#ff8a65" FontSize="9" FontWeight="Bold" LetterSpacing="0.6" />
+        <ItemsControl ItemsSource="{Binding TokenAlerts}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:DexTokenAlertViewModel">
+              <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,1">
+                <TextBlock Text="{Binding Icon}" FontSize="11" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding Message}" Foreground="{Binding Brush}" FontSize="10" Margin="6,0" VerticalAlignment="Center" TextWrapping="Wrap" />
+                <TextBlock Grid.Column="2" Text="{Binding TimeLabel}" Foreground="#5a7a94" FontSize="9" VerticalAlignment="Center" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+    <TextBlock Classes="TdSub" Text="Monitoring liquidity, whale sells &amp; volume for rug signals…" FontSize="9" IsVisible="{Binding !HasTokenAlerts}" />
+
+    <!-- Buys / Sells 24h -->
+    <Grid ColumnDefinitions="*,*">
+      <StackPanel Spacing="2">
+        <TextBlock Classes="TdLabel" Text="BUYS 24H" />
+        <TextBlock Classes="TdNum" Text="{Binding Buys24hLabel}" Foreground="#3ddc84" FontWeight="Bold" FontSize="16" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Spacing="2" HorizontalAlignment="Right">
+        <TextBlock Classes="TdLabel" Text="SELLS 24H" HorizontalAlignment="Right" />
+        <TextBlock Classes="TdNum" Text="{Binding Sells24hLabel}" Foreground="#ff6b6b" FontWeight="Bold" FontSize="16" HorizontalAlignment="Right" />
+      </StackPanel>
+    </Grid>
+    <ProgressBar Minimum="0" Maximum="100" Value="{Binding BuyPercent}" Height="8" Foreground="#3ddc84" Background="#ff6b6b" CornerRadius="4" />
+    <TextBlock Classes="TdSub" Text="{Binding BuySellRatioLabel}" HorizontalAlignment="Center" FontSize="10" />
+
+    <!-- Live trade tape -->
+    <Border Classes="TdCard">
+      <StackPanel Spacing="6">
+        <Grid ColumnDefinitions="*,*,*">
+          <TextBlock Classes="TdLabel" Text="SIDE" />
+          <TextBlock Grid.Column="1" Classes="TdLabel" Text="SIZE" HorizontalAlignment="Right" />
+          <TextBlock Grid.Column="2" Classes="TdLabel" Text="TIME" HorizontalAlignment="Right" />
+        </Grid>
+        <ScrollViewer MaxHeight="230" VerticalScrollBarVisibility="Auto">
+          <ItemsControl ItemsSource="{Binding RecentMarketTrades}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:DexMarketTradeViewModel">
+                <Grid ColumnDefinitions="*,*,*" Height="17">
+                  <TextBlock Text="{Binding SideLabel}" Foreground="{Binding SideBrush}" FontWeight="Bold" FontSize="10" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding AmountLabel}" Foreground="#c8dcef" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding TimeLabel}" Foreground="#5a7a94" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+        <TextBlock Text="Waiting for live trades on this pool…" Foreground="#5a7a94" FontSize="11" IsVisible="{Binding ShowMarketTradesPlaceholder}" />
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

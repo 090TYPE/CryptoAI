@@ -37,6 +37,31 @@ public class CexCandlestickChart : Control
     public static readonly StyledProperty<IReadOnlyList<BookWall>?> WallsProperty =
         AvaloniaProperty.Register<CexCandlestickChart, IReadOnlyList<BookWall>?>(nameof(Walls));
 
+    /// <summary>"Candles" | "HA" (Heikin-Ashi) | "Line" | "Area".</summary>
+    public static readonly StyledProperty<string?> ChartTypeProperty =
+        AvaloniaProperty.Register<CexCandlestickChart, string?>(nameof(ChartType), defaultValue: "Candles");
+
+    public static readonly StyledProperty<bool> ShowMa20Property =
+        AvaloniaProperty.Register<CexCandlestickChart, bool>(nameof(ShowMa20), defaultValue: true);
+
+    public static readonly StyledProperty<bool> ShowMa50Property =
+        AvaloniaProperty.Register<CexCandlestickChart, bool>(nameof(ShowMa50), defaultValue: true);
+
+    public static readonly StyledProperty<bool> ShowBollingerProperty =
+        AvaloniaProperty.Register<CexCandlestickChart, bool>(nameof(ShowBollinger));
+
+    public static readonly StyledProperty<bool> ShowRsiProperty =
+        AvaloniaProperty.Register<CexCandlestickChart, bool>(nameof(ShowRsi));
+
+    public static readonly StyledProperty<bool> ShowWallsProperty =
+        AvaloniaProperty.Register<CexCandlestickChart, bool>(nameof(ShowWalls), defaultValue: true);
+
+    public static readonly StyledProperty<int> ZoomInVersionProperty =
+        AvaloniaProperty.Register<CexCandlestickChart, int>(nameof(ZoomInVersion));
+
+    public static readonly StyledProperty<int> ZoomOutVersionProperty =
+        AvaloniaProperty.Register<CexCandlestickChart, int>(nameof(ZoomOutVersion));
+
     private const int MinimumVisibleCandles = 20;
     private const int DefaultRecentVisibleCandles = 180;
     private static readonly Dictionary<string, List<ChartDrawing>> PersistedDrawings = new(StringComparer.OrdinalIgnoreCase);
@@ -49,6 +74,7 @@ public class CexCandlestickChart : Control
     private Rect _chartBounds;
     private Rect _priceBounds;
     private Rect _timeBounds;
+    private Rect _rsiBounds;
     private decimal _minVisiblePrice;
     private decimal _maxVisiblePrice;
     private bool _hasChartLayout;
@@ -68,7 +94,7 @@ public class CexCandlestickChart : Control
 
     static CexCandlestickChart()
     {
-        AffectsRender<CexCandlestickChart>(CandlesProperty, ToolModeProperty, ClearDrawingsVersionProperty, ResetViewVersionProperty, PersistenceKeyProperty, ShowVwapProperty, ShowVolumeProfileProperty, WallsProperty);
+        AffectsRender<CexCandlestickChart>(CandlesProperty, ToolModeProperty, ClearDrawingsVersionProperty, ResetViewVersionProperty, PersistenceKeyProperty, ShowVwapProperty, ShowVolumeProfileProperty, WallsProperty, ChartTypeProperty, ShowMa20Property, ShowMa50Property, ShowBollingerProperty, ShowRsiProperty, ShowWallsProperty);
         FocusableProperty.OverrideDefaultValue<CexCandlestickChart>(true);
     }
 
@@ -120,6 +146,54 @@ public class CexCandlestickChart : Control
         set => SetValue(WallsProperty, value);
     }
 
+    public string? ChartType
+    {
+        get => GetValue(ChartTypeProperty);
+        set => SetValue(ChartTypeProperty, value);
+    }
+
+    public bool ShowMa20
+    {
+        get => GetValue(ShowMa20Property);
+        set => SetValue(ShowMa20Property, value);
+    }
+
+    public bool ShowMa50
+    {
+        get => GetValue(ShowMa50Property);
+        set => SetValue(ShowMa50Property, value);
+    }
+
+    public bool ShowBollinger
+    {
+        get => GetValue(ShowBollingerProperty);
+        set => SetValue(ShowBollingerProperty, value);
+    }
+
+    public bool ShowRsi
+    {
+        get => GetValue(ShowRsiProperty);
+        set => SetValue(ShowRsiProperty, value);
+    }
+
+    public bool ShowWalls
+    {
+        get => GetValue(ShowWallsProperty);
+        set => SetValue(ShowWallsProperty, value);
+    }
+
+    public int ZoomInVersion
+    {
+        get => GetValue(ZoomInVersionProperty);
+        set => SetValue(ZoomInVersionProperty, value);
+    }
+
+    public int ZoomOutVersion
+    {
+        get => GetValue(ZoomOutVersionProperty);
+        set => SetValue(ZoomOutVersionProperty, value);
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -156,6 +230,18 @@ public class CexCandlestickChart : Control
             return;
         }
 
+        if (change.Property == ZoomInVersionProperty)
+        {
+            ApplyZoom(0.8d);
+            return;
+        }
+
+        if (change.Property == ZoomOutVersionProperty)
+        {
+            ApplyZoom(1.25d);
+            return;
+        }
+
         if (change.Property == PersistenceKeyProperty)
         {
             LoadPersistedDrawings();
@@ -182,9 +268,15 @@ public class CexCandlestickChart : Control
 
         var priceAxisWidth = 98d;
         var timeAxisHeight = 34d;
-        _chartBounds = new Rect(bounds.Left, bounds.Top, Math.Max(0, bounds.Width - priceAxisWidth), Math.Max(0, bounds.Height - timeAxisHeight));
+        var rsiHeight = ShowRsi ? 78d : 0d;
+        var plotWidth = Math.Max(0, bounds.Width - priceAxisWidth);
+        var plotHeight = Math.Max(0, bounds.Height - timeAxisHeight);
+        _chartBounds = new Rect(bounds.Left, bounds.Top, plotWidth, Math.Max(0, plotHeight - rsiHeight));
+        _rsiBounds = ShowRsi
+            ? new Rect(bounds.Left, _chartBounds.Bottom, plotWidth, rsiHeight)
+            : default;
         _priceBounds = new Rect(_chartBounds.Right, _chartBounds.Top, priceAxisWidth, _chartBounds.Height);
-        _timeBounds = new Rect(_chartBounds.Left, _chartBounds.Bottom, _chartBounds.Width, timeAxisHeight);
+        _timeBounds = new Rect(bounds.Left, bounds.Top + plotHeight, plotWidth, timeAxisHeight);
         _hasChartLayout = _chartBounds.Width > 0 && _chartBounds.Height > 0;
 
         DrawBackdrop(context, bounds, _chartBounds, _priceBounds, _timeBounds);
@@ -205,8 +297,15 @@ public class CexCandlestickChart : Control
             return;
         }
 
+        // Indicators/series computed up front so the price range can grow to
+        // include any overlay (MA, Bollinger, Heikin-Ashi) that extends past the
+        // raw candle range and would otherwise clip.
+        var series = BuildSeries();
+
         _minVisiblePrice = _visibleCandles.Min(candle => candle.Low);
         _maxVisiblePrice = _visibleCandles.Max(candle => candle.High);
+        series.ExpandRange(ref _minVisiblePrice, ref _maxVisiblePrice);
+
         var padding = (_maxVisiblePrice - _minVisiblePrice) * 0.06m;
         if (padding <= 0)
         {
@@ -218,12 +317,14 @@ public class CexCandlestickChart : Control
 
         DrawPriceAxis(context);
         DrawTimeAxis(context);
-        DrawCandles(context);
+        DrawPriceSeries(context, series);
         if (ShowVolumeProfile) DrawVolumeProfile(context);
         if (ShowVwap) DrawVwap(context);
+        DrawIndicatorOverlays(context, series);
         DrawDrawings(context);
-        DrawWalls(context);
+        if (ShowWalls) DrawWalls(context);
         DrawLastPriceMarker(context, _visibleCandles[^1].Close, MapY(_visibleCandles[^1].Close));
+        if (ShowRsi) DrawRsiPanel(context, series);
         DrawCrosshair(context);
     }
 
@@ -498,6 +599,24 @@ public class CexCandlestickChart : Control
         EnsureViewWindow();
     }
 
+    /// <summary>Zoom the visible window around its right edge. factor &lt; 1 zooms in.</summary>
+    private void ApplyZoom(double factor)
+    {
+        RefreshAllCandles();
+        if (_allCandles.Count <= MinimumVisibleCandles)
+        {
+            return;
+        }
+
+        EnsureViewWindow();
+        var rightOffset = Math.Max(0, _allCandles.Count - (_visibleStartIndex + _visibleCount));
+        var newCount = (int)Math.Round(_visibleCount * factor);
+        newCount = Math.Clamp(newCount, MinimumVisibleCandles, _allCandles.Count);
+        _visibleCount = newCount;
+        _visibleStartIndex = ClampVisibleStart(_allCandles.Count - newCount - rightOffset, newCount);
+        InvalidateVisual();
+    }
+
     private void ResetViewWindow()
     {
         RefreshAllCandles();
@@ -563,7 +682,25 @@ public class CexCandlestickChart : Control
         }
     }
 
-    private void DrawCandles(DrawingContext context)
+    private void DrawPriceSeries(DrawingContext context, SeriesData series)
+    {
+        var type = (ChartType ?? "Candles").Trim();
+        if (string.Equals(type, "Line", StringComparison.OrdinalIgnoreCase))
+        {
+            DrawLineArea(context, series.Close, fill: false);
+            return;
+        }
+
+        if (string.Equals(type, "Area", StringComparison.OrdinalIgnoreCase))
+        {
+            DrawLineArea(context, series.Close, fill: true);
+            return;
+        }
+
+        DrawCandleSeries(context, series, useHa: string.Equals(type, "HA", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void DrawCandleSeries(DrawingContext context, SeriesData series, bool useHa)
     {
         var slotWidth = _chartBounds.Width / Math.Max(1, _visibleCandles.Count);
         var candleBodyWidth = Math.Clamp(slotWidth * 0.72d, 3d, 24d);
@@ -571,13 +708,29 @@ public class CexCandlestickChart : Control
         for (var visibleIndex = 0; visibleIndex < _visibleCandles.Count; visibleIndex++)
         {
             var candle = _visibleCandles[visibleIndex];
+            decimal open, high, low, close;
+            if (useHa && series.HasHa)
+            {
+                open = (decimal)series.HaOpen[visibleIndex];
+                high = (decimal)series.HaHigh[visibleIndex];
+                low = (decimal)series.HaLow[visibleIndex];
+                close = (decimal)series.HaClose[visibleIndex];
+            }
+            else
+            {
+                open = candle.Open;
+                high = candle.High;
+                low = candle.Low;
+                close = candle.Close;
+            }
+
             var globalIndex = _visibleStartIndex + visibleIndex;
             var centerX = MapX(globalIndex);
-            var openY = MapY(candle.Open);
-            var closeY = MapY(candle.Close);
-            var highY = MapY(candle.High);
-            var lowY = MapY(candle.Low);
-            var bullish = candle.Close >= candle.Open;
+            var openY = MapY(open);
+            var closeY = MapY(close);
+            var highY = MapY(high);
+            var lowY = MapY(low);
+            var bullish = close >= open;
             var color = bullish ? Color.Parse("#21E6C1") : Color.Parse("#FF6B6B");
             var brush = new SolidColorBrush(color);
             var pen = new Pen(brush, 1);
@@ -589,6 +742,327 @@ public class CexCandlestickChart : Control
             var bodyHeight = Math.Max(2d, bodyBottom - bodyTop);
             var bodyRect = new Rect(centerX - (candleBodyWidth / 2d), bodyTop, candleBodyWidth, bodyHeight);
             context.DrawRectangle(brush, pen, bodyRect);
+        }
+    }
+
+    private void DrawLineArea(DrawingContext context, double[] closes, bool fill)
+    {
+        if (closes.Length < 2)
+        {
+            return;
+        }
+
+        var lineColor = Color.Parse("#21E6C1");
+        var geo = new StreamGeometry();
+        using (var gc = geo.Open())
+        {
+            var started = false;
+            for (var i = 0; i < closes.Length; i++)
+            {
+                var p = new Point(MapX(_visibleStartIndex + i), MapY((decimal)closes[i]));
+                if (!started) { gc.BeginFigure(p, false); started = true; }
+                else gc.LineTo(p);
+            }
+
+            gc.EndFigure(false);
+        }
+
+        if (fill)
+        {
+            var fillGeo = new StreamGeometry();
+            using (var gc = fillGeo.Open())
+            {
+                gc.BeginFigure(new Point(MapX(_visibleStartIndex), _chartBounds.Bottom), true);
+                for (var i = 0; i < closes.Length; i++)
+                {
+                    gc.LineTo(new Point(MapX(_visibleStartIndex + i), MapY((decimal)closes[i])));
+                }
+
+                gc.LineTo(new Point(MapX(_visibleStartIndex + closes.Length - 1), _chartBounds.Bottom));
+                gc.EndFigure(true);
+            }
+
+            context.DrawGeometry(new SolidColorBrush(Color.FromArgb(60, lineColor.R, lineColor.G, lineColor.B)), null, fillGeo);
+        }
+
+        context.DrawGeometry(null, new Pen(new SolidColorBrush(lineColor), 1.6), geo);
+    }
+
+    private void DrawIndicatorOverlays(DrawingContext context, SeriesData series)
+    {
+        if (ShowMa20 && series.HasMa20)
+        {
+            DrawSeriesLine(context, series.Ma20, new Pen(new SolidColorBrush(Color.Parse("#F4B860")), 1.4));
+        }
+
+        if (ShowMa50 && series.HasMa50)
+        {
+            DrawSeriesLine(context, series.Ma50, new Pen(new SolidColorBrush(Color.Parse("#8FB9DE")), 1.4));
+        }
+
+        if (ShowBollinger && series.HasBb)
+        {
+            var bandPen = new Pen(new SolidColorBrush(Color.Parse("#7C5CFF")), 1.0) { DashStyle = new DashStyle([4, 3], 0) };
+            var midPen = new Pen(new SolidColorBrush(Color.FromArgb(140, 124, 92, 255)), 0.9);
+            DrawSeriesLine(context, series.BbUpper, bandPen);
+            DrawSeriesLine(context, series.BbLower, bandPen);
+            DrawSeriesLine(context, series.BbMid, midPen);
+        }
+    }
+
+    private void DrawSeriesLine(DrawingContext context, double[] values, Pen pen)
+    {
+        var geo = new StreamGeometry();
+        using (var gc = geo.Open())
+        {
+            var started = false;
+            for (var i = 0; i < values.Length; i++)
+            {
+                if (double.IsNaN(values[i]))
+                {
+                    started = false;
+                    continue;
+                }
+
+                var p = new Point(MapX(_visibleStartIndex + i), MapY((decimal)values[i]));
+                if (!started) { gc.BeginFigure(p, false); started = true; }
+                else gc.LineTo(p);
+            }
+
+            gc.EndFigure(false);
+        }
+
+        context.DrawGeometry(null, pen, geo);
+    }
+
+    private void DrawRsiPanel(DrawingContext context, SeriesData series)
+    {
+        if (_rsiBounds.Width <= 0 || _rsiBounds.Height <= 0)
+        {
+            return;
+        }
+
+        context.DrawRectangle(new SolidColorBrush(Color.Parse("#0A121B")), new Pen(new SolidColorBrush(Color.Parse("#1A2B39")), 1), _rsiBounds);
+
+        double RsiY(double value) => _rsiBounds.Bottom - (Math.Clamp(value, 0d, 100d) / 100d * _rsiBounds.Height);
+
+        var guidePen70 = new Pen(new SolidColorBrush(Color.FromArgb(80, 255, 107, 107)), 0.8) { DashStyle = new DashStyle([3, 3], 0) };
+        var guidePen30 = new Pen(new SolidColorBrush(Color.FromArgb(80, 61, 220, 132)), 0.8) { DashStyle = new DashStyle([3, 3], 0) };
+        context.DrawLine(guidePen70, new Point(_rsiBounds.Left, RsiY(70)), new Point(_rsiBounds.Right, RsiY(70)));
+        context.DrawLine(guidePen30, new Point(_rsiBounds.Left, RsiY(30)), new Point(_rsiBounds.Right, RsiY(30)));
+
+        var label = new FormattedText("RSI 14", CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+            new Typeface("Segoe UI"), 10, new SolidColorBrush(Color.Parse("#6E8196")));
+        context.DrawText(label, new Point(_rsiBounds.Left + 6, _rsiBounds.Top + 4));
+
+        if (!series.HasRsi)
+        {
+            return;
+        }
+
+        var lastRsi = 50d;
+        var geo = new StreamGeometry();
+        using (var gc = geo.Open())
+        {
+            var started = false;
+            for (var i = 0; i < series.Rsi.Length; i++)
+            {
+                if (double.IsNaN(series.Rsi[i]))
+                {
+                    started = false;
+                    continue;
+                }
+
+                lastRsi = series.Rsi[i];
+                var p = new Point(MapX(_visibleStartIndex + i), RsiY(series.Rsi[i]));
+                if (!started) { gc.BeginFigure(p, false); started = true; }
+                else gc.LineTo(p);
+            }
+
+            gc.EndFigure(false);
+        }
+
+        var rsiColor = lastRsi >= 70 ? Color.Parse("#FF6B6B") : lastRsi <= 30 ? Color.Parse("#3DDC84") : Color.Parse("#F4B860");
+        context.DrawGeometry(null, new Pen(new SolidColorBrush(rsiColor), 1.3), geo);
+
+        var valueLabel = new FormattedText(lastRsi.ToString("0.0", CultureInfo.InvariantCulture),
+            CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+            new Typeface("Segoe UI", FontStyle.Normal, FontWeight.SemiBold), 11, new SolidColorBrush(rsiColor));
+        context.DrawText(valueLabel, new Point(_rsiBounds.Right - valueLabel.Width - 6, _rsiBounds.Top + 4));
+    }
+
+    /// <summary>Compute overlay series over all candles, sliced to the visible window.</summary>
+    private SeriesData BuildSeries()
+    {
+        var start = _visibleStartIndex;
+        var count = _visibleCandles.Count;
+        var allCloses = _allCandles.Select(c => (double)c.Close).ToArray();
+        var total = allCloses.Length;
+
+        double[] Slice(double[] full)
+        {
+            var slice = new double[count];
+            for (var i = 0; i < count; i++)
+            {
+                var gi = start + i;
+                slice[i] = gi >= 0 && gi < full.Length ? full[gi] : double.NaN;
+            }
+
+            return slice;
+        }
+
+        double[] Sma(int period)
+        {
+            var result = new double[total];
+            double sum = 0;
+            for (var i = 0; i < total; i++)
+            {
+                sum += allCloses[i];
+                if (i >= period) sum -= allCloses[i - period];
+                result[i] = i >= period - 1 ? sum / period : double.NaN;
+            }
+
+            return result;
+        }
+
+        var ma20Full = Sma(20);
+        var ma50Full = Sma(50);
+
+        // Bollinger(20, 2)
+        var bbUpperFull = new double[total];
+        var bbLowerFull = new double[total];
+        var bbMidFull = new double[total];
+        for (var i = 0; i < total; i++)
+        {
+            if (i < 19)
+            {
+                bbUpperFull[i] = bbLowerFull[i] = bbMidFull[i] = double.NaN;
+                continue;
+            }
+
+            double mean = ma20Full[i];
+            double variance = 0;
+            for (var k = i - 19; k <= i; k++)
+            {
+                var d = allCloses[k] - mean;
+                variance += d * d;
+            }
+
+            var std = Math.Sqrt(variance / 20d);
+            bbMidFull[i] = mean;
+            bbUpperFull[i] = mean + 2d * std;
+            bbLowerFull[i] = mean - 2d * std;
+        }
+
+        // RSI(14) Wilder
+        var rsiFull = new double[total];
+        for (var i = 0; i < total; i++) rsiFull[i] = double.NaN;
+        if (total > 14)
+        {
+            double avgGain = 0, avgLoss = 0;
+            for (var i = 1; i <= 14; i++)
+            {
+                var change = allCloses[i] - allCloses[i - 1];
+                if (change >= 0) avgGain += change; else avgLoss -= change;
+            }
+
+            avgGain /= 14d;
+            avgLoss /= 14d;
+            rsiFull[14] = avgLoss < 1e-12 ? 100d : 100d - 100d / (1d + avgGain / avgLoss);
+            for (var i = 15; i < total; i++)
+            {
+                var change = allCloses[i] - allCloses[i - 1];
+                var gain = change >= 0 ? change : 0d;
+                var loss = change < 0 ? -change : 0d;
+                avgGain = (avgGain * 13d + gain) / 14d;
+                avgLoss = (avgLoss * 13d + loss) / 14d;
+                rsiFull[i] = avgLoss < 1e-12 ? 100d : 100d - 100d / (1d + avgGain / avgLoss);
+            }
+        }
+
+        // Heikin-Ashi over all candles
+        var haOpenFull = new double[total];
+        var haHighFull = new double[total];
+        var haLowFull = new double[total];
+        var haCloseFull = new double[total];
+        for (var i = 0; i < total; i++)
+        {
+            var c = _allCandles[i];
+            var haClose = (double)(c.Open + c.High + c.Low + c.Close) / 4d;
+            var haOpen = i == 0
+                ? (double)(c.Open + c.Close) / 2d
+                : (haOpenFull[i - 1] + haCloseFull[i - 1]) / 2d;
+            haCloseFull[i] = haClose;
+            haOpenFull[i] = haOpen;
+            haHighFull[i] = Math.Max((double)c.High, Math.Max(haOpen, haClose));
+            haLowFull[i] = Math.Min((double)c.Low, Math.Min(haOpen, haClose));
+        }
+
+        return new SeriesData
+        {
+            Close = Slice(allCloses),
+            Ma20 = Slice(ma20Full),
+            Ma50 = Slice(ma50Full),
+            BbUpper = Slice(bbUpperFull),
+            BbLower = Slice(bbLowerFull),
+            BbMid = Slice(bbMidFull),
+            HaOpen = Slice(haOpenFull),
+            HaHigh = Slice(haHighFull),
+            HaLow = Slice(haLowFull),
+            HaClose = Slice(haCloseFull),
+            Rsi = Slice(rsiFull),
+            HasMa20 = total >= 20,
+            HasMa50 = total >= 50,
+            HasBb = total >= 20,
+            HasHa = total >= 1,
+            HasRsi = total > 14,
+        };
+    }
+
+    private sealed class SeriesData
+    {
+        public required double[] Close { get; init; }
+        public required double[] Ma20 { get; init; }
+        public required double[] Ma50 { get; init; }
+        public required double[] BbUpper { get; init; }
+        public required double[] BbLower { get; init; }
+        public required double[] BbMid { get; init; }
+        public required double[] HaOpen { get; init; }
+        public required double[] HaHigh { get; init; }
+        public required double[] HaLow { get; init; }
+        public required double[] HaClose { get; init; }
+        public required double[] Rsi { get; init; }
+        public required bool HasMa20 { get; init; }
+        public required bool HasMa50 { get; init; }
+        public required bool HasBb { get; init; }
+        public required bool HasHa { get; init; }
+        public required bool HasRsi { get; init; }
+
+        /// <summary>Grow the price domain to include any visible overlay extremes.</summary>
+        public void ExpandRange(ref decimal min, ref decimal max)
+        {
+            if (!HasBb) return;
+
+            var lo = min;
+            var hi = max;
+            foreach (var v in BbUpper)
+            {
+                if (double.IsNaN(v)) continue;
+                var dv = (decimal)v;
+                if (dv < lo) lo = dv;
+                if (dv > hi) hi = dv;
+            }
+
+            foreach (var v in BbLower)
+            {
+                if (double.IsNaN(v)) continue;
+                var dv = (decimal)v;
+                if (dv < lo) lo = dv;
+                if (dv > hi) hi = dv;
+            }
+
+            min = lo;
+            max = hi;
         }
     }
 

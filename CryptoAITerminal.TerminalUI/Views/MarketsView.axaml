@@ -1,387 +1,740 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.MarketsView"
              x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-        <StackPanel Spacing="16">
-          <Border Classes="HeroPanel">
-            <Grid ColumnDefinitions="1.35*,Auto" ColumnSpacing="18">
-              <StackPanel Spacing="6">
-                <TextBlock Classes="Overline" Text="MARKET EXPLORER" />
-                <TextBlock Classes="H1" Text="Live Spot Radar" />
-                <TextBlock Text="{Binding MarketsScreenSummary}"
-                           Foreground="#8FA3B8"
-                           TextWrapping="Wrap"
-                           MaxWidth="760" />
+             x:CompileBindings="False"
+             FontFamily="{StaticResource FontDisplay}">
+
+  <!-- ================= local styles (Markets board) ================= -->
+  <UserControl.Styles>
+    <Style Selector="TextBlock.mono">
+      <Setter Property="FontFamily" Value="{StaticResource FontMono}" />
+    </Style>
+
+    <!-- tiny uppercase section / column caption -->
+    <Style Selector="TextBlock.cap">
+      <Setter Property="FontSize" Value="9" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="LetterSpacing" Value="0.6" />
+      <Setter Property="Foreground" Value="#3D5A72" />
+    </Style>
+
+    <!-- filter / sort text pill -->
+    <Style Selector="Button.pill">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0,0,12,6" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.pill:pointerover">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+    <!-- add-coin segment -->
+    <Style Selector="Button.seg">
+      <Setter Property="Padding" Value="0,5" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.seg:pointerover">
+      <Setter Property="Background" Value="#0E2A2A" />
+    </Style>
+
+    <!-- micro-trend timeframe button -->
+    <Style Selector="Button.tf">
+      <Setter Property="Padding" Value="10,3" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+
+    <!-- TRADE row button -->
+    <Style Selector="Button.trade">
+      <Setter Property="Background" Value="#07111A" />
+      <Setter Property="BorderBrush" Value="#1A3040" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Foreground" Value="#3D5A72" />
+      <Setter Property="FontSize" Value="9" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Padding" Value="6,4" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.trade:pointerover">
+      <Setter Property="Background" Value="#0E2A2A" />
+      <Setter Property="BorderBrush" Value="#21E6C1" />
+      <Setter Property="Foreground" Value="#21E6C1" />
+    </Style>
+
+    <!-- flat table row -->
+    <Style Selector="Button.rowbtn">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0,0,0,1" />
+      <Setter Property="BorderBrush" Value="#09151E" />
+      <Setter Property="Padding" Value="14,0" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Height" Value="48" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.rowbtn:pointerover">
+      <Setter Property="Background" Value="#0A1622" />
+    </Style>
+
+    <!-- favourite star -->
+    <Style Selector="Button.star">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.star:pointerover">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+    <!-- flat full-width table rows -->
+    <Style Selector="ListBox.mkt">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="ListBox.mkt ListBoxItem">
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="ListBox.mkt ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="ListBox.mkt ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#0A1622" />
+    </Style>
+    <Style Selector="ListBox.mkt ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#0E2840" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <!-- detail stat cell -->
+    <Style Selector="Border.statcell">
+      <Setter Property="Background" Value="#07111A" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Padding" Value="12,10" />
+    </Style>
+
+    <!-- search field (borderless textbox inside a chrome border) -->
+    <Style Selector="TextBox.search">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="TextBox.search:focus">
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="TextBox.addbox">
+      <Setter Property="Background" Value="#07111A" />
+      <Setter Property="BorderBrush" Value="#152233" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Padding" Value="10,7" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="CornerRadius" Value="8" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="52,*" Background="#040B12">
+
+    <!-- ============================================================
+         TOP STATS STRIP
+    ============================================================ -->
+    <Border Grid.Row="0" Background="#050C14"
+            BorderBrush="#0D1B27" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="*,Auto" Margin="16,0">
+        <ItemsControl Grid.Column="0" ItemsSource="{Binding GlobalMarketStats}"
+                      VerticalAlignment="Center">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:MarketStatCellViewModel">
+              <StackPanel Margin="0,0,26,0" VerticalAlignment="Center" Spacing="1">
+                <TextBlock Text="{Binding Label}" Classes="cap" FontSize="8" />
+                <TextBlock Text="{Binding Value}" Classes="mono"
+                           FontSize="13" FontWeight="Bold"
+                           Foreground="{Binding ValueBrush}" />
+                <TextBlock Text="{Binding Delta}" Classes="mono"
+                           FontSize="10" FontWeight="SemiBold"
+                           Foreground="{Binding DeltaBrush}"
+                           IsVisible="{Binding HasDelta}" />
               </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
 
-              <WrapPanel Orientation="Horizontal">
-                <Border Classes="SoftPanel" MinWidth="140" Margin="0,0,12,0">
-                  <StackPanel Spacing="4">
-                    <TextBlock Classes="Overline" Text="Tracked" />
-                    <TextBlock FontSize="22" FontWeight="Bold" Foreground="#21E6C1"
-                               Text="{Binding TrackedMarketsCount}" />
-                  </StackPanel>
-                </Border>
-                <Border Classes="SoftPanel" MinWidth="140" Margin="0,0,12,0">
-                  <StackPanel Spacing="4">
-                    <TextBlock Classes="Overline" Text="Visible" />
-                    <TextBlock FontSize="22" FontWeight="Bold" Foreground="#F4F7FB"
-                               Text="{Binding VisibleMarketsCount}" />
-                  </StackPanel>
-                </Border>
-                <Border Classes="SoftPanel" MinWidth="140" Margin="0,0,12,0">
-                  <StackPanel Spacing="4">
-                    <TextBlock Classes="Overline" Text="Favorites" />
-                    <TextBlock FontSize="22" FontWeight="Bold" Foreground="#F4B860"
-                               Text="{Binding FavoriteMarketsCount}" />
-                  </StackPanel>
-                </Border>
-                <Border Classes="SoftPanel" MinWidth="180">
-                  <StackPanel Spacing="4">
-                    <TextBlock Classes="Overline" Text="Breadth" />
-                    <TextBlock FontSize="22" FontWeight="Bold" Foreground="#F4F7FB"
-                               Text="{Binding MarketBreadthLabel}" />
-                  </StackPanel>
-                </Border>
-              </WrapPanel>
-            </Grid>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10"
+                    VerticalAlignment="Center">
+          <Border Background="#07111A" CornerRadius="999" Padding="10,4">
+            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+              <Ellipse Width="7" Height="7" Fill="#3DDC84" Classes="PulseDot"
+                       VerticalAlignment="Center" />
+              <TextBlock Text="LIVE" FontSize="9" FontWeight="Bold"
+                         Foreground="#5A7A94" VerticalAlignment="Center" />
+            </StackPanel>
           </Border>
+          <Border Background="#06181A" CornerRadius="999" Padding="10,4">
+            <TextBlock Text="AI ON" FontSize="9" FontWeight="Bold"
+                       Foreground="#21E6C1" VerticalAlignment="Center" />
+          </Border>
+        </StackPanel>
+      </Grid>
+    </Border>
 
-          <Grid ColumnDefinitions="320,*" ColumnSpacing="16">
-            <Border Classes="Panel" Grid.Column="0">
-              <StackPanel Spacing="14">
-                <TextBlock Classes="H2" Text="Scanner Controls" />
+    <!-- ============================================================
+         BODY: controls sidebar | table | detail panel
+    ============================================================ -->
+    <Grid Grid.Row="1" ColumnDefinitions="264,*,360">
 
-                <StackPanel Spacing="6">
-                  <TextBlock Classes="Overline" Text="Search" />
-                  <TextBox Text="{Binding MarketsSearchText}"
-                           PlaceholderText="BTC, ETH, BNB..." />
+      <!-- ===== CONTROLS SIDEBAR ===== -->
+      <Border Grid.Column="0" Background="#050C14"
+              BorderBrush="#0D1B27" BorderThickness="0,0,1,0">
+        <ScrollViewer Classes="PageScroll">
+          <StackPanel Margin="12,14" Spacing="14">
+
+            <StackPanel Spacing="3">
+              <TextBlock Text="Markets" FontSize="18" FontWeight="Bold"
+                         Foreground="#E8F4FF" />
+              <StackPanel Orientation="Horizontal" Spacing="5">
+                <TextBlock Text="{Binding TrackedMarketsCount}" FontSize="11"
+                           FontWeight="Bold" Foreground="#C8DCEF" />
+                <TextBlock Text="tracked ·" FontSize="11" Foreground="#3D5A72" />
+                <TextBlock Text="{Binding FavoriteMarketsCount}" FontSize="11"
+                           FontWeight="Bold" Foreground="#F4B860" />
+                <TextBlock Text="favourites" FontSize="11" Foreground="#3D5A72" />
+              </StackPanel>
+            </StackPanel>
+
+            <!-- search -->
+            <Border Background="#07111A" CornerRadius="8"
+                    BorderBrush="#152233" BorderThickness="1" Padding="10,7">
+              <Grid ColumnDefinitions="Auto,*">
+                <Path Grid.Column="0" Width="12" Height="12" Margin="0,0,8,0"
+                      VerticalAlignment="Center" Stroke="#3D5A72" StrokeThickness="1.4"
+                      Data="M5,5 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0 M8,8 L11,11" />
+                <TextBox Grid.Column="1" Classes="search"
+                         Text="{Binding MarketsSearchText}"
+                         Watermark="Symbol or 0x address..." />
+              </Grid>
+            </Border>
+
+            <!-- filter pills -->
+            <WrapPanel Orientation="Horizontal">
+              <Button Classes="pill" Content="ALL"
+                      Command="{Binding SetMarketFilterCommand}" CommandParameter="ALL"
+                      Foreground="{Binding SelectedMarketFilter, Converter={StaticResource PillActiveText}, ConverterParameter=ALL}" />
+              <Button Classes="pill" Content="CEX"
+                      Command="{Binding SetMarketFilterCommand}" CommandParameter="CEX"
+                      Foreground="{Binding SelectedMarketFilter, Converter={StaticResource PillActiveText}, ConverterParameter=CEX}" />
+              <Button Classes="pill" Content="DEX"
+                      Command="{Binding SetMarketFilterCommand}" CommandParameter="DEX"
+                      Foreground="{Binding SelectedMarketFilter, Converter={StaticResource PillActiveText}, ConverterParameter=DEX}" />
+              <Button Classes="pill" Content="FAV"
+                      Command="{Binding SetMarketFilterCommand}" CommandParameter="FAV"
+                      Foreground="{Binding SelectedMarketFilter, Converter={StaticResource PillActiveText}, ConverterParameter=FAV}" />
+              <Button Classes="pill" Content="GAINERS"
+                      Command="{Binding SetMarketFilterCommand}" CommandParameter="GAINERS"
+                      Foreground="{Binding SelectedMarketFilter, Converter={StaticResource PillActiveText}, ConverterParameter=GAINERS}" />
+              <Button Classes="pill" Content="LOSERS"
+                      Command="{Binding SetMarketFilterCommand}" CommandParameter="LOSERS"
+                      Foreground="{Binding SelectedMarketFilter, Converter={StaticResource PillActiveText}, ConverterParameter=LOSERS}" />
+            </WrapPanel>
+
+            <!-- sort -->
+            <StackPanel Spacing="6">
+              <TextBlock Text="SORT BY" Classes="cap" />
+              <WrapPanel Orientation="Horizontal">
+                <Button Classes="pill" Content="CHANGE"
+                        Command="{Binding SetMarketSortCommand}" CommandParameter="CHANGE"
+                        Foreground="{Binding SelectedMarketSortMode, Converter={StaticResource PillActiveText}, ConverterParameter=Momentum}" />
+                <Button Classes="pill" Content="PRICE"
+                        Command="{Binding SetMarketSortCommand}" CommandParameter="PRICE"
+                        Foreground="{Binding SelectedMarketSortMode, Converter={StaticResource PillActiveText}, ConverterParameter=Price}" />
+                <Button Classes="pill" Content="VOLUME"
+                        Command="{Binding SetMarketSortCommand}" CommandParameter="VOLUME"
+                        Foreground="{Binding SelectedMarketSortMode, Converter={StaticResource PillActiveText}, ConverterParameter=Volume}" />
+                <Button Classes="pill" Content="NAME"
+                        Command="{Binding SetMarketSortCommand}" CommandParameter="NAME"
+                        Foreground="{Binding SelectedMarketSortMode, Converter={StaticResource PillActiveText}, ConverterParameter=Alphabetical}" />
+              </WrapPanel>
+            </StackPanel>
+
+            <!-- add coin -->
+            <StackPanel Spacing="8">
+              <TextBlock Text="ADD COIN" Classes="cap" />
+              <Border Background="#07111A" CornerRadius="8" Padding="3">
+                <Grid ColumnDefinitions="*,*,*">
+                  <Button Grid.Column="0" Classes="seg" Content="CEX"
+                          Command="{Binding SetAddModeCommand}" CommandParameter="CEX"
+                          Background="{Binding SelectedAddMode, Converter={StaticResource SegActiveBg}, ConverterParameter=CEX}"
+                          Foreground="{Binding SelectedAddMode, Converter={StaticResource SegActiveText}, ConverterParameter=CEX}" />
+                  <Button Grid.Column="1" Classes="seg" Content="DEX"
+                          Command="{Binding SetAddModeCommand}" CommandParameter="DEX"
+                          Background="{Binding SelectedAddMode, Converter={StaticResource SegActiveBg}, ConverterParameter=DEX}"
+                          Foreground="{Binding SelectedAddMode, Converter={StaticResource SegActiveText}, ConverterParameter=DEX}" />
+                  <Button Grid.Column="2" Classes="seg" Content="TOKEN"
+                          Command="{Binding SetAddModeCommand}" CommandParameter="TOKEN"
+                          Background="{Binding SelectedAddMode, Converter={StaticResource SegActiveBg}, ConverterParameter=TOKEN}"
+                          Foreground="{Binding SelectedAddMode, Converter={StaticResource SegActiveText}, ConverterParameter=TOKEN}" />
+                </Grid>
+              </Border>
+              <ComboBox HorizontalAlignment="Stretch" MinHeight="0"
+                        FontSize="11" Padding="8,5"
+                        ItemsSource="{Binding DexChainOptions}"
+                        SelectedItem="{Binding SelectedDexChain}"
+                        IsVisible="{Binding IsDexSource}" />
+              <TextBox Classes="addbox" Text="{Binding NewMarketSymbol}"
+                       Watermark="{Binding AddCoinPlaceholder}" />
+              <Button Content="+ Add to Watchlist"
+                      Command="{Binding AddCustomMarketCommand}"
+                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                      Background="#091E1E" BorderThickness="0" Foreground="#21E6C1"
+                      FontSize="11" FontWeight="Bold" Padding="0,7" CornerRadius="8"
+                      MinHeight="0" />
+              <TextBlock Text="{Binding MarketsStatus}" Foreground="#5A7A94"
+                         FontSize="10" TextWrapping="Wrap"
+                         IsVisible="{Binding MarketsStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            </StackPanel>
+
+            <!-- leaders -->
+            <StackPanel Spacing="8">
+              <TextBlock Text="LEADERS" Classes="cap" />
+              <Border Background="#07111A" CornerRadius="8" Padding="10,6">
+                <Grid ColumnDefinitions="Auto,*">
+                  <TextBlock Grid.Column="0" Text="STRONGEST" Classes="cap"
+                             VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding StrongestMarketLabel}"
+                             HorizontalAlignment="Right" VerticalAlignment="Center"
+                             FontSize="11" FontWeight="Bold" Foreground="#3DDC84" />
+                </Grid>
+              </Border>
+              <Border Background="#07111A" CornerRadius="8" Padding="10,6">
+                <Grid ColumnDefinitions="Auto,*">
+                  <TextBlock Grid.Column="0" Text="WEAKEST" Classes="cap"
+                             VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding WeakestMarketLabel}"
+                             HorizontalAlignment="Right" VerticalAlignment="Center"
+                             FontSize="11" FontWeight="Bold" Foreground="#FF6B6B" />
+                </Grid>
+              </Border>
+              <Border Background="#07111A" CornerRadius="8" Padding="10,6">
+                <Grid ColumnDefinitions="Auto,*">
+                  <TextBlock Grid.Column="0" Text="MOST ACTIVE" Classes="cap"
+                             VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding MostActiveMarketLabel}"
+                             HorizontalAlignment="Right" VerticalAlignment="Center"
+                             FontSize="11" FontWeight="Bold" Foreground="#C8DCEF" />
+                </Grid>
+              </Border>
+              <Border Background="#07111A" CornerRadius="8" Padding="10,6">
+                <Grid ColumnDefinitions="Auto,*">
+                  <TextBlock Grid.Column="0" Text="TIGHTEST SPREAD" Classes="cap"
+                             VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding TightestSpreadMarketLabel}"
+                             HorizontalAlignment="Right" VerticalAlignment="Center"
+                             FontSize="11" FontWeight="Bold" Foreground="#C8DCEF" />
+                </Grid>
+              </Border>
+            </StackPanel>
+
+            <!-- breadth -->
+            <StackPanel Spacing="6">
+              <TextBlock Text="BREADTH" Classes="cap" />
+              <TextBlock FontSize="12" Foreground="#C8DCEF">
+                <Run Text="{Binding PositiveMarketsCount}" />
+                <Run Text="/" Foreground="#3D5A72" />
+                <Run Text="{Binding TrackedMarketsCount}" Foreground="#3D5A72" />
+                <Run Text=" up" Foreground="#3D5A72" />
+              </TextBlock>
+              <Grid ColumnDefinitions="*,*">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
+                  <TextBlock Text="↑ gainers" FontSize="10" Foreground="#3D5A72" />
+                  <TextBlock Text="{Binding PositiveMarketsCount}" FontSize="10"
+                             FontWeight="Bold" Foreground="#3DDC84" />
                 </StackPanel>
-
-                <StackPanel Spacing="6">
-                  <TextBlock Classes="Overline" Text="Add coin" />
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                    <ComboBox Grid.Column="0" HorizontalAlignment="Stretch"
-                              ItemsSource="{Binding MarketSourceOptions}"
-                              SelectedItem="{Binding SelectedMarketSource}" />
-                    <ComboBox Grid.Column="1" Width="120"
-                              ItemsSource="{Binding DexChainOptions}"
-                              SelectedItem="{Binding SelectedDexChain}"
-                              IsVisible="{Binding IsDexSource}" />
-                  </Grid>
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                    <TextBox Grid.Column="0" Text="{Binding NewMarketSymbol}"
-                             PlaceholderText="PEPE, WIF, 0x... / адрес токена" />
-                    <Button Grid.Column="1" Content="+ Add"
-                            Command="{Binding AddCustomMarketCommand}" />
-                  </Grid>
-                  <TextBlock Text="{Binding MarketsStatus}" Foreground="#8FA3B8"
-                             FontSize="11" TextWrapping="Wrap"
-                             IsVisible="{Binding MarketsStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                  <TextBlock Text="{Binding AddMarketHint}"
-                             Foreground="#5A7A90" FontSize="10" TextWrapping="Wrap" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4"
+                            HorizontalAlignment="Right">
+                  <TextBlock Text="losers ↓" FontSize="10" Foreground="#3D5A72" />
+                  <TextBlock Text="{Binding NegativeMarketsCount}" FontSize="10"
+                             FontWeight="Bold" Foreground="#FF6B6B" />
                 </StackPanel>
+              </Grid>
+            </StackPanel>
 
-                <StackPanel Spacing="6">
-                  <TextBlock Classes="Overline" Text="Sort" />
-                  <ComboBox ItemsSource="{Binding MarketSortOptions}"
-                            SelectedItem="{Binding SelectedMarketSortMode}" />
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+
+      <!-- ===== MARKET TABLE ===== -->
+      <Grid Grid.Column="1" RowDefinitions="48,*" Background="#040B12">
+
+        <!-- header -->
+        <Border Grid.Row="0" Background="#0A1824"
+                BorderBrush="#09151E" BorderThickness="0,0,0,1" Padding="14,0">
+          <Grid ColumnDefinitions="32,186*,110*,90*,110*,110*,90*,60*">
+            <TextBlock Grid.Column="1" Text="COIN" Classes="cap" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2" Text="PRICE" Classes="cap" VerticalAlignment="Center"
+                       HorizontalAlignment="Right" />
+            <TextBlock Grid.Column="3" Text="24H %" Classes="cap" VerticalAlignment="Center"
+                       HorizontalAlignment="Right" />
+            <TextBlock Grid.Column="4" Text="VOLUME" Classes="cap" VerticalAlignment="Center"
+                       HorizontalAlignment="Right" />
+            <TextBlock Grid.Column="5" Text="MKT CAP" Classes="cap" VerticalAlignment="Center"
+                       HorizontalAlignment="Right" />
+            <TextBlock Grid.Column="6" Text="7D TREND" Classes="cap" VerticalAlignment="Center"
+                       HorizontalAlignment="Center" />
+          </Grid>
+        </Border>
+
+        <!-- rows -->
+        <ListBox Grid.Row="1" Classes="mkt"
+                 ItemsSource="{Binding VisibleMarkets}"
+                 SelectedItem="{Binding SelectedMarket}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:CexMarketItemViewModel">
+              <Border BorderBrush="#09151E" BorderThickness="0,0,0,1" Padding="14,0" Height="48">
+                <Grid ColumnDefinitions="32,186*,110*,90*,110*,110*,90*,60*" VerticalAlignment="Center">
+
+                    <!-- favourite -->
+                    <Button Grid.Column="0" Classes="star"
+                            Content="{Binding FavoriteStar}"
+                            Foreground="{Binding FavoriteStarBrush}"
+                            HorizontalAlignment="Left"
+                            Command="{Binding $parent[Window].DataContext.ToggleMarketFavoriteCommand}"
+                            CommandParameter="{Binding .}" />
+
+                    <!-- coin -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="9"
+                                VerticalAlignment="Center">
+                      <Border Width="28" Height="28" CornerRadius="8"
+                              Background="{Binding RowIconBackground}"
+                              VerticalAlignment="Center">
+                        <TextBlock Text="{Binding IconText}"
+                                   Foreground="{Binding RowIconForeground}"
+                                   FontSize="9" FontWeight="Bold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                      </Border>
+                      <StackPanel VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Text="{Binding BaseAssetSymbol}" FontSize="12"
+                                   FontWeight="Bold" Foreground="#D4EEFF" />
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <Border Background="{Binding VenueBadgeBackground}"
+                                  CornerRadius="3" Padding="4,1">
+                            <TextBlock Text="{Binding VenueBadge}"
+                                       Foreground="{Binding VenueBadgeForeground}"
+                                       FontSize="8" FontWeight="Bold" />
+                          </Border>
+                          <TextBlock Text="{Binding QuoteBadge}" FontSize="9"
+                                     Foreground="#3D5A72" VerticalAlignment="Center" />
+                        </StackPanel>
+                      </StackPanel>
+                    </StackPanel>
+
+                    <!-- price -->
+                    <TextBlock Grid.Column="2" Text="{Binding LastPriceDisplay}"
+                               Classes="mono" FontSize="12" FontWeight="Bold"
+                               Foreground="#E8F4FF"
+                               HorizontalAlignment="Right" VerticalAlignment="Center" />
+
+                    <!-- 24h % pill -->
+                    <Border Grid.Column="3" HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Background="{Binding ChangePillBackground}"
+                            CornerRadius="5" Padding="7,3">
+                      <TextBlock Text="{Binding ChangePercentLabel}" Classes="mono"
+                                 FontSize="11" FontWeight="Bold"
+                                 Foreground="{Binding ChangePillForeground}" />
+                    </Border>
+
+                    <!-- volume -->
+                    <TextBlock Grid.Column="4" Text="{Binding Volume24hLabel}"
+                               Classes="mono" FontSize="11" Foreground="#5A7A94"
+                               HorizontalAlignment="Right" VerticalAlignment="Center" />
+
+                    <!-- market cap -->
+                    <TextBlock Grid.Column="5" Text="{Binding MarketCapLabel}"
+                               Classes="mono" FontSize="11" Foreground="#5A7A94"
+                               HorizontalAlignment="Right" VerticalAlignment="Center" />
+
+                    <!-- 7d trend -->
+                    <Viewbox Grid.Column="6" Width="72" Height="24"
+                             HorizontalAlignment="Center" VerticalAlignment="Center"
+                             Stretch="None">
+                      <Polyline Points="{Binding SparklinePoints}"
+                                Stroke="{Binding SparklineBrush}"
+                                StrokeThickness="1.4"
+                                StrokeLineCap="Round" StrokeJoin="Round" />
+                    </Viewbox>
+
+                    <!-- trade -->
+                    <Button Grid.Column="7" Classes="trade" Content="TRADE"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Command="{Binding $parent[Window].DataContext.OpenMarketInTradingCommand}"
+                            CommandParameter="{Binding .}" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Grid>
+
+      <!-- ===== DETAIL PANEL ===== -->
+      <Border Grid.Column="2" Background="#050C14"
+              BorderBrush="#0D1B27" BorderThickness="1,0,0,0">
+        <ScrollViewer Classes="PageScroll">
+          <StackPanel Margin="14" Spacing="12" DataContext="{Binding SelectedMarket}">
+
+            <!-- header -->
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <Border Grid.Column="0" Width="38" Height="38" CornerRadius="10"
+                      Background="{Binding RowIconBackground}" VerticalAlignment="Center">
+                <TextBlock Text="{Binding IconText}" Foreground="{Binding RowIconForeground}"
+                           FontSize="12" FontWeight="Bold"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+              <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" Spacing="2">
+                <TextBlock Text="{Binding BaseAssetSymbol}" FontSize="16" FontWeight="Bold"
+                           Foreground="#E8F4FF" />
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                  <TextBlock Text="{Binding CoinName}" FontSize="10" Foreground="#3D5A72" />
+                  <TextBlock Text="·" FontSize="10" Foreground="#3D5A72" />
+                  <TextBlock Text="{Binding VenueBadge}" FontSize="10" Foreground="#3D5A72" />
                 </StackPanel>
+              </StackPanel>
+              <Button Grid.Column="2" Content="☆ Save"
+                      Background="#07111A" BorderBrush="#152233" BorderThickness="1"
+                      Foreground="{Binding FavoriteBrush}" FontSize="10" FontWeight="Bold"
+                      Padding="10,6" CornerRadius="7" MinHeight="0"
+                      VerticalAlignment="Center"
+                      Command="{Binding $parent[Window].DataContext.ToggleMarketFavoriteCommand}"
+                      CommandParameter="{Binding .}" />
+            </Grid>
 
-                <CheckBox Content="Show favorites only"
-                          IsChecked="{Binding ShowFavoriteMarketsOnly}" />
-
-                <WrapPanel Orientation="Horizontal">
-                  <Button Content="REFRESH"
-                          Command="{Binding RefreshMarketsCommand}"
-                          Width="120"
-                          Margin="0,0,10,0" />
-                  <Button Content="OPEN TRADING"
-                          Command="{Binding OpenMarketInTradingCommand}"
-                          CommandParameter="{Binding SelectedMarket}"
-                          Width="150"
-                          Classes="GhostButton" />
-                </WrapPanel>
-
-                <Border Classes="SoftPanel">
-                  <StackPanel Spacing="8">
-                    <TextBlock Classes="Overline" Text="Selection" />
-                    <TextBlock Text="{Binding MarketsSelectionSummary}"
-                               Foreground="#D7E3EE"
-                               TextWrapping="Wrap" />
+            <!-- price card -->
+            <Border Background="#07111A" CornerRadius="12" Padding="15,12">
+              <StackPanel Spacing="8">
+                <TextBlock Text="{Binding LastPriceDisplay}" Classes="mono"
+                           FontSize="26" FontWeight="Bold" Foreground="#E8F4FF" />
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Text="{Binding ChangePercentLabel}" Classes="mono"
+                             FontSize="13" FontWeight="Bold"
+                             Foreground="{Binding ChangePillForeground}" />
+                  <TextBlock Text="· 24h · Updated" FontSize="11" Foreground="#3D5A72"
+                             VerticalAlignment="Center" />
+                  <TextBlock Text="{Binding UpdatedLabel}" Classes="mono" FontSize="11"
+                             Foreground="#5A7A94" VerticalAlignment="Center" />
+                </StackPanel>
+                <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
+                  <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock Text="24H Low" FontSize="9" Foreground="#3D5A72" />
+                    <TextBlock Text="{Binding Low24hLabel}" Classes="mono" FontSize="12"
+                               FontWeight="SemiBold" Foreground="#C8DCEF" />
                   </StackPanel>
-                </Border>
-
-                <Border Classes="SoftPanel">
-                  <StackPanel Spacing="8">
-                    <TextBlock Classes="Overline" Text="Leaders" />
-                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
-                      <TextBlock Grid.Row="0" Text="Strongest" Foreground="#8FA3B8" />
-                      <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding StrongestMarketLabel}" FontWeight="SemiBold" />
-                      <TextBlock Grid.Row="1" Text="Weakest" Foreground="#8FA3B8" />
-                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding WeakestMarketLabel}" FontWeight="SemiBold" />
-                      <TextBlock Grid.Row="2" Text="Tightest" Foreground="#8FA3B8" />
-                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding TightestSpreadMarketLabel}" FontWeight="SemiBold" />
-                      <TextBlock Grid.Row="3" Text="Active" Foreground="#8FA3B8" />
-                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding MostActiveMarketLabel}" FontWeight="SemiBold" />
-                    </Grid>
+                  <StackPanel Grid.Column="1" Spacing="2" HorizontalAlignment="Right">
+                    <TextBlock Text="24H High" FontSize="9" Foreground="#3D5A72"
+                               HorizontalAlignment="Right" />
+                    <TextBlock Text="{Binding High24hLabel}" Classes="mono" FontSize="12"
+                               FontWeight="SemiBold" Foreground="#C8DCEF"
+                               HorizontalAlignment="Right" />
                   </StackPanel>
-                </Border>
+                </Grid>
               </StackPanel>
             </Border>
 
-            <StackPanel Grid.Column="1" Spacing="16">
-              <Border Classes="Panel">
-                <StackPanel Spacing="12">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <TextBlock Classes="H2" Text="Heatmap" />
-                    <TextBlock Grid.Column="1"
-                               Text="{Binding ConnectionStateLabel}"
-                               Foreground="#8FA3B8"
-                               VerticalAlignment="Center" />
-                  </Grid>
-                  <ItemsControl ItemsSource="{Binding MarketHeatmapMarkets}">
-                    <ItemsControl.ItemsPanel>
-                      <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal" />
-                      </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate x:DataType="vm:CexMarketItemViewModel">
-                        <Button Width="170"
-                                Margin="0,0,12,12"
-                                Padding="12"
-                                HorizontalContentAlignment="Stretch"
-                                Command="{Binding $parent[Window].DataContext.FocusMarketCommand}"
-                                CommandParameter="{Binding .}"
-                                Background="{Binding LogoBackground}">
-                          <StackPanel Spacing="4">
-                            <Grid ColumnDefinitions="*,Auto">
-                              <TextBlock Grid.Column="0"
-                                         Text="{Binding BaseAssetSymbol}"
-                                         FontWeight="Bold"
-                                         Foreground="{Binding LogoForeground}" />
-                              <TextBlock Grid.Column="1"
-                                         Text="{Binding ChangePercentLabel}"
-                                         Foreground="{Binding LogoForeground}" />
-                            </Grid>
-                            <TextBlock Text="{Binding LastPrice, StringFormat=$ {0:N4}}"
-                                       Foreground="{Binding LogoForeground}"
-                                       FontSize="18"
-                                       FontWeight="Bold" />
-                            <TextBlock Text="{Binding TrendLabel}"
-                                       Foreground="{Binding LogoForeground}" />
-                          </StackPanel>
-                        </Button>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
+            <!-- stat grid 2x2 -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto"
+                  ColumnSpacing="12" RowSpacing="12">
+              <Border Grid.Row="0" Grid.Column="0" Classes="statcell">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="SPREAD" Classes="cap" />
+                  <TextBlock Text="{Binding SpreadPercentLabel}" Classes="mono"
+                             FontSize="14" FontWeight="Bold" Foreground="#E8F4FF" />
                 </StackPanel>
               </Border>
+              <Border Grid.Row="0" Grid.Column="1" Classes="statcell">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="ACTIVITY" Classes="cap" />
+                  <TextBlock Text="{Binding ActivityOutOf100}" Classes="mono"
+                             FontSize="14" FontWeight="Bold" Foreground="#21E6C1" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Row="1" Grid.Column="0" Classes="statcell">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="VOLUME 24H" Classes="cap" />
+                  <TextBlock Text="{Binding Volume24hLabel}" Classes="mono"
+                             FontSize="14" FontWeight="Bold" Foreground="#E8F4FF" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Row="1" Grid.Column="1" Classes="statcell">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="MKT CAP" Classes="cap" />
+                  <TextBlock Text="{Binding MarketCapLabel}" Classes="mono"
+                             FontSize="14" FontWeight="Bold" Foreground="#E8F4FF" />
+                </StackPanel>
+              </Border>
+            </Grid>
 
-              <Grid ColumnDefinitions="0.95*,1.05*" ColumnSpacing="16">
-                <Border Classes="Panel" Grid.Column="0">
-                  <StackPanel Spacing="10">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                      <TextBlock Classes="H2" Text="Market Board" />
-                      <TextBlock Grid.Column="1"
-                                 Text="{Binding VisibleMarketsCount, StringFormat=Rows: {0}}"
-                                 Foreground="#8FA3B8"
-                                 VerticalAlignment="Center" />
-                    </Grid>
-
-                    <ListBox ItemsSource="{Binding VisibleMarkets}"
-                             SelectedItem="{Binding SelectedMarket}">
-                      <ListBox.ItemTemplate>
-                        <DataTemplate x:DataType="vm:CexMarketItemViewModel">
-                          <Border Classes="SoftPanel" Margin="0,0,0,10">
-                            <StackPanel Spacing="8">
-                              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                                <Border Grid.Column="0"
-                                        Width="34"
-                                        Height="34"
-                                        Background="{Binding LogoBackground}"
-                                        CornerRadius="17">
-                                  <TextBlock Text="{Binding LogoText}"
-                                             Foreground="{Binding LogoForeground}"
-                                             HorizontalAlignment="Center"
-                                             VerticalAlignment="Center"
-                                             FontWeight="Bold" />
-                                </Border>
-                                <StackPanel Grid.Column="1" Spacing="2">
-                                  <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <TextBlock Text="{Binding DisplaySymbol}" FontWeight="Bold"
-                                               VerticalAlignment="Center" />
-                                    <Border Background="{Binding ExchangeBadgeBrush}"
-                                            CornerRadius="4" Padding="5,1"
-                                            VerticalAlignment="Center">
-                                      <TextBlock Text="{Binding ExchangeBadge}"
-                                                 Foreground="#0B0E14" FontSize="9"
-                                                 FontWeight="Bold" />
-                                    </Border>
-                                  </StackPanel>
-                                  <TextBlock Text="{Binding TrendLabel}"
-                                             Foreground="{Binding TrendBrush}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
-                                  <Button Content="{Binding FavoriteGlyph}"
-                                          Command="{Binding $parent[Window].DataContext.ToggleMarketFavoriteCommand}"
-                                          CommandParameter="{Binding .}"
-                                          Classes="GhostButton"
-                                          Foreground="{Binding FavoriteBrush}"
-                                          MinWidth="70" />
-                                  <Button Content="✕"
-                                          Command="{Binding $parent[Window].DataContext.RemoveMarketCommand}"
-                                          CommandParameter="{Binding .}"
-                                          Classes="GhostButton"
-                                          ToolTip.Tip="Удалить (только добавленные монеты)" />
-                                </StackPanel>
-                              </Grid>
-
-                              <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="6">
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding LastPrice, StringFormat=Last: $ {0:N4}}" />
-                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ChangePercentLabel}" Foreground="{Binding ChangeBrush}" HorizontalAlignment="Right" />
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding SpreadPercentLabel, StringFormat=Spread: {0}}" Foreground="#8FA3B8" />
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding UpdatedLabel, StringFormat=Updated: {0}}" Foreground="#8FA3B8" HorizontalAlignment="Right" />
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding RangeLabel, StringFormat=Range: {0}}" Foreground="#8FA3B8" />
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ActivityScoreLabel, StringFormat=Score: {0}}" Foreground="#8FA3B8" HorizontalAlignment="Right" />
-                              </Grid>
-
-                              <Button Content="OPEN IN TRADING"
-                                      Command="{Binding $parent[Window].DataContext.OpenMarketInTradingCommand}"
-                                      CommandParameter="{Binding .}"
-                                      Classes="GhostButton"
-                                      HorizontalAlignment="Left" />
-                            </StackPanel>
-                          </Border>
-                        </DataTemplate>
-                      </ListBox.ItemTemplate>
-                    </ListBox>
-                  </StackPanel>
-                </Border>
-
-                <Border Classes="Panel" Grid.Column="1">
-                  <StackPanel Spacing="14">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                      <StackPanel Spacing="4">
-                        <TextBlock Classes="H2" Text="{Binding SelectedMarketTitle}" />
-                        <TextBlock Text="{Binding MarketsSelectionSummary}"
-                                   Foreground="#8FA3B8"
-                                   TextWrapping="Wrap" />
-                      </StackPanel>
-                      <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                        <Button Content="TRADING"
-                                Command="{Binding OpenMarketInTradingCommand}"
-                                CommandParameter="{Binding SelectedMarket}"
-                                Width="110"
-                                Margin="0,0,10,0" />
-                        <Button Content="FAVORITE"
-                                Command="{Binding ToggleMarketFavoriteCommand}"
-                                CommandParameter="{Binding SelectedMarket}"
-                                Width="110"
-                                Classes="GhostButton" />
-                      </WrapPanel>
-                    </Grid>
-
-                    <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12">
-                      <Border Classes="SurfaceCard" Grid.Column="0">
-                        <StackPanel Spacing="4">
-                          <TextBlock Classes="Overline" Text="Last" />
-                          <TextBlock Classes="Metric" FontSize="22"
-                                     Text="{Binding SelectedMarket.LastPrice, StringFormat=$ {0:N4}}" />
-                        </StackPanel>
-                      </Border>
-                      <Border Classes="SurfaceCard" Grid.Column="1">
-                        <StackPanel Spacing="4">
-                          <TextBlock Classes="Overline" Text="Change" />
-                          <TextBlock Classes="Metric" FontSize="22"
-                                     Text="{Binding SelectedMarket.ChangePercentLabel}"
-                                     Foreground="{Binding SelectedMarket.ChangeBrush}" />
-                        </StackPanel>
-                      </Border>
-                      <Border Classes="SurfaceCard" Grid.Column="2">
-                        <StackPanel Spacing="4">
-                          <TextBlock Classes="Overline" Text="Spread" />
-                          <TextBlock Classes="Metric" FontSize="22"
-                                     Text="{Binding SelectedMarket.SpreadPercentLabel}" />
-                        </StackPanel>
-                      </Border>
-                      <Border Classes="SurfaceCard" Grid.Column="3">
-                        <StackPanel Spacing="4">
-                          <TextBlock Classes="Overline" Text="Activity" />
-                          <TextBlock Classes="Metric" FontSize="22"
-                                     Text="{Binding SelectedMarket.ActivityScoreLabel}" />
-                        </StackPanel>
-                      </Border>
-                    </Grid>
-
-                    <Border Classes="SoftPanel">
-                      <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
-                        <TextBlock Grid.Row="0" Classes="H2" Text="Micro Trend" />
-                        <ctrl:CexPriceChart Grid.Row="1"
-                                            Height="220"
-                                            HorizontalAlignment="Stretch"
-                                            VerticalAlignment="Stretch"
-                                            Points="{Binding SelectedMarket.ChartPoints}"
-                                            IsPositiveTrend="{Binding SelectedMarket.IsPositiveTrend}" />
-                        <TextBlock Grid.Row="2"
-                                   Text="{Binding SelectedMarket.RangeLabel, StringFormat=Observed range: {0}}"
-                                   Foreground="#8FA3B8" />
-                      </Grid>
-                    </Border>
-
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
-                      <Border Classes="SurfaceCard" Grid.Column="0">
-                        <StackPanel Spacing="8">
-                          <TextBlock Classes="H2" Text="Bids" />
-                          <ScrollViewer Classes="PageScroll" MaxHeight="240">
-                            <ItemsControl ItemsSource="{Binding SelectedMarket.BidLevels}">
-                              <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
-                                  <Grid ColumnDefinitions="*,Auto">
-                                    <TextBlock Grid.Column="0"
-                                               Text="{Binding Price, StringFormat=$ {0:N4}}"
-                                               Foreground="#3DDC84" />
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding Quantity, StringFormat={}{0:N4}}"
-                                               Foreground="#8B949E" />
-                                  </Grid>
-                                </DataTemplate>
-                              </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                          </ScrollViewer>
-                        </StackPanel>
-                      </Border>
-
-                      <Border Classes="SurfaceCard" Grid.Column="1">
-                        <StackPanel Spacing="8">
-                          <TextBlock Classes="H2" Text="Asks" />
-                          <ScrollViewer Classes="PageScroll" MaxHeight="240">
-                            <ItemsControl ItemsSource="{Binding SelectedMarket.AskLevels}">
-                              <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
-                                  <Grid ColumnDefinitions="*,Auto">
-                                    <TextBlock Grid.Column="0"
-                                               Text="{Binding Price, StringFormat=$ {0:N4}}"
-                                               Foreground="#FF6B6B" />
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding Quantity, StringFormat={}{0:N4}}"
-                                               Foreground="#8B949E" />
-                                  </Grid>
-                                </DataTemplate>
-                              </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                          </ScrollViewer>
-                        </StackPanel>
-                      </Border>
-                    </Grid>
-                  </StackPanel>
-                </Border>
+            <!-- micro trend -->
+            <StackPanel Spacing="8">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Text="MICRO TREND" Classes="cap"
+                           VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                  <Button Classes="tf" Content="15M"
+                          Command="{Binding $parent[Window].DataContext.SelectMarketTimeframeCommand}" CommandParameter="15M"
+                          Background="{Binding $parent[Window].DataContext.SelectedMarketTimeframe, Converter={StaticResource TfActiveBg}, ConverterParameter=15M}"
+                          BorderBrush="{Binding $parent[Window].DataContext.SelectedMarketTimeframe, Converter={StaticResource TfActiveBorder}, ConverterParameter=15M}"
+                          Foreground="{Binding $parent[Window].DataContext.SelectedMarketTimeframe, Converter={StaticResource TfActiveText}, ConverterParameter=15M}" />
+                  <Button Classes="tf" Content="1H"
+                          Command="{Binding $parent[Window].DataContext.SelectMarketTimeframeCommand}" CommandParameter="1H"
+                          Background="{Binding $parent[Window].DataContext.SelectedMarketTimeframe, Converter={StaticResource TfActiveBg}, ConverterParameter=1H}"
+                          BorderBrush="{Binding $parent[Window].DataContext.SelectedMarketTimeframe, Converter={StaticResource TfActiveBorder}, ConverterParameter=1H}"
+                          Foreground="{Binding $parent[Window].DataContext.SelectedMarketTimeframe, Converter={StaticResource TfActiveText}, ConverterParameter=1H}" />
+                  <Button Classes="tf" Content="4H"
+                          Command="{Binding $parent[Window].DataContext.SelectMarketTimeframeCommand}" CommandParameter="4H"
+                          Background="{Binding $parent[Window].DataContext.SelectedMarketTimeframe, Converter={StaticResource TfActiveBg}, ConverterParameter=4H}"
+                          BorderBrush="{Binding $parent[Window].DataContext.SelectedMarketTimeframe, Converter={StaticResource TfActiveBorder}, ConverterParameter=4H}"
+                          Foreground="{Binding $parent[Window].DataContext.SelectedMarketTimeframe, Converter={StaticResource TfActiveText}, ConverterParameter=4H}" />
+                  <Button Classes="tf" Content="1D"
+                          Command="{Binding $parent[Window].DataContext.SelectMarketTimeframeCommand}" CommandParameter="1D"
+                          Background="{Binding $parent[Window].DataContext.SelectedMarketTimeframe, Converter={StaticResource TfActiveBg}, ConverterParameter=1D}"
+                          BorderBrush="{Binding $parent[Window].DataContext.SelectedMarketTimeframe, Converter={StaticResource TfActiveBorder}, ConverterParameter=1D}"
+                          Foreground="{Binding $parent[Window].DataContext.SelectedMarketTimeframe, Converter={StaticResource TfActiveText}, ConverterParameter=1D}" />
+                </StackPanel>
               </Grid>
+              <Border Background="#07111A" CornerRadius="10" Padding="6" Height="120">
+                <ctrl:CexPriceChart Points="{Binding ChartPoints}"
+                                    IsPositiveTrend="{Binding IsPositiveTrend}"
+                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+              </Border>
             </StackPanel>
-          </Grid>
-        </StackPanel>
+
+            <!-- order book -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+              <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock Text="BIDS" Classes="cap" Foreground="#3DDC84" />
+                <ItemsControl ItemsSource="{Binding TopBids}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
+                      <Grid Height="16" ClipToBounds="True">
+                        <Border Background="#143DDC84" CornerRadius="2"
+                                HorizontalAlignment="Right"
+                                Width="{Binding DepthWidth}" MaxWidth="150" />
+                        <Grid ColumnDefinitions="*,Auto">
+                          <TextBlock Grid.Column="0" Text="{Binding Price, StringFormat={}{0:0.####}}"
+                                     Classes="mono" FontSize="10" Foreground="#3DDC84"
+                                     VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="1" Text="{Binding Quantity, StringFormat={}{0:0.###}}"
+                                     Classes="mono" FontSize="10" Foreground="#5A7A94"
+                                     VerticalAlignment="Center" />
+                        </Grid>
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="4">
+                <TextBlock Text="ASKS" Classes="cap" Foreground="#FF6B6B"
+                           HorizontalAlignment="Right" />
+                <ItemsControl ItemsSource="{Binding TopAsks}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
+                      <Grid Height="16" ClipToBounds="True">
+                        <Border Background="#12FF6B6B" CornerRadius="2"
+                                HorizontalAlignment="Left"
+                                Width="{Binding DepthWidth}" MaxWidth="150" />
+                        <Grid ColumnDefinitions="Auto,*">
+                          <TextBlock Grid.Column="0" Text="{Binding Quantity, StringFormat={}{0:0.###}}"
+                                     Classes="mono" FontSize="10" Foreground="#5A7A94"
+                                     VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="1" Text="{Binding Price, StringFormat={}{0:0.####}}"
+                                     Classes="mono" FontSize="10" Foreground="#FF6B6B"
+                                     HorizontalAlignment="Right" VerticalAlignment="Center" />
+                        </Grid>
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Grid>
+
+            <!-- spread footer -->
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="Spread" FontSize="9" Foreground="#3D5A72"
+                           VerticalAlignment="Center" />
+                <TextBlock Text="{Binding SpreadPercentLabel}" Classes="mono" FontSize="10"
+                           Foreground="#5A7A94" VerticalAlignment="Center" />
+              </StackPanel>
+              <TextBlock Grid.Column="1" Text="{Binding MidPriceLabel}" Classes="mono"
+                         FontSize="11" FontWeight="Bold" Foreground="#C8DCEF" />
+            </Grid>
+
+            <!-- AI signal -->
+            <Border Background="{Binding AiSignalCardBackground}"
+                    BorderBrush="{Binding AiSignalCardBorder}" BorderThickness="1"
+                    CornerRadius="12" Padding="12,14">
+              <StackPanel Orientation="Horizontal" Spacing="12">
+                <Ellipse Width="8" Height="8" Fill="{Binding AiSignalForeground}"
+                         VerticalAlignment="Top" Margin="0,4,0,0" />
+                <StackPanel Spacing="4">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="AI SIGNAL" Classes="cap" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding AiSignalLabel}" FontSize="14" FontWeight="Bold"
+                               Foreground="{Binding AiSignalForeground}" />
+                  </StackPanel>
+                  <TextBlock Text="{Binding AiSignalDetail}" FontSize="11"
+                             Foreground="#8FA3B8" TextWrapping="Wrap" MaxWidth="260" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <!-- open in trading -->
+            <Button Content="OPEN IN TRADING →"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    Background="Transparent" BorderBrush="#21E6C1" BorderThickness="1"
+                    Foreground="#21E6C1" FontSize="13" FontWeight="Bold"
+                    Padding="0,12" CornerRadius="10"
+                    Command="{Binding $parent[Window].DataContext.OpenMarketInTradingCommand}"
+                    CommandParameter="{Binding .}" />
+
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+
+    </Grid>
+  </Grid>
 </UserControl>

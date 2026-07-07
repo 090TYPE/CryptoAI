@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Threading;
 using CryptoAITerminal.Core.Models;
+using CryptoAITerminal.Core.Trading;
 using CryptoAITerminal.Gateway.DEX;
 using CryptoAITerminal.TerminalUI.Services;
 using ReactiveUI;
@@ -68,6 +69,8 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     private string _tokenBalanceLabel = string.Empty;
     private bool _isTokenBalanceLoading;
     private readonly DispatcherTimer _quoteDebounceTimer;
+    private readonly DispatcherTimer _activityTimer;
+    private readonly DispatcherTimer _keeperTimer;
 
     private const double ChartWidth = 620;
     private const double ChartHeight = 240;
@@ -124,6 +127,19 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             this.RaisePropertyChanged(nameof(DexGuardDetail));
             this.RaisePropertyChanged(nameof(SelectedTokenTitle));
             this.RaisePropertyChanged(nameof(SelectedTokenSubtitle));
+            this.RaisePropertyChanged(nameof(DexProtocolLabel));
+            this.RaisePropertyChanged(nameof(DexChainBadge));
+            this.RaisePropertyChanged(nameof(DexMarketCapLabel));
+            this.RaisePropertyChanged(nameof(DexFees24hLabel));
+            this.RaisePropertyChanged(nameof(DexUtilizationLabel));
+            this.RaisePropertyChanged(nameof(DexChange24hLabel));
+            this.RaisePropertyChanged(nameof(DexChange24hBrush));
+            this.RaisePropertyChanged(nameof(DexChange5mLabel));
+            this.RaisePropertyChanged(nameof(DexChange5mBrush));
+            this.RaisePropertyChanged(nameof(DexChange1hLabel));
+            this.RaisePropertyChanged(nameof(DexChange1hBrush));
+            this.RaisePropertyChanged(nameof(DexPriceUsdLabel));
+            this.RaisePropertyChanged(nameof(DexPairLabel));
             this.RaisePropertyChanged(nameof(IsSelectedPairCompatible));
             this.RaisePropertyChanged(nameof(PairCompatibilityMessage));
             this.RaisePropertyChanged(nameof(ManualBuyBlockedReason));
@@ -133,7 +149,64 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             _ = RefreshQuoteAssetBalanceAsync();
             _ = RefreshTokenBalanceAsync();
             _ = RefreshTokenVerdictAsync(value);
+            _ = RefreshTokenMetadataAsync(value);
+            _ = RefreshActivityAsync(value);
+            this.RaisePropertyChanged(nameof(IsSelectedWatched));
         }
+    }
+
+    /// <summary>Full profile (contract, community, logo/header, description, holders) of
+    /// the selected token — shown in the Token panel and fed into the AI context.</summary>
+    public DexTokenMetadataViewModel TokenMeta { get; } = new();
+
+    private string _metaAddress = string.Empty;
+
+    private async Task RefreshTokenMetadataAsync(DexTokenItemViewModel? token)
+    {
+        if (token is null)
+        {
+            // Transient null: rebuilding the token list momentarily clears the ListBox
+            // selection every refresh. Keep the current profile and address so it doesn't
+            // reload — a real re-selection with a different contract handles switching.
+            return;
+        }
+
+        var chain = token.TokenInfo.ChainId;
+        var address = token.TokenInfo.TokenAddress;
+
+        // The token list auto-refreshes every few seconds, re-selecting a *new* instance
+        // of the same token. Only (re)load the profile when the contract actually changes —
+        // otherwise the images would flash to null and reload on every tick.
+        if (string.Equals(address, _metaAddress, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+        _metaAddress = address ?? string.Empty;
+
+        var network = MapGeckoNetwork(chain);
+        DexTokenMetadata? meta = null;
+        if (!string.IsNullOrWhiteSpace(network) && !string.IsNullOrWhiteSpace(address))
+        {
+            try { meta = await _geckoTerminalClient.GetTokenInfoAsync(network, address); }
+            catch { meta = null; }
+        }
+
+        if (!string.Equals(address, _metaAddress, StringComparison.OrdinalIgnoreCase))
+        {
+            return; // a newer token was selected while fetching
+        }
+
+        // Fall back to the basic pair info when the profile endpoint has nothing.
+        meta ??= new DexTokenMetadata
+        {
+            Address = address,
+            Name = token.TokenInfo.Name,
+            Symbol = token.TokenInfo.Symbol,
+            ChainId = chain,
+        };
+        meta.ChainId = chain;
+
+        await TokenMeta.ApplyAsync(meta, chain, address);
     }
 
     public bool HasSelectedToken => SelectedToken is not null;
@@ -309,6 +382,8 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     public string WalletSessionSummary => _walletWorkspace.ActiveWalletBanner;
     public string WalletBalanceSummary => _walletWorkspace.NativeBalanceLabel;
     public string WalletTradeStatus => _walletWorkspace.WalletCapabilityText;
+    /// <summary>Live DEX routers on the active network (the DEX "exchange" for this venue).</summary>
+    public string ActiveDexRouterLabel => _walletWorkspace.ActiveDexGateway?.SupportedDexesLabel ?? "no live router";
     public string GlobalQuoteModeLabel => _walletWorkspace.GlobalQuoteAssetModeLabel;
     public string GlobalQuoteModeBrush => _walletWorkspace.GlobalQuoteAssetModeBrush;
     public string GlobalQuoteSummary => _walletWorkspace.GlobalQuoteAssetSummary;
@@ -430,10 +505,15 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         {
             this.RaiseAndSetIfChanged(ref _slippagePercent, Math.Max(0.1m, Math.Min(50m, value)));
             this.RaisePropertyChanged(nameof(SlippageSummary));
+            this.RaisePropertyChanged(nameof(SlippagePresetKey));
             QueueBuyQuote();
         }
     }
     public string SlippageSummary => $"Slippage: {_slippagePercent:0.##}% — router will revert if output drops below this tolerance.";
+
+    /// <summary>Preset key ("0.1"/"0.5"/"1.0"/"3.0") for driving the active style on the
+    /// slippage preset buttons via StringEqualsConverter. Non-preset values match nothing.</summary>
+    public string SlippagePresetKey => _slippagePercent.ToString("0.0", CultureInfo.InvariantCulture);
 
     public string BuyQuoteLabel
     {
@@ -444,6 +524,83 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     {
         get => _buyQuoteBrush;
         private set => this.RaiseAndSetIfChanged(ref _buyQuoteBrush, value);
+    }
+
+    // ── Aggregator (OpenOcean) best-route swap preview ────────────────────────
+    private readonly DexAggregatorService _aggregator = new();
+    private string _aggOutputLabel = string.Empty;
+    private string _aggImpactLabel = "—";
+    private string _aggImpactBrush = "#8fa3b8";
+    private string _aggRouteLabel = "—";
+    public string AggOutputLabel { get => _aggOutputLabel; private set { this.RaiseAndSetIfChanged(ref _aggOutputLabel, value); this.RaisePropertyChanged(nameof(HasAggQuote)); } }
+    public string AggImpactLabel { get => _aggImpactLabel; private set => this.RaiseAndSetIfChanged(ref _aggImpactLabel, value); }
+    public string AggImpactBrush { get => _aggImpactBrush; private set => this.RaiseAndSetIfChanged(ref _aggImpactBrush, value); }
+    public string AggRouteLabel { get => _aggRouteLabel; private set => this.RaiseAndSetIfChanged(ref _aggRouteLabel, value); }
+    public bool HasAggQuote => !string.IsNullOrEmpty(_aggOutputLabel);
+
+    // When on, manual buys route through the aggregator's best cross-DEX path (real build+sign+send)
+    // instead of the gateway's single-DEX router. Falls back automatically if the chain/gateway can't.
+    private bool _useBestRouteSwap = true;
+    public bool UseBestRouteSwap
+    {
+        get => _useBestRouteSwap;
+        set => this.RaiseAndSetIfChanged(ref _useBestRouteSwap, value);
+    }
+
+    private async Task RefreshAggregatorQuoteAsync(DexTokenItemViewModel? token, decimal amount, string quoteSymbol)
+    {
+        void Clear()
+        {
+            AggOutputLabel = string.Empty;
+            AggImpactLabel = "—";
+            AggRouteLabel = "—";
+        }
+
+        if (token is null || amount <= 0m)
+        {
+            Clear();
+            return;
+        }
+
+        var slug = DexAggregatorService.ChainSlug(token.TokenInfo.ChainId);
+        if (slug is null)
+        {
+            Clear(); // non-EVM (e.g. Solana) — aggregator preview not wired here
+            return;
+        }
+
+        string inToken;
+        if (IsNativeQuoteMode(quoteSymbol))
+        {
+            inToken = DexAggregatorService.NativePlaceholder;
+        }
+        else
+        {
+            var asset = DexQuoteAssetCatalog.Find(_walletWorkspace.SelectedNetwork, quoteSymbol);
+            if (asset is null || string.IsNullOrWhiteSpace(asset.ContractAddress))
+            {
+                Clear();
+                return;
+            }
+            inToken = asset.ContractAddress;
+        }
+
+        var quote = await _aggregator.GetQuoteAsync(slug, inToken, token.TokenAddress, amount);
+        if (!ReferenceEquals(SelectedToken, token))
+        {
+            return;
+        }
+        if (quote is null)
+        {
+            Clear();
+            return;
+        }
+
+        AggOutputLabel = $"≈ {quote.OutTokens:0.######} {token.TokenInfo.Symbol}";
+        AggImpactLabel = quote.PriceImpact;
+        AggImpactBrush = quote.PriceImpact.TrimStart().StartsWith("-") ? "#3ddc84"
+            : quote.PriceImpact.Contains('%') && double.TryParse(quote.PriceImpact.TrimEnd('%'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var p) && p >= 2 ? "#ff6b6b" : "#f4b860";
+        AggRouteLabel = quote.Route;
     }
 
     public decimal TokenBalance
@@ -525,6 +682,531 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         return string.Empty;
     }
 
+    // ── Keeper: real conditional orders (limit / stop / TP-SL / trailing / DCA) ─
+    private readonly DexKeeperEngine _keeper = new();
+    private readonly DexKeeperStore _keeperStore = new();
+    public ObservableCollection<DexKeeperOrderViewModel> KeeperOrders { get; } = new();
+    public bool ShowKeeperPlaceholder => KeeperOrders.Count == 0;
+
+    private string _keeperOrderType = "Limit"; // Limit / Stop / Trailing / DCA
+    private decimal _keeperTriggerPrice;
+    private decimal _keeperTrailingPct = 10m;
+    private int _keeperDcaLegs = 3;
+    private decimal _keeperDcaStepPct = 5m;
+    private string _keeperStatus = "Arm a conditional order — the keeper watches price and executes it.";
+
+    public string KeeperOrderType
+    {
+        get => _keeperOrderType;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _keeperOrderType, value);
+            this.RaisePropertyChanged(nameof(IsKeeperLimit));
+            this.RaisePropertyChanged(nameof(IsKeeperStop));
+            this.RaisePropertyChanged(nameof(IsKeeperTrailing));
+            this.RaisePropertyChanged(nameof(IsKeeperDca));
+            this.RaisePropertyChanged(nameof(KeeperNeedsTrigger));
+        }
+    }
+    public bool IsKeeperLimit => Is(_keeperOrderType, "Limit");
+    public bool IsKeeperStop => Is(_keeperOrderType, "Stop");
+    public bool IsKeeperTrailing => Is(_keeperOrderType, "Trailing");
+    public bool IsKeeperDca => Is(_keeperOrderType, "DCA");
+    public bool KeeperNeedsTrigger => IsKeeperLimit || IsKeeperStop || IsKeeperDca;
+    private static bool Is(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+
+    public decimal KeeperTriggerPrice { get => _keeperTriggerPrice; set => this.RaiseAndSetIfChanged(ref _keeperTriggerPrice, value); }
+    public decimal KeeperTrailingPct { get => _keeperTrailingPct; set => this.RaiseAndSetIfChanged(ref _keeperTrailingPct, Math.Max(0.1m, value)); }
+    public int KeeperDcaLegs { get => _keeperDcaLegs; set => this.RaiseAndSetIfChanged(ref _keeperDcaLegs, Math.Clamp(value, 2, 20)); }
+    public decimal KeeperDcaStepPct { get => _keeperDcaStepPct; set => this.RaiseAndSetIfChanged(ref _keeperDcaStepPct, Math.Max(0.1m, value)); }
+    public string KeeperStatus { get => _keeperStatus; private set => this.RaiseAndSetIfChanged(ref _keeperStatus, value); }
+
+    public ReactiveCommand<string, Unit> SelectKeeperOrderTypeCommand { get; private set; } = null!;
+    public ReactiveCommand<string, Unit> ArmKeeperOrderCommand { get; private set; } = null!;
+    public ReactiveCommand<string, Unit> CancelKeeperOrderCommand { get; private set; } = null!;
+
+    private void ArmKeeperOrder(string? side)
+    {
+        var token = SelectedToken;
+        if (token is null)
+        {
+            KeeperStatus = "Select a token first.";
+            return;
+        }
+
+        var isBuy = string.Equals(side, "BUY", StringComparison.OrdinalIgnoreCase);
+        var keeperSide = isBuy ? KeeperSide.Buy : KeeperSide.Sell;
+        var trigger = _keeperTriggerPrice > 0m ? _keeperTriggerPrice : token.TokenInfo.PriceUsd;
+
+        switch (_keeperOrderType.ToUpperInvariant())
+        {
+            case "DCA":
+                var legs = _keeper.CreateDca(token.TokenAddress, token.TokenInfo.ChainId, token.TokenInfo.Symbol,
+                    BuyAmountBnb, _keeperDcaLegs, trigger, _keeperDcaStepPct);
+                KeeperStatus = $"DCA armed: {legs.Count} buy legs from {FormatPrice(trigger)}.";
+                break;
+            case "TRAILING":
+                _keeper.Add(new DexKeeperOrder
+                {
+                    TokenAddress = token.TokenAddress, ChainId = token.TokenInfo.ChainId, Symbol = token.TokenInfo.Symbol,
+                    Kind = KeeperOrderKind.Trailing, Side = KeeperSide.Sell,
+                    TriggerPrice = token.TokenInfo.PriceUsd, TrailingDistancePct = _keeperTrailingPct, AmountTokens = SellAmountTokens,
+                });
+                KeeperStatus = $"Trailing stop armed: {_keeperTrailingPct:0.##}% below peak.";
+                break;
+            default: // Limit / Stop
+                _keeper.Add(new DexKeeperOrder
+                {
+                    TokenAddress = token.TokenAddress, ChainId = token.TokenInfo.ChainId, Symbol = token.TokenInfo.Symbol,
+                    Kind = IsKeeperStop ? KeeperOrderKind.Stop : KeeperOrderKind.Limit, Side = keeperSide,
+                    TriggerPrice = trigger, AmountUsd = BuyAmountBnb, AmountTokens = SellAmountTokens,
+                });
+                KeeperStatus = $"{_keeperOrderType} {side} armed @ {FormatPrice(trigger)}.";
+                break;
+        }
+
+        RefreshKeeperOrders();
+        SaveKeeper();
+    }
+
+    private void RefreshKeeperOrders()
+    {
+        KeeperOrders.Clear();
+        foreach (var o in _keeper.WorkingOrders)
+        {
+            KeeperOrders.Add(new DexKeeperOrderViewModel(o));
+        }
+        this.RaisePropertyChanged(nameof(ShowKeeperPlaceholder));
+    }
+
+    private void TickKeeper()
+    {
+        var token = SelectedToken;
+        if (token is null || token.TokenInfo.PriceUsd <= 0m || _keeper.WorkingOrders.All(o => !string.Equals(o.TokenAddress, token.TokenAddress, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        var fired = _keeper.Tick(token.TokenAddress, token.TokenInfo.PriceUsd);
+        if (fired.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var order in fired)
+        {
+            _keeper.Remove(order);
+            _ = ExecuteKeeperOrderAsync(order);
+        }
+        RefreshKeeperOrders();
+        SaveKeeper();
+    }
+
+    private void SaveKeeper()
+    {
+        var snapshot = _keeper.WorkingOrders.ToList();
+        _ = Task.Run(() => _keeperStore.Save(snapshot));
+    }
+
+    /// <summary>Background price poll so keeper orders on tokens you're not currently viewing
+    /// still fire. Fetches each distinct order token's price and ticks it.</summary>
+    private async Task PollKeeperAsync()
+    {
+        var addresses = _keeper.WorkingOrders.Select(o => o.TokenAddress)
+            .Concat(WatchlistItems.Select(w => w.TokenAddress))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (addresses.Count == 0)
+        {
+            return;
+        }
+
+        var selected = SelectedToken?.TokenAddress;
+        var anyFired = false;
+        foreach (var addr in addresses)
+        {
+            if (string.Equals(addr, selected, StringComparison.OrdinalIgnoreCase))
+            {
+                continue; // already ticked / priced on the fast selected-token path
+            }
+
+            decimal price = 0m;
+            decimal change = 0m;
+            try
+            {
+                var results = await _dexClient.SearchTokensAsync(addr);
+                var match = results.FirstOrDefault(t => string.Equals(t.TokenAddress, addr, StringComparison.OrdinalIgnoreCase));
+                price = match?.PriceUsd ?? 0m;
+                change = match?.PriceChange24h ?? 0m;
+            }
+            catch { price = 0m; }
+
+            if (price <= 0m)
+            {
+                continue;
+            }
+
+            var watch = WatchlistItems.FirstOrDefault(w => string.Equals(w.TokenAddress, addr, StringComparison.OrdinalIgnoreCase));
+            watch?.Update(price, change);
+
+            var fired = _keeper.Tick(addr, price);
+            foreach (var order in fired)
+            {
+                anyFired = true;
+                _keeper.Remove(order);
+                await ExecuteKeeperOrderAsync(order);
+            }
+        }
+
+        if (anyFired)
+        {
+            RefreshKeeperOrders();
+            SaveKeeper();
+        }
+
+        await RefreshPortfolioAsync();
+        await RefreshLivePerpAccountAsync();
+    }
+
+    // ── Live on-chain perp account (Hyperliquid, keyless read) ────────────────
+    private readonly HyperliquidPerpClient _hlClient = new(enableLiveOrders: false, testnet: false);
+    public ObservableCollection<HyperliquidPositionViewModel> LivePerpPositions { get; } = new();
+    private string _livePerpSummary = "Connect an EVM wallet to read live Hyperliquid perp positions.";
+    public string LivePerpSummary { get => _livePerpSummary; private set => this.RaiseAndSetIfChanged(ref _livePerpSummary, value); }
+    private bool _hasLivePerpPositions;
+    public bool HasLivePerpPositions { get => _hasLivePerpPositions; private set => this.RaiseAndSetIfChanged(ref _hasLivePerpPositions, value); }
+    public ReactiveCommand<Unit, Unit> RefreshLivePerpCommand { get; private set; } = null!;
+
+    private async Task RefreshLivePerpAccountAsync()
+    {
+        var address = _walletWorkspace.ConnectedAddress;
+        if (string.IsNullOrWhiteSpace(address) || !EvmWalletClient.IsValidAddress(address))
+        {
+            await RunOnUiAsync(() =>
+            {
+                LivePerpPositions.Clear();
+                HasLivePerpPositions = false;
+                LivePerpSummary = "Connect an EVM wallet to read live Hyperliquid perp positions.";
+            });
+            return;
+        }
+
+        var state = await _hlClient.GetAccountStateAsync(address);
+        await RunOnUiAsync(() =>
+        {
+            LivePerpPositions.Clear();
+            foreach (var p in state.Positions)
+            {
+                LivePerpPositions.Add(new HyperliquidPositionViewModel(p));
+            }
+
+            HasLivePerpPositions = LivePerpPositions.Count > 0;
+            LivePerpSummary = state.AccountValueUsd > 0m || state.Positions.Count > 0
+                ? $"Acct $ {state.AccountValueUsd:N2} · margin $ {state.TotalMarginUsedUsd:N2} · free $ {state.WithdrawableUsd:N2}"
+                : "No open Hyperliquid perp positions on the connected wallet.";
+        });
+    }
+
+    // ── Live Hyperliquid order placement (gated, OFF by default) ───────────────
+    private readonly HyperliquidSettingsStore _hlSettingsStore = new();
+    private bool _hlEnableLiveOrders;
+    private bool _hlTestnet = true;
+    public bool HlEnableLiveOrders
+    {
+        get => _hlEnableLiveOrders;
+        set { this.RaiseAndSetIfChanged(ref _hlEnableLiveOrders, value); PersistHlSettings(); this.RaisePropertyChanged(nameof(HlOrderModeLabel)); }
+    }
+    public bool HlTestnet
+    {
+        get => _hlTestnet;
+        set { this.RaiseAndSetIfChanged(ref _hlTestnet, value); PersistHlSettings(); this.RaisePropertyChanged(nameof(HlOrderModeLabel)); }
+    }
+    public string HlOrderModeLabel => !_hlEnableLiveOrders
+        ? "Live orders OFF — validate on testnet first (see docs), then enable."
+        : _hlTestnet ? "LIVE orders ON · TESTNET" : "LIVE orders ON · MAINNET (real funds)";
+
+    private string _hlCoin = "ETH";
+    public string HlCoin { get => _hlCoin; set => this.RaiseAndSetIfChanged(ref _hlCoin, (value ?? string.Empty).Trim().ToUpperInvariant()); }
+    private bool _hlIsBuy = true;
+    public bool HlIsBuy { get => _hlIsBuy; set => this.RaiseAndSetIfChanged(ref _hlIsBuy, value); }
+    private decimal _hlSize;
+    public decimal HlSize { get => _hlSize; set => this.RaiseAndSetIfChanged(ref _hlSize, value); }
+    private decimal _hlLimitPrice;
+    public decimal HlLimitPrice { get => _hlLimitPrice; set => this.RaiseAndSetIfChanged(ref _hlLimitPrice, value); }
+    private string _hlOrderStatus = string.Empty;
+    public string HlOrderStatus { get => _hlOrderStatus; private set => this.RaiseAndSetIfChanged(ref _hlOrderStatus, value); }
+    public ReactiveCommand<Unit, Unit> PlaceHyperliquidOrderCommand { get; private set; } = null!;
+
+    private void PersistHlSettings() => _hlSettingsStore.Save(new HyperliquidSettings(_hlEnableLiveOrders, _hlTestnet));
+
+    private async Task PlaceHyperliquidOrderAsync()
+    {
+        if (!_hlEnableLiveOrders)
+        {
+            HlOrderStatus = "Live orders are OFF. Validate signing on testnet, then enable.";
+            return;
+        }
+
+        var (coin, isBuy, size, price, testnet) = (_hlCoin, _hlIsBuy, _hlSize, _hlLimitPrice, _hlTestnet);
+        if (string.IsNullOrWhiteSpace(coin) || size <= 0m || price <= 0m)
+        {
+            HlOrderStatus = "Set a coin, a positive size and a limit price.";
+            return;
+        }
+
+        var key = _walletWorkspace.TryGetEvmSigningKey();
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            HlOrderStatus = "Import a trade-enabled EVM wallet (not watch mode) to sign Hyperliquid orders.";
+            return;
+        }
+
+        if (!testnet && !_walletWorkspace.TryApproveLiveExecution("Hyperliquid mainnet perp order", out var reason))
+        {
+            HlOrderStatus = reason;
+            return;
+        }
+
+        HlOrderStatus = $"Resolving {coin} on {(testnet ? "testnet" : "mainnet")}…";
+        try
+        {
+            var resolver = new HyperliquidPerpClient(enableLiveOrders: false, testnet: testnet);
+            var assetIndex = await resolver.GetAssetIndexAsync(coin);
+            if (assetIndex < 0)
+            {
+                HlOrderStatus = $"Unknown Hyperliquid market '{coin}'.";
+                return;
+            }
+
+            var client = new HyperliquidPerpClient(enableLiveOrders: true, testnet: testnet);
+            var response = await client.PlaceOrderAsync(key!, assetIndex, isBuy, price, size, reduceOnly: false);
+            var ok = response.Contains("\"status\":\"ok\"", StringComparison.OrdinalIgnoreCase);
+            HlOrderStatus = ok
+                ? $"{(isBuy ? "BUY" : "SELL")} {size} {coin} @ {price} sent ({(testnet ? "testnet" : "mainnet")}). Accepted."
+                : $"Rejected: {Trim(response, 180)}";
+            await RefreshLivePerpAccountAsync();
+        }
+        catch (Exception ex)
+        {
+            HlOrderStatus = $"Order failed: {ex.Message}";
+        }
+
+        static string Trim(string s, int n) => s.Length <= n ? s : s[..n] + "…";
+    }
+
+    private async Task ExecuteKeeperOrderAsync(DexKeeperOrder order)
+    {
+        var gateway = _walletWorkspace.ActiveDexGateway;
+        var dexId = Tokens.FirstOrDefault(t => string.Equals(t.TokenAddress, order.TokenAddress, StringComparison.OrdinalIgnoreCase))?.TokenInfo.DexId;
+
+        // Gated: only broadcast when a live, chain-matched, guard-approved route exists.
+        var reason = "paper mode";
+        if (gateway is null || !_walletWorkspace.CanTradeChainId(order.ChainId) ||
+            !_walletWorkspace.TryApproveLiveExecution("DEX keeper", out reason))
+        {
+            AddTradeRecord(order.Side == KeeperSide.Buy ? "BUY" : "SELL", order.Symbol,
+                order.Side == KeeperSide.Buy ? order.AmountUsd : order.AmountTokens, order.TriggerPrice, "PAPER-KEEPER", true);
+            KeeperStatus = $"Keeper (paper): {order.Kind} {order.Side} {order.Symbol} fired @ {FormatPrice(order.TriggerPrice)}. {reason}";
+            return;
+        }
+
+        try
+        {
+            var slippage = SlippagePercent;
+            string tx = order.Side == KeeperSide.Buy
+                ? await gateway.BuyTokenAsync(order.TokenAddress, order.AmountUsd, slippagePercent: slippage, dexId: dexId, spendAssetSymbol: null)
+                : await gateway.SellTokenAsync(order.TokenAddress, order.AmountTokens, slippagePercent: slippage, dexId: dexId, receiveAssetSymbol: null);
+            AddTradeRecord(order.Side == KeeperSide.Buy ? "BUY" : "SELL", order.Symbol,
+                order.Side == KeeperSide.Buy ? order.AmountUsd : order.AmountTokens, order.TriggerPrice, tx, true);
+            KeeperStatus = $"Keeper executed {order.Kind} {order.Side} {order.Symbol}: {tx}";
+        }
+        catch (Exception ex)
+        {
+            AddTradeRecord(order.Side == KeeperSide.Buy ? "BUY" : "SELL", order.Symbol,
+                order.Side == KeeperSide.Buy ? order.AmountUsd : order.AmountTokens, order.TriggerPrice, string.Empty, false);
+            KeeperStatus = $"Keeper execution failed: {ex.Message}";
+        }
+    }
+
+    // ── Watchlist (favourite tokens, persisted) ───────────────────────────────
+    private readonly DexWatchlistStore _watchlistStore = new();
+    public ObservableCollection<DexWatchItemViewModel> WatchlistItems { get; } = new();
+    public bool HasWatchlist => WatchlistItems.Count > 0;
+    public bool IsSelectedWatched => SelectedToken is not null &&
+        WatchlistItems.Any(w => string.Equals(w.TokenAddress, SelectedToken.TokenAddress, StringComparison.OrdinalIgnoreCase));
+
+    public ReactiveCommand<Unit, Unit> ToggleWatchlistCommand { get; private set; } = null!;
+    public ReactiveCommand<string, Unit> RemoveWatchlistCommand { get; private set; } = null!;
+    public ReactiveCommand<string, Unit> OpenWatchlistCommand { get; private set; } = null!;
+
+    private void ToggleWatchlist()
+    {
+        var t = SelectedToken;
+        if (t is null) return;
+
+        var existing = WatchlistItems.FirstOrDefault(w => string.Equals(w.TokenAddress, t.TokenAddress, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+        {
+            WatchlistItems.Remove(existing);
+        }
+        else
+        {
+            var item = new DexWatchItemViewModel(t.TokenInfo.ChainId, t.TokenAddress, t.TokenInfo.Symbol);
+            item.Update(t.TokenInfo.PriceUsd, t.TokenInfo.PriceChange24h);
+            WatchlistItems.Add(item);
+        }
+        SaveWatchlist();
+        this.RaisePropertyChanged(nameof(HasWatchlist));
+        this.RaisePropertyChanged(nameof(IsSelectedWatched));
+    }
+
+    private void RemoveWatchlist(string address)
+    {
+        var existing = WatchlistItems.FirstOrDefault(w => string.Equals(w.TokenAddress, address, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+        {
+            WatchlistItems.Remove(existing);
+            SaveWatchlist();
+            this.RaisePropertyChanged(nameof(HasWatchlist));
+            this.RaisePropertyChanged(nameof(IsSelectedWatched));
+        }
+    }
+
+    private void SaveWatchlist()
+    {
+        var snapshot = WatchlistItems.Select(w => new DexWatchEntry(w.ChainId, w.TokenAddress, w.Symbol)).ToList();
+        _ = Task.Run(() => _watchlistStore.Save(snapshot));
+    }
+
+    private void LoadWatchlist()
+    {
+        foreach (var e in _watchlistStore.Load())
+        {
+            WatchlistItems.Add(new DexWatchItemViewModel(e.ChainId, e.TokenAddress, e.Symbol));
+        }
+        this.RaisePropertyChanged(nameof(HasWatchlist));
+    }
+
+    private void UpdateWatchlistFromTokens()
+    {
+        foreach (var w in WatchlistItems)
+        {
+            var t = Tokens.FirstOrDefault(x => string.Equals(x.TokenAddress, w.TokenAddress, StringComparison.OrdinalIgnoreCase));
+            if (t is not null)
+            {
+                w.Update(t.TokenInfo.PriceUsd, t.TokenInfo.PriceChange24h);
+            }
+        }
+    }
+
+    // ── DEX portfolio (wallet holdings valued live) ───────────────────────────
+    public ObservableCollection<DexHoldingViewModel> PortfolioHoldings { get; } = new();
+    public bool ShowPortfolioPlaceholder => PortfolioHoldings.Count == 0;
+    private decimal _portfolioTotal;
+    public string PortfolioTotalLabel => _portfolioTotal > 0m ? $"$ {_portfolioTotal:N2}" : "—";
+    public string PortfolioNativeLabel => WalletBalanceSummary;
+    public ReactiveCommand<Unit, Unit> RefreshPortfolioCommand { get; private set; } = null!;
+
+    // Optional Covalent (GoldRush) key → cross-chain holdings + USD value across all wired chains.
+    // When empty, the portfolio stays in keyless single-chain mode (selected + watchlist tokens).
+    private readonly DexPortfolioKeyStore _portfolioKeyStore = new();
+    private readonly PortfolioAggregatorService _portfolioAgg = new();
+    private string _portfolioApiKey = string.Empty;
+    public string PortfolioApiKey
+    {
+        get => _portfolioApiKey;
+        set
+        {
+            var v = (value ?? string.Empty).Trim();
+            this.RaiseAndSetIfChanged(ref _portfolioApiKey, v);
+            _portfolioKeyStore.Save(v);
+            this.RaisePropertyChanged(nameof(PortfolioModeLabel));
+        }
+    }
+    public string PortfolioModeLabel => string.IsNullOrWhiteSpace(_portfolioApiKey)
+        ? "Single-chain (keyless) · add a Covalent key for all chains + USD value"
+        : "Cross-chain via Covalent · all wired networks";
+
+    private async Task RefreshPortfolioAsync()
+    {
+        // Cross-chain path: a Covalent key values every holding across all wired chains in one sweep.
+        if (!string.IsNullOrWhiteSpace(_portfolioApiKey))
+        {
+            var address = _walletWorkspace.ConnectedAddress;
+            if (!string.IsNullOrWhiteSpace(address) && EvmWalletClient.IsValidAddress(address))
+            {
+                var rows = await _portfolioAgg.GetAllHoldingsAsync(_portfolioApiKey, address);
+                await RunOnUiAsync(() =>
+                {
+                    PortfolioHoldings.Clear();
+                    decimal crossTotal = 0m;
+                    foreach (var h in rows)
+                    {
+                        crossTotal += h.ValueUsd;
+                        PortfolioHoldings.Add(new DexHoldingViewModel($"{h.Symbol} · {h.Chain}", h.Balance, h.ValueUsd));
+                    }
+                    _portfolioTotal = crossTotal;
+                    this.RaisePropertyChanged(nameof(PortfolioTotalLabel));
+                    this.RaisePropertyChanged(nameof(PortfolioNativeLabel));
+                    this.RaisePropertyChanged(nameof(ShowPortfolioPlaceholder));
+                });
+                return;
+            }
+        }
+
+        var gateway = _walletWorkspace.ActiveDexGateway;
+        if (gateway is null || !_walletWorkspace.CanUseDexTradingOnSelectedNetwork)
+        {
+            PortfolioHoldings.Clear();
+            _portfolioTotal = 0m;
+            this.RaisePropertyChanged(nameof(PortfolioTotalLabel));
+            this.RaisePropertyChanged(nameof(PortfolioNativeLabel));
+            this.RaisePropertyChanged(nameof(ShowPortfolioPlaceholder));
+            return;
+        }
+
+        // Candidates: the selected token + watchlist tokens on the wallet's active chain.
+        var candidates = new List<(string Addr, string Sym, decimal Price)>();
+        if (SelectedToken is not null && _walletWorkspace.CanTradeChainId(SelectedToken.TokenInfo.ChainId))
+        {
+            candidates.Add((SelectedToken.TokenAddress, SelectedToken.TokenInfo.Symbol, SelectedToken.TokenInfo.PriceUsd));
+        }
+        foreach (var w in WatchlistItems.Where(w => _walletWorkspace.CanTradeChainId(w.ChainId)))
+        {
+            candidates.Add((w.TokenAddress, w.Symbol, w.PriceValue));
+        }
+        candidates = candidates
+            .GroupBy(c => c.Addr, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
+            .ToList();
+
+        var holdings = new List<DexHoldingViewModel>();
+        decimal total = 0m;
+        foreach (var c in candidates)
+        {
+            decimal balance = 0m;
+            try { balance = await gateway.GetTokenBalanceAsync(c.Addr); }
+            catch { balance = 0m; }
+            if (balance <= 0m)
+            {
+                continue;
+            }
+            var value = c.Price > 0m ? balance * c.Price : 0m;
+            total += value;
+            holdings.Add(new DexHoldingViewModel(c.Sym, balance, value));
+        }
+
+        PortfolioHoldings.Clear();
+        foreach (var h in holdings.OrderByDescending(h => h.ValueUsd))
+        {
+            PortfolioHoldings.Add(h);
+        }
+        _portfolioTotal = total;
+        this.RaisePropertyChanged(nameof(PortfolioTotalLabel));
+        this.RaisePropertyChanged(nameof(PortfolioNativeLabel));
+        this.RaisePropertyChanged(nameof(ShowPortfolioPlaceholder));
+    }
+
     public bool HasChartData => ChartCandles.Count > 0;
     public string ChartPolylinePoints => string.Join(
         ' ',
@@ -546,6 +1228,24 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         : SelectedToken.TokenInfo.LiquidityUsd > 0
             ? $"$ {SelectedToken.TokenInfo.LiquidityUsd:N0}"
             : "--";
+
+    // ── Pool / exchange labels for the mock's DEX right rail (real-derived) ────
+    public string DexProtocolLabel => string.IsNullOrWhiteSpace(SelectedToken?.TokenInfo.DexId) ? "--" : SelectedToken!.TokenInfo.DexId.ToUpperInvariant();
+    public string DexChainBadge => string.IsNullOrWhiteSpace(SelectedToken?.TokenInfo.ChainId) ? "--" : SelectedToken!.TokenInfo.ChainId.ToUpperInvariant();
+    public string DexPairFeeLabel => "0.30%"; // default AMM tier shown on the info strip
+    public string DexMarketCapLabel => SelectedToken is { TokenInfo.MarketCap: > 0 } ? $"$ {SelectedToken.TokenInfo.MarketCap:N0}" : "--";
+    public string DexFees24hLabel => SelectedToken is { TokenInfo.Volume24h: > 0 } ? $"$ {SelectedToken.TokenInfo.Volume24h * 0.003m:N0}" : "--";
+    public string DexUtilizationLabel => SelectedToken is { TokenInfo.LiquidityUsd: > 0 } tk
+        ? $"{Math.Min(999m, tk.TokenInfo.Volume24h / tk.TokenInfo.LiquidityUsd * 100m):N0}%"
+        : "--";
+    public string DexChange24hLabel => SelectedToken is null ? "--" : $"{SelectedToken.TokenInfo.PriceChange24h:+0.00;-0.00;0.00}%";
+    public string DexChange24hBrush => (SelectedToken?.TokenInfo.PriceChange24h ?? 0m) >= 0m ? "#3ddc84" : "#ff6b6b";
+    public string DexChange5mLabel => SelectedToken is null ? "--" : $"{SelectedToken.TokenInfo.PriceChange5m:+0.00;-0.00;0.00}%";
+    public string DexChange5mBrush => (SelectedToken?.TokenInfo.PriceChange5m ?? 0m) >= 0m ? "#3ddc84" : "#ff6b6b";
+    public string DexChange1hLabel => SelectedToken is null ? "--" : $"{SelectedToken.TokenInfo.PriceChange1h:+0.00;-0.00;0.00}%";
+    public string DexChange1hBrush => (SelectedToken?.TokenInfo.PriceChange1h ?? 0m) >= 0m ? "#3ddc84" : "#ff6b6b";
+    public string DexPriceUsdLabel => SelectedToken is { TokenInfo.PriceUsd: > 0 } t ? $"$ {t.TokenInfo.PriceUsd:N6}" : "--";
+    public string DexPairLabel => SelectedToken is null ? "--" : $"{SelectedToken.TokenInfo.Symbol}/{SelectedToken.TokenInfo.QuoteSymbol}";
 
     private static string FormatPrice(decimal price) => price switch
     {
@@ -575,6 +1275,128 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     // ── Recent DEX trade history (blotter) ────────────────────────────────────
     public ObservableCollection<DexTradeRecordViewModel> RecentDexTrades { get; } = new();
     public bool ShowDexTradesPlaceholder => RecentDexTrades.Count == 0;
+
+    // ── Live market flow (buys/sells + trade tape) for the selected token ──────
+    public ObservableCollection<DexMarketTradeViewModel> RecentMarketTrades { get; } = new();
+    private long _buys24h;
+    private long _sells24h;
+    private string _activityPool = string.Empty;
+
+    // ── Anti-rug monitor (liquidity drop / whale sell / volume spike) ──────────
+    public ObservableCollection<DexTokenAlertViewModel> TokenAlerts { get; } = new();
+    public bool HasTokenAlerts => TokenAlerts.Count > 0;
+    private string _alertAddress = string.Empty;
+    private decimal _prevLiquidity;
+    private decimal _prevVolume;
+    private DateTime _lastTradeUtc = DateTime.MinValue;
+
+    private void CheckAntiRug(DexTokenItemViewModel token, DexPoolActivity activity)
+    {
+        var addr = token.TokenInfo.TokenAddress;
+        var liq = token.TokenInfo.LiquidityUsd;
+        var vol = token.TokenInfo.Volume24h;
+
+        if (!string.Equals(addr, _alertAddress, StringComparison.OrdinalIgnoreCase))
+        {
+            // New token — establish baselines and clear the previous token's alerts.
+            _alertAddress = addr;
+            _prevLiquidity = liq;
+            _prevVolume = vol;
+            _lastTradeUtc = activity.Trades.Count > 0 ? activity.Trades.Max(t => t.TimeUtc) : DateTime.UtcNow;
+            TokenAlerts.Clear();
+            this.RaisePropertyChanged(nameof(HasTokenAlerts));
+            return;
+        }
+
+        if (_prevLiquidity > 0m && liq > 0m && liq < _prevLiquidity * 0.7m)
+        {
+            AddAlert("⚠", $"Liquidity dropped {(1m - liq / _prevLiquidity) * 100m:0}% (${_prevLiquidity:N0} → ${liq:N0})", "#ff6b6b");
+        }
+        if (_prevVolume > 0m && vol > _prevVolume * 1.5m)
+        {
+            AddAlert("📈", $"Volume spike +{(vol / _prevVolume - 1m) * 100m:0}% (${vol:N0} 24h)", "#f4b860");
+        }
+        if (liq > 0m) _prevLiquidity = liq;
+        if (vol > 0m) _prevVolume = vol;
+
+        var whaleUsd = Math.Max(5000m, liq * 0.01m);
+        var newest = _lastTradeUtc;
+        foreach (var t in activity.Trades.Where(t => t.TimeUtc > _lastTradeUtc))
+        {
+            if (string.Equals(t.Side, "sell", StringComparison.OrdinalIgnoreCase) && t.AmountUsd >= whaleUsd)
+            {
+                AddAlert("🐳", $"Whale SELL ${t.AmountUsd:N0}", "#ff6b6b");
+            }
+            if (t.TimeUtc > newest) newest = t.TimeUtc;
+        }
+        _lastTradeUtc = newest;
+    }
+
+    private void AddAlert(string icon, string message, string brush)
+    {
+        TokenAlerts.Insert(0, new DexTokenAlertViewModel(icon, message, brush, DateTime.Now));
+        while (TokenAlerts.Count > 30)
+        {
+            TokenAlerts.RemoveAt(TokenAlerts.Count - 1);
+        }
+        this.RaisePropertyChanged(nameof(HasTokenAlerts));
+    }
+
+    public bool ShowMarketTradesPlaceholder => RecentMarketTrades.Count == 0;
+    public string Buys24hLabel => _buys24h > 0 ? _buys24h.ToString("N0") : "—";
+    public string Sells24hLabel => _sells24h > 0 ? _sells24h.ToString("N0") : "—";
+    public double BuyPercent => (_buys24h + _sells24h) > 0 ? (double)_buys24h / (_buys24h + _sells24h) * 100.0 : 50.0;
+    public double SellPercent => 100.0 - BuyPercent;
+    public string BuySellRatioLabel => (_buys24h + _sells24h) > 0 ? $"{BuyPercent:0}% buy / {SellPercent:0}% sell" : "—";
+
+    private async Task RefreshActivityAsync(DexTokenItemViewModel? token)
+    {
+        token ??= SelectedToken;
+        if (token is null)
+        {
+            return;
+        }
+
+        var address = token.TokenInfo.TokenAddress;
+        var network = MapGeckoNetwork(token.TokenInfo.ChainId);
+        var pool = token.TokenInfo.PairAddress;
+        if (string.IsNullOrWhiteSpace(network) || string.IsNullOrWhiteSpace(pool))
+        {
+            return;
+        }
+
+        DexPoolActivity? activity = null;
+        try { activity = await _geckoTerminalClient.GetPoolActivityAsync(network, pool); }
+        catch { activity = null; }
+
+        if (SelectedToken is null || !string.Equals(SelectedToken.TokenInfo.TokenAddress, address, StringComparison.OrdinalIgnoreCase))
+        {
+            return; // selection changed while fetching
+        }
+        if (activity is null)
+        {
+            return;
+        }
+
+        _buys24h = activity.Buys24h;
+        _sells24h = activity.Sells24h;
+        _activityPool = pool;
+
+        RecentMarketTrades.Clear();
+        foreach (var tick in activity.Trades.Take(40))
+        {
+            RecentMarketTrades.Add(new DexMarketTradeViewModel(tick));
+        }
+
+        CheckAntiRug(token, activity);
+
+        this.RaisePropertyChanged(nameof(Buys24hLabel));
+        this.RaisePropertyChanged(nameof(Sells24hLabel));
+        this.RaisePropertyChanged(nameof(BuyPercent));
+        this.RaisePropertyChanged(nameof(SellPercent));
+        this.RaisePropertyChanged(nameof(BuySellRatioLabel));
+        this.RaisePropertyChanged(nameof(ShowMarketTradesPlaceholder));
+    }
 
     private void AddTradeRecord(string side, string symbol, decimal amount, decimal price, string txHash, bool success)
     {
@@ -634,8 +1456,36 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         }
     }
 
+    // ── DEX chart indicators (reuse the CEX candlestick control's overlays) ────
+    private bool _showDexMa20 = true;
+    private bool _showDexMa50;
+    private bool _showDexBollinger;
+    private bool _showDexRsi;
+    private bool _showDexVwap;
+    private bool _trendingMode;
+    public bool ShowDexMa20 { get => _showDexMa20; set => this.RaiseAndSetIfChanged(ref _showDexMa20, value); }
+    public bool ShowDexMa50 { get => _showDexMa50; set => this.RaiseAndSetIfChanged(ref _showDexMa50, value); }
+    public bool ShowDexBollinger { get => _showDexBollinger; set => this.RaiseAndSetIfChanged(ref _showDexBollinger, value); }
+    public bool ShowDexRsi { get => _showDexRsi; set => this.RaiseAndSetIfChanged(ref _showDexRsi, value); }
+    public bool ShowDexVwap { get => _showDexVwap; set => this.RaiseAndSetIfChanged(ref _showDexVwap, value); }
+
+    private void ToggleDexIndicator(string? indicator)
+    {
+        switch (indicator?.ToUpperInvariant())
+        {
+            case "MA20": ShowDexMa20 = !ShowDexMa20; break;
+            case "MA50": ShowDexMa50 = !ShowDexMa50; break;
+            case "BB": ShowDexBollinger = !ShowDexBollinger; break;
+            case "RSI": ShowDexRsi = !ShowDexRsi; break;
+            case "VWAP": ShowDexVwap = !ShowDexVwap; break;
+        }
+    }
+
     public ReactiveCommand<Unit, Unit> RefreshCommand { get; }
     public ReactiveCommand<Unit, Unit> SearchCommand { get; }
+    public ReactiveCommand<string, Unit> ToggleDexIndicatorCommand { get; }
+    public ReactiveCommand<Unit, Unit> LoadTrendingCommand { get; }
+    public bool IsTrendingMode => _trendingMode;
     public ReactiveCommand<Unit, Unit> BuyCommand { get; }
     public ReactiveCommand<Unit, Unit> SellCommand { get; }
     public ReactiveCommand<Unit, Unit> UseMaxBuyAmountCommand { get; }
@@ -643,6 +1493,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<string, Unit> ApplySellBalancePresetCommand { get; }
     public ReactiveCommand<Unit, Unit> RefreshTokenBalanceCommand { get; }
     public ReactiveCommand<string, Unit> SelectChartRangeCommand { get; }
+    public ReactiveCommand<string, Unit> SelectSlippagePresetCommand { get; }
 
     public DexTokenAiVerdictViewModel TokenVerdict { get; } = new();
     public ReactiveCommand<Unit, Unit> DeepScanTokenCommand { get; }
@@ -663,6 +1514,23 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         ApplySellBalancePresetCommand = ReactiveCommand.Create<string>(ApplySellBalancePreset, outputScheduler: App.UiScheduler);
         RefreshTokenBalanceCommand = ReactiveCommand.CreateFromTask(RefreshTokenBalanceAsync, outputScheduler: App.UiScheduler);
         SelectChartRangeCommand = ReactiveCommand.CreateFromTask<string>(SelectChartRangeAsync, outputScheduler: App.UiScheduler);
+        SelectSlippagePresetCommand = ReactiveCommand.Create<string>(ApplySlippagePreset, outputScheduler: App.UiScheduler);
+        ToggleDexIndicatorCommand = ReactiveCommand.Create<string>(ToggleDexIndicator, outputScheduler: App.UiScheduler);
+        LoadTrendingCommand = ReactiveCommand.CreateFromTask(LoadTrendingAsync, outputScheduler: App.UiScheduler);
+        SelectKeeperOrderTypeCommand = ReactiveCommand.Create<string>(v => { if (!string.IsNullOrWhiteSpace(v)) KeeperOrderType = v; }, outputScheduler: App.UiScheduler);
+        ArmKeeperOrderCommand = ReactiveCommand.Create<string>(ArmKeeperOrder, outputScheduler: App.UiScheduler);
+        CancelKeeperOrderCommand = ReactiveCommand.Create<string>(id => { _keeper.Cancel(id); RefreshKeeperOrders(); SaveKeeper(); }, outputScheduler: App.UiScheduler);
+        ToggleWatchlistCommand = ReactiveCommand.Create(ToggleWatchlist, outputScheduler: App.UiScheduler);
+        RemoveWatchlistCommand = ReactiveCommand.Create<string>(RemoveWatchlist, outputScheduler: App.UiScheduler);
+        OpenWatchlistCommand = ReactiveCommand.CreateFromTask<string>(addr => SelectTokenByAddressAsync(addr), outputScheduler: App.UiScheduler);
+        RefreshPortfolioCommand = ReactiveCommand.CreateFromTask(RefreshPortfolioAsync, outputScheduler: App.UiScheduler);
+        RefreshLivePerpCommand = ReactiveCommand.CreateFromTask(RefreshLivePerpAccountAsync, outputScheduler: App.UiScheduler);
+        PlaceHyperliquidOrderCommand = ReactiveCommand.CreateFromTask(PlaceHyperliquidOrderAsync, outputScheduler: App.UiScheduler);
+        _portfolioApiKey = _portfolioKeyStore.Load();
+        var hlSettings = _hlSettingsStore.Load();
+        _hlEnableLiveOrders = hlSettings.EnableLiveOrders;
+        _hlTestnet = hlSettings.Testnet;
+        LoadWatchlist();
         DeepScanTokenCommand = ReactiveCommand.CreateFromTask(DeepScanTokenAsync, outputScheduler: App.UiScheduler);
 
         _refreshTimer = new DispatcherTimer
@@ -691,6 +1559,16 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             _quoteDebounceTimer.Stop();
             await RefreshBuyQuoteAsync();
         };
+
+        _activityTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(12) };
+        _activityTimer.Tick += async (_, _) => await RefreshActivityAsync(null);
+        _activityTimer.Start();
+
+        _keeper.LoadOrders(_keeperStore.Load());
+        RefreshKeeperOrders();
+        _keeperTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(15) };
+        _keeperTimer.Tick += async (_, _) => await PollKeeperAsync();
+        _keeperTimer.Start();
 
         RefreshQuoteAssetOptions();
         EnsureValidQuoteAssetSelection();
@@ -773,6 +1651,8 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         _refreshTimer.Stop();
         _chartDebounceTimer.Stop();
         _quoteDebounceTimer.Stop();
+        _activityTimer.Stop();
+        _keeperTimer.Stop();
         _walletWorkspace.PropertyChanged -= OnWalletWorkspacePropertyChanged;
         _securityScanner.Dispose();
     }
@@ -792,10 +1672,29 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         return await Dispatcher.UIThread.InvokeAsync(action);
     }
 
+    private async Task LoadTrendingAsync()
+    {
+        _trendingMode = true;
+        this.RaisePropertyChanged(nameof(IsTrendingMode));
+        var chainId = ChainIdForFilter(_selectedChainFilter) ?? "ethereum";
+        var network = MapGeckoNetwork(chainId);
+        if (string.IsNullOrWhiteSpace(network))
+        {
+            network = "eth";
+        }
+        await LoadTokensAsync(() => _geckoTerminalClient.GetTrendingTokensAsync(network), "🔥 Trending pools loaded.");
+    }
+
     private async Task AutoRefreshAsync()
     {
         if (IsLoading)
         {
+            return;
+        }
+
+        if (_trendingMode)
+        {
+            await LoadTrendingAsync();
             return;
         }
 
@@ -812,8 +1711,59 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         }
     }
 
+    /// <summary>Open a specific token in the DEX list by contract address (used by the
+    /// Markets → Trade hand-off). Loads it via search if it isn't already listed and
+    /// selects it, keeping the search context so it stays visible on auto-refresh.</summary>
+    public async Task SelectTokenByAddressAsync(string tokenAddress, string? symbolHint = null)
+    {
+        if (string.IsNullOrWhiteSpace(tokenAddress))
+        {
+            return;
+        }
+
+        var existing = Tokens.FirstOrDefault(t => string.Equals(t.TokenAddress, tokenAddress, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+        {
+            SelectedToken = existing;
+            return;
+        }
+
+        SearchText = string.IsNullOrWhiteSpace(symbolHint) ? tokenAddress : symbolHint;
+        await SearchAsync();
+
+        var found = Tokens.FirstOrDefault(t => string.Equals(t.TokenAddress, tokenAddress, StringComparison.OrdinalIgnoreCase));
+        if (found is null)
+        {
+            // Filters or the search view may not surface it — fetch by address and inject.
+            try
+            {
+                var results = await _dexClient.SearchTokensAsync(tokenAddress);
+                var match = results.FirstOrDefault(t => string.Equals(t.TokenAddress, tokenAddress, StringComparison.OrdinalIgnoreCase))
+                            ?? results.FirstOrDefault();
+                if (match is not null)
+                {
+                    var item = new DexTokenItemViewModel();
+                    item.Update(match);
+                    Tokens.Insert(0, item);
+                    found = item;
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Could not open token: {ex.Message}";
+            }
+        }
+
+        if (found is not null)
+        {
+            SelectedToken = found;
+            StatusMessage = $"Opened {found.DisplayName} from Markets.";
+        }
+    }
+
     private async Task RefreshAsync()
     {
+        if (_trendingMode) { _trendingMode = false; this.RaisePropertyChanged(nameof(IsTrendingMode)); }
         var chainId = ChainIdForFilter(_selectedChainFilter);
         if (!string.IsNullOrEmpty(chainId))
         {
@@ -828,6 +1778,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
     private async Task SearchAsync()
     {
+        if (_trendingMode) { _trendingMode = false; this.RaisePropertyChanged(nameof(IsTrendingMode)); }
         await LoadTokensAsync(() => _dexClient.SearchTokensAsync(SearchText), $"Search refreshed for '{SearchText}'.");
     }
 
@@ -852,7 +1803,9 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
                 LastUpdatedLocal = DateTime.Now;
             });
 
-            await RunOnUiAsync(QueueChartReload);
+            // NOTE: do not reload the chart on every list refresh — that redrew the chart
+            // from scratch every few seconds (nice live candles → empty cache flicker). The
+            // chart reloads on token selection and timeframe change, which is enough.
         }
         catch (Exception ex)
         {
@@ -873,22 +1826,89 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             ChainIdForFilter(_selectedChainFilter),
             ThresholdValue(_selectedMinLiquidity),
             ThresholdValue(_selectedMinVolume),
-            SortModeKey(_selectedSortMode));
+            SortModeKey(_selectedSortMode)).ToList();
 
-        Tokens.Clear();
-        foreach (var token in filtered)
+        // Reconcile the list IN PLACE (update / move / add / remove individual rows) instead
+        // of Clear()+rebuild. Clearing dropped the ListBox selection to null every auto-
+        // refresh, which re-ran the SelectedToken setter — reloading the chart (nice live
+        // candles → cleared to an empty cache) and the token profile (banner flicker). In
+        // place, the selected instance survives, so nothing reloads on a routine refresh.
+
+        var keep = new HashSet<string>(filtered.Select(t => t.TokenAddress), StringComparer.OrdinalIgnoreCase);
+        for (var i = Tokens.Count - 1; i >= 0; i--)
         {
-            var item = new DexTokenItemViewModel();
-            item.Update(token);
-            Tokens.Add(item);
+            if (!keep.Contains(Tokens[i].TokenAddress))
+            {
+                Tokens.RemoveAt(i);
+            }
         }
 
-        SelectedToken = Tokens.FirstOrDefault(t => string.Equals(t.TokenAddress, previousTokenAddress, StringComparison.OrdinalIgnoreCase))
-            ?? Tokens.FirstOrDefault();
+        for (var i = 0; i < filtered.Count; i++)
+        {
+            var info = filtered[i];
+            var k = -1;
+            for (var j = 0; j < Tokens.Count; j++)
+            {
+                if (string.Equals(Tokens[j].TokenAddress, info.TokenAddress, StringComparison.OrdinalIgnoreCase))
+                {
+                    k = j;
+                    break;
+                }
+            }
+
+            if (k < 0)
+            {
+                var item = new DexTokenItemViewModel();
+                item.Update(info);
+                Tokens.Insert(Math.Min(i, Tokens.Count), item);
+            }
+            else
+            {
+                Tokens[k].Update(info);
+                if (k != i && i < Tokens.Count)
+                {
+                    Tokens.Move(k, i);
+                }
+            }
+        }
+
+        // Only (re)select when nothing is selected or the current selection dropped out.
+        if (SelectedToken is null || !keep.Contains(SelectedToken.TokenAddress))
+        {
+            SelectedToken = Tokens.FirstOrDefault(t => string.Equals(t.TokenAddress, previousTokenAddress, StringComparison.OrdinalIgnoreCase))
+                ?? Tokens.FirstOrDefault();
+        }
+        else
+        {
+            // Same token stays selected — refresh the derived header labels in place so the
+            // live price/liquidity update without re-running the heavy chart/profile reload.
+            RaiseSelectedTokenMarketLabels();
+            TickKeeper();
+        }
+
+        UpdateWatchlistFromTokens();
 
         StatusMessage = Tokens.Count == 0
             ? (_loadedTokens.Count == 0 ? "No tokens found." : "No tokens match filters.")
             : _lastLoadSuccessMessage;
+    }
+
+    private void RaiseSelectedTokenMarketLabels()
+    {
+        this.RaisePropertyChanged(nameof(SelectedToken));
+        this.RaisePropertyChanged(nameof(DexPriceUsdLabel));
+        this.RaisePropertyChanged(nameof(DexChange5mLabel));
+        this.RaisePropertyChanged(nameof(DexChange5mBrush));
+        this.RaisePropertyChanged(nameof(DexChange1hLabel));
+        this.RaisePropertyChanged(nameof(DexChange1hBrush));
+        this.RaisePropertyChanged(nameof(DexChange24hLabel));
+        this.RaisePropertyChanged(nameof(DexChange24hBrush));
+        this.RaisePropertyChanged(nameof(DexLiquidityLabel));
+        this.RaisePropertyChanged(nameof(DexVolume24hLabel));
+        this.RaisePropertyChanged(nameof(DexMarketCapLabel));
+        this.RaisePropertyChanged(nameof(DexFees24hLabel));
+        this.RaisePropertyChanged(nameof(DexUtilizationLabel));
+        this.RaisePropertyChanged(nameof(DexPairLabel));
     }
 
     private static string? ChainIdForFilter(string display) => display switch
@@ -1004,9 +2024,25 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         }
 
         var slippage = await RunOnUiAsync(() => SlippagePercent);
+        var wantsBestRoute = await RunOnUiAsync(() => UseBestRouteSwap);
         try
         {
             var spendAssetSymbol = IsNativeQuoteMode(quoteAssetSymbol) || string.Equals(quoteAssetSymbol, dexGateway.NativeSymbol, StringComparison.OrdinalIgnoreCase) ? null : quoteAssetSymbol;
+
+            if (wantsBestRoute && dexGateway is ISupportsAggregatorSwap agg && agg.SupportsAggregatorSwap)
+            {
+                // OpenOcean returns the effective gasPrice with the tx; the quote param is advisory only.
+                var res = await agg.ExecuteAggregatorBuyAsync(selectedToken.TokenAddress, buyAmount, slippage, spendAssetSymbol, gasPriceGwei: 0m);
+                await RunOnUiAsync(() =>
+                {
+                    StatusMessage = res.Success
+                        ? $"Best-route buy filled ({res.Route}): {res.TxHash}"
+                        : $"Best-route buy reverted: {res.TxHash}";
+                    AddTradeRecord("BUY", selectedToken.DisplayName, buyAmount, selectedToken.TokenInfo.PriceUsd, res.TxHash, res.Success);
+                });
+                return;
+            }
+
             var transactionHash = await dexGateway.BuyTokenAsync(selectedToken.TokenAddress, buyAmount, slippagePercent: slippage, dexId: selectedToken.TokenInfo.DexId, spendAssetSymbol: spendAssetSymbol);
             await RunOnUiAsync(() =>
             {
@@ -1064,11 +2100,27 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        var (sellAmount, quoteAssetSymbol, slippage) = await RunOnUiAsync(() => (SellAmountTokens, SelectedQuoteAssetSymbol, SlippagePercent));
+        var (sellAmount, quoteAssetSymbol, slippage, wantsBestRoute) = await RunOnUiAsync(() => (SellAmountTokens, SelectedQuoteAssetSymbol, SlippagePercent, UseBestRouteSwap));
 
         try
         {
             var receiveAssetSymbol = IsNativeQuoteMode(quoteAssetSymbol) || string.Equals(quoteAssetSymbol, dexGateway.NativeSymbol, StringComparison.OrdinalIgnoreCase) ? null : quoteAssetSymbol;
+
+            // Best route sells the token straight into the chosen quote asset (USDT by default),
+            // routing across every DEX so any token converts back to USDT on the wallet.
+            if (wantsBestRoute && dexGateway is ISupportsAggregatorSwap agg && agg.SupportsAggregatorSwap)
+            {
+                var res = await agg.ExecuteAggregatorSellAsync(selectedToken.TokenAddress, sellAmount, slippage, receiveAssetSymbol, gasPriceGwei: 0m);
+                await RunOnUiAsync(() =>
+                {
+                    StatusMessage = res.Success
+                        ? $"Best-route sell filled → {(receiveAssetSymbol ?? dexGateway.NativeSymbol)} ({res.Route}): {res.TxHash}"
+                        : $"Best-route sell reverted: {res.TxHash}";
+                    AddTradeRecord("SELL", selectedToken.DisplayName, sellAmount, selectedToken.TokenInfo.PriceUsd, res.TxHash, res.Success);
+                });
+                return;
+            }
+
             var transactionHash = await dexGateway.SellTokenAsync(selectedToken.TokenAddress, sellAmount, slippagePercent: slippage, dexId: selectedToken.TokenInfo.DexId, receiveAssetSymbol: receiveAssetSymbol);
             await RunOnUiAsync(() =>
             {
@@ -1146,6 +2198,14 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         StatusMessage = $"Buy amount set to {preset}% of available {SelectedQuoteAssetSymbol}: {BuyAmountBnb:0.######}.";
     }
 
+    private void ApplySlippagePreset(string? preset)
+    {
+        if (decimal.TryParse(preset, NumberStyles.Any, CultureInfo.InvariantCulture, out var value) && value > 0m)
+        {
+            SlippagePercent = value;
+        }
+    }
+
     private decimal RoundBuyAmount(decimal amount)
     {
         var decimals = ResolveSpendPrecision();
@@ -1176,14 +2236,10 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             return true;
         }
 
-        if (string.Equals(tokenInfo.QuoteSymbol, SelectedQuoteAssetSymbol, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        return string.Equals(_walletWorkspace.SelectedNetwork, "Base", StringComparison.OrdinalIgnoreCase) &&
-               string.Equals(SelectedQuoteAssetSymbol, "USDT", StringComparison.OrdinalIgnoreCase) &&
-               string.Equals(tokenInfo.QuoteSymbol, "USDC", StringComparison.OrdinalIgnoreCase);
+        // A stable quote (USDT/USDC) buys and sells any token via the best-route aggregator or a
+        // wrapped-native hop, so a direct token/stable pool is not required — every token on a
+        // supported network can be traded against the selected stable.
+        return DexQuoteAssetCatalog.Find(_walletWorkspace.SelectedNetwork, SelectedQuoteAssetSymbol) is not null;
     }
 
     private async Task RefreshQuoteAssetBalanceAsync()
@@ -1688,6 +2744,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             this.RaisePropertyChanged(nameof(WalletSessionSummary));
             this.RaisePropertyChanged(nameof(WalletBalanceSummary));
             this.RaisePropertyChanged(nameof(WalletTradeStatus));
+            this.RaisePropertyChanged(nameof(ActiveDexRouterLabel));
             this.RaisePropertyChanged(nameof(GlobalQuoteModeLabel));
             this.RaisePropertyChanged(nameof(GlobalQuoteModeBrush));
             this.RaisePropertyChanged(nameof(GlobalQuoteSummary));
@@ -1800,6 +2857,9 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         var selectedToken = await RunOnUiAsync(() => SelectedToken);
         var buyAmount = await RunOnUiAsync(() => BuyAmountBnb);
         var quoteSymbol = await RunOnUiAsync(() => SelectedQuoteAssetSymbol);
+
+        // Best-route aggregator preview (independent of the wallet gateway).
+        await RefreshAggregatorQuoteAsync(selectedToken, buyAmount, quoteSymbol);
 
         if (gateway is null || selectedToken is null || buyAmount <= 0m)
         {
@@ -1933,6 +2993,147 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
     private sealed record LocalChartRequest(TimeSpan BucketSize, TimeSpan Lookback, int MaxCandles);
     private sealed record GeckoChartRequest(string Timeframe, int Aggregate, int Limit);
+}
+
+/// <summary>One wallet holding row in the DEX portfolio.</summary>
+public sealed class DexHoldingViewModel
+{
+    public DexHoldingViewModel(string symbol, decimal balance, decimal valueUsd)
+    {
+        Symbol = string.IsNullOrWhiteSpace(symbol) ? "?" : symbol;
+        BalanceLabel = balance.ToString("0.######");
+        ValueUsd = valueUsd;
+        ValueLabel = valueUsd > 0m ? $"$ {valueUsd:N2}" : "—";
+    }
+
+    public string Symbol { get; }
+    public string BalanceLabel { get; }
+    public decimal ValueUsd { get; }
+    public string ValueLabel { get; }
+}
+
+/// <summary>One live on-chain Hyperliquid perp position row.</summary>
+public sealed class HyperliquidPositionViewModel
+{
+    public HyperliquidPositionViewModel(HyperliquidPosition p)
+    {
+        Coin = p.Coin;
+        Side = p.Side;
+        SideBrush = p.IsLong ? "#21e6c1" : "#ff5c7c";
+        SizeLabel = Math.Abs(p.Size).ToString("0.######");
+        EntryLabel = p.EntryPrice > 0m ? $"$ {p.EntryPrice:0.####}" : "—";
+        LiqLabel = p.LiquidationPrice > 0m ? $"$ {p.LiquidationPrice:0.####}" : "—";
+        LeverageLabel = $"{p.Leverage}x {p.LeverageType}";
+        PnlLabel = (p.UnrealizedPnl >= 0m ? "+$ " : "-$ ") + Math.Abs(p.UnrealizedPnl).ToString("N2");
+        PnlBrush = p.UnrealizedPnl >= 0m ? "#21e6c1" : "#ff5c7c";
+        ValueLabel = $"$ {p.PositionValueUsd:N2}";
+    }
+
+    public string Coin { get; }
+    public string Side { get; }
+    public string SideBrush { get; }
+    public string SizeLabel { get; }
+    public string EntryLabel { get; }
+    public string LiqLabel { get; }
+    public string LeverageLabel { get; }
+    public string PnlLabel { get; }
+    public string PnlBrush { get; }
+    public string ValueLabel { get; }
+}
+
+/// <summary>One watchlist token row with a live price.</summary>
+public sealed class DexWatchItemViewModel : ReactiveObject
+{
+    private decimal _price;
+    private decimal _change24h;
+
+    public DexWatchItemViewModel(string chainId, string tokenAddress, string symbol)
+    {
+        ChainId = chainId;
+        TokenAddress = tokenAddress;
+        Symbol = string.IsNullOrWhiteSpace(symbol) ? "?" : symbol;
+    }
+
+    public string ChainId { get; }
+    public string TokenAddress { get; }
+    public string Symbol { get; }
+    public string ChainBadge => string.IsNullOrWhiteSpace(ChainId) ? "" : ChainId.ToUpperInvariant();
+
+    public decimal PriceValue => _price;
+    public string PriceLabel => _price > 0m ? $"$ {DexPerpFormat.Price(_price)}" : "—";
+    public string ChangeLabel => _price > 0m ? $"{_change24h:+0.0;-0.0;0}%" : "";
+    public string ChangeBrush => _change24h >= 0m ? "#3ddc84" : "#ff6b6b";
+
+    public void Update(decimal price, decimal change24h)
+    {
+        _price = price;
+        _change24h = change24h;
+        this.RaisePropertyChanged(nameof(PriceLabel));
+        this.RaisePropertyChanged(nameof(ChangeLabel));
+        this.RaisePropertyChanged(nameof(ChangeBrush));
+    }
+}
+
+/// <summary>One active keeper (conditional) order row.</summary>
+public sealed class DexKeeperOrderViewModel
+{
+    public DexKeeperOrderViewModel(DexKeeperOrder o)
+    {
+        Id = o.Id;
+        var side = o.Side == KeeperSide.Buy ? "BUY" : "SELL";
+        TypeLabel = o.PlanId is not null && o.PlanId.StartsWith("DCA", StringComparison.OrdinalIgnoreCase)
+            ? $"DCA {side}"
+            : $"{o.Kind.ToString().ToUpperInvariant()} {side}";
+        SideBrush = o.Side == KeeperSide.Buy ? "#3ddc84" : "#ff6b6b";
+        Symbol = o.Symbol;
+        TriggerLabel = o.Kind == KeeperOrderKind.Trailing
+            ? $"−{o.TrailingDistancePct:0.##}%"
+            : DexPerpFormat.Price(o.TriggerPrice);
+        AmountLabel = o.Side == KeeperSide.Buy ? $"${o.AmountUsd:0.##}" : $"{o.AmountTokens:0.####}";
+    }
+
+    public string Id { get; }
+    public string TypeLabel { get; }
+    public string SideBrush { get; }
+    public string Symbol { get; }
+    public string TriggerLabel { get; }
+    public string AmountLabel { get; }
+}
+
+/// <summary>One anti-rug alert (liquidity drop / whale sell / volume spike).</summary>
+public sealed class DexTokenAlertViewModel
+{
+    public DexTokenAlertViewModel(string icon, string message, string brush, DateTime timeLocal)
+    {
+        Icon = icon;
+        Message = message;
+        Brush = brush;
+        TimeLabel = timeLocal.ToString("HH:mm:ss");
+    }
+
+    public string Icon { get; }
+    public string Message { get; }
+    public string Brush { get; }
+    public string TimeLabel { get; }
+}
+
+/// <summary>One live market-trade row (all traders, from the pool tape).</summary>
+public sealed class DexMarketTradeViewModel
+{
+    public DexMarketTradeViewModel(DexTradeTick t)
+    {
+        IsBuy = string.Equals(t.Side, "buy", StringComparison.OrdinalIgnoreCase);
+        SideLabel = IsBuy ? "BUY" : "SELL";
+        SideBrush = IsBuy ? "#3ddc84" : "#ff6b6b";
+        AmountLabel = t.AmountUsd >= 1000m ? $"${t.AmountUsd / 1000m:0.#}K" : $"${t.AmountUsd:0}";
+        TimeLabel = t.TimeUtc.ToLocalTime().ToString("HH:mm:ss");
+    }
+
+    public bool IsBuy { get; }
+    public string SideLabel { get; }
+    public string SideBrush { get; }
+    public string AmountLabel { get; }
+    public string TimeLabel { get; }
 }
 
 public sealed class DexTradeRecordViewModel : ReactiveObject

@@ -1,632 +1,880 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
-             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.AiSignalsView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <Border Classes="Panel">
-            <StackPanel Spacing="18">
-              <Border Classes="HeroPanel">
-                <Grid ColumnDefinitions="1.2*,Auto" ColumnSpacing="18">
-                  <StackPanel Spacing="8">
-                    <TextBlock Classes="Overline" Text="AI SIGNAL STUDIO" />
-                    <TextBlock Classes="H1" Text="Crypto Copilot Workspace" />
-                    <TextBlock Text="A focused signal desk with local crypto chat, visual review, route context, and quick action prompts built around the live terminal state."
-                               Foreground="#8FA3B8"
-                               MaxWidth="940"
-                               TextWrapping="Wrap" />
-                  </StackPanel>
-                  <WrapPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Border Classes="SurfaceCard" MinWidth="148" Margin="0,0,12,0">
-                      <StackPanel Spacing="4">
-                        <TextBlock Classes="Overline" Text="Status" />
-                        <TextBlock Text="{Binding AiAssistantStatusLabel}" FontWeight="Bold" Foreground="{Binding AiAssistantStatusBrush}" />
-                      </StackPanel>
-                    </Border>
-                    <Border Classes="SurfaceCard" MinWidth="136" Margin="0,0,12,0">
-                      <StackPanel Spacing="4">
-                        <TextBlock Classes="Overline" Text="Chat" />
-                        <TextBlock Text="{Binding AiConversationCountLabel}" FontWeight="Bold" />
-                      </StackPanel>
-                    </Border>
-                    <Border Classes="SurfaceCard" MinWidth="136" Margin="0,0,12,0">
-                      <StackPanel Spacing="4">
-                        <TextBlock Classes="Overline" Text="Visuals" />
-                        <TextBlock Text="{Binding AiVisualCountLabel}" FontWeight="Bold" />
-                      </StackPanel>
-                    </Border>
-                    <Border Classes="SurfaceCard" MinWidth="170">
-                      <StackPanel Spacing="4">
-                        <TextBlock Classes="Overline" Text="Engine" />
-                        <TextBlock Text="{Binding AiEngineAvailabilityLabel}" FontWeight="Bold" Foreground="{Binding AiEngineAvailabilityBrush}" />
-                      </StackPanel>
-                    </Border>
-                  </WrapPanel>
-                </Grid>
-              </Border>
+             x:DataType="vm:AiSignalDeskViewModel"
+             x:CompileBindings="False"
+             DataContext="{Binding AiSignalDeskVM}"
+             FontFamily="{StaticResource FontDisplay}"
+             FontSize="13"
+             Foreground="#d0e4f4">
 
-              <Grid ColumnDefinitions="480,1.1*,540" ColumnSpacing="24" MinHeight="980">
-                <Border Grid.Column="0" Classes="SectionPanel" Padding="20" MinHeight="980">
-                  <Grid RowDefinitions="Auto,*" RowSpacing="12">
-                    <StackPanel Spacing="6">
-                      <TextBlock Classes="H2" Text="Prompt Library" />
-                      <TextBlock Text="{Binding AiWorkspaceSubheadline}" Classes="SecondaryCopy" TextWrapping="Wrap" />
-                    </StackPanel>
+  <UserControl.Styles>
+    <!-- Flat, chrome-less buttons used across the desk -->
+    <Style Selector="Button.Flat">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="CornerRadius" Value="10" />
+    </Style>
+    <Style Selector="Button.Flat:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.Pill">
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="5" />
+      <Setter Property="Padding" Value="0,4" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="FontSize" Value="9" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style Selector="Button.Pill:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#0c1e2e" />
+    </Style>
+    <Style Selector="Button.Tab">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0,0,0,2" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="Padding" Value="0,8" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="FontSize" Value="9" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style Selector="Button.Tab:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+  </UserControl.Styles>
 
-                    <ScrollViewer Grid.Row="1" MaxHeight="880" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                      <StackPanel Spacing="14">
-                        <Border Classes="AiPromptCard">
-                          <StackPanel Spacing="12">
-                            <Grid ColumnDefinitions="*,Auto">
-                              <TextBlock Classes="H2" Text="Prompt Builder" />
-                              <Button Grid.Column="1"
-                                      Content="BUILD PROMPT"
-                                      Classes="GhostButton"
-                                      Command="{Binding GenerateAiPresetPromptCommand}" />
-                            </Grid>
-                            <TextBlock Text="Assemble a focused AI question from the active context, trade style, horizon, risk, and analysis goal." Classes="SecondaryCopy" TextWrapping="Wrap" />
+  <Grid RowDefinitions="54,*" Background="#040b12">
 
-                            <StackPanel Spacing="6">
-                              <TextBlock Classes="Overline" Text="Asset" />
-                              <TextBox Text="{Binding AiPromptPresetAsset}" />
-                            </StackPanel>
+    <!-- ════════ HEADER ════════ -->
+    <Border Grid.Row="0" Background="#050c14" BorderBrush="#0d1b27" BorderThickness="0,0,0,1" Padding="14,0">
+      <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto">
 
-                            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                              <StackPanel Grid.Column="0" Spacing="6">
-                                <TextBlock Classes="Overline" Text="Trade Style" />
-                                <ComboBox ItemsSource="{Binding AiPromptTradeStyleOptions}"
-                                          SelectedItem="{Binding SelectedAiPromptTradeStyle}" />
-                              </StackPanel>
-                              <StackPanel Grid.Column="1" Spacing="6">
-                                <TextBlock Classes="Overline" Text="Horizon" />
-                                <ComboBox ItemsSource="{Binding AiPromptHorizonOptions}"
-                                          SelectedItem="{Binding SelectedAiPromptHorizon}" />
-                              </StackPanel>
-                            </Grid>
+        <!-- Title -->
+        <Border Grid.Column="0" BorderBrush="#0d1b27" BorderThickness="0,0,1,0" Padding="0,0,16,0">
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <TextBlock Text="/" Foreground="#1e3048" FontSize="16" FontWeight="Light" VerticalAlignment="Center" />
+            <TextBlock Text="AI Signal" Foreground="#21e6c1" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" />
+          </StackPanel>
+        </Border>
 
-                            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                              <StackPanel Grid.Column="0" Spacing="6">
-                                <TextBlock Classes="Overline" Text="Risk Profile" />
-                                <ComboBox ItemsSource="{Binding AiPromptRiskProfileOptions}"
-                                          SelectedItem="{Binding SelectedAiPromptRiskProfile}" />
-                              </StackPanel>
-                              <StackPanel Grid.Column="1" Spacing="6">
-                                <TextBlock Classes="Overline" Text="Focus" />
-                                <ComboBox ItemsSource="{Binding AiPromptFocusOptions}"
-                                          SelectedItem="{Binding SelectedAiPromptFocus}" />
-                              </StackPanel>
-                            </Grid>
+        <!-- Regime -->
+        <Border Grid.Column="1" BorderBrush="#0d1b27" BorderThickness="0,0,1,0" Padding="14,0">
+          <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+            <TextBlock Text="REGIME" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+            <Border Background="{Binding RegimeBadgeBg}" BorderBrush="{Binding RegimeBadgeBorder}" BorderThickness="1" CornerRadius="5" Padding="9,3">
+              <TextBlock Text="{Binding RegimeLabel}" Foreground="{Binding RegimeBadgeColor}" FontSize="10" FontWeight="ExtraBold" />
+            </Border>
+          </StackPanel>
+        </Border>
 
-                            <Border Classes="InfoBand">
-                              <StackPanel Spacing="4">
-                                <TextBlock Classes="Overline" Text="Preset Summary" />
-                                <TextBlock Text="{Binding AiPromptPresetSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                              </StackPanel>
-                            </Border>
+        <!-- Accuracy -->
+        <Border Grid.Column="2" BorderBrush="#0d1b27" BorderThickness="0,0,1,0" Padding="14,0">
+          <StackPanel VerticalAlignment="Center" Spacing="2">
+            <TextBlock Text="SIGNAL ACCURACY" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="73%" Foreground="#21e6c1" FontSize="16" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}" />
+              <TextBlock Text="7d: 68% · 30d: 71%" Foreground="#3d5a72" FontSize="9" VerticalAlignment="Bottom" Margin="0,0,0,2" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
 
-                            <Border Classes="AiFactCard">
-                              <StackPanel Spacing="4">
-                                <TextBlock Classes="Overline" Text="Prompt Preview" />
-                                <TextBlock Text="{Binding AiPromptPresetPreview}" Classes="SecondaryCopy" TextWrapping="Wrap" />
-                              </StackPanel>
-                            </Border>
+        <!-- Signals today -->
+        <Border Grid.Column="3" BorderBrush="#0d1b27" BorderThickness="0,0,1,0" Padding="14,0">
+          <StackPanel VerticalAlignment="Center" Spacing="2">
+            <TextBlock Text="SIGNALS TODAY" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+            <TextBlock Text="{Binding SignalCount}" Foreground="#e8f4ff" FontSize="16" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}" />
+          </StackPanel>
+        </Border>
 
-                            <StackPanel Spacing="6">
-                              <TextBlock Classes="Overline" Text="My Preset Name" />
-                              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                                <TextBox Text="{Binding AiCustomPresetName}" />
-                                <Button Grid.Column="1"
-                                        Content="SAVE MY PRESET"
-                                        Classes="GhostButton"
-                                        Command="{Binding SaveAiCustomPromptPresetCommand}"
-                                        IsEnabled="{Binding CanSaveAiCustomPromptPreset}" />
-                              </Grid>
-                            </StackPanel>
+        <!-- Ticker tape -->
+        <Border Grid.Column="4" ClipToBounds="True" Padding="14,0">
+          <ItemsControl ItemsSource="{Binding Ticker}" VerticalAlignment="Center">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" Spacing="28" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:AiSignalTickerViewModel">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Sym}" Foreground="#2d4a5e" FontSize="10" FontWeight="Bold" />
+                  <TextBlock Text="{Binding Price}" Foreground="#8fa3b8" FontSize="12" FontFamily="{StaticResource FontMono}" />
+                  <TextBlock Text="{Binding Chg}" Foreground="{Binding ChgColor}" FontSize="11" FontWeight="SemiBold" />
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Border>
+
+        <!-- Right cluster -->
+        <Border Grid.Column="5" BorderBrush="#0d1b27" BorderThickness="1,0,0,0" Padding="14,0">
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <TextBlock Text="analysing…" Foreground="#21e6c1" FontSize="9" FontWeight="Bold"
+                       VerticalAlignment="Center" IsVisible="{Binding IsGenerating}" />
+            <Button Classes="Pill" Content="↻ REFRESH" Padding="9,4" Foreground="#5a7a94"
+                    Background="#060d14" BorderBrush="#152233"
+                    Command="{Binding RefreshCommand}" IsEnabled="{Binding !IsGenerating}" />
+            <Border Background="#060d14" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="6" Padding="10,4">
+              <TextBlock Text="{Binding SourceLabel}" Foreground="#3d5a72" FontSize="9" FontWeight="Bold" />
+            </Border>
+            <Border Background="#060d14" BorderBrush="#152233" BorderThickness="1" CornerRadius="10" Padding="11,5">
+              <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                <Ellipse Width="6" Height="6" Fill="#3ddc84" />
+                <TextBlock Text="LIVE" Foreground="#5a7a94" FontSize="10" FontWeight="Bold" />
+              </StackPanel>
+            </Border>
+            <Border Background="#060d14" BorderBrush="#1a3030" BorderThickness="1" CornerRadius="10" Padding="11,5">
+              <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                <Ellipse Width="6" Height="6" Fill="#21e6c1" />
+                <TextBlock Text="AI ON" Foreground="#21e6c1" FontSize="10" FontWeight="Bold" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+
+    <!-- ════════ CONTENT ════════ -->
+    <Grid Grid.Row="1" ColumnDefinitions="258,*,270" ColumnSpacing="8" Margin="8">
+
+      <!-- ──────── LEFT: SIGNAL FEED ──────── -->
+      <Grid Grid.Column="0" RowDefinitions="Auto,*,Auto" RowSpacing="7">
+
+        <!-- Feed header + filters -->
+        <Border Grid.Row="0" Background="#07101a" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Padding="11,9">
+          <StackPanel Spacing="8">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="SIGNAL FEED" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" />
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                <Ellipse Width="5" Height="5" Fill="#21e6c1" />
+                <TextBlock Text="LIVE" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+              </StackPanel>
+            </Grid>
+            <ItemsControl ItemsSource="{Binding Filters}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <UniformGrid Columns="4" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:AiSignalFilterViewModel">
+                  <Button Classes="Pill"
+                          Margin="1,0"
+                          Content="{Binding Label}"
+                          Background="{Binding Background}"
+                          BorderBrush="{Binding BorderBrush}"
+                          Foreground="{Binding Foreground}"
+                          HorizontalAlignment="Stretch"
+                          Command="{Binding Command}"
+                          CommandParameter="{Binding Key}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+
+        <!-- Signal cards -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <ItemsControl ItemsSource="{Binding FeedItems}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:AiSignalCardViewModel">
+                <Button Classes="Flat" HorizontalAlignment="Stretch" Margin="0,0,0,5"
+                        Command="{Binding Command}" CommandParameter="{Binding .}">
+                  <Border Background="{Binding CardBg}" BorderBrush="{Binding CardBorder}" BorderThickness="1"
+                          CornerRadius="10" Padding="11,9">
+                    <StackPanel Spacing="7">
+                      <!-- symbol + badge -->
+                      <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                          <Border Width="26" Height="26" CornerRadius="7" Background="{Binding LogoBg}"
+                                  BorderBrush="#1a2d3e" BorderThickness="1">
+                            <TextBlock Text="{Binding Logo}" Foreground="#7a9ab8" FontSize="8" FontWeight="ExtraBold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Border>
+                          <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Sym}" Foreground="#e8f4ff" FontSize="12" FontWeight="Bold" />
+                            <TextBlock Text="{Binding TfExch}" Foreground="#2d4a5e" FontSize="9" />
                           </StackPanel>
-                        </Border>
-
-                        <Border Classes="AiPromptCard">
-                          <StackPanel Spacing="12">
-                            <Grid ColumnDefinitions="*,Auto">
-                              <TextBlock Classes="H2" Text="Saved Presets" />
-                              <TextBlock Grid.Column="1" Text="{Binding AiSavedPresetCountLabel}" Classes="MicroCopy" VerticalAlignment="Center" />
-                            </Grid>
-                            <TextBlock Text="One-click tactical profiles for scalp, swing, DEX, sniper, and risk review workflows." Classes="SecondaryCopy" TextWrapping="Wrap" />
-                            <ItemsControl ItemsSource="{Binding AiSavedPromptPresets}">
-                              <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="vm:AiPromptPresetViewModel">
-                                  <Border Classes="AiFactCard" Margin="0,0,0,10">
-                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                                      <StackPanel Spacing="4">
-                                        <DockPanel LastChildFill="True">
-                                          <TextBlock DockPanel.Dock="Left" Text="{Binding Label}" FontWeight="Bold" />
-                                          <TextBlock DockPanel.Dock="Right" Text="{Binding Asset}" Classes="MicroCopy" />
-                                        </DockPanel>
-                                        <TextBlock Text="{Binding Summary}" Classes="SecondaryCopy" TextWrapping="Wrap" />
-                                        <TextBlock Text="{Binding TradeStyle}" Foreground="#6FDBFF" FontWeight="SemiBold" />
-                                      </StackPanel>
-                                      <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
-                                        <Button Content="LOAD"
-                                                Classes="GhostButton"
-                                                Command="{Binding #RootWindow.DataContext.LoadAiSavedPromptPresetCommand}"
-                                                CommandParameter="{Binding .}" />
-                                        <Button Content="BUILD"
-                                                Classes="GhostButton"
-                                                Command="{Binding #RootWindow.DataContext.BuildAiSavedPromptPresetCommand}"
-                                                CommandParameter="{Binding .}" />
-                                        <Button Content="SEND NOW"
-                                                Classes="GhostButton"
-                                                Command="{Binding #RootWindow.DataContext.SendAiSavedPromptPresetCommand}"
-                                                CommandParameter="{Binding .}" />
-                                      </StackPanel>
-                                    </Grid>
-                                  </Border>
-                                </DataTemplate>
-                              </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                          </StackPanel>
-                        </Border>
-
-                        <Border Classes="AiPromptCard">
-                          <StackPanel Spacing="12">
-                            <Grid ColumnDefinitions="*,Auto">
-                              <TextBlock Classes="H2" Text="My Presets" />
-                              <TextBlock Grid.Column="1" Text="{Binding AiCustomPresetCountLabel}" Classes="MicroCopy" VerticalAlignment="Center" />
-                            </Grid>
-                            <TextBlock Text="Your own saved prompt profiles live here and persist between terminal restarts." Classes="SecondaryCopy" TextWrapping="Wrap" />
-                            <ItemsControl ItemsSource="{Binding AiCustomPromptPresets}">
-                              <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="vm:AiPromptPresetViewModel">
-                                  <Border Classes="AiFactCard" Margin="0,0,0,10">
-                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                                      <StackPanel Spacing="4">
-                                        <TextBlock Text="{Binding Label}" FontWeight="Bold" />
-                                        <TextBlock Text="{Binding Summary}" Classes="SecondaryCopy" TextWrapping="Wrap" />
-                                      </StackPanel>
-                                      <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
-                                        <Button Content="LOAD"
-                                                Classes="GhostButton"
-                                                Command="{Binding #RootWindow.DataContext.LoadAiSavedPromptPresetCommand}"
-                                                CommandParameter="{Binding .}" />
-                                        <Button Content="BUILD"
-                                                Classes="GhostButton"
-                                                Command="{Binding #RootWindow.DataContext.BuildAiSavedPromptPresetCommand}"
-                                                CommandParameter="{Binding .}" />
-                                        <Button Content="SEND NOW"
-                                                Classes="GhostButton"
-                                                Command="{Binding #RootWindow.DataContext.SendAiSavedPromptPresetCommand}"
-                                                CommandParameter="{Binding .}" />
-                                        <Button Content="DELETE"
-                                                Classes="GhostButton"
-                                                Command="{Binding #RootWindow.DataContext.DeleteAiCustomPromptPresetCommand}"
-                                                CommandParameter="{Binding .}" />
-                                      </StackPanel>
-                                    </Grid>
-                                  </Border>
-                                </DataTemplate>
-                              </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                          </StackPanel>
-                        </Border>
-
-                        <Border Classes="AiPromptCard">
-                          <StackPanel Spacing="12">
-                            <Grid ColumnDefinitions="*,Auto">
-                              <TextBlock Classes="H2" Text="Prompt Library" />
-                              <TextBlock Grid.Column="1" Text="{Binding AiQuickPromptCountLabel}" Classes="MicroCopy" VerticalAlignment="Center" />
-                            </Grid>
-                            <TextBlock Text="{Binding AiWorkspaceSubheadline}" Classes="SecondaryCopy" TextWrapping="Wrap" />
-
-                            <StackPanel Spacing="10">
-                              <TextBlock Classes="Overline" Text="ENTRY" />
-                              <ItemsControl ItemsSource="{Binding AiEntryPrompts}">
-                                <ItemsControl.ItemsPanel>
-                                  <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal" />
-                                  </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                  <DataTemplate x:DataType="vm:AiAssistantQuickPromptViewModel">
-                                    <Button Classes="AiPromptChip"
-                                            Content="{Binding Label}"
-                                            Command="{Binding #RootWindow.DataContext.UseAiAssistantQuickPromptCommand}"
-                                            CommandParameter="{Binding .}"
-                                            Margin="0,0,10,10" />
-                                  </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                              </ItemsControl>
-                            </StackPanel>
-
-                            <StackPanel Spacing="10">
-                              <TextBlock Classes="Overline" Text="EXIT" />
-                              <ItemsControl ItemsSource="{Binding AiExitPrompts}">
-                                <ItemsControl.ItemsPanel>
-                                  <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal" />
-                                  </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                  <DataTemplate x:DataType="vm:AiAssistantQuickPromptViewModel">
-                                    <Button Classes="AiPromptChip"
-                                            Content="{Binding Label}"
-                                            Command="{Binding #RootWindow.DataContext.UseAiAssistantQuickPromptCommand}"
-                                            CommandParameter="{Binding .}"
-                                            Margin="0,0,10,10" />
-                                  </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                              </ItemsControl>
-                            </StackPanel>
-
-                            <StackPanel Spacing="10">
-                              <TextBlock Classes="Overline" Text="RISK" />
-                              <ItemsControl ItemsSource="{Binding AiRiskPrompts}">
-                                <ItemsControl.ItemsPanel>
-                                  <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal" />
-                                  </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                  <DataTemplate x:DataType="vm:AiAssistantQuickPromptViewModel">
-                                    <Button Classes="AiPromptChip"
-                                            Content="{Binding Label}"
-                                            Command="{Binding #RootWindow.DataContext.UseAiAssistantQuickPromptCommand}"
-                                            CommandParameter="{Binding .}"
-                                            Margin="0,0,10,10" />
-                                  </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                              </ItemsControl>
-                            </StackPanel>
-
-                            <StackPanel Spacing="10">
-                              <TextBlock Classes="Overline" Text="DEX" />
-                              <ItemsControl ItemsSource="{Binding AiDexPrompts}">
-                                <ItemsControl.ItemsPanel>
-                                  <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal" />
-                                  </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                  <DataTemplate x:DataType="vm:AiAssistantQuickPromptViewModel">
-                                    <Button Classes="AiPromptChip"
-                                            Content="{Binding Label}"
-                                            Command="{Binding #RootWindow.DataContext.UseAiAssistantQuickPromptCommand}"
-                                            CommandParameter="{Binding .}"
-                                            Margin="0,0,10,10" />
-                                  </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                              </ItemsControl>
-                            </StackPanel>
-
-                            <StackPanel Spacing="10">
-                              <TextBlock Classes="Overline" Text="SNIPER" />
-                              <ItemsControl ItemsSource="{Binding AiSniperPrompts}">
-                                <ItemsControl.ItemsPanel>
-                                  <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal" />
-                                  </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                  <DataTemplate x:DataType="vm:AiAssistantQuickPromptViewModel">
-                                    <Button Classes="AiPromptChip"
-                                            Content="{Binding Label}"
-                                            Command="{Binding #RootWindow.DataContext.UseAiAssistantQuickPromptCommand}"
-                                            CommandParameter="{Binding .}"
-                                            Margin="0,0,10,10" />
-                                  </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                              </ItemsControl>
-                            </StackPanel>
-
-                            <StackPanel Spacing="10">
-                              <TextBlock Classes="Overline" Text="VISUAL" />
-                              <ItemsControl ItemsSource="{Binding AiVisualPrompts}">
-                                <ItemsControl.ItemsPanel>
-                                  <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal" />
-                                  </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                  <DataTemplate x:DataType="vm:AiAssistantQuickPromptViewModel">
-                                    <Button Classes="AiPromptChip"
-                                            Content="{Binding Label}"
-                                            Command="{Binding #RootWindow.DataContext.UseAiAssistantQuickPromptCommand}"
-                                            CommandParameter="{Binding .}"
-                                            Margin="0,0,10,10" />
-                                  </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                              </ItemsControl>
-                            </StackPanel>
-                          </StackPanel>
-                        </Border>
-
-                        <Border Classes="AiPromptCard">
-                          <StackPanel Spacing="10">
-                            <TextBlock Classes="Overline" Text="Context Venue" />
-                            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
-                              <Button Grid.Column="0"
-                                      Content="AUTO"
-                                      Classes="GhostButton"
-                                      Command="{Binding SelectAiContextVenueModeCommand}"
-                                      CommandParameter="AUTO"
-                                      Background="{Binding AiContextAutoBackground}"
-                                      Foreground="{Binding AiContextAutoForeground}" />
-                              <Button Grid.Column="1"
-                                      Content="CEX"
-                                      Classes="GhostButton"
-                                      Command="{Binding SelectAiContextVenueModeCommand}"
-                                      CommandParameter="CEX"
-                                      Background="{Binding AiContextCexBackground}"
-                                      Foreground="{Binding AiContextCexForeground}" />
-                              <Button Grid.Column="2"
-                                      Content="DEX"
-                                      Classes="GhostButton"
-                                      Command="{Binding SelectAiContextVenueModeCommand}"
-                                      CommandParameter="DEX"
-                                      Background="{Binding AiContextDexBackground}"
-                                      Foreground="{Binding AiContextDexForeground}" />
-                            </Grid>
-                            <TextBlock Text="{Binding AiContextVenueLabel}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                            <TextBlock Text="{Binding AiContextVenueSummary}" Classes="SecondaryCopy" TextWrapping="Wrap" />
-                          </StackPanel>
-                        </Border>
-
-                        <Border Classes="AiPromptCard">
-                          <StackPanel Spacing="10">
-                            <TextBlock Classes="Overline" Text="Context Sources" />
-                            <WrapPanel Orientation="Horizontal">
-                              <Button Content="MARKET"
-                                      Classes="GhostButton"
-                                      Command="{Binding ToggleAiContextSourceCommand}"
-                                      CommandParameter="MARKET"
-                                      Background="{Binding AiMarketChipBackground}"
-                                      Foreground="{Binding AiMarketChipForeground}"
-                                      Margin="0,0,8,8" />
-                              <Button Content="RISK"
-                                      Classes="GhostButton"
-                                      Command="{Binding ToggleAiContextSourceCommand}"
-                                      CommandParameter="RISK"
-                                      Background="{Binding AiRiskChipBackground}"
-                                      Foreground="{Binding AiRiskChipForeground}"
-                                      Margin="0,0,8,8" />
-                              <Button Content="DEX"
-                                      Classes="GhostButton"
-                                      Command="{Binding ToggleAiContextSourceCommand}"
-                                      CommandParameter="DEX"
-                                      Background="{Binding AiDexChipBackground}"
-                                      Foreground="{Binding AiDexChipForeground}"
-                                      Margin="0,0,8,8" />
-                              <Button Content="SNIPER"
-                                      Classes="GhostButton"
-                                      Command="{Binding ToggleAiContextSourceCommand}"
-                                      CommandParameter="SNIPER"
-                                      Background="{Binding AiSniperChipBackground}"
-                                      Foreground="{Binding AiSniperChipForeground}"
-                                      Margin="0,0,8,8" />
-                              <Button Content="VISUAL"
-                                      Classes="GhostButton"
-                                      Command="{Binding ToggleAiContextSourceCommand}"
-                                      CommandParameter="VISUAL"
-                                      Background="{Binding AiVisualChipBackground}"
-                                      Foreground="{Binding AiVisualChipForeground}"
-                                      Margin="0,0,8,8" />
-                            </WrapPanel>
-                            <TextBlock Text="{Binding AiContextSourcesSummary}" Classes="SecondaryCopy" TextWrapping="Wrap" />
-                          </StackPanel>
-                        </Border>
-
-                        <Border Classes="AiPromptCard">
-                          <StackPanel Spacing="8">
-                            <TextBlock Classes="Overline" Text="Scope" />
-                            <TextBlock Text="{Binding AiAssistantScopeLabel}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                            <TextBlock Text="{Binding AiAssistantModeSummary}" Classes="SecondaryCopy" TextWrapping="Wrap" />
-                          </StackPanel>
-                        </Border>
-
-                        <Border Classes="AiPromptCard">
-                          <StackPanel Spacing="8">
-                            <TextBlock Classes="Overline" Text="Model Slot" />
-                            <TextBlock Text="{Binding AiEngineAvailabilityLabel}" FontWeight="Bold" Foreground="{Binding AiEngineAvailabilityBrush}" />
-                            <TextBlock Text="{Binding AiEngineAvailabilitySummary}" Classes="SecondaryCopy" TextWrapping="Wrap" />
-                          </StackPanel>
-                        </Border>
-
-                        <Border Classes="AiPromptCard">
-                          <StackPanel Spacing="8">
-                            <TextBlock Classes="Overline" Text="Image Window" />
-                            <TextBlock Text="{Binding AiAttachmentStatusLabel}" FontWeight="Bold" />
-                            <TextBlock Text="{Binding AiAttachmentStatusSummary}" Classes="SecondaryCopy" TextWrapping="Wrap" />
-                          </StackPanel>
-                        </Border>
-
-                        <StackPanel Spacing="10">
-                          <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Classes="H2" Text="Live Context" />
-                            <TextBlock Grid.Column="1" Text="{Binding AiQuickPromptCountLabel}" Classes="MicroCopy" VerticalAlignment="Center" />
-                          </Grid>
-                          <ItemsControl ItemsSource="{Binding AiAssistantContextCards}">
-                            <ItemsControl.ItemTemplate>
-                              <DataTemplate x:DataType="vm:AiContextCardViewModel">
-                                <Border Classes="AiFactCard" Margin="0,0,0,10">
-                                  <StackPanel Spacing="4">
-                                    <TextBlock Classes="Overline" Text="{Binding Overline}" />
-                                    <TextBlock Text="{Binding Value}" FontSize="17" FontWeight="Bold" TextWrapping="Wrap" />
-                                    <TextBlock Text="{Binding Caption}" Classes="SecondaryCopy" TextWrapping="Wrap" />
-                                  </StackPanel>
-                                </Border>
-                              </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                          </ItemsControl>
                         </StackPanel>
-
-                        <StackPanel Spacing="10">
-                          <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Classes="H2" Text="Knowledge Base" />
-                            <TextBlock Grid.Column="1" Text="{Binding AiKnowledgeCountLabel}" Classes="MicroCopy" VerticalAlignment="Center" />
-                          </Grid>
-                          <TextBlock Text="{Binding AiKnowledgeSummary}" Classes="SecondaryCopy" TextWrapping="Wrap" />
-                          <ItemsControl ItemsSource="{Binding AiAssistantKnowledgeTopics}">
-                            <ItemsControl.ItemTemplate>
-                              <DataTemplate x:DataType="vm:AiKnowledgeTopicViewModel">
-                                <Button Command="{Binding #RootWindow.DataContext.ExplainAiKnowledgeTopicCommand}"
-                                        CommandParameter="{Binding .}"
-                                        Padding="0"
-                                        Margin="0,0,0,10"
-                                        Background="Transparent"
-                                        BorderThickness="0">
-                                  <Border Classes="AiFactCard">
-                                    <StackPanel Spacing="4">
-                                      <DockPanel LastChildFill="True">
-                                        <TextBlock DockPanel.Dock="Left" Text="{Binding Label}" FontWeight="Bold" />
-                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Category}" Classes="MicroCopy" />
-                                      </DockPanel>
-                                      <TextBlock Text="{Binding Question}" Classes="SecondaryCopy" TextWrapping="Wrap" />
-                                    </StackPanel>
-                                  </Border>
-                                </Button>
-                              </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                          </ItemsControl>
-                        </StackPanel>
-                      </StackPanel>
-                    </ScrollViewer>
-                  </Grid>
-                </Border>
-
-                <Border Grid.Column="1" Classes="SectionPanel" Padding="20" MinHeight="980">
-                  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="16">
-                    <StackPanel Spacing="6">
-                      <TextBlock Classes="H2" Text="Conversation" />
-                      <TextBlock Text="Use this desk like an execution copilot: ask for setup, invalidation, route checks, sniper pressure, glossary topics, or a concrete next action." Classes="SecondaryCopy" TextWrapping="Wrap" />
-                    </StackPanel>
-
-                    <Border Grid.Row="1" Classes="AiPromptCard" Padding="14">
-                        <ItemsControl ItemsSource="{Binding AiAssistantMessages}">
-                          <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:AiAssistantMessageViewModel">
-                              <Grid ColumnDefinitions="*,*" Margin="0,0,0,12">
-                                <Border Grid.Column="{Binding ColumnIndex}"
-                                        HorizontalAlignment="{Binding BubbleAlignment}"
-                                        Background="{Binding BubbleBackground}"
-                                        BorderBrush="{Binding BubbleBorderBrush}"
-                                        BorderThickness="1"
-                                        CornerRadius="18"
-                                        Padding="14,12"
-                                        MaxWidth="560">
-                                  <StackPanel Spacing="6">
-                                    <DockPanel LastChildFill="True">
-                                      <TextBlock DockPanel.Dock="Left" Text="{Binding Title}" FontWeight="Bold" Foreground="{Binding TitleBrush}" />
-                                      <TextBlock DockPanel.Dock="Right" Text="{Binding Meta}" Foreground="{Binding MetaBrush}" FontSize="11" HorizontalAlignment="Right" />
-                                    </DockPanel>
-                                    <TextBlock Text="{Binding Body}" TextWrapping="Wrap" LineHeight="20" />
-                                  </StackPanel>
-                                </Border>
-                              </Grid>
-                            </DataTemplate>
-                          </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </Border>
-
-                    <StackPanel Grid.Row="2" Spacing="10">
-                      <TextBox Text="{Binding AiAssistantDraftPrompt}"
-                               AcceptsReturn="True"
-                               TextWrapping="Wrap"
-                               Height="126"
-                               PlaceholderText="{Binding AiAssistantComposerPlaceholder}" />
-                      <WrapPanel Orientation="Horizontal">
-                        <Button Content="SEND"
-                                Width="124"
-                                Command="{Binding SendAiAssistantPromptCommand}"
-                                IsEnabled="{Binding CanSendAiAssistantPrompt}"
-                                Margin="0,0,10,0" />
-                        <Button Content="SYNC CONTEXT"
-                                Width="136"
-                                Classes="GhostButton"
-                                Command="{Binding InjectAiMarketContextCommand}"
-                                Margin="0,0,10,0" />
-                        <Button Content="BUILD PLAN"
-                                Width="136"
-                                Classes="GhostButton"
-                                Command="{Binding BuildAiTradePlanCommand}"
-                                Margin="0,0,10,0" />
-                        <Button Content="ANALYZE VISUAL"
-                                Width="156"
-                                Classes="GhostButton"
-                                Command="{Binding AnalyzeSelectedAiVisualCommand}"
-                                Margin="0,0,10,0" />
-                        <Button Content="CLEAR"
-                                Width="112"
-                                Classes="GhostButton"
-                                Command="{Binding ClearAiAssistantConversationCommand}" />
-                      </WrapPanel>
-                    </StackPanel>
-                  </Grid>
-                </Border>
-
-                <Border Grid.Column="2" Classes="SectionPanel" Padding="20" MinHeight="980">
-                  <Grid RowDefinitions="Auto,Auto,*" RowSpacing="16">
-                    <Border Classes="AiStudioStage">
-                      <Grid RowDefinitions="420,Auto,Auto" RowSpacing="12">
-                        <Border CornerRadius="14" ClipToBounds="True">
-                          <Image Source="{Binding AiSelectedVisualImage}" Stretch="UniformToFill" />
-                        </Border>
-                        <StackPanel Grid.Row="1" Spacing="6">
-                          <TextBlock Classes="Overline" Text="Pinned Visual" />
-                          <TextBlock Text="{Binding AiSelectedVisualTitle}" FontSize="22" FontWeight="Bold" />
-                          <TextBlock Text="{Binding AiSelectedVisualCaption}" Classes="SecondaryCopy" TextWrapping="Wrap" />
-                        </StackPanel>
-                        <Border Grid.Row="2" Classes="InfoBand">
-                          <StackPanel Spacing="4">
-                            <TextBlock Classes="Overline" Text="Signal Metric" />
-                            <TextBlock Text="{Binding AiSelectedVisualMetric}" FontWeight="Bold" />
-                          </StackPanel>
+                        <Border Grid.Column="1" Background="{Binding DirBg}" BorderBrush="{Binding DirBorder}"
+                                BorderThickness="1" CornerRadius="5" Padding="7,3" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding DirLabel}" Foreground="{Binding DirColor}" FontSize="10" FontWeight="ExtraBold" />
                         </Border>
                       </Grid>
-                    </Border>
-
-                    <Border Grid.Row="1" Classes="AiPromptCard">
-                      <StackPanel Spacing="8">
-                        <TextBlock Classes="Overline" Text="Visual Usage" />
-                        <TextBlock Text="Use the gallery below to pin a chart-style image, then run visual analysis to get a local explanation tied to current market and route state." Classes="SecondaryCopy" TextWrapping="Wrap" />
-                      </StackPanel>
-                    </Border>
-
-                    <StackPanel Grid.Row="2" Spacing="12">
-                        <Grid ColumnDefinitions="*,Auto">
-                          <TextBlock Classes="H2" Text="Visual Rail" />
-                          <TextBlock Grid.Column="1" Text="tap to focus" Classes="MicroCopy" VerticalAlignment="Center" />
-                        </Grid>
-                        <ItemsControl ItemsSource="{Binding AiAssistantVisuals}">
-                          <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:AiVisualCardViewModel">
-                              <Button Command="{Binding #RootWindow.DataContext.SelectAiVisualCommand}"
-                                      CommandParameter="{Binding .}"
-                                      Padding="0"
-                                      Background="Transparent"
-                                      BorderThickness="0"
-                                      Margin="0,0,0,10">
-                                <Border Classes="AiThumbCard"
-                                        Background="{Binding CardBackground}"
-                                        BorderBrush="{Binding CardBorderBrush}">
-                                  <Grid ColumnDefinitions="118,*" ColumnSpacing="12">
-                                    <Border Grid.Column="0" CornerRadius="10" ClipToBounds="True" Height="82">
-                                      <Image Source="{Binding Image}" Stretch="UniformToFill" />
-                                    </Border>
-                                    <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
-                                      <TextBlock Text="{Binding Title}" FontWeight="Bold" />
-                                      <TextBlock Text="{Binding Caption}" Classes="SecondaryCopy" TextWrapping="Wrap" MaxHeight="40" />
-                                      <TextBlock Text="{Binding Metric}" Foreground="{Binding MetricBrush}" FontWeight="SemiBold" />
-                                    </StackPanel>
-                                  </Grid>
-                                </Border>
-                              </Button>
-                            </DataTemplate>
-                          </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                      <!-- confidence bar -->
+                      <Grid Height="2" Background="#0a1520">
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="{Binding ConfW, Converter={StaticResource StarRatioConverter}}" />
+                          <ColumnDefinition Width="{Binding ConfW, Converter={StaticResource StarRatioConverter}, ConverterParameter=rest}" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="{Binding DirColor}" Opacity="0.8" />
+                      </Grid>
+                      <!-- reason -->
+                      <TextBlock Text="{Binding Reason}" Foreground="#4a6a82" FontSize="9" TextWrapping="Wrap"
+                                 MaxLines="2" TextTrimming="CharacterEllipsis" LineHeight="14" />
+                      <!-- footer -->
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="{Binding ConfPct}" Foreground="{Binding DirColor}" FontSize="9"
+                                   FontFamily="{StaticResource FontMono}" FontWeight="Bold" />
+                        <TextBlock Grid.Column="1" Text="{Binding Time}" Foreground="#1e3048" FontSize="9"
+                                   FontFamily="{StaticResource FontMono}" />
+                      </Grid>
                     </StackPanel>
-                  </Grid>
+                  </Border>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+
+        <!-- DEX Trending -->
+        <Border Grid.Row="2" Background="#07101a" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Padding="11,9">
+          <StackPanel Spacing="8">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="DEX TRENDING" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" />
+              <Border Grid.Column="1" Background="#060d14" BorderBrush="#0a1520" BorderThickness="1" CornerRadius="4" Padding="6,2">
+                <TextBlock Text="AI RANKED" Foreground="#3d5a72" FontSize="8" FontWeight="SemiBold" />
+              </Border>
+            </Grid>
+            <ItemsControl ItemsSource="{Binding DexTokens}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:AiSignalDexTokenViewModel">
+                  <Border BorderBrush="#0a1820" BorderThickness="0,0,0,1" Padding="0,5">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Border Width="22" Height="22" CornerRadius="5" Background="{Binding Bg}" BorderBrush="#152535" BorderThickness="1">
+                          <TextBlock Text="{Binding Logo}" Foreground="#7a9ab8" FontSize="7" FontWeight="ExtraBold"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Sym}" Foreground="#c8dcef" FontSize="10" FontWeight="Bold" />
+                          <TextBlock Text="{Binding ChainScore}" Foreground="#2d4a5e" FontSize="8" />
+                        </StackPanel>
+                      </StackPanel>
+                      <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Signal}" Foreground="{Binding SigColor}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+                        <TextBlock Text="{Binding Change}" Foreground="#3ddc84" FontSize="9" FontFamily="{StaticResource FontMono}" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <!-- ──────── CENTER: INTELLIGENCE HUB ──────── -->
+      <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,*" RowSpacing="7">
+
+        <!-- Row 1: Regime + News -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,*" ColumnSpacing="7">
+
+          <!-- Market Regime -->
+          <Border Grid.Column="0" Background="#07101a" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Padding="13,11">
+            <StackPanel Spacing="8">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="MARKET REGIME" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" />
+                <Border Grid.Column="1" Background="#1421E6C1" BorderBrush="#3321E6C1" BorderThickness="1" CornerRadius="4" Padding="7,2">
+                  <TextBlock Text="NEW" Foreground="#21e6c1" FontSize="8" FontWeight="Bold" />
                 </Border>
+              </Grid>
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Border Background="{Binding RegimeBadgeBg}" BorderBrush="{Binding RegimeBadgeBorder}" BorderThickness="1" CornerRadius="7" Padding="12,5" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding RegimeLabel}" Foreground="{Binding RegimeBadgeColor}" FontSize="14" FontWeight="ExtraBold" />
+                </Border>
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                  <TextBlock Text="{Binding RegimeSummary}" Foreground="#7a9ab8" FontSize="10"
+                             TextTrimming="CharacterEllipsis" />
+                  <TextBlock Text="{Binding RegimeMeta}" Foreground="#2d4a5e" FontSize="9" />
+                </StackPanel>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <!-- News Digest -->
+          <Border Grid.Column="1" Background="#07101a" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Padding="13,11">
+            <StackPanel Spacing="8">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="NEWS DIGEST" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" />
+                <Border Grid.Column="1" Background="{Binding NewsBadgeBg}" BorderBrush="{Binding NewsBadgeBorder}" BorderThickness="1" CornerRadius="5" Padding="8,3">
+                  <TextBlock Text="{Binding NewsBias}" Foreground="{Binding NewsBadgeColor}" FontSize="10" FontWeight="ExtraBold" />
+                </Border>
+              </Grid>
+              <TextBlock Text="{Binding NewsSummary}"
+                         Foreground="#7a9ab8" FontSize="10" LineHeight="15" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />
+              <ItemsControl ItemsSource="{Binding NewsBullets}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Spacing="4" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:AiSignalNewsBulletViewModel">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <Ellipse Width="4" Height="4" Fill="{Binding DotColor}" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding Text}" Foreground="#4a6a82" FontSize="9" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+        </Grid>
+
+        <!-- AI Opportunities -->
+        <Border Grid.Row="1" Background="#07101a" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" MaxHeight="200" ClipToBounds="True">
+          <Grid RowDefinitions="Auto,*">
+            <Border Grid.Row="0" BorderBrush="#0a1520" BorderThickness="0,0,0,1" Padding="13,9">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="AI OPPORTUNITIES" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" />
+                <TextBlock Grid.Column="1" Text="updated 47s ago" Foreground="#2d4a5e" FontSize="9" FontFamily="{StaticResource FontMono}" />
+              </Grid>
+            </Border>
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+              <ItemsControl ItemsSource="{Binding Opportunities}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:AiSignalOpportunityViewModel">
+                    <Border BorderBrush="#06111a" BorderThickness="0,0,0,1" Padding="13,7">
+                      <Grid ColumnDefinitions="90,Auto,64,*">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Sym}" Foreground="#e8f4ff" FontSize="11" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                          <TextBlock Text="{Binding Exch}" Foreground="#2d4a5e" FontSize="8" />
+                        </StackPanel>
+                        <Border Grid.Column="1" Background="{Binding BiasBg}" BorderBrush="{Binding BiasBorder}" BorderThickness="1"
+                                CornerRadius="4" Padding="6,2" VerticalAlignment="Center" Margin="0,0,8,0">
+                          <TextBlock Text="{Binding Bias}" Foreground="{Binding BiasColor}" FontSize="9" FontWeight="ExtraBold" />
+                        </Border>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" Margin="0,0,8,0">
+                          <TextBlock Text="{Binding Score}" Foreground="#e8f4ff" FontSize="12" FontWeight="Bold"
+                                     FontFamily="{StaticResource FontMono}" MinWidth="22" />
+                          <Grid Height="3" Width="30" Background="#0a1520" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                              <ColumnDefinition Width="{Binding Bar, Converter={StaticResource StarRatioConverter}}" />
+                              <ColumnDefinition Width="{Binding Bar, Converter={StaticResource StarRatioConverter}, ConverterParameter=rest}" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Background="{Binding BiasColor}" Opacity="0.85" CornerRadius="2" />
+                          </Grid>
+                        </StackPanel>
+                        <TextBlock Grid.Column="3" Text="{Binding Reason}" Foreground="#3d5a72" FontSize="9" LineHeight="13"
+                                   TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </Grid>
+        </Border>
+
+        <!-- Market Insights row -->
+        <ItemsControl Grid.Row="2" ItemsSource="{Binding Insights}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <UniformGrid Columns="4" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:AiSignalInsightViewModel">
+              <Border Background="#07101a" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Padding="11,9" Margin="0,0,7,0">
+                <StackPanel Spacing="6">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="{Binding Label}" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" VerticalAlignment="Center" />
+                    <Border Grid.Column="1" Background="{Binding SigBg}" BorderBrush="{Binding SigBorder}" BorderThickness="1" CornerRadius="4" Padding="6,2">
+                      <TextBlock Text="{Binding Sig}" Foreground="{Binding SigColor}" FontSize="8" FontWeight="ExtraBold" />
+                    </Border>
+                  </Grid>
+                  <TextBlock Text="{Binding Summary}" Foreground="#4a6a82" FontSize="9" LineHeight="13" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- Multi-TF Signal Heatmap -->
+        <Border Grid.Row="3" Background="#07101a" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Padding="13,11" MinHeight="200">
+          <Grid RowDefinitions="Auto,*" RowSpacing="10">
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+              <TextBlock Text="MULTI-TIMEFRAME SIGNAL HEATMAP" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                  <Border Width="8" Height="8" CornerRadius="2" Background="#8C3DDC84" />
+                  <TextBlock Text="LONG" Foreground="#2d4a5e" FontSize="8" FontWeight="SemiBold" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                  <Border Width="8" Height="8" CornerRadius="2" Background="#8CFF6B6B" />
+                  <TextBlock Text="SHORT" Foreground="#2d4a5e" FontSize="8" FontWeight="SemiBold" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                  <Border Width="8" Height="8" CornerRadius="2" Background="#59F4B860" />
+                  <TextBlock Text="HOLD" Foreground="#2d4a5e" FontSize="8" FontWeight="SemiBold" />
+                </StackPanel>
+                <Border Background="#1421E6C1" BorderBrush="#3321E6C1" BorderThickness="1" CornerRadius="4" Padding="7,2">
+                  <TextBlock Text="NEW" Foreground="#21e6c1" FontSize="8" FontWeight="Bold" />
+                </Border>
+              </StackPanel>
+            </Grid>
+
+            <StackPanel Grid.Row="1" Spacing="3">
+              <!-- header row: blank corner + timeframes -->
+              <Grid ColumnDefinitions="42,*">
+                <ItemsControl Grid.Column="1" ItemsSource="{Binding HeatmapTimeframes}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <UniformGrid Rows="1" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                      <TextBlock Text="{Binding}" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </Grid>
+              <!-- data rows -->
+              <ItemsControl ItemsSource="{Binding HeatmapRows}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:AiSignalHeatmapRowViewModel">
+                    <Grid ColumnDefinitions="42,*" Margin="0,0,0,3">
+                      <TextBlock Text="{Binding Symbol}" Foreground="#4a6a82" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
+                      <ItemsControl Grid.Column="1" ItemsSource="{Binding Cells}">
+                        <ItemsControl.ItemsPanel>
+                          <ItemsPanelTemplate>
+                            <UniformGrid Rows="1" />
+                          </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:AiSignalHeatmapCellViewModel">
+                            <Border Height="26" CornerRadius="4" Margin="1,0" Background="{Binding Background}"
+                                    BorderBrush="{Binding Border}" BorderThickness="1">
+                              <TextBlock Text="{Binding Text}" Foreground="{Binding Foreground}" FontSize="8" FontWeight="Bold"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Grid>
+        </Border>
+      </Grid>
+
+      <!-- ──────── RIGHT: SIGNAL DETAIL ──────── -->
+      <Border Grid.Column="2" Background="#07101a" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" ClipToBounds="True">
+        <Grid RowDefinitions="Auto,Auto,*">
+
+          <!-- Selected signal header -->
+          <Border Grid.Row="0" BorderBrush="#0a1520" BorderThickness="0,0,0,1" Padding="13,12">
+            <StackPanel Spacing="10">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Border Width="34" Height="34" CornerRadius="9" Background="{Binding SelLogoBg}" BorderBrush="#1a2d3e" BorderThickness="1">
+                    <TextBlock Text="{Binding SelLogo}" Foreground="#7a9ab8" FontSize="10" FontWeight="ExtraBold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  </Border>
+                  <StackPanel VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                      <TextBlock Text="{Binding SelSym}" Foreground="#e8f4ff" FontSize="14" FontWeight="ExtraBold" />
+                      <TextBlock Text="/USDT" Foreground="#2d4a5e" FontSize="10" VerticalAlignment="Bottom" Margin="0,0,0,1" />
+                    </StackPanel>
+                    <TextBlock Foreground="#2d4a5e" FontSize="9">
+                      <Run Text="{Binding SelTf}" /><Run Text=" · " /><Run Text="{Binding SelExch}" />
+                    </TextBlock>
+                  </StackPanel>
+                </StackPanel>
+                <Border Grid.Column="1" Background="{Binding SelDirBg}" BorderBrush="{Binding SelDirBorder}" BorderThickness="1"
+                        CornerRadius="6" Padding="10,4" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding SelDirLabel}" Foreground="{Binding SelDirColor}" FontSize="12" FontWeight="ExtraBold" />
+                </Border>
+              </Grid>
+
+              <!-- Confidence display -->
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding SelConf}" Foreground="{Binding SelDirColor}" FontSize="30" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}" />
+                    <TextBlock Text="%" Foreground="{Binding SelDirColor}" FontSize="30" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}" />
+                  </StackPanel>
+                  <TextBlock Text="CONFIDENCE" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="8">
+                  <Grid Height="5" Background="#0a1520">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="{Binding SelConfW, Converter={StaticResource StarRatioConverter}}" />
+                      <ColumnDefinition Width="{Binding SelConfW, Converter={StaticResource StarRatioConverter}, ConverterParameter=rest}" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Background="{Binding SelDirColor}" Opacity="0.85" CornerRadius="3" />
+                  </Grid>
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="{Binding SelPrice}" Foreground="#e8f4ff" FontSize="14" FontWeight="Bold" FontFamily="{StaticResource FontMono}" />
+                    <TextBlock Text="{Binding SelChange}" Foreground="{Binding SelChangeColor}" FontSize="10" FontWeight="Bold" VerticalAlignment="Bottom" Margin="0,0,0,1" />
+                  </StackPanel>
+                </StackPanel>
               </Grid>
             </StackPanel>
           </Border>
+
+          <!-- Detail tabs -->
+          <Border Grid.Row="1" BorderBrush="#0a1520" BorderThickness="0,0,0,1" Padding="8,0">
+            <ItemsControl ItemsSource="{Binding DetailTabs}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <UniformGrid Columns="5" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:AiSignalDetailTabViewModel">
+                  <Button Classes="Tab" Content="{Binding Label}" Foreground="{Binding Foreground}"
+                          BorderBrush="{Binding BorderColor}" HorizontalAlignment="Stretch"
+                          Command="{Binding Command}" CommandParameter="{Binding Key}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Border>
+
+          <!-- Tab content -->
+          <Grid Grid.Row="2">
+
+            <!-- SIGNAL TAB -->
+            <ScrollViewer IsVisible="{Binding IsSignalTab}" Padding="13,12" VerticalScrollBarVisibility="Auto">
+              <StackPanel Spacing="10">
+                <TextBlock Text="{Binding SelReason}" Foreground="#4a6a82" FontSize="10" LineHeight="17" TextWrapping="Wrap" />
+                <Border Height="1" Background="#0a1520" />
+                <StackPanel Spacing="7">
+                  <TextBlock Text="SIGNAL METADATA" Foreground="#1e3048" FontSize="8" FontWeight="Bold" />
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="Generated" Foreground="#2d4a5e" FontSize="10" />
+                    <TextBlock Grid.Column="1" Text="{Binding SelTime}" Foreground="#7a9ab8" FontSize="10" FontFamily="{StaticResource FontMono}" />
+                  </Grid>
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="Timeframe" Foreground="#2d4a5e" FontSize="10" />
+                    <TextBlock Grid.Column="1" Text="{Binding SelTf}" Foreground="#7a9ab8" FontSize="10" FontFamily="{StaticResource FontMono}" />
+                  </Grid>
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="Exchange" Foreground="#2d4a5e" FontSize="10" />
+                    <TextBlock Grid.Column="1" Text="{Binding SelExch}" Foreground="#7a9ab8" FontSize="10" FontFamily="{StaticResource FontMono}" />
+                  </Grid>
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="Model" Foreground="#2d4a5e" FontSize="10" />
+                    <TextBlock Grid.Column="1" Text="{Binding SourceLabel}" Foreground="#7a9ab8" FontSize="10" FontFamily="{StaticResource FontMono}" />
+                  </Grid>
+                </StackPanel>
+                <Border Height="1" Background="#0a1520" />
+
+                <!-- Multi-TF consensus -->
+                <Border Background="#060d14" BorderBrush="#0e1e2e" BorderThickness="1" CornerRadius="8" Padding="12,10">
+                  <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Text="MULTI-TF CONSENSUS" Foreground="#1e3048" FontSize="8" FontWeight="Bold" />
+                      <TextBlock Grid.Column="1" Text="NEW" Foreground="#21e6c1" FontSize="8" FontWeight="Bold" />
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                      <TextBlock Text="{Binding ConsensusCount}" Foreground="#21e6c1" FontSize="24" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}" VerticalAlignment="Center" />
+                      <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="timeframes agree" Foreground="#7a9ab8" FontSize="10" />
+                        <TextBlock Text="{Binding ConsensusLabel}" Foreground="{Binding SelDirColor}" FontSize="9" />
+                      </StackPanel>
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding ConsensusBars}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <UniformGrid Rows="1" />
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:AiSignalConsensusBarViewModel">
+                          <Border Height="4" CornerRadius="2" Margin="1,0" Background="{Binding Color}" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+
+                <!-- Quick execute -->
+                <Button Content="{Binding SelDirLabelExecute}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Background="{Binding SelDirBg}" BorderBrush="{Binding SelDirBorder}" BorderThickness="1"
+                        Foreground="{Binding SelDirColor}" FontSize="13" FontWeight="ExtraBold" CornerRadius="8" Padding="0,11" />
+              </StackPanel>
+            </ScrollViewer>
+
+            <!-- TP/SL TAB -->
+            <ScrollViewer IsVisible="{Binding IsTpSlTab}" Padding="13,12" VerticalScrollBarVisibility="Auto">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                  <Border Grid.Column="0" Background="#060d14" BorderBrush="#0c2a1a" BorderThickness="1" CornerRadius="9" Padding="11,10">
+                    <StackPanel Spacing="3">
+                      <TextBlock Text="TAKE PROFIT" Foreground="#1e3048" FontSize="8" FontWeight="Bold" />
+                      <TextBlock Text="{Binding TpslTp}" Foreground="#3ddc84" FontSize="17" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}" />
+                      <TextBlock Text="{Binding TpslTpPrice}" Foreground="#2d4a5e" FontSize="10" FontFamily="{StaticResource FontMono}" />
+                    </StackPanel>
+                  </Border>
+                  <Border Grid.Column="1" Background="#060d14" BorderBrush="#2a0c10" BorderThickness="1" CornerRadius="9" Padding="11,10">
+                    <StackPanel Spacing="3">
+                      <TextBlock Text="STOP LOSS" Foreground="#1e3048" FontSize="8" FontWeight="Bold" />
+                      <TextBlock Text="{Binding TpslSl}" Foreground="#ff6b6b" FontSize="17" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}" />
+                      <TextBlock Text="{Binding TpslSlPrice}" Foreground="#2d4a5e" FontSize="10" FontFamily="{StaticResource FontMono}" />
+                    </StackPanel>
+                  </Border>
+                </Grid>
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                  <Border Grid.Column="0" Background="#060d14" BorderBrush="#0a1520" BorderThickness="1" CornerRadius="8" Padding="11,8">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Text="R : R Ratio" Foreground="#2d4a5e" FontSize="9" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="{Binding TpslRr}" Foreground="#21e6c1" FontSize="14" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}" />
+                    </Grid>
+                  </Border>
+                  <Border Grid.Column="1" Background="#060d14" BorderBrush="#0a1520" BorderThickness="1" CornerRadius="8" Padding="11,8">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Text="Trailing" Foreground="#2d4a5e" FontSize="9" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="ENABLED" Foreground="#f4b860" FontSize="10" FontWeight="Bold" />
+                    </Grid>
+                  </Border>
+                </Grid>
+                <Border Background="#060d14" BorderBrush="#0a1520" BorderThickness="1" CornerRadius="8" Padding="11,10">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="AI RATIONALE" Foreground="#1e3048" FontSize="8" FontWeight="Bold" />
+                    <TextBlock Text="{Binding TpslRationale}" Foreground="#4a6a82" FontSize="10" LineHeight="16" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
+                <Border Height="1" Background="#0a1520" />
+                <Border Background="#060d14" BorderBrush="#0a1520" BorderThickness="1" CornerRadius="8" Padding="11,10">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="DYNAMIC ADJUSTMENT" Foreground="#1e3048" FontSize="8" FontWeight="Bold" />
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Text="24h ATR" Foreground="#2d4a5e" FontSize="9" />
+                      <TextBlock Grid.Column="1" Text="{Binding TpslAtr}" Foreground="#7a9ab8" FontSize="10" FontFamily="{StaticResource FontMono}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Text="Volatility tier" Foreground="#2d4a5e" FontSize="9" />
+                      <TextBlock Grid.Column="1" Text="MEDIUM" Foreground="#f4b860" FontSize="10" FontWeight="Bold" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Text="Suggested size" Foreground="#2d4a5e" FontSize="9" />
+                      <TextBlock Grid.Column="1" Text="{Binding TpslSize}" Foreground="#7a9ab8" FontSize="10" FontFamily="{StaticResource FontMono}" />
+                    </Grid>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+
+            <!-- PAIRS / STAT ARB TAB -->
+            <ScrollViewer IsVisible="{Binding IsStatArbTab}" Padding="13,12" VerticalScrollBarVisibility="Auto">
+              <StackPanel Spacing="10">
+                <Border Background="#060d14" BorderBrush="#0a1520" BorderThickness="1" CornerRadius="9" Padding="12,11">
+                  <StackPanel Spacing="0">
+                    <TextBlock Text="TOP PAIR — BTC / ETH" Foreground="#1e3048" FontSize="8" FontWeight="Bold" Margin="0,0,0,9" />
+                    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="BTC" Foreground="#e8f4ff" FontSize="16" FontWeight="ExtraBold" />
+                        <TextBlock Text=" / " Foreground="#2d4a5e" FontSize="12" VerticalAlignment="Center" />
+                        <TextBlock Text="ETH" Foreground="#e8f4ff" FontSize="16" FontWeight="ExtraBold" />
+                      </StackPanel>
+                      <Border Grid.Column="1" Background="#8C1D4A2E" BorderBrush="#1a4a2e" BorderThickness="1" CornerRadius="5" Padding="8,3" VerticalAlignment="Center">
+                        <TextBlock Text="LONG A / SHORT B" Foreground="#3ddc84" FontSize="9" FontWeight="Bold" />
+                      </Border>
+                    </Grid>
+                    <StackPanel Spacing="6" Margin="0,0,0,10">
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Correlation" Foreground="#2d4a5e" FontSize="10" />
+                        <TextBlock Grid.Column="1" Text="0.92" Foreground="#7a9ab8" FontSize="10" FontFamily="{StaticResource FontMono}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Z-Score" Foreground="#2d4a5e" FontSize="10" />
+                        <TextBlock Grid.Column="1" Text="−2.31" Foreground="#5bc0ff" FontSize="11" FontWeight="Bold" FontFamily="{StaticResource FontMono}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Half-life" Foreground="#2d4a5e" FontSize="10" />
+                        <TextBlock Grid.Column="1" Text="8 bars" Foreground="#7a9ab8" FontSize="10" FontFamily="{StaticResource FontMono}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Score" Foreground="#2d4a5e" FontSize="10" />
+                        <TextBlock Grid.Column="1" Text="78 / 100" Foreground="#e8f4ff" FontSize="10" FontFamily="{StaticResource FontMono}" />
+                      </Grid>
+                    </StackPanel>
+                    <Border Height="1" Background="#0a1520" Margin="0,0,0,9" />
+                    <TextBlock Text="Z-score stretched to −2.31; pairs historically mean-revert within 8 bars at this level. BTC cheap relative to ETH — long BTC, short ETH."
+                               Foreground="#4a6a82" FontSize="9" LineHeight="14" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
+                <Border Background="#060d14" BorderBrush="#0a1520" BorderThickness="1" CornerRadius="9" Padding="12,11">
+                  <StackPanel Spacing="0">
+                    <TextBlock Text="PAIR 2 — SOL / BNB" Foreground="#1e3048" FontSize="8" FontWeight="Bold" Margin="0,0,0,9" />
+                    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="SOL" Foreground="#e8f4ff" FontSize="14" FontWeight="ExtraBold" />
+                        <TextBlock Text=" / " Foreground="#2d4a5e" FontSize="11" VerticalAlignment="Center" />
+                        <TextBlock Text="BNB" Foreground="#e8f4ff" FontSize="14" FontWeight="ExtraBold" />
+                      </StackPanel>
+                      <Border Grid.Column="1" Background="#734A3810" BorderBrush="#3a2c10" BorderThickness="1" CornerRadius="5" Padding="8,3" VerticalAlignment="Center">
+                        <TextBlock Text="WAIT" Foreground="#f4b860" FontSize="9" FontWeight="Bold" />
+                      </Border>
+                    </Grid>
+                    <StackPanel Spacing="5">
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Correlation" Foreground="#2d4a5e" FontSize="10" />
+                        <TextBlock Grid.Column="1" Text="0.78" Foreground="#7a9ab8" FontSize="10" FontFamily="{StaticResource FontMono}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Z-Score" Foreground="#2d4a5e" FontSize="10" />
+                        <TextBlock Grid.Column="1" Text="−0.84" Foreground="#7a9ab8" FontSize="10" FontFamily="{StaticResource FontMono}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="Score" Foreground="#2d4a5e" FontSize="10" />
+                        <TextBlock Grid.Column="1" Text="41 / 100" Foreground="#7a9ab8" FontSize="10" FontFamily="{StaticResource FontMono}" />
+                      </Grid>
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+
+            <!-- COACH TAB -->
+            <ScrollViewer IsVisible="{Binding IsJournalTab}" Padding="13,12" VerticalScrollBarVisibility="Auto">
+              <StackPanel Spacing="10">
+                <Border Background="#060d14" BorderBrush="#0a1520" BorderThickness="1" CornerRadius="8" Padding="12,10">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="PERFORMANCE SUMMARY" Foreground="#1e3048" FontSize="8" FontWeight="Bold" />
+                    <TextBlock Text="{Binding JournalSummary}" Foreground="#4a6a82" FontSize="10" LineHeight="17" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
+                <StackPanel Spacing="7">
+                  <TextBlock Text="STRENGTHS" Foreground="#1e3048" FontSize="8" FontWeight="Bold" />
+                  <ItemsControl ItemsSource="{Binding JournalStrengths}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="x:String">
+                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,0,5">
+                          <Ellipse Width="4" Height="4" Fill="#3ddc84" VerticalAlignment="Top" Margin="0,5,0,0" />
+                          <TextBlock Text="{Binding}" Foreground="#4a6a82" FontSize="9" LineHeight="14" TextWrapping="Wrap" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+                <StackPanel Spacing="7">
+                  <TextBlock Text="LEAKS" Foreground="#1e3048" FontSize="8" FontWeight="Bold" />
+                  <ItemsControl ItemsSource="{Binding JournalLeaks}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="x:String">
+                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,0,5">
+                          <Ellipse Width="4" Height="4" Fill="#ff6b6b" VerticalAlignment="Top" Margin="0,5,0,0" />
+                          <TextBlock Text="{Binding}" Foreground="#4a6a82" FontSize="9" LineHeight="14" TextWrapping="Wrap" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+                <StackPanel Spacing="7">
+                  <TextBlock Text="SUGGESTIONS" Foreground="#1e3048" FontSize="8" FontWeight="Bold" />
+                  <ItemsControl ItemsSource="{Binding JournalSuggestions}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="x:String">
+                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,0,5">
+                          <Ellipse Width="4" Height="4" Fill="#21e6c1" VerticalAlignment="Top" Margin="0,5,0,0" />
+                          <TextBlock Text="{Binding}" Foreground="#4a6a82" FontSize="9" LineHeight="14" TextWrapping="Wrap" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+                <Border Height="1" Background="#0a1520" />
+                <Border Background="#060d14" BorderBrush="#0a1520" BorderThickness="1" CornerRadius="8" Padding="12,10">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="AI ALERT BUILDER" Foreground="#1e3048" FontSize="8" FontWeight="Bold" />
+                    <Border Background="#040b12" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="6" Padding="10,7">
+                      <TextBlock Text="ping me if BTC breaks 70k..." Foreground="#3d5a72" FontSize="9" FontFamily="{StaticResource FontMono}" />
+                    </Border>
+                    <Button Content="Set Alert via AI →" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                            Background="#1421E6C1" BorderBrush="#1a3030" BorderThickness="1" Foreground="#21e6c1"
+                            FontSize="10" FontWeight="Bold" CornerRadius="6" Padding="0,7" />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+
+            <!-- ASK AI TAB -->
+            <Grid IsVisible="{Binding IsAskTab}" RowDefinitions="*,Auto,Auto" Margin="13,12">
+
+              <!-- Chat history -->
+              <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding ChatMessages}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AiSignalChatMessageViewModel">
+                      <Grid Margin="0,0,0,8">
+                        <!-- AI message -->
+                        <StackPanel Orientation="Horizontal" Spacing="7" IsVisible="{Binding IsAi}" HorizontalAlignment="Left">
+                          <Border Width="22" Height="22" CornerRadius="6" Background="#1F21E6C1" BorderBrush="#4021E6C1" BorderThickness="1" VerticalAlignment="Top">
+                            <TextBlock Text="AI" Foreground="#21e6c1" FontSize="8" FontWeight="ExtraBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Border>
+                          <Border Background="#060d14" BorderBrush="#0e1e2e" BorderThickness="1" CornerRadius="8,8,8,2" Padding="10,8" MaxWidth="200">
+                            <TextBlock Text="{Binding Text}" Foreground="#7a9ab8" FontSize="9" LineHeight="15" TextWrapping="Wrap" />
+                          </Border>
+                        </StackPanel>
+                        <!-- User message -->
+                        <Border IsVisible="{Binding IsUser}" HorizontalAlignment="Right" Background="#1721E6C1" BorderBrush="#3321E6C1"
+                                BorderThickness="1" CornerRadius="8,8,2,8" Padding="10,7" MaxWidth="200">
+                          <TextBlock Text="{Binding Text}" Foreground="#21e6c1" FontSize="9" LineHeight="14" TextWrapping="Wrap" />
+                        </Border>
+                        <!-- Typing indicator -->
+                        <StackPanel Orientation="Horizontal" Spacing="7" IsVisible="{Binding IsTyping}" HorizontalAlignment="Left">
+                          <Border Width="22" Height="22" CornerRadius="6" Background="#1F21E6C1" BorderBrush="#4021E6C1" BorderThickness="1">
+                            <TextBlock Text="AI" Foreground="#21e6c1" FontSize="8" FontWeight="ExtraBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Border>
+                          <Border Background="#060d14" BorderBrush="#0e1e2e" BorderThickness="1" CornerRadius="8,8,8,2" Padding="12,10">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                              <Ellipse Width="4" Height="4" Fill="#21e6c1" />
+                              <Ellipse Width="4" Height="4" Fill="#21e6c1" Opacity="0.6" />
+                              <Ellipse Width="4" Height="4" Fill="#21e6c1" Opacity="0.3" />
+                            </StackPanel>
+                          </Border>
+                        </StackPanel>
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+
+              <!-- Quick suggestions -->
+              <StackPanel Grid.Row="1" IsVisible="{Binding ShowSuggestions}" Margin="0,10,0,8" Spacing="5">
+                <TextBlock Text="QUICK QUESTIONS" Foreground="#1e3048" FontSize="8" FontWeight="Bold" />
+                <ItemsControl ItemsSource="{Binding Suggestions}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AiSignalSuggestionViewModel">
+                      <Button Content="{Binding Label}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                              Background="#060d14" BorderBrush="#0e1e2e" BorderThickness="1" Foreground="#4a6a82"
+                              FontSize="9" CornerRadius="6" Padding="9,6" Margin="0,0,0,4"
+                              Command="{Binding Command}" CommandParameter="{Binding CommandParameter}" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+
+              <!-- Input row -->
+              <Border Grid.Row="2" Background="#060d14" BorderBrush="#0e1e2e" BorderThickness="1" CornerRadius="9" Padding="11,5,5,5">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBox Text="{Binding ChatInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                           PlaceholderText="{Binding ChatPlaceholder}"
+                           Background="Transparent" BorderThickness="0" Padding="0" FontSize="10" Foreground="#c8dcef"
+                           VerticalAlignment="Center" VerticalContentAlignment="Center">
+                    <TextBox.KeyBindings>
+                      <KeyBinding Gesture="Enter" Command="{Binding SendChatCommand}" />
+                    </TextBox.KeyBindings>
+                  </TextBox>
+                  <Button Grid.Column="1" Width="28" Height="28" CornerRadius="6" Padding="0"
+                          Background="{Binding ChatSendBg}" Foreground="{Binding ChatSendFg}" BorderThickness="0"
+                          Content="↑" FontSize="14" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                          Command="{Binding SendChatCommand}" />
+                </Grid>
+              </Border>
+            </Grid>
+          </Grid>
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
 </UserControl>
