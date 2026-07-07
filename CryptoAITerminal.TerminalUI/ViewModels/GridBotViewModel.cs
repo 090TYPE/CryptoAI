@@ -68,6 +68,31 @@ public class GridBotViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _quantityPerGrid, value);
     }
 
+    /// <summary>Agentic action-layer bridge: sets the grid configuration (does NOT start the
+    /// bot — starting stays a deliberate user/command action). Reuses the public config setters.</summary>
+    internal Services.AppActions.AppActionResult ConfigureFromAgent(string symbol, decimal lower, decimal upper, int levels)
+    {
+        if (upper <= lower)
+        {
+            return Services.AppActions.AppActionResult.Fail("upper price must be greater than lower price");
+        }
+
+        if (levels < 2)
+        {
+            return Services.AppActions.AppActionResult.Fail("grid levels must be >= 2");
+        }
+
+        if (!string.IsNullOrWhiteSpace(symbol))
+        {
+            Symbol = symbol;
+        }
+
+        LowerPrice = lower;
+        UpperPrice = upper;
+        GridLevels = levels;
+        return Services.AppActions.AppActionResult.Ok($"Grid configured: {Symbol} {lower}–{upper} across {GridLevels} levels");
+    }
+
     public string SelectedMarketMode
     {
         get => _selectedMarketMode;

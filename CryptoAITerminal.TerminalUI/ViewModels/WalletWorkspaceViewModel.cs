@@ -153,6 +153,25 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
         }
     }
 
+    /// <summary>Agentic action-layer bridge: selects a wallet network by name, validating it
+    /// against the available set. Reuses the public <see cref="SelectedNetwork"/> setter.</summary>
+    internal Services.AppActions.AppActionResult SelectNetworkFromAgent(string network)
+    {
+        if (string.IsNullOrWhiteSpace(network))
+        {
+            return Services.AppActions.AppActionResult.Fail("network required");
+        }
+
+        var match = AvailableNetworks.FirstOrDefault(n => string.Equals(n, network, StringComparison.OrdinalIgnoreCase));
+        if (match is null)
+        {
+            return Services.AppActions.AppActionResult.Fail($"unknown network '{network}'. Known: {string.Join(", ", AvailableNetworks)}");
+        }
+
+        SelectedNetwork = match;
+        return Services.AppActions.AppActionResult.Ok($"Wallet network set to {match}");
+    }
+
     public string WalletAddressInput
     {
         get => _walletAddressInput;

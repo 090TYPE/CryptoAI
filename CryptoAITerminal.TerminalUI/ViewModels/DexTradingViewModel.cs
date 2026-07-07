@@ -1803,6 +1803,69 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         }
     }
 
+    // ── Agentic action-layer bridge (reuses the gated swap path) ──────────────
+    internal async Task<Services.AppActions.AppActionResult> SelectTokenFromAgent(string tokenAddressOrSymbol)
+    {
+        if (string.IsNullOrWhiteSpace(tokenAddressOrSymbol))
+        {
+            return Services.AppActions.AppActionResult.Fail("token address or symbol required");
+        }
+
+        var query = tokenAddressOrSymbol.Trim();
+        await SelectTokenByAddressAsync(query, query);
+
+        var resolved = SelectedToken is not null
+            && (string.Equals(SelectedToken.TokenAddress, query, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(SelectedToken.TokenInfo.Symbol, query, StringComparison.OrdinalIgnoreCase));
+
+        if (!resolved)
+        {
+            var bySymbol = Tokens.FirstOrDefault(t => string.Equals(t.TokenInfo.Symbol, query, StringComparison.OrdinalIgnoreCase));
+            if (bySymbol is not null)
+            {
+                SelectedToken = bySymbol;
+            }
+        }
+
+        return SelectedToken is null
+            ? Services.AppActions.AppActionResult.Fail($"DEX token not found: {query}")
+            : Services.AppActions.AppActionResult.Ok($"Selected DEX token {SelectedToken.TokenInfo.Symbol}");
+    }
+
+    internal async Task<Services.AppActions.AppActionResult> DexBuyFromAgent(decimal amountNative)
+    {
+        if (amountNative <= 0m)
+        {
+            return Services.AppActions.AppActionResult.Fail("buy amount must be > 0");
+        }
+
+        if (SelectedToken is null)
+        {
+            return Services.AppActions.AppActionResult.Fail("no DEX token selected");
+        }
+
+        BuyAmountBnb = amountNative;
+        await BuyAsync();
+        return Services.AppActions.AppActionResult.Ok($"DEX buy submitted: {amountNative} for {SelectedToken.TokenInfo.Symbol} (subject to wallet/live guards)");
+    }
+
+    internal async Task<Services.AppActions.AppActionResult> DexSellFromAgent(decimal amountTokens)
+    {
+        if (amountTokens <= 0m)
+        {
+            return Services.AppActions.AppActionResult.Fail("sell amount must be > 0");
+        }
+
+        if (SelectedToken is null)
+        {
+            return Services.AppActions.AppActionResult.Fail("no DEX token selected");
+        }
+
+        SellAmountTokens = amountTokens;
+        await SellAsync();
+        return Services.AppActions.AppActionResult.Ok($"DEX sell submitted: {amountTokens} {SelectedToken.TokenInfo.Symbol} (subject to wallet/live guards)");
+    }
+
     private async Task RefreshAsync()
     {
         if (_trendingMode) { _trendingMode = false; this.RaisePropertyChanged(nameof(IsTrendingMode)); }
