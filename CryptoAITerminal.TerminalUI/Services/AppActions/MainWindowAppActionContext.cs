@@ -44,6 +44,12 @@ public sealed class MainWindowAppActionContext : IAppActionContext
             ? await func().ConfigureAwait(false)
             : await Dispatcher.UIThread.InvokeAsync(func).ConfigureAwait(false);
 
+    // ── Autonomous-guard support ────────────────────────────────────────────
+    public string CurrentSymbol => _vm.SelectedTradingSymbol;
+
+    public Task<decimal> GetTicketNotionalUsdAsync(CancellationToken ct)
+        => Task.FromResult(OnUi(() => _vm.TradeNotional));
+
     // ── Navigation + reads ──────────────────────────────────────────────────
     public IReadOnlyList<string> KnownSections => _vm.KnownSectionKeys;
 

@@ -12,6 +12,9 @@ public sealed class FakeAppActionContext : IAppActionContext
     public decimal BalanceUsdt = 1000m;
     public ActionMarketSnapshot? Market = new("BTCUSDT", 99_990m, 100_010m, 100_000m);
     public IReadOnlyList<ActionPositionLine> Positions = new List<ActionPositionLine>();
+    public string CurrentSymbol { get; set; } = "BTCUSDT";
+    public decimal TicketNotionalUsd = 100m;
+    public Task<decimal> GetTicketNotionalUsdAsync(CancellationToken ct) => Task.FromResult(TicketNotionalUsd);
 
     private AppActionResult Log(string call) { Calls.Add(call); return AppActionResult.Ok(call); }
 

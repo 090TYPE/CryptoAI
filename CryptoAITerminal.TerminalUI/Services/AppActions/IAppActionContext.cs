@@ -16,6 +16,10 @@ public sealed record ActionMarketSnapshot(string Symbol, decimal Bid, decimal As
 /// </summary>
 public interface IAppActionContext
 {
+    // ── Autonomous-guard support ──
+    string CurrentSymbol { get; }
+    Task<decimal> GetTicketNotionalUsdAsync(CancellationToken ct);
+
     // ── Navigation + reads ──
     AppActionResult NavigateTo(string sectionKey);
     IReadOnlyList<string> KnownSections { get; }
