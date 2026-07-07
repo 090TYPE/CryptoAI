@@ -960,5 +960,87 @@
               </StackPanel>
             </Border>
 
+            <!-- ── Autonomous agent (drives the app on a timer through the guardrails) ── -->
+            <Border Classes="Panel">
+              <StackPanel Spacing="12">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock Classes="H2" Text="🤖 AUTONOMOUS AGENT" />
+                    <TextBlock Text="Runs a turn every interval and acts on its own within your caps. PAPER by default — LIVE places real orders and needs explicit consent. Kill-switch stops instantly."
+                               Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <Border Grid.Column="1" CornerRadius="6" Padding="10,4" VerticalAlignment="Center"
+                          Background="#04101A">
+                    <TextBlock Text="{Binding AutonomousVM.ModeBadge}"
+                               Foreground="#21E6C1" FontWeight="SemiBold" FontSize="12" />
+                  </Border>
+                </Grid>
+
+                <!-- Objective -->
+                <TextBlock Text="Objective" Foreground="#8FA3B8" FontSize="11" />
+                <TextBox Text="{Binding AutonomousVM.Objective}" AcceptsReturn="True" TextWrapping="Wrap"
+                         MinHeight="60" MaxHeight="140" />
+
+                <!-- Caps -->
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                  <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock Text="Interval (s)" Foreground="#8FA3B8" FontSize="11" />
+                    <NumericUpDown Value="{Binding AutonomousVM.IntervalSeconds}" Minimum="5" Maximum="3600"
+                                   Increment="5" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock Text="Budget (USD)" Foreground="#8FA3B8" FontSize="11" />
+                    <NumericUpDown Value="{Binding AutonomousVM.SessionBudgetUsd}" Minimum="0"
+                                   Increment="100" FormatString="N0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="2">
+                    <TextBlock Text="Max trades" Foreground="#8FA3B8" FontSize="11" />
+                    <NumericUpDown Value="{Binding AutonomousVM.MaxTrades}" Minimum="0"
+                                   Increment="1" FormatString="N0" />
+                  </StackPanel>
+                </Grid>
+
+                <!-- Allowlist -->
+                <TextBlock Text="Symbol allowlist" Foreground="#8FA3B8" FontSize="11" />
+                <TextBox Text="{Binding AutonomousVM.AllowlistText}"
+                         Watermark="any (e.g. BTCUSDT, ETHUSDT)" />
+
+                <!-- PAPER / LIVE toggle -->
+                <ToggleSwitch IsChecked="{Binding AutonomousVM.LiveEnabled}"
+                              OffContent="PAPER"
+                              OnContent="LIVE · real funds" />
+
+                <!-- LIVE consent strip -->
+                <Border IsVisible="{Binding AutonomousVM.ShowLiveConsent}" Background="#200a0a"
+                        CornerRadius="4" Padding="8" Margin="0,4,0,0">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="Start LIVE autonomous trading? The agent will place REAL orders up to your budget/trade caps. Risk/wallet/testnet gates still apply."
+                               Foreground="#ff9d9d" TextWrapping="Wrap" FontSize="10" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Button Content="I understand — start LIVE" Command="{Binding AutonomousVM.ConfirmLiveCommand}" />
+                      <Button Content="Cancel" Command="{Binding AutonomousVM.CancelLiveCommand}" />
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+
+                <!-- Controls -->
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Button Content="ARM" Command="{Binding AutonomousVM.ArmCommand}"
+                          IsEnabled="{Binding !AutonomousVM.IsRunning}" />
+                  <Button Content="STOP (kill)" Command="{Binding AutonomousVM.StopCommand}"
+                          IsEnabled="{Binding AutonomousVM.IsRunning}"
+                          Background="#7a1020" Foreground="#ffd9d9" />
+                </StackPanel>
+
+                <!-- Status log -->
+                <Border Background="#04101A" CornerRadius="6" Padding="10,8" MinHeight="80" MaxHeight="220">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <TextBlock Text="{Binding AutonomousVM.StatusLog}" Foreground="#9FB2C6"
+                               FontSize="11" FontFamily="Consolas,monospace" TextWrapping="Wrap" />
+                  </ScrollViewer>
+                </Border>
+              </StackPanel>
+            </Border>
+
           </StackPanel>
 </UserControl>

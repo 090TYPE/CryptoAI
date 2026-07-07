@@ -782,6 +782,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             autoMode: () => CopilotVM?.IsAutoMode ?? false,
             audit: audit);
         CopilotVM = new CopilotViewModel(copilotData, _appAgent, AgentTray);
+        AutonomousVM = new AutonomousAgentViewModel(actionCtx, registry, audit);
         var telegramUserClient = new Services.TelegramUserClientService();
         TelegramAccountVM = new TelegramAccountViewModel(telegramUserClient);
 
@@ -3420,6 +3421,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public AIBotViewModel AIBotVM { get; }
     public AiTraderViewModel AiTraderVM { get; }
     public CopilotViewModel CopilotVM { get; private set; } = null!;
+    public AutonomousAgentViewModel AutonomousVM { get; private set; } = null!;
     private Services.AppActions.AppAgentService? _appAgent;
     public AgentActionTrayViewModel AgentTray { get; private set; } = null!;
     public TelegramAccountViewModel TelegramAccountVM { get; private set; } = null!;
@@ -5522,6 +5524,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             NewsFeedVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
             AiTraderVM.Configure(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
             CopilotVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
+            AutonomousVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
             BriefingVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
             RiskCheckVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
             CorrelationInsightVM.ConfigureAi(AIBotVM.ClaudeApiKey, AIBotVM.ClaudeModel);
