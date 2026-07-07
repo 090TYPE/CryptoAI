@@ -62,6 +62,8 @@ public sealed class MainWindowAppActionContext : IAppActionContext
     public Task<decimal> GetBalanceUsdtAsync(CancellationToken ct)
         => Task.FromResult(OnUi(() => _vm.AvailableBalanceUsdt));
 
+    // Reports only the active manual-desk symbol (SelectedTradingSymbol): the manual trading desk
+    // is single-symbol by design, so multi-symbol exposure is not surfaced here.
     public Task<IReadOnlyList<ActionPositionLine>> GetOpenPositionsAsync(CancellationToken ct)
         => Task.FromResult(OnUi<IReadOnlyList<ActionPositionLine>>(() =>
             _vm.PositionQuantity != 0m

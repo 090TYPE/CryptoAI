@@ -1549,8 +1549,8 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
         RefreshCommand = ReactiveCommand.CreateFromTask(RefreshAsync, outputScheduler: App.UiScheduler);
         SearchCommand = ReactiveCommand.CreateFromTask(SearchAsync, outputScheduler: App.UiScheduler);
-        BuyCommand = ReactiveCommand.CreateFromTask(BuyAsync, outputScheduler: App.UiScheduler);
-        SellCommand = ReactiveCommand.CreateFromTask(SellAsync, outputScheduler: App.UiScheduler);
+        BuyCommand = ReactiveCommand.CreateFromTask(async () => { await BuyAsync(); }, outputScheduler: App.UiScheduler);
+        SellCommand = ReactiveCommand.CreateFromTask(async () => { await SellAsync(); }, outputScheduler: App.UiScheduler);
         UseMaxBuyAmountCommand = ReactiveCommand.Create(UseMaxBuyAmount, outputScheduler: App.UiScheduler);
         ApplyBuyBalancePresetCommand = ReactiveCommand.Create<string>(ApplyBuyBalancePreset, outputScheduler: App.UiScheduler);
         ApplySellBalancePresetCommand = ReactiveCommand.Create<string>(ApplySellBalancePreset, outputScheduler: App.UiScheduler);
@@ -1845,8 +1845,9 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         }
 
         BuyAmountBnb = amountNative;
-        await BuyAsync();
-        return Services.AppActions.AppActionResult.Ok($"DEX buy submitted: {amountNative} for {SelectedToken.TokenInfo.Symbol} (subject to wallet/live guards)");
+        return await BuyAsync()
+            ? Services.AppActions.AppActionResult.Ok($"DEX buy placed: {amountNative} for {SelectedToken.TokenInfo.Symbol}")
+            : Services.AppActions.AppActionResult.Fail($"DEX buy was blocked or reverted — {StatusMessage}");
     }
 
     internal async Task<Services.AppActions.AppActionResult> DexSellFromAgent(decimal amountTokens)
@@ -1862,8 +1863,9 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         }
 
         SellAmountTokens = amountTokens;
-        await SellAsync();
-        return Services.AppActions.AppActionResult.Ok($"DEX sell submitted: {amountTokens} {SelectedToken.TokenInfo.Symbol} (subject to wallet/live guards)");
+        return await SellAsync()
+            ? Services.AppActions.AppActionResult.Ok($"DEX sell placed: {amountTokens} {SelectedToken.TokenInfo.Symbol}")
+            : Services.AppActions.AppActionResult.Fail($"DEX sell was blocked or reverted — {StatusMessage}");
     }
 
     private async Task RefreshAsync()
@@ -2074,50 +2076,50 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         }
     }
 
-    private async Task BuyAsync()
+    private async Task<bool> BuyAsync()
     {
         var selectedToken = await RunOnUiAsync(() => SelectedToken);
         if (selectedToken is null)
         {
             await RunOnUiAsync(() => StatusMessage = "Choose a token before buying.");
-            return;
+            return false;
         }
 
         if (!IsPairCompatibleWithQuoteMode(selectedToken.TokenInfo))
         {
             await RunOnUiAsync(() => StatusMessage = PairCompatibilityMessage);
-            return;
+            return false;
         }
 
         if (!HasEnoughQuoteBalanceForBuy)
         {
             await RunOnUiAsync(() => StatusMessage = BuyAvailabilityMessage);
-            return;
+            return false;
         }
 
         if (!_walletWorkspace.CanTradeChainId(selectedToken.TokenInfo.ChainId))
         {
             await RunOnUiAsync(() => StatusMessage = $"Manual trading requires a trade-enabled wallet on the same network as the selected token. Current wallet network: {_walletWorkspace.SelectedNetwork}.");
-            return;
+            return false;
         }
 
         var dexGateway = _walletWorkspace.ActiveDexGateway;
         if (dexGateway is null)
         {
             await RunOnUiAsync(() => StatusMessage = "Connect a trade-enabled wallet in the Wallet tab to enable DEX trading.");
-            return;
+            return false;
         }
 
         if (!dexGateway.SupportsDex(selectedToken.TokenInfo.DexId))
         {
             await RunOnUiAsync(() => StatusMessage = $"DEX connector '{selectedToken.TokenInfo.DexId}' is not wired on {_walletWorkspace.SelectedNetwork}. Supported: {dexGateway.SupportedDexesLabel}.");
-            return;
+            return false;
         }
 
         if (!_walletWorkspace.TryApproveLiveExecution("DEX manual buy", out var executionReason))
         {
             await RunOnUiAsync(() => StatusMessage = executionReason);
-            return;
+            return false;
         }
 
         var (buyAmount, quoteAssetSymbol) = await RunOnUiAsync(() => (BuyAmountBnb, SelectedQuoteAssetSymbol));
@@ -2125,7 +2127,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             !_walletWorkspace.TryApproveUsdRisk(buyAmount, 0m, 0m, out var riskReason))
         {
             await RunOnUiAsync(() => StatusMessage = riskReason);
-            return;
+            return false;
         }
 
         var slippage = await RunOnUiAsync(() => SlippagePercent);
@@ -2145,7 +2147,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
                         : $"Best-route buy reverted: {res.TxHash}";
                     AddTradeRecord("BUY", selectedToken.DisplayName, buyAmount, selectedToken.TokenInfo.PriceUsd, res.TxHash, res.Success);
                 });
-                return;
+                return res.Success;
             }
 
             var transactionHash = await dexGateway.BuyTokenAsync(selectedToken.TokenAddress, buyAmount, slippagePercent: slippage, dexId: selectedToken.TokenInfo.DexId, spendAssetSymbol: spendAssetSymbol);
@@ -2154,6 +2156,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
                 StatusMessage = $"Buy sent via {(spendAssetSymbol ?? dexGateway.NativeSymbol)}: {transactionHash}";
                 AddTradeRecord("BUY", selectedToken.DisplayName, buyAmount, selectedToken.TokenInfo.PriceUsd, transactionHash, true);
             });
+            return true;
         }
         catch (Exception ex)
         {
@@ -2162,47 +2165,48 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
                 StatusMessage = $"Buy failed: {ex.Message}";
                 AddTradeRecord("BUY", selectedToken.DisplayName, buyAmount, selectedToken.TokenInfo.PriceUsd, string.Empty, false);
             });
+            return false;
         }
     }
 
-    private async Task SellAsync()
+    private async Task<bool> SellAsync()
     {
         var selectedToken = await RunOnUiAsync(() => SelectedToken);
         if (selectedToken is null)
         {
             await RunOnUiAsync(() => StatusMessage = "Choose a token before selling.");
-            return;
+            return false;
         }
 
         if (!IsPairCompatibleWithQuoteMode(selectedToken.TokenInfo))
         {
             await RunOnUiAsync(() => StatusMessage = PairCompatibilityMessage);
-            return;
+            return false;
         }
 
         if (!_walletWorkspace.CanTradeChainId(selectedToken.TokenInfo.ChainId))
         {
             await RunOnUiAsync(() => StatusMessage = $"Manual trading requires a trade-enabled wallet on the same network as the selected token. Current wallet network: {_walletWorkspace.SelectedNetwork}.");
-            return;
+            return false;
         }
 
         var dexGateway = _walletWorkspace.ActiveDexGateway;
         if (dexGateway is null)
         {
             await RunOnUiAsync(() => StatusMessage = "Connect a trade-enabled wallet in the Wallet tab to enable DEX trading.");
-            return;
+            return false;
         }
 
         if (!dexGateway.SupportsDex(selectedToken.TokenInfo.DexId))
         {
             await RunOnUiAsync(() => StatusMessage = $"DEX connector '{selectedToken.TokenInfo.DexId}' is not wired on {_walletWorkspace.SelectedNetwork}. Supported: {dexGateway.SupportedDexesLabel}.");
-            return;
+            return false;
         }
 
         if (!_walletWorkspace.TryApproveLiveExecution("DEX manual sell", out var executionReason))
         {
             await RunOnUiAsync(() => StatusMessage = executionReason);
-            return;
+            return false;
         }
 
         var (sellAmount, quoteAssetSymbol, slippage, wantsBestRoute) = await RunOnUiAsync(() => (SellAmountTokens, SelectedQuoteAssetSymbol, SlippagePercent, UseBestRouteSwap));
@@ -2223,7 +2227,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
                         : $"Best-route sell reverted: {res.TxHash}";
                     AddTradeRecord("SELL", selectedToken.DisplayName, sellAmount, selectedToken.TokenInfo.PriceUsd, res.TxHash, res.Success);
                 });
-                return;
+                return res.Success;
             }
 
             var transactionHash = await dexGateway.SellTokenAsync(selectedToken.TokenAddress, sellAmount, slippagePercent: slippage, dexId: selectedToken.TokenInfo.DexId, receiveAssetSymbol: receiveAssetSymbol);
@@ -2232,6 +2236,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
                 StatusMessage = $"Sell sent to {(receiveAssetSymbol ?? dexGateway.NativeSymbol)}: {transactionHash}";
                 AddTradeRecord("SELL", selectedToken.DisplayName, sellAmount, selectedToken.TokenInfo.PriceUsd, transactionHash, true);
             });
+            return true;
         }
         catch (Exception ex)
         {
@@ -2240,6 +2245,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
                 StatusMessage = $"Sell failed: {ex.Message}";
                 AddTradeRecord("SELL", selectedToken.DisplayName, sellAmount, selectedToken.TokenInfo.PriceUsd, string.Empty, false);
             });
+            return false;
         }
     }
 

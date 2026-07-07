@@ -20,7 +20,7 @@ public partial class MainWindowViewModel
         "dashboard", "markets", "trading", "portfolio", "ai-signals", "sniper", "dex",
         "logs", "risk", "backtest", "bots", "whale", "tape", "funding", "liquidation",
         "rules", "arb", "scanner", "router", "journal", "gas", "positions", "news",
-        "onchain", "copy", "statarb", "settings",
+        "onchain", "copy", "statarb", "analytics", "settings",
     };
 
     // ── Trading ticket (CEX) ────────────────────────────────────────────────
@@ -88,16 +88,10 @@ public partial class MainWindowViewModel
             return AppActionResult.Fail("set a quantity first");
         }
 
-        if (isBuy)
-        {
-            PlaceBuyLimit();
-        }
-        else
-        {
-            PlaceSellLimit();
-        }
-
-        return AppActionResult.Ok($"{(isBuy ? "BUY" : "SELL")} LIMIT armed at {LimitPrice:N2} for {TradeQuantity} {BaseAssetSymbol}");
+        var ok = isBuy ? PlaceBuyLimit() : PlaceSellLimit();
+        return ok
+            ? AppActionResult.Ok($"{(isBuy ? "BUY" : "SELL")} LIMIT armed at {LimitPrice:N2} for {TradeQuantity} {BaseAssetSymbol}")
+            : AppActionResult.Fail("limit rejected — see the log");
     }
 
     internal AppActionResult ArmTakeProfitFromAgent()
@@ -112,8 +106,9 @@ public partial class MainWindowViewModel
             return AppActionResult.Fail("set a take-profit price first");
         }
 
-        ArmTakeProfit();
-        return AppActionResult.Ok($"Take-profit armed at {TakeProfitPrice:N2}");
+        return ArmTakeProfit()
+            ? AppActionResult.Ok($"Take-profit armed at {TakeProfitPrice:N2}")
+            : AppActionResult.Fail("take-profit rejected — see the log");
     }
 
     internal AppActionResult ArmStopLossFromAgent()
@@ -128,8 +123,9 @@ public partial class MainWindowViewModel
             return AppActionResult.Fail("set a stop-loss price first");
         }
 
-        ArmStopLoss();
-        return AppActionResult.Ok($"Stop-loss armed at {StopLossPrice:N2}");
+        return ArmStopLoss()
+            ? AppActionResult.Ok($"Stop-loss armed at {StopLossPrice:N2}")
+            : AppActionResult.Fail("stop-loss rejected — see the log");
     }
 
     internal async Task<AppActionResult> PlaceMarketFromAgent(bool isBuy)
@@ -139,16 +135,10 @@ public partial class MainWindowViewModel
             return AppActionResult.Fail("set a quantity first");
         }
 
-        if (isBuy)
-        {
-            await ExecuteBuyMarket();
-        }
-        else
-        {
-            await ExecuteSellMarket();
-        }
-
-        return AppActionResult.Ok($"Market {(isBuy ? "BUY" : "SELL")} submitted for {TradeQuantity} {BaseAssetSymbol} (subject to risk/execution guards)");
+        var ok = isBuy ? await ExecuteBuyMarket() : await ExecuteSellMarket();
+        return ok
+            ? AppActionResult.Ok($"Market {(isBuy ? "BUY" : "SELL")} placed for {TradeQuantity} {BaseAssetSymbol}")
+            : AppActionResult.Fail("order was blocked by a risk/wallet/execution guard — see the log");
     }
 
     internal async Task<AppActionResult> ClosePositionFromAgent()
@@ -158,8 +148,9 @@ public partial class MainWindowViewModel
             return AppActionResult.Fail("no open position to close");
         }
 
-        await ExecuteClosePosition();
-        return AppActionResult.Ok("Close-position submitted (subject to risk/execution guards)");
+        return await ExecuteClosePosition()
+            ? AppActionResult.Ok("Close-position placed")
+            : AppActionResult.Fail("close was blocked by a risk/wallet/execution guard — see the log");
     }
 
     // ── DEX perps ───────────────────────────────────────────────────────────

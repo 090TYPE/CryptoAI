@@ -1249,14 +1249,14 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             });
         });
 
-        BuyMarketCommand = ReactiveCommand.CreateFromTask(ExecuteBuyMarket, outputScheduler: App.UiScheduler);
-        SellMarketCommand = ReactiveCommand.CreateFromTask(ExecuteSellMarket, outputScheduler: App.UiScheduler);
-        PlaceBuyLimitCommand = ReactiveCommand.Create(PlaceBuyLimit, outputScheduler: App.UiScheduler);
-        PlaceSellLimitCommand = ReactiveCommand.Create(PlaceSellLimit, outputScheduler: App.UiScheduler);
-        ArmTakeProfitCommand = ReactiveCommand.Create(ArmTakeProfit, outputScheduler: App.UiScheduler);
-        ArmStopLossCommand = ReactiveCommand.Create(ArmStopLoss, outputScheduler: App.UiScheduler);
+        BuyMarketCommand = ReactiveCommand.CreateFromTask(async () => { await ExecuteBuyMarket(); }, outputScheduler: App.UiScheduler);
+        SellMarketCommand = ReactiveCommand.CreateFromTask(async () => { await ExecuteSellMarket(); }, outputScheduler: App.UiScheduler);
+        PlaceBuyLimitCommand = ReactiveCommand.Create(() => { PlaceBuyLimit(); }, outputScheduler: App.UiScheduler);
+        PlaceSellLimitCommand = ReactiveCommand.Create(() => { PlaceSellLimit(); }, outputScheduler: App.UiScheduler);
+        ArmTakeProfitCommand = ReactiveCommand.Create(() => { ArmTakeProfit(); }, outputScheduler: App.UiScheduler);
+        ArmStopLossCommand = ReactiveCommand.Create(() => { ArmStopLoss(); }, outputScheduler: App.UiScheduler);
         CancelAllOrdersCommand = ReactiveCommand.Create(CancelAllOrders, outputScheduler: App.UiScheduler);
-        ClosePositionCommand = ReactiveCommand.CreateFromTask(ExecuteClosePosition, outputScheduler: App.UiScheduler);
+        ClosePositionCommand = ReactiveCommand.CreateFromTask(async () => { await ExecuteClosePosition(); }, outputScheduler: App.UiScheduler);
         ReversePositionCommand = ReactiveCommand.CreateFromTask(ExecuteReversePosition, outputScheduler: App.UiScheduler);
         OpenWalletTabCommand = ReactiveCommand.Create(() => { SelectMainTab("portfolio"); }, outputScheduler: App.UiScheduler);
         SelectMainTabCommand = ReactiveCommand.Create<string>(SelectMainTab, outputScheduler: App.UiScheduler);
@@ -4852,13 +4852,13 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
     }
 
-    private async Task ExecuteBuyMarket()
+    private async Task<bool> ExecuteBuyMarket()
     {
         var symbol = SelectedTradingSymbol;
         if (!WalletVM.TryApproveLiveExecution("CEX market buy", out var executionReason))
         {
             AddLog(executionReason);
-            return;
+            return false;
         }
 
         if (IsManualFuturesMode && PositionQuantity < 0)
@@ -4867,20 +4867,20 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             if (quantityToBuy <= 0)
             {
                 AddLog("No open manual futures short position to buy back.");
-                return;
+                return false;
             }
 
             AddLog($"Executing reduce-only market buy of {quantityToBuy} {symbol} to close short exposure...");
             var result = await PlaceCexMarketOrderAsync(CryptoAITerminal.Core.Enums.OrderSide.Buy, quantityToBuy, reduceOnly: true);
             await SyncManualExecutionStateAsync(CryptoAITerminal.Core.Enums.OrderSide.Buy, result.Price > 0 ? result.Price : CurrentTradePrice, result.Quantity);
             AddLog($"Buy order placed: {result.Id} - {result.Status}");
-            return;
+            return true;
         }
 
         if (!WalletVM.TryApproveUsdRisk(TradeNotional, CurrentOpenExposureUsdt, RealizedPnl, out var riskReason))
         {
             AddLog(riskReason);
-            return;
+            return false;
         }
 
         AddLog($"Executing market buy of {TradeQuantity} {symbol}...");
@@ -4906,20 +4906,20 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             var result = await PlaceCexMarketOrderAsync(CryptoAITerminal.Core.Enums.OrderSide.Buy, TradeQuantity);
             await SyncManualExecutionStateAsync(CryptoAITerminal.Core.Enums.OrderSide.Buy, result.Price > 0 ? result.Price : CurrentTradePrice, result.Quantity);
             AddLog($"Buy order placed: {result.Id} - {result.Status}");
+            return true;
         }
-        else
-        {
-            AddLog("Risk manager rejected the buy order.");
-        }
+
+        AddLog("Risk manager rejected the buy order.");
+        return false;
     }
 
-    private async Task ExecuteSellMarket()
+    private async Task<bool> ExecuteSellMarket()
     {
         var symbol = SelectedTradingSymbol;
         if (!WalletVM.TryApproveLiveExecution("CEX market sell", out var executionReason))
         {
             AddLog(executionReason);
-            return;
+            return false;
         }
 
         if (IsManualFuturesMode && PositionQuantity > 0)
@@ -4929,19 +4929,19 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             var reduceResult = await PlaceCexMarketOrderAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, reduceQuantity, reduceOnly: true);
             await SyncManualExecutionStateAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, reduceResult.Price > 0 ? reduceResult.Price : CurrentTradePrice, reduceResult.Quantity);
             AddLog($"Sell order placed: {reduceResult.Id} - {reduceResult.Status}");
-            return;
+            return true;
         }
 
         if (!IsManualFuturesMode && PositionQuantity <= 0)
         {
             AddLog("No open spot position to sell.");
-            return;
+            return false;
         }
 
         if (IsManualFuturesMode && !WalletVM.TryApproveUsdRisk(TradeNotional, CurrentOpenExposureUsdt, RealizedPnl, out var riskReason))
         {
             AddLog(riskReason);
-            return;
+            return false;
         }
 
         if (IsManualFuturesMode)
@@ -4961,7 +4961,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             if (!_riskManager.CanPlaceOrder(shortOrder, CurrentTradePrice, AvailableBalanceUsdt, CurrentOpenExposureUsdt))
             {
                 AddLog("Risk manager rejected the sell order.");
-                return;
+                return false;
             }
         }
 
@@ -4970,27 +4970,28 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         var result = await PlaceCexMarketOrderAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, quantityToSell, reduceOnly: false);
         await SyncManualExecutionStateAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, result.Price > 0 ? result.Price : CurrentTradePrice, result.Quantity);
         AddLog($"Sell order placed: {result.Id} - {result.Status}");
+        return true;
     }
 
-    private void PlaceBuyLimit()
+    private bool PlaceBuyLimit()
     {
         if (LimitPrice <= 0 || TradeQuantity <= 0)
         {
             AddLog("Set a valid limit price and quantity first.");
-            return;
+            return false;
         }
 
         if (IsManualFuturesMode)
         {
             _ = PlaceExchangeLimitAsync(CryptoAITerminal.Core.Enums.OrderSide.Buy, LimitPrice);
-            return;
+            return true;
         }
 
         var requestedSpend = TradeQuantity * LimitPrice;
         if (!WalletVM.TryApproveUsdRisk(requestedSpend, CurrentOpenExposureUsdt, RealizedPnl, out var riskReason))
         {
             AddLog(riskReason);
-            return;
+            return false;
         }
 
         var order = WorkingOrderViewModel.CreateLimit(OrderSide.Buy, SelectedTradingSymbol, TradeQuantity, LimitPrice, SelectedTimeInForce, SelectedSpotExchange);
@@ -4999,20 +5000,21 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         RaiseWorkingOrdersCollectionChanged();
         PersistSoftwareWorkingOrders();
         AddLog($"BUY LIMIT armed at {LimitPrice:N2} for {TradeQuantity:0.0000} {BaseAssetSymbol} on {SelectedSpotExchange}.");
+        return true;
     }
 
-    private void PlaceSellLimit()
+    private bool PlaceSellLimit()
     {
         if (LimitPrice <= 0 || TradeQuantity <= 0)
         {
             AddLog("Set a valid limit price and quantity first.");
-            return;
+            return false;
         }
 
         if (IsManualFuturesMode)
         {
             _ = PlaceExchangeLimitAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, LimitPrice);
-            return;
+            return true;
         }
 
         var order = WorkingOrderViewModel.CreateLimit(OrderSide.Sell, SelectedTradingSymbol, Math.Min(TradeQuantity, Math.Max(PositionQuantity, TradeQuantity)), LimitPrice, SelectedTimeInForce, SelectedSpotExchange);
@@ -5021,20 +5023,21 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         RaiseWorkingOrdersCollectionChanged();
         PersistSoftwareWorkingOrders();
         AddLog($"SELL LIMIT armed at {LimitPrice:N2} for {order.Quantity:0.0000} {BaseAssetSymbol} on {SelectedSpotExchange}.");
+        return true;
     }
 
-    private void ArmTakeProfit()
+    private bool ArmTakeProfit()
     {
         if (TakeProfitPrice <= 0 || PositionQuantity == 0)
         {
             AddLog("Take-profit requires an open position and a valid trigger.");
-            return;
+            return false;
         }
 
         if (IsManualFuturesMode)
         {
             _ = ArmExchangeProtectionAsync(WorkingOrderKind.TakeProfit, TakeProfitPrice);
-            return;
+            return true;
         }
 
         var order = WorkingOrderViewModel.CreateProtection(WorkingOrderKind.TakeProfit, SelectedTradingSymbol, Math.Abs(PositionQuantity), TakeProfitPrice, SelectedSpotExchange);
@@ -5043,20 +5046,21 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         RaiseWorkingOrdersCollectionChanged();
         PersistSoftwareWorkingOrders();
         AddLog($"Take-profit armed at {TakeProfitPrice:N2} on {SelectedSpotExchange}.");
+        return true;
     }
 
-    private void ArmStopLoss()
+    private bool ArmStopLoss()
     {
         if (StopLossPrice <= 0 || PositionQuantity == 0)
         {
             AddLog("Stop-loss requires an open position and a valid trigger.");
-            return;
+            return false;
         }
 
         if (IsManualFuturesMode)
         {
             _ = ArmExchangeProtectionAsync(WorkingOrderKind.StopLoss, StopLossPrice);
-            return;
+            return true;
         }
 
         var order = WorkingOrderViewModel.CreateProtection(WorkingOrderKind.StopLoss, SelectedTradingSymbol, Math.Abs(PositionQuantity), StopLossPrice, SelectedSpotExchange);
@@ -5065,6 +5069,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         RaiseWorkingOrdersCollectionChanged();
         PersistSoftwareWorkingOrders();
         AddLog($"Stop-loss armed at {StopLossPrice:N2} on {SelectedSpotExchange}.");
+        return true;
     }
 
     private void CancelAllOrders()
@@ -5094,18 +5099,18 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         AddLog($"Canceled {orders.Count} working orders.");
     }
 
-    private async Task ExecuteClosePosition()
+    private async Task<bool> ExecuteClosePosition()
     {
         if (!WalletVM.TryApproveLiveExecution("CEX close position", out var executionReason))
         {
             AddLog(executionReason);
-            return;
+            return false;
         }
 
         if (PositionQuantity == 0)
         {
             AddLog("No open position to close.");
-            return;
+            return false;
         }
 
         var closeSize = Math.Abs(PositionQuantity);
@@ -5114,6 +5119,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         var result = await PlaceCexMarketOrderAsync(closeSide, closeSize, reduceOnly: IsManualFuturesMode);
         await SyncManualExecutionStateAsync(closeSide, result.Price > 0 ? result.Price : CurrentTradePrice, result.Quantity);
         AddLog($"Position closed at {(result.Price > 0 ? result.Price : CurrentTradePrice):N2}.");
+        return true;
     }
 
     private async Task ExecuteReversePosition()
