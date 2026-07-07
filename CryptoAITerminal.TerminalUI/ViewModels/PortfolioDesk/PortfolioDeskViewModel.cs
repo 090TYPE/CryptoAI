@@ -29,6 +29,8 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
     private readonly PortfolioRebalanceViewModel _rebalance;
     private readonly WalletWorkspaceViewModel _wallet;
     private readonly ObservableCollection<SavedWalletViewModel> _savedWallets;
+    private readonly WalletTxHistoryService _txHistory = new();
+    private readonly WalletApprovalsService _approvals = new();
 
     // ── UI state ─────────────────────────────────────────────────────────────
     private string _walletTypeFilter = "ALL";
@@ -74,6 +76,7 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
 
         OpenStudioCommand   = ReactiveCommand.Create(() => { ConnectionStudioVisible = true; }, outputScheduler: App.UiScheduler);
         CloseStudioCommand  = ReactiveCommand.Create(() => { ConnectionStudioVisible = false; }, outputScheduler: App.UiScheduler);
+        RevokeApprovalCommand = ReactiveCommand.Create<PfApproval>(RevokeApproval, outputScheduler: App.UiScheduler);
 
         // Recompute derived panels whenever the live holdings change.
         _rebalance.Allocations.CollectionChanged += (_, _) => RecomputeAll();
@@ -98,6 +101,7 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> ModalConfirmCommand{ get; }
     public ReactiveCommand<Unit, Unit> OpenStudioCommand  { get; }
     public ReactiveCommand<Unit, Unit> CloseStudioCommand { get; }
+    public ReactiveCommand<PfApproval, Unit> RevokeApprovalCommand { get; }
 
     public bool ConnectionStudioVisible
     {
@@ -247,7 +251,7 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
     // ── State setters that also re-render chrome ─────────────────────────────
     private void SetWalletFilter(string t) { _walletTypeFilter = t; _selectedWalletIndex = 0; RecomputeAll(); }
     private void SetBlotterTab(string t)    { _blotterTab = t; RaiseTabFlags(); RecomputeAll(); }
-    private void SetRightTab(string t)      { _rightTab = t; RaiseRightFlags(); RecomputeAll(); }
+    private void SetRightTab(string t)      { _rightTab = t; RaiseRightFlags(); RecomputeAll(); if (t == "HISTORY") LoadTxHistoryAsync(); if (t == "CHECKS") LoadApprovalsAsync(); }
 
     private void RaiseTabFlags()
     {
@@ -271,6 +275,7 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
     {
         _scanning = true;
         RecomputeRightPanel();
+        LoadApprovalsAsync();
         System.Threading.Tasks.Task.Delay(1600).ContinueWith(_ =>
         {
             _scanning = false;
@@ -288,6 +293,102 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
             StatusMessage = $"Applied {name} as the active session.";
             this.RaisePropertyChanged(nameof(StatusMessage));
         }
+        if (_rightTab == "HISTORY") LoadTxHistoryAsync();
+        LoadApprovalsAsync();
+    }
+
+    /// <summary>Fetches real recent transactions for the selected wallet's address+chain.</summary>
+    private async void LoadTxHistoryAsync()
+    {
+        TxRows.Clear();
+        this.RaisePropertyChanged(nameof(TxEmpty));
+        var w = SelectedRaw();
+        if (w is null || string.IsNullOrWhiteSpace(w.Address) || w.Address.StartsWith("api:", StringComparison.Ordinal))
+            return;
+        var txs = await _txHistory.GetRecentAsync(w.Address, w.Network ?? "", 15);
+        TxRows.Clear();
+        foreach (var t in txs) TxRows.Add(MapTx(t));
+        this.RaisePropertyChanged(nameof(TxEmpty));
+    }
+
+    private static PfTxRow MapTx(WalletTx t)
+    {
+        var emoji = t.Failed ? "✕" : t.Direction switch { "out" => "↑", "in" => "↓", _ => "⇄" };
+        var iconBg = t.Direction == "out" ? "rgba(255,128,128,.1)" : t.Direction == "in" ? "rgba(61,220,132,.1)" : "rgba(91,192,255,.1)";
+        var amtStr = t.Amount == 0
+            ? "—"
+            : (t.Direction == "out" ? "-" : t.Direction == "in" ? "+" : "") + t.Amount.ToString("0.####", CultureInfo.InvariantCulture) + " " + t.AssetSymbol;
+        var amtColor = t.Direction == "out" ? "#ff8080" : t.Direction == "in" ? "#3ddc84" : "#e8f4ff";
+        var hashShort = t.Hash.Length > 12 ? t.Hash[..8] + "…" : t.Hash;
+        var fee = t.FeeNative > 0 ? t.FeeNative.ToString("0.######", CultureInfo.InvariantCulture) + " " + t.AssetSymbol : "";
+        return new PfTxRow
+        {
+            Emoji = emoji, IconBg = iconBg, Action = t.Action, Amount = amtStr, AmountColor = amtColor,
+            Hash = hashShort, Fee = fee,
+            Status = t.Failed ? "FAILED" : "CONFIRMED",
+            StatusColor = t.Failed ? "#ff6b6b" : "#3ddc84",
+            StatusBg = t.Failed ? "rgba(255,107,107,.1)" : "rgba(61,220,132,.1)",
+            Time = TimeAgo(t.TimeUtc),
+        };
+    }
+
+    private static string TimeAgo(DateTime utc)
+    {
+        var d = DateTime.UtcNow - utc;
+        if (d.TotalMinutes < 1) return "just now";
+        if (d.TotalMinutes < 60) return $"{(int)d.TotalMinutes}m ago";
+        if (d.TotalHours < 24)   return $"{(int)d.TotalHours}h ago";
+        return $"{(int)d.TotalDays}d ago";
+    }
+
+    /// <summary>Fetches real ERC-20 approvals for the selected EVM wallet (Covalent).</summary>
+    private async void LoadApprovalsAsync()
+    {
+        var w = SelectedRaw();
+        if (w is null || string.IsNullOrWhiteSpace(w.Address) || w.Address.StartsWith("api:", StringComparison.Ordinal)
+            || WalletApprovalsService.ChainId(w.Network ?? "") is null)
+        {
+            Approvals.Clear(); ApprovalCount = "0"; RaiseApprovalFlags();
+            return;
+        }
+        var items = await _approvals.GetApprovalsAsync(w.Address, w.Network ?? "");
+        Approvals.Clear();
+        foreach (var a in items) Approvals.Add(MapApproval(a));
+        ApprovalCount = Approvals.Count.ToString(CultureInfo.InvariantCulture);
+        RaiseApprovalFlags();
+    }
+
+    private void RaiseApprovalFlags()
+    {
+        this.RaisePropertyChanged(nameof(ApprovalCount));
+        this.RaisePropertyChanged(nameof(ApprovalsEmpty));
+    }
+
+    private PfApproval MapApproval(TokenApproval a)
+    {
+        var (dot, color, border, bg) = a.RiskLevel switch
+        {
+            "high"   => ("#ff6b6b", "#ff8080", "#3d0d0d", "rgba(255,107,107,.1)"),
+            "medium" => ("#f4b860", "#f4b860", "#3d2d00", "rgba(244,184,96,.1)"),
+            _         => ("#3ddc84", "#3ddc84", "#0d2a1e", "rgba(61,220,132,.08)"),
+        };
+        return new PfApproval
+        {
+            Protocol = a.SpenderLabel,
+            Token = a.TokenSymbol,
+            Amount = a.AllowanceLabel,
+            RiskDot = dot,
+            RevokeColor = color, RevokeBorder = border, RevokeBg = bg,
+            RevokeCommand = RevokeApprovalCommand,
+        };
+    }
+
+    private void RevokeApproval(PfApproval? _)
+    {
+        var w = SelectedRaw();
+        if (w is null || string.IsNullOrWhiteSpace(w.Address)) return;
+        var url = WalletApprovalsService.RevokeUrl(w.Address, w.Network ?? "");
+        try { Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true }); } catch { /* best-effort */ }
     }
 
     private void CopySelectedAddress()
@@ -652,9 +753,8 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
         // Deterministic security-checks engine (rule-based, not fabricated data).
         BuildChecks(type);
 
-        // Approvals need a live allowance scan — none wired, so honest empty.
-        Approvals.Clear();
-        ApprovalCount = "0";
+        // Approvals are loaded on demand (LoadApprovalsAsync); only clear when no wallet.
+        if (w is null) { Approvals.Clear(); ApprovalCount = "0"; }
 
         RescanLabel = _scanning ? "SCANNING…" : "RESCAN";
         RescanColor = _scanning ? "#5bc0ff" : "#3d5a72";
