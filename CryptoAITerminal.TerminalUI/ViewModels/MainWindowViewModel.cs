@@ -2499,8 +2499,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         if (parsed.Intent == AiCommandPaletteService.Intent.Navigate && parsed.SectionKey is not null)
         {
             SelectMainTab(parsed.SectionKey);
-            CommandPaletteResult = $"→ {parsed.SectionLabel}";
-            IsCommandPaletteOpen = false;
+            CommandPaletteResult = $"→ Opened {parsed.SectionLabel}";
+            // Keep the bar open — the user closes it (✕ / Esc / click-outside), not us.
+            CommandPaletteInput = string.Empty;
             return;
         }
 
