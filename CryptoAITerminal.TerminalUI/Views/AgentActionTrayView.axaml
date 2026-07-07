@@ -1,0 +1,23 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="CryptoAITerminal.TerminalUI.Views.AgentActionTrayView"
+             x:CompileBindings="False">
+  <Border Background="#0a1622" CornerRadius="6" Padding="8" IsVisible="{Binding HasPending}">
+    <StackPanel Spacing="6">
+      <TextBlock Text="AGENT WANTS TO:" Foreground="#f4b860" FontWeight="Bold" FontSize="11" />
+      <ItemsControl ItemsSource="{Binding Pending}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,2">
+              <TextBlock Text="{Binding Preview}" Foreground="#c8dcef" TextWrapping="Wrap" VerticalAlignment="Center" />
+              <Button Grid.Column="1" Content="✓" Foreground="#3ddc84" Margin="4,0"
+                      Command="{Binding $parent[ItemsControl].DataContext.ApproveCommand}" CommandParameter="{Binding}" />
+              <Button Grid.Column="2" Content="✕" Foreground="#ff6b6b"
+                      Command="{Binding $parent[ItemsControl].DataContext.RejectCommand}" CommandParameter="{Binding}" />
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+  </Border>
+</UserControl>

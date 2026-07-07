@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             xmlns:views="clr-namespace:CryptoAITerminal.TerminalUI.Views"
              x:Class="CryptoAITerminal.TerminalUI.Views.BotsView"
              x:DataType="vm:MainWindowViewModel"
              x:CompileBindings="False">
@@ -928,6 +929,14 @@
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
+
+                <!-- Agent action approval tray + AUTO toggle -->
+                <views:AgentActionTrayView DataContext="{Binding AgentTray}" />
+                <ToggleSwitch IsChecked="{Binding CopilotVM.IsAutoMode}"
+                              OffContent="AUTO off · approve each order"
+                              OnContent="AUTO ON · agent acts (gates still apply)" />
+                <TextBlock Text="{Binding CopilotVM.AutoModeWarning}" Foreground="#f4b860"
+                           FontSize="10" TextWrapping="Wrap" />
 
                 <!-- Input -->
                 <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">

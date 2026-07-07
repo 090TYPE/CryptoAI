@@ -772,7 +772,16 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                     pulse += "\n\n[Selected DEX token profile]\n" + tokenCtx;
                 return pulse;
             }));
-        CopilotVM = new CopilotViewModel(copilotData);
+        var actionCtx = new Services.AppActions.MainWindowAppActionContext(this);
+        var registry = Services.AppActions.AppActionRegistry.Default();
+        var audit = new Services.AppActions.AppActionAuditLog();
+        AgentTray = new AgentActionTrayViewModel(p => _appAgent!.ExecuteApprovedAsync(p));
+        _appAgent = new Services.AppActions.AppAgentService(
+            registry, actionCtx,
+            proposalSink: p => { Avalonia.Threading.Dispatcher.UIThread.Post(() => AgentTray.Enqueue(p)); return System.Threading.Tasks.Task.FromResult(Services.AppActions.AppActionResult.Ok("queued for your approval")); },
+            autoMode: () => CopilotVM?.IsAutoMode ?? false,
+            audit: audit);
+        CopilotVM = new CopilotViewModel(copilotData, _appAgent, AgentTray);
         var telegramUserClient = new Services.TelegramUserClientService();
         TelegramAccountVM = new TelegramAccountViewModel(telegramUserClient);
 
@@ -3411,6 +3420,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public AIBotViewModel AIBotVM { get; }
     public AiTraderViewModel AiTraderVM { get; }
     public CopilotViewModel CopilotVM { get; private set; } = null!;
+    private Services.AppActions.AppAgentService? _appAgent;
+    public AgentActionTrayViewModel AgentTray { get; private set; } = null!;
     public TelegramAccountViewModel TelegramAccountVM { get; private set; } = null!;
     public DailyBriefingViewModel BriefingVM { get; private set; } = null!;
     public PreTradeRiskViewModel RiskCheckVM { get; private set; } = null!;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Reactive;
 using System.Threading.Tasks;
 using CryptoAITerminal.TerminalUI.Services.AppActions;
 using ReactiveUI;
@@ -18,7 +19,17 @@ public sealed class AgentActionProposalViewModel : ReactiveObject
 public sealed class AgentActionTrayViewModel : ReactiveObject
 {
     private readonly Func<ActionProposal, Task<AppActionResult>> _execute;
-    public AgentActionTrayViewModel(Func<ActionProposal, Task<AppActionResult>> execute) => _execute = execute;
+    public AgentActionTrayViewModel(Func<ActionProposal, Task<AppActionResult>> execute)
+    {
+        _execute = execute;
+        ApproveCommand = ReactiveCommand.CreateFromTask<AgentActionProposalViewModel>(
+            async vm => await ApproveAsync(vm), outputScheduler: App.UiScheduler);
+        RejectCommand = ReactiveCommand.Create<AgentActionProposalViewModel>(
+            Reject, outputScheduler: App.UiScheduler);
+    }
+
+    public ReactiveCommand<AgentActionProposalViewModel, Unit> ApproveCommand { get; }
+    public ReactiveCommand<AgentActionProposalViewModel, Unit> RejectCommand { get; }
 
     public ObservableCollection<AgentActionProposalViewModel> Pending { get; } = new();
     public bool HasPending => Pending.Count > 0;

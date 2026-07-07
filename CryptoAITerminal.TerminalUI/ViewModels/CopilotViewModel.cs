@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using CryptoAITerminal.TerminalUI.Services;
+using CryptoAITerminal.TerminalUI.Services.AppActions;
 using ReactiveUI;
 
 namespace CryptoAITerminal.TerminalUI.ViewModels;
@@ -34,9 +35,31 @@ public sealed class CopilotMessageVM
 public sealed class CopilotViewModel : ReactiveObject
 {
     private readonly CopilotAgentService _service;
+    private readonly AppAgentService? _agent;
 
     private string _question = string.Empty;
     private bool _isBusy;
+    private bool _isAutoMode;
+
+    /// <summary>The approval tray for mutating actions the agent proposes (null in read-only mode).</summary>
+    public AgentActionTrayViewModel? Tray { get; }
+
+    /// <summary>True when an agent is wired in, so the copilot can act (not just advise).</summary>
+    public bool CanAct => _agent is not null;
+
+    public bool IsAutoMode
+    {
+        get => _isAutoMode;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isAutoMode, value);
+            this.RaisePropertyChanged(nameof(AutoModeWarning));
+        }
+    }
+
+    public string AutoModeWarning => _isAutoMode
+        ? "AUTO ON — the agent places orders without asking. Risk/wallet/testnet gates still apply."
+        : "AUTO off — every order waits for your approval.";
 
     public CopilotViewModel(CopilotAgentService.CopilotDataSource dataSource)
     {
@@ -56,6 +79,20 @@ public sealed class CopilotViewModel : ReactiveObject
     }
 
     /// <summary>
+    /// Agentic overload: the copilot can also take actions through <paramref name="agent"/>,
+    /// surfacing mutating proposals in <paramref name="tray"/> for approval.
+    /// </summary>
+    public CopilotViewModel(
+        CopilotAgentService.CopilotDataSource dataSource,
+        AppAgentService agent,
+        AgentActionTrayViewModel tray)
+        : this(dataSource)
+    {
+        _agent = agent;
+        Tray = tray;
+    }
+
+    /// <summary>
     /// Answers a one-off question without touching the chat transcript — used by the
     /// global Ctrl+K command bar, which shows the reply inline. Reuses the same
     /// configured service (active provider + offline fallback) as the chat panel.
@@ -68,6 +105,11 @@ public sealed class CopilotViewModel : ReactiveObject
     {
         if (apiKey is not null) _service.ApiKey = apiKey;
         if (!string.IsNullOrWhiteSpace(model)) _service.Model = model;
+        if (_agent is not null)
+        {
+            if (apiKey is not null) _agent.ApiKey = apiKey;
+            if (!string.IsNullOrWhiteSpace(model)) _agent.Model = model;
+        }
         this.RaisePropertyChanged(nameof(ModeLabel));
         this.RaisePropertyChanged(nameof(ModeBrush));
     }
@@ -125,13 +167,23 @@ public sealed class CopilotViewModel : ReactiveObject
 
         try
         {
-            var answer = await _service.AskAsync(q, CancellationToken.None);
-            Messages.Add(new CopilotMessageVM
+            if (_agent is not null && _agent.UsesLiveModel)
             {
-                IsUser = false,
-                Text = answer.Text,
-                Source = answer.Source + (answer.ToolCalls > 0 ? $" · {answer.ToolCalls} tool call(s)" : "")
-            });
+                var reply = await _agent.RunTurnAsync(q, CancellationToken.None);
+                if (Tray?.HasPending == true)
+                    reply += $"\n\n{Tray.Pending.Count} action(s) awaiting your approval below.";
+                Messages.Add(new CopilotMessageVM { IsUser = false, Text = reply, Source = "Agent" });
+            }
+            else
+            {
+                var answer = await _service.AskAsync(q, CancellationToken.None);
+                Messages.Add(new CopilotMessageVM
+                {
+                    IsUser = false,
+                    Text = answer.Text,
+                    Source = answer.Source + (answer.ToolCalls > 0 ? $" · {answer.ToolCalls} tool call(s)" : "")
+                });
+            }
         }
         catch (Exception ex)
         {
