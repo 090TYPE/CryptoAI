@@ -27,7 +27,11 @@ public sealed class AppActionRegistry
     {
         new NavGotoAction(), new ReadBalanceAction(), new ReadPositionsAction(), new ReadMarketAction(),
         new SetTicketAction(), new ArmLimitAction(), new ArmTpSlAction(), new PlaceMarketAction(),
-        new ClosePositionAction(), new SetPerpModeAction(),
+        new ClosePositionAction(),
+        // DEX spot buy/sell (gated via ctx.BuyAsync/SellAsync). perp.place is intentionally
+        // descoped in v1: no context method places a perp order — only perp.set_mode toggles
+        // live/paper; perp order entry stays on the perps desk UI.
+        new SelectDexTokenAction(), new DexBuyAction(), new DexSellAction(), new SetPerpModeAction(),
         new AddAlertAction(), new ApplySignalAction(),
         new ConfigureGridBotAction(), new SelectWalletAction(),
     });

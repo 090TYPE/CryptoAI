@@ -40,6 +40,8 @@ public sealed class CopilotViewModel : ReactiveObject
     private string _question = string.Empty;
     private bool _isBusy;
     private bool _isAutoMode;
+    private bool _autoConsented;
+    private bool _showAutoConsent;
 
     /// <summary>The approval tray for mutating actions the agent proposes (null in read-only mode).</summary>
     public AgentActionTrayViewModel? Tray { get; }
@@ -47,12 +49,17 @@ public sealed class CopilotViewModel : ReactiveObject
     /// <summary>True when an agent is wired in, so the copilot can act (not just advise).</summary>
     public bool CanAct => _agent is not null;
 
+    /// <summary>True while the inline AUTO consent strip is asking the user to confirm.</summary>
+    public bool ShowAutoConsent { get => _showAutoConsent; private set => this.RaiseAndSetIfChanged(ref _showAutoConsent, value); }
+
     public bool IsAutoMode
     {
         get => _isAutoMode;
         set
         {
+            if (value && !_autoConsented) { ShowAutoConsent = true; this.RaisePropertyChanged(nameof(IsAutoMode)); return; }
             this.RaiseAndSetIfChanged(ref _isAutoMode, value);
+            if (!value) { _autoConsented = false; ShowAutoConsent = false; }
             this.RaisePropertyChanged(nameof(AutoModeWarning));
         }
     }
@@ -68,6 +75,8 @@ public sealed class CopilotViewModel : ReactiveObject
         AskCommand = ReactiveCommand.CreateFromTask(AskAsync, outputScheduler: App.UiScheduler);
         AskSuggestionCommand = ReactiveCommand.CreateFromTask<string>(AskSuggestionAsync, outputScheduler: App.UiScheduler);
         ClearCommand = ReactiveCommand.Create(Clear, outputScheduler: App.UiScheduler);
+        ConfirmAutoModeCommand = ReactiveCommand.Create(ConfirmAutoMode, outputScheduler: App.UiScheduler);
+        CancelAutoModeCommand = ReactiveCommand.Create(CancelAutoMode, outputScheduler: App.UiScheduler);
 
         Messages.Add(new CopilotMessageVM
         {
@@ -148,6 +157,23 @@ public sealed class CopilotViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> AskCommand { get; }
     public ReactiveCommand<string, Unit> AskSuggestionCommand { get; }
     public ReactiveCommand<Unit, Unit> ClearCommand { get; }
+    public ReactiveCommand<Unit, Unit> ConfirmAutoModeCommand { get; }
+    public ReactiveCommand<Unit, Unit> CancelAutoModeCommand { get; }
+
+    /// <summary>User accepted the AUTO warning — record consent and turn AUTO on.</summary>
+    private void ConfirmAutoMode()
+    {
+        _autoConsented = true;
+        ShowAutoConsent = false;
+        IsAutoMode = true;
+    }
+
+    /// <summary>User declined — hide the strip and snap the toggle back to off.</summary>
+    private void CancelAutoMode()
+    {
+        ShowAutoConsent = false;
+        this.RaisePropertyChanged(nameof(IsAutoMode));
+    }
 
     /// <summary>Fill the box from a suggestion chip and immediately ask.</summary>
     private async Task AskSuggestionAsync(string prompt)

@@ -935,6 +935,15 @@
                 <ToggleSwitch IsChecked="{Binding CopilotVM.IsAutoMode}"
                               OffContent="AUTO off · approve each order"
                               OnContent="AUTO ON · agent acts (gates still apply)" />
+                <Border IsVisible="{Binding CopilotVM.ShowAutoConsent}" Background="#200a0a" CornerRadius="4" Padding="8" Margin="0,4,0,0">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="Enable AUTO? The agent will place real orders without asking. Risk/wallet/testnet gates still apply." Foreground="#ff9d9d" TextWrapping="Wrap" FontSize="10" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Button Content="I understand — enable AUTO" Command="{Binding CopilotVM.ConfirmAutoModeCommand}" />
+                      <Button Content="Cancel" Command="{Binding CopilotVM.CancelAutoModeCommand}" />
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
                 <TextBlock Text="{Binding CopilotVM.AutoModeWarning}" Foreground="#f4b860"
                            FontSize="10" TextWrapping="Wrap" />
 
