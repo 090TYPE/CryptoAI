@@ -1394,7 +1394,7 @@
             <Grid ColumnDefinitions="*,Auto">
               <StackPanel Grid.Column="0" Spacing="2">
                 <TextBlock Text="⚡ AI Command" Classes="H2" />
-                <TextBlock Text="Navigate or ask anything — Enter to run, Esc to close."
+                <TextBlock Text="Ask, navigate, or command the terminal — Enter to run, Esc to close."
                            Foreground="#8FA3B8" FontSize="12" />
               </StackPanel>
               <Button Grid.Column="1" Content="✕" Command="{Binding CloseCommandPaletteCommand}"
@@ -1405,7 +1405,7 @@
             <TextBox x:Name="CommandPaletteBox"
                      Text="{Binding CommandPaletteInput}"
                      FontSize="16" Padding="12,10"
-                     PlaceholderText="e.g. “open scanner”, “go to settings”, “what's my biggest risk?”">
+                     PlaceholderText="e.g. “go to markets”, “long BTC $500 5x, stop -2%”, “alert ETH above 4000”, “what's my risk?”">
               <TextBox.KeyBindings>
                 <KeyBinding Gesture="Enter"  Command="{Binding RunCommandPaletteCommand}" />
                 <KeyBinding Gesture="Escape" Command="{Binding CloseCommandPaletteCommand}" />
@@ -1419,14 +1419,53 @@
                          IsVisible="{Binding CommandPaletteBusy}" />
             </StackPanel>
 
-            <Border Background="#0A1722" CornerRadius="6" Padding="12"
-                    IsVisible="{Binding CommandPaletteResult, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-              <TextBlock Text="{Binding CommandPaletteResult}" Foreground="#D7E3EE"
-                         TextWrapping="Wrap" />
+            <!-- AI response + proposed actions (styled, scrollable — keeps the panel small) -->
+            <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto"
+                          IsVisible="{Binding CommandPaletteResult, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+              <StackPanel Spacing="10">
+                <Border Background="#0A1722" BorderBrush="#14324A" BorderThickness="1" CornerRadius="10" Padding="14">
+                  <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Border Width="26" Height="26" CornerRadius="13" Background="#0E2A2E">
+                        <TextBlock Text="🧠" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                      </Border>
+                      <TextBlock Text="AI Copilot" Foreground="#21E6C1" FontWeight="SemiBold" VerticalAlignment="Center" />
+                      <Border Background="#0E2A2E" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
+                        <TextBlock Text="terminal agent" Foreground="#21E6C1" FontSize="10" />
+                      </Border>
+                    </StackPanel>
+                    <TextBlock Text="{Binding CommandPaletteResult}" Foreground="#D7E3EE"
+                               TextWrapping="Wrap" LineHeight="20" />
+                  </StackPanel>
+                </Border>
+
+                <!-- Pending order/action approvals from the agent -->
+                <views:AgentActionTrayView DataContext="{Binding AgentTray}" />
+              </StackPanel>
+            </ScrollViewer>
+
+            <!-- AUTO consent strip (mirrors the Bots panel) -->
+            <Border IsVisible="{Binding CopilotVM.ShowAutoConsent}" Background="#200A0A"
+                    BorderBrush="#4A1A1E" BorderThickness="1" CornerRadius="8" Padding="10">
+              <StackPanel Spacing="8">
+                <TextBlock TextWrapping="Wrap" Foreground="#FF9D9D" FontSize="11"
+                           Text="Enable AUTO? The agent will place real orders without asking. Risk / wallet / testnet gates still apply." />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Button Content="I understand — enable AUTO" Command="{Binding CopilotVM.ConfirmAutoModeCommand}"
+                          Background="#3A1216" Foreground="#FF9D9D" Padding="10,5" />
+                  <Button Content="Cancel" Command="{Binding CopilotVM.CancelAutoModeCommand}"
+                          Background="Transparent" Foreground="#8FA3B8" Padding="10,5" />
+                </StackPanel>
+              </StackPanel>
             </Border>
 
-            <TextBlock Foreground="#4A6880" FontSize="11" TextWrapping="Wrap"
-                       Text="Tip: type a destination (scanner, settings, whales, liquidations…) to jump there, or ask a question to get an AI answer. The command bar never trades — it only advises and navigates." />
+            <!-- Footer: hint + AUTO toggle -->
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Grid.Column="0" Foreground="#4A6880" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center"
+                         Text="Ask, navigate, or command — the agent acts on the terminal. Order actions ask for approval above; turn on AUTO to let it act on its own." />
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding CopilotVM.IsAutoMode}"
+                            OffContent="AUTO off" OnContent="AUTO on" VerticalAlignment="Center" />
+            </Grid>
           </StackPanel>
         </Border>
       </Grid>

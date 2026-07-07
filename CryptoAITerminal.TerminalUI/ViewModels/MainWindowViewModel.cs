@@ -2450,9 +2450,11 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     }
 
     /// <summary>
-    /// Runs the Ctrl+K command bar. Navigation intents jump to the section instantly
-    /// (deterministic, offline-safe); everything else is answered by the AI copilot
-    /// inline. Per the chosen autonomy level the bar never trades — it advises and navigates.
+    /// Runs the Ctrl+K "Ask AI" command bar. A pure navigation phrase jumps instantly
+    /// (deterministic, offline-safe). Everything else goes to the FULL agent, which can
+    /// navigate, read and act on the terminal: order/alert/config actions surface as
+    /// approval cards in the tray shown right in the bar (or run directly when AUTO is on).
+    /// Falls back to the read-only assistant when no AI key is configured.
     /// </summary>
     private async System.Threading.Tasks.Task RunCommandPaletteAsync()
     {
@@ -2469,13 +2471,24 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        // Question → AI copilot (live provider when keyed, offline assistant otherwise).
         CommandPaletteBusy = true;
         CommandPaletteResult = "Thinking…";
         try
         {
-            var answer = await CopilotVM.AskInlineAsync(text).ConfigureAwait(true);
-            CommandPaletteResult = answer.Text;
+            if (_appAgent is not null && _appAgent.UsesLiveModel)
+            {
+                // Full agent turn — may navigate/read immediately and enqueue order proposals.
+                var reply = await _appAgent.RunTurnAsync(text).ConfigureAwait(true);
+                CommandPaletteResult = string.IsNullOrWhiteSpace(reply)
+                    ? (AgentTray.HasPending ? "Proposed action(s) below — approve to run." : "Done.")
+                    : reply;
+            }
+            else
+            {
+                // No AI key → read-only assistant (still answers common questions).
+                var answer = await CopilotVM.AskInlineAsync(text).ConfigureAwait(true);
+                CommandPaletteResult = answer.Text;
+            }
         }
         catch (Exception ex)
         {
@@ -2484,6 +2497,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         finally
         {
             CommandPaletteBusy = false;
+            CommandPaletteInput = string.Empty;
         }
     }
 
