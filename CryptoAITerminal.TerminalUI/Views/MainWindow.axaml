@@ -1419,6 +1419,31 @@
                          IsVisible="{Binding CommandPaletteBusy}" />
             </StackPanel>
 
+            <!-- LIVE trace — you see exactly what the agent is doing as it happens -->
+            <Border Background="#0A1722" BorderBrush="#14324A" BorderThickness="1" CornerRadius="8" Padding="10"
+                    IsVisible="{Binding HasAgentActivity}">
+              <StackPanel Spacing="6">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Ellipse Width="7" Height="7" Fill="#21E6C1" VerticalAlignment="Center" />
+                  <TextBlock Text="LIVE · what the agent is doing" Foreground="#4A6880" FontSize="10" FontWeight="SemiBold" />
+                </StackPanel>
+                <ScrollViewer MaxHeight="160" VerticalScrollBarVisibility="Auto">
+                  <ItemsControl ItemsSource="{Binding AgentActivity}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Grid ColumnDefinitions="Auto,*" Margin="0,1">
+                          <TextBlock Grid.Column="0" Text="{Binding Glyph}" Foreground="{Binding GlyphBrush}"
+                                     FontSize="12" Margin="0,0,8,0" />
+                          <TextBlock Grid.Column="1" Text="{Binding Text}" Foreground="#B9C9D8"
+                                     FontSize="12" TextWrapping="Wrap" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </StackPanel>
+            </Border>
+
             <!-- AI response + proposed actions (styled, scrollable — keeps the panel small) -->
             <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto"
                           IsVisible="{Binding CommandPaletteResult, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">

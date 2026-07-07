@@ -781,6 +781,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             proposalSink: p => { Avalonia.Threading.Dispatcher.UIThread.Post(() => AgentTray.Enqueue(p)); return System.Threading.Tasks.Task.FromResult(Services.AppActions.AppActionResult.Ok("queued for your approval")); },
             autoMode: () => CopilotVM?.IsAutoMode ?? false,
             audit: audit);
+        _appAgent.OnEvent += OnAgentActivity; // stream the agent's live steps into the Ask-AI bar
         CopilotVM = new CopilotViewModel(copilotData, _appAgent, AgentTray);
         AutonomousVM = new AutonomousAgentViewModel(actionCtx, registry, audit);
         var telegramUserClient = new Services.TelegramUserClientService();
@@ -2449,6 +2450,38 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         private set => this.RaiseAndSetIfChanged(ref _commandPaletteBusy, value);
     }
 
+    /// <summary>Live, streaming trace of what the agent is doing this turn (thinking → tool → result).</summary>
+    public ObservableCollection<AgentStepViewModel> AgentActivity { get; } = new();
+    public bool HasAgentActivity => AgentActivity.Count > 0;
+
+    /// <summary>Maps each streamed <see cref="CryptoAITerminal.AIEngine.Agent.AgentEvent"/> to a bindable line.</summary>
+    private void OnAgentActivity(CryptoAITerminal.AIEngine.Agent.AgentEvent e)
+    {
+        void Add()
+        {
+            var (glyph, brush) = e.Kind switch
+            {
+                CryptoAITerminal.AIEngine.Agent.AgentEventKind.Text       => ("🧠", "#8FA3B8"),
+                CryptoAITerminal.AIEngine.Agent.AgentEventKind.ToolCall   => ("🔧", "#21E6C1"),
+                CryptoAITerminal.AIEngine.Agent.AgentEventKind.ToolResult => ("✓",  "#3DDC84"),
+                CryptoAITerminal.AIEngine.Agent.AgentEventKind.Error      => ("⚠",  "#FF6B6B"),
+                _                                                          => ("●",  "#5A7A94"),
+            };
+
+            var title = string.IsNullOrWhiteSpace(e.Title) ? e.Kind.ToString() : e.Title.Replace('_', '.');
+            var detail = (e.Detail ?? string.Empty).Replace('\n', ' ').Trim();
+            if (detail.Length > 140) detail = detail[..140] + "…";
+            var line = string.IsNullOrEmpty(detail) ? title : $"{title} · {detail}";
+
+            AgentActivity.Add(new AgentStepViewModel(glyph, brush, line));
+            while (AgentActivity.Count > 40) AgentActivity.RemoveAt(0);
+            this.RaisePropertyChanged(nameof(HasAgentActivity));
+        }
+
+        if (Dispatcher.UIThread.CheckAccess()) Add();
+        else Dispatcher.UIThread.Post(Add);
+    }
+
     /// <summary>
     /// Runs the Ctrl+K "Ask AI" command bar. A pure navigation phrase jumps instantly
     /// (deterministic, offline-safe). Everything else goes to the FULL agent, which can
@@ -2471,6 +2504,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return;
         }
 
+        AgentActivity.Clear();
+        this.RaisePropertyChanged(nameof(HasAgentActivity));
         CommandPaletteBusy = true;
         CommandPaletteResult = "Thinking…";
         try
