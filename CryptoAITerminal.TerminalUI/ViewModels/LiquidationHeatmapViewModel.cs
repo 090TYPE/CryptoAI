@@ -248,10 +248,10 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
             await LoadAsync();
         }, outputScheduler: App.UiScheduler);
 
-        // Full reload (re-fetches from Binance/CoinGlass) every 5 minutes
+        // Full reload (re-fetches from Binance/CoinGlass) every 5 minutes.
+        // Started only while the Liquidation section is on screen (Activate/Deactivate).
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(5) };
         _refreshTimer.Tick += async (_, _) => await LoadAsync();
-        _refreshTimer.Start();
 
         // Lightweight live-price tick every 5 seconds: just re-fetches current price,
         // rebuilds leverage model in-place, and redraws — no full HTTP roundtrip.
@@ -267,9 +267,30 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
             RenderHeatmap();
             StatusLabel = $"Live  {DateTime.Now:HH:mm:ss}  ·  {FormatPrice((double)price)}";
         };
-        _priceTimer.Start();
+    }
 
-        _ = LoadAsync();
+    // ── Activation (gated to section visibility) ──────────────────────────────
+
+    private bool _hasLoadedOnce;
+
+    /// <summary>Called when the Liquidation section becomes visible: load data on
+    /// first open, then resume the 5 min reload and 5 s price ticks.</summary>
+    public void Activate()
+    {
+        if (!_hasLoadedOnce)
+        {
+            _hasLoadedOnce = true;
+            _ = LoadAsync();
+        }
+        if (!_refreshTimer.IsEnabled) _refreshTimer.Start();
+        if (!_priceTimer.IsEnabled)   _priceTimer.Start();
+    }
+
+    /// <summary>Called when the section is hidden: stop both timers.</summary>
+    public void Deactivate()
+    {
+        _refreshTimer.Stop();
+        _priceTimer.Stop();
     }
 
     // ── Data loading ──────────────────────────────────────────────────────────

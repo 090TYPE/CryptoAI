@@ -288,10 +288,28 @@ public class FundingRateViewModel : ReactiveObject, IDisposable
         _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
         _pollTimer.Tick += async (_, _) => await RefreshOnceAsync();
 
-        // Update countdown labels every second without a full refresh
+        // Update countdown labels every second without a full refresh. Runs only
+        // while the Funding section is on screen (see Activate/Deactivate).
         _countdownTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _countdownTimer.Tick += (_, _) => TickCountdowns();
-        _countdownTimer.Start();
+    }
+
+    // ── Activation (gated to section visibility) ──────────────────────────────
+
+    /// <summary>Called when the Funding section becomes visible: resume the 1 s
+    /// countdown and (if the user had tracking on) the 30 s poll.</summary>
+    public void Activate()
+    {
+        if (!_countdownTimer.IsEnabled) _countdownTimer.Start();
+        if (IsTracking && !_pollTimer.IsEnabled) _pollTimer.Start();
+    }
+
+    /// <summary>Called when the section is hidden: pause both timers. Tracking
+    /// state is preserved so the poll resumes on the next Activate.</summary>
+    public void Deactivate()
+    {
+        _countdownTimer.Stop();
+        _pollTimer.Stop();
     }
 
     // ── Tracking control ──────────────────────────────────────────────────────

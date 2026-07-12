@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Avalonia;
 using CryptoAITerminal.Core.Models;
 using ReactiveUI;
 using System.Linq;
@@ -84,6 +86,45 @@ public class SniperCandidateViewModel : ReactiveObject
             : $"{TokenInfo.Name} ({TokenInfo.Symbol})";
 
     public string PairLabel => $"{TokenInfo.ChainId.ToUpperInvariant()} / {TokenInfo.DexId} / {TokenInfo.QuoteSymbol}";
+
+    // ── Detail-panel helpers (right column of the Sniper terminal) ────────────────
+
+    public string DetailSymbol => string.IsNullOrWhiteSpace(TokenInfo.Symbol) ? TokenInfo.Name : TokenInfo.Symbol;
+
+    public string DetailPairChainLabel => $"{DetailSymbol} / {TokenInfo.QuoteSymbol} · {TokenInfo.ChainId.ToUpperInvariant()}";
+
+    public string IconText
+    {
+        get
+        {
+            var s = DetailSymbol?.Trim() ?? string.Empty;
+            return s.Length >= 2 ? s[..2].ToUpperInvariant()
+                 : s.Length == 1 ? s.ToUpperInvariant()
+                 : "··";
+        }
+    }
+
+    public string DetailPriceLabel =>
+        TokenInfo.PriceUsd > 0m ? $"$ {TokenInfo.PriceUsd:N8}" : "waiting for quote";
+
+    public decimal DetailChangePercent => TokenInfo.PriceChange5m;
+
+    public string DetailChangeLabel => $"{DetailChangePercent:+0.##;-0.##;0}% · 5m";
+
+    public string DetailChangeHex => DetailChangePercent switch
+    {
+        > 0m => "#3DDC84",
+        < 0m => "#FF5D73",
+        _ => "#8FA3B8"
+    };
+
+    public string LiquidityLabel => $"$ {TokenInfo.LiquidityUsd:N0}";
+    public string Volume24hLabel => $"$ {TokenInfo.Volume24h:N0}";
+    public string MarketCapLabel => TokenInfo.MarketCap > 0m ? $"$ {TokenInfo.MarketCap:N0}" : "—";
+    public string RiskScoreLabel => $"{RiskScore} / 100";
+
+    /// <summary>Synthetic micro-trend sparkline (300×90) for the detail panel.</summary>
+    public IList<Point> MicroTrendPoints => SniperSparklines.Micro(DetailSymbol, (double)DetailChangePercent);
 
     public bool WasBought
     {

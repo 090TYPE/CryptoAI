@@ -441,6 +441,7 @@ public partial class SniperViewModel : ReactiveObject, IDisposable
         _spotMarketSubscription = _spotGateway?.MarketDataStream.Subscribe(OnSpotMarketDataReceived);
         _futuresMarketSubscription = _futuresGateway?.MarketDataStream.Subscribe(OnFuturesMarketDataReceived);
         ObserveCommandErrors();
+        AttachTerminalState();
 
         LoadSettings();
         LoadPaperTradeHistory();
@@ -533,7 +534,11 @@ public partial class SniperViewModel : ReactiveObject, IDisposable
     public bool IsArmed
     {
         get => _isArmed;
-        set => this.RaiseAndSetIfChanged(ref _isArmed, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isArmed, value);
+            RaiseArmPillProperties();
+        }
     }
 
     public bool AutoBuyEnabled
@@ -834,6 +839,7 @@ public partial class SniperViewModel : ReactiveObject, IDisposable
             this.RaiseAndSetIfChanged(ref _paperTradingEnabled, value);
             PersistSettings();
             RaiseSafetyProperties();
+            RaisePaperPillProperties();
         }
     }
 

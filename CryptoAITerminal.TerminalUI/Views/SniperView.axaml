@@ -1,1812 +1,869 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.SniperView"
              x:DataType="vm:MainWindowViewModel"
              x:CompileBindings="False">
-            <StackPanel Spacing="16">
 
-            <!-- ═══ DEX Trending Feed ═══ -->
-            <Border Classes="Panel" x:DataType="vm:MainWindowViewModel">
-              <StackPanel Spacing="10">
+  <UserControl.Styles>
+    <!-- Section overline -->
+    <Style Selector="TextBlock.secLabel">
+      <Setter Property="FontSize" Value="9" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Foreground" Value="#3D5A72" />
+      <Setter Property="LetterSpacing" Value="0.6" />
+    </Style>
+    <!-- Stat strip label / value -->
+    <Style Selector="TextBlock.stripLabel">
+      <Setter Property="FontSize" Value="8" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Foreground" Value="#3D5A72" />
+      <Setter Property="LetterSpacing" Value="0.6" />
+    </Style>
+    <Style Selector="TextBlock.stripValue">
+      <Setter Property="FontFamily" Value="Consolas, 'SF Mono', monospace" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Foreground" Value="#E8F4FF" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <!-- Terminal card -->
+    <Style Selector="Border.tcard">
+      <Setter Property="Background" Value="#07111A" />
+      <Setter Property="BorderBrush" Value="#152233" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="10" />
+    </Style>
+    <!-- Centre tab buttons -->
+    <Style Selector="Button.sniperTab">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="#8FA3B8" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="Padding" Value="12,7" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style Selector="Button.sniperTab.active">
+      <Setter Property="Background" Value="#0E2A2A" />
+      <Setter Property="Foreground" Value="#21E6C1" />
+    </Style>
+    <!-- Timeframe buttons -->
+    <Style Selector="Button.tf">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="#8FA3B8" />
+      <Setter Property="BorderBrush" Value="#152233" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="10,4" />
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style Selector="Button.tf.active">
+      <Setter Property="Background" Value="#0E2A2A" />
+      <Setter Property="Foreground" Value="#21E6C1" />
+      <Setter Property="BorderBrush" Value="#21E6C1" />
+    </Style>
+    <!-- Compact numeric / textbox in the control rail -->
+    <Style Selector="NumericUpDown.rail">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="MinWidth" Value="96" />
+    </Style>
+    <Style Selector="TextBlock.fieldName">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="#8FA3B8" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+  </UserControl.Styles>
 
-                <!-- ── Header row ─────────────────────────────────────────── -->
-                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                  <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                    <TextBlock Classes="H2" Text="DEX Trending" VerticalAlignment="Center" />
-                    <!-- Count badge -->
-                    <Border Background="#0D1826" CornerRadius="8" Padding="6,1" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding DexTrendingVM.TotalCount}"
-                                 Foreground="#8FA3B8"
-                                 FontSize="11" />
-                    </Border>
+  <Grid RowDefinitions="52,*" Background="#040B12">
 
-                    <!-- Timeframe toggle buttons with active-state highlight -->
-                    <Button Classes="GhostButton"
-                            Classes.active="{Binding DexTrendingVM.IsTf5m}"
-                            Content="5m"
-                            FontSize="11"
-                            Padding="8,3"
-                            Command="{Binding DexTrendingVM.SetTimeframeCommand}"
-                            CommandParameter="5m" />
-                    <Button Classes="GhostButton"
-                            Classes.active="{Binding DexTrendingVM.IsTf15m}"
-                            Content="15m"
-                            FontSize="11"
-                            Padding="8,3"
-                            Command="{Binding DexTrendingVM.SetTimeframeCommand}"
-                            CommandParameter="15m" />
-                    <Button Classes="GhostButton"
-                            Classes.active="{Binding DexTrendingVM.IsTf1h}"
-                            Content="1h"
-                            FontSize="11"
-                            Padding="8,3"
-                            Command="{Binding DexTrendingVM.SetTimeframeCommand}"
-                            CommandParameter="1h" />
-                    <Button Classes="GhostButton"
-                            Classes.active="{Binding DexTrendingVM.IsTf6h}"
-                            Content="6h"
-                            FontSize="11"
-                            Padding="8,3"
-                            Command="{Binding DexTrendingVM.SetTimeframeCommand}"
-                            CommandParameter="6h" />
-                    <Button Classes="GhostButton"
-                            Classes.active="{Binding DexTrendingVM.IsTf24h}"
-                            Content="24h"
-                            FontSize="11"
-                            Padding="8,3"
-                            Command="{Binding DexTrendingVM.SetTimeframeCommand}"
-                            CommandParameter="24h" />
-                  </StackPanel>
+    <!-- ═══════════════ TOP STATS STRIP ═══════════════ -->
+    <Border Grid.Row="0" Background="#050C14" BorderBrush="#0D1B27" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="*,Auto" Margin="16,0">
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="26" VerticalAlignment="Center">
+          <StackPanel Spacing="1">
+            <TextBlock Classes="stripLabel" Text="MODE" />
+            <TextBlock Classes="stripValue" Text="{Binding SniperVM.ExecutionModeLabel}" MaxWidth="120" />
+          </StackPanel>
+          <StackPanel Spacing="1">
+            <TextBlock Classes="stripLabel" Text="PRESET" />
+            <TextBlock Classes="stripValue" Text="{Binding SniperVM.PresetSummary}" MaxWidth="150" />
+          </StackPanel>
+          <StackPanel Spacing="1">
+            <TextBlock Classes="stripLabel" Text="EXECUTION" />
+            <TextBlock Classes="stripValue" Foreground="#3DDC84" Text="{Binding SniperVM.AutoModeLabel}" MaxWidth="120" />
+          </StackPanel>
+          <StackPanel Spacing="1">
+            <TextBlock Classes="stripLabel" Text="CHAINS" />
+            <TextBlock Classes="stripValue" Foreground="#C8DCEF" Text="{Binding SniperVM.EnabledChainsSummary}" MaxWidth="160" />
+          </StackPanel>
+          <StackPanel Spacing="1">
+            <TextBlock Classes="stripLabel" Text="LAST SCAN" />
+            <TextBlock Classes="stripValue" Foreground="#C8DCEF" Text="{Binding SniperVM.LastScanLocal, StringFormat={}{0:HH:mm:ss}}" />
+          </StackPanel>
+          <StackPanel Spacing="1">
+            <TextBlock Classes="stripLabel" Text="COOLDOWN" />
+            <TextBlock Classes="stripValue" Foreground="#3DDC84" Text="{Binding SniperVM.CooldownStatus}" MaxWidth="140" />
+          </StackPanel>
+          <StackPanel Spacing="1">
+            <TextBlock Classes="stripLabel" Text="SAFETY" />
+            <TextBlock Classes="stripValue" Foreground="#3DDC84" Text="{Binding SniperVM.SafetySummary}" MaxWidth="150" />
+          </StackPanel>
+        </StackPanel>
 
-                  <!-- ── Filter controls ──────────────────────────────────── -->
-                  <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
-                    <!-- Min liquidity -->
-                    <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,4">
-                      <TextBlock Text="Min Liq $" VerticalAlignment="Center" FontSize="12" Foreground="#8FA3B8" />
-                      <NumericUpDown Value="{Binding DexTrendingVM.MinLiquidityUsd}"
-                                     Minimum="0"
-                                     Maximum="10000000"
-                                     Increment="5000"
-                                     Width="165"
-                                     FontSize="12" />
-                    </StackPanel>
-                    <!-- Pool age -->
-                    <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,4">
-                      <TextBlock Text="Age ≤" VerticalAlignment="Center" FontSize="12" Foreground="#8FA3B8" />
-                      <NumericUpDown Value="{Binding DexTrendingVM.MaxPoolAgeHours}"
-                                     Minimum="1"
-                                     Maximum="8760"
-                                     Increment="24"
-                                     Width="125"
-                                     FontSize="12" />
-                      <TextBlock Text="h" VerticalAlignment="Center" FontSize="12" Foreground="#8FA3B8" />
-                    </StackPanel>
-                    <!-- Security score -->
-                    <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,4">
-                      <TextBlock Text="Score ≥" VerticalAlignment="Center" FontSize="12" Foreground="#8FA3B8" />
-                      <NumericUpDown Value="{Binding DexTrendingVM.MinSecurityScore}"
-                                     Minimum="0"
-                                     Maximum="100"
-                                     Increment="10"
-                                     Width="115"
-                                     FontSize="12" />
-                    </StackPanel>
-                    <!-- Search -->
-                    <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,0,4">
-                      <TextBlock Text="Search:" VerticalAlignment="Center" FontSize="12" Foreground="#8FA3B8" />
-                      <TextBox Text="{Binding DexTrendingVM.SearchQuery}"
-                               Width="130"
-                               FontSize="12"
-                               PlaceholderText="symbol / name…" />
-                    </StackPanel>
-                  </WrapPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <Button Command="{Binding SniperVM.ToggleArmCommand}"
+                  Background="#07111A"
+                  BorderBrush="{Binding SniperVM.ArmBorderHex}"
+                  BorderThickness="1"
+                  CornerRadius="999"
+                  Padding="14,6">
+            <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+              <Ellipse Width="7" Height="7" Fill="{Binding SniperVM.ArmDotHex}" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding SniperVM.ArmStatusLabel}"
+                         FontSize="9" FontWeight="Bold"
+                         Foreground="{Binding SniperVM.ArmDotHex}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+          <Border Background="#06181A" CornerRadius="999" Padding="12,6">
+            <TextBlock Text="AI ON" FontSize="9" FontWeight="Bold" Foreground="#21E6C1" />
+          </Border>
+        </StackPanel>
+      </Grid>
+    </Border>
 
-                  <!-- Refresh button -->
-                  <Button Grid.Column="2"
-                          Content="⟳ Refresh"
-                          Classes="GhostButton"
-                          FontSize="12"
-                          Padding="10,4"
-                          Command="{Binding DexTrendingVM.RefreshCommand}"
-                          VerticalAlignment="Center" />
+    <!-- ═══════════════ 3-COLUMN BODY ═══════════════ -->
+    <Grid Grid.Row="1" ColumnDefinitions="280,*,380">
+
+      <!-- ─────────── LEFT: SNIPER CONTROLS ─────────── -->
+      <Border Grid.Column="0" Background="#050C14" BorderBrush="#0D1B27" BorderThickness="0,0,1,0">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="14" Spacing="14">
+
+            <!-- Header -->
+            <StackPanel Spacing="3">
+              <TextBlock Text="Sniper" FontSize="18" FontWeight="Bold" Foreground="#E8F4FF" />
+              <TextBlock FontSize="11" Foreground="#3D5A72">
+                <Run Text="{Binding SniperVM.OpenPositionCount}" Foreground="#C8DCEF" FontWeight="Bold" />
+                <Run Text=" open · " />
+                <Run Text="{Binding SniperVM.AcceptedPairs.Count}" Foreground="#F4B860" FontWeight="Bold" />
+                <Run Text=" queued" />
+              </TextBlock>
+            </StackPanel>
+
+            <!-- Scanner mode -->
+            <StackPanel Spacing="8">
+              <TextBlock Classes="secLabel" Text="SCANNER MODE" />
+              <ComboBox HorizontalAlignment="Stretch" FontSize="12"
+                        ItemsSource="{Binding SniperVM.SniperVenueOptions}"
+                        SelectedItem="{Binding SniperVM.SelectedScanVenue}" />
+              <ComboBox HorizontalAlignment="Stretch" FontSize="12"
+                        ItemsSource="{Binding SniperVM.TradingProfileOptions}"
+                        SelectedItem="{Binding SniperVM.SelectedTradingProfile}" />
+              <StackPanel Spacing="6" IsVisible="{Binding SniperVM.IsScalpProfile}">
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="6">
+                  <Button Grid.Column="0" Classes="tf" Content="TIGHT" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                          Command="{Binding SniperVM.ApplyScalpPresetCommand}" CommandParameter="Tight" />
+                  <Button Grid.Column="1" Classes="tf active" Content="STANDARD" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                          Command="{Binding SniperVM.ApplyScalpPresetCommand}" CommandParameter="Standard" />
+                  <Button Grid.Column="2" Classes="tf" Content="AGGRO" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                          Command="{Binding SniperVM.ApplyScalpPresetCommand}" CommandParameter="Aggro" />
                 </Grid>
+                <TextBlock Text="{Binding SniperVM.ScalpPresetSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+              </StackPanel>
+              <TextBlock Text="{Binding SniperVM.VenueSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding SniperVM.TradingProfileSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+              <Expander Header="Advanced — futures" IsVisible="{Binding SniperVM.IsFuturesVenue}">
+                <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8" Margin="0,6,0,0">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Classes="fieldName" Text="Leverage" />
+                  <NumericUpDown Grid.Row="0" Grid.Column="1" Classes="rail" Value="{Binding SniperVM.FuturesLeverage}" Increment="1" Minimum="1" Maximum="50" FormatString="0" />
+                  <TextBlock Grid.Row="1" Grid.Column="0" Classes="fieldName" Text="Bias" />
+                  <ComboBox Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" FontSize="11"
+                            ItemsSource="{Binding SniperVM.FuturesBiasOptions}" SelectedItem="{Binding SniperVM.SelectedFuturesBias}" />
+                  <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding SniperVM.FuturesExecutionSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+                </Grid>
+              </Expander>
+            </StackPanel>
 
-                <!-- ── AI Picks (#9) ── -->
-                <Border Background="#0D1826" CornerRadius="8" Padding="12,10">
-                  <StackPanel Spacing="8">
-                    <Grid ColumnDefinitions="*,Auto,Auto">
-                      <TextBlock Grid.Column="0" Text="🧠 AI Trending Picks (momentum vs rug risk)"
-                                 Foreground="#E8F0FE" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="1" Text="{Binding DexTrendingVM.AiSource}"
-                                 Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
-                      <Button Grid.Column="2" Content="Rank with AI"
-                              Command="{Binding DexTrendingVM.RankWithAiCommand}"
-                              IsEnabled="{Binding !DexTrendingVM.AiRunning}" Foreground="#21E6C1" />
-                    </Grid>
-                    <ItemsControl ItemsSource="{Binding DexTrendingVM.AiPicks}" IsVisible="{Binding DexTrendingVM.HasAiPicks}">
-                      <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:AiPickVM">
-                          <Border Background="#0A1622" CornerRadius="6" Padding="10,7" Margin="0,2">
-                            <Grid ColumnDefinitions="Auto,110,*">
-                              <Border Grid.Column="0" CornerRadius="4" Padding="6,2" Background="#04101A" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding ScoreLabel}" FontWeight="Bold" Foreground="#21E6C1" FontSize="13" />
-                              </Border>
-                              <StackPanel Grid.Column="1" Spacing="0" Margin="8,0" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding Symbol}" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
-                                <TextBlock Text="{Binding Bias}" Foreground="#8FA3B8" FontSize="11" FontWeight="Bold" />
-                              </StackPanel>
-                              <TextBlock Grid.Column="2" Text="{Binding Reason}" Foreground="#8FA3B8"
-                                         FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center" />
-                            </Grid>
-                          </Border>
-                        </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                  </StackPanel>
+            <!-- Preset studio -->
+            <StackPanel Spacing="8">
+              <TextBlock Classes="secLabel" Text="PRESET STUDIO" />
+              <Grid ColumnDefinitions="*,*,*" ColumnSpacing="6">
+                <Button Grid.Column="0" Classes="tf" Content="SAFE" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Command="{Binding SniperVM.ApplySafePresetCommand}" />
+                <Button Grid.Column="1" Classes="tf active" Content="BALANCED" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Command="{Binding SniperVM.ApplyBalancedPresetCommand}" />
+                <Button Grid.Column="2" Classes="tf" Content="AGGRO" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Command="{Binding SniperVM.ApplyAggressivePresetCommand}" />
+              </Grid>
+              <TextBlock Text="{Binding SniperVM.PresetSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- Execution mode -->
+            <StackPanel Spacing="8">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Classes="secLabel" Text="EXECUTION MODE" VerticalAlignment="Center" />
+                <Border Grid.Column="1" Background="{Binding SniperVM.PaperPillHex}" CornerRadius="999" Padding="10,2">
+                  <TextBlock Text="{Binding SniperVM.PaperPillLabel}" Foreground="#081018" FontSize="9" FontWeight="Bold" />
                 </Border>
+              </Grid>
+              <CheckBox FontSize="11" Content="Enable full auto-buy on accepted pairs" IsChecked="{Binding SniperVM.AutoBuyEnabled}" />
+              <CheckBox FontSize="11" Content="Use paper sniper instead of real execution" IsChecked="{Binding SniperVM.PaperTradingEnabled}" />
+              <CheckBox FontSize="11" Content="Auto-sell with take-profit" IsChecked="{Binding SniperVM.AutoTakeProfitEnabled}" />
+              <CheckBox FontSize="11" Content="Cut position with stop-loss" IsChecked="{Binding SniperVM.AutoStopLossEnabled}" />
+              <CheckBox FontSize="11" Content="Protect profit with trailing stop" IsChecked="{Binding SniperVM.AutoTrailingStopEnabled}" />
+              <CheckBox FontSize="11" Content="Require native/wrapped-native quote" IsChecked="{Binding SniperVM.RequireBnbQuote}" IsVisible="{Binding SniperVM.IsDexVenue}" />
+              <CheckBox FontSize="11" Content="Enable execution guard before buy" IsChecked="{Binding SniperVM.EnableExecutionGuard}" />
+              <CheckBox FontSize="11" Content="Block suspected honeypots" IsChecked="{Binding SniperVM.BlockSuspectedHoneypots}" IsVisible="{Binding SniperVM.IsDexVenue}" />
+              <CheckBox FontSize="11" Content="Deep security scan (GoPlus + RugCheck)" IsChecked="{Binding SniperVM.EnableExternalSecurityScan}" IsVisible="{Binding SniperVM.IsDexVenue}" />
+              <Expander Header="Advanced — quote routing" IsVisible="{Binding SniperVM.IsDexVenue}">
+                <StackPanel Spacing="8" Margin="0,6,0,0">
+                  <CheckBox FontSize="11" Content="Stable-first quote routing" IsChecked="{Binding SniperVM.PreferStableQuote}" />
+                  <TextBlock Text="{Binding SniperVM.StableQuoteSpendableLabel}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding SniperVM.StableQuoteAvailabilityMessage}" Foreground="{Binding SniperVM.StableQuoteAvailabilityBrush}" FontSize="10" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding SniperVM.QuoteRoutingSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding SniperVM.SupportedQuoteRoutesSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+                </StackPanel>
+              </Expander>
+            </StackPanel>
 
-                <!-- ── Column headers ────────────────────────────────────── -->
-                <Grid ColumnDefinitions="28,64,*,70,70,60,46,70,Auto"
-                      ColumnSpacing="6"
-                      Margin="4,2,4,0">
-                  <TextBlock Grid.Column="0" Text=""         FontSize="11" Foreground="#5C6E82" />
-                  <TextBlock Grid.Column="1" Text="TOKEN"    FontSize="11" Foreground="#5C6E82" FontWeight="Bold" />
-                  <TextBlock Grid.Column="2" Text="PRICE"    FontSize="11" Foreground="#5C6E82" FontWeight="Bold" />
-                  <TextBlock Grid.Column="3" Text="CHANGE"   FontSize="11" Foreground="#5C6E82" FontWeight="Bold" />
-                  <TextBlock Grid.Column="4" Text="VOLUME"   FontSize="11" Foreground="#5C6E82" FontWeight="Bold" />
-                  <TextBlock Grid.Column="5" Text="LIQ"      FontSize="11" Foreground="#5C6E82" FontWeight="Bold" />
-                  <TextBlock Grid.Column="6" Text="AGE"      FontSize="11" Foreground="#5C6E82" FontWeight="Bold" />
-                  <TextBlock Grid.Column="7" Text="SCORE"    FontSize="11" Foreground="#5C6E82" FontWeight="Bold" />
-                  <TextBlock Grid.Column="8" Text=""         FontSize="11" Foreground="#5C6E82" />
+            <!-- Chain compatibility -->
+            <StackPanel Spacing="8" IsVisible="{Binding SniperVM.IsDexVenue}">
+              <TextBlock Classes="secLabel" Text="CHAIN COMPATIBILITY" />
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                <Button Grid.Column="0" Classes="tf" Content="ALL CHAINS" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Command="{Binding SniperVM.ApplyAllChainsCommand}" />
+                <Button Grid.Column="1" Classes="tf" Content="EVM ONLY" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Command="{Binding SniperVM.ApplyEvmChainsCommand}" />
+              </Grid>
+              <TextBlock Text="{Binding SniperVM.ChainCoverageSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding SniperVM.TokenFilterSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- Buy amount -->
+            <StackPanel Spacing="8">
+              <TextBlock Classes="secLabel" Text="{Binding SniperVM.BuyAmountLabel}" TextWrapping="Wrap" />
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                <NumericUpDown Grid.Column="0" Classes="rail" HorizontalAlignment="Stretch"
+                               Value="{Binding SniperVM.BuyAmountBnb}" Increment="0.001" Minimum="0" FormatString="0.0000" />
+                <Button Grid.Column="1" Classes="tf" Content="MAX" Command="{Binding SniperVM.UseMaxBuyAmountCommand}" />
+              </Grid>
+              <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="6">
+                <Button Grid.Column="0" Classes="tf" Content="25%" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding SniperVM.ApplyBuyBalancePresetCommand}" CommandParameter="25" />
+                <Button Grid.Column="1" Classes="tf" Content="50%" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding SniperVM.ApplyBuyBalancePresetCommand}" CommandParameter="50" />
+                <Button Grid.Column="2" Classes="tf" Content="75%" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding SniperVM.ApplyBuyBalancePresetCommand}" CommandParameter="75" />
+                <Button Grid.Column="3" Classes="tf" Content="100%" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding SniperVM.ApplyBuyBalancePresetCommand}" CommandParameter="100" />
+              </Grid>
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                <TextBlock Grid.Column="0" Classes="fieldName" Text="Slippage" />
+                <NumericUpDown Grid.Column="2" Classes="rail" Value="{Binding SniperVM.SlippagePercent}" Increment="0.5" Minimum="0.1" Maximum="50" FormatString="0.#" />
+              </Grid>
+            </StackPanel>
+
+            <!-- Token filters -->
+            <StackPanel Spacing="8">
+              <TextBlock Classes="secLabel" Text="TOKEN FILTERS" />
+              <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+                <TextBlock Grid.Row="0" Grid.Column="0" Classes="fieldName" Text="Min Liquidity" />
+                <NumericUpDown Grid.Row="0" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.MinLiquidityUsd}" Increment="1000" Minimum="0" FormatString="0" />
+                <TextBlock Grid.Row="1" Grid.Column="0" Classes="fieldName" Text="Max Liquidity" />
+                <NumericUpDown Grid.Row="1" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.MaxLiquidityUsd}" Increment="5000" Minimum="0" FormatString="0" />
+                <TextBlock Grid.Row="2" Grid.Column="0" Classes="fieldName" Text="Min Volume 24h" />
+                <NumericUpDown Grid.Row="2" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.MinVolume24hUsd}" Increment="10000" Minimum="0" FormatString="0" />
+                <TextBlock Grid.Row="3" Grid.Column="0" Classes="fieldName" Text="Min 5m %" />
+                <NumericUpDown Grid.Row="3" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.MinMomentum5m}" Increment="1" Minimum="-100" FormatString="0.##" />
+                <TextBlock Grid.Row="4" Grid.Column="0" Classes="fieldName" Text="Max MCap" />
+                <NumericUpDown Grid.Row="4" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.MaxMarketCapUsd}" Increment="100000" Minimum="0" FormatString="0" />
+                <TextBlock Grid.Row="5" Grid.Column="0" Classes="fieldName" Text="Max Vol/Liq" />
+                <NumericUpDown Grid.Row="5" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.MaxVolumeToLiquidityRatio}" Increment="1" Minimum="0" FormatString="0.##" />
+              </Grid>
+              <Expander Header="Advanced — strategy &amp; taxes">
+                <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8" Margin="0,6,0,0">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Classes="fieldName" Text="Strategy Mode" />
+                  <ComboBox Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" FontSize="11"
+                            ItemsSource="{Binding SniperVM.StrategyModeOptions}" SelectedItem="{Binding SniperVM.SelectedStrategyMode}" />
+                  <TextBlock Grid.Row="1" Grid.Column="0" Classes="fieldName" Text="Max MCap/Liq" />
+                  <NumericUpDown Grid.Row="1" Grid.Column="1" Classes="rail" Value="{Binding SniperVM.MaxMarketCapToLiquidityRatio}" Increment="1" Minimum="0" FormatString="0.##" />
+                  <TextBlock Grid.Row="2" Grid.Column="0" Classes="fieldName" Text="Max Buy Tax %" />
+                  <NumericUpDown Grid.Row="2" Grid.Column="1" Classes="rail" Value="{Binding SniperVM.MaxSimulatedBuyTaxPercent}" Increment="1" Minimum="0" FormatString="0.##" />
+                  <TextBlock Grid.Row="3" Grid.Column="0" Classes="fieldName" Text="Max Sell Tax %" />
+                  <NumericUpDown Grid.Row="3" Grid.Column="1" Classes="rail" Value="{Binding SniperVM.MaxSimulatedSellTaxPercent}" Increment="1" Minimum="0" FormatString="0.##" />
+                  <TextBlock Grid.Row="4" Grid.Column="0" Classes="fieldName" Text="Min Pair Age (min)" />
+                  <NumericUpDown Grid.Row="4" Grid.Column="1" Classes="rail" Value="{Binding SniperVM.MinPairAgeMinutes}" Increment="1" Minimum="0" FormatString="0.#" />
+                  <TextBlock Grid.Row="5" Grid.Column="0" Classes="fieldName" Text="Max Pair Age (min)" />
+                  <NumericUpDown Grid.Row="5" Grid.Column="1" Classes="rail" Value="{Binding SniperVM.MaxPairAgeMinutes}" Increment="5" Minimum="0" FormatString="0.#" />
+                  <TextBlock Grid.Row="6" Grid.Column="0" Classes="fieldName" Text="Launch Max Age (min)" />
+                  <NumericUpDown Grid.Row="6" Grid.Column="1" Classes="rail" Value="{Binding SniperVM.LaunchMaxPairAgeMinutes}" Increment="1" Minimum="1" FormatString="0.#" />
+                  <TextBlock Grid.Row="7" Grid.Column="0" Classes="fieldName" Text="Warm Pair Age (min)" />
+                  <NumericUpDown Grid.Row="7" Grid.Column="1" Classes="rail" Value="{Binding SniperVM.WarmPairMinAgeMinutes}" Increment="1" Minimum="0" FormatString="0.#" />
                 </Grid>
+              </Expander>
+            </StackPanel>
 
-                <!-- ── Loading spinner ───────────────────────────────────── -->
-                <TextBlock Text="Loading trending tokens…"
-                           IsVisible="{Binding DexTrendingVM.IsLoading}"
-                           Foreground="#8FA3B8"
-                           FontSize="12"
-                           HorizontalAlignment="Center"
-                           Margin="0,8" />
+            <!-- Safety limits -->
+            <StackPanel Spacing="8">
+              <TextBlock Classes="secLabel" Text="SAFETY LIMITS" />
+              <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+                <TextBlock Grid.Row="0" Grid.Column="0" Classes="fieldName" Text="Cooldown (sec)" />
+                <NumericUpDown Grid.Row="0" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.CooldownSeconds}" Increment="15" Minimum="0" FormatString="0" />
+                <TextBlock Grid.Row="1" Grid.Column="0" Classes="fieldName" Text="Max Open Positions" />
+                <NumericUpDown Grid.Row="1" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.MaxSimultaneousPositions}" Increment="1" Minimum="1" FormatString="0" />
+                <TextBlock Grid.Row="2" Grid.Column="0" Classes="fieldName" Text="Max Buys / Session" />
+                <NumericUpDown Grid.Row="2" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.MaxBuysPerSession}" Increment="1" Minimum="1" FormatString="0" />
+                <TextBlock Grid.Row="3" Grid.Column="0" Classes="fieldName" Text="Max Risk Score" />
+                <NumericUpDown Grid.Row="3" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.MaxRiskScore}" Increment="5" Minimum="0" FormatString="0" />
+                <TextBlock Grid.Row="4" Grid.Column="0" Classes="fieldName" Text="Take Profit %" />
+                <NumericUpDown Grid.Row="4" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.TakeProfitPercent}" Increment="5" Minimum="1" FormatString="0.##" />
+                <TextBlock Grid.Row="5" Grid.Column="0" Classes="fieldName" Text="Stop Loss %" />
+                <NumericUpDown Grid.Row="5" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.StopLossPercent}" Increment="2" Minimum="1" FormatString="0.##" />
+                <TextBlock Grid.Row="6" Grid.Column="0" Classes="fieldName" Text="Trailing Stop %" />
+                <NumericUpDown Grid.Row="6" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.TrailingStopPercent}" Increment="2" Minimum="1" FormatString="0.##" />
+                <TextBlock Grid.Row="7" Grid.Column="0" Classes="fieldName" Text="Break-even Arm %" />
+                <NumericUpDown Grid.Row="7" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.BreakEvenTriggerPercent}" Increment="2" Minimum="1" FormatString="0.##" />
+              </Grid>
+              <Expander Header="Advanced — runners &amp; break-even">
+                <StackPanel Spacing="8" Margin="0,6,0,0">
+                  <CheckBox FontSize="11" Content="Enable partial take-profit runner" IsChecked="{Binding SniperVM.PartialTakeProfitEnabled}" />
+                  <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+                    <TextBlock Grid.Row="0" Grid.Column="0" Classes="fieldName" Text="Partial TP Trigger %" />
+                    <NumericUpDown Grid.Row="0" Grid.Column="1" Classes="rail" Value="{Binding SniperVM.PartialTakeProfitTriggerPercent}" Increment="2" Minimum="1" FormatString="0.##" />
+                    <TextBlock Grid.Row="1" Grid.Column="0" Classes="fieldName" Text="Partial TP Sell %" />
+                    <NumericUpDown Grid.Row="1" Grid.Column="1" Classes="rail" Value="{Binding SniperVM.PartialTakeProfitSellPercent}" Increment="5" Minimum="1" Maximum="99" FormatString="0.##" />
+                  </Grid>
+                  <CheckBox FontSize="11" Content="Arm break-even after a green move" IsChecked="{Binding SniperVM.BreakEvenEnabled}" />
+                  <TextBlock Text="{Binding SniperVM.ExitEngineSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+                </StackPanel>
+              </Expander>
+            </StackPanel>
 
-                <!-- ── Token rows ─────────────────────────────────────────── -->
-                <ItemsControl ItemsSource="{Binding DexTrendingVM.FilteredTokens}"
-                              IsVisible="{Binding !DexTrendingVM.IsLoading}">
+            <!-- Live risk caps -->
+            <StackPanel Spacing="8">
+              <TextBlock Classes="secLabel" Text="LIVE RISK CAPS" />
+              <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+                <TextBlock Grid.Row="0" Grid.Column="0" Classes="fieldName" Text="Max Daily Live Loss" />
+                <NumericUpDown Grid.Row="0" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.MaxDailyLiveLossNative}" Increment="0.001" Minimum="0" FormatString="0.0000" />
+                <TextBlock Grid.Row="1" Grid.Column="0" Classes="fieldName" Text="Max Chain Exposure" />
+                <NumericUpDown Grid.Row="1" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.MaxExposurePerChainNative}" Increment="0.001" Minimum="0" FormatString="0.0000" />
+                <TextBlock Grid.Row="2" Grid.Column="0" Classes="fieldName" Text="Max Wallet Exposure" />
+                <NumericUpDown Grid.Row="2" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.MaxExposurePerWalletNative}" Increment="0.001" Minimum="0" FormatString="0.0000" />
+                <TextBlock Grid.Row="3" Grid.Column="0" Classes="fieldName" Text="Hard Cap Exposure" />
+                <NumericUpDown Grid.Row="3" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.HardCapTotalLiveExposureNative}" Increment="0.001" Minimum="0" FormatString="0.0000" />
+                <TextBlock Grid.Row="4" Grid.Column="0" Classes="fieldName" Text="Max Losing Trades" />
+                <NumericUpDown Grid.Row="4" Grid.Column="1" Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.MaxConsecutiveLiveLosses}" Increment="1" Minimum="0" FormatString="0" />
+              </Grid>
+              <Expander Header="Advanced — dry-run cap">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" Margin="0,6,0,0">
+                  <TextBlock Grid.Column="0" Classes="fieldName" Text="Tiny Dry-Run Cap" />
+                  <NumericUpDown Grid.Column="1" Classes="rail" Value="{Binding SniperVM.TinyDryRunCapNative}" Increment="0.001" Minimum="0" FormatString="0.0000" />
+                </Grid>
+              </Expander>
+              <TextBlock Text="{Binding SniperVM.LiveRiskSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- Word lists -->
+            <StackPanel Spacing="8">
+              <TextBlock Classes="secLabel" Text="ENABLED CHAINS" />
+              <TextBox FontSize="11" Text="{Binding SniperVM.EnabledChainsText}" Watermark="bsc,ethereum,base,solana" />
+            </StackPanel>
+            <StackPanel Spacing="8">
+              <TextBlock Classes="secLabel" Text="WHITELIST FRAGMENTS" />
+              <TextBox FontSize="11" Text="{Binding SniperVM.WhitelistText}" Watermark="bnbx,pepe,ai" />
+            </StackPanel>
+            <StackPanel Spacing="8">
+              <TextBlock Classes="secLabel" Text="WATCHLIST PRIORITY" />
+              <TextBox FontSize="11" Text="{Binding SniperVM.WatchlistText}" Watermark="pepe,ai,cat — priority, not a hard block" />
+            </StackPanel>
+            <StackPanel Spacing="8">
+              <TextBlock Classes="secLabel" Text="BLACKLIST FRAGMENTS" />
+              <TextBox FontSize="11" Text="{Binding SniperVM.BlacklistText}" Watermark="inu,elon,test,wrapped" />
+            </StackPanel>
+
+            <!-- Manual snipe -->
+            <Border Classes="tcard" Padding="12" IsVisible="{Binding SniperVM.IsDexVenue}">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="secLabel" Text="MANUAL SNIPE — CONTRACT ADDRESS" />
+                <TextBox FontSize="11" Text="{Binding SniperVM.ManualSnipeAddress, Mode=TwoWay}" Watermark="0x… or Solana address" />
+                <TextBlock Text="{Binding SniperVM.ManualSnipeInfoLabel}" Foreground="{Binding SniperVM.ManualSnipeInfoBrush}" FontSize="11" TextWrapping="Wrap"
+                           IsVisible="{Binding SniperVM.ManualSnipeInfoLabel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <TextBlock Text="{Binding SniperVM.ManualSnipeQuoteLabel}" Foreground="{Binding SniperVM.ManualSnipeQuoteBrush}" FontSize="11" FontWeight="SemiBold"
+                           IsVisible="{Binding SniperVM.ManualSnipeQuoteLabel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <TextBlock Text="Sell amount" FontSize="10" Foreground="#5A7A94" />
+                <NumericUpDown Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.ManualSnipeSellAmount}" Increment="1000" Minimum="0" FormatString="0.########" />
+                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="5">
+                  <Button Grid.Column="0" Classes="tf" Content="25%" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding SniperVM.ApplyManualSnipeSellPresetCommand}" CommandParameter="25" />
+                  <Button Grid.Column="1" Classes="tf" Content="50%" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding SniperVM.ApplyManualSnipeSellPresetCommand}" CommandParameter="50" />
+                  <Button Grid.Column="2" Classes="tf" Content="75%" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding SniperVM.ApplyManualSnipeSellPresetCommand}" CommandParameter="75" />
+                  <Button Grid.Column="3" Classes="tf" Content="100%" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding SniperVM.ApplyManualSnipeSellPresetCommand}" CommandParameter="100" />
+                </Grid>
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="6">
+                  <Button Grid.Column="0" Content="BUY" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                          Background="#21E6C1" Foreground="#081018" FontSize="10" FontWeight="Bold" CornerRadius="6"
+                          Command="{Binding SniperVM.ManualSnipeBuyCommand}" />
+                  <Button Grid.Column="1" Classes="tf" Content="SELL" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding SniperVM.ManualSnipeSellCommand}" />
+                  <Button Grid.Column="2" Classes="tf" Content="PROBE" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding SniperVM.ManualSnipeProbeCommand}" />
+                </Grid>
+                <TextBlock Text="{Binding SniperVM.ManualSnipeStatusMessage}" FontSize="11" Foreground="#8FA3B8" TextWrapping="Wrap"
+                           IsVisible="{Binding SniperVM.ManualSnipeStatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+            </Border>
+
+            <!-- Guard status -->
+            <Border Background="#0A1F1A" BorderBrush="{Binding SniperVM.SniperGuardStatusBrush}" BorderThickness="1" CornerRadius="10" Padding="12,10">
+              <StackPanel Spacing="4">
+                <TextBlock Text="{Binding SniperVM.SniperGuardStatusLabel}" FontSize="10" FontWeight="Bold" Foreground="{Binding SniperVM.SniperGuardStatusBrush}" />
+                <TextBlock Text="{Binding SniperVM.SniperGuardSummary}" FontSize="10" Foreground="#C8DCEF" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding SniperVM.SniperGuardDetail}" FontSize="10" Foreground="#8FA3B8" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
+            <!-- Action row -->
+            <StackPanel Spacing="6">
+              <Button Content="{Binding SniperVM.ArmToggleLabel}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                      Background="{Binding SniperVM.ArmFillHex}" Foreground="{Binding SniperVM.ArmTextHex}"
+                      BorderBrush="{Binding SniperVM.ArmBorderHex}" BorderThickness="1" CornerRadius="8"
+                      FontSize="12" FontWeight="Bold" Padding="0,10"
+                      Command="{Binding SniperVM.ToggleArmCommand}" />
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                <Button Grid.Column="0" Classes="tf" Content="SCAN NOW" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,8" Command="{Binding SniperVM.ScanNowCommand}" />
+                <Button Grid.Column="1" Classes="tf" Content="STOP" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,8" Command="{Binding SniperVM.StopCommand}" />
+              </Grid>
+              <Button Content="RESET SAFETY" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                      Background="Transparent" BorderBrush="#152233" BorderThickness="1" Foreground="#5A7A94"
+                      CornerRadius="8" FontSize="11" FontWeight="Bold" Padding="0,8"
+                      Command="{Binding SniperVM.ResetSafetyCommand}" />
+            </StackPanel>
+
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+
+      <!-- ─────────── CENTER: TABS + CONTENT ─────────── -->
+      <Grid Grid.Column="1" RowDefinitions="48,*" Background="#040B12">
+
+        <!-- Tab bar -->
+        <Border Grid.Row="0" Background="#0A1824" BorderBrush="#09151E" BorderThickness="0,0,0,1">
+          <Grid ColumnDefinitions="*,Auto" Margin="14,0">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+              <Button Classes="sniperTab" Classes.active="{Binding SniperVM.IsTrendingTab}" Command="{Binding SniperVM.SelectSniperTabCommand}" CommandParameter="trending">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Text="DEX Trending" VerticalAlignment="Center" />
+                  <Border Background="#1A2C3A" CornerRadius="999" Padding="6,1"><TextBlock Text="{Binding DexTrendingVM.TotalCount}" FontSize="10" /></Border>
+                </StackPanel>
+              </Button>
+              <Button Classes="sniperTab" Classes.active="{Binding SniperVM.IsFreshTab}" Command="{Binding SniperVM.SelectSniperTabCommand}" CommandParameter="fresh">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Text="Fresh Pairs" VerticalAlignment="Center" />
+                  <Border Background="#1A2C3A" CornerRadius="999" Padding="6,1"><TextBlock Text="{Binding SniperVM.FreshPairs.Count}" FontSize="10" /></Border>
+                </StackPanel>
+              </Button>
+              <Button Classes="sniperTab" Classes.active="{Binding SniperVM.IsAcceptedTab}" Command="{Binding SniperVM.SelectSniperTabCommand}" CommandParameter="accepted">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Text="Accepted Queue" VerticalAlignment="Center" />
+                  <Border Background="#1A2C3A" CornerRadius="999" Padding="6,1"><TextBlock Text="{Binding SniperVM.AcceptedPairs.Count}" FontSize="10" /></Border>
+                </StackPanel>
+              </Button>
+              <Button Classes="sniperTab" Classes.active="{Binding SniperVM.IsPositionsTab}" Command="{Binding SniperVM.SelectSniperTabCommand}" CommandParameter="positions">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Text="Open Positions" VerticalAlignment="Center" />
+                  <Border Background="#1A2C3A" CornerRadius="999" Padding="6,1"><TextBlock Text="{Binding SniperVM.OpenPositions.Count}" FontSize="10" /></Border>
+                </StackPanel>
+              </Button>
+              <Button Classes="sniperTab" Classes.active="{Binding SniperVM.IsPaperTab}" Command="{Binding SniperVM.SelectSniperTabCommand}" CommandParameter="paper">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Text="Paper Positions" VerticalAlignment="Center" />
+                  <Border Background="#1A2C3A" CornerRadius="999" Padding="6,1"><TextBlock Text="{Binding SniperVM.PaperPositions.Count}" FontSize="10" /></Border>
+                </StackPanel>
+              </Button>
+              <Button Classes="sniperTab" Classes.active="{Binding SniperVM.IsAnalyticsTab}" Content="Analytics" Command="{Binding SniperVM.SelectSniperTabCommand}" CommandParameter="analytics" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" IsVisible="{Binding SniperVM.IsTrendingTab}">
+              <Button Classes="tf" Classes.active="{Binding DexTrendingVM.IsTf5m}"  Content="5m"  Command="{Binding DexTrendingVM.SetTimeframeCommand}" CommandParameter="5m" />
+              <Button Classes="tf" Classes.active="{Binding DexTrendingVM.IsTf15m}" Content="15m" Command="{Binding DexTrendingVM.SetTimeframeCommand}" CommandParameter="15m" />
+              <Button Classes="tf" Classes.active="{Binding DexTrendingVM.IsTf1h}"  Content="1h"  Command="{Binding DexTrendingVM.SetTimeframeCommand}" CommandParameter="1h" />
+              <Button Classes="tf" Classes.active="{Binding DexTrendingVM.IsTf6h}"  Content="6h"  Command="{Binding DexTrendingVM.SetTimeframeCommand}" CommandParameter="6h" />
+              <Button Classes="tf" Classes.active="{Binding DexTrendingVM.IsTf24h}" Content="24h" Command="{Binding DexTrendingVM.SetTimeframeCommand}" CommandParameter="24h" />
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <!-- ── DEX Trending tab ── -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" IsVisible="{Binding SniperVM.IsTrendingTab}">
+          <StackPanel Margin="14" Spacing="12">
+            <!-- filter row -->
+            <WrapPanel Orientation="Horizontal">
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,14,6" VerticalAlignment="Center">
+                <TextBlock Text="Min Liq $" FontSize="10" Foreground="#3D5A72" VerticalAlignment="Center" />
+                <NumericUpDown Width="130" FontSize="11" Value="{Binding DexTrendingVM.MinLiquidityUsd}" Minimum="0" Maximum="10000000" Increment="5000" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,14,6" VerticalAlignment="Center">
+                <TextBlock Text="Age ≤" FontSize="10" Foreground="#3D5A72" VerticalAlignment="Center" />
+                <NumericUpDown Width="110" FontSize="11" Value="{Binding DexTrendingVM.MaxPoolAgeHours}" Minimum="1" Maximum="8760" Increment="24" />
+                <TextBlock Text="h" FontSize="10" Foreground="#3D5A72" VerticalAlignment="Center" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,14,6" VerticalAlignment="Center">
+                <TextBlock Text="Score ≥" FontSize="10" Foreground="#3D5A72" VerticalAlignment="Center" />
+                <NumericUpDown Width="100" FontSize="11" Value="{Binding DexTrendingVM.MinSecurityScore}" Minimum="0" Maximum="100" Increment="10" />
+              </StackPanel>
+              <TextBox Width="130" FontSize="11" Margin="0,0,14,6" Text="{Binding DexTrendingVM.SearchQuery}" Watermark="symbol / name…" />
+              <Button Classes="tf" Content="⟳ Refresh" Margin="0,0,14,6" Command="{Binding DexTrendingVM.RefreshCommand}" />
+              <TextBlock Text="{Binding DexTrendingVM.StatusLabel}" FontSize="10" Foreground="#3D5A72" VerticalAlignment="Center" Margin="0,0,0,6" />
+            </WrapPanel>
+
+            <!-- AI picks -->
+            <Border Background="#0A1824" CornerRadius="10" Padding="12,10">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                  <TextBlock Grid.Column="0" Text="AI Trending Picks — momentum vs rug risk" FontSize="12" FontWeight="Bold" Foreground="#E8F4FF" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding DexTrendingVM.AiSource}" FontSize="9" Foreground="#3D5A72" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <Button Grid.Column="2" Classes="tf active" Content="Rank with AI" Command="{Binding DexTrendingVM.RankWithAiCommand}" IsEnabled="{Binding !DexTrendingVM.AiRunning}" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding DexTrendingVM.AiPicks}" IsVisible="{Binding DexTrendingVM.HasAiPicks}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AiPickVM">
+                      <Border Background="#07111A" CornerRadius="8" Padding="9,7" Margin="0,0,8,8" Width="250">
+                        <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
+                          <Border Background="#040B12" CornerRadius="6" Padding="8,5" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding ScoreLabel}" FontWeight="Bold" Foreground="#21E6C1" FontSize="13" />
+                          </Border>
+                          <StackPanel Spacing="0" VerticalAlignment="Center" MinWidth="60">
+                            <TextBlock Text="{Binding Symbol}" FontWeight="Bold" FontSize="12" Foreground="#E8F4FF" />
+                            <TextBlock Text="{Binding Bias}" FontSize="10" FontWeight="Bold" Foreground="#F4B860" />
+                          </StackPanel>
+                          <TextBlock Text="{Binding Reason}" FontSize="10" Foreground="#8FA3B8" TextWrapping="Wrap" MaxWidth="130" VerticalAlignment="Center" />
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
+            <!-- table -->
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+              <StackPanel MinWidth="860" Spacing="4">
+                <Grid ColumnDefinitions="26,90,96,66,96,78,78,78,48,86,96" Margin="8,0">
+                  <TextBlock Grid.Column="1" Text="TOKEN"  Classes="secLabel" />
+                  <TextBlock Grid.Column="2" Text="PRICE"  Classes="secLabel" />
+                  <TextBlock Grid.Column="3" Text="CHANGE" Classes="secLabel" />
+                  <TextBlock Grid.Column="4" Text="TREND"  Classes="secLabel" />
+                  <TextBlock Grid.Column="5" Text="VOLUME" Classes="secLabel" />
+                  <TextBlock Grid.Column="6" Text="LIQ"    Classes="secLabel" />
+                  <TextBlock Grid.Column="7" Text="MCAP"   Classes="secLabel" />
+                  <TextBlock Grid.Column="8" Text="AGE"    Classes="secLabel" />
+                  <TextBlock Grid.Column="10" Text="SCORE" Classes="secLabel" />
+                </Grid>
+                <TextBlock Text="Loading trending tokens…" IsVisible="{Binding DexTrendingVM.IsLoading}" Foreground="#8FA3B8" FontSize="12" HorizontalAlignment="Center" Margin="0,8" />
+                <ItemsControl ItemsSource="{Binding DexTrendingVM.FilteredTokens}" IsVisible="{Binding !DexTrendingVM.IsLoading}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:DexTokenRowViewModel">
-                      <Border Background="#0A1520"
-                              CornerRadius="5"
-                              Padding="4,5"
-                              Margin="0,1">
-                        <Border.Transitions>
-                          <Transitions>
-                            <BrushTransition Property="Background" Duration="0:0:0.15" />
-                          </Transitions>
-                        </Border.Transitions>
-                        <Grid ColumnDefinitions="28,64,*,70,70,60,46,70,Auto"
-                              ColumnSpacing="6"
-                              VerticalAlignment="Center">
-                          <!-- Chain icon -->
-                          <TextBlock Grid.Column="0"
-                                     Text="{Binding ChainIcon}"
-                                     FontSize="14"
-                                     VerticalAlignment="Center"
-                                     HorizontalAlignment="Center" />
-                          <!-- Symbol + name tooltip -->
-                          <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding Symbol}"
-                                       FontSize="12"
-                                       FontWeight="Bold"
-                                       TextTrimming="CharacterEllipsis"
-                                       ToolTip.Tip="{Binding Name}" />
-                            <TextBlock Text="{Binding DexId}"
-                                       FontSize="9"
-                                       Foreground="#4A6070"
-                                       TextTrimming="CharacterEllipsis" />
+                      <Border Background="#07111A" CornerRadius="8" Padding="8,9" Margin="0,0,0,1">
+                        <Grid ColumnDefinitions="26,90,96,66,96,78,78,78,48,86,96" VerticalAlignment="Center">
+                          <TextBlock Grid.Column="0" Text="{Binding ChainIcon}" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          <StackPanel Grid.Column="1" Spacing="0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Symbol}" FontSize="12" FontWeight="Bold" Foreground="#D4EEFF" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
+                            <TextBlock Text="{Binding DexId}" FontSize="9" Foreground="#3D5A72" TextTrimming="CharacterEllipsis" />
                           </StackPanel>
-                          <!-- Price -->
-                          <TextBlock Grid.Column="2"
-                                     Text="{Binding PriceLabel}"
-                                     FontSize="12"
-                                     VerticalAlignment="Center"
-                                     Foreground="#C8D6E5" />
-                          <!-- Price change -->
-                          <TextBlock Grid.Column="3"
-                                     Text="{Binding PriceChangeLabel}"
-                                     FontSize="12"
-                                     FontWeight="Bold"
-                                     Foreground="{Binding PriceChangeBrush}"
-                                     VerticalAlignment="Center" />
-                          <!-- Volume -->
-                          <TextBlock Grid.Column="4"
-                                     Text="{Binding VolumeLabel}"
-                                     FontSize="12"
-                                     VerticalAlignment="Center"
-                                     Foreground="#C8D6E5" />
-                          <!-- Liquidity -->
-                          <TextBlock Grid.Column="5"
-                                     Text="{Binding LiquidityLabel}"
-                                     FontSize="12"
-                                     VerticalAlignment="Center"
-                                     Foreground="#C8D6E5" />
-                          <!-- Age -->
-                          <TextBlock Grid.Column="6"
-                                     Text="{Binding AgeLabel}"
-                                     FontSize="12"
-                                     VerticalAlignment="Center"
-                                     Foreground="#8FA3B8" />
-                          <!-- Security score badge -->
-                          <TextBlock Grid.Column="7"
-                                     Text="{Binding SecurityBadge}"
-                                     FontSize="11"
-                                     VerticalAlignment="Center"
-                                     ToolTip.Tip="Heuristic score: liquidity + age + volume + price stability (0-100)" />
-                          <!-- Open in Sniper -->
-                          <Button Grid.Column="8"
-                                  Content="▶ Sniper"
-                                  FontSize="11"
-                                  Padding="8,3"
-                                  Classes="GhostButton"
-                                  VerticalAlignment="Center"
-                                  ToolTip.Tip="Open this token in Sniper"
-                                  Command="{Binding $parent[Window].DataContext.DexTrendingVM.OpenInSniperCommand}"
-                                  CommandParameter="{Binding}" />
+                          <TextBlock Grid.Column="2" Text="{Binding PriceLabel}" FontFamily="Consolas, monospace" FontSize="11" Foreground="#C8DCEF" VerticalAlignment="Center" />
+                          <Border Grid.Column="3" Background="#0A1520" CornerRadius="5" Padding="6,3" Margin="0,0,6,0" VerticalAlignment="Center" HorizontalAlignment="Left">
+                            <TextBlock Text="{Binding PriceChangeLabel}" FontFamily="Consolas, monospace" FontSize="11" FontWeight="Bold" Foreground="{Binding PriceChangeBrush}" />
+                          </Border>
+                          <Border Grid.Column="4" Width="90" Height="20" VerticalAlignment="Center" ClipToBounds="True">
+                            <Polyline Points="{Binding SparkPoints}" Stroke="{Binding PriceChangeBrush}" StrokeThickness="1.4" />
+                          </Border>
+                          <TextBlock Grid.Column="5" Text="{Binding VolumeLabel}" FontFamily="Consolas, monospace" FontSize="11" Foreground="#5A7A94" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="6" Text="{Binding LiquidityLabel}" FontFamily="Consolas, monospace" FontSize="11" Foreground="#5A7A94" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="7" Text="{Binding MarketCapLabel}" FontFamily="Consolas, monospace" FontSize="11" Foreground="#5A7A94" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="8" Text="{Binding AgeLabel}" FontSize="11" Foreground="#5A7A94" VerticalAlignment="Center" />
+                          <Button Grid.Column="9" Content="▶ Snipe" FontSize="10" FontWeight="Bold" Foreground="#21E6C1"
+                                  Background="#0A1E1C" BorderBrush="#1A3A3A" BorderThickness="1" CornerRadius="6" Padding="8,5"
+                                  HorizontalAlignment="Left" VerticalAlignment="Center"
+                                  Command="{Binding $parent[Window].DataContext.DexTrendingVM.OpenInSniperCommand}" CommandParameter="{Binding}" />
+                          <Grid Grid.Column="10" ColumnDefinitions="44,*" VerticalAlignment="Center">
+                            <Border Grid.Column="0" Height="5" CornerRadius="3" Background="#152233" ClipToBounds="True" VerticalAlignment="Center">
+                              <Border HorizontalAlignment="Left" CornerRadius="3" Background="{Binding ScoreColorHex}" Width="{Binding ScoreBarWidth}" />
+                            </Border>
+                            <TextBlock Grid.Column="1" Margin="6,0,0,0" Text="{Binding SecurityScore}" FontSize="10" FontWeight="Bold" Foreground="{Binding ScoreColorHex}" VerticalAlignment="Center" />
+                          </Grid>
                         </Grid>
                       </Border>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
-
-                <!-- ── Empty state ────────────────────────────────────────── -->
-                <StackPanel IsVisible="{Binding DexTrendingVM.HasNoFilteredTokens}"
-                            HorizontalAlignment="Center"
-                            Spacing="4"
-                            Margin="0,12">
-                  <TextBlock Text="No tokens match the current filters."
-                             Foreground="#8FA3B8"
-                             FontSize="13"
-                             HorizontalAlignment="Center" />
-                  <TextBlock Text="Try lowering Score ≥ or Min Liq, or increase Pool Age limit."
-                             Foreground="#4A6070"
-                             FontSize="11"
-                             HorizontalAlignment="Center" />
-                </StackPanel>
-
-                <!-- ── Status bar ─────────────────────────────────────────── -->
-                <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock Grid.Column="0"
-                             Text="{Binding DexTrendingVM.StatusLabel}"
-                             Foreground="#4A6070"
-                             FontSize="11" />
-                  <TextBlock Grid.Column="1"
-                             Foreground="#3A5060"
-                             FontSize="10">
-                    <TextBlock.Text>
-                      <MultiBinding StringFormat="Showing {0} / {1}">
-                        <Binding Path="DexTrendingVM.FilteredTokens.Count" />
-                        <Binding Path="DexTrendingVM.TotalCount" />
-                      </MultiBinding>
-                    </TextBlock.Text>
-                  </TextBlock>
-                </Grid>
-
               </StackPanel>
-            </Border>
-            <!-- ═══ End DEX Trending Feed ═══ -->
+            </ScrollViewer>
+          </StackPanel>
+        </ScrollViewer>
 
-            <Border Classes="HeroPanel"
-                    BorderBrush="{Binding WalletVM.GlobalQuoteAssetModeBrush}"
-                    BorderThickness="1.5">
-              <StackPanel Spacing="16">
-                <StackPanel Spacing="8">
-                  <TextBlock Classes="Overline" Text="MULTI-CHAIN SNIPER" />
-                  <TextBlock Classes="H1" Text="Fresh Pair Hunter" />
-                  <TextBlock Text="{Binding SniperVM.StatusMessage}"
-                             Foreground="#8FA3B8"
-                             TextWrapping="Wrap"
-                             MaxWidth="900" />
-                </StackPanel>
-                <WrapPanel Orientation="Horizontal">
-                  <Border Classes="SurfaceCard" MinWidth="150" Margin="0,0,12,0">
-                    <StackPanel Spacing="4">
-                      <TextBlock Classes="Overline" Text="Mode" />
-                      <TextBlock Text="{Binding SniperVM.AutoModeLabel}" FontWeight="Bold" />
-                    </StackPanel>
-                  </Border>
-                  <Border Classes="SurfaceCard" MinWidth="170" Margin="0,0,12,0">
-                    <StackPanel Spacing="4">
-                      <TextBlock Classes="Overline" Text="Preset" />
-                      <TextBlock Text="{Binding SniperVM.PresetSummary}" FontWeight="Bold" />
-                    </StackPanel>
-                  </Border>
-                  <Border Classes="SurfaceCard" MinWidth="170" Margin="0,0,12,0">
-                    <StackPanel Spacing="4">
-                      <TextBlock Classes="Overline" Text="Execution" />
-                      <TextBlock Text="{Binding SniperVM.ExecutionModeLabel}" FontWeight="Bold" />
-                    </StackPanel>
-                  </Border>
-                  <Border Classes="SurfaceCard" MinWidth="220" Margin="0,0,12,0">
-                    <StackPanel Spacing="4">
-                      <TextBlock Classes="Overline" Text="Enabled Chains" />
-                      <TextBlock Text="{Binding SniperVM.EnabledChainsSummary}" FontWeight="Bold" TextWrapping="Wrap" MaxWidth="240" />
-                    </StackPanel>
-                  </Border>
-                  <Border Classes="SurfaceCard" MinWidth="180" Margin="0,0,12,0">
-                    <StackPanel Spacing="4">
-                      <TextBlock Classes="Overline" Text="Last Scan" />
-                      <TextBlock Text="{Binding SniperVM.LastScanLocal, StringFormat={}{0:HH:mm:ss}}" FontWeight="Bold" />
-                    </StackPanel>
-                  </Border>
-                  <Border Classes="SurfaceCard" MinWidth="220" Margin="0,0,12,0">
-                    <StackPanel Spacing="4">
-                      <TextBlock Classes="Overline" Text="Cooldown" />
-                      <TextBlock Text="{Binding SniperVM.CooldownStatus}" FontWeight="Bold" />
-                    </StackPanel>
-                  </Border>
-                  <Border Classes="SurfaceCard" MinWidth="220" Margin="0,0,12,0">
-                    <StackPanel Spacing="4">
-                      <TextBlock Classes="Overline" Text="Exit Engine" />
-                      <TextBlock Text="{Binding SniperVM.ExitEngineSummary}" FontWeight="Bold" TextWrapping="Wrap" MaxWidth="260" />
-                    </StackPanel>
-                  </Border>
-                  <Border Classes="SurfaceCard" MinWidth="180">
-                    <StackPanel Spacing="4">
-                      <TextBlock Classes="Overline" Text="Safety State" />
-                      <TextBlock Text="{Binding SniperVM.SafetySummary}" FontWeight="Bold" TextWrapping="Wrap" MaxWidth="220" />
-                    </StackPanel>
-                  </Border>
-                </WrapPanel>
-              </StackPanel>
-            </Border>
-
-            <Grid ColumnDefinitions="360,*" ColumnSpacing="16">
-              <Border Classes="Panel">
-                <StackPanel Spacing="14">
-                  <TextBlock Classes="H2" Text="Sniper Controls" />
-                  <TextBlock Text="{Binding SniperVM.WalletStatus}"
-                             Foreground="#8B949E"
-                             TextWrapping="Wrap" />
-
-                  <Border Classes="SurfaceCard">
-                    <StackPanel Spacing="10">
-                      <TextBlock Classes="Overline" Text="Scanner Mode" />
-                      <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="14" RowSpacing="10">
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Venue" VerticalAlignment="Center" />
-                        <ComboBox Grid.Row="0" Grid.Column="1"
-                                  ItemsSource="{Binding SniperVM.SniperVenueOptions}"
-                                  SelectedItem="{Binding SniperVM.SelectedScanVenue}" />
-
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Profile" VerticalAlignment="Center" />
-                        <ComboBox Grid.Row="1" Grid.Column="1"
-                                  ItemsSource="{Binding SniperVM.TradingProfileOptions}"
-                                  SelectedItem="{Binding SniperVM.SelectedTradingProfile}" />
-
-                        <TextBlock Grid.Row="2" Grid.Column="0"
-                                   Grid.ColumnSpan="2"
-                                   Text="{Binding SniperVM.VenueSummary}"
-                                   Foreground="#8B949E"
-                                   TextWrapping="Wrap" />
-
-                        <TextBlock Grid.Row="3" Grid.Column="0"
-                                   Grid.ColumnSpan="2"
-                                   Text="{Binding SniperVM.TradingProfileSummary}"
-                                   Foreground="#8B949E"
-                                   TextWrapping="Wrap" />
-
-                        <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8"
-                                    IsVisible="{Binding SniperVM.IsScalpProfile}">
-                          <TextBlock Classes="Overline" Text="Scalp Presets" />
-                          <WrapPanel Orientation="Horizontal">
-                            <Button Content="TIGHT"
-                                    Command="{Binding SniperVM.ApplyScalpPresetCommand}"
-                                    CommandParameter="Tight"
-                                    Width="90"
-                                    Margin="0,0,8,0"
-                                    Classes="GhostButton" />
-                            <Button Content="STANDARD"
-                                    Command="{Binding SniperVM.ApplyScalpPresetCommand}"
-                                    CommandParameter="Standard"
-                                    Width="110"
-                                    Margin="0,0,8,0" />
-                            <Button Content="AGGRO"
-                                    Command="{Binding SniperVM.ApplyScalpPresetCommand}"
-                                    CommandParameter="Aggro"
-                                    Width="90"
-                                    Classes="GhostButton" />
-                          </WrapPanel>
-                          <TextBlock Text="{Binding SniperVM.ScalpPresetSummary}"
-                                     Foreground="#8B949E"
-                                     TextWrapping="Wrap" />
-                        </StackPanel>
-
-                        <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
-                              ColumnDefinitions="Auto,*"
-                              RowDefinitions="Auto,Auto,Auto,Auto"
-                              ColumnSpacing="14"
-                              RowSpacing="10"
-                              IsVisible="{Binding SniperVM.IsFuturesVenue}">
-                          <TextBlock Grid.Row="0" Grid.Column="0" Text="Leverage" VerticalAlignment="Center" />
-                          <NumericUpDown Grid.Row="0" Grid.Column="1"
-                                         Value="{Binding SniperVM.FuturesLeverage}"
-                                         Increment="1"
-                                         Minimum="1"
-                                         Maximum="50"
-                                         FormatString="0" />
-                          <TextBlock Grid.Row="1" Grid.Column="0" Text="Bias" VerticalAlignment="Center" />
-                          <ComboBox Grid.Row="1" Grid.Column="1"
-                                    ItemsSource="{Binding SniperVM.FuturesBiasOptions}"
-                                    SelectedItem="{Binding SniperVM.SelectedFuturesBias}" />
-                          <TextBlock Grid.Row="2" Grid.Column="0"
-                                     Grid.ColumnSpan="2"
-                                     Text="{Binding SniperVM.FuturesExecutionSummary}"
-                                     Foreground="#8B949E"
-                                     TextWrapping="Wrap" />
-                        </Grid>
+        <!-- ── Candidate tabs (fresh / accepted / positions / paper) ── -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" IsVisible="{Binding SniperVM.IsCandidateTab}">
+          <ItemsControl ItemsSource="{Binding SniperVM.CurrentCandidates}" Margin="14">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:SniperCandidateViewModel">
+                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="0" Margin="0,0,0,10"
+                        Background="Transparent" BorderThickness="0"
+                        Command="{Binding $parent[Window].DataContext.SniperVM.SelectSniperCandidateCommand}" CommandParameter="{Binding}">
+                  <Border Background="#07111A" BorderBrush="#152233" BorderThickness="1" CornerRadius="10" Padding="12,12">
+                    <StackPanel Spacing="8">
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="{Binding DisplayName}" FontSize="13" FontWeight="Bold" Foreground="#D4EEFF" />
+                        <TextBlock Grid.Column="1" Text="{Binding PaperPnlLabel}" FontFamily="Consolas, monospace" FontSize="12" FontWeight="Bold" Foreground="{Binding PnlAccentHex}" />
                       </Grid>
-                    </StackPanel>
-                  </Border>
-
-                  <Border Classes="SurfaceCard">
-                    <StackPanel Spacing="10">
-                      <TextBlock Classes="Overline" Text="Preset Studio" />
+                      <TextBlock Text="{Binding PairLabel}" FontSize="11" Foreground="#3D5A72" />
                       <WrapPanel Orientation="Horizontal">
-                        <Button Content="SAFE"
-                                Command="{Binding SniperVM.ApplySafePresetCommand}"
-                                Width="90"
-                                Margin="0,0,8,0"
-                                Classes="GhostButton" />
-                        <Button Content="BALANCED"
-                                Command="{Binding SniperVM.ApplyBalancedPresetCommand}"
-                                Width="110"
-                                Margin="0,0,8,0" />
-                        <Button Content="AGGRESSIVE"
-                                Command="{Binding SniperVM.ApplyAggressivePresetCommand}"
-                                Width="120"
-                                Classes="GhostButton" />
+                        <TextBlock Text="{Binding RiskBadgeText}" FontSize="10" FontWeight="Bold" Foreground="{Binding RiskAccentHex}" Margin="0,0,10,0" />
+                        <TextBlock Text="{Binding Reason}" FontSize="10" Foreground="#8FA3B8" TextWrapping="Wrap" MaxWidth="520" />
                       </WrapPanel>
-                      <TextBlock Text="{Binding SniperVM.PresetSummary}"
-                                 Foreground="#8B949E"
-                                 TextWrapping="Wrap" />
-                    </StackPanel>
-                  </Border>
-
-                  <Border Classes="SurfaceCard">
-                    <StackPanel Spacing="10">
-                      <TextBlock Classes="Overline" Text="Execution Mode" />
-                      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                        <Border Background="{Binding SniperVM.StableQuoteModeBrush}" CornerRadius="10" Padding="10,4">
-                          <TextBlock Text="{Binding SniperVM.StableQuoteModeLabel}" Foreground="#081018" FontWeight="Bold" />
+                      <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding SecurityScanComplete}">
+                        <Border Background="{Binding SecurityVerdictColor}" CornerRadius="4" Padding="7,2" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding SecurityVerdict}" FontSize="9" FontWeight="Bold" Foreground="White" />
                         </Border>
-                        <TextBlock Grid.Column="1"
-                                   Text="{Binding SniperVM.StableQuoteSpendableLabel}"
-                                   Foreground="#8B949E"
-                                   TextWrapping="Wrap"
-                                   VerticalAlignment="Center" />
-                      </Grid>
-                      <TextBlock Text="{Binding SniperVM.StableQuoteAvailabilityMessage}"
-                                 Foreground="{Binding SniperVM.StableQuoteAvailabilityBrush}"
-                                 TextWrapping="Wrap"
-                                 IsVisible="{Binding SniperVM.IsDexVenue}" />
-                      <CheckBox Content="Enable full auto-buy on accepted pairs"
-                                IsChecked="{Binding SniperVM.AutoBuyEnabled}" />
-                      <CheckBox Content="Use paper sniper instead of real execution"
-                                IsChecked="{Binding SniperVM.PaperTradingEnabled}" />
-                      <CheckBox Content="Auto-sell with take-profit when the price grows"
-                                IsChecked="{Binding SniperVM.AutoTakeProfitEnabled}" />
-                      <CheckBox Content="Cut the position automatically with stop-loss"
-                                IsChecked="{Binding SniperVM.AutoStopLossEnabled}" />
-                      <CheckBox Content="Protect gained profit with trailing stop"
-                                IsChecked="{Binding SniperVM.AutoTrailingStopEnabled}" />
-                      <CheckBox Content="Require native or wrapped-native quote pair only"
-                                IsChecked="{Binding SniperVM.RequireBnbQuote}"
-                                IsVisible="{Binding SniperVM.IsDexVenue}" />
-                      <CheckBox Content="Use stable-first quote routing for scanner and live buys"
-                                IsChecked="{Binding SniperVM.PreferStableQuote}"
-                                IsVisible="{Binding SniperVM.IsDexVenue}" />
-                      <CheckBox Content="Enable execution guard before buy"
-                                IsChecked="{Binding SniperVM.EnableExecutionGuard}" />
-                      <CheckBox Content="Block suspected honeypots"
-                                IsChecked="{Binding SniperVM.BlockSuspectedHoneypots}"
-                                IsVisible="{Binding SniperVM.IsDexVenue}" />
-                      <CheckBox Content="Deep security scan before buy (GoPlus + Honeypot.is / RugCheck)"
-                                IsChecked="{Binding SniperVM.EnableExternalSecurityScan}"
-                                IsVisible="{Binding SniperVM.IsDexVenue}" />
-                      <TextBlock Text="{Binding SniperVM.QuoteRoutingSummary}"
-                                 Foreground="#8B949E"
-                                 TextWrapping="Wrap" />
-                      <TextBlock Text="{Binding SniperVM.SupportedQuoteRoutesSummary}"
-                                 Foreground="#8B949E"
-                                 TextWrapping="Wrap" />
-                    </StackPanel>
-                  </Border>
-
-                  <Border Classes="SurfaceCard" IsVisible="{Binding SniperVM.IsDexVenue}">
-                    <StackPanel Spacing="10">
-                      <TextBlock Classes="Overline" Text="Compatibility" />
-                      <WrapPanel Orientation="Horizontal">
-                        <Button Content="ALL CHAINS"
-                                Command="{Binding SniperVM.ApplyAllChainsCommand}"
-                                Margin="0,0,8,0"
-                                Classes="GhostButton" />
-                        <Button Content="EVM ONLY"
-                                Command="{Binding SniperVM.ApplyEvmChainsCommand}"
-                                Classes="GhostButton" />
-                      </WrapPanel>
-                      <TextBlock Text="{Binding SniperVM.ChainCoverageSummary}"
-                                 Foreground="#8B949E"
-                                 TextWrapping="Wrap" />
-                      <TextBlock Text="{Binding SniperVM.TokenFilterSummary}"
-                                 Foreground="#8B949E"
-                                 TextWrapping="Wrap" />
-                    </StackPanel>
-                  </Border>
-
-                  <Border Classes="SurfaceCard">
-                    <Grid ColumnDefinitions="132,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="14">
-                      <TextBlock Grid.Row="0"
-                                 Grid.Column="0"
-                                 Grid.ColumnSpan="2"
-                                 Text="{Binding SniperVM.BuyAmountLabel}"
-                                 TextWrapping="Wrap"
-                                 VerticalAlignment="Center" />
-                      <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8">
-                        <Grid ColumnDefinitions="*,88,Auto,70" ColumnSpacing="8">
-                          <NumericUpDown Grid.Column="0"
-                                         MinWidth="140"
-                                         HorizontalAlignment="Stretch"
-                                         Value="{Binding SniperVM.BuyAmountBnb}"
-                                         Increment="0.001"
-                                         Minimum="0"
-                                         FormatString="0.0000" />
-                          <Button Grid.Column="1"
-                                  Content="MAX"
-                                  Classes="GhostButton"
-                                  Command="{Binding SniperVM.UseMaxBuyAmountCommand}" />
-                          <TextBlock Grid.Column="2" Text="Slip%" VerticalAlignment="Center" Foreground="#8FA3B8" />
-                          <NumericUpDown Grid.Column="3"
-                                         Value="{Binding SniperVM.SlippagePercent}"
-                                         Increment="0.5" FormatString="0.#"
-                                         Minimum="0.1" Maximum="50"
-                                         ToolTip.Tip="{Binding SniperVM.SlippageSummary}" />
-                        </Grid>
-                        <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
-                          <Button Grid.Column="0" Content="25%" Classes="GhostButton" Command="{Binding SniperVM.ApplyBuyBalancePresetCommand}" CommandParameter="25" />
-                          <Button Grid.Column="1" Content="50%" Classes="GhostButton" Command="{Binding SniperVM.ApplyBuyBalancePresetCommand}" CommandParameter="50" />
-                          <Button Grid.Column="2" Content="75%" Classes="GhostButton" Command="{Binding SniperVM.ApplyBuyBalancePresetCommand}" CommandParameter="75" />
-                          <Button Grid.Column="3" Content="100%" Classes="GhostButton" Command="{Binding SniperVM.ApplyBuyBalancePresetCommand}" CommandParameter="100" />
-                        </Grid>
+                        <TextBlock Text="{Binding SecurityChecksSummary}" FontSize="10" Foreground="#5A7A94" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="480" />
                       </StackPanel>
-
-                      <TextBlock Grid.Row="2" Grid.Column="0" Text="Min Liquidity" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="2" Grid.Column="1"
-                                     MinWidth="170"
-                                     HorizontalAlignment="Stretch"
-                                     Value="{Binding SniperVM.MinLiquidityUsd}"
-                                     Increment="1000"
-                                     Minimum="0"
-                                     FormatString="0" />
-
-                      <TextBlock Grid.Row="3" Grid.Column="0" Text="Max Liquidity" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="3" Grid.Column="1"
-                                     MinWidth="170"
-                                     HorizontalAlignment="Stretch"
-                                     Value="{Binding SniperVM.MaxLiquidityUsd}"
-                                     Increment="5000"
-                                     Minimum="0"
-                                     FormatString="0" />
-
-                      <TextBlock Grid.Row="4" Grid.Column="0" Text="Min Volume 24h" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="4" Grid.Column="1"
-                                     MinWidth="170"
-                                     HorizontalAlignment="Stretch"
-                                     Value="{Binding SniperVM.MinVolume24hUsd}"
-                                     Increment="10000"
-                                     Minimum="0"
-                                     FormatString="0" />
-
-                      <TextBlock Grid.Row="5" Grid.Column="0" Text="Min 5m %" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="5" Grid.Column="1"
-                                     MinWidth="170"
-                                     HorizontalAlignment="Stretch"
-                                     Value="{Binding SniperVM.MinMomentum5m}"
-                                     Increment="1"
-                                     Minimum="-100"
-                                     FormatString="0.##" />
-
-                      <TextBlock Grid.Row="6" Grid.Column="0" Text="Max MCap" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="6" Grid.Column="1"
-                                     MinWidth="170"
-                                     HorizontalAlignment="Stretch"
-                                     Value="{Binding SniperVM.MaxMarketCapUsd}"
-                                     Increment="100000"
-                                     Minimum="0"
-                                     FormatString="0" />
-                    </Grid>
-                  </Border>
-
-                  <Border Classes="SurfaceCard">
-                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="14">
-                      <TextBlock Grid.Row="0" Grid.Column="0" Text="Strategy Mode" VerticalAlignment="Center" />
-                      <ComboBox Grid.Row="0" Grid.Column="1"
-                                ItemsSource="{Binding SniperVM.StrategyModeOptions}"
-                                SelectedItem="{Binding SniperVM.SelectedStrategyMode}" />
-
-                      <TextBlock Grid.Row="1" Grid.Column="0" Text="Min Pair Age (min)" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="1" Grid.Column="1"
-                                     Value="{Binding SniperVM.MinPairAgeMinutes}"
-                                     Increment="1"
-                                     Minimum="0"
-                                     FormatString="0.#" />
-
-                      <TextBlock Grid.Row="2" Grid.Column="0" Text="Max Pair Age (min)" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="2" Grid.Column="1"
-                                     Value="{Binding SniperVM.MaxPairAgeMinutes}"
-                                     Increment="5"
-                                     Minimum="0"
-                                     FormatString="0.#" />
-
-                      <TextBlock Grid.Row="3" Grid.Column="0" Text="Launch Max Age (min)" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="3" Grid.Column="1"
-                                     Value="{Binding SniperVM.LaunchMaxPairAgeMinutes}"
-                                     Increment="1"
-                                     Minimum="1"
-                                     FormatString="0.#" />
-
-                      <TextBlock Grid.Row="4" Grid.Column="0" Text="Warm Pair Age (min)" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="4" Grid.Column="1"
-                                     Value="{Binding SniperVM.WarmPairMinAgeMinutes}"
-                                     Increment="1"
-                                     Minimum="0"
-                                     FormatString="0.#" />
-
-                      <TextBlock Grid.Row="5" Grid.Column="0"
-                                 Grid.ColumnSpan="2"
-                                 Text="{Binding SniperVM.StrategyModeSummary}"
-                                 Foreground="#8B949E"
-                                 TextWrapping="Wrap" />
-                    </Grid>
-                  </Border>
-
-                  <Border Classes="SurfaceCard">
-                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="14">
-                      <TextBlock Grid.Row="0" Grid.Column="0" Text="Cooldown (sec)" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="0" Grid.Column="1"
-                                     Value="{Binding SniperVM.CooldownSeconds}"
-                                     Increment="15"
-                                     Minimum="0"
-                                     FormatString="0" />
-
-                      <TextBlock Grid.Row="1" Grid.Column="0" Text="Max Open Positions" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="1" Grid.Column="1"
-                                     Value="{Binding SniperVM.MaxSimultaneousPositions}"
-                                     Increment="1"
-                                     Minimum="1"
-                                     FormatString="0" />
-
-                      <TextBlock Grid.Row="2" Grid.Column="0" Text="Max Buys / Session" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="2" Grid.Column="1"
-                                     Value="{Binding SniperVM.MaxBuysPerSession}"
-                                     Increment="1"
-                                     Minimum="1"
-                                     FormatString="0" />
-
-                      <TextBlock Grid.Row="3" Grid.Column="0" Text="Max Risk Score" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="3" Grid.Column="1"
-                                     Value="{Binding SniperVM.MaxRiskScore}"
-                                     Increment="5"
-                                     Minimum="0"
-                                     FormatString="0" />
-
-                      <TextBlock Grid.Row="4" Grid.Column="0" Text="Max Vol/Liq Ratio" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="4" Grid.Column="1"
-                                     Value="{Binding SniperVM.MaxVolumeToLiquidityRatio}"
-                                     Increment="1"
-                                     Minimum="0"
-                                     FormatString="0.##" />
-
-                      <TextBlock Grid.Row="5" Grid.Column="0" Text="Max MCap/Liq Ratio" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="5" Grid.Column="1"
-                                     Value="{Binding SniperVM.MaxMarketCapToLiquidityRatio}"
-                                     Increment="1"
-                                     Minimum="0"
-                                     FormatString="0.##" />
-
-                      <TextBlock Grid.Row="6" Grid.Column="0" Text="Max Buy Tax %" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="6" Grid.Column="1"
-                                     Value="{Binding SniperVM.MaxSimulatedBuyTaxPercent}"
-                                     Increment="1"
-                                     Minimum="0"
-                                     FormatString="0.##" />
-
-                      <TextBlock Grid.Row="7" Grid.Column="0" Text="Max Sell Tax %" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="7" Grid.Column="1"
-                                     Value="{Binding SniperVM.MaxSimulatedSellTaxPercent}"
-                                     Increment="1"
-                                     Minimum="0"
-                                     FormatString="0.##" />
-
-                      <TextBlock Grid.Row="8" Grid.Column="0" Text="Take Profit %" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="8" Grid.Column="1"
-                                     Value="{Binding SniperVM.TakeProfitPercent}"
-                                     Increment="5"
-                                     Minimum="1"
-                                     FormatString="0.##" />
-
-                      <TextBlock Grid.Row="9" Grid.Column="0" Text="Stop Loss %" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="9" Grid.Column="1"
-                                     Value="{Binding SniperVM.StopLossPercent}"
-                                     Increment="2"
-                                     Minimum="1"
-                                     FormatString="0.##" />
-
-                      <TextBlock Grid.Row="10" Grid.Column="0" Text="Trailing Stop %" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="10" Grid.Column="1"
-                                     Value="{Binding SniperVM.TrailingStopPercent}"
-                                     Increment="2"
-                                     Minimum="1"
-                                     FormatString="0.##" />
-
-                      <CheckBox Grid.Row="11" Grid.Column="0" Grid.ColumnSpan="2"
-                                Content="Enable partial take-profit runner"
-                                IsChecked="{Binding SniperVM.PartialTakeProfitEnabled}" />
-
-                      <TextBlock Grid.Row="12" Grid.Column="0" Text="Partial TP Trigger %" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="12" Grid.Column="1"
-                                     Value="{Binding SniperVM.PartialTakeProfitTriggerPercent}"
-                                     Increment="2"
-                                     Minimum="1"
-                                     FormatString="0.##" />
-
-                      <TextBlock Grid.Row="13" Grid.Column="0" Text="Partial TP Sell %" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="13" Grid.Column="1"
-                                     Value="{Binding SniperVM.PartialTakeProfitSellPercent}"
-                                     Increment="5"
-                                     Minimum="1"
-                                     Maximum="99"
-                                     FormatString="0.##" />
-
-                      <CheckBox Grid.Row="14" Grid.Column="0" Grid.ColumnSpan="2"
-                                Content="Arm break-even protection after a green move"
-                                IsChecked="{Binding SniperVM.BreakEvenEnabled}" />
-
-                      <TextBlock Grid.Row="15" Grid.Column="0" Text="Break-even Arm %" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="15" Grid.Column="1"
-                                     Value="{Binding SniperVM.BreakEvenTriggerPercent}"
-                                     Increment="2"
-                                     Minimum="1"
-                                     FormatString="0.##" />
-
-                      <TextBlock Grid.Row="16" Grid.Column="0"
-                                 Grid.ColumnSpan="2"
-                                 Text="{Binding SniperVM.ExitEngineSummary}"
-                                 Foreground="#8B949E"
-                                 TextWrapping="Wrap" />
-                    </Grid>
-                  </Border>
-
-                  <Border Classes="SurfaceCard">
-                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="14">
-                      <TextBlock Grid.Row="0" Grid.Column="0" Text="Max Daily Live Loss" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="0" Grid.Column="1"
-                                     Value="{Binding SniperVM.MaxDailyLiveLossNative}"
-                                     Increment="0.001"
-                                     Minimum="0"
-                                     FormatString="0.0000" />
-
-                      <TextBlock Grid.Row="1" Grid.Column="0" Text="Max Chain Exposure" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="1" Grid.Column="1"
-                                     Value="{Binding SniperVM.MaxExposurePerChainNative}"
-                                     Increment="0.001"
-                                     Minimum="0"
-                                     FormatString="0.0000" />
-
-                      <TextBlock Grid.Row="2" Grid.Column="0" Text="Max Wallet Exposure" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="2" Grid.Column="1"
-                                     Value="{Binding SniperVM.MaxExposurePerWalletNative}"
-                                     Increment="0.001"
-                                     Minimum="0"
-                                     FormatString="0.0000" />
-
-                      <TextBlock Grid.Row="3" Grid.Column="0" Text="Hard Cap Live Exposure" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="3" Grid.Column="1"
-                                     Value="{Binding SniperVM.HardCapTotalLiveExposureNative}"
-                                     Increment="0.001"
-                                     Minimum="0"
-                                     FormatString="0.0000" />
-
-                      <TextBlock Grid.Row="4" Grid.Column="0" Text="Max Losing Live Trades" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="4" Grid.Column="1"
-                                     Value="{Binding SniperVM.MaxConsecutiveLiveLosses}"
-                                     Increment="1"
-                                     Minimum="0"
-                                     FormatString="0" />
-
-                      <TextBlock Grid.Row="5" Grid.Column="0" Text="Tiny Dry-Run Cap" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Row="5" Grid.Column="1"
-                                     Value="{Binding SniperVM.TinyDryRunCapNative}"
-                                     Increment="0.001"
-                                     Minimum="0"
-                                     FormatString="0.0000" />
-
-                      <TextBlock Grid.Row="6"
-                                 Grid.Column="0"
-                                 Grid.ColumnSpan="2"
-                                 Text="{Binding SniperVM.LiveRiskSummary}"
-                                 Foreground="#8B949E"
-                                 TextWrapping="Wrap" />
-                    </Grid>
-                  </Border>
-
-                  <StackPanel Spacing="8">
-                    <TextBlock Classes="Overline" Text="Enabled Chains" />
-                    <TextBox Text="{Binding SniperVM.EnabledChainsText}"
-                             PlaceholderText="bsc,ethereum,base,solana" />
-                  </StackPanel>
-
-                  <StackPanel Spacing="8">
-                    <TextBlock Classes="Overline" Text="Whitelist Fragments" />
-                    <TextBox Text="{Binding SniperVM.WhitelistText}"
-                             PlaceholderText="bnbx,pepe,ai" />
-                  </StackPanel>
-
-                  <StackPanel Spacing="8">
-                    <TextBlock Classes="Overline" Text="Watchlist Priority" />
-                    <TextBox Text="{Binding SniperVM.WatchlistText}"
-                             PlaceholderText="pepe,ai,cat - matched tokens get priority, not a hard block" />
-                  </StackPanel>
-
-                  <StackPanel Spacing="8">
-                    <TextBlock Classes="Overline" Text="Blacklist Fragments" />
-                    <TextBox Text="{Binding SniperVM.BlacklistText}"
-                             PlaceholderText="inu,elon,test,wrapped" />
-                  </StackPanel>
-
-                  <!-- ── Manual Snipe ─────────────────────────────────────────────── -->
-                  <Border Classes="SurfaceCard" IsVisible="{Binding SniperVM.IsDexVenue}">
-                    <StackPanel Spacing="10">
-                      <TextBlock Classes="Overline" Text="MANUAL SNIPE — Contract Address" />
-
-                      <!-- Address input + loading indicator -->
-                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
-                        <TextBox Grid.Column="0"
-                                 Text="{Binding SniperVM.ManualSnipeAddress, Mode=TwoWay}"
-                                 PlaceholderText="0x… or Solana address" />
-                        <Border Grid.Column="1"
-                                Width="20" Height="20"
-                                CornerRadius="10"
-                                BorderBrush="#21E6C1"
-                                BorderThickness="2"
-                                IsVisible="{Binding SniperVM.IsManualSnipeLoading}"
-                                VerticalAlignment="Center"
-                                Opacity="0.7" />
-                      </Grid>
-
-                      <!-- Resolved token info -->
-                      <TextBlock Text="{Binding SniperVM.ManualSnipeInfoLabel}"
-                                 Foreground="{Binding SniperVM.ManualSnipeInfoBrush}"
-                                 TextWrapping="Wrap"
-                                 FontSize="12"
-                                 IsVisible="{Binding SniperVM.ManualSnipeInfoLabel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-
-                      <!-- Pre-trade quote -->
-                      <TextBlock Text="{Binding SniperVM.ManualSnipeQuoteLabel}"
-                                 Foreground="{Binding SniperVM.ManualSnipeQuoteBrush}"
-                                 FontWeight="SemiBold"
-                                 IsVisible="{Binding SniperVM.ManualSnipeQuoteLabel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-
-                      <!-- Token balance row -->
-                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
-                        <TextBlock Grid.Column="0"
-                                   Text="{Binding SniperVM.ManualSnipeTokenBalanceLabel}"
-                                   Foreground="#8FA3B8"
-                                   VerticalAlignment="Center"
-                                   FontSize="12"
-                                   IsVisible="{Binding SniperVM.ManualSnipeTokenBalanceLabel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                        <Button Grid.Column="1"
-                                Content="↻"
-                                Classes="GhostButton"
-                                ToolTip.Tip="Refresh token balance"
-                                Command="{Binding SniperVM.ManualSnipeRefreshBalanceCommand}" />
-                      </Grid>
-
-                      <!-- Sell amount + presets -->
-                      <TextBlock Classes="Overline" Text="SELL AMOUNT" Opacity="0.7" />
-                      <NumericUpDown Value="{Binding SniperVM.ManualSnipeSellAmount}"
-                                     Increment="1000"
-                                     Minimum="0"
-                                     FormatString="0.########"
-                                     PlaceholderText="Token amount to sell"
-                                     HorizontalAlignment="Stretch" />
-                      <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="6">
-                        <Button Grid.Column="0" Content="25%"  Classes="GhostButton"
-                                Command="{Binding SniperVM.ApplyManualSnipeSellPresetCommand}" CommandParameter="25" />
-                        <Button Grid.Column="1" Content="50%"  Classes="GhostButton"
-                                Command="{Binding SniperVM.ApplyManualSnipeSellPresetCommand}" CommandParameter="50" />
-                        <Button Grid.Column="2" Content="75%"  Classes="GhostButton"
-                                Command="{Binding SniperVM.ApplyManualSnipeSellPresetCommand}" CommandParameter="75" />
-                        <Button Grid.Column="3" Content="100%" Classes="GhostButton"
-                                Command="{Binding SniperVM.ApplyManualSnipeSellPresetCommand}" CommandParameter="100" />
-                      </Grid>
-
-                      <!-- Action buttons -->
-                      <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
-                        <Button Grid.Column="0"
-                                Content="BUY TOKEN"
-                                Command="{Binding SniperVM.ManualSnipeBuyCommand}"
-                                HorizontalAlignment="Stretch" />
-                        <Button Grid.Column="1"
-                                Content="SELL TOKEN"
-                                Command="{Binding SniperVM.ManualSnipeSellCommand}"
-                                Classes="GhostButton"
-                                HorizontalAlignment="Stretch" />
-                        <Button Grid.Column="2"
-                                Content="PROBE"
-                                Classes="GhostButton"
-                                ToolTip.Tip="Run on-chain sellability probe (also primes ERC20 allowance)"
-                                Command="{Binding SniperVM.ManualSnipeProbeCommand}"
-                                HorizontalAlignment="Stretch" />
-                      </Grid>
-
-                      <!-- Status message -->
-                      <TextBlock Text="{Binding SniperVM.ManualSnipeStatusMessage}"
-                                 TextWrapping="Wrap"
-                                 FontSize="12"
-                                 Foreground="#8FA3B8"
-                                 IsVisible="{Binding SniperVM.ManualSnipeStatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="BUY NOW" Background="#21E6C1" Foreground="#081018" FontSize="10" FontWeight="Bold" CornerRadius="6" Padding="16,6"
+                                IsVisible="{Binding !$parent[Window].DataContext.SniperVM.IsPositionsTab}"
+                                Command="{Binding $parent[Window].DataContext.SniperVM.BuyCandidateCommand}" CommandParameter="{Binding}" />
+                        <Button Content="EMERGENCY CLOSE" Background="#FF6B6B" Foreground="#081018" FontSize="10" FontWeight="Bold" CornerRadius="6" Padding="16,6"
+                                IsVisible="{Binding $parent[Window].DataContext.SniperVM.IsPositionsTab}"
+                                Command="{Binding $parent[Window].DataContext.SniperVM.EmergencyClosePositionCommand}" CommandParameter="{Binding}" />
+                        <Button Content="CLEAR" Classes="tf" Padding="16,6"
+                                Command="{Binding $parent[Window].DataContext.SniperVM.ClearPositionCommand}" CommandParameter="{Binding}" />
+                      </StackPanel>
                     </StackPanel>
                   </Border>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
 
-                  <Border Classes="GuardStripCard">
-                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                      <Border Classes="GuardChip"
-                              Background="#10251F"
-                              BorderBrush="{Binding SniperVM.SniperGuardStatusBrush}">
-                        <TextBlock Text="{Binding SniperVM.SniperGuardStatusLabel}"
-                                   Foreground="{Binding SniperVM.SniperGuardStatusBrush}"
-                                   FontWeight="Bold" />
-                      </Border>
-                      <StackPanel Grid.Column="1" Spacing="4">
-                        <TextBlock Text="{Binding SniperVM.SniperGuardSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                        <TextBlock Text="{Binding SniperVM.SniperGuardDetail}" Foreground="#8FA3B8" TextWrapping="Wrap" />
+        <!-- ── Analytics tab ── -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" IsVisible="{Binding SniperVM.IsAnalyticsTab}">
+          <StackPanel Margin="14" Spacing="14">
+            <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10">
+              <Border Grid.Column="0" Background="#07111A" CornerRadius="9" Padding="12">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="COMBINED WIN RATE" Classes="secLabel" />
+                  <TextBlock Text="{Binding SniperVM.CombinedWinRateLabel}" FontFamily="Consolas, monospace" FontSize="16" FontWeight="Bold" Foreground="#3DDC84" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Background="#07111A" CornerRadius="9" Padding="12">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="NET CLOSED PNL" Classes="secLabel" />
+                  <TextBlock Text="{Binding SniperVM.NetClosedPnlLabel}" FontFamily="Consolas, monospace" FontSize="16" FontWeight="Bold" Foreground="#3DDC84" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Background="#07111A" CornerRadius="9" Padding="12">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="PAPER TRADES" Classes="secLabel" />
+                  <TextBlock Text="{Binding SniperVM.PaperTradeCount}" FontFamily="Consolas, monospace" FontSize="16" FontWeight="Bold" Foreground="#E8F4FF" />
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="3" Background="#07111A" CornerRadius="9" Padding="12">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="LIVE WIN RATE" Classes="secLabel" />
+                  <TextBlock Text="{Binding SniperVM.LiveWinRateLabel}" FontFamily="Consolas, monospace" FontSize="16" FontWeight="Bold" Foreground="#3DDC84" />
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <Border Background="#07111A" CornerRadius="10" Padding="14">
+              <StackPanel Spacing="10">
+                <TextBlock Text="Performance Curve" FontSize="13" FontWeight="Bold" Foreground="#E8F4FF" />
+                <ctrl:CexPriceChart Height="160" Points="{Binding SniperVM.PerformanceCurvePoints}" IsPositiveTrend="{Binding SniperVM.IsPerformancePositive}" />
+              </StackPanel>
+            </Border>
+
+            <StackPanel Spacing="8">
+              <TextBlock Text="Execution Audit Trail" FontSize="13" FontWeight="Bold" Foreground="#E8F4FF" />
+              <ItemsControl ItemsSource="{Binding SniperVM.ExecutionAuditTrail}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:SniperExecutionAuditRecordViewModel">
+                    <Border Background="#07111A" CornerRadius="8" Padding="10,10" Margin="0,0,0,8">
+                      <StackPanel Spacing="4">
+                        <Grid ColumnDefinitions="*,Auto">
+                          <TextBlock Grid.Column="0" Text="{Binding AuditTitle}" FontSize="12" FontWeight="Bold" Foreground="#E8F4FF" />
+                          <TextBlock Grid.Column="1" Text="{Binding TxLine}" FontSize="10" Foreground="#5A7A94" />
+                        </Grid>
+                        <TextBlock Text="{Binding MetaLine}" FontSize="10" Foreground="#8FA3B8" TextWrapping="Wrap" />
                       </StackPanel>
-                    </Grid>
-                  </Border>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
 
-                  <WrapPanel Orientation="Horizontal">
-                    <Button Content="ARM SNIPER"
-                            Command="{Binding SniperVM.ArmCommand}"
-                            Width="150"
-                            Margin="0,0,10,0" />
-                    <Button Content="SCAN NOW"
-                            Command="{Binding SniperVM.ScanNowCommand}"
-                            Width="130"
-                            Margin="0,0,10,0"
-                            Classes="GhostButton" />
-                    <Button Content="STOP"
-                            Command="{Binding SniperVM.StopCommand}"
-                            Width="110"
-                            Margin="0,0,10,0"
-                            Classes="GhostButton" />
-                    <Button Content="RESET SAFETY"
-                            Command="{Binding SniperVM.ResetSafetyCommand}"
-                            Width="150"
-                            Classes="GhostButton" />
-                  </WrapPanel>
+      <!-- ─────────── RIGHT: DETAIL PANEL ─────────── -->
+      <Border Grid.Column="2" Background="#050C14" BorderBrush="#0D1B27" BorderThickness="1,0,0,0">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <Grid>
+            <!-- Empty state -->
+            <TextBlock Text="Select a token to inspect it here." Foreground="#3D5A72" FontSize="12"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20"
+                       IsVisible="{Binding !SniperVM.HasSelectedCandidate}" />
+
+            <StackPanel Margin="14" Spacing="12" IsVisible="{Binding SniperVM.HasSelectedCandidate}">
+              <!-- Header -->
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="10" Background="#0E2A2A">
+                  <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.IconText}" FontWeight="Bold" FontSize="12" Foreground="#21E6C1" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.DetailSymbol}" FontSize="15" FontWeight="Bold" Foreground="#E8F4FF" />
+                  <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.DetailPairChainLabel}" FontSize="10" Foreground="#3D5A72" />
+                </StackPanel>
+                <Border Grid.Column="2" Background="#07111A" BorderBrush="#152233" BorderThickness="1" CornerRadius="7" Padding="10,6" VerticalAlignment="Center">
+                  <TextBlock Text="☆ Watch" FontSize="10" FontWeight="Bold" Foreground="#F4B860" />
+                </Border>
+              </Grid>
+
+              <!-- Price card -->
+              <Border Background="#07111A" CornerRadius="12" Padding="14">
+                <StackPanel Spacing="6">
+                  <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.DetailPriceLabel}" FontFamily="Consolas, monospace" FontSize="22" FontWeight="Bold" Foreground="#E8F4FF" />
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.DetailChangeLabel}" FontFamily="Consolas, monospace" FontSize="12" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.DetailChangeHex}" />
+                    <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.MarketTickLabel}" FontSize="10" Foreground="#3D5A72" VerticalAlignment="Center" />
+                  </StackPanel>
                 </StackPanel>
               </Border>
 
-              <StackPanel Grid.Column="1" Spacing="16">
-                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12">
-                  <Border Classes="SurfaceCard" Grid.Column="0">
-                    <StackPanel Spacing="6">
-                      <TextBlock Classes="Overline" Text="Feed Pulse" />
-                      <TextBlock Text="{Binding SniperVM.FeedTelemetrySummary}"
-                                 FontWeight="SemiBold"
-                                 TextWrapping="Wrap" />
-                      <TextBlock Text="{Binding SniperVM.SignalNarrativeSummary}"
-                                 Classes="SecondaryCopy"
-                                 TextWrapping="Wrap" />
-                    </StackPanel>
-                  </Border>
-                  <Border Classes="SurfaceCard" Grid.Column="1">
-                    <StackPanel Spacing="6">
-                      <TextBlock Classes="Overline" Text="Snapshot Engine" />
-                      <TextBlock Text="{Binding SniperVM.SnapshotTelemetrySummary}"
-                                 FontWeight="SemiBold"
-                                 TextWrapping="Wrap" />
-                      <TextBlock Text="{Binding SniperVM.StatusMessage}"
-                                 Classes="SecondaryCopy"
-                                 TextWrapping="Wrap" />
-                    </StackPanel>
-                  </Border>
-                  <Border Classes="SurfaceCard" Grid.Column="2">
-                    <StackPanel Spacing="6">
-                      <TextBlock Classes="Overline" Text="Queue Flow" />
-                      <TextBlock Text="{Binding SniperVM.QueueTelemetrySummary}"
-                                 FontWeight="SemiBold"
-                                 TextWrapping="Wrap" />
-                      <TextBlock Text="{Binding SniperVM.LatestDecisionSummary}"
-                                 Classes="SecondaryCopy"
-                                 TextWrapping="Wrap" />
-                    </StackPanel>
-                  </Border>
-                  <Border Classes="SurfaceCard" Grid.Column="3">
-                    <StackPanel Spacing="6">
-                      <TextBlock Classes="Overline" Text="Wallet / Execution" />
-                      <TextBlock Text="{Binding WalletVM.WalletReadinessLabel}"
-                                 Foreground="{Binding WalletVM.WalletReadinessBrush}"
-                                 FontWeight="Bold" />
-                      <TextBlock Text="{Binding SniperVM.WalletExecutionSummary}"
-                                 FontWeight="SemiBold"
-                                 TextWrapping="Wrap" />
-                      <TextBlock Text="{Binding WalletVM.RouteReadinessSummary}"
-                                 Classes="SecondaryCopy"
-                                 TextWrapping="Wrap" />
-                      <TextBlock Text="{Binding SniperVM.OpenPositionPulseSummary}"
-                                 Classes="SecondaryCopy"
-                                 TextWrapping="Wrap" />
-                      <TextBlock Text="{Binding SniperVM.LatestAuditSummary}"
-                                 Classes="SecondaryCopy"
-                                 TextWrapping="Wrap" />
-                    </StackPanel>
-                  </Border>
-                </Grid>
-
-                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16">
-                  <Border Classes="Panel" Grid.Column="0">
-                    <StackPanel Spacing="10">
-                      <TextBlock Classes="H2" Text="Fresh Pairs" />
-                      <TextBlock Text="{Binding SniperVM.FreshPairsSummary}"
-                                 Foreground="#8B949E"
-                                 TextWrapping="Wrap"
-                                 FontSize="12" />
-                      <ScrollViewer Classes="PageScroll" MaxHeight="340">
-                        <ItemsControl ItemsSource="{Binding SniperVM.FreshPairs}">
-                          <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:SniperCandidateViewModel">
-                              <Border Classes="SoftPanel" Margin="0,0,0,10">
-                                <StackPanel Spacing="6">
-                                  <Grid ColumnDefinitions="*,Auto">
-                                    <TextBlock Grid.Column="0" Text="{Binding DisplayName}" FontWeight="Bold" />
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding TokenInfo.PriceChange5m, StringFormat={}{0:+0.##;-0.##;0}%}"
-                                               Foreground="#21E6C1" />
-                                  </Grid>
-                                  <TextBlock Text="{Binding PairLabel}" Foreground="#8B949E" FontSize="12" />
-                                  <TextBlock Text="{Binding SignalProfileLabel}" Foreground="#21E6C1" FontSize="12" FontWeight="SemiBold" />
-                                  <TextBlock Text="{Binding SignalSourceLabel}" Foreground="#8B949E" TextWrapping="Wrap" FontSize="12" />
-                                  <TextBlock Text="{Binding Reason}" Foreground="#8B949E" TextWrapping="Wrap" FontSize="12" />
-                                  <TextBlock Text="{Binding TokenInfo.Volume24h, StringFormat=24h volume: $ {0:N0}}" Foreground="#8B949E" FontSize="12" />
-                                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
-                                    <TextBlock Grid.Column="0"
-                                               Text="{Binding RiskScore, StringFormat=Risk: {0}/100}"
-                                               FontWeight="SemiBold"
-                                               Foreground="{Binding RiskAccentHex}" />
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding RiskBand, StringFormat=Band: {0}}"
-                                               Foreground="{Binding RiskAccentHex}" />
-                                  </Grid>
-                                  <TextBlock Text="{Binding TaxSummary}" Foreground="#8B949E" FontSize="12" />
-                                  <TextBlock Text="{Binding HoneypotLabel}" Foreground="{Binding ExecutionAccentHex}" FontSize="12" FontWeight="SemiBold" />
-                                  <TextBlock Text="{Binding WatchlistPriorityLabel}" Foreground="#8B949E" TextWrapping="Wrap" FontSize="12" />
-                                  <TextBlock Text="{Binding OwnershipSignalLabel}" Foreground="#8B949E" TextWrapping="Wrap" FontSize="12" />
-                                  <TextBlock Text="{Binding RiskFlags}" Foreground="#8B949E" TextWrapping="Wrap" FontSize="12" />
-                                  <TextBlock Text="{Binding Status}" FontWeight="SemiBold" />
-                                </StackPanel>
-                              </Border>
-                            </DataTemplate>
-                          </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                      </ScrollViewer>
-                    </StackPanel>
-                  </Border>
-
-                  <Border Classes="Panel" Grid.Column="1">
-                    <StackPanel Spacing="10">
-                      <TextBlock Classes="H2" Text="Accepted Queue" />
-                      <TextBlock Text="{Binding SniperVM.AcceptedQueueSummary}"
-                                 Foreground="#8B949E"
-                                 TextWrapping="Wrap"
-                                 FontSize="12" />
-                      <ScrollViewer Classes="PageScroll" MaxHeight="340">
-                        <ItemsControl ItemsSource="{Binding SniperVM.AcceptedPairs}">
-                          <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:SniperCandidateViewModel">
-                              <Border Classes="SoftPanel" Margin="0,0,0,10">
-                                <StackPanel Spacing="8">
-                                  <Grid ColumnDefinitions="*,Auto">
-                                    <TextBlock Grid.Column="0" Text="{Binding DisplayName}" FontWeight="Bold" />
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding TokenInfo.LiquidityUsd, StringFormat=$ {0:N0}}"
-                                               Foreground="#21E6C1" />
-                                  </Grid>
-                                  <TextBlock Text="{Binding PairLabel}" Foreground="#8B949E" FontSize="12" />
-                                  <TextBlock Text="{Binding SignalProfileLabel}" Foreground="#21E6C1" FontSize="12" FontWeight="SemiBold" />
-                                  <TextBlock Text="{Binding SignalSourceLabel}" Foreground="#8B949E" TextWrapping="Wrap" FontSize="12" />
-                                  <TextBlock Text="{Binding Reason}" Foreground="#8B949E" TextWrapping="Wrap" FontSize="12" />
-                                  <TextBlock Text="{Binding RiskSummary}" Foreground="#8B949E" TextWrapping="Wrap" FontSize="12" />
-                                  <TextBlock Text="{Binding StrategySummary}" Foreground="#8B949E" TextWrapping="Wrap" FontSize="12" />
-                                  <TextBlock Text="{Binding TaxSummary}" Foreground="#8B949E" FontSize="12" />
-                                  <TextBlock Text="{Binding WatchlistPriorityLabel}" Foreground="#8B949E" TextWrapping="Wrap" FontSize="12" />
-                                  <TextBlock Text="{Binding OwnershipSignalLabel}" Foreground="#8B949E" TextWrapping="Wrap" FontSize="12" />
-                                  <TextBlock Text="{Binding ExecutionBlockReason}" Foreground="{Binding ExecutionAccentHex}" TextWrapping="Wrap" FontSize="12" />
-
-                                  <!-- ── Security Scan Result ─────────────────────────────────── -->
-                                  <Border Background="#0A1520"
-                                          BorderBrush="#1A3A50"
-                                          BorderThickness="1"
-                                          CornerRadius="4"
-                                          Padding="8,6"
-                                          IsVisible="{Binding SecurityScanComplete}">
-                                    <StackPanel Spacing="4">
-                                      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                                        <!-- Verdict badge -->
-                                        <Border Grid.Column="0"
-                                                Background="{Binding SecurityVerdictColor}"
-                                                CornerRadius="3"
-                                                Padding="7,3"
-                                                VerticalAlignment="Center">
-                                          <TextBlock Text="{Binding SecurityVerdict}"
-                                                     Foreground="White"
-                                                     FontSize="11"
-                                                     FontWeight="Bold" />
-                                        </Border>
-                                        <!-- Score -->
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding SecurityScoreLabel}"
-                                                   Foreground="{Binding SecurityVerdictColor}"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold"
-                                                   VerticalAlignment="Center" />
-                                        <!-- Source -->
-                                        <TextBlock Grid.Column="2"
-                                                   Text="{Binding SecuritySourceLabel}"
-                                                   Foreground="#3A5A70"
-                                                   FontSize="10"
-                                                   VerticalAlignment="Center" />
-                                      </Grid>
-                                      <!-- Individual checks -->
-                                      <TextBlock Text="{Binding SecurityChecksSummary}"
-                                                 Foreground="#8B949E"
-                                                 FontSize="10"
-                                                 TextWrapping="Wrap" />
-                                      <!-- Flags (top 4) — shown when there are any -->
-                                      <TextBlock Text="{Binding SecurityFlagsSummary}"
-                                                 Foreground="#C5934A"
-                                                 FontSize="10"
-                                                 TextWrapping="Wrap" />
-                                    </StackPanel>
-                                  </Border>
-
-                                  <!-- ── AI Verdict (Claude / offline heuristic) ──────────────── -->
-                                  <Border Background="#0A1520"
-                                          BorderBrush="#243A66"
-                                          BorderThickness="1"
-                                          CornerRadius="4"
-                                          Padding="8,6"
-                                          IsVisible="{Binding HasAiVerdict}">
-                                    <StackPanel Spacing="4">
-                                      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                                        <Border Grid.Column="0"
-                                                Background="{Binding AiAccentHex}"
-                                                CornerRadius="3"
-                                                Padding="7,3"
-                                                VerticalAlignment="Center">
-                                          <TextBlock Text="{Binding AiVerdictBadge}"
-                                                     Foreground="White"
-                                                     FontSize="11"
-                                                     FontWeight="Bold" />
-                                        </Border>
-                                        <TextBlock Grid.Column="2"
-                                                   Text="{Binding AiSourceLabel}"
-                                                   Foreground="#3A5A70"
-                                                   FontSize="10"
-                                                   VerticalAlignment="Center" />
-                                      </Grid>
-                                      <TextBlock Text="{Binding AiReason}"
-                                                 Foreground="#8B949E"
-                                                 FontSize="10"
-                                                 TextWrapping="Wrap" />
-                                      <TextBlock Text="{Binding AiRedFlagsText}"
-                                                 Foreground="#C5934A"
-                                                 FontSize="10"
-                                                 TextWrapping="Wrap" />
-                                    </StackPanel>
-                                  </Border>
-                                  <TextBlock Text="AI: assessing…"
-                                             Foreground="#5A7A90"
-                                             FontSize="10"
-                                             FontStyle="Italic"
-                                             IsVisible="{Binding AiAssessmentRunning}" />
-
-                                  <WrapPanel Orientation="Horizontal">
-                                    <Button Content="BUY NOW"
-                                            Command="{Binding $parent[Window].DataContext.SniperVM.BuyCandidateCommand}"
-                                            CommandParameter="{Binding .}"
-                                            Width="120"
-                                            Margin="0,0,10,0" />
-                                    <TextBlock Text="{Binding RiskBadgeText}"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,10,0"
-                                               Foreground="{Binding RiskAccentHex}"
-                                               FontWeight="SemiBold" />
-                                    <TextBlock Text="{Binding ExecutionVerdict}"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,10,0"
-                                               Foreground="{Binding ExecutionAccentHex}"
-                                               FontWeight="SemiBold" />
-                                    <TextBlock Text="{Binding Status}"
-                                               VerticalAlignment="Center"
-                                               FontWeight="SemiBold" />
-                                  </WrapPanel>
-                                </StackPanel>
-                              </Border>
-                            </DataTemplate>
-                          </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                      </ScrollViewer>
-                    </StackPanel>
-                  </Border>
-
-                  <Border Classes="Panel" Grid.Column="2">
-                    <StackPanel Spacing="10">
-                      <TextBlock Classes="H2" Text="Open Positions" />
-                      <TextBlock Text="{Binding SniperVM.OpenPositionsSummary}"
-                                 Foreground="#8B949E"
-                                 TextWrapping="Wrap"
-                                 FontSize="12" />
-                      <TextBlock Text="{Binding SniperVM.OpenPositionTrackerStatus}"
-                                 Foreground="#21E6C1"
-                                 TextWrapping="Wrap"
-                                 FontSize="12" />
-                      <ScrollViewer Classes="PageScroll" MaxHeight="340">
-                        <ItemsControl ItemsSource="{Binding SniperVM.OpenPositions}">
-                          <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:SniperCandidateViewModel">
-                              <Border Classes="SoftPanel" Margin="0,0,0,10">
-                                <StackPanel Spacing="8">
-                                  <Grid ColumnDefinitions="*,Auto">
-                                    <TextBlock Grid.Column="0" Text="{Binding DisplayName}" FontWeight="Bold" />
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding TokenInfo.PriceUsd, StringFormat=$ {0:N8}}"
-                                               Foreground="#21E6C1" />
-                                  </Grid>
-                                  <TextBlock Text="{Binding PositionMeta}" Foreground="#8B949E" FontSize="12" />
-                                  <TextBlock Text="{Binding CurrentPriceLabel}" Foreground="#21E6C1" FontSize="12" FontWeight="SemiBold" />
-                                  <TextBlock Text="{Binding SignalSourceLabel}" Foreground="#8B949E" FontSize="12" TextWrapping="Wrap" />
-                                  <TextBlock Text="{Binding PaperPnlLabel}" Foreground="{Binding PnlAccentHex}" FontSize="12" FontWeight="SemiBold" />
-                                  <TextBlock Text="{Binding MarketTickLabel}" Foreground="#8B949E" FontSize="12" />
-                                  <TextBlock Text="{Binding ExitRuleSummary}" Foreground="#8B949E" FontSize="12" TextWrapping="Wrap" />
-                                  <TextBlock Text="{Binding ExitStatus}" Foreground="{Binding ExitAccentHex}" FontSize="12" FontWeight="SemiBold" />
-                                  <TextBlock Text="{Binding PeakPriceLabel}" Foreground="#8B949E" FontSize="12" />
-                                  <TextBlock Text="{Binding TrackedTokenAmountLabel}" Foreground="#8B949E" FontSize="12" />
-                                  <TextBlock Text="{Binding SizeStatusLabel}" Foreground="#8B949E" FontSize="12" />
-                                  <TextBlock Text="{Binding RiskBadgeText}" Foreground="{Binding RiskAccentHex}" FontSize="12" FontWeight="SemiBold" />
-                                  <TextBlock Text="{Binding TaxSummary}" Foreground="#8B949E" FontSize="12" />
-                                  <!-- Security scan compact badge for open positions -->
-                                  <Border Background="#0A1520"
-                                          BorderBrush="#1A3A50"
-                                          BorderThickness="1"
-                                          CornerRadius="3"
-                                          Padding="6,4"
-                                          IsVisible="{Binding SecurityScanComplete}">
-                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
-                                      <Border Grid.Column="0"
-                                              Background="{Binding SecurityVerdictColor}"
-                                              CornerRadius="2"
-                                              Padding="5,2">
-                                        <TextBlock Text="{Binding SecurityVerdict}"
-                                                   Foreground="White"
-                                                   FontSize="10"
-                                                   FontWeight="Bold" />
-                                      </Border>
-                                      <TextBlock Grid.Column="1"
-                                                 Text="{Binding SecurityChecksSummary}"
-                                                 Foreground="#8B949E"
-                                                 FontSize="10"
-                                                 TextWrapping="Wrap"
-                                                 VerticalAlignment="Center" />
-                                    </Grid>
-                                  </Border>
-                                  <TextBlock Text="{Binding Status}" FontWeight="SemiBold" />
-                                  <WrapPanel Orientation="Horizontal">
-                                    <Button Content="EMERGENCY CLOSE"
-                                            Command="{Binding $parent[Window].DataContext.SniperVM.EmergencyClosePositionCommand}"
-                                            CommandParameter="{Binding .}"
-                                            Width="160"
-                                            Margin="0,0,10,0"
-                                  IsEnabled="{Binding $parent[Window].DataContext.SniperVM.CanEmergencyCloseLivePositions}"
-                                  ToolTip.Tip="{Binding $parent[Window].DataContext.SniperVM.EmergencyCloseBlockedReason}" />
-                                    <Button Content="CLEAR POSITION"
-                                            Command="{Binding $parent[Window].DataContext.SniperVM.ClearPositionCommand}"
-                                            CommandParameter="{Binding .}"
-                                            Width="160"
-                                            Classes="GhostButton" />
-                                  </WrapPanel>
-                                  <TextBlock Text="{Binding $parent[Window].DataContext.SniperVM.EmergencyCloseBlockedReason}"
-                                             Foreground="#F4B860"
-                                             TextWrapping="Wrap"
-                                             FontSize="12"
-                                             IsVisible="{Binding !$parent[Window].DataContext.SniperVM.CanEmergencyCloseLivePositions}" />
-                                </StackPanel>
-                              </Border>
-                            </DataTemplate>
-                          </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                      </ScrollViewer>
-                    </StackPanel>
-                  </Border>
-                </Grid>
-
-                <Border Classes="Panel">
-                  <StackPanel Spacing="10">
-                    <TextBlock Classes="H2" Text="Paper Positions" />
-                    <ScrollViewer Classes="PageScroll" MaxHeight="220">
-                      <ItemsControl ItemsSource="{Binding SniperVM.PaperPositions}">
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate x:DataType="vm:SniperCandidateViewModel">
-                            <Border Classes="SoftPanel" Margin="0,0,0,10">
-                              <StackPanel Spacing="8">
-                                <Grid ColumnDefinitions="*,Auto">
-                                  <TextBlock Grid.Column="0" Text="{Binding DisplayName}" FontWeight="Bold" />
-                                  <TextBlock Grid.Column="1"
-                                             Text="PAPER"
-                                             Foreground="#21E6C1"
-                                             FontWeight="SemiBold" />
-                                </Grid>
-                                <TextBlock Text="{Binding PositionMeta}" Foreground="#8B949E" FontSize="12" />
-                                <TextBlock Text="{Binding ExitRuleSummary}" Foreground="#8B949E" FontSize="12" TextWrapping="Wrap" />
-                                <TextBlock Text="{Binding ExitStatus}" Foreground="{Binding ExitAccentHex}" FontSize="12" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding PeakPriceLabel}" Foreground="#8B949E" FontSize="12" />
-                                <TextBlock Text="{Binding SizeStatusLabel}" Foreground="#8B949E" FontSize="12" />
-                                <TextBlock Text="{Binding RiskBadgeText}" Foreground="{Binding RiskAccentHex}" FontSize="12" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding TaxSummary}" Foreground="#8B949E" FontSize="12" />
-                                <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="10">
-                                  <TextBlock Grid.Column="0"
-                                             Text="{Binding EntryPriceUsd, StringFormat=Entry: $ {0:N8}}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                  <TextBlock Grid.Column="1"
-                                             Text="{Binding CurrentPriceUsd, StringFormat=Now: $ {0:N8}}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                  <TextBlock Grid.Column="2"
-                                             Text="{Binding PaperPnlLabel}"
-                                             Foreground="{Binding PnlAccentHex}"
-                                             FontWeight="SemiBold"
-                                             FontSize="12" />
-                                </Grid>
-                                <WrapPanel Orientation="Horizontal">
-                                  <Button Content="CLEAR PAPER"
-                                          Command="{Binding $parent[Window].DataContext.SniperVM.ClearPositionCommand}"
-                                          CommandParameter="{Binding .}"
-                                          Width="150"
-                                          Classes="GhostButton" />
-                                  <TextBlock Text="{Binding Status}"
-                                             VerticalAlignment="Center"
-                                             Margin="10,0,0,0"
-                                             FontWeight="SemiBold" />
-                                </WrapPanel>
-                              </StackPanel>
-                            </Border>
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                    </ScrollViewer>
-                  </StackPanel>
+              <!-- Stat grid -->
+              <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+                <Border Grid.Row="0" Grid.Column="0" Background="#07111A" CornerRadius="9" Padding="10">
+                  <StackPanel Spacing="3"><TextBlock Text="RISK SCORE" Classes="secLabel" /><TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.RiskScoreLabel}" FontFamily="Consolas, monospace" FontSize="13" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.RiskAccentHex}" /></StackPanel>
                 </Border>
-
-                <Border Classes="Panel">
-                  <Grid ColumnDefinitions="*,*,*,*,*,*,*,*" ColumnSpacing="16">
-                    <Border Classes="SoftPanel">
-                      <StackPanel Spacing="6">
-                        <TextBlock Classes="Overline" Text="Paper Trades" />
-                        <TextBlock Classes="Metric" Text="{Binding SniperVM.PaperTradeCount}" />
-                      </StackPanel>
-                    </Border>
-                    <Border Classes="SoftPanel">
-                      <StackPanel Spacing="6">
-                        <TextBlock Classes="Overline" Text="Win Rate" />
-                        <TextBlock Classes="Metric" Text="{Binding SniperVM.WinRateLabel}" />
-                      </StackPanel>
-                    </Border>
-                    <Border Classes="SoftPanel">
-                      <StackPanel Spacing="6">
-                        <TextBlock Classes="Overline" Text="Avg PnL" />
-                        <TextBlock Classes="Metric" Text="{Binding SniperVM.AveragePaperPnlLabel}" />
-                      </StackPanel>
-                    </Border>
-                    <Border Classes="SoftPanel">
-                      <StackPanel Spacing="6">
-                        <TextBlock Classes="Overline" Text="Best / Worst" />
-                        <TextBlock Text="{Binding SniperVM.BestPaperTradeLabel}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                        <TextBlock Text="{Binding SniperVM.WorstPaperTradeLabel}" Foreground="#8B949E" TextWrapping="Wrap" />
-                      </StackPanel>
-                    </Border>
-                    <Border Classes="SoftPanel">
-                      <StackPanel Spacing="6">
-                        <TextBlock Classes="Overline" Text="Open Paper PnL" />
-                        <TextBlock Classes="Metric" Text="{Binding SniperVM.OpenPaperPnlLabel}" />
-                      </StackPanel>
-                    </Border>
-                    <Border Classes="SoftPanel">
-                      <StackPanel Spacing="6">
-                        <TextBlock Classes="Overline" Text="Runners" />
-                        <TextBlock Classes="Metric" Text="{Binding SniperVM.OpenRunnerCount}" />
-                      </StackPanel>
-                    </Border>
-                    <Border Classes="SoftPanel">
-                      <StackPanel Spacing="6">
-                        <TextBlock Classes="Overline" Text="Live Win Rate" />
-                        <TextBlock Classes="Metric" Text="{Binding SniperVM.LiveWinRateLabel}" />
-                        <TextBlock Text="{Binding SniperVM.AverageLivePnlLabel, StringFormat=Avg {0}}"
-                                   Foreground="#8B949E" />
-                      </StackPanel>
-                    </Border>
-                    <Border Classes="SoftPanel">
-                      <StackPanel Spacing="6">
-                        <TextBlock Classes="Overline" Text="Best / Worst Live" />
-                        <TextBlock Text="{Binding SniperVM.BestLiveTradeLabel}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                        <TextBlock Text="{Binding SniperVM.WorstLiveTradeLabel}" Foreground="#8B949E" TextWrapping="Wrap" />
-                      </StackPanel>
-                    </Border>
-                  </Grid>
+                <Border Grid.Row="0" Grid.Column="1" Background="#07111A" CornerRadius="9" Padding="10">
+                  <StackPanel Spacing="3"><TextBlock Text="SECURITY" Classes="secLabel" /><TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.SecurityVerdict}" FontFamily="Consolas, monospace" FontSize="13" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.SecurityVerdictColor}" /></StackPanel>
                 </Border>
-
-                <Border Classes="Panel">
-                  <StackPanel Spacing="12">
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
-                      <Border Classes="SoftPanel">
-                        <StackPanel Spacing="6">
-                          <TextBlock Classes="Overline" Text="Live-Ready Matrix" />
-                          <TextBlock Classes="Metric" Text="{Binding SniperVM.LiveReadySummary}" />
-                          <TextBlock Text="{Binding WalletVM.RouteReadinessLabel}"
-                                     Foreground="{Binding WalletVM.RouteReadinessBrush}"
-                                     FontWeight="SemiBold" />
-                        </StackPanel>
-                      </Border>
-                      <Border Classes="SoftPanel">
-                        <StackPanel Spacing="6">
-                          <TextBlock Classes="Overline" Text="Dry-Run Scope" />
-                          <TextBlock Text="buy, partial TP, full sell, stop-loss, trailing stop, RPC recovery, restore after restart"
-                                     Foreground="#8B949E"
-                                     TextWrapping="Wrap" />
-                        </StackPanel>
-                      </Border>
-                    </Grid>
-
-                    <ItemsControl ItemsSource="{Binding SniperVM.LiveReadyStatuses}">
-                      <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:SniperLiveReadyStatusViewModel">
-                          <Border Classes="SoftPanel" Margin="0,0,0,10">
-                            <StackPanel Spacing="6">
-                              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                                <TextBlock Grid.Column="0" Text="{Binding DisplayLabel}" FontWeight="Bold" />
-                                <TextBlock Grid.Column="1"
-                                           Text="{Binding StatusLabel}"
-                                           Foreground="{Binding AccentHex}"
-                                           FontWeight="SemiBold" />
-                              </Grid>
-                              <TextBlock Text="{Binding Summary}" Foreground="#8B949E" TextWrapping="Wrap" />
-                            </StackPanel>
-                          </Border>
-                        </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                  </StackPanel>
+                <Border Grid.Row="1" Grid.Column="0" Background="#07111A" CornerRadius="9" Padding="10">
+                  <StackPanel Spacing="3"><TextBlock Text="LIQUIDITY" Classes="secLabel" /><TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.LiquidityLabel}" FontFamily="Consolas, monospace" FontSize="13" FontWeight="Bold" Foreground="#E8F4FF" /></StackPanel>
                 </Border>
-
-                <Border Classes="Panel">
-                  <StackPanel Spacing="12">
-                    <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="16">
-                      <Border Classes="SoftPanel">
-                        <StackPanel Spacing="6">
-                          <TextBlock Classes="Overline" Text="Total Closed Trades" />
-                          <TextBlock Classes="Metric" Text="{Binding SniperVM.CombinedTradeCount}" />
-                          <TextBlock Text="{Binding SniperVM.TradeMixLabel}" Foreground="#8B949E" />
-                        </StackPanel>
-                      </Border>
-                      <Border Classes="SoftPanel">
-                        <StackPanel Spacing="6">
-                          <TextBlock Classes="Overline" Text="Combined Win Rate" />
-                          <TextBlock Classes="Metric" Text="{Binding SniperVM.CombinedWinRateLabel}" />
-                        </StackPanel>
-                      </Border>
-                      <Border Classes="SoftPanel">
-                        <StackPanel Spacing="6">
-                          <TextBlock Classes="Overline" Text="Net Closed PnL" />
-                          <TextBlock Classes="Metric" Text="{Binding SniperVM.NetClosedPnlLabel}" />
-                        </StackPanel>
-                      </Border>
-                      <Border Classes="SoftPanel">
-                        <StackPanel Spacing="6">
-                          <TextBlock Classes="Overline" Text="Average Closed PnL" />
-                          <TextBlock Classes="Metric" Text="{Binding SniperVM.CombinedAveragePnlLabel}" />
-                        </StackPanel>
-                      </Border>
-                    </Grid>
-
-                    <StackPanel Spacing="10">
-                      <TextBlock Classes="H2" Text="Performance Curve" />
-                      <TextBlock Text="Paper and live journals stay separate; this curve is only a merged overview of closed outcomes."
-                                 Foreground="#8B949E"
-                                 TextWrapping="Wrap" />
-                      <ctrl:CexPriceChart Height="260"
-                                          Points="{Binding SniperVM.PerformanceCurvePoints}"
-                                          IsPositiveTrend="{Binding SniperVM.IsPerformancePositive}" />
-                    </StackPanel>
-                  </StackPanel>
+                <Border Grid.Row="1" Grid.Column="1" Background="#07111A" CornerRadius="9" Padding="10">
+                  <StackPanel Spacing="3"><TextBlock Text="VOLUME 24H" Classes="secLabel" /><TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.Volume24hLabel}" FontFamily="Consolas, monospace" FontSize="13" FontWeight="Bold" Foreground="#E8F4FF" /></StackPanel>
                 </Border>
-
-                <Border Classes="Panel">
-                  <StackPanel Spacing="10">
-                    <TextBlock Classes="H2" Text="Paper Trade History" />
-                    <ScrollViewer Classes="PageScroll" MaxHeight="260">
-                      <ItemsControl ItemsSource="{Binding SniperVM.PaperTradeHistory}">
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate x:DataType="vm:PaperTradeRecordViewModel">
-                            <Border Classes="SoftPanel" Margin="0,0,0,10">
-                              <StackPanel Spacing="8">
-                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
-                                  <TextBlock Grid.Column="0" Text="{Binding DisplayName}" FontWeight="Bold" />
-                                  <TextBlock Grid.Column="1"
-                                             Text="{Binding DurationLabel}"
-                                             Foreground="#8B949E"
-                                             VerticalAlignment="Center" />
-                                  <TextBlock Grid.Column="2"
-                                             Text="{Binding PnlLabel}"
-                                             Foreground="{Binding PnlAccentHex}"
-                                             FontWeight="SemiBold"
-                                             VerticalAlignment="Center" />
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="12">
-                                  <TextBlock Grid.Column="0"
-                                             Text="{Binding EntryPriceUsd, StringFormat=Entry: $ {0:N8}}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                  <TextBlock Grid.Column="1"
-                                             Text="{Binding ExitPriceUsd, StringFormat=Exit: $ {0:N8}}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                  <TextBlock Grid.Column="2"
-                                             Text="{Binding EntryAmountBnb, StringFormat=Size: {0:0.####} BNB}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="12">
-                                  <TextBlock Grid.Column="0"
-                                             Text="{Binding OpenedAtLocal, StringFormat=Open: {0:dd.MM HH:mm:ss}}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                  <TextBlock Grid.Column="1"
-                                             Text="{Binding ClosedAtLocal, StringFormat=Close: {0:dd.MM HH:mm:ss}}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                  <TextBlock Grid.Column="2"
-                                             Text="{Binding RiskBand, StringFormat=Risk: {0}}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                </Grid>
-                              </StackPanel>
-                            </Border>
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                    </ScrollViewer>
-                  </StackPanel>
+                <Border Grid.Row="2" Grid.Column="0" Background="#07111A" CornerRadius="9" Padding="10">
+                  <StackPanel Spacing="3"><TextBlock Text="MARKET CAP" Classes="secLabel" /><TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.MarketCapLabel}" FontFamily="Consolas, monospace" FontSize="13" FontWeight="Bold" Foreground="#E8F4FF" /></StackPanel>
                 </Border>
-
-                <Border Classes="Panel">
-                  <StackPanel Spacing="10">
-                    <TextBlock Classes="H2" Text="Live Exit History" />
-                    <ScrollViewer Classes="PageScroll" MaxHeight="240">
-                      <ItemsControl ItemsSource="{Binding SniperVM.LiveTradeHistory}">
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate x:DataType="vm:PaperTradeRecordViewModel">
-                            <Border Classes="SoftPanel" Margin="0,0,0,10">
-                              <StackPanel Spacing="8">
-                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
-                                  <TextBlock Grid.Column="0" Text="{Binding DisplayName}" FontWeight="Bold" />
-                                  <TextBlock Grid.Column="1"
-                                             Text="{Binding MetaLabel}"
-                                             Foreground="#8B949E"
-                                             VerticalAlignment="Center" />
-                                  <TextBlock Grid.Column="2"
-                                             Text="{Binding PnlLabel}"
-                                             Foreground="{Binding PnlAccentHex}"
-                                             FontWeight="SemiBold"
-                                             VerticalAlignment="Center" />
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="12">
-                                  <TextBlock Grid.Column="0"
-                                             Text="{Binding EntryPriceUsd, StringFormat=Entry: $ {0:N8}}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                  <TextBlock Grid.Column="1"
-                                             Text="{Binding ExitPriceUsd, StringFormat=Exit: $ {0:N8}}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                  <TextBlock Grid.Column="2"
-                                             Text="{Binding EntryAmountBnb, StringFormat=Size: {0:0.####} BNB}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                </Grid>
-                                <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="12">
-                                  <TextBlock Grid.Column="0"
-                                             Text="{Binding OpenedAtLocal, StringFormat=Open: {0:dd.MM HH:mm:ss}}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                  <TextBlock Grid.Column="1"
-                                             Text="{Binding ClosedAtLocal, StringFormat=Close: {0:dd.MM HH:mm:ss}}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                  <TextBlock Grid.Column="2"
-                                             Text="{Binding DurationLabel, StringFormat=Duration: {0}}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                </Grid>
-                              </StackPanel>
-                            </Border>
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                    </ScrollViewer>
-                  </StackPanel>
+                <Border Grid.Row="2" Grid.Column="1" Background="#07111A" CornerRadius="9" Padding="10">
+                  <StackPanel Spacing="3"><TextBlock Text="BUY / SELL TAX" Classes="secLabel" /><TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.TaxSummary}" FontFamily="Consolas, monospace" FontSize="12" FontWeight="Bold" Foreground="#E8F4FF" TextWrapping="Wrap" /></StackPanel>
                 </Border>
-
-                <Border Classes="Panel">
-                  <StackPanel Spacing="10">
-                    <TextBlock Classes="H2" Text="Execution Audit Trail" />
-                    <TextBlock Text="Every live step writes tx hash, chain, dex, size, price, fee, and reason so dry-run evidence can be reviewed before the first real deployment."
-                               Foreground="#8B949E"
-                               TextWrapping="Wrap" />
-                    <ScrollViewer Classes="PageScroll" MaxHeight="260">
-                      <ItemsControl ItemsSource="{Binding SniperVM.ExecutionAuditTrail}">
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate x:DataType="vm:SniperExecutionAuditRecordViewModel">
-                            <Border Classes="SoftPanel" Margin="0,0,0,10">
-                              <StackPanel Spacing="8">
-                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                                  <TextBlock Grid.Column="0" Text="{Binding AuditTitle}" FontWeight="Bold" />
-                                  <TextBlock Grid.Column="1" Text="{Binding TxLine}" Foreground="#8B949E" />
-                                </Grid>
-                                <TextBlock Text="{Binding MetaLine}" Foreground="#8B949E" FontSize="12" />
-                                <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="12">
-                                  <TextBlock Grid.Column="0"
-                                             Text="{Binding InputNativeAmount, StringFormat=In native: {0:0.########}}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                  <TextBlock Grid.Column="1"
-                                             Text="{Binding OutputNativeAmount, StringFormat=Out native: {0:0.########}}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                  <TextBlock Grid.Column="2"
-                                             Text="{Binding NetworkFeeNative, StringFormat=Fee: {0:0.########}}"
-                                             Foreground="#8B949E"
-                                             FontSize="12" />
-                                </Grid>
-                                <TextBlock Text="{Binding Notes}" Foreground="#8B949E" TextWrapping="Wrap" FontSize="12" />
-                              </StackPanel>
-                            </Border>
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                    </ScrollViewer>
-                  </StackPanel>
-                </Border>
-
-                <Border Classes="Panel">
-                  <Grid ColumnDefinitions="1.15*,0.85*" ColumnSpacing="16">
-                    <StackPanel Spacing="10">
-                      <TextBlock Classes="H2" Text="Decision Log" />
-                      <ScrollViewer Classes="PageScroll" MaxHeight="320">
-                        <ItemsControl ItemsSource="{Binding SniperVM.DecisionLog}">
-                          <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:SniperLogEntryViewModel">
-                              <Border Classes="SoftPanel" Margin="0,0,0,8">
-                                <StackPanel Spacing="4">
-                                  <TextBlock Text="{Binding LocalTime, StringFormat={}{0:HH:mm:ss}}"
-                                             Foreground="#6E8196"
-                                             FontSize="12" />
-                                  <TextBlock Text="{Binding Message}"
-                                             TextWrapping="Wrap"
-                                             Foreground="{Binding IsPositive, Converter={StaticResource BoolToColorConverter}}" />
-                                </StackPanel>
-                              </Border>
-                            </DataTemplate>
-                          </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                      </ScrollViewer>
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="1" Spacing="12">
-                      <TextBlock Classes="H2" Text="Session Guard" />
-                      <Border Classes="SoftPanel">
-                        <StackPanel Spacing="6">
-                          <TextBlock Classes="Overline" Text="Open Slots" />
-                          <TextBlock Classes="Metric"
-                                     Text="{Binding SniperVM.OpenPositionCount, StringFormat={}{0}}"
-                                     />
-                          <TextBlock Text="{Binding SniperVM.RemainingPositionSlots, StringFormat=Remaining slots: {0}}"
-                                     Foreground="#8B949E" />
-                        </StackPanel>
-                      </Border>
-                      <Border Classes="SoftPanel">
-                        <StackPanel Spacing="6">
-                          <TextBlock Classes="Overline" Text="Session Buys" />
-                          <TextBlock Classes="Metric"
-                                     Text="{Binding SniperVM.SessionBuyCount, StringFormat={}{0}}"
-                                     />
-                          <TextBlock Text="{Binding SniperVM.RemainingSessionBuys, StringFormat=Remaining buys: {0}}"
-                                     Foreground="#8B949E" />
-                        </StackPanel>
-                      </Border>
-                      <Border Classes="SoftPanel">
-                        <StackPanel Spacing="6">
-                          <TextBlock Classes="Overline" Text="Entry Cooldown" />
-                          <TextBlock FontSize="18"
-                                     FontWeight="Bold"
-                                     Text="{Binding SniperVM.CooldownStatus}"
-                                     TextWrapping="Wrap" />
-                        </StackPanel>
-                      </Border>
-                      <Border Classes="SoftPanel"
-                              BorderBrush="{Binding SniperVM.LatestRiskAccentHex}"
-                              BorderThickness="1.5">
-                        <StackPanel Spacing="8">
-                          <TextBlock Classes="Overline" Text="Risk Verdict" />
-                          <TextBlock Text="{Binding SniperVM.LatestRiskVerdictTitle}"
-                                     FontSize="18"
-                                     FontWeight="Bold"
-                                     Foreground="{Binding SniperVM.LatestRiskAccentHex}"
-                                     TextWrapping="Wrap" />
-                          <TextBlock Text="{Binding SniperVM.LatestRiskScoreLabel}"
-                                     FontWeight="SemiBold"
-                                     Foreground="{Binding SniperVM.LatestRiskAccentHex}" />
-                          <TextBlock Text="{Binding SniperVM.LatestRiskNarrative}"
-                                     Foreground="#8B949E"
-                                     TextWrapping="Wrap" />
-                          <TextBlock Text="{Binding SniperVM.LatestRiskFlags}"
-                                     Foreground="#8B949E"
-                                     TextWrapping="Wrap"
-                                     FontSize="12" />
-                        </StackPanel>
-                      </Border>
-                      <Border Classes="SoftPanel"
-                              BorderBrush="{Binding SniperVM.LatestStructureAccentHex}"
-                              BorderThickness="1.5">
-                        <StackPanel Spacing="8">
-                          <TextBlock Classes="Overline" Text="Structure Guard" />
-                          <TextBlock Text="{Binding SniperVM.LatestStructureVerdict}"
-                                     FontSize="18"
-                                     FontWeight="Bold"
-                                     Foreground="{Binding SniperVM.LatestStructureAccentHex}"
-                                     TextWrapping="Wrap" />
-                          <TextBlock Text="{Binding SniperVM.LatestStructureNarrative}"
-                                     Foreground="#8B949E"
-                                     TextWrapping="Wrap" />
-                        </StackPanel>
-                      </Border>
-                      <Border Classes="SoftPanel"
-                              BorderBrush="{Binding SniperVM.LatestExecutionAccentHex}"
-                              BorderThickness="1.5">
-                        <StackPanel Spacing="8">
-                          <TextBlock Classes="Overline" Text="Execution Block Reason" />
-                          <TextBlock Text="{Binding SniperVM.LatestExecutionVerdict}"
-                                     FontSize="18"
-                                     FontWeight="Bold"
-                                     Foreground="{Binding SniperVM.LatestExecutionAccentHex}"
-                                     TextWrapping="Wrap" />
-                          <TextBlock Text="{Binding SniperVM.LatestExecutionReason}"
-                                     Foreground="#8B949E"
-                                     TextWrapping="Wrap" />
-                        </StackPanel>
-                      </Border>
-                    </StackPanel>
-                  </Grid>
-                </Border>
-                </StackPanel>
               </Grid>
+
+              <!-- Micro trend -->
+              <Border Background="#07111A" CornerRadius="10" Padding="10">
+                <StackPanel Spacing="6">
+                  <TextBlock Text="MICRO TREND" Classes="secLabel" />
+                  <Viewbox Height="90" Stretch="Fill" HorizontalAlignment="Stretch">
+                    <Polyline Points="{Binding SniperVM.SelectedSniperCandidate.MicroTrendPoints}" Stroke="{Binding SniperVM.SelectedSniperCandidate.DetailChangeHex}" StrokeThickness="1.6" />
+                  </Viewbox>
+                </StackPanel>
+              </Border>
+
+              <!-- Security scan -->
+              <Border Background="#07111A" BorderBrush="#1A3A50" BorderThickness="1" CornerRadius="10" Padding="11,11">
+                <StackPanel Spacing="6">
+                  <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
+                    <Border Grid.Column="0" Background="{Binding SniperVM.SelectedSniperCandidate.SecurityVerdictColor}" CornerRadius="4" Padding="8,3" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.SecurityVerdict}" FontSize="10" FontWeight="Bold" Foreground="White" />
+                    </Border>
+                    <TextBlock Grid.Column="1" Text="{Binding SniperVM.SelectedSniperCandidate.SecurityScoreLabel}" FontSize="11" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.SecurityVerdictColor}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="3" Text="GoPlus + RugCheck" FontSize="9" Foreground="#3D5A72" VerticalAlignment="Center" />
+                  </Grid>
+                  <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.SecurityChecksSummary}" FontSize="10" Foreground="#8FA3B8" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+
+              <!-- AI verdict -->
+              <Border Background="#0A1F1A" BorderBrush="#1F5C4A" BorderThickness="1" CornerRadius="12" Padding="12,12">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <Ellipse Width="8" Height="8" Fill="{Binding SniperVM.SelectedSniperCandidate.AiAccentHex}" VerticalAlignment="Top" Margin="0,5,0,0" />
+                  <StackPanel Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="AI SIGNAL" Classes="secLabel" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.AiVerdictLabel}" FontSize="13" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.AiAccentHex}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.AiReason}" FontSize="11" Foreground="#8FA3B8" TextWrapping="Wrap" MaxWidth="320" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
+              <!-- Structure guard (session) -->
+              <Border Background="#07111A" CornerRadius="10" Padding="10,10">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="STRUCTURE GUARD" Classes="secLabel" />
+                  <TextBlock Text="{Binding SniperVM.LatestStructureVerdict}" FontSize="12" FontWeight="Bold" Foreground="{Binding SniperVM.LatestStructureAccentHex}" />
+                  <TextBlock Text="{Binding SniperVM.LatestStructureNarrative}" FontSize="10" Foreground="#8FA3B8" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+
+              <!-- Buy -->
+              <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                      Background="Transparent" BorderBrush="#21E6C1" BorderThickness="1" Foreground="#21E6C1"
+                      CornerRadius="10" FontSize="12" FontWeight="Bold" Padding="0,12"
+                      Content="{Binding SniperVM.SelectedSniperCandidate.DetailSymbol, StringFormat=BUY {0} →}"
+                      Command="{Binding SniperVM.BuyCandidateCommand}" CommandParameter="{Binding SniperVM.SelectedSniperCandidate}" />
+
+              <!-- Decision log -->
+              <StackPanel Spacing="6">
+                <TextBlock Text="DECISION LOG" Classes="secLabel" />
+                <ItemsControl ItemsSource="{Binding SniperVM.DecisionLog}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:SniperLogEntryViewModel">
+                      <Border Background="#07111A" CornerRadius="8" Padding="8,8" Margin="0,0,0,6">
+                        <StackPanel Spacing="2">
+                          <TextBlock Text="{Binding LocalTime, StringFormat={}{0:HH:mm:ss}}" FontFamily="Consolas, monospace" FontSize="10" Foreground="#3D5A72" />
+                          <TextBlock Text="{Binding Message}" FontSize="11" TextWrapping="Wrap"
+                                     Foreground="{Binding IsPositive, Converter={StaticResource BoolToColorConverter}}" />
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+
+              <!-- Session guard (extra, folded) -->
+              <Expander Header="Session guard details">
+                <StackPanel Spacing="10" Margin="0,6,0,0">
+                  <Border Background="#07111A" CornerRadius="9" Padding="10">
+                    <StackPanel Spacing="3">
+                      <TextBlock Text="OPEN SLOTS" Classes="secLabel" />
+                      <TextBlock Text="{Binding SniperVM.OpenPositionCount}" FontSize="16" FontWeight="Bold" Foreground="#E8F4FF" />
+                      <TextBlock Text="{Binding SniperVM.RemainingPositionSlots, StringFormat=Remaining slots: {0}}" FontSize="10" Foreground="#8FA3B8" />
+                    </StackPanel>
+                  </Border>
+                  <Border Background="#07111A" CornerRadius="9" Padding="10">
+                    <StackPanel Spacing="3">
+                      <TextBlock Text="SESSION BUYS" Classes="secLabel" />
+                      <TextBlock Text="{Binding SniperVM.SessionBuyCount}" FontSize="16" FontWeight="Bold" Foreground="#E8F4FF" />
+                      <TextBlock Text="{Binding SniperVM.RemainingSessionBuys, StringFormat=Remaining buys: {0}}" FontSize="10" Foreground="#8FA3B8" />
+                    </StackPanel>
+                  </Border>
+                  <Border Background="#07111A" CornerRadius="9" Padding="10" BorderBrush="{Binding SniperVM.LatestRiskAccentHex}" BorderThickness="1">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="RISK VERDICT" Classes="secLabel" />
+                      <TextBlock Text="{Binding SniperVM.LatestRiskVerdictTitle}" FontSize="14" FontWeight="Bold" Foreground="{Binding SniperVM.LatestRiskAccentHex}" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding SniperVM.LatestRiskNarrative}" FontSize="10" Foreground="#8FA3B8" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </Expander>
+
             </StackPanel>
+          </Grid>
+        </ScrollViewer>
+      </Border>
+
+    </Grid>
+  </Grid>
 </UserControl>

@@ -5303,6 +5303,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         else
             MarketTapeVM?.Stop();
 
+        // Gate heavy per-page timers to their section's visibility — off-screen
+        // these were burning UI-thread time every 1–5 s and causing app-wide jank.
+        if (normalized == "arb") CrossExchangeArbVM?.Activate(); else CrossExchangeArbVM?.Deactivate();
+        if (normalized == "funding") FundingRateVM?.Activate(); else FundingRateVM?.Deactivate();
+        if (normalized == "liquidation") LiquidationHeatmapVM?.Activate(); else LiquidationHeatmapVM?.Deactivate();
+
         // Generate the AI signal desk the first time it is opened (live if a key is set).
         if (normalized == "ai-signals")
             _ = AiSignalDeskVM.EnsureLoadedAsync();

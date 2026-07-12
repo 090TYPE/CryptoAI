@@ -132,6 +132,15 @@ public partial class MainWindow : Window
         _tickerTimer.Tick += TickerTick;
         _tickerTimer.Start();
 
+        // The marquee runs at ~60 fps. When the window is hidden to the tray it is
+        // pure wasted CPU (nothing on screen), so pause it while hidden and resume
+        // on show. Covers the X-to-tray path since Closing calls Hide().
+        this.GetObservable(IsVisibleProperty).Subscribe(visible =>
+        {
+            if (visible) _tickerTimer.Start();
+            else _tickerTimer.Stop();
+        });
+
         // Single-key trading hotkeys (fire only when no text-input control is focused)
         AddHandler(KeyDownEvent, OnTradingHotkeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
     }
@@ -369,7 +378,7 @@ public partial class MainWindow : Window
     {
         RegisterTextBlock(SplashStatusText);
 
-        foreach (var visual in this.GetVisualDescendants())
+        foreach (var visual in EnumerateLocalizableVisuals(this))
         {
             if (visual is Control control)
             {
@@ -397,6 +406,35 @@ public partial class MainWindow : Window
                 case TextBox textBox:
                     RegisterTextBox(textBox);
                     break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Walks the visual tree for localization registration, but does NOT descend into
+    /// hidden section pages. The shell keeps all ~27 <c>*View</c> UserControls in the
+    /// tree at once and toggles them with <c>IsVisible</c>, so a flat
+    /// <c>GetVisualDescendants()</c> re-scanned every inactive page on every tick — the
+    /// bulk of a ~15k-control tree — which showed up as stutter on navigation.
+    /// Pruning at a hidden <see cref="UserControl"/> skips the 26 off-screen pages
+    /// while still fully walking the active page (including its collapsed Expanders,
+    /// which are not UserControls, so their behaviour is unchanged). A hidden page
+    /// registers the next time it is shown — the scan re-arms on section switch.
+    /// </summary>
+    private static IEnumerable<Visual> EnumerateLocalizableVisuals(Visual root)
+    {
+        foreach (var child in root.GetVisualChildren())
+        {
+            if (child is UserControl { IsVisible: false })
+            {
+                continue;
+            }
+
+            yield return child;
+
+            foreach (var descendant in EnumerateLocalizableVisuals(child))
+            {
+                yield return descendant;
             }
         }
     }

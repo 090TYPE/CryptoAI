@@ -71,6 +71,12 @@ public class CexCandlestickChart : Control
     private INotifyCollectionChanged? _subscribedWalls;
     private IReadOnlyList<DexOhlcvPoint> _allCandles = Array.Empty<DexOhlcvPoint>();
     private IReadOnlyList<DexOhlcvPoint> _visibleCandles = Array.Empty<DexOhlcvPoint>();
+    // Cache keys so Render can skip the per-frame filter+sort+copy of the full candle
+    // list when membership hasn't changed. DexOhlcvPoint is a class, so in-place value
+    // updates on the forming candle are already visible through the cached references —
+    // only a collection swap or a Count change needs a rebuild.
+    private object? _lastCandlesRef;
+    private int _lastCandlesCount = -1;
     private Rect _chartBounds;
     private Rect _priceBounds;
     private Rect _timeBounds;
@@ -282,7 +288,7 @@ public class CexCandlestickChart : Control
         DrawBackdrop(context, bounds, _chartBounds, _priceBounds, _timeBounds);
         DrawGrid(context, _chartBounds);
 
-        RefreshAllCandles();
+        EnsureCandlesRefreshedForRender();
         if (_allCandles.Count == 0)
         {
             DrawEmptyState(context, _chartBounds);
@@ -586,6 +592,25 @@ public class CexCandlestickChart : Control
             .Where(candle => candle.High > 0 && candle.Low > 0 && candle.Open > 0 && candle.Close > 0)
             .OrderBy(candle => candle.Timestamp)
             .ToList() ?? (IReadOnlyList<DexOhlcvPoint>)Array.Empty<DexOhlcvPoint>();
+
+        // Remember what we rebuilt from so Render can skip redundant rebuilds.
+        _lastCandlesRef = Candles;
+        _lastCandlesCount = Candles?.Count ?? 0;
+    }
+
+    /// <summary>Rebuilds the sorted/filtered candle list only when the source collection
+    /// reference or item count changed since the last build. Called every frame from
+    /// <see cref="Render"/> — the guard turns a per-frame Where+OrderBy+ToList over the
+    /// whole history into a couple of cheap comparisons on the common repaint paths
+    /// (crosshair move, pan, zoom, hover).</summary>
+    private void EnsureCandlesRefreshedForRender()
+    {
+        if (ReferenceEquals(Candles, _lastCandlesRef) && (Candles?.Count ?? 0) == _lastCandlesCount)
+        {
+            return;
+        }
+
+        RefreshAllCandles();
     }
 
     private void ResetViewWindowIfNeeded()

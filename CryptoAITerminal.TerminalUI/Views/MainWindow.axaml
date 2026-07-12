@@ -498,10 +498,7 @@
           </StackPanel>
         </TabItem.Header>
         <Grid>
-          <ScrollViewer Classes="PageScroll">
-            <views:SniperView />
-          </ScrollViewer>
-
+          <views:SniperView />
         </Grid>
       </TabItem>
 

@@ -1,7 +1,9 @@
+using Avalonia;
 using Avalonia.Media;
 using CryptoAITerminal.TerminalUI.Services;
 using ReactiveUI;
 using System;
+using System.Collections.Generic;
 
 namespace CryptoAITerminal.TerminalUI.ViewModels;
 
@@ -151,6 +153,15 @@ public class DexTokenRowViewModel : ReactiveObject
 
         return Math.Min(100, score);
     }
+
+    /// <summary>Synthetic inline trend sparkline (90×22) for the trending table.</summary>
+    public IList<Point> SparkPoints => SniperSparklines.Row(Symbol, GetPriceChange());
+
+    /// <summary>Filled width (px) of the fixed 44px score meter, so it can never overflow its cell.</summary>
+    public double ScoreBarWidth => Math.Clamp(SecurityScore, 0, 100) / 100.0 * 44.0;
+
+    /// <summary>Score meter / label colour: green ≥75, amber ≥55, else red (matches the mock).</summary>
+    public string ScoreColorHex => SecurityScore >= 75 ? "#3DDC84" : SecurityScore >= 55 ? "#F4B860" : "#FF6B6B";
 
     public string SecurityBadge
     {

@@ -324,11 +324,24 @@ public sealed class CrossExchangeArbitrageViewModel : ReactiveObject, IDisposabl
         // Connect price feeds
         _svc.StartMonitoring();
 
-        // Scan for opportunities every 1 second
+        // Scan for opportunities every 1 second. Started only while the Arb
+        // section is on screen (see Activate/Deactivate) — running the scan on
+        // the UI thread while the page is hidden was pure wasted CPU / jank.
         _scanTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _scanTimer.Tick += (_, _) => DoScanTick();
-        _scanTimer.Start();
     }
+
+    // ── Activation (gated to section visibility) ──────────────────────────────
+
+    /// <summary>Start the 1 s scan. Called when the Arb section becomes visible.</summary>
+    public void Activate()
+    {
+        if (_disposed) return;
+        if (!_scanTimer.IsEnabled) _scanTimer.Start();
+    }
+
+    /// <summary>Stop the scan when the section is hidden so it stops burning UI-thread time.</summary>
+    public void Deactivate() => _scanTimer.Stop();
 
     // ── Scan tick (1 s) ───────────────────────────────────────────────────────
 
