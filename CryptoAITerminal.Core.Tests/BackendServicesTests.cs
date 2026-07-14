@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using CryptoAITerminal.Backend.Services;
+using CryptoAITerminal.Server.Common;
 using CryptoAITerminal.LicenseBot;
 
 namespace CryptoAITerminal.Core.Tests;

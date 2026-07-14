@@ -71,3 +71,7 @@ package.json
 package-lock.json
 .claude/
 portfolio/
+
+# Local secrets for docker-compose (keep .env.example tracked)
+.env
+!.env.example

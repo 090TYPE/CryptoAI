@@ -1,0 +1,83 @@
+name: cryptoai
+
+# Whole server contour: TimescaleDB + public API (edge) + candle/collector worker
+# + withdrawal executor (core). Only the API publishes a port. Migrations in ./db
+# are applied automatically on first DB boot (init runs first via 001_ prefix).
+#
+#   docker compose up -d --build
+#   curl http://localhost:8080/health
+#
+# Dev defaults are inline; override via a .env file for anything real.
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: cryptoai
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+      - ./db/002_dex_data.sql:/docker-entrypoint-initdb.d/002_dex_data.sql:ro
+      - ./db/003_more_data.sql:/docker-entrypoint-initdb.d/003_more_data.sql:ro
+      - ./db/004_custodial.sql:/docker-entrypoint-initdb.d/004_custodial.sql:ro
+    ports:
+      - "5432:5432"   # dev: lets the host admin console (cryptoai-admin) connect. Remove in prod.
+    networks: [core]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cryptoai"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build:
+      context: ./CryptoAITerminal.Server.Api
+      dockerfile: Dockerfile
+    environment:
+      DB_CONN: "Host=db;Database=cryptoai;Username=postgres;Password=${DB_PASSWORD:-postgres}"
+      ASPNETCORE_URLS: "http://+:8080"
+      # Secrets come from .env (gitignored). See .env.example.
+      CRYPTOAI_KEK_B64: ${CRYPTOAI_KEK_B64:?set CRYPTOAI_KEK_B64 in .env — generate: openssl rand -base64 32}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?set ADMIN_TOKEN in .env}
+      WITHDRAWAL_DELAY_MINUTES: ${WITHDRAWAL_DELAY_MINUTES:-30}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [edge, core]
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./CryptoAITerminal.CandleWorker
+      dockerfile: Dockerfile
+    environment:
+      DB_CONN: "Host=db;Database=cryptoai;Username=postgres;Password=${DB_PASSWORD:-postgres}"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [core]
+    restart: unless-stopped
+
+  executor:
+    build:
+      context: ./CryptoAITerminal.Executor
+      dockerfile: Dockerfile
+    environment:
+      DB_CONN: "Host=db;Database=cryptoai;Username=postgres;Password=${DB_PASSWORD:-postgres}"
+      # MUST match the API's KEK so it can decrypt what the API encrypted (from .env).
+      CRYPTOAI_KEK_B64: ${CRYPTOAI_KEK_B64:?set CRYPTOAI_KEK_B64 in .env}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [core]
+    restart: unless-stopped
+
+networks:
+  edge: {}
+  core: {}
+
+volumes:
+  pgdata: {}

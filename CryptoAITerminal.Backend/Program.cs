@@ -1,5 +1,6 @@
 using System.Text;
 using CryptoAITerminal.Backend.Services;
+using CryptoAITerminal.Server.Common;
 
 var builder = WebApplication.CreateBuilder(args);
 

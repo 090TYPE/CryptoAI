@@ -215,6 +215,9 @@ public sealed class LicenseService
         catch { return null; }
     }
 
+    /// <summary>The stored signed license token, for the server <c>X-License</c> header. Null on trial.</summary>
+    public string? GetToken() => ReadStoredLicense();
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     /// <summary>Stable, non-PII machine fingerprint for optional license binding.</summary>

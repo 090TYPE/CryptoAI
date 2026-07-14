@@ -42,6 +42,24 @@
   <Folder Name="/src/LicenseBot/">
     <Project Path="CryptoAITerminal.LicenseBot/CryptoAITerminal.LicenseBot.csproj" />
   </Folder>
+  <Folder Name="/src/Server.Common/">
+    <Project Path="CryptoAITerminal.Server.Common/CryptoAITerminal.Server.Common.csproj" />
+  </Folder>
+  <Folder Name="/src/Server.Data/">
+    <Project Path="CryptoAITerminal.Server.Data/CryptoAITerminal.Server.Data.csproj" />
+  </Folder>
+  <Folder Name="/src/CandleWorker/">
+    <Project Path="CryptoAITerminal.CandleWorker/CryptoAITerminal.CandleWorker.csproj" />
+  </Folder>
+  <Folder Name="/src/Server.Api/">
+    <Project Path="CryptoAITerminal.Server.Api/CryptoAITerminal.Server.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/Executor/">
+    <Project Path="CryptoAITerminal.Executor/CryptoAITerminal.Executor.csproj" />
+  </Folder>
+  <Folder Name="/src/AdminCli/">
+    <Project Path="CryptoAITerminal.AdminCli/CryptoAITerminal.AdminCli.csproj" />
+  </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/Core.Tests/">
     <Project Path="CryptoAITerminal.Core.Tests/CryptoAITerminal.Core.Tests.csproj" />

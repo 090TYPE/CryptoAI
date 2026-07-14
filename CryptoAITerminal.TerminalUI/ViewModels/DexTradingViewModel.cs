@@ -1072,6 +1072,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
     // ── Watchlist (favourite tokens, persisted) ───────────────────────────────
     private readonly DexWatchlistStore _watchlistStore = new();
+    private readonly FavoritesSyncService _favoritesSync = new();
     public ObservableCollection<DexWatchItemViewModel> WatchlistItems { get; } = new();
     public bool HasWatchlist => WatchlistItems.Count > 0;
     public bool IsSelectedWatched => SelectedToken is not null &&
@@ -1118,6 +1119,8 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     {
         var snapshot = WatchlistItems.Select(w => new DexWatchEntry(w.ChainId, w.TokenAddress, w.Symbol)).ToList();
         _ = Task.Run(() => _watchlistStore.Save(snapshot));
+        // Mirror to the server so the tokens get tracked 24/7 (best-effort; no-op if unconfigured).
+        _ = Task.Run(() => _favoritesSync.PushAsync(snapshot));
     }
 
     private void LoadWatchlist()
