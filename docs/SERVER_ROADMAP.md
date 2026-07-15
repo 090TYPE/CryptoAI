@@ -37,7 +37,7 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
 - 🔴 Long historical candles as a service
 
 ## Trading
-- 🔴 Server-side bots 24/7 (DCA/Grid/trailing run when PC is off) — bot_configs exist, need strategy executor
+- 🟡 Server-side bots 24/7 — DCA done (BotExecutorService + bot_orders, paper stub via IBotOrderExecutor); grid/trailing + real exchange exec TODO
 - 🔴 Server-side copy-trading
 - 🔴 Cloud backtesting
 - 🔴 Multi-exchange order routing (best price CEX/DEX)
