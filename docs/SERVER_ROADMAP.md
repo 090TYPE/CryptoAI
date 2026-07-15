@@ -21,7 +21,7 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
 - 🔴 **Plan limits** (rate limit, #bots, feature gating) per tier
 - 🔴 **MPC / threshold signer** for withdrawals (replace StubWithdrawalSigner) — before real funds
 - 🔴 **Deploy to Timeweb** (2-node Amsterdam) + domain + Cloudflare
-- 🔴 **2FA** on login + withdrawal
+- 🟡 **2FA** (TOTP) — server done (Totp RFC6238 + /api/2fa/setup|enable|verify + withdrawal gated; secret envelope-encrypted); client UI + login gate TODO
 
 ## AI
 - 🔴 Real-time AI alerts (Claude flags anomalies on favorites)

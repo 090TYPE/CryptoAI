@@ -24,6 +24,7 @@ builder.Services.AddSingleton(sp => new AiProxy(
 builder.Services.AddSingleton<SecretsRepository>();
 builder.Services.AddSingleton<WithdrawalsRepository>();
 builder.Services.AddSingleton<BotConfigRepository>();
+builder.Services.AddSingleton<TwoFactorRepository>();
 builder.Services.AddSingleton<PriceAlertsRepository>();
 builder.Services.AddSingleton<NotificationRepository>();
 builder.Services.AddSingleton<TrackedTokenRepository>();
@@ -122,6 +123,26 @@ static async Task Deny(HttpContext ctx, string msg)
 
 static Guid Uid(HttpContext ctx) => (Guid)ctx.Items["uid"]!;
 static string? ClientIp(HttpContext ctx) => ctx.Connection.RemoteIpAddress?.ToString();
+
+// Always checks the code against the stored secret (used for enable + verify).
+static async Task<bool> VerifyCodeAsync(HttpContext ctx, string? code)
+{
+    var repo = ctx.RequestServices.GetRequiredService<TwoFactorRepository>();
+    var row = await repo.GetAsync(Uid(ctx), ctx.RequestAborted);
+    var cipher = ctx.RequestServices.GetService<IEnvelopeCipher>();
+    if (row is null || cipher is null || string.IsNullOrWhiteSpace(code)) return false;
+    var secret = await cipher.DecryptAsync(row.Ciphertext, row.WrappedDek, ctx.RequestAborted);
+    return Totp.Verify(secret, code!);
+}
+
+// Gate for custodial actions: passes when 2FA isn't enabled, else requires a valid code.
+static async Task<bool> Verify2faAsync(HttpContext ctx, string? code)
+{
+    var repo = ctx.RequestServices.GetRequiredService<TwoFactorRepository>();
+    var row = await repo.GetAsync(Uid(ctx), ctx.RequestAborted);
+    if (row is null || !row.Enabled) return true; // 2FA not set up → nothing to check
+    return await VerifyCodeAsync(ctx, code);
+}
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok", ts = DateTime.UtcNow }));
 
@@ -231,11 +252,37 @@ app.MapDelete("/api/secrets/{id:guid}", async (HttpContext ctx, Guid id, Secrets
     return Results.Ok(new { removed });
 });
 
+// ── 2FA (TOTP) ────────────────────────────────────────────────────────────────
+app.MapPost("/api/2fa/setup", async (HttpContext ctx, TwoFactorRepository tfa) =>
+{
+    var cipher = ctx.RequestServices.GetService<IEnvelopeCipher>();
+    if (cipher is null) return Results.Json(new { error = "encryption_not_configured" }, statusCode: 503);
+    var secret = Totp.GenerateSecret();
+    var (cipherB, wrapped) = await cipher.EncryptAsync(secret, ctx.RequestAborted);
+    await tfa.UpsertSecretAsync(Uid(ctx), cipherB, wrapped, ctx.RequestAborted);
+    // secret returned once so the user adds it to their authenticator app
+    return Results.Ok(new { secret, otpauth = Totp.ProvisioningUri(secret, Uid(ctx).ToString()) });
+});
+
+app.MapPost("/api/2fa/enable", async (HttpContext ctx, TwoFaCode body, TwoFactorRepository tfa, AuditRepository audit) =>
+{
+    if (!await VerifyCodeAsync(ctx, body.Code)) return Results.BadRequest(new { error = "invalid code" });
+    await tfa.SetEnabledAsync(Uid(ctx), true, ctx.RequestAborted);
+    await audit.WriteAsync(Uid(ctx), "user", "2fa_enabled", null, ClientIp(ctx), ctx.RequestAborted);
+    return Results.Ok(new { enabled = true });
+});
+
+app.MapPost("/api/2fa/verify", async (HttpContext ctx, TwoFaCode body) =>
+    await VerifyCodeAsync(ctx, body.Code) ? Results.Ok(new { ok = true }) : Results.Unauthorized());
+
 // ── Withdrawals (delay + cancel window — the custodial compensating control) ──
 app.MapPost("/api/withdrawals", async (HttpContext ctx, WithdrawalRequest body, WithdrawalsRepository wd, AuditRepository audit, IConfiguration cfg) =>
 {
     if (body.Amount <= 0 || string.IsNullOrWhiteSpace(body.Asset) || string.IsNullOrWhiteSpace(body.ToAddress))
         return Results.BadRequest(new { error = "asset, amount>0 and toAddress are required" });
+    // Custodial action → require a valid 2FA code when the user has 2FA enabled.
+    if (!await Verify2faAsync(ctx, body.Code))
+        return Results.Json(new { error = "2fa_required" }, statusCode: 401);
 
     var delayMin = int.TryParse(cfg["WITHDRAWAL_DELAY_MINUTES"], out var d) ? d : 30;
     var executeAfter = DateTime.UtcNow.AddMinutes(delayMin);
@@ -364,7 +411,8 @@ app.Run();
 
 record KeyUpdate(string ApiKey, bool Enabled, string? Note);
 record SecretInput(string? Kind, string? Label, string ExchangeOrChain, string Secret, string? Permissions);
-record WithdrawalRequest(string Asset, decimal Amount, string ToAddress);
+record WithdrawalRequest(string Asset, decimal Amount, string ToAddress, string? Code);
+record TwoFaCode(string Code);
 record BotInput(string Strategy, JsonElement? Params, bool Enabled);
 record AlertInput(string Chain, string TokenAddress, string? Symbol, string Condition, decimal Threshold);
 record NotificationInput(string Kind, string Target, string? Token, bool? Enabled);
