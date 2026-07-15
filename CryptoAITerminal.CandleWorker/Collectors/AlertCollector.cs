@@ -13,12 +13,14 @@ public sealed class AlertCollector : IDataCollector
 {
     private readonly PriceAlertsRepository _alerts;
     private readonly AuditRepository _audit;
+    private readonly INotifier _notifier;
     private readonly ILogger<AlertCollector> _log;
 
-    public AlertCollector(PriceAlertsRepository alerts, AuditRepository audit, ILogger<AlertCollector> log)
+    public AlertCollector(PriceAlertsRepository alerts, AuditRepository audit, INotifier notifier, ILogger<AlertCollector> log)
     {
         _alerts = alerts;
         _audit = audit;
+        _notifier = notifier;
         _log = log;
     }
 
@@ -34,6 +36,8 @@ public sealed class AlertCollector : IDataCollector
             await _audit.WriteAsync(a.UserId, "alerts", "alert_triggered",
                 JsonSerializer.Serialize(new { a.Id, a.Chain, a.Symbol, a.Condition, a.Threshold, price = a.Price }),
                 null, ct);
+            await _notifier.SendAsync(a.UserId, "Price alert",
+                $"{a.Symbol ?? a.TokenAddress} {a.Condition} {a.Threshold} — now {a.Price}", ct);
             _log.LogInformation("alert {Id} fired: {Symbol} {Condition} {Threshold} (price {Price})",
                 a.Id, a.Symbol, a.Condition, a.Threshold, a.Price);
         }

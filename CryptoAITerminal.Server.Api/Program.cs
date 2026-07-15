@@ -25,6 +25,7 @@ builder.Services.AddSingleton<SecretsRepository>();
 builder.Services.AddSingleton<WithdrawalsRepository>();
 builder.Services.AddSingleton<BotConfigRepository>();
 builder.Services.AddSingleton<PriceAlertsRepository>();
+builder.Services.AddSingleton<NotificationRepository>();
 builder.Services.AddSingleton<TrackedTokenRepository>();
 builder.Services.AddSingleton<AuditRepository>();
 
@@ -315,6 +316,28 @@ app.MapGet("/api/alerts", async (HttpContext ctx, PriceAlertsRepository alerts) 
 app.MapDelete("/api/alerts/{id:guid}", async (HttpContext ctx, Guid id, PriceAlertsRepository alerts) =>
     Results.Ok(new { removed = await alerts.DeleteAsync(Uid(ctx), id, ctx.RequestAborted) }));
 
+// ── Notification channel (ntfy topic or Telegram) for alert/bot pushes ────────
+app.MapGet("/api/notifications", async (HttpContext ctx, NotificationRepository notif) =>
+{
+    var ch = await notif.GetForUserAsync(Uid(ctx), ctx.RequestAborted);
+    return ch is null
+        ? Results.Ok(new { configured = false })
+        // never echo the telegram bot token back
+        : Results.Ok(new { configured = true, ch.Kind, ch.Target, ch.Enabled });
+});
+
+app.MapPut("/api/notifications", async (HttpContext ctx, NotificationInput body, NotificationRepository notif) =>
+{
+    var kind = (body.Kind ?? "").ToLowerInvariant();
+    if (kind is not ("ntfy" or "telegram") || string.IsNullOrWhiteSpace(body.Target))
+        return Results.BadRequest(new { error = "kind (ntfy|telegram) and target required" });
+    if (kind == "telegram" && string.IsNullOrWhiteSpace(body.Token))
+        return Results.BadRequest(new { error = "telegram needs a bot token" });
+
+    await notif.UpsertAsync(Uid(ctx), kind, body.Target, body.Token, body.Enabled ?? true, ctx.RequestAborted);
+    return Results.Ok(new { ok = true, kind });
+});
+
 // ── Admin: editable provider keys ─────────────────────────────────────────────
 app.MapGet("/api/keys", async (ProviderKeyStore keys, CancellationToken ct) =>
 {
@@ -344,5 +367,6 @@ record SecretInput(string? Kind, string? Label, string ExchangeOrChain, string S
 record WithdrawalRequest(string Asset, decimal Amount, string ToAddress);
 record BotInput(string Strategy, JsonElement? Params, bool Enabled);
 record AlertInput(string Chain, string TokenAddress, string? Symbol, string Condition, decimal Threshold);
+record NotificationInput(string Kind, string Target, string? Token, bool? Enabled);
 
 public partial class Program; // for WebApplicationFactory in tests

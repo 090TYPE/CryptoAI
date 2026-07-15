@@ -25,6 +25,8 @@ builder.Services.AddSingleton<WhaleRepository>();
 builder.Services.AddSingleton<OnChainRepository>();
 builder.Services.AddSingleton<LiquidationsRepository>();
 builder.Services.AddSingleton<PriceAlertsRepository>();
+builder.Services.AddSingleton<NotificationRepository>();
+builder.Services.AddSingleton<INotifier, Notifier>();
 builder.Services.AddSingleton<AuditRepository>();
 builder.Services.AddSingleton<CollectorRunsRepository>();
 builder.Services.AddSingleton<ProviderKeyStore>();
