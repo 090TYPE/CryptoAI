@@ -24,6 +24,8 @@ builder.Services.AddSingleton<HoldersRepository>();
 builder.Services.AddSingleton<WhaleRepository>();
 builder.Services.AddSingleton<OnChainRepository>();
 builder.Services.AddSingleton<LiquidationsRepository>();
+builder.Services.AddSingleton<PriceAlertsRepository>();
+builder.Services.AddSingleton<AuditRepository>();
 builder.Services.AddSingleton<CollectorRunsRepository>();
 builder.Services.AddSingleton<ProviderKeyStore>();
 
@@ -50,6 +52,7 @@ builder.Services.AddSingleton<IDataCollector, LiquidationsCollector>();
 builder.Services.AddSingleton<IDataCollector, NewsCollector>();
 builder.Services.AddSingleton<IDataCollector, SentimentCollector>();
 builder.Services.AddSingleton<IDataCollector, CryptoPanicCollector>();
+builder.Services.AddSingleton<IDataCollector, AlertCollector>();
 builder.Services.AddHostedService<CollectorRunner>();
 
 builder.Build().Run();

@@ -1,4 +1,6 @@
+using System.Text;
 using System.Text.Json;
+using System.Threading.RateLimiting;
 using CryptoAITerminal.Server.Common;
 using CryptoAITerminal.Server.Data;
 
@@ -14,9 +16,16 @@ builder.Services.AddSingleton<FavoritesRepository>();
 builder.Services.AddSingleton<CandleRepository>();
 builder.Services.AddSingleton<ApiReadRepository>();
 builder.Services.AddSingleton<ProviderKeyStore>();
+builder.Services.AddSingleton(sp => new AiProxy(
+    new HttpClient { Timeout = TimeSpan.FromSeconds(120) },
+    sp.GetRequiredService<ProviderKeyStore>(),
+    builder.Configuration["ANTHROPIC_API_KEY"],
+    builder.Configuration["OPENAI_API_KEY"]));
 builder.Services.AddSingleton<SecretsRepository>();
 builder.Services.AddSingleton<WithdrawalsRepository>();
 builder.Services.AddSingleton<BotConfigRepository>();
+builder.Services.AddSingleton<PriceAlertsRepository>();
+builder.Services.AddSingleton<TrackedTokenRepository>();
 builder.Services.AddSingleton<AuditRepository>();
 
 // Custodial envelope encryption. Registered only when a master key is provided
@@ -33,8 +42,30 @@ builder.Services.AddSingleton(new LicenseTokenValidator(licensePubKey));
 
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
+// Rate limiting: a fixed window per license token (or per client IP when unauthenticated),
+// so a leaked token or a brute-force sweep against the public domain can't hammer the API.
+var ratePerMin = int.TryParse(builder.Configuration["RATE_LIMIT_PER_MIN"], out var rpm) ? rpm : 120;
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =>
+    {
+        var license = ctx.Request.Headers["X-License"].ToString();
+        var key = string.IsNullOrEmpty(license)
+            ? (ctx.Connection.RemoteIpAddress?.ToString() ?? "anon")
+            : license;
+        return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = ratePerMin,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        });
+    });
+});
+
 var app = builder.Build();
 app.UseCors();
+app.UseRateLimiter();
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 // /health is open. /api/keys is admin-gated (X-Admin == ADMIN_TOKEN when set).
@@ -113,6 +144,25 @@ app.MapDelete("/api/favorites/{chain}/{token}", async (HttpContext ctx, string c
 {
     await favs.RemoveAsync(Uid(ctx), chain, token, ctx.RequestAborted);
     return Results.Ok(new { removed = token });
+});
+
+// ── AI proxy (server-held key; returns the model's answer) ────────────────────
+app.MapPost("/api/ai/message", async (HttpContext ctx, AiProxy ai) =>
+{
+    var body = await new StreamReader(ctx.Request.Body).ReadToEndAsync(ctx.RequestAborted);
+    var result = await ai.ForwardAnthropicAsync(body, ctx.RequestAborted);
+    return result is null
+        ? Results.Json(new { error = "ai_key_not_configured" }, statusCode: 503)
+        : Results.Content(result.Value.Body, "application/json", Encoding.UTF8, result.Value.Status);
+});
+
+app.MapPost("/api/ai/openai", async (HttpContext ctx, AiProxy ai) =>
+{
+    var body = await new StreamReader(ctx.Request.Body).ReadToEndAsync(ctx.RequestAborted);
+    var result = await ai.ForwardOpenAiAsync(body, ctx.RequestAborted);
+    return result is null
+        ? Results.Json(new { error = "ai_key_not_configured" }, statusCode: 503)
+        : Results.Content(result.Value.Body, "application/json", Encoding.UTF8, result.Value.Status);
 });
 
 // ── DEX data (read) ───────────────────────────────────────────────────────────
@@ -245,6 +295,26 @@ app.MapDelete("/api/bots/{id:guid}", async (HttpContext ctx, Guid id, BotConfigR
     return Results.Ok(new { removed });
 });
 
+// ── Price alerts (server watches 24/7, even with the user's PC off) ───────────
+app.MapPost("/api/alerts", async (HttpContext ctx, AlertInput body, PriceAlertsRepository alerts, TrackedTokenRepository tracked) =>
+{
+    var cond = (body.Condition ?? "").ToLowerInvariant();
+    if (cond is not ("above" or "below") || body.Threshold <= 0 ||
+        string.IsNullOrWhiteSpace(body.Chain) || string.IsNullOrWhiteSpace(body.TokenAddress))
+        return Results.BadRequest(new { error = "chain, tokenAddress, condition(above|below), threshold>0 required" });
+
+    // Make sure the token is tracked so the collector fills its price.
+    await tracked.EnsureTrackedAsync(body.Chain, body.TokenAddress, body.Symbol, ctx.RequestAborted);
+    var id = await alerts.CreateAsync(Uid(ctx), body.Chain, body.TokenAddress, body.Symbol, cond, body.Threshold, ctx.RequestAborted);
+    return Results.Ok(new { id, status = "active" });
+});
+
+app.MapGet("/api/alerts", async (HttpContext ctx, PriceAlertsRepository alerts) =>
+    Results.Ok(await alerts.ListForUserAsync(Uid(ctx), ctx.RequestAborted)));
+
+app.MapDelete("/api/alerts/{id:guid}", async (HttpContext ctx, Guid id, PriceAlertsRepository alerts) =>
+    Results.Ok(new { removed = await alerts.DeleteAsync(Uid(ctx), id, ctx.RequestAborted) }));
+
 // ── Admin: editable provider keys ─────────────────────────────────────────────
 app.MapGet("/api/keys", async (ProviderKeyStore keys, CancellationToken ct) =>
 {
@@ -273,5 +343,6 @@ record KeyUpdate(string ApiKey, bool Enabled, string? Note);
 record SecretInput(string? Kind, string? Label, string ExchangeOrChain, string Secret, string? Permissions);
 record WithdrawalRequest(string Asset, decimal Amount, string ToAddress);
 record BotInput(string Strategy, JsonElement? Params, bool Enabled);
+record AlertInput(string Chain, string TokenAddress, string? Symbol, string Condition, decimal Threshold);
 
 public partial class Program; // for WebApplicationFactory in tests

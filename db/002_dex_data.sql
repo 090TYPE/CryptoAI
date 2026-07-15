@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS provider_keys (
 -- Seed the full provider list (empty). Fill api_key + set enabled=true anytime:
 --   UPDATE provider_keys SET api_key='...', enabled=true WHERE provider='birdeye';
 INSERT INTO provider_keys (provider, note) VALUES
+  ('anthropic',  'Claude AI (server-side proxy)'),
+  ('openai',     'OpenAI / ChatGPT (server-side proxy)'),
   ('birdeye',    'Solana OHLCV / token data'),
   ('coingecko',  'CoinGecko Pro on-chain OHLCV & token data'),
   ('covalent',   'Historical prices / balances'),

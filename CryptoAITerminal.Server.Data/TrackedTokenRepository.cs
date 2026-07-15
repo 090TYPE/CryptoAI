@@ -50,6 +50,19 @@ public sealed class TrackedTokenRepository
         return rows.ToList();
     }
 
+    /// <summary>Ensure a token is tracked so the market collector fills its snapshot (for alerts/manual adds).</summary>
+    public async Task EnsureTrackedAsync(string chain, string token, string? symbol, CancellationToken ct = default)
+    {
+        const string sql = @"
+            INSERT INTO tracked_tokens (chain, token_address, symbol, source, is_active, next_poll_utc)
+            VALUES (@chain, @token, @symbol, 'manual', true, now())
+            ON CONFLICT (chain, token_address) DO UPDATE
+              SET is_active = true,
+                  symbol = COALESCE(NULLIF(EXCLUDED.symbol, ''), tracked_tokens.symbol);";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        await conn.ExecuteAsync(new CommandDefinition(sql, new { chain, token, symbol }, cancellationToken: ct));
+    }
+
     /// <summary>Persist the resolved primary pool for a token (done once).</summary>
     public async Task SetPoolAsync(string chain, string token, string poolAddress, CancellationToken ct = default)
     {

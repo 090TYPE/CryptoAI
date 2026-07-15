@@ -21,7 +21,8 @@ public sealed class OpenAiAgentRunner : IAgentRunner
 
     public OpenAiAgentRunner(string apiKey, string? model = null, int maxIterations = 8, HttpClient? http = null)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // In server mode the key lives on the server; the client authenticates by license.
+        if (string.IsNullOrWhiteSpace(apiKey) && string.IsNullOrWhiteSpace(ChatClient.ServerBaseUrl))
             throw new ArgumentException("OpenAI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model = string.IsNullOrWhiteSpace(model) ? "gpt-4o" : model;
@@ -70,11 +71,22 @@ public sealed class OpenAiAgentRunner : IAgentRunner
                 tool_choice = "auto"
             };
 
-            using var req = new HttpRequestMessage(HttpMethod.Post, Endpoint)
+            // Route through the CryptoAI server when configured; else call OpenAI directly.
+            var useServer = !string.IsNullOrWhiteSpace(ChatClient.ServerBaseUrl);
+            var endpoint = useServer ? ChatClient.ServerBaseUrl!.TrimEnd('/') + "/api/ai/openai" : Endpoint;
+            using var req = new HttpRequestMessage(HttpMethod.Post, endpoint)
             {
                 Content = JsonContent.Create(payload)
             };
-            req.Headers.Add("Authorization", "Bearer " + _apiKey);
+            if (useServer)
+            {
+                var token = ChatClient.LicenseTokenProvider?.Invoke();
+                if (!string.IsNullOrWhiteSpace(token)) req.Headers.Add("X-License", token);
+            }
+            else
+            {
+                req.Headers.Add("Authorization", "Bearer " + _apiKey);
+            }
 
             string body;
             try

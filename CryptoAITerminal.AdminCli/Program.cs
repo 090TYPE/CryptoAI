@@ -42,6 +42,7 @@ while (true)
         "Sentiment",
         "On-chain metrics",
         "Users",
+        "Price alerts",
     });
     var choice = Ask("Select");
 
@@ -65,6 +66,7 @@ while (true)
             case "12": await ViewSql("SENTIMENT", "SELECT metric, value, label, ts FROM sentiment ORDER BY ts DESC LIMIT 5"); break;
             case "13": await ViewSql("ON-CHAIN METRICS", "SELECT DISTINCT ON (asset,metric) asset, metric, round(value,0) AS value, ts FROM onchain_metrics ORDER BY asset, metric, ts DESC LIMIT 20"); break;
             case "14": await ViewSql("USERS", "SELECT license_name AS license, email, created_utc AS created FROM users ORDER BY created_utc DESC LIMIT 100"); break;
+            case "15": await ViewSql("PRICE ALERTS", @"SELECT a.id, u.license_name AS ""user"", a.symbol, a.condition, a.threshold, a.status, a.triggered_price AS ""triggered@"" FROM price_alerts a JOIN users u ON u.id=a.user_id ORDER BY a.created_utc DESC LIMIT 100"); break;
 
             default: Warn("pick a number from the menu."); Pause(); break;
         }

@@ -30,7 +30,8 @@ public sealed class ClaudeAgentRunner : IAgentRunner
     /// </param>
     public ClaudeAgentRunner(string apiKey, string? model = null, int maxIterations = 8, HttpClient? http = null)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // In server mode the key lives on the server; the client authenticates by license.
+        if (string.IsNullOrWhiteSpace(apiKey) && string.IsNullOrWhiteSpace(ChatClient.ServerBaseUrl))
             throw new ArgumentException("Anthropic API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
@@ -86,12 +87,24 @@ public sealed class ClaudeAgentRunner : IAgentRunner
                 messages
             };
 
-            using var req = new HttpRequestMessage(HttpMethod.Post, DefaultEndpoint)
+            // Route through the CryptoAI server when configured (tools + messages forward
+            // verbatim; the server injects the key). Otherwise call Anthropic directly.
+            var useServer = !string.IsNullOrWhiteSpace(ChatClient.ServerBaseUrl);
+            var endpoint = useServer ? ChatClient.ServerBaseUrl!.TrimEnd('/') + "/api/ai/message" : DefaultEndpoint;
+            using var req = new HttpRequestMessage(HttpMethod.Post, endpoint)
             {
                 Content = JsonContent.Create(payload)
             };
-            req.Headers.Add("x-api-key", _apiKey);
-            req.Headers.Add("anthropic-version", AnthropicVersion);
+            if (useServer)
+            {
+                var token = ChatClient.LicenseTokenProvider?.Invoke();
+                if (!string.IsNullOrWhiteSpace(token)) req.Headers.Add("X-License", token);
+            }
+            else
+            {
+                req.Headers.Add("x-api-key", _apiKey);
+                req.Headers.Add("anthropic-version", AnthropicVersion);
+            }
 
             string body;
             try

@@ -20,6 +20,17 @@ public static class ChatClient
     private const string AnthropicVersion = "2023-06-01";
     private const string OpenAiEndpoint = "https://api.openai.com/v1/chat/completions";
 
+    // ── Server routing ────────────────────────────────────────────────────────
+    // When the app is bound to a CryptoAI server (ServerBaseUrl set at startup from
+    // ServerEndpoint), AI calls go to the server's proxy with the license token instead
+    // of the vendor API with a client-held key — the key lives only on the server.
+    // Left null → direct-to-vendor (unchanged behaviour).
+    public static string? ServerBaseUrl { get; set; }
+    public static Func<string?>? LicenseTokenProvider { get; set; }
+
+    private static bool UseServer => !string.IsNullOrWhiteSpace(ServerBaseUrl);
+    private static string? LicenseToken => LicenseTokenProvider?.Invoke();
+
     /// <summary>
     /// Sends a single-turn completion and returns the assistant's text (already
     /// extracted from the vendor's response envelope). Throws
@@ -38,7 +49,8 @@ public static class ChatClient
         HttpClient? http = null,
         CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // When routing through the server the client needs no key — the server holds it.
+        if (!UseServer && string.IsNullOrWhiteSpace(apiKey))
             throw new ArgumentException("AI API key is required.", nameof(apiKey));
 
         var client = http ?? SharedHttp;
@@ -63,12 +75,21 @@ public static class ChatClient
         };
         if (temperature is { } t) payload["temperature"] = t;
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, AnthropicEndpoint)
+        var endpoint = UseServer ? ServerBaseUrl!.TrimEnd('/') + "/api/ai/message" : AnthropicEndpoint;
+        using var req = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {
             Content = JsonContent.Create(payload)
         };
-        req.Headers.Add("x-api-key", apiKey);
-        req.Headers.Add("anthropic-version", AnthropicVersion);
+        if (UseServer)
+        {
+            var token = LicenseToken;
+            if (!string.IsNullOrWhiteSpace(token)) req.Headers.Add("X-License", token);
+        }
+        else
+        {
+            req.Headers.Add("x-api-key", apiKey);
+            req.Headers.Add("anthropic-version", AnthropicVersion);
+        }
 
         using var res = await http.SendAsync(req, ct).ConfigureAwait(false);
         var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
@@ -106,11 +127,20 @@ public static class ChatClient
         };
         if (temperature is { } t) payload["temperature"] = t;
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, OpenAiEndpoint)
+        var endpoint = UseServer ? ServerBaseUrl!.TrimEnd('/') + "/api/ai/openai" : OpenAiEndpoint;
+        using var req = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {
             Content = JsonContent.Create(payload)
         };
-        req.Headers.Add("Authorization", "Bearer " + apiKey);
+        if (UseServer)
+        {
+            var token = LicenseToken;
+            if (!string.IsNullOrWhiteSpace(token)) req.Headers.Add("X-License", token);
+        }
+        else
+        {
+            req.Headers.Add("Authorization", "Bearer " + apiKey);
+        }
 
         using var res = await http.SendAsync(req, ct).ConfigureAwait(false);
         var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);

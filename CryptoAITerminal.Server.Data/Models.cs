@@ -57,3 +57,12 @@ public sealed record WithdrawalView(
 
 /// <summary>An autonomous-strategy config.</summary>
 public sealed record BotConfigView(Guid Id, string Strategy, string? ParamsJson, bool Enabled, DateTime UpdatedUtc);
+
+/// <summary>A price alert as shown to the user.</summary>
+public sealed record AlertView(
+    Guid Id, string Chain, string TokenAddress, string? Symbol, string Condition,
+    decimal Threshold, string Status, DateTime CreatedUtc, DateTime? TriggeredUtc, decimal? TriggeredPrice);
+
+/// <summary>An active alert whose condition is currently met (the worker fires it).</summary>
+public sealed record DueAlert(Guid Id, Guid UserId, string Chain, string TokenAddress, string? Symbol,
+    string Condition, decimal Threshold, decimal Price);
