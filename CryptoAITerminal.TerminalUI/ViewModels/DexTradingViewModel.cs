@@ -1130,6 +1130,24 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             WatchlistItems.Add(new DexWatchItemViewModel(e.ChainId, e.TokenAddress, e.Symbol));
         }
         this.RaisePropertyChanged(nameof(HasWatchlist));
+
+        // Multi-device: pull the server's watchlist and merge in anything missing locally.
+        _ = Task.Run(async () =>
+        {
+            var remote = await _favoritesSync.PullAsync();
+            if (remote.Count == 0) return;
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                foreach (var e in remote)
+                {
+                    if (WatchlistItems.Any(w => string.Equals(w.TokenAddress, e.TokenAddress, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+                    WatchlistItems.Add(new DexWatchItemViewModel(e.ChainId, e.TokenAddress, e.Symbol));
+                }
+                this.RaisePropertyChanged(nameof(HasWatchlist));
+                SaveWatchlist(); // persist the merged set locally
+            });
+        });
     }
 
     private void UpdateWatchlistFromTokens()

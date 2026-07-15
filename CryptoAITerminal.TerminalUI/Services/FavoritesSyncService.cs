@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -57,6 +58,42 @@ public sealed class FavoritesSyncService
         catch
         {
             return false; // offline / server down — local save already succeeded
+        }
+    }
+
+    /// <summary>GET the server's copy of the watchlist (multi-device pull). Empty on any failure.</summary>
+    public async Task<IReadOnlyList<DexWatchEntry>> PullAsync(CancellationToken ct = default)
+    {
+        var baseUrl = _baseUrl();
+        var token = _token();
+        if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(token))
+            return Array.Empty<DexWatchEntry>();
+
+        try
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl.TrimEnd('/')}/api/favorites");
+            req.Headers.Add("X-License", token);
+            using var resp = await _http.SendAsync(req, ct);
+            if (!resp.IsSuccessStatusCode) return Array.Empty<DexWatchEntry>();
+
+            var json = await resp.Content.ReadAsStringAsync(ct);
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != JsonValueKind.Array) return Array.Empty<DexWatchEntry>();
+
+            var list = new List<DexWatchEntry>();
+            foreach (var el in doc.RootElement.EnumerateArray())
+            {
+                var chain = el.TryGetProperty("chain", out var c) ? c.GetString() : null;
+                var token2 = el.TryGetProperty("tokenAddress", out var t) ? t.GetString() : null;
+                var sym = el.TryGetProperty("symbol", out var s) ? s.GetString() : null;
+                if (!string.IsNullOrWhiteSpace(chain) && !string.IsNullOrWhiteSpace(token2))
+                    list.Add(new DexWatchEntry(chain!, token2!, sym ?? string.Empty));
+            }
+            return list;
+        }
+        catch
+        {
+            return Array.Empty<DexWatchEntry>();
         }
     }
 }

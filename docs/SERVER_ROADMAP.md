@@ -50,7 +50,7 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
 - 🔴 Dedicated executor node + firewall (2-node topology)
 
 ## Realtime & sync
-- 🔴 Favorites PULL (server→client) for multi-device
+- ✅ Favorites PULL (server→client) for multi-device (FavoritesSyncService.PullAsync + LoadWatchlist merge)
 - 🔴 Settings/watchlist sync across devices
 - 🔴 Push notifications (Telegram/ntfy/mobile) from server
 

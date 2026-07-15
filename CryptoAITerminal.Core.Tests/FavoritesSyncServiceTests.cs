@@ -65,4 +65,42 @@ public class FavoritesSyncServiceTests
         Assert.False(await svc.PushAsync(new[] { new DexWatchEntry("eth", "0xabc", "W") }));
         Assert.Null(handler.Request);
     }
+
+    private sealed class RespondingHandler : HttpMessageHandler
+    {
+        public HttpRequestMessage? Request;
+        private readonly string _body;
+        public RespondingHandler(string body) => _body = body;
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            Request = request;
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(_body) };
+        }
+    }
+
+    [Fact]
+    public async Task PullAsync_returns_server_favorites()
+    {
+        var handler = new RespondingHandler(
+            "[{\"chain\":\"eth\",\"tokenAddress\":\"0xabc\",\"symbol\":\"PEPE\"}," +
+            "{\"chain\":\"sol\",\"tokenAddress\":\"BonkAddr\",\"symbol\":\"BONK\"}]");
+        var svc = new FavoritesSyncService(() => "http://localhost:5080", () => "tok", new HttpClient(handler));
+
+        var list = await svc.PullAsync();
+
+        Assert.Equal("http://localhost:5080/api/favorites", handler.Request!.RequestUri!.ToString());
+        Assert.Equal(HttpMethod.Get, handler.Request.Method);
+        Assert.Equal(2, list.Count);
+        Assert.Contains(list, e => e.ChainId == "eth" && e.TokenAddress == "0xabc" && e.Symbol == "PEPE");
+    }
+
+    [Fact]
+    public async Task PullAsync_noops_when_unconfigured()
+    {
+        var handler = new RespondingHandler("[]");
+        var svc = new FavoritesSyncService(() => null, () => "tok", new HttpClient(handler));
+
+        Assert.Empty(await svc.PullAsync());
+        Assert.Null(handler.Request);
+    }
 }
