@@ -17,13 +17,17 @@ public sealed class BotExecutorService : BackgroundService
     private readonly BotOrdersRepository _orders;
     private readonly AuditRepository _audit;
     private readonly IBotOrderExecutor _executor;
+    private readonly IPreTradeReviewer _reviewer;
+    private readonly InboxRepository _inbox;
     private readonly ILogger<BotExecutorService> _log;
     private readonly TimeSpan _tick;
 
     public BotExecutorService(BotConfigRepository bots, BotOrdersRepository orders, AuditRepository audit,
-        IBotOrderExecutor executor, IConfiguration cfg, ILogger<BotExecutorService> log)
+        IBotOrderExecutor executor, IPreTradeReviewer reviewer, InboxRepository inbox,
+        IConfiguration cfg, ILogger<BotExecutorService> log)
     {
-        _bots = bots; _orders = orders; _audit = audit; _executor = executor; _log = log;
+        _bots = bots; _orders = orders; _audit = audit; _executor = executor;
+        _reviewer = reviewer; _inbox = inbox; _log = log;
         _tick = TimeSpan.FromSeconds(int.TryParse(cfg["BOT_TICK_SECONDS"], out var t) ? t : 15);
     }
 
@@ -54,6 +58,21 @@ public sealed class BotExecutorService : BackgroundService
                 var (asset, amountUsd, intervalMin) = p.Value;
                 if (bot.LastRunUtc is { } last && (DateTime.UtcNow - last).TotalMinutes < intervalMin)
                     continue; // not due yet
+
+                // AI risk check before anything is placed. An explicit reject stops the trade;
+                // see AiPreTradeReviewer for what happens when the model is unavailable.
+                var (approved, reason) = await _reviewer.ReviewAsync("buy", asset, amountUsd, ct);
+                if (!approved)
+                {
+                    await _orders.InsertAsync(bot.Id, bot.UserId, "buy", asset, amountUsd, null, "blocked", null, ct);
+                    await _bots.MarkRunAsync(bot.Id, ct); // respect the interval; don't hammer the model
+                    await _audit.WriteAsync(bot.UserId, "bot", "bot_trade_blocked",
+                        JsonSerializer.Serialize(new { bot.Id, side = "buy", asset, amountUsd, reason }), null, ct);
+                    await _inbox.InsertAsync(bot.UserId, "bot",
+                        $"AI blocked a bot trade: {asset}", reason ?? "No reason given", ct);
+                    _log.LogInformation("bot {Id} trade BLOCKED by AI review: {Reason}", bot.Id, reason);
+                    continue;
+                }
 
                 var (status, extRef) = await _executor.PlaceAsync(bot.UserId, "buy", asset, amountUsd, ct);
                 await _orders.InsertAsync(bot.Id, bot.UserId, "buy", asset, amountUsd, null, status, extRef, ct);

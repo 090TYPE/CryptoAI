@@ -12,6 +12,14 @@ builder.Services.AddSingleton<SecretsRepository>();
 builder.Services.AddSingleton<BotConfigRepository>();
 builder.Services.AddSingleton<BotOrdersRepository>();
 builder.Services.AddSingleton<AuditRepository>();
+builder.Services.AddSingleton<InboxRepository>();
+builder.Services.AddSingleton<ProviderKeyStore>();
+builder.Services.AddSingleton<AiDigestRepository>();
+builder.Services.AddSingleton(sp => new AiProxy(
+    new HttpClient { Timeout = TimeSpan.FromSeconds(60) },
+    sp.GetRequiredService<ProviderKeyStore>(),
+    cfg["ANTHROPIC_API_KEY"], cfg["OPENAI_API_KEY"]));
+builder.Services.AddSingleton<IPreTradeReviewer, AiPreTradeReviewer>();
 
 // Envelope cipher: Vault Transit in production, local AES for dev/tests.
 var vaultAddr = cfg["VAULT_ADDR"];

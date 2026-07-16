@@ -43,7 +43,7 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
   - **30 broadcast AI streams total.** New AI feature = one small subclass (prompt + facts).
     Each publishes nothing when it has no facts — no spend, no invented content.
 - ✅ AI token scoring cached for everyone (AiScoreCollector + token_ai_score, surfaced in /api/dex/token; needs anthropic key)
-- 🔴 AI pre-trade review before autonomous trades
+- ✅ AI pre-trade review before autonomous trades (AiPreTradeReviewer gate in BotExecutorService; explicit reject blocks + inbox notice; fail-open unless AI_PRETRADE_REQUIRED=true)
 - ✅ RAG Q&A — POST /api/ai/ask: answers grounded ONLY in our DB (user watchlist + digests + news)
 - ✅ Personal portfolio review (PortfolioReviewJob → user inbox, weekly, cost-bounded)
 
