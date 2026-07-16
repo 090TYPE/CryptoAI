@@ -44,7 +44,8 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
     Each publishes nothing when it has no facts — no spend, no invented content.
 - ✅ AI token scoring cached for everyone (AiScoreCollector + token_ai_score, surfaced in /api/dex/token; needs anthropic key)
 - 🔴 AI pre-trade review before autonomous trades
-- 🔴 RAG over collected data (Claude answers grounded in our DB)
+- ✅ RAG Q&A — POST /api/ai/ask: answers grounded ONLY in our DB (user watchlist + digests + news)
+- ✅ Personal portfolio review (PortfolioReviewJob → user inbox, weekly, cost-bounded)
 
 ## Data & server
 - ✅ Server-side price alerts 24/7 (price_alerts + AlertCollector + /api/alerts; fires vs token_snapshot, audits 'alert_triggered')

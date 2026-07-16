@@ -29,6 +29,7 @@ builder.Services.AddSingleton<PriceAlertsRepository>();
 builder.Services.AddSingleton<NotificationRepository>();
 builder.Services.AddSingleton<InboxRepository>();
 builder.Services.AddSingleton<AiDigestRepository>();
+builder.Services.AddSingleton<PersonalAiRepository>();
 builder.Services.AddSingleton<TrackedTokenRepository>();
 builder.Services.AddSingleton<AuditRepository>();
 
@@ -187,6 +188,50 @@ app.MapPost("/api/ai/openai", async (HttpContext ctx, AiProxy ai) =>
     return result is null
         ? Results.Json(new { error = "ai_key_not_configured" }, statusCode: 503)
         : Results.Content(result.Value.Body, "application/json", Encoding.UTF8, result.Value.Status);
+});
+
+// ── RAG: answer questions grounded in OUR collected data, not the model's memory ──
+app.MapPost("/api/ai/ask", async (HttpContext ctx, AskInput body, AiProxy ai,
+    PersonalAiRepository personal, AiDigestRepository digests) =>
+{
+    if (string.IsNullOrWhiteSpace(body.Question))
+        return Results.BadRequest(new { error = "question required" });
+
+    // Context = what the server actually knows: this user's watchlist, the latest AI
+    // digests and recent headlines. The model must answer from this or admit it can't.
+    var context = JsonSerializer.Serialize(new
+    {
+        yourWatchlist = await personal.GetUserPortfolioFactsAsync(Uid(ctx), ctx.RequestAborted),
+        latestDigests = await digests.ListRecentAsync(null, 8, ctx.RequestAborted),
+        headlines = await digests.GetNewsHeadlinesAsync(15, ctx.RequestAborted)
+    });
+
+    var request = JsonSerializer.Serialize(new
+    {
+        model = "claude-3-5-haiku-20241022",
+        max_tokens = 700,
+        system = "Answer the trader's question using ONLY the provided context (their watchlist, our AI digests, " +
+                 "recent headlines). Quote the numbers from it. If the context doesn't contain the answer, say so " +
+                 "plainly instead of guessing or drawing on outside knowledge. Not financial advice.",
+        messages = new[] { new { role = "user", content = $"Context:\n{context}\n\nQuestion: {body.Question}" } }
+    });
+
+    var res = await ai.ForwardAnthropicAsync(request, ctx.RequestAborted);
+    if (res is null) return Results.Json(new { error = "ai_key_not_configured" }, statusCode: 503);
+    if (res.Value.Status != 200) return Results.Json(new { error = "upstream", status = res.Value.Status }, statusCode: 502);
+
+    // Unwrap the model envelope so the terminal just gets the answer text.
+    try
+    {
+        using var doc = JsonDocument.Parse(res.Value.Body);
+        var text = "";
+        if (doc.RootElement.TryGetProperty("content", out var arr) && arr.ValueKind == JsonValueKind.Array)
+            foreach (var b in arr.EnumerateArray())
+                if (b.TryGetProperty("type", out var t) && t.GetString() == "text" && b.TryGetProperty("text", out var tv))
+                { text = tv.GetString() ?? ""; break; }
+        return Results.Ok(new { answer = text });
+    }
+    catch { return Results.Json(new { error = "unparsable_upstream" }, statusCode: 502); }
 });
 
 // ── DEX data (read) ───────────────────────────────────────────────────────────
@@ -436,5 +481,6 @@ record TwoFaCode(string Code);
 record BotInput(string Strategy, JsonElement? Params, bool Enabled);
 record AlertInput(string Chain, string TokenAddress, string? Symbol, string Condition, decimal Threshold);
 record NotificationInput(string Kind, string Target, string? Token, bool? Enabled);
+record AskInput(string Question);
 
 public partial class Program; // for WebApplicationFactory in tests
