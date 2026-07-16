@@ -25,6 +25,8 @@ public static class WidgetCatalog
         new WidgetCatalogEntry("scanner",       "MARKET SCANNER",             6, 3),
         new WidgetCatalogEntry("gas",           "GAS MONITOR",                4, 2),
         new WidgetCatalogEntry("tape",          "LIVE TAPE",                  4, 3),
+        // Server feed — the 30 shared AI streams + this user's events
+        new WidgetCatalogEntry("ai-feed",       "AI FEED",                    6, 4),
     };
 
     public static WidgetCatalogEntry? Find(string key)

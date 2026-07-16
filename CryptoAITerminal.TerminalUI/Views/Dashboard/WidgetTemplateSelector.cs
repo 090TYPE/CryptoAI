@@ -28,6 +28,8 @@ public sealed class WidgetTemplateSelector : IDataTemplate
         "scanner"       => new ScannerWidget(),
         "gas"           => new GasWidget(),
         "tape"          => new TapeWidget(),
+        // Server feed — shared AI digests + this user's events
+        "ai-feed"       => new AiFeedWidget(),
         _               => new TextBlock { Text = "Unknown widget" },
     };
 }

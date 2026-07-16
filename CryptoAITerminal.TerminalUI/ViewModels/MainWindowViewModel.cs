@@ -3560,6 +3560,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public GasMonitorViewModel           GasMonitorVM       { get; private set; } = null!;
     public AllPositionsViewModel         AllPositionsVM     { get; private set; } = null!;
     public NewsFeedViewModel             NewsFeedVM         { get; private set; } = null!;
+    /// <summary>Server feed: the shared AI digest streams + this user's events. Idle without a server.</summary>
+    public AiFeedViewModel               AiFeedVM           { get; } = new();
     public OnChainMetricsViewModel       OnChainVM          { get; private set; } = null!;
     public OnboardingViewModel           OnboardingVM       { get; } = new();
     public LicenseViewModel              LicenseVM          { get; } = new();
