@@ -72,6 +72,11 @@ builder.Services.AddSingleton<IDataCollector, DailyDigestJob>();
 builder.Services.AddSingleton<IDataCollector, MoversDigestJob>();
 builder.Services.AddSingleton<IDataCollector, NarrativeDigestJob>();
 builder.Services.AddSingleton<IDataCollector, NewsImpactDigestJob>();
+builder.Services.AddSingleton<IDataCollector, WeeklyRecapJob>();
+builder.Services.AddSingleton<IDataCollector, NewListingRadarJob>();
+builder.Services.AddSingleton<IDataCollector, WhaleInterpreterJob>();
+builder.Services.AddSingleton<IDataCollector, GasAdvisorJob>();
+builder.Services.AddSingleton<IDataCollector, RugPostMortemJob>();
 builder.Services.AddHostedService<CollectorRunner>();
 
 builder.Build().Run();

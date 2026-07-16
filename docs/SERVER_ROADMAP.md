@@ -30,6 +30,11 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
   - ✅ `movers` — why the biggest 24h gainers/losers moved (6h)
   - ✅ `narratives` — clusters tracked tokens into narratives getting flow (12h)
   - ✅ `news_impact` — which headlines actually matter for tracked tokens (3h)
+  - ✅ `weekly` — week in review (7d)
+  - ✅ `new_listings` — fresh tokens: early opportunity vs trap, from security+holders (6h)
+  - ✅ `whales` — what the big transfers likely mean (6h)
+  - ✅ `gas` — transaction-timing advice from 24h gas stats per chain (6h)
+  - ✅ `rug_postmortem` — what killed the collapsed tokens + the tell to spot next time (12h)
   - New AI feature = one small subclass (prompt + facts)
 - ✅ AI token scoring cached for everyone (AiScoreCollector + token_ai_score, surfaced in /api/dex/token; needs anthropic key)
 - 🔴 AI pre-trade review before autonomous trades

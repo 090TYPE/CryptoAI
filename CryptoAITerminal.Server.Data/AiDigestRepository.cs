@@ -76,6 +76,69 @@ public sealed class AiDigestRepository
         return (await conn.QueryAsync(new CommandDefinition(sql, new { limit }, cancellationToken: ct))).ToList();
     }
 
+    /// <summary>Tokens that started being tracked recently — the "new listing" radar.</summary>
+    public async Task<IReadOnlyList<dynamic>> GetNewTokensAsync(int hours, int limit, CancellationToken ct = default)
+    {
+        const string sql = @"
+            SELECT t.symbol, t.chain, round(s.price_usd,6) AS price, round(s.liq_usd,0) AS liq,
+                   round(s.vol24h,0) AS vol24h, round(s.chg_24h,2) AS chg24h,
+                   sec.risk_label, sec.is_honeypot, round(sec.buy_tax,2) AS buy_tax, round(sec.sell_tax,2) AS sell_tax,
+                   h.holder_count, round(h.top10_pct,1) AS top10_pct, t.added_utc
+            FROM tracked_tokens t
+            JOIN token_snapshot s USING (chain, token_address)
+            LEFT JOIN token_security sec USING (chain, token_address)
+            LEFT JOIN token_holders h USING (chain, token_address)
+            WHERE t.added_utc > now() - make_interval(hours => @hours)
+            ORDER BY t.added_utc DESC LIMIT @limit;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return (await conn.QueryAsync(new CommandDefinition(sql, new { hours, limit }, cancellationToken: ct))).ToList();
+    }
+
+    /// <summary>Recent large transfers for the whale interpreter.</summary>
+    public async Task<IReadOnlyList<dynamic>> GetWhaleTxsAsync(int limit, CancellationToken ct = default)
+    {
+        const string sql = @"SELECT chain, token_symbol, left(from_address,10) AS from_addr, left(to_address,10) AS to_addr,
+                                    round(usd_value,0) AS usd_value, ts
+                             FROM whale_txs ORDER BY ts DESC NULLS LAST LIMIT @limit;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return (await conn.QueryAsync(new CommandDefinition(sql, new { limit }, cancellationToken: ct))).ToList();
+    }
+
+    /// <summary>24h gas stats per chain for the gas advisor.</summary>
+    public async Task<IReadOnlyList<dynamic>> GetGasStatsAsync(CancellationToken ct = default)
+    {
+        const string sql = @"
+            SELECT g.chain,
+                   round(avg(g.standard),3) AS avg24h,
+                   round(min(g.standard),3) AS min24h,
+                   round(max(g.standard),3) AS max24h,
+                   (SELECT round(standard,3) FROM gas_prices l WHERE l.chain = g.chain ORDER BY ts DESC LIMIT 1) AS latest
+            FROM gas_prices g
+            WHERE g.ts > now() - interval '24 hours'
+            GROUP BY g.chain;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return (await conn.QueryAsync(new CommandDefinition(sql, cancellationToken: ct))).ToList();
+    }
+
+    /// <summary>Tokens that look like they just collapsed — rug post-mortem candidates.</summary>
+    public async Task<IReadOnlyList<dynamic>> GetCollapsedTokensAsync(decimal dropPct, int limit, CancellationToken ct = default)
+    {
+        const string sql = @"
+            SELECT t.symbol, t.chain, round(s.chg_24h,2) AS chg24h, round(s.liq_usd,0) AS liq,
+                   round(s.vol24h,0) AS vol24h, sec.risk_label, sec.is_honeypot,
+                   round(sec.sell_tax,2) AS sell_tax, h.holder_count, round(h.top10_pct,1) AS top10_pct,
+                   d.est_rugpulls AS deployer_rugpulls, d.tokens_deployed AS deployer_tokens
+            FROM tracked_tokens t
+            JOIN token_snapshot s USING (chain, token_address)
+            LEFT JOIN token_security sec USING (chain, token_address)
+            LEFT JOIN token_holders h USING (chain, token_address)
+            LEFT JOIN token_deployer d USING (chain, token_address)
+            WHERE t.is_active AND s.chg_24h <= @dropPct
+            ORDER BY s.chg_24h ASC LIMIT @limit;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return (await conn.QueryAsync(new CommandDefinition(sql, new { dropPct, limit }, cancellationToken: ct))).ToList();
+    }
+
     public async Task<IReadOnlyList<dynamic>> GetContextAsync(CancellationToken ct = default)
     {
         const string sql = @"
