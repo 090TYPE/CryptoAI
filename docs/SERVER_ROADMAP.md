@@ -35,7 +35,13 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
   - ✅ `whales` — what the big transfers likely mean (6h)
   - ✅ `gas` — transaction-timing advice from 24h gas stats per chain (6h)
   - ✅ `rug_postmortem` — what killed the collapsed tokens + the tell to spot next time (12h)
-  - New AI feature = one small subclass (prompt + facts)
+  - Risk lens: ✅ `liquidity_watch` `volume_anomaly` `holder_concentration` `security_roundup`
+    `deployer_blacklist` `worst_scored` `top_scored` `dead_tokens` `risk_dashboard`
+  - Market lens: ✅ `chain_rotation` `onchain_pulse` `sentiment_read` `liquidations`
+    `stablecoin_flows` `volatility` `momentum` `reversals` `liquidity_leaders` `microcaps`
+    `news_price_gap` `gas_vs_activity` `token_of_the_day`
+  - **30 broadcast AI streams total.** New AI feature = one small subclass (prompt + facts).
+    Each publishes nothing when it has no facts — no spend, no invented content.
 - ✅ AI token scoring cached for everyone (AiScoreCollector + token_ai_score, surfaced in /api/dex/token; needs anthropic key)
 - 🔴 AI pre-trade review before autonomous trades
 - 🔴 RAG over collected data (Claude answers grounded in our DB)

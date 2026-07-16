@@ -139,6 +139,137 @@ public sealed class AiDigestRepository
         return (await conn.QueryAsync(new CommandDefinition(sql, new { dropPct, limit }, cancellationToken: ct))).ToList();
     }
 
+    /// <summary>Per-chain aggregate: where the flow is.</summary>
+    public async Task<IReadOnlyList<dynamic>> GetChainAggregatesAsync(CancellationToken ct = default)
+    {
+        const string sql = @"
+            SELECT s.chain, count(*) AS tokens, round(sum(s.vol24h),0) AS vol24h,
+                   round(sum(s.liq_usd),0) AS liq, round(avg(s.chg_24h),2) AS avg_chg24h
+            FROM token_snapshot s JOIN tracked_tokens t USING (chain, token_address)
+            WHERE t.is_active GROUP BY s.chain ORDER BY sum(s.vol24h) DESC NULLS LAST;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return (await conn.QueryAsync(new CommandDefinition(sql, cancellationToken: ct))).ToList();
+    }
+
+    /// <summary>24h realised range per token, straight from the 1m candles.</summary>
+    public async Task<IReadOnlyList<dynamic>> GetVolatilityAsync(int limit, CancellationToken ct = default)
+    {
+        const string sql = @"
+            SELECT t.symbol, c.chain, round(min(c.l),8) AS low24h, round(max(c.h),8) AS high24h,
+                   round((max(c.h) - min(c.l)) / NULLIF(min(c.l),0) * 100, 1) AS range_pct,
+                   count(*) AS candles
+            FROM dex_candles c JOIN tracked_tokens t USING (chain, token_address)
+            WHERE c.ts > now() - interval '24 hours' AND c.l > 0
+            GROUP BY t.symbol, c.chain HAVING count(*) > 10
+            ORDER BY (max(c.h) - min(c.l)) / NULLIF(min(c.l),0) DESC
+            LIMIT @limit;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return (await conn.QueryAsync(new CommandDefinition(sql, new { limit }, cancellationToken: ct))).ToList();
+    }
+
+    /// <summary>Recent on-chain metric series (BTC/ETH active addresses, tx count).</summary>
+    public async Task<IReadOnlyList<dynamic>> GetOnchainSeriesAsync(int limit, CancellationToken ct = default)
+    {
+        const string sql = @"SELECT asset, metric, round(value,0) AS value, ts FROM onchain_metrics
+                             ORDER BY ts DESC LIMIT @limit;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return (await conn.QueryAsync(new CommandDefinition(sql, new { limit }, cancellationToken: ct))).ToList();
+    }
+
+    public async Task<IReadOnlyList<dynamic>> GetLiquidationsAsync(int limit, CancellationToken ct = default)
+    {
+        const string sql = @"SELECT symbol, side, round(usd_value,0) AS usd_value, ts FROM liquidations
+                             ORDER BY ts DESC LIMIT @limit;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return (await conn.QueryAsync(new CommandDefinition(sql, new { limit }, cancellationToken: ct))).ToList();
+    }
+
+    /// <summary>Best / worst AI-scored tokens.</summary>
+    public async Task<IReadOnlyList<dynamic>> GetScoredAsync(bool best, int limit, CancellationToken ct = default)
+    {
+        var sql = @"SELECT t.symbol, a.chain, a.score, a.verdict, a.summary,
+                           round(s.price_usd,6) AS price, round(s.liq_usd,0) AS liq, round(s.chg_24h,2) AS chg24h
+                    FROM token_ai_score a
+                    JOIN tracked_tokens t USING (chain, token_address)
+                    LEFT JOIN token_snapshot s USING (chain, token_address)
+                    WHERE a.score IS NOT NULL
+                    ORDER BY a.score " + (best ? "DESC" : "ASC") + " LIMIT @limit;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return (await conn.QueryAsync(new CommandDefinition(sql, new { limit }, cancellationToken: ct))).ToList();
+    }
+
+    /// <summary>Tokens whose deployer has a rug history.</summary>
+    public async Task<IReadOnlyList<dynamic>> GetDeployerRiskyAsync(int limit, CancellationToken ct = default)
+    {
+        const string sql = @"SELECT t.symbol, d.chain, left(d.deployer_address,12) AS deployer,
+                                    d.tokens_deployed, d.est_rugpulls, d.wallet_age_months
+                             FROM token_deployer d JOIN tracked_tokens t USING (chain, token_address)
+                             WHERE d.est_rugpulls > 0 ORDER BY d.est_rugpulls DESC LIMIT @limit;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return (await conn.QueryAsync(new CommandDefinition(sql, new { limit }, cancellationToken: ct))).ToList();
+    }
+
+    /// <summary>Tracked tokens that have gone quiet.</summary>
+    public async Task<IReadOnlyList<dynamic>> GetQuietTokensAsync(int limit, CancellationToken ct = default)
+    {
+        const string sql = @"SELECT t.symbol, s.chain, round(s.vol24h,0) AS vol24h, round(s.liq_usd,0) AS liq,
+                                    t.fav_count, t.last_trade_utc
+                             FROM tracked_tokens t JOIN token_snapshot s USING (chain, token_address)
+                             WHERE t.is_active AND COALESCE(s.vol24h,0) < 1000
+                             ORDER BY s.vol24h ASC NULLS FIRST LIMIT @limit;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return (await conn.QueryAsync(new CommandDefinition(sql, new { limit }, cancellationToken: ct))).ToList();
+    }
+
+    /// <summary>Security problems found across tracked tokens.</summary>
+    public async Task<IReadOnlyList<dynamic>> GetSecurityIssuesAsync(int limit, CancellationToken ct = default)
+    {
+        const string sql = @"SELECT t.symbol, sec.chain, sec.is_honeypot, round(sec.buy_tax,2) AS buy_tax,
+                                    round(sec.sell_tax,2) AS sell_tax, sec.risk_label, sec.risk_score
+                             FROM token_security sec JOIN tracked_tokens t USING (chain, token_address)
+                             WHERE sec.is_honeypot OR sec.buy_tax > 10 OR sec.sell_tax > 10 OR sec.risk_score < 40
+                             ORDER BY sec.risk_score ASC NULLS FIRST LIMIT @limit;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return (await conn.QueryAsync(new CommandDefinition(sql, new { limit }, cancellationToken: ct))).ToList();
+    }
+
+    /// <summary>Whale-held supply concentration.</summary>
+    public async Task<IReadOnlyList<dynamic>> GetConcentrationAsync(int limit, CancellationToken ct = default)
+    {
+        const string sql = @"SELECT t.symbol, h.chain, h.holder_count, round(h.top10_pct,1) AS top10_pct,
+                                    round(s.liq_usd,0) AS liq
+                             FROM token_holders h JOIN tracked_tokens t USING (chain, token_address)
+                             LEFT JOIN token_snapshot s USING (chain, token_address)
+                             WHERE h.top10_pct IS NOT NULL ORDER BY h.top10_pct DESC LIMIT @limit;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return (await conn.QueryAsync(new CommandDefinition(sql, new { limit }, cancellationToken: ct))).ToList();
+    }
+
+    /// <summary>Volume-to-liquidity outliers (churn vs depth).</summary>
+    public async Task<IReadOnlyList<dynamic>> GetVolumeLiqRatioAsync(int limit, CancellationToken ct = default)
+    {
+        const string sql = @"SELECT t.symbol, s.chain, round(s.vol24h,0) AS vol24h, round(s.liq_usd,0) AS liq,
+                                    round(s.vol24h / NULLIF(s.liq_usd,0), 2) AS vol_liq_ratio, round(s.chg_24h,2) AS chg24h
+                             FROM token_snapshot s JOIN tracked_tokens t USING (chain, token_address)
+                             WHERE t.is_active AND s.liq_usd > 0 AND s.vol24h > 0
+                             ORDER BY s.vol24h / NULLIF(s.liq_usd,0) DESC LIMIT @limit;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return (await conn.QueryAsync(new CommandDefinition(sql, new { limit }, cancellationToken: ct))).ToList();
+    }
+
+    /// <summary>Small caps that still trade real volume.</summary>
+    public async Task<IReadOnlyList<dynamic>> GetMicrocapsAsync(int limit, CancellationToken ct = default)
+    {
+        const string sql = @"SELECT t.symbol, m.chain, round(m.market_cap,0) AS mcap, round(s.vol24h,0) AS vol24h,
+                                    round(s.liq_usd,0) AS liq, round(s.chg_24h,2) AS chg24h
+                             FROM token_metadata m JOIN tracked_tokens t USING (chain, token_address)
+                             JOIN token_snapshot s USING (chain, token_address)
+                             WHERE m.market_cap > 0 AND m.market_cap < 5000000 AND s.vol24h > 10000
+                             ORDER BY s.vol24h DESC LIMIT @limit;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return (await conn.QueryAsync(new CommandDefinition(sql, new { limit }, cancellationToken: ct))).ToList();
+    }
+
     public async Task<IReadOnlyList<dynamic>> GetContextAsync(CancellationToken ct = default)
     {
         const string sql = @"

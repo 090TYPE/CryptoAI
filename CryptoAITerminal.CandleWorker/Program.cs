@@ -77,6 +77,30 @@ builder.Services.AddSingleton<IDataCollector, NewListingRadarJob>();
 builder.Services.AddSingleton<IDataCollector, WhaleInterpreterJob>();
 builder.Services.AddSingleton<IDataCollector, GasAdvisorJob>();
 builder.Services.AddSingleton<IDataCollector, RugPostMortemJob>();
+// risk & safety lens
+builder.Services.AddSingleton<IDataCollector, LiquidityWatchJob>();
+builder.Services.AddSingleton<IDataCollector, VolumeAnomalyJob>();
+builder.Services.AddSingleton<IDataCollector, HolderConcentrationJob>();
+builder.Services.AddSingleton<IDataCollector, SecurityRoundupJob>();
+builder.Services.AddSingleton<IDataCollector, DeployerBlacklistJob>();
+builder.Services.AddSingleton<IDataCollector, WorstScoredJob>();
+builder.Services.AddSingleton<IDataCollector, TopScoredJob>();
+builder.Services.AddSingleton<IDataCollector, DeadTokensJob>();
+builder.Services.AddSingleton<IDataCollector, RiskDashboardJob>();
+// opportunity & market structure lens
+builder.Services.AddSingleton<IDataCollector, ChainRotationJob>();
+builder.Services.AddSingleton<IDataCollector, OnchainPulseJob>();
+builder.Services.AddSingleton<IDataCollector, SentimentReadJob>();
+builder.Services.AddSingleton<IDataCollector, LiquidationReportJob>();
+builder.Services.AddSingleton<IDataCollector, StablecoinFlowJob>();
+builder.Services.AddSingleton<IDataCollector, VolatilityReportJob>();
+builder.Services.AddSingleton<IDataCollector, MomentumScanJob>();
+builder.Services.AddSingleton<IDataCollector, ReversalWatchJob>();
+builder.Services.AddSingleton<IDataCollector, LiquidityLeadersJob>();
+builder.Services.AddSingleton<IDataCollector, MicrocapRadarJob>();
+builder.Services.AddSingleton<IDataCollector, NewsPriceGapJob>();
+builder.Services.AddSingleton<IDataCollector, GasVsActivityJob>();
+builder.Services.AddSingleton<IDataCollector, TokenOfTheDayJob>();
 builder.Services.AddHostedService<CollectorRunner>();
 
 builder.Build().Run();
