@@ -24,7 +24,7 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
 - 🟡 **2FA** (TOTP) — server done (Totp RFC6238 + /api/2fa/setup|enable|verify + withdrawal gated; secret envelope-encrypted); client UI + login gate TODO
 
 ## AI
-- 🔴 Real-time AI alerts (Claude flags anomalies on favorites)
+- ✅ Real-time AI alerts (AiAnomalyCollector: SQL pre-filter → Claude verdict → push to everyone holding the token)
 - 🔴 Server-side morning AI briefing (push to all)
 - ✅ AI token scoring cached for everyone (AiScoreCollector + token_ai_score, surfaced in /api/dex/token; needs anthropic key)
 - 🔴 AI pre-trade review before autonomous trades
