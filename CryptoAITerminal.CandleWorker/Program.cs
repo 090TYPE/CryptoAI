@@ -34,6 +34,7 @@ builder.Services.AddSingleton(sp => new AiProxy(
     builder.Configuration["ANTHROPIC_API_KEY"],
     builder.Configuration["OPENAI_API_KEY"]));
 builder.Services.AddSingleton<NotificationRepository>();
+builder.Services.AddSingleton<InboxRepository>();
 builder.Services.AddSingleton<INotifier, Notifier>();
 builder.Services.AddSingleton<AuditRepository>();
 builder.Services.AddSingleton<CollectorRunsRepository>();

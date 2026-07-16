@@ -4,28 +4,43 @@ using Microsoft.Extensions.Logging;
 
 namespace CryptoAITerminal.CandleWorker;
 
-/// <summary>Pushes a message to a user's configured channel. Best-effort — never throws.</summary>
+/// <summary>Delivers a server event to the user. Best-effort — never throws.</summary>
 public interface INotifier
 {
-    Task SendAsync(Guid userId, string title, string message, CancellationToken ct = default);
+    Task SendAsync(Guid userId, string title, string message, string kind = "system", CancellationToken ct = default);
 }
 
-/// <summary>ntfy (phone push, no token) and Telegram (bot token + chat id) notifier.</summary>
+/// <summary>
+/// Primary channel is the in-terminal inbox: every user gets it, no setup. A phone channel
+/// (ntfy topic / Telegram bot) is optional and only fires when the user configured one.
+/// </summary>
 public sealed class Notifier : INotifier
 {
     private readonly HttpClient _http;
+    private readonly InboxRepository _inbox;
     private readonly NotificationRepository _repo;
     private readonly ILogger<Notifier> _log;
 
-    public Notifier(NotificationRepository repo, ILogger<Notifier> log)
+    public Notifier(InboxRepository inbox, NotificationRepository repo, ILogger<Notifier> log)
     {
+        _inbox = inbox;
         _repo = repo;
         _log = log;
         _http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
     }
 
-    public async Task SendAsync(Guid userId, string title, string message, CancellationToken ct = default)
+    public async Task SendAsync(Guid userId, string title, string message, string kind = "system", CancellationToken ct = default)
     {
+        // 1) Always land it in the terminal inbox.
+        try
+        {
+            await _inbox.InsertAsync(userId, kind, title, message, ct);
+            _log.LogInformation("inbox <- {User}: {Title}", userId, title);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex) { _log.LogWarning(ex, "inbox write failed for {User}", userId); }
+
+        // 2) Optional phone push, only if the user set a channel up.
         var ch = await _repo.GetForUserAsync(userId, ct);
         if (ch is null || !ch.Enabled) return;
 

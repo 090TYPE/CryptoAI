@@ -52,7 +52,7 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
 ## Realtime & sync
 - ✅ Favorites PULL (server→client) for multi-device (FavoritesSyncService.PullAsync + LoadWatchlist merge)
 - 🔴 Settings/watchlist sync across devices
-- ✅ Push notifications (ntfy + Telegram) from server — fires on alerts (INotifier + notification_channels + /api/notifications)
+- ✅ In-terminal inbox for ALL users (inbox + /api/inbox) — primary channel; optional phone push (ntfy/Telegram) when a channel is configured
 
 ## Client & UX
 - 🔴 Web dashboard (account, subscription, keys, bots, history)

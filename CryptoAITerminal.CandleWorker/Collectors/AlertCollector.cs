@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using CryptoAITerminal.Server.Data;
 using Microsoft.Extensions.Logging;
@@ -36,8 +37,10 @@ public sealed class AlertCollector : IDataCollector
             await _audit.WriteAsync(a.UserId, "alerts", "alert_triggered",
                 JsonSerializer.Serialize(new { a.Id, a.Chain, a.Symbol, a.Condition, a.Threshold, price = a.Price }),
                 null, ct);
+            // Invariant formatting — the message must not depend on the server's locale.
             await _notifier.SendAsync(a.UserId, "Price alert",
-                $"{a.Symbol ?? a.TokenAddress} {a.Condition} {a.Threshold} — now {a.Price}", ct);
+                string.Format(CultureInfo.InvariantCulture, "{0} {1} {2} — now {3}",
+                    a.Symbol ?? a.TokenAddress, a.Condition, a.Threshold, a.Price), "alert", ct);
             _log.LogInformation("alert {Id} fired: {Symbol} {Condition} {Threshold} (price {Price})",
                 a.Id, a.Symbol, a.Condition, a.Threshold, a.Price);
         }

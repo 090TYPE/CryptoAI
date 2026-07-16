@@ -27,6 +27,7 @@ builder.Services.AddSingleton<BotConfigRepository>();
 builder.Services.AddSingleton<TwoFactorRepository>();
 builder.Services.AddSingleton<PriceAlertsRepository>();
 builder.Services.AddSingleton<NotificationRepository>();
+builder.Services.AddSingleton<InboxRepository>();
 builder.Services.AddSingleton<TrackedTokenRepository>();
 builder.Services.AddSingleton<AuditRepository>();
 
@@ -363,7 +364,20 @@ app.MapGet("/api/alerts", async (HttpContext ctx, PriceAlertsRepository alerts) 
 app.MapDelete("/api/alerts/{id:guid}", async (HttpContext ctx, Guid id, PriceAlertsRepository alerts) =>
     Results.Ok(new { removed = await alerts.DeleteAsync(Uid(ctx), id, ctx.RequestAborted) }));
 
-// ── Notification channel (ntfy topic or Telegram) for alert/bot pushes ────────
+// ── Inbox: how the desktop terminal receives server events (every user, no setup) ─
+app.MapGet("/api/inbox", async (HttpContext ctx, bool? unread, int? limit, InboxRepository inbox) =>
+    Results.Ok(await inbox.ListForUserAsync(Uid(ctx), unread ?? false, Math.Clamp(limit ?? 50, 1, 200), ctx.RequestAborted)));
+
+app.MapGet("/api/inbox/unread-count", async (HttpContext ctx, InboxRepository inbox) =>
+    Results.Ok(new { unread = await inbox.UnreadCountAsync(Uid(ctx), ctx.RequestAborted) }));
+
+app.MapPost("/api/inbox/{id:guid}/read", async (HttpContext ctx, Guid id, InboxRepository inbox) =>
+    Results.Ok(new { read = await inbox.MarkReadAsync(Uid(ctx), id, ctx.RequestAborted) }));
+
+app.MapPost("/api/inbox/read-all", async (HttpContext ctx, InboxRepository inbox) =>
+    Results.Ok(new { read = await inbox.MarkAllReadAsync(Uid(ctx), ctx.RequestAborted) }));
+
+// ── Notification channel (ntfy topic or Telegram) for OPTIONAL phone pushes ──
 app.MapGet("/api/notifications", async (HttpContext ctx, NotificationRepository notif) =>
 {
     var ch = await notif.GetForUserAsync(Uid(ctx), ctx.RequestAborted);

@@ -61,7 +61,7 @@ public sealed class AiAnomalyCollector : IDataCollector
                     v.Value.Severity, v.Value.Headline, v.Value.Detail, ct);
 
                 foreach (var userId in await _anomalies.GetFavoritedByAsync(c.Chain, c.TokenAddress, ct))
-                    await _notifier.SendAsync(userId, $"⚠ {c.Symbol}: {v.Value.Headline}", v.Value.Detail ?? "", ct);
+                    await _notifier.SendAsync(userId, $"⚠ {c.Symbol}: {v.Value.Headline}", v.Value.Detail ?? "", "anomaly", ct);
 
                 fired++;
                 _log.LogInformation("ai_anomaly {Symbol}: {Severity} — {Headline}", c.Symbol, v.Value.Severity, v.Value.Headline);
