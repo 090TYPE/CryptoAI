@@ -25,7 +25,12 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
 
 ## AI
 - ✅ Real-time AI alerts (AiAnomalyCollector: SQL pre-filter → Claude verdict → push to everyone holding the token)
-- 🔴 Server-side morning AI briefing (push to all)
+- ✅ Shared AI digests via `AiDigestJob` base (one call → all users, read at /api/digests):
+  - ✅ `daily` — daily market briefing across everything tracked (24h)
+  - ✅ `movers` — why the biggest 24h gainers/losers moved (6h)
+  - ✅ `narratives` — clusters tracked tokens into narratives getting flow (12h)
+  - ✅ `news_impact` — which headlines actually matter for tracked tokens (3h)
+  - New AI feature = one small subclass (prompt + facts)
 - ✅ AI token scoring cached for everyone (AiScoreCollector + token_ai_score, surfaced in /api/dex/token; needs anthropic key)
 - 🔴 AI pre-trade review before autonomous trades
 - 🔴 RAG over collected data (Claude answers grounded in our DB)

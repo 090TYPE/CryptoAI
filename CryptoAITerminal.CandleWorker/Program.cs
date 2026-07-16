@@ -27,6 +27,7 @@ builder.Services.AddSingleton<LiquidationsRepository>();
 builder.Services.AddSingleton<PriceAlertsRepository>();
 builder.Services.AddSingleton<AiScoreRepository>();
 builder.Services.AddSingleton<AiAnomalyRepository>();
+builder.Services.AddSingleton<AiDigestRepository>();
 builder.Services.AddSingleton<ApiReadRepository>();
 builder.Services.AddSingleton(sp => new AiProxy(
     new HttpClient { Timeout = TimeSpan.FromSeconds(120) },
@@ -66,6 +67,11 @@ builder.Services.AddSingleton<IDataCollector, CryptoPanicCollector>();
 builder.Services.AddSingleton<IDataCollector, AlertCollector>();
 builder.Services.AddSingleton<IDataCollector, AiScoreCollector>();
 builder.Services.AddSingleton<IDataCollector, AiAnomalyCollector>();
+// Shared AI digests — one model call each, read by every user.
+builder.Services.AddSingleton<IDataCollector, DailyDigestJob>();
+builder.Services.AddSingleton<IDataCollector, MoversDigestJob>();
+builder.Services.AddSingleton<IDataCollector, NarrativeDigestJob>();
+builder.Services.AddSingleton<IDataCollector, NewsImpactDigestJob>();
 builder.Services.AddHostedService<CollectorRunner>();
 
 builder.Build().Run();

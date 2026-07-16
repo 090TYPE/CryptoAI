@@ -28,6 +28,7 @@ builder.Services.AddSingleton<TwoFactorRepository>();
 builder.Services.AddSingleton<PriceAlertsRepository>();
 builder.Services.AddSingleton<NotificationRepository>();
 builder.Services.AddSingleton<InboxRepository>();
+builder.Services.AddSingleton<AiDigestRepository>();
 builder.Services.AddSingleton<TrackedTokenRepository>();
 builder.Services.AddSingleton<AuditRepository>();
 
@@ -363,6 +364,11 @@ app.MapGet("/api/alerts", async (HttpContext ctx, PriceAlertsRepository alerts) 
 
 app.MapDelete("/api/alerts/{id:guid}", async (HttpContext ctx, Guid id, PriceAlertsRepository alerts) =>
     Results.Ok(new { removed = await alerts.DeleteAsync(Uid(ctx), id, ctx.RequestAborted) }));
+
+// ── Shared AI digests (daily / movers / narratives / news_impact) ─────────────
+// Computed once on the server, served to every user.
+app.MapGet("/api/digests", async (HttpContext ctx, string? kind, int? limit, AiDigestRepository digests) =>
+    Results.Ok(await digests.ListRecentAsync(kind, Math.Clamp(limit ?? 20, 1, 100), ctx.RequestAborted)));
 
 // ── Inbox: how the desktop terminal receives server events (every user, no setup) ─
 app.MapGet("/api/inbox", async (HttpContext ctx, bool? unread, int? limit, InboxRepository inbox) =>
