@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
 using Avalonia.Threading;
@@ -13,15 +15,43 @@ public sealed class AiDigestRowVM
 {
     public AiDigestRowVM(ServerDigest d)
     {
-        Kind = d.Kind.ToUpperInvariant().Replace('_', ' ');
+        var info = AiStreamCatalog.Describe(d.Kind);
+        Kind = info.Name;                 // human name, not the raw kind
+        Cadence = info.Cadence;
+        Group = info.Group;
         Title = d.Title;
         Body = d.Body ?? string.Empty;
         AgeLabel = AiFeedViewModel.Age(d.CreatedUtc);
     }
 
     public string Kind { get; }
+    public string Cadence { get; }
+    public string Group { get; }
     public string Title { get; }
     public string Body { get; }
+    public string AgeLabel { get; }
+}
+
+/// <summary>One AI function the server runs — listed even before it has published anything.</summary>
+public sealed class AiStreamRowVM
+{
+    public AiStreamRowVM(AiStreamInfo info, ServerDigest? latest)
+    {
+        Name = info.Name;
+        Description = info.Description;
+        Cadence = info.Cadence;
+        Group = info.Group;
+        HasLatest = latest is not null;
+        LatestTitle = latest?.Title ?? "waiting for first publish";
+        AgeLabel = latest is null ? "" : AiFeedViewModel.Age(latest.CreatedUtc);
+    }
+
+    public string Name { get; }
+    public string Description { get; }
+    public string Cadence { get; }
+    public string Group { get; }
+    public bool HasLatest { get; }
+    public string LatestTitle { get; }
     public string AgeLabel { get; }
 }
 
@@ -58,6 +88,9 @@ public sealed class AiFeedViewModel : ReactiveObject, IDisposable
 
     public ObservableCollection<AiDigestRowVM> Digests { get; } = [];
     public ObservableCollection<InboxRowVM> Inbox { get; } = [];
+
+    /// <summary>Every AI function the server runs, with its cadence and last publish.</summary>
+    public ObservableCollection<AiStreamRowVM> Streams { get; } = [];
 
     private string _statusLabel = "Server not configured — local mode";
     private bool _isLoading;
@@ -96,22 +129,36 @@ public sealed class AiFeedViewModel : ReactiveObject, IDisposable
 
         if (Digests.Count == 0 && Inbox.Count == 0) IsLoading = true;
 
-        var digests = await _feed.GetDigestsAsync(limit: 20);
+        // Pull deep enough to find the latest publish of every stream, not just the newest few.
+        var digests = await _feed.GetDigestsAsync(limit: 100);
         var inbox = await _feed.GetInboxAsync(limit: 20);
         var unread = await _feed.GetUnreadCountAsync();
+
+        // Latest publish per kind → lets us show every catalogued function with its state.
+        var latestByKind = digests
+            .GroupBy(d => d.Kind, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(d => d.CreatedUtc).First(), StringComparer.OrdinalIgnoreCase);
 
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
             Digests.Clear();
-            foreach (var d in digests) Digests.Add(new AiDigestRowVM(d));
+            foreach (var d in digests.OrderByDescending(d => d.CreatedUtc).Take(20))
+                Digests.Add(new AiDigestRowVM(d));
+
             Inbox.Clear();
             foreach (var m in inbox) Inbox.Add(new InboxRowVM(m));
+
+            Streams.Clear();
+            foreach (var info in AiStreamCatalog.BroadcastStreams)
+                Streams.Add(new AiStreamRowVM(info, latestByKind.GetValueOrDefault(info.Kind)));
+
             UnreadBadge = unread;
             this.RaisePropertyChanged(nameof(HasInbox));
             this.RaisePropertyChanged(nameof(HasDigests));
+            var live = latestByKind.Count;
             StatusLabel = digests.Count == 0 && inbox.Count == 0
                 ? "Connected — nothing published yet"
-                : $"{digests.Count} AI streams · {inbox.Count} events · {DateTime.Now:HH:mm:ss}";
+                : $"{live}/{AiStreamCatalog.BroadcastStreams.Count} AI streams live · {inbox.Count} events · {DateTime.Now:HH:mm:ss}";
             IsLoading = false;
         });
     }

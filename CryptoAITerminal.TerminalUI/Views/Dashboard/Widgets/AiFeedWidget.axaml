@@ -56,9 +56,9 @@
       </ItemsControl>
     </StackPanel>
 
-    <!-- Shared AI digests (server computes once, everyone reads) -->
-    <TextBlock Text="AI STREAMS" Foreground="#2D4A5A" FontSize="9" FontWeight="Bold" Margin="0,4,0,0" />
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <!-- Latest AI output (server computes once, everyone reads) -->
+    <TextBlock Text="LATEST AI OUTPUT" Foreground="#2D4A5A" FontSize="9" FontWeight="Bold" Margin="0,4,0,0" />
+    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="260">
       <ItemsControl ItemsSource="{Binding AiFeedVM.Digests}">
         <ItemsControl.ItemTemplate>
           <DataTemplate DataType="{x:Type vm:AiDigestRowVM}">
@@ -74,12 +74,48 @@
                   </Border>
                   <TextBlock Grid.Column="1" Text="{Binding Title}" Foreground="#C8D8E8"
                              FontSize="11" FontWeight="Bold" TextWrapping="Wrap" />
-                  <TextBlock Grid.Column="2" Text="{Binding AgeLabel}" Foreground="#4A6880" FontSize="9"
-                             VerticalAlignment="Top" />
+                  <StackPanel Grid.Column="2" VerticalAlignment="Top" HorizontalAlignment="Right">
+                    <TextBlock Text="{Binding AgeLabel}" Foreground="#4A6880" FontSize="9"
+                               HorizontalAlignment="Right" />
+                    <TextBlock Text="{Binding Cadence}" Foreground="#2D4A5A" FontSize="8"
+                               HorizontalAlignment="Right" />
+                  </StackPanel>
                 </Grid>
                 <TextBlock Text="{Binding Body}" Foreground="#7A93A8" FontSize="10"
                            TextWrapping="Wrap" MaxLines="4" />
               </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+
+    <!-- Every AI function the server runs, with its cadence and last publish -->
+    <TextBlock Text="ALL AI FUNCTIONS" Foreground="#2D4A5A" FontSize="9" FontWeight="Bold" Margin="0,4,0,0" />
+    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="220">
+      <ItemsControl ItemsSource="{Binding AiFeedVM.Streams}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="{x:Type vm:AiStreamRowVM}">
+            <Border Background="#060D14" CornerRadius="3" Padding="8,5" Margin="0,1"
+                    BorderBrush="#17263A" BorderThickness="0,0,0,1">
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                <Border Grid.Column="0" Background="#111C28" CornerRadius="3" Padding="4,2" VerticalAlignment="Top">
+                  <TextBlock Text="{Binding Group}" Foreground="#4A6880" FontSize="8" FontWeight="Bold" />
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="1">
+                  <TextBlock Text="{Binding Name}" Foreground="#C8D8E8" FontSize="10" FontWeight="Bold" />
+                  <TextBlock Text="{Binding Description}" Foreground="#4A6880" FontSize="9"
+                             TextWrapping="Wrap" MaxLines="1" />
+                  <TextBlock Text="{Binding LatestTitle}" Foreground="#7A93A8" FontSize="9"
+                             TextWrapping="Wrap" MaxLines="1" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" VerticalAlignment="Top" HorizontalAlignment="Right">
+                  <TextBlock Text="{Binding Cadence}" Foreground="#2D4A5A" FontSize="8"
+                             HorizontalAlignment="Right" />
+                  <TextBlock Text="{Binding AgeLabel}" Foreground="#4A6880" FontSize="9"
+                             HorizontalAlignment="Right" IsVisible="{Binding HasLatest}" />
+                </StackPanel>
+              </Grid>
             </Border>
           </DataTemplate>
         </ItemsControl.ItemTemplate>
