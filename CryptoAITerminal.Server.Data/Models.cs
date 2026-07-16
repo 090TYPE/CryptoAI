@@ -36,7 +36,8 @@ public sealed record TokenDetail(
     string? ImageUrl, string? Website, string? Twitter, string? Telegram,
     bool? IsHoneypot, decimal? BuyTax, decimal? SellTax, string? RiskLabel, int? RiskScore,
     long? HolderCount, decimal? HoldersTop10Pct,
-    string? DeployerAddress, int? DeployerTokensDeployed, int? DeployerRugpulls, int? DeployerWalletAgeMonths);
+    string? DeployerAddress, int? DeployerTokensDeployed, int? DeployerRugpulls, int? DeployerWalletAgeMonths,
+    int? AiScore = null, string? AiVerdict = null, string? AiSummary = null);
 
 /// <summary>Latest gas price for a chain (gwei).</summary>
 public sealed record GasPoint(string Chain, decimal? Standard, DateTime Ts);

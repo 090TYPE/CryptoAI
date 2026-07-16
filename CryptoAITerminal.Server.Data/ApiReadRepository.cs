@@ -20,13 +20,15 @@ public sealed class ApiReadRepository
                    sec.risk_label AS RiskLabel, sec.risk_score AS RiskScore,
                    h.holder_count AS HolderCount, h.top10_pct AS HoldersTop10Pct,
                    d.deployer_address AS DeployerAddress, d.tokens_deployed AS DeployerTokensDeployed,
-                   d.est_rugpulls AS DeployerRugpulls, d.wallet_age_months AS DeployerWalletAgeMonths
+                   d.est_rugpulls AS DeployerRugpulls, d.wallet_age_months AS DeployerWalletAgeMonths,
+                   ai.score AS AiScore, ai.verdict AS AiVerdict, ai.summary AS AiSummary
             FROM tracked_tokens t
             LEFT JOIN token_snapshot s   USING (chain, token_address)
             LEFT JOIN token_metadata m   USING (chain, token_address)
             LEFT JOIN token_security sec USING (chain, token_address)
             LEFT JOIN token_holders h    USING (chain, token_address)
             LEFT JOIN token_deployer d   USING (chain, token_address)
+            LEFT JOIN token_ai_score ai  USING (chain, token_address)
             WHERE t.chain = @chain AND t.token_address = @token;";
         await using var conn = await _db.OpenConnectionAsync(ct);
         return await conn.QuerySingleOrDefaultAsync<TokenDetail>(

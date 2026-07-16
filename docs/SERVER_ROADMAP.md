@@ -26,7 +26,7 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
 ## AI
 - 🔴 Real-time AI alerts (Claude flags anomalies on favorites)
 - 🔴 Server-side morning AI briefing (push to all)
-- 🔴 AI token scoring (rug risk / narrative) cached for everyone
+- ✅ AI token scoring cached for everyone (AiScoreCollector + token_ai_score, surfaced in /api/dex/token; needs anthropic key)
 - 🔴 AI pre-trade review before autonomous trades
 - 🔴 RAG over collected data (Claude answers grounded in our DB)
 
