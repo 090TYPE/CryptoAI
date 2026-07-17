@@ -1676,10 +1676,10 @@ git commit -m "feat(copilot): agentic copilot with action tray + AUTO toggle"
 ## Task 14: Docs + audit surfacing (optional polish)
 
 **Files:**
-- Modify: `TRADING_AUDIT.md` / `SETUP_ЧТО_ПОДКЛЮЧИТЬ.md` — note the agent needs an AI key.
+- Modify: `TRADING_AUDIT.md` / `SETUP.md` — note the agent needs an AI key.
 - Optionally surface recent `AppActionAuditLog` entries in the Logs section.
 
-- [ ] **Step 1:** Add a short "AI Agent" paragraph to `SETUP_ЧТО_ПОДКЛЮЧИТЬ.md` (needs `ANTHROPIC_API_KEY`/`OPENAI_API_KEY`; CONFIRM default, AUTO opt-in + testnet-first).
+- [ ] **Step 1:** Add a short "AI Agent" paragraph to `SETUP.md` (needs `ANTHROPIC_API_KEY`/`OPENAI_API_KEY`; CONFIRM default, AUTO opt-in + testnet-first).
 - [ ] **Step 2: Commit**
 
 ```bash
