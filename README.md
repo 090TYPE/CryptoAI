@@ -10,6 +10,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11%20x64-0078D6?logo=windows" alt="Platform"/>
   <img src="https://img.shields.io/badge/Version-v1.4-21E6C1" alt="v1.4"/>
   <img src="https://img.shields.io/badge/License-Source--available-lightgrey" alt="License: source-available"/>
+  <a href="https://github.com/090TYPE/CryptoAI/actions/workflows/ci.yml"><img src="https://github.com/090TYPE/CryptoAI/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
 </p>
 
 <p align="center">
