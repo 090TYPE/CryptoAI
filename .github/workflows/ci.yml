@@ -1,0 +1,17 @@
+name: CI
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  test:
+    name: Core — Build & Test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Test (Core)
+        run: dotnet test CryptoAITerminal.Core.Tests --configuration Release --verbosity normal
