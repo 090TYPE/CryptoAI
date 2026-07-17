@@ -9,8 +9,29 @@
   <img src="https://img.shields.io/badge/Avalonia-12.0-883EFF" alt="Avalonia"/>
   <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11%20x64-0078D6?logo=windows" alt="Platform"/>
   <img src="https://img.shields.io/badge/Version-v1.4-21E6C1" alt="v1.4"/>
+  <img src="https://img.shields.io/badge/License-Source--available-lightgrey" alt="License: source-available"/>
 </p>
 
+<p align="center">
+  <b>English</b> · <a href="#содержание">Русская версия ниже ↓</a>
+</p>
+
+> **A professional desktop terminal for crypto trading.** CEX + DEX in one window —
+> Binance, Bybit, OKX, KuCoin, Uniswap, Jupiter, SunSwap. Algorithmic bots, a new-listing
+> sniper, on-chain analytics, and **AI throughout**: pick **Claude or ChatGPT** with a single
+> switch, a global **AI command bar (`Ctrl+K`)**, an autonomous AI trader that trades by
+> itself via tool use (CEX and DEX), plus AI assistants across 13 sections. Runs in demo
+> mode without API keys. Fully bilingual UI — instant **RU ⇄ EN** switching.
+>
+> **Stack:** C# · .NET 8 · Avalonia · MVVM · SQLite · Claude API / OpenAI API · Docker
+> (server side: ASP.NET Core, PostgreSQL/TimescaleDB, Vault).
+>
+> ⚠️ **Not financial advice.** Trading crypto carries substantial risk of loss.
+> Live trading is gated behind explicit confirmation; paper trading is the default.
+>
+> 📄 Source-available for review — see [LICENSE](LICENSE). Commercial use requires permission.
+
+---
 > **Профессиональный десктоп-терминал для торговли криптовалютами.** CEX + DEX в одном окне: Binance, Bybit, OKX, KuCoin, Uniswap, Jupiter, SunSwap. Алгоритмические боты, снайпер новых листингов, on-chain аналитика и **AI везде**: на выбор **Claude или ChatGPT** (один переключатель на весь терминал), глобальная **AI-командная строка `Ctrl+K`** (навигация и вопросы из любого места), автономный AI-трейдер (сам торгует через tool use, CEX и DEX) плюс AI-помощники в 13 разделах. Демо-режим без ключей, лицензирование и Telegram-бот продажи лицензий с оплатой Stars/криптой. Интерфейс полностью двуязычный — мгновенное переключение **RU ⇄ EN** на лету.
 
 ---
