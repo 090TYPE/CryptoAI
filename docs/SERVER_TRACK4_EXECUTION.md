@@ -193,6 +193,13 @@ ALTER TABLE bot_orders  ADD COLUMN IF NOT EXISTS reconciled_utc TIMESTAMPTZ;
 
 ### Фаза 4.2 — Серверный Grid-бот
 
+> **Статус: 🟡 чистая логика портирована по TDD (13 тестов).** `ServerGridStrategy`:
+> `GenerateLevels` (spacing + N+1 уровней), `CycleProfit` (комиссия с двух сторон, BUG-10),
+> `InitialOrders` (spot — buy-below, futures + sell-above), `OnFill` (buy@i→sell@i+1;
+> sell@i→buy@i-1 + закрытие цикла). Все решения детерминированы и покрыты. Осталось: stateful
+> обвязка (таблица активных ордеров, poll-loop филлов, размещение через gateway, restart-safe) —
+> идёт вместе с 4.5 (реконсилятор), т.к. требует живой БД и биржи.
+
 Grid — stateful: держит набор лимиток между `lower`/`upper`, ловит филлы, переставляет.
 
 - `CryptoAITerminal.Executor/Strategies/ServerGridStrategy.cs` — портировать логику десктопного `GridBot.cs` (уровни, комиссия 0.1%/сторона учтена — БАГ-10 уже исправлен в десктопе, переиспользовать формулу).
