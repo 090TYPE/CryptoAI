@@ -14,6 +14,11 @@
   <ItemGroup>
     <ProjectReference Include="..\CryptoAITerminal.Server.Data\CryptoAITerminal.Server.Data.csproj" />
     <ProjectReference Include="..\CryptoAITerminal.Server.Common\CryptoAITerminal.Server.Common.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.Core\CryptoAITerminal.Core.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.Gateway.Binance\CryptoAITerminal.Gateway.Binance.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.Gateway.Bybit\CryptoAITerminal.Gateway.Bybit.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.Gateway.OKX\CryptoAITerminal.Gateway.OKX.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.Gateway.KuCoin\CryptoAITerminal.Gateway.KuCoin.csproj" />
   </ItemGroup>
 
 </Project>

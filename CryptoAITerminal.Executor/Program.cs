@@ -36,9 +36,22 @@ else
 builder.Services.AddSingleton<IWithdrawalSigner, StubWithdrawalSigner>();
 builder.Services.AddHostedService<WithdrawalExecutorService>();
 
-// ⚠️ StubBotOrderExecutor trades NO real money. Replace with a real exchange-order impl
-// (decrypt key + gateway + RiskManager) before going live (see IBotOrderExecutor).
-builder.Services.AddSingleton<IBotOrderExecutor, StubBotOrderExecutor>();
+// Bot order execution (Track 4 Phase 4.1). Collaborators for the real executor:
+builder.Services.AddSingleton<IGatewayFactory, GatewayFactory>();
+builder.Services.AddSingleton<ICexKeyProvider, SecretsCexKeyProvider>();
+builder.Services.AddSingleton<IPriceSource>(new HttpPriceSource(new HttpClient { Timeout = TimeSpan.FromSeconds(15) }));
+
+// Hard per-order USD cap — the minimum guardrail before any live order.
+var maxOrderUsd = decimal.TryParse(cfg["BOT_MAX_ORDER_USD"], out var cap) ? cap : 100m;
+builder.Services.AddSingleton<IRiskGate>(new PerOrderCapRiskGate(maxOrderUsd));
+
+// Live is opt-in per node: BOT_LIVE_ENABLED=true wires the real exchange executor (which still
+// only goes live for bots with mode=live, trade-only keys). Otherwise the paper stub moves no money.
+if (string.Equals(cfg["BOT_LIVE_ENABLED"], "true", StringComparison.OrdinalIgnoreCase))
+    builder.Services.AddSingleton<IBotOrderExecutor, ExchangeBotOrderExecutor>();
+else
+    builder.Services.AddSingleton<IBotOrderExecutor, StubBotOrderExecutor>();
+
 builder.Services.AddHostedService<BotExecutorService>();
 
 builder.Build().Run();
