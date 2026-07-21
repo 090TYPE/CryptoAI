@@ -26,4 +26,26 @@ public static class ServerGridStrategy
         var commission = (buyPrice + sellPrice) * qty * feePerSide;
         return (sellPrice - buyPrice) * qty - commission;
     }
+
+    /// <summary>A limit order the grid wants placed at startup.</summary>
+    public readonly record struct GridOrder(string Side, decimal Price);
+
+    /// <summary>
+    /// Initial grid orders for a price. Each cell fully below price → limit buy at its bottom;
+    /// each cell fully above price → limit sell at its top, but only on futures (short entry).
+    /// Spot places buys only. Ported from GridBot.PlaceInitialOrders.
+    /// </summary>
+    public static IReadOnlyList<GridOrder> InitialOrders(decimal[] levels, decimal currentPrice, bool futures)
+    {
+        var orders = new List<GridOrder>();
+        for (int i = 0; i < levels.Length - 1; i++)
+        {
+            decimal bottom = levels[i], top = levels[i + 1];
+            if (top <= currentPrice)
+                orders.Add(new GridOrder("buy", bottom));
+            else if (bottom >= currentPrice && futures)
+                orders.Add(new GridOrder("sell", top));
+        }
+        return orders;
+    }
 }
