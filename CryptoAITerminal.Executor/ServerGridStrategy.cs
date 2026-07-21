@@ -27,8 +27,31 @@ public static class ServerGridStrategy
         return (sellPrice - buyPrice) * qty - commission;
     }
 
-    /// <summary>A limit order the grid wants placed at startup.</summary>
-    public readonly record struct GridOrder(string Side, decimal Price);
+    /// <summary>A limit order the grid wants placed. Side null = no order (grid edge).</summary>
+    public readonly record struct GridOrder(string? Side, decimal Price);
+
+    /// <summary>What to do after a fill: the opposite order to place (Side null at the grid edge)
+    /// and whether a full buy→sell cycle just closed (for PnL accounting).</summary>
+    public readonly record struct GridFillResult(GridOrder Order, bool CycleClosed);
+
+    /// <summary>Reaction to a filled grid order. Ported from GridBot.PollFills.</summary>
+    public static GridFillResult OnFill(decimal[] levels, string filledSide, int filledLevel)
+    {
+        // Filled buy at i → place sell at i+1 (take profit one level up).
+        if (string.Equals(filledSide, "buy", StringComparison.OrdinalIgnoreCase))
+        {
+            int up = filledLevel + 1;
+            return up < levels.Length
+                ? new GridFillResult(new GridOrder("sell", levels[up]), CycleClosed: false)
+                : new GridFillResult(new GridOrder(null, 0m), false);
+        }
+
+        // Filled sell at i → place buy at i-1 (re-arm lower); a full cycle just closed.
+        int down = filledLevel - 1;
+        return down >= 0
+            ? new GridFillResult(new GridOrder("buy", levels[down]), CycleClosed: true)
+            : new GridFillResult(new GridOrder(null, 0m), false);
+    }
 
     /// <summary>
     /// Initial grid orders for a price. Each cell fully below price → limit buy at its bottom;
