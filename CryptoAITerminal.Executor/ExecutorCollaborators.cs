@@ -32,7 +32,7 @@ public sealed class SqlTslPositionStore : ITslPositionStore
         var r = await _repo.LoadAsync(botId, ct);
         if (r is null) return null;
         var state = new ServerTrailingStop.TslState(r.Peak, r.Sl, r.RemainingQty, r.TpPercent, r.Closed, r.PartialDone);
-        return new TrailingPosition(r.BotId, r.Symbol, r.IsLong, r.Entry, r.Futures, state, r.Closed);
+        return new TrailingPosition(r.BotId, r.Symbol, r.IsLong, r.Entry, r.Futures, state, r.Closed, r.NativeSl, r.SlOrderId);
     }
 
     public Task SaveAsync(TrailingPosition p, CancellationToken ct)
@@ -42,7 +42,7 @@ public sealed class SqlTslPositionStore : ITslPositionStore
         var s = p.State;
         return _repo.UpsertAsync(new TslPositionRow(
             p.BotId, Guid.Empty, p.Symbol, p.IsLong, p.Entry, p.Futures,
-            s.Peak, s.Sl, s.RemainingQty, s.TpPercent, s.PartialDone, p.Closed), ct);
+            s.Peak, s.Sl, s.RemainingQty, s.TpPercent, s.PartialDone, p.Closed, p.NativeSl, p.SlOrderId), ct);
     }
 }
 

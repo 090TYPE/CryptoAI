@@ -266,7 +266,7 @@ public sealed class BotExecutorService : BackgroundService
     {
         var t = ParseTrailingParams(bot.ParamsJson);
         if (t is null) return;
-        var (symbol, isLong, entry, qty, futures, exchange, market, mode, pollMin, tsl) = t.Value;
+        var (symbol, isLong, entry, qty, futures, exchange, market, mode, pollMin, nativeSl, tsl) = t.Value;
 
         if (bot.LastRunUtc is null)
         {
@@ -274,7 +274,8 @@ public sealed class BotExecutorService : BackgroundService
             var s = ServerTrailingStop.Init(isLong, entry, tsl) with { RemainingQty = qty };
             await _tslRepo.UpsertAsync(new TslPositionRow(
                 bot.Id, bot.UserId, symbol, isLong, entry, futures,
-                s.Peak, s.Sl, s.RemainingQty, s.TpPercent, s.PartialDone, Closed: false), ct);
+                s.Peak, s.Sl, s.RemainingQty, s.TpPercent, s.PartialDone, Closed: false,
+                NativeSl: nativeSl && futures), ct);
             await _bots.MarkRunAsync(bot.Id, ct);
             await _audit.WriteAsync(bot.UserId, "bot", "bot_order",
                 JsonSerializer.Serialize(new { bot.Id, strategy = "trailing", action = "attach", symbol, side = isLong ? "long" : "short", entry, qty, mode }), null, ct);
@@ -311,7 +312,7 @@ public sealed class BotExecutorService : BackgroundService
     /// "pollMinutes":1, plus TpSlConfig fields: tpEnabled, tpPercent, slEnabled, slPercent, trailing,
     /// partialTp, partialTpClosePercent, partialTp2Percent }. Returns null if unusable.</summary>
     private static (string Symbol, bool IsLong, decimal Entry, decimal Qty, bool Futures,
-        string Exchange, string Market, string Mode, double PollMin, TpSlConfig Tsl)? ParseTrailingParams(string? json)
+        string Exchange, string Market, string Mode, double PollMin, bool NativeSl, TpSlConfig Tsl)? ParseTrailingParams(string? json)
     {
         if (string.IsNullOrWhiteSpace(json)) return null;
         try
@@ -340,6 +341,7 @@ public sealed class BotExecutorService : BackgroundService
             var exchange = r.TryGetProperty("exchange", out var ex) ? ex.GetString() : null;
             var mode = r.TryGetProperty("mode", out var mo) ? mo.GetString() : null;
             var pollMin = r.TryGetProperty("pollMinutes", out var pm) && pm.TryGetDouble(out var pmd) ? pmd : 0d;
+            var nativeSl = Bool(r, "nativeSl");
 
             var tsl = new TpSlConfig
             {
@@ -355,7 +357,7 @@ public sealed class BotExecutorService : BackgroundService
 
             return (symbol!, isLong, entry, qty, futures,
                     string.IsNullOrWhiteSpace(exchange) ? "binance" : exchange!, market!,
-                    string.IsNullOrWhiteSpace(mode) ? "paper" : mode!, pollMin, tsl);
+                    string.IsNullOrWhiteSpace(mode) ? "paper" : mode!, pollMin, nativeSl, tsl);
         }
         catch { return null; }
     }
