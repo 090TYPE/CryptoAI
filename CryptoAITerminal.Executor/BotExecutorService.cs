@@ -26,19 +26,20 @@ public sealed class BotExecutorService : BackgroundService
     private readonly ITslPositionStore _tslStore;
     private readonly TslPositionsRepository _tslRepo;
     private readonly IPriceSource _price;
+    private readonly IQuoteSource _quotes;
     private readonly ILogger<BotExecutorService> _log;
     private readonly TimeSpan _tick;
 
     public BotExecutorService(BotConfigRepository bots, BotOrdersRepository orders, AuditRepository audit,
         IBotOrderExecutor executor, IPreTradeReviewer reviewer, IRiskGate risk, InboxRepository inbox,
         IGridOrderStore gridStore, IGridGatewayProvider gridGateways,
-        ITslPositionStore tslStore, TslPositionsRepository tslRepo, IPriceSource price,
+        ITslPositionStore tslStore, TslPositionsRepository tslRepo, IPriceSource price, IQuoteSource quotes,
         IConfiguration cfg, ILogger<BotExecutorService> log)
     {
         _bots = bots; _orders = orders; _audit = audit; _executor = executor;
         _reviewer = reviewer; _risk = risk; _inbox = inbox;
         _gridStore = gridStore; _gridGateways = gridGateways;
-        _tslStore = tslStore; _tslRepo = tslRepo; _price = price; _log = log;
+        _tslStore = tslStore; _tslRepo = tslRepo; _price = price; _quotes = quotes; _log = log;
         _tick = TimeSpan.FromSeconds(int.TryParse(cfg["BOT_TICK_SECONDS"], out var t) ? t : 15);
     }
 
@@ -76,9 +77,13 @@ public sealed class BotExecutorService : BackgroundService
                 var p = ParseParams(bot.ParamsJson);
                 if (p is null) continue;
 
-                var (asset, quote, amountUsd, intervalMin, exchange, market, mode) = p.Value;
+                var (asset, quote, amountUsd, intervalMin, exchange, market, mode, route, exchanges) = p.Value;
                 if (bot.LastRunUtc is { } last && (DateTime.UtcNow - last).TotalMinutes < intervalMin)
                     continue; // not due yet
+
+                // Best-execution routing (Phase 4.4): pick the cheapest venue among the user's exchanges.
+                if (route && exchanges.Length >= 2)
+                    exchange = await RouteBuyAsync(bot, asset, quote, exchange, exchanges, ct);
 
                 // Idempotency: same logical minute → same client order id (see Track 4 §4.5).
                 var clientOrderId = $"dca-{bot.Id:N}-{DateTime.UtcNow:yyyyMMddHHmm}";
@@ -325,9 +330,40 @@ public sealed class BotExecutorService : BackgroundService
     private static bool Bool(JsonElement r, string name) => r.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.True;
     private static decimal Dec(JsonElement r, string name, decimal fallback) => r.TryGetProperty(name, out var v) && v.TryGetDecimal(out var d) ? d : fallback;
 
+    /// <summary>
+    /// Compare the user's exchanges on effective (fee-adjusted) price and return the cheapest to buy.
+    /// Public quotes only; venues that don't answer are skipped. Falls back to the default exchange
+    /// when fewer than two venues quote. The choice (and saving vs the worst venue) is audited.
+    /// </summary>
+    private async Task<string> RouteBuyAsync(EnabledBot bot, string asset, string quote, string fallback, string[] exchanges, CancellationToken ct)
+    {
+        var quotes = new List<ServerBestExecution.ExchangeQuote>(exchanges.Length);
+        foreach (var ex in exchanges)
+        {
+            var px = await _quotes.GetQuoteAsync(ex, asset, quote, ct);
+            if (px is > 0m) quotes.Add(new ServerBestExecution.ExchangeQuote(ex, px.Value, 0.1m));
+        }
+
+        var choice = ServerBestExecution.PickBest(Core.Enums.OrderSide.Buy, quotes);
+        if (choice is null) return fallback;
+
+        await _audit.WriteAsync(bot.UserId, "bot", "bot_route",
+            JsonSerializer.Serialize(new
+            {
+                bot.Id, asset, quote, chosen = choice.Value.Best.Exchange,
+                savingsPerUnit = choice.Value.SavingsPerUnit,
+                venues = quotes.Select(q => new { q.Exchange, q.RawPrice }),
+            }), null, ct);
+        _log.LogInformation("bot {Id} routed {Asset}{Quote} → {Exchange} (save {Save}/unit)",
+            bot.Id, asset, quote, choice.Value.Best.Exchange, choice.Value.SavingsPerUnit);
+        return choice.Value.Best.Exchange;
+    }
+
     /// <summary>DCA params: { "asset":"BTC", "quote":"USDT", "amountUsd":100, "intervalMinutes":60,
-    /// "exchange":"binance", "market":"spot", "mode":"paper" }. Missing fields fall back to safe defaults.</summary>
-    private static (string Asset, string Quote, decimal AmountUsd, double IntervalMin, string Exchange, string Market, string Mode)? ParseParams(string? json)
+    /// "exchange":"binance", "market":"spot", "mode":"paper", "route":true, "exchanges":["binance","bybit"] }.
+    /// Missing fields fall back to safe defaults; route/exchanges enable best-execution (Phase 4.4).</summary>
+    private static (string Asset, string Quote, decimal AmountUsd, double IntervalMin, string Exchange,
+        string Market, string Mode, bool Route, string[] Exchanges)? ParseParams(string? json)
     {
         if (string.IsNullOrWhiteSpace(json)) return null;
         try
@@ -343,10 +379,16 @@ public sealed class BotExecutorService : BackgroundService
             var exchange = root.TryGetProperty("exchange", out var ex) ? ex.GetString() : null;
             var market = root.TryGetProperty("market", out var mk) ? mk.GetString() : null;
             var mode = root.TryGetProperty("mode", out var mo) ? mo.GetString() : null;
+
+            var route = root.TryGetProperty("route", out var rt) && rt.ValueKind == JsonValueKind.True;
+            var exchanges = root.TryGetProperty("exchanges", out var exs) && exs.ValueKind == JsonValueKind.Array
+                ? exs.EnumerateArray().Select(e => e.GetString()).Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s!).ToArray()
+                : Array.Empty<string>();
+
             return (asset!, string.IsNullOrWhiteSpace(quote) ? "USDT" : quote!, amount, interval,
                     string.IsNullOrWhiteSpace(exchange) ? "binance" : exchange!,
                     string.IsNullOrWhiteSpace(market) ? "spot" : market!,
-                    string.IsNullOrWhiteSpace(mode) ? "paper" : mode!);
+                    string.IsNullOrWhiteSpace(mode) ? "paper" : mode!, route, exchanges);
         }
         catch { return null; }
     }

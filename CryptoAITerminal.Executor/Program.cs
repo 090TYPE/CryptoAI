@@ -40,6 +40,8 @@ builder.Services.AddHostedService<WithdrawalExecutorService>();
 builder.Services.AddSingleton<IGatewayFactory, GatewayFactory>();
 builder.Services.AddSingleton<ICexKeyProvider, SecretsCexKeyProvider>();
 builder.Services.AddSingleton<IPriceSource>(new HttpPriceSource(new HttpClient { Timeout = TimeSpan.FromSeconds(15) }));
+// Best-execution routing (Track 4 Phase 4.4): public per-exchange quotes to pick the cheapest venue.
+builder.Services.AddSingleton<IQuoteSource>(new MultiExchangeQuoteSource(new HttpClient { Timeout = TimeSpan.FromSeconds(10) }));
 
 // Hard per-order USD cap — the minimum guardrail before any live order.
 var maxOrderUsd = decimal.TryParse(cfg["BOT_MAX_ORDER_USD"], out var cap) ? cap : 100m;
