@@ -15,7 +15,7 @@
 
 | Компонент | Файл | Состояние |
 |---|---|---|
-| Цикл исполнения ботов | `CryptoAITerminal.Executor/BotExecutorService.cs` | ✅ тикает 15с, грузит `enabled` bot_configs, **только DCA** |
+| Цикл исполнения ботов | `CryptoAITerminal.Executor/BotExecutorService.cs` | ✅ тикает 15с, грузит `enabled` bot_configs, **DCA + Grid** |
 | Интерфейс исполнителя | `CryptoAITerminal.Executor/IBotOrderExecutor.cs` | ✅ `PlaceAsync(userId, side, asset, amount)` |
 | Реальный исполнитель | — | 🔴 только `StubBotOrderExecutor` → возвращает `("paper", ref)` |
 | AI pre-trade review | `IPreTradeReviewer.cs` / `AiPreTradeReviewer` | ✅ гейт перед сделкой (fail-open, если модель недоступна) |
@@ -193,12 +193,18 @@ ALTER TABLE bot_orders  ADD COLUMN IF NOT EXISTS reconciled_utc TIMESTAMPTZ;
 
 ### Фаза 4.2 — Серверный Grid-бот
 
-> **Статус: 🟡 чистая логика портирована по TDD (13 тестов).** `ServerGridStrategy`:
-> `GenerateLevels` (spacing + N+1 уровней), `CycleProfit` (комиссия с двух сторон, BUG-10),
-> `InitialOrders` (spot — buy-below, futures + sell-above), `OnFill` (buy@i→sell@i+1;
-> sell@i→buy@i-1 + закрытие цикла). Все решения детерминированы и покрыты. Осталось: stateful
-> обвязка (таблица активных ордеров, poll-loop филлов, размещение через gateway, restart-safe) —
-> идёт вместе с 4.5 (реконсилятор), т.к. требует живой БД и биржи.
+> **Статус: ✅ реализовано по TDD (grid-логика + stateful-обвязка + диспетчеризация в тик-цикле).**
+> `ServerGridStrategy` (чистые функции): `GenerateLevels` (spacing + N+1 уровней),
+> `CycleProfit` (комиссия с двух сторон, BUG-10), `InitialOrders` (spot — buy-below,
+> futures + sell-above), `OnFill` (buy@i→sell@i+1; sell@i→buy@i-1 + закрытие цикла).
+> `GridBotRunner` (stateful): `StartAsync` ставит сетку, `PollAsync` ловит филлы через
+> `GetOpenOrdersAsync` и переставляет противоположный ордер. Активные ордера — в таблице
+> `grid_orders` (уникальный индекс на открытые `(bot,level,side)`, restart-safe).
+> `BotExecutorService` диспетчеризует `strategy=grid`: первый прогон → `StartAsync`, дальше
+> → `PollAsync`. `PaperExchangeGateway` симулирует филлы по пересечению цены (grid гоняется
+> end-to-end без биржи); `GridGatewayProvider` выбирает paper или live trade-only ключ юзера.
+> На нотионал каждой ячейки — тот же per-order риск-кап, что у DCA. Осталось: прогон на testnet
+> с живыми ключами + реконсилятор (4.5).
 
 Grid — stateful: держит набор лимиток между `lower`/`upper`, ловит филлы, переставляет.
 
