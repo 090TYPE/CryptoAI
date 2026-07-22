@@ -131,8 +131,17 @@ public sealed class BotExecutorService : BackgroundService
                     continue;
                 }
 
+                // Idempotency: if this logical tick's order was already recorded (e.g. node restarted
+                // between placing and stamping last_run), don't place it again — just re-stamp.
+                if (await _orders.ExistsClientOrderIdAsync(clientOrderId, ct))
+                {
+                    await _bots.MarkRunAsync(bot.Id, ct);
+                    _log.LogInformation("bot {Id} DCA: order {Cid} already placed — skipping (idempotent)", bot.Id, clientOrderId);
+                    continue;
+                }
+
                 var fill = await _executor.PlaceAsync(intent, ct);
-                await _orders.InsertAsync(bot.Id, bot.UserId, "buy", asset, amountUsd, fill.AvgPrice, fill.Status, fill.ExtRef, ct);
+                await _orders.InsertAsync(bot.Id, bot.UserId, "buy", asset, amountUsd, fill.AvgPrice, fill.Status, fill.ExtRef, ct, clientOrderId);
                 await _bots.MarkRunAsync(bot.Id, ct);
                 await _audit.WriteAsync(bot.UserId, "bot", "bot_order",
                     JsonSerializer.Serialize(new { bot.Id, strategy = "dca", side = "buy", asset, amountUsd, fill.Status, fill.ExtRef }), null, ct);

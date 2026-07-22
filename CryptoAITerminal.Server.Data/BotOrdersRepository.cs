@@ -9,12 +9,24 @@ public sealed class BotOrdersRepository
     public BotOrdersRepository(Db db) => _db = db;
 
     public async Task InsertAsync(Guid botId, Guid userId, string side, string asset,
-        decimal amount, decimal? price, string status, string? extRef, CancellationToken ct = default)
+        decimal amount, decimal? price, string status, string? extRef,
+        CancellationToken ct = default, string? clientOrderId = null)
     {
-        const string sql = @"INSERT INTO bot_orders (bot_id, user_id, side, asset, amount, price, status, ext_ref)
-                             VALUES (@botId, @userId, @side, @asset, @amount, @price, @status, @extRef);";
+        // ON CONFLICT on the client_order_id unique index makes a re-tick after a restart a no-op
+        // instead of a duplicate order row (Track 4 §4.5 idempotency).
+        const string sql = @"INSERT INTO bot_orders (bot_id, user_id, side, asset, amount, price, status, ext_ref, client_order_id)
+                             VALUES (@botId, @userId, @side, @asset, @amount, @price, @status, @extRef, @clientOrderId)
+                             ON CONFLICT (client_order_id) DO NOTHING;";
         await using var conn = await _db.OpenConnectionAsync(ct);
         await conn.ExecuteAsync(new CommandDefinition(sql,
-            new { botId, userId, side, asset, amount, price, status, extRef }, cancellationToken: ct));
+            new { botId, userId, side, asset, amount, price, status, extRef, clientOrderId }, cancellationToken: ct));
+    }
+
+    /// <summary>True if an order with this client-order-id was already recorded (idempotency check).</summary>
+    public async Task<bool> ExistsClientOrderIdAsync(string clientOrderId, CancellationToken ct = default)
+    {
+        const string sql = "SELECT EXISTS (SELECT 1 FROM bot_orders WHERE client_order_id = @clientOrderId);";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return await conn.ExecuteScalarAsync<bool>(new CommandDefinition(sql, new { clientOrderId }, cancellationToken: ct));
     }
 }
