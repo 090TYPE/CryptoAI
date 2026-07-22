@@ -274,13 +274,13 @@ Grid — stateful: держит набор лимиток между `lower`/`up
 
 ⚠️ **Live-исполнение не включать, пока не готово:**
 
-1. **Per-order cap** — макс. notional на ордер (в bot_config или глобально).
-2. **Per-user daily loss cap** — переиспользовать `RiskManager` (thread-safe, БАГ-21 исправлен); хранить состояние на ноде или в БД (`bot_risk_state`).
-3. **Max open positions / max bots per user** — из тарифа (Трек 2, plan-limits).
-4. **Kill-switch:** таблица `user_flags(user_id, live_halted bool)` + глобальный `BOT_LIVE_ENABLED`; executor проверяет перед каждым live-ордером.
-5. **Allowlist символов** (как в десктопном автономном агенте).
-6. **Ключи только с правом trade, без withdraw** — валидировать `secrets.permissions` перед live.
-7. Всё — в `audit_log` (append-only; в проде отобрать UPDATE/DELETE у app-роли).
+1. ✅ **Per-order cap** — `PerOrderCapRiskGate` (`BOT_MAX_ORDER_USD`), проверяется перед каждым ордером.
+2. 🟢 **Per-user daily cap** — `DailyCapGate` (`BOT_MAX_DAILY_USD`): потолок дневного live-notional на юзера (сумма из `bot_orders`). *Loss*-cap (по реализованному PnL) требует PnL-учёта — отложено.
+3. ⬜ **Max open positions / max bots per user** — из тарифа (Трек 2, plan-limits). Не сделано.
+4. ✅ **Kill-switch:** `user_flags(user_id, live_halted)` (+ all-zero UUID = глобальный) + env `BOT_LIVE_ENABLED`; `LiveGate` проверяется перед каждым live-ордером DCA/grid.
+5. ✅ **Allowlist символов** — `SymbolAllowlist` (`BOT_SYMBOL_ALLOWLIST`); live DCA/grid только по разрешённым символам.
+6. ✅ **Ключи только с правом trade, без withdraw** — `ExchangeBotOrderExecutor`/`GridGatewayProvider` валидируют `permissions` (refuse withdraw, require trade) перед live.
+7. ✅ Всё пишется в `audit_log` (`bot_order`/`bot_route`/`kill_switch`/`symbol_blocked`/`daily_cap`/`bot_trade_blocked`).
 
 Реальные деньги трогать только после Трека 3 (MPC/whitelist/2FA) — зафиксировать как gate.
 
