@@ -118,6 +118,22 @@ public class NotificationHubTests
     }
 
     [Fact]
+    public async Task ChannelsOnly_restricts_routing_to_named_channels()
+    {
+        var desktop = new RecordingChannel("Desktop");
+        var telegram = new RecordingChannel("Telegram");
+        var hub = new NotificationHub(new[] { desktop, telegram }, new InMemoryNotificationInbox());
+
+        var n = new AppNotification("x", "y", NotificationSeverity.Warning, "alert",
+            ChannelsOnly: new[] { "Desktop" });
+        var r = await hub.PublishAsync(n);
+
+        Assert.Equal(new[] { "Desktop" }, r.SentTo);
+        Assert.Single(desktop.Sent);
+        Assert.Empty(telegram.Sent);
+    }
+
+    [Fact]
     public void Digest_rolls_up_counts_and_top_symbols()
     {
         var items = new[]

@@ -21,7 +21,8 @@ public sealed record AppNotification(
     string? Symbol = null,
     string? DedupKey = null,
     DateTime Timestamp = default,
-    string Id = "");
+    string Id = "",
+    IReadOnlyCollection<string>? ChannelsOnly = null);
 
 /// <summary>An outbound destination (Telegram/Discord/ntfy/email/desktop). Adapters wrap the
 /// existing per-channel services.</summary>

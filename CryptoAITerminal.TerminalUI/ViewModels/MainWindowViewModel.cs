@@ -322,6 +322,32 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         AlertsVM = new AlertsViewModel(alertService, _telegram, _discord, _ntfy, _email);
         AlertsVM.ToastRequested += ShowToast;
 
+        // ── Unified smart-notification hub ────────────────────────────────────
+        // One publish point fans out to every configured channel with antispam dedup + an in-app inbox.
+        NotificationInbox = new Services.Notifications.InMemoryNotificationInbox();
+        NotificationHubService = new Services.Notifications.NotificationHub(
+            new Services.Notifications.INotificationChannel[]
+            {
+                new Services.Notifications.DelegateChannel("Desktop",
+                    (n, _) => { ShowToast($"{n.Title}\n{n.Body}"); return System.Threading.Tasks.Task.FromResult(true); }),
+                new Services.Notifications.TelegramChannel(_telegram),
+                new Services.Notifications.DiscordChannel(_discord),
+                new Services.Notifications.NtfyChannel(_ntfy),
+                new Services.Notifications.EmailChannel(_email),
+            },
+            NotificationInbox);
+        // Route fired price alerts through the hub (deduped per alert id).
+        alertService.AlertFired += (_, e) => _ = NotificationHubService.PublishAsync(new Services.Notifications.AppNotification(
+            Title: $"Alert · {e.Alert.Symbol}",
+            Body: $"{e.Alert.ConditionLabel} (now {e.TriggerValue})",
+            Severity: Services.Notifications.NotificationSeverity.Warning,
+            Category: "alert",
+            Symbol: e.Alert.Symbol,
+            DedupKey: $"alert:{e.Alert.Id}",
+            // AlertService already delivers to Telegram/Discord/ntfy/email per the alert's own flags;
+            // the hub only adds the deduped desktop toast + inbox entry (no double external send).
+            ChannelsOnly: new[] { "Desktop" }));
+
         // ── API Credentials commands ──────────────────────────────────────────
         SaveBinanceCredentialsCommand = ReactiveCommand.Create(() =>
         {
@@ -3550,6 +3576,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public SniperViewModel SniperVM { get; }
     public BacktestViewModel BacktestVM { get; }
     public AlertsViewModel AlertsVM { get; }
+
+    /// <summary>Unified smart-notification hub: one publish → antispam-deduped fan-out to all channels + inbox.</summary>
+    public Services.Notifications.NotificationHub NotificationHubService { get; }
+    /// <summary>In-app inbox backing the notification centre (newest first).</summary>
+    public Services.Notifications.InMemoryNotificationInbox NotificationInbox { get; }
+
     public CompositeRuleViewModel        CompositeRuleVM    { get; }
     public OrderTemplatesViewModel       OrderTemplatesVM   { get; }
     public AdvancedTrailingStopViewModel AdvancedTrailingVM { get; }

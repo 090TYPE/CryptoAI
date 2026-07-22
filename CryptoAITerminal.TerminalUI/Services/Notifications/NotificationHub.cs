@@ -72,6 +72,8 @@ public sealed class NotificationHub
         foreach (var ch in _channels)
         {
             if (!ch.IsConfigured || n.Severity < ch.MinSeverity) continue;
+            if (n.ChannelsOnly is { } only && !only.Contains(ch.Name)) continue; // targeted routing
+
             try { if (await ch.SendAsync(n, ct)) sent.Add(ch.Name); }
             catch { /* one bad channel must not sink the rest */ }
         }
