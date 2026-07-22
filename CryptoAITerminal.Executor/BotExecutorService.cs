@@ -20,15 +20,20 @@ public sealed class BotExecutorService : BackgroundService
     private readonly IPreTradeReviewer _reviewer;
     private readonly IRiskGate _risk;
     private readonly InboxRepository _inbox;
+    private readonly IGridOrderStore _gridStore;
+    private readonly IGridGatewayProvider _gridGateways;
+    private readonly IPriceSource _price;
     private readonly ILogger<BotExecutorService> _log;
     private readonly TimeSpan _tick;
 
     public BotExecutorService(BotConfigRepository bots, BotOrdersRepository orders, AuditRepository audit,
         IBotOrderExecutor executor, IPreTradeReviewer reviewer, IRiskGate risk, InboxRepository inbox,
+        IGridOrderStore gridStore, IGridGatewayProvider gridGateways, IPriceSource price,
         IConfiguration cfg, ILogger<BotExecutorService> log)
     {
         _bots = bots; _orders = orders; _audit = audit; _executor = executor;
-        _reviewer = reviewer; _risk = risk; _inbox = inbox; _log = log;
+        _reviewer = reviewer; _risk = risk; _inbox = inbox;
+        _gridStore = gridStore; _gridGateways = gridGateways; _price = price; _log = log;
         _tick = TimeSpan.FromSeconds(int.TryParse(cfg["BOT_TICK_SECONDS"], out var t) ? t : 15);
     }
 
@@ -50,6 +55,11 @@ public sealed class BotExecutorService : BackgroundService
         {
             try
             {
+                if (string.Equals(bot.Strategy, "grid", StringComparison.OrdinalIgnoreCase))
+                {
+                    await RunGridAsync(bot, ct);
+                    continue;
+                }
                 if (!string.Equals(bot.Strategy, "dca", StringComparison.OrdinalIgnoreCase))
                     continue; // other strategies land as their own evaluators
 
@@ -103,6 +113,99 @@ public sealed class BotExecutorService : BackgroundService
             catch (OperationCanceledException) { throw; }
             catch (Exception ex) { _log.LogWarning(ex, "bot {Id} failed", bot.Id); }
         }
+    }
+
+    /// <summary>
+    /// Grid tick: on the bot's first run place the initial ladder (StartAsync); afterwards poll for
+    /// fills and place the opposite order (PollAsync). The gateway is paper (simulated by price cross)
+    /// or the user's live trade-only key, per params. Order state lives in grid_orders so it survives
+    /// restarts. A per-order risk cap is applied to each grid cell's notional.
+    /// </summary>
+    private async Task RunGridAsync(EnabledBot bot, CancellationToken ct)
+    {
+        var g = ParseGridParams(bot.ParamsJson);
+        if (g is null) return;
+        var (symbol, lower, upper, levels, qty, exchange, market, mode, pollMin) = g.Value;
+
+        var first = bot.LastRunUtc is null;
+        if (!first && bot.LastRunUtc is { } last && (DateTime.UtcNow - last).TotalMinutes < pollMin)
+            return; // not due yet
+
+        var price = await _price.GetPriceAsync(exchange, symbol, ct);
+        if (price <= 0) { _log.LogWarning("grid bot {Id}: no price for {Symbol}", bot.Id, symbol); return; }
+
+        // Guard each grid cell's notional with the same per-order cap as DCA.
+        var cellIntent = new BotIntent(bot.UserId, bot.Id, exchange, market, mode, "buy",
+            symbol, "", qty * price, qty, null);
+        var (riskOk, riskReason) = _risk.Check(cellIntent);
+        if (!riskOk)
+        {
+            await _bots.MarkRunAsync(bot.Id, ct);
+            await _audit.WriteAsync(bot.UserId, "bot", "bot_trade_blocked",
+                JsonSerializer.Serialize(new { bot.Id, strategy = "grid", symbol, cellNotional = qty * price, reason = riskReason }), null, ct);
+            await _inbox.InsertAsync(bot.UserId, "bot", $"Risk blocked a grid bot: {symbol}", riskReason ?? "per-order cap exceeded", ct);
+            _log.LogInformation("grid bot {Id} BLOCKED by risk gate: {Reason}", bot.Id, riskReason);
+            return;
+        }
+
+        var open = await _gridStore.GetOpenAsync(bot.Id, ct);
+        var gateway = await _gridGateways.CreateAsync(bot.UserId, exchange, market, mode, price, open, ct);
+        var runner = new GridBotRunner(gateway, _gridStore);
+        var cfg = new GridConfig(bot.Id, bot.UserId, symbol, lower, upper, levels, qty, string.Equals(market, "futures", StringComparison.OrdinalIgnoreCase));
+
+        if (first)
+        {
+            await runner.StartAsync(cfg, price, ct);
+            await _audit.WriteAsync(bot.UserId, "bot", "bot_order",
+                JsonSerializer.Serialize(new { bot.Id, strategy = "grid", action = "start", symbol, lower, upper, levels, price, mode }), null, ct);
+            _log.LogInformation("grid bot {Id} started: {Symbol} [{Lower}-{Upper}]/{Levels} @ {Price} ({Mode})", bot.Id, symbol, lower, upper, levels, price, mode);
+        }
+        else
+        {
+            await runner.PollAsync(cfg, ct);
+            _log.LogInformation("grid bot {Id} polled: {Symbol} @ {Price}", bot.Id, symbol, price);
+        }
+        await _bots.MarkRunAsync(bot.Id, ct);
+    }
+
+    /// <summary>Grid params: { "symbol":"BTCUSDT" | "asset":"BTC","quote":"USDT", "lower":100, "upper":200,
+    /// "gridLevels":10, "qtyPerGrid":0.01, "exchange":"binance", "market":"spot", "mode":"paper",
+    /// "pollMinutes":1 }. Missing fields fall back to safe defaults; returns null if unusable.</summary>
+    private static (string Symbol, decimal Lower, decimal Upper, int Levels, decimal Qty,
+        string Exchange, string Market, string Mode, double PollMin)? ParseGridParams(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var r = doc.RootElement;
+
+            string? symbol = r.TryGetProperty("symbol", out var s) ? s.GetString() : null;
+            if (string.IsNullOrWhiteSpace(symbol))
+            {
+                var asset = r.TryGetProperty("asset", out var a) ? a.GetString() : null;
+                var quote = r.TryGetProperty("quote", out var q) ? q.GetString() : "USDT";
+                if (string.IsNullOrWhiteSpace(asset)) return null;
+                symbol = asset + (string.IsNullOrWhiteSpace(quote) ? "USDT" : quote);
+            }
+
+            var lower = r.TryGetProperty("lower", out var lo) && lo.TryGetDecimal(out var l) ? l : 0m;
+            var upper = r.TryGetProperty("upper", out var up) && up.TryGetDecimal(out var u) ? u : 0m;
+            var levels = r.TryGetProperty("gridLevels", out var gl) && gl.TryGetInt32(out var n) ? n : 0;
+            var qty = r.TryGetProperty("qtyPerGrid", out var qp) && qp.TryGetDecimal(out var qd) ? qd : 0m;
+            if (upper <= lower || levels <= 0 || qty <= 0) return null;
+
+            var exchange = r.TryGetProperty("exchange", out var ex) ? ex.GetString() : null;
+            var market = r.TryGetProperty("market", out var mk) ? mk.GetString() : null;
+            var mode = r.TryGetProperty("mode", out var mo) ? mo.GetString() : null;
+            var pollMin = r.TryGetProperty("pollMinutes", out var pm) && pm.TryGetDouble(out var pmd) ? pmd : 0d;
+
+            return (symbol!, lower, upper, levels, qty,
+                    string.IsNullOrWhiteSpace(exchange) ? "binance" : exchange!,
+                    string.IsNullOrWhiteSpace(market) ? "spot" : market!,
+                    string.IsNullOrWhiteSpace(mode) ? "paper" : mode!, pollMin);
+        }
+        catch { return null; }
     }
 
     /// <summary>DCA params: { "asset":"BTC", "quote":"USDT", "amountUsd":100, "intervalMinutes":60,

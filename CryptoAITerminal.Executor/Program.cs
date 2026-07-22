@@ -45,6 +45,11 @@ builder.Services.AddSingleton<IPriceSource>(new HttpPriceSource(new HttpClient {
 var maxOrderUsd = decimal.TryParse(cfg["BOT_MAX_ORDER_USD"], out var cap) ? cap : 100m;
 builder.Services.AddSingleton<IRiskGate>(new PerOrderCapRiskGate(maxOrderUsd));
 
+// Grid execution (Track 4 Phase 4.2): restart-safe order tracking + gateway resolution (paper/live).
+builder.Services.AddSingleton<GridOrdersRepository>();
+builder.Services.AddSingleton<IGridOrderStore, SqlGridOrderStore>();
+builder.Services.AddSingleton<IGridGatewayProvider, GridGatewayProvider>();
+
 // Live is opt-in per node: BOT_LIVE_ENABLED=true wires the real exchange executor (which still
 // only goes live for bots with mode=live, trade-only keys). Otherwise the paper stub moves no money.
 if (string.Equals(cfg["BOT_LIVE_ENABLED"], "true", StringComparison.OrdinalIgnoreCase))
