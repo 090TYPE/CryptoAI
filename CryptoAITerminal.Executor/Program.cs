@@ -59,6 +59,9 @@ builder.Services.AddSingleton<ITslPositionStore, SqlTslPositionStore>();
 // Live-trading kill-switch (Track 4 Phase 4.5): per-user + global halt, checked before live orders.
 builder.Services.AddSingleton<UserFlagsRepository>();
 
+// Symbol allowlist (Track 4 §4): when set, live bots may only trade these symbols. Empty = no limit.
+builder.Services.AddSingleton(new SymbolAllowlist(cfg["BOT_SYMBOL_ALLOWLIST"]));
+
 // Live is opt-in per node: BOT_LIVE_ENABLED=true wires the real exchange executor (which still
 // only goes live for bots with mode=live, trade-only keys). Otherwise the paper stub moves no money.
 if (string.Equals(cfg["BOT_LIVE_ENABLED"], "true", StringComparison.OrdinalIgnoreCase))

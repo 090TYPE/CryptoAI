@@ -28,6 +28,7 @@ public sealed class BotExecutorService : BackgroundService
     private readonly IPriceSource _price;
     private readonly IQuoteSource _quotes;
     private readonly UserFlagsRepository _flags;
+    private readonly SymbolAllowlist _allowlist;
     private readonly ILogger<BotExecutorService> _log;
     private readonly TimeSpan _tick;
 
@@ -35,12 +36,13 @@ public sealed class BotExecutorService : BackgroundService
         IBotOrderExecutor executor, IPreTradeReviewer reviewer, IRiskGate risk, InboxRepository inbox,
         IGridOrderStore gridStore, IGridGatewayProvider gridGateways,
         ITslPositionStore tslStore, TslPositionsRepository tslRepo, IPriceSource price, IQuoteSource quotes,
-        UserFlagsRepository flags, IConfiguration cfg, ILogger<BotExecutorService> log)
+        UserFlagsRepository flags, SymbolAllowlist allowlist, IConfiguration cfg, ILogger<BotExecutorService> log)
     {
         _bots = bots; _orders = orders; _audit = audit; _executor = executor;
         _reviewer = reviewer; _risk = risk; _inbox = inbox;
         _gridStore = gridStore; _gridGateways = gridGateways;
-        _tslStore = tslStore; _tslRepo = tslRepo; _price = price; _quotes = quotes; _flags = flags; _log = log;
+        _tslStore = tslStore; _tslRepo = tslRepo; _price = price; _quotes = quotes;
+        _flags = flags; _allowlist = allowlist; _log = log;
         _tick = TimeSpan.FromSeconds(int.TryParse(cfg["BOT_TICK_SECONDS"], out var t) ? t : 15);
     }
 
@@ -99,6 +101,18 @@ public sealed class BotExecutorService : BackgroundService
                     await _audit.WriteAsync(bot.UserId, "bot", "kill_switch",
                         JsonSerializer.Serialize(new { bot.Id, strategy = "dca", asset, reason = killReason }), null, ct);
                     _log.LogWarning("bot {Id} live BLOCKED by kill-switch", bot.Id);
+                    continue;
+                }
+
+                // Symbol allowlist: a live bot may only trade configured symbols (guards typos/rogue config).
+                if (string.Equals(mode, "live", StringComparison.OrdinalIgnoreCase) && !_allowlist.IsAllowed(asset + quote))
+                {
+                    await _orders.InsertAsync(bot.Id, bot.UserId, "buy", asset, amountUsd, null, "blocked", null, ct);
+                    await _bots.MarkRunAsync(bot.Id, ct);
+                    await _audit.WriteAsync(bot.UserId, "bot", "symbol_blocked",
+                        JsonSerializer.Serialize(new { bot.Id, strategy = "dca", symbol = asset + quote }), null, ct);
+                    await _inbox.InsertAsync(bot.UserId, "bot", $"Symbol not allowed for live: {asset + quote}", "not in the node allowlist", ct);
+                    _log.LogWarning("bot {Id} live BLOCKED — {Symbol} not in allowlist", bot.Id, asset + quote);
                     continue;
                 }
 
@@ -176,6 +190,17 @@ public sealed class BotExecutorService : BackgroundService
             await _audit.WriteAsync(bot.UserId, "bot", "kill_switch",
                 JsonSerializer.Serialize(new { bot.Id, strategy = "grid", symbol, reason = killReason }), null, ct);
             _log.LogWarning("grid bot {Id} live BLOCKED by kill-switch", bot.Id);
+            return;
+        }
+
+        // Symbol allowlist for live grid placement.
+        if (string.Equals(mode, "live", StringComparison.OrdinalIgnoreCase) && !_allowlist.IsAllowed(symbol))
+        {
+            await _bots.MarkRunAsync(bot.Id, ct);
+            await _audit.WriteAsync(bot.UserId, "bot", "symbol_blocked",
+                JsonSerializer.Serialize(new { bot.Id, strategy = "grid", symbol }), null, ct);
+            await _inbox.InsertAsync(bot.UserId, "bot", $"Symbol not allowed for live: {symbol}", "not in the node allowlist", ct);
+            _log.LogWarning("grid bot {Id} live BLOCKED — {Symbol} not in allowlist", bot.Id, symbol);
             return;
         }
 
