@@ -15,7 +15,7 @@
 
 | Компонент | Файл | Состояние |
 |---|---|---|
-| Цикл исполнения ботов | `CryptoAITerminal.Executor/BotExecutorService.cs` | ✅ тикает 15с, грузит `enabled` bot_configs, **DCA + Grid** |
+| Цикл исполнения ботов | `CryptoAITerminal.Executor/BotExecutorService.cs` | ✅ тикает 15с, грузит `enabled` bot_configs, **DCA + Grid + Trailing** |
 | Интерфейс исполнителя | `CryptoAITerminal.Executor/IBotOrderExecutor.cs` | ✅ `PlaceAsync(userId, side, asset, amount)` |
 | Реальный исполнитель | — | 🔴 только `StubBotOrderExecutor` → возвращает `("paper", ref)` |
 | AI pre-trade review | `IPreTradeReviewer.cs` / `AiPreTradeReviewer` | ✅ гейт перед сделкой (fail-open, если модель недоступна) |
@@ -219,7 +219,7 @@ Grid — stateful: держит набор лимиток между `lower`/`up
 
 ### Фаза 4.3 — Серверный Trailing / TP-SL
 
-> **Статус: 🟡 логика + stateful-runner готовы по TDD (11 тестов); осталась персистентность + диспетчеризация.**
+> **Статус: ✅ реализовано по TDD (логика + runner + персистентность + диспетчеризация).**
 > `ServerTrailingStop` (чистые функции): один тик цены → одно действие (TP / SL / partial TP /
 > сдвиг трейл-SL) + следующее состояние, порядок TP→SL→trail как в десктопе. Сохранены анти-спам
 > гард трейлинга (>0.1%) и БАГ-07 (partial TP на споте: TP1 закрывает долю и перевзводит цель на TP2,
@@ -227,9 +227,13 @@ Grid — stateful: держит набор лимиток между `lower`/`up
 > к gateway + `ITslPositionStore`: грузит позицию, оценивает цену, шлёт рыночное закрытие (полное/
 > частичное) или просто сохраняет подтянутый стоп; состояние пишется каждый тик (restart-safe).
 > Трейлинг софт-симулируется (закрытие по пересечению стопа — без churn нативных SL-ордеров, поэтому
-> БАГ-08 с гонкой обновления SL здесь неактуален). **Осталось:** таблица `tsl_positions` + репозиторий,
-> диспетчеризация `strategy=trailing` в `BotExecutorService`, и апстрим-поток открытия позиции
-> (сейчас раннер управляет уже открытой позицией — на сервере её пока никто не открывает).
+> БАГ-08 с гонкой обновления SL здесь неактуален). Таблица `tsl_positions`
+> (одна управляемая позиция на бота, restart-safe) + `TslPositionsRepository` + `SqlTslPositionStore`;
+> `BotExecutorService` диспетчеризует `strategy=trailing`: первый прогон «прикрепляет» позицию из
+> params (юзер уже держит её — бот ведёт только выход), дальше тики опрашивают цену и `TrailingBotRunner`
+> закрывает (полностью/частично) или подтягивает стоп. Gateway paper/live резолвится как у grid, стейт
+> пишется каждый тик. **Осталось:** апстрим-поток, который сам открывает позицию (сейчас юзер задаёт
+> entry/qty в params вручную), и нативные биржевые SL для futures (сейчас софт-симуляция).
 
 - `CryptoAITerminal.Executor/ServerTrailingStop.cs` + `TrailingBotRunner.cs` — ✅ портировано из `TpSlManager.cs`.
 - Для futures — серверные reduce-only SL/TP через `PlaceStopLossOrderAsync` / `PlaceTakeProfitOrderAsync` (уже в `IExchangeGateway`).
