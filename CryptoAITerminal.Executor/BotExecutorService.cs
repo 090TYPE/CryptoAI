@@ -27,6 +27,7 @@ public sealed class BotExecutorService : BackgroundService
     private readonly TslPositionsRepository _tslRepo;
     private readonly IPriceSource _price;
     private readonly IQuoteSource _quotes;
+    private readonly UserFlagsRepository _flags;
     private readonly ILogger<BotExecutorService> _log;
     private readonly TimeSpan _tick;
 
@@ -34,12 +35,12 @@ public sealed class BotExecutorService : BackgroundService
         IBotOrderExecutor executor, IPreTradeReviewer reviewer, IRiskGate risk, InboxRepository inbox,
         IGridOrderStore gridStore, IGridGatewayProvider gridGateways,
         ITslPositionStore tslStore, TslPositionsRepository tslRepo, IPriceSource price, IQuoteSource quotes,
-        IConfiguration cfg, ILogger<BotExecutorService> log)
+        UserFlagsRepository flags, IConfiguration cfg, ILogger<BotExecutorService> log)
     {
         _bots = bots; _orders = orders; _audit = audit; _executor = executor;
         _reviewer = reviewer; _risk = risk; _inbox = inbox;
         _gridStore = gridStore; _gridGateways = gridGateways;
-        _tslStore = tslStore; _tslRepo = tslRepo; _price = price; _quotes = quotes; _log = log;
+        _tslStore = tslStore; _tslRepo = tslRepo; _price = price; _quotes = quotes; _flags = flags; _log = log;
         _tick = TimeSpan.FromSeconds(int.TryParse(cfg["BOT_TICK_SECONDS"], out var t) ? t : 15);
     }
 
@@ -88,6 +89,18 @@ public sealed class BotExecutorService : BackgroundService
                 // Idempotency: same logical minute → same client order id (see Track 4 §4.5).
                 var clientOrderId = $"dca-{bot.Id:N}-{DateTime.UtcNow:yyyyMMddHHmm}";
                 var intent = new BotIntent(bot.UserId, bot.Id, exchange, market, mode, "buy", asset, quote, amountUsd, null, clientOrderId);
+
+                // Kill-switch: a halted user (or global halt) blocks live orders before anything else.
+                var (killed, killReason) = LiveGate.Check(mode, await _flags.IsLiveHaltedAsync(bot.UserId, ct));
+                if (killed)
+                {
+                    await _orders.InsertAsync(bot.Id, bot.UserId, "buy", asset, amountUsd, null, "blocked", null, ct);
+                    await _bots.MarkRunAsync(bot.Id, ct);
+                    await _audit.WriteAsync(bot.UserId, "bot", "kill_switch",
+                        JsonSerializer.Serialize(new { bot.Id, strategy = "dca", asset, reason = killReason }), null, ct);
+                    _log.LogWarning("bot {Id} live BLOCKED by kill-switch", bot.Id);
+                    continue;
+                }
 
                 // Hard risk gate (per-order cap) before spending on AI review or touching an exchange.
                 var (riskOk, riskReason) = _risk.Check(intent);
@@ -145,6 +158,17 @@ public sealed class BotExecutorService : BackgroundService
         var first = bot.LastRunUtc is null;
         if (!first && bot.LastRunUtc is { } last && (DateTime.UtcNow - last).TotalMinutes < pollMin)
             return; // not due yet
+
+        // Kill-switch: halt live grid placement (paper unaffected).
+        var (killed, killReason) = LiveGate.Check(mode, await _flags.IsLiveHaltedAsync(bot.UserId, ct));
+        if (killed)
+        {
+            await _bots.MarkRunAsync(bot.Id, ct);
+            await _audit.WriteAsync(bot.UserId, "bot", "kill_switch",
+                JsonSerializer.Serialize(new { bot.Id, strategy = "grid", symbol, reason = killReason }), null, ct);
+            _log.LogWarning("grid bot {Id} live BLOCKED by kill-switch", bot.Id);
+            return;
+        }
 
         var price = await _price.GetPriceAsync(exchange, symbol, ct);
         if (price <= 0) { _log.LogWarning("grid bot {Id}: no price for {Symbol}", bot.Id, symbol); return; }
