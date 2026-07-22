@@ -22,6 +22,16 @@ public sealed class BotOrdersRepository
             new { botId, userId, side, asset, amount, price, status, extRef, clientOrderId }, cancellationToken: ct));
     }
 
+    /// <summary>Sum of today's placed live-order notional for a user (drives the daily spend cap).</summary>
+    public async Task<decimal> SumTodayPlacedNotionalAsync(Guid userId, CancellationToken ct = default)
+    {
+        const string sql = @"SELECT COALESCE(SUM(amount), 0) FROM bot_orders
+                             WHERE user_id = @userId AND status = 'placed'
+                               AND created_utc >= date_trunc('day', now());";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return await conn.ExecuteScalarAsync<decimal>(new CommandDefinition(sql, new { userId }, cancellationToken: ct));
+    }
+
     /// <summary>True if an order with this client-order-id was already recorded (idempotency check).</summary>
     public async Task<bool> ExistsClientOrderIdAsync(string clientOrderId, CancellationToken ct = default)
     {

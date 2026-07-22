@@ -29,6 +29,7 @@ public sealed class BotExecutorService : BackgroundService
     private readonly IQuoteSource _quotes;
     private readonly UserFlagsRepository _flags;
     private readonly SymbolAllowlist _allowlist;
+    private readonly decimal _maxDailyUsd;
     private readonly ILogger<BotExecutorService> _log;
     private readonly TimeSpan _tick;
 
@@ -43,6 +44,7 @@ public sealed class BotExecutorService : BackgroundService
         _gridStore = gridStore; _gridGateways = gridGateways;
         _tslStore = tslStore; _tslRepo = tslRepo; _price = price; _quotes = quotes;
         _flags = flags; _allowlist = allowlist; _log = log;
+        _maxDailyUsd = decimal.TryParse(cfg["BOT_MAX_DAILY_USD"], out var md) ? md : 0m;
         _tick = TimeSpan.FromSeconds(int.TryParse(cfg["BOT_TICK_SECONDS"], out var t) ? t : 15);
     }
 
@@ -114,6 +116,23 @@ public sealed class BotExecutorService : BackgroundService
                     await _inbox.InsertAsync(bot.UserId, "bot", $"Symbol not allowed for live: {asset + quote}", "not in the node allowlist", ct);
                     _log.LogWarning("bot {Id} live BLOCKED — {Symbol} not in allowlist", bot.Id, asset + quote);
                     continue;
+                }
+
+                // Per-user daily live-spend cap (ceiling on capital committed per day).
+                if (string.Equals(mode, "live", StringComparison.OrdinalIgnoreCase))
+                {
+                    var spentToday = await _orders.SumTodayPlacedNotionalAsync(bot.UserId, ct);
+                    var (capped, capReason) = DailyCapGate.Check(spentToday, amountUsd, _maxDailyUsd);
+                    if (capped)
+                    {
+                        await _orders.InsertAsync(bot.Id, bot.UserId, "buy", asset, amountUsd, null, "blocked", null, ct);
+                        await _bots.MarkRunAsync(bot.Id, ct);
+                        await _audit.WriteAsync(bot.UserId, "bot", "daily_cap",
+                            JsonSerializer.Serialize(new { bot.Id, strategy = "dca", asset, amountUsd, spentToday, reason = capReason }), null, ct);
+                        await _inbox.InsertAsync(bot.UserId, "bot", "Daily spend cap reached", capReason ?? "daily cap", ct);
+                        _log.LogWarning("bot {Id} live BLOCKED by daily cap: {Reason}", bot.Id, capReason);
+                        continue;
+                    }
                 }
 
                 // Hard risk gate (per-order cap) before spending on AI review or touching an exchange.
