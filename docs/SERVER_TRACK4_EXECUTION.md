@@ -293,6 +293,31 @@ Grid — stateful: держит набор лимиток между `lower`/`up
 3. **Unit-тесты** — fake gateway (см. 4.5).
 4. **Прогон в текущем контуре** — `docker compose up`, включить бота через `AdminCli` (пункт 8 BOTS) или `/api/bots`, наблюдать `bot_orders` и логи executor.
 
+### Testnet-runbook (когда есть testnet-ключи)
+
+Live-путь готов; для реального прогона нужны **trade-only** testnet-ключи (без права withdraw).
+
+1. **Сгенерировать testnet-ключи** на бирже (Binance/Bybit/OKX testnet), права: только spot trade.
+2. **Залить ключ** (шифруется envelope-cipher'ом в `secrets`). `Secret` — JSON с ключами, `permissions` содержит `trade` и НЕ содержит `withdraw`:
+   ```
+   curl -X POST http://localhost:8080/api/secrets -H "X-License: <token>" -H "Content-Type: application/json" \
+     -d '{"kind":"cex_api","exchangeOrChain":"binance","label":"testnet",
+          "secret":"{\"key\":\"<API_KEY>\",\"secret\":\"<API_SECRET>\"}","permissions":"trade"}'
+   ```
+   (OKX/KuCoin — добавить `\"passphrase\":\"...\"` в `secret`.)
+3. **Создать live-бота** (`mode:live`), малый размер, `BOT_MAX_ORDER_USD` держит потолок:
+   ```
+   curl -X POST http://localhost:8080/api/bots -H "X-License: <token>" -H "Content-Type: application/json" \
+     -d '{"strategy":"dca","params":{"asset":"BTC","quote":"USDT","amountUsd":10,
+          "intervalMinutes":1,"exchange":"binance","market":"spot","mode":"live"}}'
+   ```
+4. **Включить live на ноде:** в `.env` `BOT_LIVE_ENABLED=true` → `docker compose up -d --build executor`.
+   (Executor подхватит `ExchangeBotOrderExecutor`; kill-switch `user_flags` — глобальный/на юзера стоп.)
+5. **Наблюдать:** `docker compose logs -f executor`, таблица `bot_orders` (`status=placed`, `ext_ref`=id ордера на бирже), `audit_log`.
+6. **Стоп:** `UPDATE user_flags SET live_halted=true WHERE user_id='00000000-0000-0000-0000-000000000000';` (глобальный kill-switch) или выключить бота.
+
+⚠️ Реальные деньги (не testnet) — только после Трека 3 (MPC/whitelist/2FA).
+
 ---
 
 ## 5a. Режимы отказа (обязательно обработать)
