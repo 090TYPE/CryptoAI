@@ -219,7 +219,19 @@ Grid — stateful: держит набор лимиток между `lower`/`up
 
 ### Фаза 4.3 — Серверный Trailing / TP-SL
 
-- `CryptoAITerminal.Executor/Strategies/ServerTrailingStop.cs` — портировать `TpSlManager.cs` (учесть БАГ-08: `SemaphoreSlim(1,1)` вокруг обновления SL, чтобы не плодить дубли SL-ордеров).
+> **Статус: 🟡 логика + stateful-runner готовы по TDD (11 тестов); осталась персистентность + диспетчеризация.**
+> `ServerTrailingStop` (чистые функции): один тик цены → одно действие (TP / SL / partial TP /
+> сдвиг трейл-SL) + следующее состояние, порядок TP→SL→trail как в десктопе. Сохранены анти-спам
+> гард трейлинга (>0.1%) и БАГ-07 (partial TP на споте: TP1 закрывает долю и перевзводит цель на TP2,
+> TP2 закрывает остаток — без бесконечного деления пополам). `TrailingBotRunner` привязывает решение
+> к gateway + `ITslPositionStore`: грузит позицию, оценивает цену, шлёт рыночное закрытие (полное/
+> частичное) или просто сохраняет подтянутый стоп; состояние пишется каждый тик (restart-safe).
+> Трейлинг софт-симулируется (закрытие по пересечению стопа — без churn нативных SL-ордеров, поэтому
+> БАГ-08 с гонкой обновления SL здесь неактуален). **Осталось:** таблица `tsl_positions` + репозиторий,
+> диспетчеризация `strategy=trailing` в `BotExecutorService`, и апстрим-поток открытия позиции
+> (сейчас раннер управляет уже открытой позицией — на сервере её пока никто не открывает).
+
+- `CryptoAITerminal.Executor/ServerTrailingStop.cs` + `TrailingBotRunner.cs` — ✅ портировано из `TpSlManager.cs`.
 - Для futures — серверные reduce-only SL/TP через `PlaceStopLossOrderAsync` / `PlaceTakeProfitOrderAsync` (уже в `IExchangeGateway`).
 - Partial TP (учесть БАГ-07 — на спот тоже работает частичное закрытие).
 
