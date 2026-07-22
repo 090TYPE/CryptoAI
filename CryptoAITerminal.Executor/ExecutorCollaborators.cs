@@ -4,6 +4,23 @@ using CryptoAITerminal.Server.Data;
 
 namespace CryptoAITerminal.Executor;
 
+/// <summary>DB-backed grid order store — adapts <see cref="GridOrdersRepository"/> to the runner's port.</summary>
+public sealed class SqlGridOrderStore : IGridOrderStore
+{
+    private readonly GridOrdersRepository _repo;
+    public SqlGridOrderStore(GridOrdersRepository repo) => _repo = repo;
+
+    public Task AddOpenAsync(Guid botId, Guid userId, int level, string side, decimal price, decimal qty, string? extRef, CancellationToken ct)
+        => _repo.AddOpenAsync(botId, userId, level, side, price, qty, extRef, ct);
+
+    public async Task<IReadOnlyList<TrackedGridOrder>> GetOpenAsync(Guid botId, CancellationToken ct)
+        => (await _repo.GetOpenAsync(botId, ct))
+            .Select(r => new TrackedGridOrder(r.Id, r.BotId, r.Level, r.Side, r.Price, r.Qty, r.ExtRef, r.Status))
+            .ToList();
+
+    public Task MarkFilledAsync(Guid id, CancellationToken ct) => _repo.MarkFilledAsync(id, ct);
+}
+
 /// <summary>Production key provider — reads the user's CEX trade key (ciphertext + permissions) from the DB.</summary>
 public sealed class SecretsCexKeyProvider : ICexKeyProvider
 {
