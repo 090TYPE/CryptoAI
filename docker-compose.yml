@@ -30,6 +30,7 @@ services:
       - ./db/011_inbox.sql:/docker-entrypoint-initdb.d/011_inbox.sql:ro
       - ./db/012_ai_digests.sql:/docker-entrypoint-initdb.d/012_ai_digests.sql:ro
       - ./db/013_grid_orders.sql:/docker-entrypoint-initdb.d/013_grid_orders.sql:ro
+      - ./db/014_tsl_positions.sql:/docker-entrypoint-initdb.d/014_tsl_positions.sql:ro
     ports:
       - "5432:5432"   # dev: lets the host admin console (cryptoai-admin) connect. Remove in prod.
     networks: [core]

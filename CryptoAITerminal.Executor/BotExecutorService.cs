@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CryptoAITerminal.Core.Models;
 using CryptoAITerminal.Server.Data;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -22,18 +23,22 @@ public sealed class BotExecutorService : BackgroundService
     private readonly InboxRepository _inbox;
     private readonly IGridOrderStore _gridStore;
     private readonly IGridGatewayProvider _gridGateways;
+    private readonly ITslPositionStore _tslStore;
+    private readonly TslPositionsRepository _tslRepo;
     private readonly IPriceSource _price;
     private readonly ILogger<BotExecutorService> _log;
     private readonly TimeSpan _tick;
 
     public BotExecutorService(BotConfigRepository bots, BotOrdersRepository orders, AuditRepository audit,
         IBotOrderExecutor executor, IPreTradeReviewer reviewer, IRiskGate risk, InboxRepository inbox,
-        IGridOrderStore gridStore, IGridGatewayProvider gridGateways, IPriceSource price,
+        IGridOrderStore gridStore, IGridGatewayProvider gridGateways,
+        ITslPositionStore tslStore, TslPositionsRepository tslRepo, IPriceSource price,
         IConfiguration cfg, ILogger<BotExecutorService> log)
     {
         _bots = bots; _orders = orders; _audit = audit; _executor = executor;
         _reviewer = reviewer; _risk = risk; _inbox = inbox;
-        _gridStore = gridStore; _gridGateways = gridGateways; _price = price; _log = log;
+        _gridStore = gridStore; _gridGateways = gridGateways;
+        _tslStore = tslStore; _tslRepo = tslRepo; _price = price; _log = log;
         _tick = TimeSpan.FromSeconds(int.TryParse(cfg["BOT_TICK_SECONDS"], out var t) ? t : 15);
     }
 
@@ -58,6 +63,11 @@ public sealed class BotExecutorService : BackgroundService
                 if (string.Equals(bot.Strategy, "grid", StringComparison.OrdinalIgnoreCase))
                 {
                     await RunGridAsync(bot, ct);
+                    continue;
+                }
+                if (string.Equals(bot.Strategy, "trailing", StringComparison.OrdinalIgnoreCase))
+                {
+                    await RunTrailingAsync(bot, ct);
                     continue;
                 }
                 if (!string.Equals(bot.Strategy, "dca", StringComparison.OrdinalIgnoreCase))
@@ -207,6 +217,113 @@ public sealed class BotExecutorService : BackgroundService
         }
         catch { return null; }
     }
+
+    /// <summary>
+    /// Trailing tick: on the bot's first run it seeds the managed position from params (the user
+    /// already holds it — the bot only manages the exit); afterwards it polls the price and lets
+    /// <see cref="TrailingBotRunner"/> close (full/partial) or ratchet the stop. State lives in
+    /// tsl_positions, so a restart resumes exactly where it left off.
+    /// </summary>
+    private async Task RunTrailingAsync(EnabledBot bot, CancellationToken ct)
+    {
+        var t = ParseTrailingParams(bot.ParamsJson);
+        if (t is null) return;
+        var (symbol, isLong, entry, qty, futures, exchange, market, mode, pollMin, tsl) = t.Value;
+
+        if (bot.LastRunUtc is null)
+        {
+            // Seed the position with real user_id (SaveAsync later only updates the row).
+            var s = ServerTrailingStop.Init(isLong, entry, tsl) with { RemainingQty = qty };
+            await _tslRepo.UpsertAsync(new TslPositionRow(
+                bot.Id, bot.UserId, symbol, isLong, entry, futures,
+                s.Peak, s.Sl, s.RemainingQty, s.TpPercent, s.PartialDone, Closed: false), ct);
+            await _bots.MarkRunAsync(bot.Id, ct);
+            await _audit.WriteAsync(bot.UserId, "bot", "bot_order",
+                JsonSerializer.Serialize(new { bot.Id, strategy = "trailing", action = "attach", symbol, side = isLong ? "long" : "short", entry, qty, mode }), null, ct);
+            _log.LogInformation("trailing bot {Id} attached: {Side} {Qty} {Symbol} @ {Entry} ({Mode})", bot.Id, isLong ? "long" : "short", qty, symbol, entry, mode);
+            return;
+        }
+
+        if (bot.LastRunUtc is { } last && (DateTime.UtcNow - last).TotalMinutes < pollMin)
+            return; // not due yet
+
+        var pos = await _tslStore.LoadAsync(bot.Id, ct);
+        if (pos is null || pos.Closed) { await _bots.MarkRunAsync(bot.Id, ct); return; }
+
+        var price = await _price.GetPriceAsync(exchange, symbol, ct);
+        if (price <= 0) { _log.LogWarning("trailing bot {Id}: no price for {Symbol}", bot.Id, symbol); return; }
+
+        var gateway = await _gridGateways.CreateAsync(bot.UserId, exchange, market, mode, price, Array.Empty<TrackedGridOrder>(), ct);
+        var runner = new TrailingBotRunner(gateway, _tslStore);
+        await runner.PollAsync(bot.Id, tsl, price, ct);
+        await _bots.MarkRunAsync(bot.Id, ct);
+
+        var after = await _tslStore.LoadAsync(bot.Id, ct);
+        if (after is { Closed: true })
+        {
+            await _audit.WriteAsync(bot.UserId, "bot", "bot_order",
+                JsonSerializer.Serialize(new { bot.Id, strategy = "trailing", action = "closed", symbol, price }), null, ct);
+            await _inbox.InsertAsync(bot.UserId, "bot", $"Trailing bot closed {symbol}", $"exit around {price}", ct);
+            _log.LogInformation("trailing bot {Id} closed {Symbol} @ {Price}", bot.Id, symbol, price);
+        }
+    }
+
+    /// <summary>Trailing params: { "symbol":"BTCUSDT" (or "asset"+"quote"), "side":"long"|"short",
+    /// "entry":100, "qty":0.5, "futures":false, "exchange":"binance", "market":"spot", "mode":"paper",
+    /// "pollMinutes":1, plus TpSlConfig fields: tpEnabled, tpPercent, slEnabled, slPercent, trailing,
+    /// partialTp, partialTpClosePercent, partialTp2Percent }. Returns null if unusable.</summary>
+    private static (string Symbol, bool IsLong, decimal Entry, decimal Qty, bool Futures,
+        string Exchange, string Market, string Mode, double PollMin, TpSlConfig Tsl)? ParseTrailingParams(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var r = doc.RootElement;
+
+            string? symbol = r.TryGetProperty("symbol", out var s) ? s.GetString() : null;
+            if (string.IsNullOrWhiteSpace(symbol))
+            {
+                var asset = r.TryGetProperty("asset", out var a) ? a.GetString() : null;
+                var quote = r.TryGetProperty("quote", out var q) ? q.GetString() : "USDT";
+                if (string.IsNullOrWhiteSpace(asset)) return null;
+                symbol = asset + (string.IsNullOrWhiteSpace(quote) ? "USDT" : quote);
+            }
+
+            var entry = r.TryGetProperty("entry", out var e) && e.TryGetDecimal(out var ed) ? ed : 0m;
+            var qty = r.TryGetProperty("qty", out var qp) && qp.TryGetDecimal(out var qd) ? qd : 0m;
+            if (entry <= 0 || qty <= 0) return null;
+
+            var side = r.TryGetProperty("side", out var sd) ? sd.GetString() : "long";
+            var isLong = !string.Equals(side, "short", StringComparison.OrdinalIgnoreCase);
+            var futures = r.TryGetProperty("futures", out var fu) && fu.ValueKind == JsonValueKind.True;
+            var market = r.TryGetProperty("market", out var mk) ? mk.GetString() : null;
+            if (string.IsNullOrWhiteSpace(market)) market = futures ? "futures" : "spot";
+            var exchange = r.TryGetProperty("exchange", out var ex) ? ex.GetString() : null;
+            var mode = r.TryGetProperty("mode", out var mo) ? mo.GetString() : null;
+            var pollMin = r.TryGetProperty("pollMinutes", out var pm) && pm.TryGetDouble(out var pmd) ? pmd : 0d;
+
+            var tsl = new TpSlConfig
+            {
+                TpEnabled = Bool(r, "tpEnabled"),
+                TpPercent = Dec(r, "tpPercent", 2m),
+                SlEnabled = Bool(r, "slEnabled"),
+                SlPercent = Dec(r, "slPercent", 1m),
+                TrailingStop = Bool(r, "trailing"),
+                PartialTp = Bool(r, "partialTp"),
+                PartialTpClosePercent = Dec(r, "partialTpClosePercent", 50m),
+                PartialTp2Percent = Dec(r, "partialTp2Percent", 4m),
+            };
+
+            return (symbol!, isLong, entry, qty, futures,
+                    string.IsNullOrWhiteSpace(exchange) ? "binance" : exchange!, market!,
+                    string.IsNullOrWhiteSpace(mode) ? "paper" : mode!, pollMin, tsl);
+        }
+        catch { return null; }
+    }
+
+    private static bool Bool(JsonElement r, string name) => r.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.True;
+    private static decimal Dec(JsonElement r, string name, decimal fallback) => r.TryGetProperty(name, out var v) && v.TryGetDecimal(out var d) ? d : fallback;
 
     /// <summary>DCA params: { "asset":"BTC", "quote":"USDT", "amountUsd":100, "intervalMinutes":60,
     /// "exchange":"binance", "market":"spot", "mode":"paper" }. Missing fields fall back to safe defaults.</summary>

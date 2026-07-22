@@ -50,6 +50,10 @@ builder.Services.AddSingleton<GridOrdersRepository>();
 builder.Services.AddSingleton<IGridOrderStore, SqlGridOrderStore>();
 builder.Services.AddSingleton<IGridGatewayProvider, GridGatewayProvider>();
 
+// Trailing / TP-SL execution (Track 4 Phase 4.3): restart-safe managed-position state.
+builder.Services.AddSingleton<TslPositionsRepository>();
+builder.Services.AddSingleton<ITslPositionStore, SqlTslPositionStore>();
+
 // Live is opt-in per node: BOT_LIVE_ENABLED=true wires the real exchange executor (which still
 // only goes live for bots with mode=live, trade-only keys). Otherwise the paper stub moves no money.
 if (string.Equals(cfg["BOT_LIVE_ENABLED"], "true", StringComparison.OrdinalIgnoreCase))

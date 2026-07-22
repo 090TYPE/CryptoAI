@@ -21,6 +21,31 @@ public sealed class SqlGridOrderStore : IGridOrderStore
     public Task MarkFilledAsync(Guid id, CancellationToken ct) => _repo.MarkFilledAsync(id, ct);
 }
 
+/// <summary>DB-backed trailing position store — adapts <see cref="TslPositionsRepository"/> to the runner's port.</summary>
+public sealed class SqlTslPositionStore : ITslPositionStore
+{
+    private readonly TslPositionsRepository _repo;
+    public SqlTslPositionStore(TslPositionsRepository repo) => _repo = repo;
+
+    public async Task<TrailingPosition?> LoadAsync(Guid botId, CancellationToken ct)
+    {
+        var r = await _repo.LoadAsync(botId, ct);
+        if (r is null) return null;
+        var state = new ServerTrailingStop.TslState(r.Peak, r.Sl, r.RemainingQty, r.TpPercent, r.Closed, r.PartialDone);
+        return new TrailingPosition(r.BotId, r.Symbol, r.IsLong, r.Entry, r.Futures, state, r.Closed);
+    }
+
+    public Task SaveAsync(TrailingPosition p, CancellationToken ct)
+    {
+        // UserId isn't carried on the runner's position record — reload keeps the stored one; on first
+        // save the dispatcher writes the full row, so SaveAsync only ever updates an existing position.
+        var s = p.State;
+        return _repo.UpsertAsync(new TslPositionRow(
+            p.BotId, Guid.Empty, p.Symbol, p.IsLong, p.Entry, p.Futures,
+            s.Peak, s.Sl, s.RemainingQty, s.TpPercent, s.PartialDone, p.Closed), ct);
+    }
+}
+
 /// <summary>Production key provider — reads the user's CEX trade key (ciphertext + permissions) from the DB.</summary>
 public sealed class SecretsCexKeyProvider : ICexKeyProvider
 {
