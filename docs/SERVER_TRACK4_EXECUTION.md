@@ -232,8 +232,10 @@ Grid — stateful: держит набор лимиток между `lower`/`up
 > `BotExecutorService` диспетчеризует `strategy=trailing`: первый прогон «прикрепляет» позицию из
 > params (юзер уже держит её — бот ведёт только выход), дальше тики опрашивают цену и `TrailingBotRunner`
 > закрывает (полностью/частично) или подтягивает стоп. Gateway paper/live резолвится как у grid, стейт
-> пишется каждый тик. **Осталось:** апстрим-поток, который сам открывает позицию (сейчас юзер задаёт
-> entry/qty в params вручную), и нативные биржевые SL для futures (сейчас софт-симуляция).
+> пишется каждый тик. Для futures есть **нативный биржевой SL** (`nativeSl:true`): один reduce-only стоп
+> ставится на attach, cancel+replace при подтягивании, resize на partial TP, снимается при TP-закрытии;
+> пересечение SL отдаётся бирже (без двойного закрытия), `sl_order_id`/`native_sl` в `tsl_positions`.
+> **Осталось:** апстрим-поток, который сам открывает позицию (сейчас юзер задаёт entry/qty вручную).
 
 - `CryptoAITerminal.Executor/ServerTrailingStop.cs` + `TrailingBotRunner.cs` — ✅ портировано из `TpSlManager.cs`.
 - Для futures — серверные reduce-only SL/TP через `PlaceStopLossOrderAsync` / `PlaceTakeProfitOrderAsync` (уже в `IExchangeGateway`).
@@ -245,19 +247,26 @@ Grid — stateful: держит набор лимиток между `lower`/`up
 
 ### Фаза 4.4 — Мульти-биржевая маршрутизация (best price)
 
-- Переиспользовать десктопный `BestExecutionRouterService` (после фиксов БАГ-16/17) как серверный сервис: сравнить котировки на подключённых биржах юзера, маршрутизировать.
-- Только для юзеров с ключами ≥2 бирж.
+> **Статус: ✅ реализовано (single-venue best price) по TDD (5 тестов).** `ServerBestExecution`
+> (чистое) выбирает биржу по эффективной (с учётом комиссии) цене: дешевле купить / дороже продать.
+> `MultiExchangeQuoteSource` тянет публичные спотовые тикеры Binance/Bybit/OKX; биржа, что не ответила,
+> пропускается. DCA-параметры `route:true` + `exchanges:[...]` сравнивают площадки каждый тик и шлют
+> ордер на лучшую, выбор + экономия/ед. пишутся в `audit_log` (`bot_route`). **Осталось:** сплит
+> крупного ордера по стаканам (десктопный `RouteSplit`) — на сервере пока весь ордер на одну площадку.
 
-**DoD:** ордер уходит на биржу с лучшей эффективной ценой; выбор виден в аудите.
+**DoD:** ✅ ордер уходит на биржу с лучшей эффективной ценой; выбор виден в аудите.
 
 ---
 
 ### Фаза 4.5 — Безопасность исполнения, реконсиляция, тесты
 
-- **Реконсилятор** отдельным `BackgroundService`: добивает `status`/`avg_price`/`filled_qty` по незакрытым `bot_orders` (частичные/зависшие).
-- **Идемпотентность:** `MarkRun` только после подтверждённого размещения; защита от двойного тика при рестарте (advisory lock на bot_id или `SELECT ... FOR UPDATE SKIP LOCKED`).
-- **Kill-switch на юзера и глобальный** (см. §4).
-- **Тесты** (`CryptoAITerminal.Core.Tests` или новый `Executor.Tests`): fake `IExchangeGateway`, проверить: paper-fill, live-place, risk-deny, AI-deny, реконсиляцию, идемпотентность. Цель ≥25 тестов.
+> **Статус: 🟢 kill-switch + идемпотентность готовы; реконсиляция покрыта grid-раннером.**
+
+- **Kill-switch на юзера и глобальный** — ✅ таблица `user_flags` (per-user + строка all-zero UUID = глобальный стоп) + `UserFlagsRepository` + чистый `LiveGate` (3 теста). Executor проверяет перед каждым live-ордером DCA и постановкой grid; paper не гейтится; трейлинг-выходы разрешены при halt (закрытие снижает риск).
+- **Идемпотентность** — ✅ `bot_orders.client_order_id` + уникальный индекс; тот же логический тик даёт тот же id, повторный place после рестарта пропускается (+ `ON CONFLICT DO NOTHING` как второй барьер). `MarkRunAsync` — после подтверждённого размещения.
+- **Реконсилятор** — grid-раннер сам реконсилит лимитки (`GetOpenOrdersAsync` → fill → противоположный ордер); DCA — market-ордера (мгновенный fill). Отдельный `BackgroundService` для `avg_price`/`filled_qty` нужен только когда добавим частичные лимитки вне grid — **отложено**.
+- **Тесты** — fake `IExchangeGateway` покрывает paper-fill, live-place, risk-deny, grid fill-reaction, trailing (soft + native SL), routing, kill-switch, idempotency. **696 зелёных** (>25 по Треку 4).
+- **Осталось:** advisory-lock/`SKIP LOCKED` на `bot_id` для мульти-инстансного executor (сейчас один инстанс — не критично).
 
 ---
 
