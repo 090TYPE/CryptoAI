@@ -121,7 +121,7 @@ public class BinanceFuturesGateway : IExchangeGateway
 
     public async Task<IReadOnlyList<DexOhlcvPoint>> GetCandlesAsync(string symbol, string timeframe, int limit = 180)
     {
-        var interval = timeframe switch
+        var interval = (timeframe ?? string.Empty).Trim().ToUpperInvariant() switch
         {
             "1M" => KlineInterval.OneMinute,
             "5M" => KlineInterval.FiveMinutes,
@@ -183,7 +183,9 @@ public class BinanceFuturesGateway : IExchangeGateway
             price: order.Type == OrderType.Limit && order.Price > 0 ? order.Price : null,
             positionSide: positionSide,
             timeInForce: order.Type == OrderType.Limit ? TimeInForce.GoodTillCanceled : null,
-            reduceOnly: order.ReduceOnly,
+            // In hedge mode (positionSide Long/Short) Binance rejects reduceOnly with -1106
+            // ("reduceOnly sent when not required"); only send it in one-way (Both) mode.
+            reduceOnly: positionSide == PositionSide.Both ? order.ReduceOnly : (bool?)null,
             newClientOrderId: string.IsNullOrWhiteSpace(order.ClientOrderId) ? null : order.ClientOrderId,
             stopPrice: order.StopPrice);
 
@@ -479,7 +481,8 @@ public class BinanceFuturesGateway : IExchangeGateway
             orderType,
             quantity: quantity,
             positionSide: mappedPositionSide,
-            reduceOnly: reduceOnly,
+            // Hedge mode rejects reduceOnly (-1106); only send it in one-way (Both) mode.
+            reduceOnly: mappedPositionSide == PositionSide.Both ? reduceOnly : (bool?)null,
             stopPrice: triggerPrice,
             workingType: WorkingType.Mark);
 

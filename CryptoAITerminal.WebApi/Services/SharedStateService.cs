@@ -74,7 +74,7 @@ public sealed class SharedStateService
 
     public QueuedOrderRecord EnqueueTradingViewAlert(TradingViewAlertDto alert)
     {
-        var side = alert.Action.Trim().ToLowerInvariant() switch
+        var side = (alert.Action ?? "").Trim().ToLowerInvariant() switch
         {
             "sell"  or "short" => "Sell",
             "close"            => "Sell",
@@ -84,7 +84,7 @@ public sealed class SharedStateService
         {
             Exchange = NormalizeExchange(alert.Exchange),
             Market   = NormalizeMarket(alert.Market),
-            Symbol   = alert.Symbol.Trim().ToUpperInvariant(),
+            Symbol   = (alert.Symbol ?? "").Trim().ToUpperInvariant(),
             Side     = side,
             Quantity = alert.Qty,
         };
@@ -121,8 +121,8 @@ public sealed class SharedStateService
         catch { /* logging is best-effort */ }
     }
 
-    private static string NormalizeExchange(string raw) =>
-        raw.Trim() switch
+    private static string NormalizeExchange(string? raw) =>
+        (raw ?? "").Trim() switch
         {
             { } s when s.Equals("Bybit",  StringComparison.OrdinalIgnoreCase) => "Bybit",
             { } s when s.Equals("OKX",    StringComparison.OrdinalIgnoreCase) => "OKX",
@@ -130,8 +130,8 @@ public sealed class SharedStateService
             _                                                                   => "Binance",
         };
 
-    private static string NormalizeMarket(string raw) =>
-        raw.Trim().Equals("Futures", StringComparison.OrdinalIgnoreCase) ? "Futures" : "Spot";
+    private static string NormalizeMarket(string? raw) =>
+        (raw ?? "").Trim().Equals("Futures", StringComparison.OrdinalIgnoreCase) ? "Futures" : "Spot";
 
     private void WriteQueueRecord(QueuedOrderRecord record)
     {

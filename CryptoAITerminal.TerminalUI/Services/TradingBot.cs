@@ -155,6 +155,12 @@ public class TradingBot
                 return;
             }
 
+            // Already long — don't pyramid: AttachTpSl detaches the prior entry's TP/SL and
+            // re-arms only _tradeQuantity, so stacking would leave most of the position unprotected.
+            // Use the LIVE position only — the _hasFuturesLong flag isn't reconciled after an
+            // exchange-side close (native TP/SL, liquidation), so it would wrongly block re-entry.
+            if (position?.Quantity > 0m) return;
+
             if (_futuresBias == FuturesTradeBias.ShortOnly) return;
 
             var entrySide = EntryPositionSide(isBuy: true);
@@ -242,6 +248,10 @@ public class TradingBot
                 }
                 return;
             }
+
+            // Already short — don't pyramid (TP/SL would only cover the newest entry). Live
+            // position only — _hasFuturesShort isn't reconciled after an exchange-side close.
+            if (position?.Quantity < 0m) return;
 
             if (_futuresBias == FuturesTradeBias.LongOnly) return;
 

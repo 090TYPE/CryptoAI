@@ -73,7 +73,8 @@ app.UseCors();
 app.UseRateLimiter();
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
-// /health is open. /api/keys is admin-gated (X-Admin == ADMIN_TOKEN when set).
+// /health is open. /api/keys is admin-gated: requires X-Admin == ADMIN_TOKEN, and is
+// denied outright when ADMIN_TOKEN is unset (fail closed).
 // Everything else needs a valid X-License: the token's RSA signature is verified (shared
 // LicenseTokenValidator), then the license Name resolves to a user id in ctx.Items["uid"].
 app.Use(async (ctx, next) =>
@@ -88,8 +89,10 @@ app.Use(async (ctx, next) =>
 
     if (path.StartsWith("/api/keys", StringComparison.OrdinalIgnoreCase))
     {
+        // Fail CLOSED: this endpoint can read/overwrite server-held provider keys, so
+        // an unset ADMIN_TOKEN must deny access (not fall through unauthenticated).
         var admin = Environment.GetEnvironmentVariable("ADMIN_TOKEN");
-        if (!string.IsNullOrEmpty(admin) &&
+        if (string.IsNullOrEmpty(admin) ||
             !string.Equals(ctx.Request.Headers["X-Admin"], admin, StringComparison.Ordinal))
         {
             await Deny(ctx, "admin token required");

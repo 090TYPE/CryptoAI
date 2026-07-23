@@ -201,8 +201,10 @@ public sealed class MarketScannerService : IDisposable
             AlertSeverity.Info,
             $"Активность ×{r.ActivityScore / Math.Max(1, HighActivityThreshold):F1} от нормы 🔥");
 
-        // Level breaks
-        foreach (var lvl in _levels)
+        // Level breaks — snapshot under lock; UI thread may add/remove concurrently.
+        List<PriceLevel> levels;
+        lock (_levels) levels = _levels.ToList();
+        foreach (var lvl in levels)
         {
             if (!string.Equals(lvl.Symbol, r.Symbol, StringComparison.OrdinalIgnoreCase)) continue;
             if (lvl.Triggered) continue;

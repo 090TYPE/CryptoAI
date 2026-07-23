@@ -186,7 +186,7 @@ app.MapPost("/api/webhook/tradingview", (TradingViewAlertDto alert, SharedStateS
             statusCode: StatusCodes.Status400BadRequest);
 
     var validActions = new[] { "buy", "sell", "close", "long", "short" };
-    if (!validActions.Contains(alert.Action.Trim().ToLowerInvariant()))
+    if (!validActions.Contains((alert.Action ?? "").Trim().ToLowerInvariant()))
         return Results.Json(
             new TradingViewWebhookResult
             {

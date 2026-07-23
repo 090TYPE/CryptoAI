@@ -134,9 +134,19 @@ public sealed class TelegramSignalViewModel : ReactiveObject
                    $"{(string.IsNullOrWhiteSpace(description) ? "" : description + "\n")}" +
                    $"<i>Expires in 5 minutes.</i>";
 
-        var msgId = await _telegram.SendWithButtonsAsync(text,
-            ("✅ Accept", $"accept:{0}"),   // placeholder — filled after we get msgId
-            ("❌ Skip",   $"skip:{0}"));
+        // async void + network send: guard so a failed send cannot crash the process.
+        long msgId;
+        try
+        {
+            msgId = await _telegram.SendWithButtonsAsync(text,
+                ("✅ Accept", $"accept:{0}"),   // placeholder — filled after we get msgId
+                ("❌ Skip",   $"skip:{0}"));
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Telegram SendSignal failed: {ex.Message}");
+            return;
+        }
 
         if (msgId <= 0) return;
 

@@ -124,7 +124,7 @@ public class BinanceGateway : IExchangeGateway
             return await GetAllCandlesAsync(symbol);
         }
 
-        var interval = timeframe switch
+        var interval = (timeframe ?? string.Empty).Trim().ToUpperInvariant() switch
         {
             "1M" => KlineInterval.OneMinute,
             "5M" => KlineInterval.FiveMinutes,
@@ -160,7 +160,7 @@ public class BinanceGateway : IExchangeGateway
     public async Task<IReadOnlyList<DexOhlcvPoint>> GetCandlesByDateRangeAsync(
         string symbol, string timeframe, DateTime startDate, DateTime endDate)
     {
-        var interval = timeframe switch
+        var interval = (timeframe ?? string.Empty).Trim().ToUpperInvariant() switch
         {
             "1M"  => KlineInterval.OneMinute,
             "5M"  => KlineInterval.FiveMinutes,

@@ -15,20 +15,18 @@ public sealed record DexPerpBookLevel(decimal Price, decimal Size, decimal Cumul
 public sealed class DexPerpMarketSimulator
 {
     private readonly Random _rng;
-    private readonly decimal _anchor;
+    private decimal _anchor;
     private readonly decimal _volatility;
-    private readonly decimal _bandLow;
-    private readonly decimal _bandHigh;
+    private readonly decimal _bandPercent;
+    private decimal _bandLow;
+    private decimal _bandHigh;
 
     public DexPerpMarketSimulator(decimal anchorPrice, decimal volatility = 0.004m, decimal bandPercent = 0.10m, int seed = 12345)
     {
-        _anchor = anchorPrice > 0m ? anchorPrice : 1m;
         _volatility = Math.Max(0.0001m, volatility);
-        _bandLow = _anchor * (1m - bandPercent);
-        _bandHigh = _anchor * (1m + bandPercent);
+        _bandPercent = bandPercent;
         _rng = new Random(seed);
-        Mark = _anchor;
-        FundingRate = 0m;
+        Reanchor(anchorPrice > 0m ? anchorPrice : 1m);
     }
 
     public decimal Mark { get; private set; }
@@ -47,7 +45,13 @@ public sealed class DexPerpMarketSimulator
             return;
         }
 
-        Mark = anchorPrice;
+        // Recompute anchor AND band/funding base — else NextMark clamps the new mark back into
+        // the old token's band and funding is computed against a stale anchor.
+        _anchor = anchorPrice;
+        _bandLow = _anchor * (1m - _bandPercent);
+        _bandHigh = _anchor * (1m + _bandPercent);
+        Mark = _anchor;
+        FundingRate = 0m;
     }
 
     /// <summary>Advance one step and return the new mark price.</summary>

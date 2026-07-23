@@ -60,7 +60,11 @@ public sealed class WalletWatchService
             var addresses = group.Select(g => g.Address).ToList();
             var monitor = new WalletCopyTradeMonitor(group.Key, rpc, addresses, Array.Empty<string>());
             var channel = Channel.CreateUnbounded<CopyTradeSignal>();
-            _ = Task.Run(() => monitor.RunAsync(channel.Writer, cts.Token));
+            _ = Task.Run(async () =>
+            {
+                try { await monitor.RunAsync(channel.Writer, cts.Token); }
+                finally { monitor.Dispose(); }
+            });
             _ = Task.Run(() => DrainAsync(channel.Reader, cts.Token));
         }
     }

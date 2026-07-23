@@ -41,11 +41,13 @@ public sealed class Notifier : INotifier
         catch (Exception ex) { _log.LogWarning(ex, "inbox write failed for {User}", userId); }
 
         // 2) Optional phone push, only if the user set a channel up.
-        var ch = await _repo.GetForUserAsync(userId, ct);
-        if (ch is null || !ch.Enabled) return;
-
+        //    The channel lookup is inside the try too, so a DB hiccup here can't
+        //    break the documented "never throws" contract.
         try
         {
+            var ch = await _repo.GetForUserAsync(userId, ct);
+            if (ch is null || !ch.Enabled) return;
+
             switch (ch.Kind.ToLowerInvariant())
             {
                 case "ntfy":
@@ -72,6 +74,6 @@ public sealed class Notifier : INotifier
             _log.LogInformation("notified {User} via {Kind}", userId, ch.Kind);
         }
         catch (OperationCanceledException) { throw; }
-        catch (Exception ex) { _log.LogWarning(ex, "notify {User} via {Kind} failed", userId, ch.Kind); }
+        catch (Exception ex) { _log.LogWarning(ex, "notify {User} failed", userId); }
     }
 }

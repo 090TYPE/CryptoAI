@@ -113,7 +113,8 @@ public sealed class RuleBuilderAiProvider
         e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? fallback : fallback;
 
     private static decimal NumProp(JsonElement e, string name, decimal fallback) =>
-        e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number ? v.GetDecimal() : fallback;
+        e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number
+            && v.TryGetDecimal(out var d) ? d : fallback;
 }
 
 public readonly record struct AiRuleCondition(string Type, string Symbol, decimal Param1, decimal Param2);

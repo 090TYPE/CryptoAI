@@ -300,15 +300,24 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
     /// <summary>Fetches real recent transactions for the selected wallet's address+chain.</summary>
     private async void LoadTxHistoryAsync()
     {
-        TxRows.Clear();
-        this.RaisePropertyChanged(nameof(TxEmpty));
-        var w = SelectedRaw();
-        if (w is null || string.IsNullOrWhiteSpace(w.Address) || w.Address.StartsWith("api:", StringComparison.Ordinal))
-            return;
-        var txs = await _txHistory.GetRecentAsync(w.Address, w.Network ?? "", 15);
-        TxRows.Clear();
-        foreach (var t in txs) TxRows.Add(MapTx(t));
-        this.RaisePropertyChanged(nameof(TxEmpty));
+        // async void + awaited network I/O: a swallow-all guard keeps a failed
+        // fetch from crashing the process via the UI SynchronizationContext.
+        try
+        {
+            TxRows.Clear();
+            this.RaisePropertyChanged(nameof(TxEmpty));
+            var w = SelectedRaw();
+            if (w is null || string.IsNullOrWhiteSpace(w.Address) || w.Address.StartsWith("api:", StringComparison.Ordinal))
+                return;
+            var txs = await _txHistory.GetRecentAsync(w.Address, w.Network ?? "", 15);
+            TxRows.Clear();
+            foreach (var t in txs) TxRows.Add(MapTx(t));
+            this.RaisePropertyChanged(nameof(TxEmpty));
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"LoadTxHistory failed: {ex.Message}");
+        }
     }
 
     private static PfTxRow MapTx(WalletTx t)
@@ -344,18 +353,27 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
     /// <summary>Fetches real ERC-20 approvals for the selected EVM wallet (Covalent).</summary>
     private async void LoadApprovalsAsync()
     {
-        var w = SelectedRaw();
-        if (w is null || string.IsNullOrWhiteSpace(w.Address) || w.Address.StartsWith("api:", StringComparison.Ordinal)
-            || WalletApprovalsService.ChainId(w.Network ?? "") is null)
+        // async void + awaited network I/O: guard so a failed fetch cannot crash
+        // the process via the UI SynchronizationContext.
+        try
         {
-            Approvals.Clear(); ApprovalCount = "0"; RaiseApprovalFlags();
-            return;
+            var w = SelectedRaw();
+            if (w is null || string.IsNullOrWhiteSpace(w.Address) || w.Address.StartsWith("api:", StringComparison.Ordinal)
+                || WalletApprovalsService.ChainId(w.Network ?? "") is null)
+            {
+                Approvals.Clear(); ApprovalCount = "0"; RaiseApprovalFlags();
+                return;
+            }
+            var items = await _approvals.GetApprovalsAsync(w.Address, w.Network ?? "");
+            Approvals.Clear();
+            foreach (var a in items) Approvals.Add(MapApproval(a));
+            ApprovalCount = Approvals.Count.ToString(CultureInfo.InvariantCulture);
+            RaiseApprovalFlags();
         }
-        var items = await _approvals.GetApprovalsAsync(w.Address, w.Network ?? "");
-        Approvals.Clear();
-        foreach (var a in items) Approvals.Add(MapApproval(a));
-        ApprovalCount = Approvals.Count.ToString(CultureInfo.InvariantCulture);
-        RaiseApprovalFlags();
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"LoadApprovals failed: {ex.Message}");
+        }
     }
 
     private void RaiseApprovalFlags()

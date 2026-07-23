@@ -61,8 +61,12 @@ internal static class AiJson
             ? v.GetString() ?? fallback : fallback;
 
     public static decimal Num(JsonElement e, string name, decimal fallback = 0m) =>
-        e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number
-            ? v.GetDecimal() : fallback;
+        // TryGetDecimal (not GetDecimal) so an out-of-range LLM number (e.g. 1.5e30)
+        // returns the fallback instead of throwing FormatException past the caller's
+        // catch(JsonException) guard.
+        e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out var v)
+            && v.ValueKind == JsonValueKind.Number && v.TryGetDecimal(out var d)
+            ? d : fallback;
 
     public static bool Bool(JsonElement e, string name, bool fallback = false) =>
         e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out var v) &&

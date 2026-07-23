@@ -50,9 +50,11 @@ public sealed class WhaleTrackerService : IDisposable
 
     public void Stop()
     {
-        _cts?.Cancel();
+        var cts = _cts;
         _cts = null;
         _pollingTask = null;
+        cts?.Cancel();
+        cts?.Dispose();
     }
 
     private async Task PollLoopAsync(CancellationToken ct)

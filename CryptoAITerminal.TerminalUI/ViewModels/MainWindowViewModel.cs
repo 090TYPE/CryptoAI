@@ -1096,16 +1096,36 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             CompositeRuleVM.Engine.FeedMarketData(data.Symbol, data.LastPrice));
 
         // ── Telegram Inline Signals ───────────────────────────────────────
-        TelegramSignalVM.SignalAccepted += sig =>
+        TelegramSignalVM.SignalAccepted += async sig =>
         {
+            // Guard: PlaceCexMarketOrderAsync trades the desk's active symbol, so a signal
+            // for a different symbol would fire a market order on the WRONG asset with real
+            // funds. Refuse the mismatch instead of trading the wrong thing.
+            if (!string.Equals(sig.Symbol, SelectedTradingSymbol, StringComparison.OrdinalIgnoreCase))
+            {
+                AddLog($"[TG] Signal for {sig.Symbol} ignored — desk is on {SelectedTradingSymbol}. Switch symbol to trade it.");
+                ShowToast($"⚠️ TG signal for {sig.Symbol} skipped (desk on {SelectedTradingSymbol})");
+                return;
+            }
+
             AddLog($"[TG] Accepted: {sig.Side} {sig.Symbol} @ {sig.Price:N2}");
-            ShowToast($"✅ TG Signal executed: {sig.Side} {sig.Symbol}");
-            // Populate trade form and fire market order
             SelectedOrderSide = sig.Side;
+            var qty = sig.Quantity > 0 ? sig.Quantity : TradeQuantity;
             if (sig.Quantity > 0) TradeQuantity = sig.Quantity;
-            _ = sig.Side == "SELL"
-                ? PlaceCexMarketOrderAsync(Core.Enums.OrderSide.Sell, sig.Quantity > 0 ? sig.Quantity : TradeQuantity, reduceOnly: IsManualFuturesMode)
-                : PlaceCexMarketOrderAsync(Core.Enums.OrderSide.Buy,  sig.Quantity > 0 ? sig.Quantity : TradeQuantity);
+            try
+            {
+                // No forced reduceOnly: a SELL signal is an entry (open short on futures /
+                // sell on spot), not merely a position trim.
+                await (sig.Side == "SELL"
+                    ? PlaceCexMarketOrderAsync(Core.Enums.OrderSide.Sell, qty)
+                    : PlaceCexMarketOrderAsync(Core.Enums.OrderSide.Buy,  qty));
+                ShowToast($"✅ TG Signal executed: {sig.Side} {sig.Symbol}");
+            }
+            catch (Exception ex)
+            {
+                AddLog($"[TG] Execution failed: {ex.Message}");
+                ShowToast($"❌ TG Signal failed: {ex.Message}");
+            }
         };
         TelegramSignalVM.SignalSkipped += sig =>
         {
@@ -1498,6 +1518,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             this.RaiseAndSetIfChanged(ref _manualFuturesLeverage, normalized);
             this.RaisePropertyChanged(nameof(CexMarketModeSummary));
             this.RaisePropertyChanged(nameof(ManualLeverageLabel));
+            // Force re-apply on the next order: Bybit/OKX don't re-send leverage per order,
+            // so without this the exchange keeps the stale leverage while the UI shows the new one.
+            _manualFuturesSetupDone.Clear();
         }
     }
     public string ManualFuturesMarginMode
@@ -1514,6 +1537,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             this.RaiseAndSetIfChanged(ref _manualFuturesMarginMode, normalized);
             this.RaisePropertyChanged(nameof(CexMarketModeSummary));
             this.RaisePropertyChanged(nameof(CurrentFuturesMarginModeLabel));
+            // Re-apply margin mode (and leverage) on the next order — see leverage setter.
+            _manualFuturesSetupDone.Clear();
         }
     }
     public string SelectedTradingProfile
@@ -4395,7 +4420,10 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             string.Equals(position.Symbol, SelectedTradingSymbol, StringComparison.OrdinalIgnoreCase) &&
             position.Quantity != 0);
 
-        return matchingPosition ?? positions.FirstOrDefault(static position => position.Quantity != 0);
+        // Only the active symbol's position — no cross-symbol fallback. Returning an arbitrary
+        // other-symbol position here would arm TP/SL on the wrong instrument or stitch a foreign
+        // qty/PositionSide onto a reduce-only order for SelectedTradingSymbol.
+        return matchingPosition;
     }
 
     private async Task SyncExchangeManagedOrdersAsync(string symbol)
@@ -4524,15 +4552,16 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             }
             catch (NotSupportedException)
             {
-                // Exchange does not support native TP/SL — register as software-simulated working order.
-                var softId = Guid.NewGuid().ToString("N")[..8];
-                var softOrder = WorkingOrderViewModel.CreateExchangeProtection(
-                    kind, openPosition.Symbol, Math.Abs(openPosition.Quantity), triggerPrice,
-                    softId, 0m, "New", DateTime.Now, true, kind == WorkingOrderKind.TakeProfit ? "TAKE_PROFIT" : "STOP");
-                softOrder.AttachCancel(() => CancelSingleOrder(softOrder));
-                WorkingOrders.Add(softOrder);
-                RaiseWorkingOrdersCollectionChanged();
-                AddLog($"{softOrder.KindLabel} (software) registered at {triggerPrice:N2} — {SelectedFuturesExchange} does not support native conditional orders.");
+                // This exchange has no native futures TP/SL, and the software working-order
+                // engine (ExecuteWorkingOrderAsync / ResolveSoftwarePositionQuantityAsync) only
+                // closes SPOT holdings — it resolves size from the spot base-asset balance and
+                // sends a spot market order, so it cannot reduce a FUTURES position. Registering
+                // a software "protection" here previously showed a protected row that never
+                // triggered — a dangerous false sense of security. Fail honestly instead.
+                var label = kind == WorkingOrderKind.TakeProfit ? "take-profit" : "stop-loss";
+                AddLog($"⚠️ {SelectedFuturesExchange} has no native futures {label}, and software " +
+                       $"protection is spot-only — {label.ToUpperInvariant()} was NOT armed. Manage this " +
+                       $"position manually or use an exchange with native conditional orders.");
                 return;
             }
 
@@ -5221,6 +5250,14 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private async Task ExecuteReversePosition()
     {
+        // Reverse only makes sense on futures (spot can't hold a short); guard here too
+        // in case this is invoked outside the button (e.g. agent actions).
+        if (!IsManualFuturesMode)
+        {
+            AddLog("Reverse is available in futures mode only.");
+            return;
+        }
+
         if (!WalletVM.TryApproveLiveExecution("CEX reverse position", out var executionReason))
         {
             AddLog(executionReason);
@@ -6868,6 +6905,13 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private string GetCexReverseBlockedReason()
     {
+        // Reverse = close, then open the OPPOSITE side. Spot cannot hold a short, so the
+        // open leg would fire a second erroneous sell of an asset no longer held.
+        if (!IsManualFuturesMode)
+        {
+            return "Reverse is available in futures mode only.";
+        }
+
         if (TradeQuantity <= 0m)
         {
             return "Set trade size above zero.";

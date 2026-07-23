@@ -12,7 +12,7 @@ namespace CryptoAITerminal.Gateway.DEX;
 /// emitting sniper signals BEFORE the transaction is mined.
 /// This gives 1-3 blocks of advance notice over factory event monitoring.
 /// </summary>
-public sealed class EvmMempoolMonitor
+public sealed class EvmMempoolMonitor : IDisposable
 {
     // addLiquidityETH(address,uint256,uint256,uint256,address,uint256)
     private const string AddLiquidityEthSelector = "0xf305d719";
@@ -192,6 +192,8 @@ public sealed class EvmMempoolMonitor
     }
 
     private sealed record PendingTxDto(string Hash, string To, string Input, string Value, string GasPrice);
+
+    public void Dispose() => _http.Dispose();
 }
 
 /// <summary>

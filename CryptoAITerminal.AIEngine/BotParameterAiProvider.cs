@@ -70,8 +70,9 @@ public sealed class BotParameterAiProvider
 
             var map = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
             foreach (var key in keys)
-                if (pObj.TryGetProperty(key, out var val) && val.ValueKind == JsonValueKind.Number)
-                    map[key] = val.GetDecimal();
+                if (pObj.TryGetProperty(key, out var val) && val.ValueKind == JsonValueKind.Number
+                    && val.TryGetDecimal(out var num))
+                    map[key] = num;
 
             if (map.Count == 0) return null;
             var rationale = root.TryGetProperty("rationale", out var r) ? r.GetString() ?? "" : "";
