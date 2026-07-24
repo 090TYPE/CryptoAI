@@ -4853,6 +4853,10 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                 if (!serverResult.Accepted)
                 {
                     AddLog($"Server rejected {cmd.Side} {cmd.Quantity} {cmd.Symbol}: {serverResult.RejectReason ?? "unknown reason"}");
+                    // Throw, exactly as an in-process gateway does on failure. Callers ignore
+                    // Order.Status, so returning a Rejected order here would have every layer
+                    // above (risk, journal, toasts) treat a refusal as a fill.
+                    throw new InvalidOperationException($"Server rejected the order: {serverResult.RejectReason ?? "unknown reason"}");
                 }
 
                 return new Order
@@ -4868,7 +4872,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                     MarginMode = cmd.MarginMode,
                     ReduceOnly = cmd.ReduceOnly,
                     PositionSide = cmd.PositionSide,
-                    Status = serverResult.Accepted ? OrderStatus.New : OrderStatus.Rejected
+                    Status = OrderStatus.New
                 };
             }
 

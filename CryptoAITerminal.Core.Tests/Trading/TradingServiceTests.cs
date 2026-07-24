@@ -56,14 +56,38 @@ public class TradingServiceTests
         private int _placeCalls;
         public int PlaceCalls => Volatile.Read(ref _placeCalls);
         public bool Throw;
+        public bool ThrowOnSetLeverage;
+        public bool ThrowOnSetMarginMode;
+        public (string Symbol, int Leverage)? LeverageSet;
+        public (string Symbol, FuturesMarginMode Mode)? MarginModeSet;
+        /// <summary>Ordered log of the calls that matter for ordering assertions
+        /// ("leverage", "marginMode", "place"). Guarded because the race tests share one gateway.</summary>
+        public readonly List<string> CallLog = [];
+        private readonly object _logLock = new();
+        private void Log(string call) { lock (_logLock) CallLog.Add(call); }
         public readonly List<(string Symbol, string OrderId)> Cancelled = [];
         /// <summary>When set, the call stays in flight (as a real exchange round-trip would)
         /// until this task completes.</summary>
         public Task? InFlightGate;
         public Task ConnectAsync() => Task.CompletedTask;
         public Task DisconnectAsync() => Task.CompletedTask;
+        public Task SetLeverageAsync(string symbol, int leverage)
+        {
+            Log("leverage");
+            LeverageSet = (symbol, leverage);
+            if (ThrowOnSetLeverage) throw new Exception("leverage not modified");
+            return Task.CompletedTask;
+        }
+        public Task SetMarginModeAsync(string symbol, FuturesMarginMode marginMode)
+        {
+            Log("marginMode");
+            MarginModeSet = (symbol, marginMode);
+            if (ThrowOnSetMarginMode) throw new Exception("margin mode not modified");
+            return Task.CompletedTask;
+        }
         public async Task<Order> PlaceOrderAsync(Order o)
         {
+            Log("place");
             Interlocked.Increment(ref _placeCalls);
             if (Throw) throw new Exception("exchange down");
             if (InFlightGate is not null) await Task.WhenAny(InFlightGate, Task.Delay(TimeSpan.FromSeconds(10)));
@@ -381,6 +405,43 @@ public class TradingServiceTests
         Assert.False(res.Accepted);
         Assert.Contains("in flight", res.RejectReason!, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(0, gw.PlaceCalls);
+    }
+
+    // ── I4: leverage/margin mode must actually reach the venue ───────────────
+    // OKX and Bybit ignore the leverage/marginMode carried on the order object, so without an
+    // explicit call the user's 3× silently becomes whatever the account was last left on.
+    [Fact]
+    public async Task Place_market_applies_leverage_and_margin_mode_before_placing_the_order()
+    {
+        var gw = new FakeGateway();
+        var journal = new InMemoryOrderJournal();
+        var svc = Make(gw, journal);
+
+        var res = await svc.PlaceMarketAsync(Uid, Cmd(cid: "lev-1"), default);
+
+        Assert.True(res.Accepted);
+        Assert.Equal(("BTCUSDT", 5), gw.LeverageSet);
+        Assert.Equal(("BTCUSDT", FuturesMarginMode.Isolated), gw.MarginModeSet);
+        // Both settings must land BEFORE the order, or the fill uses the stale account setting.
+        Assert.Equal(new[] { "leverage", "marginMode", "place" }, gw.CallLog);
+    }
+
+    [Fact]
+    public async Task A_failing_set_leverage_does_not_block_the_order()
+    {
+        // Venues routinely reject re-setting the SAME leverage ("leverage not modified"), and a
+        // gateway with no futures support throws NotSupportedException. Neither may kill a
+        // legitimate order — the desktop's EnsureManualFuturesSetupAsync logs and proceeds.
+        var gw = new FakeGateway { ThrowOnSetLeverage = true, ThrowOnSetMarginMode = true };
+        var journal = new InMemoryOrderJournal();
+        var svc = Make(gw, journal);
+
+        var res = await svc.PlaceMarketAsync(Uid, Cmd(cid: "lev-2"), default);
+
+        Assert.True(res.Accepted);
+        Assert.Equal("EX-777", res.OrderId);
+        Assert.Equal(1, gw.PlaceCalls);
+        Assert.Equal("placed", Assert.Single(journal.Rows).Value.Status);
     }
 
     // ── C4: cancel must carry the symbol or it is a silent no-op ─────────────

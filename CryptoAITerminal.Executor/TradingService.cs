@@ -72,6 +72,17 @@ public sealed class TradingService : ITradingService
         try
         {
             var gateway = _factory.Create(cmd.Exchange, "futures", creds);
+
+            // Leverage and margin mode must be pushed explicitly: only Binance and KuCoin re-apply
+            // them from the order object, so on OKX/Bybit a 3× request would otherwise inherit
+            // whatever the account was last left on — with a matching wrong liquidation price.
+            // Best-effort by design, mirroring the desktop's EnsureManualFuturesSetupAsync: venues
+            // routinely reject re-setting an unchanged value ("leverage not modified") and gateways
+            // without futures support throw NotSupportedException. Neither is a reason to refuse a
+            // legitimate order, so each call is swallowed individually.
+            try { await gateway.SetLeverageAsync(cmd.Symbol, cmd.Leverage); } catch { /* venue may reject a no-op change; not fatal */ }
+            try { await gateway.SetMarginModeAsync(cmd.Symbol, cmd.MarginMode); } catch { /* ditto */ }
+
             var order = new Order
             {
                 Symbol = cmd.Symbol,

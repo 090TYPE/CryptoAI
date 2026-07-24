@@ -26,13 +26,19 @@ public sealed class ServerTradingClient : IServerTradingClient, IAsyncDisposable
     private readonly HttpClient _http;
     private readonly string _hubUrl;
     private readonly string _license;
+    private readonly IReadOnlyList<TimeSpan> _retryBackoff;
     private HubConnection? _hub;
     private readonly Subject<OrderStatusDto> _status = new();
     private readonly Subject<NotificationDto> _notif = new();
 
+    /// <summary>One entry per EXTRA attempt after the first, so two entries = up to three POSTs.</summary>
+    private static readonly TimeSpan[] DefaultRetryBackoff =
+        [TimeSpan.FromMilliseconds(400), TimeSpan.FromMilliseconds(800)];
+
     /// <param name="http">BaseAddress = server root, with the X-License default header set.</param>
-    public ServerTradingClient(HttpClient http, string hubUrl, string license)
-    { _http = http; _hubUrl = hubUrl; _license = license; }
+    /// <param name="retryBackoff">Overridable so tests do not pay the real delays.</param>
+    public ServerTradingClient(HttpClient http, string hubUrl, string license, IReadOnlyList<TimeSpan>? retryBackoff = null)
+    { _http = http; _hubUrl = hubUrl; _license = license; _retryBackoff = retryBackoff ?? DefaultRetryBackoff; }
 
     public IObservable<OrderStatusDto> OrderStatus => _status;
     public IObservable<NotificationDto> Notifications => _notif;
@@ -48,10 +54,47 @@ public sealed class ServerTradingClient : IServerTradingClient, IAsyncDisposable
         await _hub.StartAsync();
     }
 
+    /// <summary>
+    /// Places one order, surviving a lost transport without ever placing twice.
+    /// <para>
+    /// Every attempt sends the SAME <paramref name="cmd"/>, hence the same ClientOrderId. That is
+    /// precisely what makes the retry safe: the server claims (uid, ClientOrderId) atomically, so
+    /// a duplicate attempt replays the first attempt's recorded outcome instead of placing a
+    /// second real order. One user click = one intent = one id; the id is deliberately NOT derived
+    /// from a time bucket, which would silently swallow a trader's second, genuinely-wanted order
+    /// while scaling into the same symbol.
+    /// </para>
+    /// Only transport-level failures are retried. Once a response arrives the server has decided,
+    /// so it is final whatever the status code.
+    /// </summary>
     public async Task<PlaceOrderResult> PlaceMarketAsync(PlaceMarketCommand cmd)
     {
-        var resp = await _http.PostAsJsonAsync("/api/trade/order", cmd);
-        return (await resp.Content.ReadFromJsonAsync<PlaceOrderResult>())!;
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                var resp = await _http.PostAsJsonAsync("/api/trade/order", cmd);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    // A 401/429/503 has no PlaceOrderResult body: deserializing it would yield a
+                    // rejection with a null reason, and a non-JSON 500 body would throw out of the
+                    // command entirely. Report the status and body instead.
+                    var body = await resp.Content.ReadAsStringAsync();
+                    return new PlaceOrderResult(false, null, $"server returned {(int)resp.StatusCode}: {body}");
+                }
+                return await resp.Content.ReadFromJsonAsync<PlaceOrderResult>()
+                       ?? new PlaceOrderResult(false, null, "server returned an empty response body");
+            }
+            catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
+            {
+                // TaskCanceledException derives from OperationCanceledException, so this also covers
+                // the HttpClient timeout — the dangerous case, because the order may already be live.
+                if (attempt >= _retryBackoff.Count)
+                    return new PlaceOrderResult(false, null,
+                        "no response from server; the order may or may not have been placed — check positions before retrying");
+                await Task.Delay(_retryBackoff[attempt]);
+            }
+        }
     }
 
     public async Task<CancelResult> CancelAsync(string exchange, string symbol, string orderId)
