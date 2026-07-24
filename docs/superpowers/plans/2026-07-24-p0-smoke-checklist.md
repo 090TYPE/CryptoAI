@@ -44,9 +44,10 @@ into DI is the first task of the next slice — until then the flag alone change
 
 ## BLOCKERS — C1–C5 are now FIXED ✅
 
-All five criticals below were closed and pinned with regression tests (suite 724 → 731). Each fix
-was mutation-checked: reverting it makes its test fail. **Still open before the flag can be
-enabled: I1, I3, I4** (listed under the table).
+All five criticals below were closed and pinned with regression tests. Each fix was
+mutation-checked: reverting it makes its test fail. **I1, I3 and I4 are now closed too**
+(suite 724 → 738), so the only thing left before the flag can be enabled is the manual
+smoke run in the table further down.
 
 | # | Defect | Why it matters |
 |---|---|---|
@@ -56,10 +57,15 @@ enabled: I1, I3, I4** (listed under the table).
 | C4 | Cancel is a silent no-op that reports success | `CancelAsync` uses the 1-arg `CancelOrderAsync(orderId)`; the gateway resolves the symbol from a per-instance cache, and the service builds a **fresh gateway per request**, so the cache is always empty. Pass the symbol and use the 2-arg overload. |
 | C5 | `db/018_trade_orders.sql` is never applied | `docker-compose.yml` mounts only `001`–`017`. On a fresh deploy the table is missing and the endpoint 500s. |
 
-Also required before enabling: **I1** stable retry-safe `ClientOrderId` (the desktop mints a new
-GUID per call, so the idempotency machinery is unreachable), **I3** the desktop must throw on
-`!Accepted` (today it returns a rejected `Order` that callers treat as a fill), **I4** leverage is
-silently ignored on OKX/Bybit (no `SetLeverageAsync` on the server path).
+Also closed:
+
+| # | Defect | Fix |
+|---|---|---|
+| I1 | The desktop minted a fresh `ClientOrderId` per click, so a timed-out POST with a live order led to a second order on the next click | The **client** now retries transport failures reusing the same id (safe because the server claims the id atomically). The id is deliberately NOT derived from a time bucket — a trader legitimately repeats the same size while scaling in, and a bucketed id would swallow that second, wanted order |
+| I3 | The desktop returned a rejected `Order`; callers ignored `Status` and recorded a fill | Throws `InvalidOperationException`, matching the in-process gateway contract |
+| I4 | Leverage/margin mode never reached OKX/Bybit — a 3× request could execute at whatever the account was last left on | `TradingService` applies both before placing, best-effort, mirroring the desktop's `EnsureManualFuturesSetupAsync` |
+| I2 | A replayed id always answered "accepted" | Replay now reports the recorded outcome; the still-in-flight case says the order **may be live** rather than reading as a rejection |
+| M8 | Non-2xx responses deserialised into a null-reason rejection | Status code and body are surfaced, and never retried |
 
 ## Known gaps (deliberate, carried forward)
 
