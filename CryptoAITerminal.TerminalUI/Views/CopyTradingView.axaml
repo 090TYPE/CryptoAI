@@ -88,7 +88,7 @@
                             <TextBlock Text="{Binding Address}" Foreground="#5C6E82"
                                        FontFamily="Consolas" FontSize="10" />
                           </StackPanel>
-                          <CheckBox Grid.Column="1" Content="Copy" IsChecked="{Binding Copy}"
+                          <CheckBox Grid.Column="1" Content="Copy trades" IsChecked="{Binding Copy}"
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="Stronger &quot;copy this&quot; alert on a buy (no auto-execution)" />
                           <Button Grid.Column="2" Classes="GhostButton" Content="✕"
