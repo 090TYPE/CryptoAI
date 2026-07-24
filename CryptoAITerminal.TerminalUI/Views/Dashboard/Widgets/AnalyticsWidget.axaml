@@ -6,48 +6,50 @@
              x:CompileBindings="False">
   <StackPanel Spacing="8">
 
-    <!-- KPI cards -->
-    <Grid ColumnDefinitions="*,*,*,*,*,*" ColumnSpacing="6">
-      <Border Grid.Column="0" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
+    <!-- KPI cards. WrapPanel + MinWidth: six equal grid columns squeezed each tile below the
+         width of its own label ("DRAWDOWN") and value, so both were clipped. Tiles now keep a
+         readable width and wrap to a second row when the widget is narrow — nothing is hidden. -->
+    <WrapPanel Orientation="Horizontal">
+      <Border MinWidth="92" Margin="0,0,6,6" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
-          <TextBlock Text="P&amp;L" Foreground="#5A7A90" FontSize="9" />
+          <TextBlock Text="P&amp;L" Foreground="#5A7A90" FontSize="9" TextWrapping="Wrap" />
           <TextBlock Text="{Binding PnlDashboardVM.TotalPnlLabel}"
                      Foreground="{Binding PnlDashboardVM.TotalPnlBrush}"
-                     FontSize="13" FontWeight="SemiBold" />
+                     FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
-      <Border Grid.Column="1" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border MinWidth="92" Margin="0,0,6,6" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
-          <TextBlock Text="WIN RATE" Foreground="#5A7A90" FontSize="9" />
-          <TextBlock Text="{Binding PnlDashboardVM.WinRateLabel}" Foreground="#21E6C1" FontSize="13" FontWeight="SemiBold" />
-          <TextBlock Text="{Binding PnlDashboardVM.TradeCountLabel}" Foreground="#4D5F70" FontSize="9" />
+          <TextBlock Text="WIN RATE" Foreground="#5A7A90" FontSize="9" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding PnlDashboardVM.WinRateLabel}" Foreground="#21E6C1" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding PnlDashboardVM.TradeCountLabel}" Foreground="#4D5F70" FontSize="9" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
-      <Border Grid.Column="2" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border MinWidth="92" Margin="0,0,6,6" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
-          <TextBlock Text="AVG WIN" Foreground="#5A7A90" FontSize="9" />
-          <TextBlock Text="{Binding PnlDashboardVM.AvgWinLabel}" Foreground="#3DDC84" FontSize="13" FontWeight="SemiBold" />
+          <TextBlock Text="AVG WIN" Foreground="#5A7A90" FontSize="9" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding PnlDashboardVM.AvgWinLabel}" Foreground="#3DDC84" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
-      <Border Grid.Column="3" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border MinWidth="92" Margin="0,0,6,6" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
-          <TextBlock Text="AVG LOSS" Foreground="#5A7A90" FontSize="9" />
-          <TextBlock Text="{Binding PnlDashboardVM.AvgLossLabel}" Foreground="#FF5D73" FontSize="13" FontWeight="SemiBold" />
+          <TextBlock Text="AVG LOSS" Foreground="#5A7A90" FontSize="9" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding PnlDashboardVM.AvgLossLabel}" Foreground="#FF5D73" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
-      <Border Grid.Column="4" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border MinWidth="92" Margin="0,0,6,6" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
-          <TextBlock Text="DRAWDOWN" Foreground="#5A7A90" FontSize="9" />
-          <TextBlock Text="{Binding PnlDashboardVM.MaxDrawdownLabel}" Foreground="#F4B860" FontSize="13" FontWeight="SemiBold" />
+          <TextBlock Text="DRAWDOWN" Foreground="#5A7A90" FontSize="9" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding PnlDashboardVM.MaxDrawdownLabel}" Foreground="#F4B860" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
-      <Border Grid.Column="5" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border MinWidth="92" Margin="0,0,6,6" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
-          <TextBlock Text="PROFIT F." Foreground="#5A7A90" FontSize="9" />
-          <TextBlock Text="{Binding PnlDashboardVM.ProfitFactorLabel}" Foreground="#A78BFA" FontSize="13" FontWeight="SemiBold" />
+          <TextBlock Text="PROFIT FACTOR" Foreground="#5A7A90" FontSize="9" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding PnlDashboardVM.ProfitFactorLabel}" Foreground="#A78BFA" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
-    </Grid>
+    </WrapPanel>
 
     <!-- Equity curve mini canvas -->
     <Border Background="#060D14" CornerRadius="4" Height="80"

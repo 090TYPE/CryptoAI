@@ -77,7 +77,10 @@
     <Border Classes="StatCell" Grid.Column="6">
       <StackPanel Spacing="3">
         <TextBlock Classes="StatLabel" Text="SESSION RANGE" />
+        <!-- Two numbers joined by a dash overflow this equal-width cell and were clipped;
+             wrap onto a second line instead of hiding the end of the range. -->
         <TextBlock Classes="Mono" FontSize="14" FontWeight="Bold" Foreground="#5BC0FF"
+                   TextWrapping="Wrap"
                    Text="{Binding SelectedMarket.RangeLabel}" />
         <TextBlock FontSize="10" Foreground="#5A7A94"
                    Text="{Binding SelectedMarket.RangePercent, StringFormat='{}{0:N2}% band'}" />
