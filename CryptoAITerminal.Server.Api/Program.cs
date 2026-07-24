@@ -1,6 +1,9 @@
 using System.Text;
 using System.Text.Json;
 using System.Threading.RateLimiting;
+using CryptoAITerminal.Core.Contracts;
+using CryptoAITerminal.Executor;
+using CryptoAITerminal.Server.Api;
 using CryptoAITerminal.Server.Common;
 using CryptoAITerminal.Server.Data;
 
@@ -39,6 +42,16 @@ builder.Services.AddSingleton<AuditRepository>();
 var kekB64 = builder.Configuration["CRYPTOAI_KEK_B64"];
 if (!string.IsNullOrWhiteSpace(kekB64))
     builder.Services.AddSingleton<IEnvelopeCipher>(LocalAesEnvelopeCipher.FromBase64(kekB64));
+
+// ── Manual trading (server-side execution) ───────────────────────────────────
+// Collaborators live in the executor project; the API owns only the HTTP surface.
+builder.Services.AddSingleton<IGatewayFactory, GatewayFactory>();
+builder.Services.AddSingleton<ICexKeyProvider, SecretsCexKeyProvider>();
+builder.Services.AddSingleton<IPriceSource>(new HttpPriceSource(new HttpClient { Timeout = TimeSpan.FromSeconds(15) }));
+builder.Services.AddSingleton<IManualRiskGate>(_ => new PerOrderCapManualRiskGate(
+    decimal.TryParse(Environment.GetEnvironmentVariable("MANUAL_MAX_NOTIONAL_USD"), out var cap) ? cap : 5000m));
+builder.Services.AddSingleton<IOrderJournal, OrderJournalRepository>();
+builder.Services.AddSingleton<ITradingService, TradingService>();
 
 // License verification: same RSA-signed tokens the app issues. Override the key in prod
 // via LICENSE_PUBLIC_KEY_PEM; falls back to the app's embedded public key.
@@ -474,6 +487,9 @@ app.MapPut("/api/keys/{provider}", async (string provider, KeyUpdate body, Provi
     await keys.SetAsync(provider, body.ApiKey, body.Enabled, body.Note, ct);
     return Results.Ok(new { provider, body.Enabled });
 });
+
+// ── Manual trading (place / cancel / positions) ───────────────────────────────
+app.MapTradeEndpoints();
 
 app.Run();
 
