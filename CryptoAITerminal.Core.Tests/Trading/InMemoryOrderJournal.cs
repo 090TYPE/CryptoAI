@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
-using CryptoAITerminal.Executor;
+using CryptoAITerminal.Core.Contracts;
 
 namespace CryptoAITerminal.Core.Tests.Trading;
 
