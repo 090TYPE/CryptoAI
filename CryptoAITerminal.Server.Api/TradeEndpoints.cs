@@ -42,11 +42,13 @@ public static class TradeEndpoints
             return Results.Ok(result);
         });
 
-        app.MapPost("/api/trade/order/{orderId}/cancel", async (HttpContext ctx, string orderId, string exchange) =>
+        // symbol is a required query parameter: futures cancels need it, and without it the
+        // gateway call is a silent no-op that still reports success.
+        app.MapPost("/api/trade/order/{orderId}/cancel", async (HttpContext ctx, string orderId, string exchange, string symbol) =>
         {
             var svc = Trading(ctx);
             if (svc is null) return NotConfigured();
-            return Results.Ok(await svc.CancelAsync(Uid(ctx), exchange, orderId, ctx.RequestAborted));
+            return Results.Ok(await svc.CancelAsync(Uid(ctx), exchange, symbol, orderId, ctx.RequestAborted));
         });
 
         app.MapGet("/api/trade/positions", async (HttpContext ctx, string exchange) =>

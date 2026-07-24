@@ -13,7 +13,7 @@ namespace CryptoAITerminal.Executor;
 public interface ITradingService
 {
     Task<PlaceOrderResult> PlaceMarketAsync(System.Guid uid, PlaceMarketCommand cmd, CancellationToken ct);
-    Task<CancelResult> CancelAsync(System.Guid uid, string exchange, string orderId, CancellationToken ct);
+    Task<CancelResult> CancelAsync(System.Guid uid, string exchange, string symbol, string orderId, CancellationToken ct);
     Task<IReadOnlyList<FuturesPositionDto>> GetPositionsAsync(System.Guid uid, string exchange, CancellationToken ct);
 }
 
@@ -42,19 +42,20 @@ public sealed class TradingService : ITradingService
         if (string.IsNullOrWhiteSpace(cmd.ClientOrderId))
             return new PlaceOrderResult(false, null, "ClientOrderId is required.");
 
-        // Idempotency: a replayed ClientOrderId never places twice.
-        if (await _journal.ExistsAsync(uid, cmd.ClientOrderId, ct))
-            return new PlaceOrderResult(true, null, null);
-
         var px = await _price.GetPriceAsync(cmd.Exchange, cmd.Symbol, ct);
         var (ok, reason) = _risk.Check(cmd, px);
         if (!ok)
             return new PlaceOrderResult(false, null, reason); // gate blocks before anything is recorded or sent
 
+        // Idempotency: the claim is atomic, so exactly one caller may ever place this
+        // (uid, ClientOrderId). Losing the claim means the order already exists — report its
+        // recorded outcome and place nothing.
         var side = cmd.Side == OrderSide.Sell ? "sell" : "buy";
-        await _journal.InsertAsync(new TradeOrderRow(
+        var claimed = await _journal.TryClaimAsync(new TradeOrderRow(
             uid, cmd.Exchange, cmd.ClientOrderId, null, cmd.Symbol, side,
             cmd.Quantity, cmd.ReduceOnly, "accepted", null), ct);
+        if (!claimed)
+            return await ReplayAsync(uid, cmd.ClientOrderId, ct);
 
         var key = await _keys.FindAsync(uid, cmd.Exchange, ct);
         if (key is null)
@@ -67,6 +68,7 @@ public sealed class TradingService : ITradingService
             return await RejectAsync(uid, cmd, "key lacks trade permission", ct);
 
         var creds = await _cipher.DecryptAsync(key.Ciphertext, key.WrappedDek, ct);
+        Order placed;
         try
         {
             var gateway = _factory.Create(cmd.Exchange, "futures", creds);
@@ -83,31 +85,56 @@ public sealed class TradingService : ITradingService
                 MarketType = TradingMarketType.FuturesUsdM,
                 ClientOrderId = cmd.ClientOrderId,
             };
-            var placed = await gateway.PlaceOrderAsync(order);
-            await _journal.MarkPlacedAsync(uid, cmd.ClientOrderId, placed.Id ?? "", ct);
-            return new PlaceOrderResult(true, placed.Id, null);
+            placed = await gateway.PlaceOrderAsync(order);
         }
         catch (System.Exception ex)
         {
-            return await RejectAsync(uid, cmd, ex.Message, ct);
+            // Nothing reached the exchange (or the attempt failed outright) — record the rejection.
+            // CancellationToken.None: a caller who walked away must still leave a truthful row.
+            return await RejectAsync(uid, cmd, ex.Message, System.Threading.CancellationToken.None);
         }
         finally
         {
             creds = null!; // drop the decrypted secret from our local reference
         }
+
+        // Past this line the exchange HAS the order, so the outcome is terminal and the caller
+        // must be told "accepted" no matter what happens next. The journal write is deliberately
+        // outside the try above, uses CancellationToken.None (the caller's token may already be
+        // cancelled), and its failure is swallowed: a DB blip must never be reported as a
+        // rejection, or the user re-clicks and doubles a real position.
+        try
+        {
+            await _journal.MarkPlacedAsync(uid, cmd.ClientOrderId, placed.Id ?? "", System.Threading.CancellationToken.None);
+        }
+        catch
+        {
+            // Row stays 'accepted'; the order is live and the caller is told so.
+        }
+        return new PlaceOrderResult(true, placed.Id, null);
     }
 
-    /// <summary>Overwrite the accepted row (same (uid, ClientOrderId) key) with a rejected one.</summary>
+    /// <summary>A ClientOrderId whose claim was already taken: report what actually happened
+    /// instead of a blanket success, and place nothing.</summary>
+    private async Task<PlaceOrderResult> ReplayAsync(System.Guid uid, string clientOrderId, CancellationToken ct)
+    {
+        var row = await _journal.GetAsync(uid, clientOrderId, ct);
+        return row?.Status switch
+        {
+            "placed" => new PlaceOrderResult(true, row.ExchangeOrderId, null),
+            "rejected" => new PlaceOrderResult(false, null, row.RejectReason ?? "previously rejected"),
+            _ => new PlaceOrderResult(false, null, "duplicate ClientOrderId already in flight"),
+        };
+    }
+
+    /// <summary>Mark the claimed row rejected. Never downgrades a row already marked 'placed'.</summary>
     private async Task<PlaceOrderResult> RejectAsync(System.Guid uid, PlaceMarketCommand cmd, string reason, CancellationToken ct)
     {
-        var side = cmd.Side == OrderSide.Sell ? "sell" : "buy";
-        await _journal.InsertAsync(new TradeOrderRow(
-            uid, cmd.Exchange, cmd.ClientOrderId, null, cmd.Symbol, side,
-            cmd.Quantity, cmd.ReduceOnly, "rejected", reason), ct);
+        await _journal.MarkRejectedAsync(uid, cmd.ClientOrderId, reason, ct);
         return new PlaceOrderResult(false, null, reason);
     }
 
-    public async Task<CancelResult> CancelAsync(System.Guid uid, string exchange, string orderId, CancellationToken ct)
+    public async Task<CancelResult> CancelAsync(System.Guid uid, string exchange, string symbol, string orderId, CancellationToken ct)
     {
         var key = await _keys.FindAsync(uid, exchange, ct);
         if (key is null) return new CancelResult(false, $"no trade key for {exchange}");
@@ -115,7 +142,10 @@ public sealed class TradingService : ITradingService
         var creds = await _cipher.DecryptAsync(key.Ciphertext, key.WrappedDek, ct);
         try
         {
-            await _factory.Create(exchange, "futures", creds).CancelOrderAsync(orderId);
+            // Two-arg overload: every futures gateway resolves the symbol for the 1-arg form from a
+            // per-instance cache that is always empty here (a fresh gateway per request), so the
+            // 1-arg call silently cancels nothing while we report success.
+            await _factory.Create(exchange, "futures", creds).CancelOrderAsync(symbol, orderId);
             return new CancelResult(true, null);
         }
         catch (System.Exception ex)

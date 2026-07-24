@@ -14,7 +14,7 @@ namespace CryptoAITerminal.TerminalUI.Services;
 public interface IServerTradingClient
 {
     Task<PlaceOrderResult> PlaceMarketAsync(PlaceMarketCommand cmd);
-    Task<CancelResult> CancelAsync(string exchange, string orderId);
+    Task<CancelResult> CancelAsync(string exchange, string symbol, string orderId);
     Task<IReadOnlyList<FuturesPositionDto>> GetPositionsAsync(string exchange);
     IObservable<OrderStatusDto> OrderStatus { get; }
     IObservable<NotificationDto> Notifications { get; }
@@ -54,9 +54,9 @@ public sealed class ServerTradingClient : IServerTradingClient, IAsyncDisposable
         return (await resp.Content.ReadFromJsonAsync<PlaceOrderResult>())!;
     }
 
-    public async Task<CancelResult> CancelAsync(string exchange, string orderId)
+    public async Task<CancelResult> CancelAsync(string exchange, string symbol, string orderId)
     {
-        var resp = await _http.PostAsync($"/api/trade/order/{orderId}/cancel?exchange={exchange}", null);
+        var resp = await _http.PostAsync($"/api/trade/order/{orderId}/cancel?exchange={exchange}&symbol={symbol}", null);
         return (await resp.Content.ReadFromJsonAsync<CancelResult>())!;
     }
 

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Reactive.Linq;
 using CryptoAITerminal.Core.Contracts;
 using CryptoAITerminal.Core.Enums;
@@ -20,6 +21,22 @@ public class TradingServiceTests
         public Task<decimal> GetPriceAsync(string exchange, string symbol, CancellationToken ct) => Task.FromResult(px);
     }
 
+    /// <summary>Releases every caller only once <paramref name="parties"/> callers have arrived,
+    /// so concurrent PlaceMarketAsync calls hit the journal claim at the same time instead of
+    /// running one after the other.</summary>
+    private sealed class RendezvousPriceSource(decimal px, int parties) : IPriceSource
+    {
+        private readonly TaskCompletionSource _gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _arrived;
+
+        public async Task<decimal> GetPriceAsync(string exchange, string symbol, CancellationToken ct)
+        {
+            if (Interlocked.Increment(ref _arrived) >= parties) _gate.TrySetResult();
+            await _gate.Task;
+            return px;
+        }
+    }
+
     private sealed class FakeKeyProvider(CexKeyMaterial? m) : ICexKeyProvider
     {
         public Task<CexKeyMaterial?> FindAsync(Guid userId, string exchange, CancellationToken ct) => Task.FromResult(m);
@@ -36,24 +53,87 @@ public class TradingServiceTests
     private sealed class FakeGateway : IExchangeGateway
     {
         public Order? Placed;
-        public int PlaceCalls;
+        private int _placeCalls;
+        public int PlaceCalls => Volatile.Read(ref _placeCalls);
         public bool Throw;
+        public readonly List<(string Symbol, string OrderId)> Cancelled = [];
+        /// <summary>When set, the call stays in flight (as a real exchange round-trip would)
+        /// until this task completes.</summary>
+        public Task? InFlightGate;
         public Task ConnectAsync() => Task.CompletedTask;
         public Task DisconnectAsync() => Task.CompletedTask;
-        public Task<Order> PlaceOrderAsync(Order o)
+        public async Task<Order> PlaceOrderAsync(Order o)
         {
-            PlaceCalls++;
+            Interlocked.Increment(ref _placeCalls);
             if (Throw) throw new Exception("exchange down");
+            if (InFlightGate is not null) await Task.WhenAny(InFlightGate, Task.Delay(TimeSpan.FromSeconds(10)));
+            await Task.Yield(); // a real round-trip suspends; keep the race window open
             Placed = o;
             o.Id = "EX-777";
             o.Status = OrderStatus.Filled;
             o.FilledQuantity = o.Quantity;
-            return Task.FromResult(o);
+            return o;
         }
-        public Task CancelOrderAsync(string id) => Task.CompletedTask;
+        /// <summary>The 1-arg overload every futures gateway resolves from an (always empty)
+        /// per-instance symbol cache — a silent no-op. Recording no symbol makes that visible.</summary>
+        public Task CancelOrderAsync(string id) { Cancelled.Add(("", id)); return Task.CompletedTask; }
+        public Task CancelOrderAsync(string symbol, string id) { Cancelled.Add((symbol, id)); return Task.CompletedTask; }
         public Task<decimal> GetBalanceAsync(string a) => Task.FromResult(1000m);
         public Task<OrderBook> GetOrderBookAsync(string s, int d = 10) => Task.FromResult<OrderBook>(null!);
         public IObservable<MarketData> MarketDataStream => Observable.Empty<MarketData>();
+    }
+
+    /// <summary>Journal whose MarkPlacedAsync always fails — stands in for a DB blip or a
+    /// cancelled request token AFTER the exchange has already accepted the order.</summary>
+    private sealed class MarkPlacedThrowsJournal : IOrderJournal
+    {
+        private readonly InMemoryOrderJournal _inner = new();
+        public int MarkPlacedCalls;
+        public Task<bool> TryClaimAsync(TradeOrderRow row, CancellationToken ct) => _inner.TryClaimAsync(row, ct);
+        public Task<TradeOrderRow?> GetAsync(Guid u, string cid, CancellationToken ct) => _inner.GetAsync(u, cid, ct);
+        public Task MarkPlacedAsync(Guid u, string cid, string exId, CancellationToken ct)
+        {
+            MarkPlacedCalls++;
+            throw new InvalidOperationException("journal unavailable");
+        }
+        public Task MarkRejectedAsync(Guid u, string cid, string reason, CancellationToken ct)
+            => _inner.MarkRejectedAsync(u, cid, reason, ct);
+    }
+
+    /// <summary>Journal that honours the CancellationToken it is handed — like a real Npgsql
+    /// command does. Passing the caller's (already cancelled) request token to a post-placement
+    /// write therefore fails here, exactly as it would against Postgres.</summary>
+    private sealed class CtHonouringJournal : IOrderJournal
+    {
+        private readonly InMemoryOrderJournal _inner = new();
+        public ConcurrentDictionary<string, TradeOrderRow> Rows => _inner.Rows;
+        public Task<bool> TryClaimAsync(TradeOrderRow row, CancellationToken ct)
+        { ct.ThrowIfCancellationRequested(); return _inner.TryClaimAsync(row, ct); }
+        public Task<TradeOrderRow?> GetAsync(Guid u, string cid, CancellationToken ct)
+        { ct.ThrowIfCancellationRequested(); return _inner.GetAsync(u, cid, ct); }
+        public Task MarkPlacedAsync(Guid u, string cid, string exId, CancellationToken ct)
+        { ct.ThrowIfCancellationRequested(); return _inner.MarkPlacedAsync(u, cid, exId, ct); }
+        public Task MarkRejectedAsync(Guid u, string cid, string reason, CancellationToken ct)
+        { ct.ThrowIfCancellationRequested(); return _inner.MarkRejectedAsync(u, cid, reason, ct); }
+    }
+
+    /// <summary>Journal that reports when a claim LOSER looks the row up. Only the loser calls
+    /// GetAsync, so the winner can be held inside the exchange call until the loser has answered —
+    /// which pins the race to the interesting interleaving instead of leaving it to the scheduler.</summary>
+    private sealed class RaceJournal : IOrderJournal
+    {
+        private readonly InMemoryOrderJournal _inner = new();
+        public readonly TaskCompletionSource LoserLookedUp = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public ConcurrentDictionary<string, TradeOrderRow> Rows => _inner.Rows;
+        public Task<bool> TryClaimAsync(TradeOrderRow row, CancellationToken ct) => _inner.TryClaimAsync(row, ct);
+        public async Task<TradeOrderRow?> GetAsync(Guid u, string cid, CancellationToken ct)
+        {
+            var row = await _inner.GetAsync(u, cid, ct);
+            LoserLookedUp.TrySetResult();
+            return row;
+        }
+        public Task MarkPlacedAsync(Guid u, string cid, string exId, CancellationToken ct) => _inner.MarkPlacedAsync(u, cid, exId, ct);
+        public Task MarkRejectedAsync(Guid u, string cid, string reason, CancellationToken ct) => _inner.MarkRejectedAsync(u, cid, reason, ct);
     }
 
     private sealed class FakeGatewayFactory(FakeGateway gw) : IGatewayFactory
@@ -72,11 +152,12 @@ public class TradingServiceTests
         string cid = "cid-1")
         => new("binance", "BTCUSDT", side, qty, reduceOnly, 5, FuturesMarginMode.Isolated, posSide, cid);
 
-    private static TradingService Make(FakeGateway gw, InMemoryOrderJournal journal, decimal cap = 1_000_000m) =>
+    private static TradingService Make(
+        FakeGateway gw, IOrderJournal journal, decimal cap = 1_000_000m, IPriceSource? price = null) =>
         new(new FakeKeyProvider(new CexKeyMaterial(new byte[1], new byte[1], "trade")),
             new FakeCipher(),
             new FakeGatewayFactory(gw),
-            new FakePriceSource(Price),
+            price ?? new FakePriceSource(Price),
             new PerOrderCapManualRiskGate(cap),
             journal);
 
@@ -154,7 +235,8 @@ public class TradingServiceTests
         var second = await svc.PlaceMarketAsync(Uid, Cmd(), default);
 
         Assert.True(second.Accepted);
-        Assert.Equal(1, gw.PlaceCalls); // no second placement
+        Assert.Equal("EX-777", second.OrderId); // the replay reports the recorded exchange id
+        Assert.Equal(1, gw.PlaceCalls);         // no second placement
         Assert.Single(journal.Rows);
     }
 
@@ -174,5 +256,147 @@ public class TradingServiceTests
         Assert.NotNull(gw.Placed);
         Assert.True(gw.Placed!.ReduceOnly);
         Assert.Equal(FuturesPositionSide.Short, gw.Placed!.PositionSide);
+    }
+
+    // ── C1: a live order must never be reported as rejected ──────────────────
+    [Fact]
+    public async Task Journal_failure_after_a_successful_place_still_reports_accepted()
+    {
+        var gw = new FakeGateway();
+        var journal = new MarkPlacedThrowsJournal();
+        var svc = Make(gw, journal);
+
+        var res = await svc.PlaceMarketAsync(Uid, Cmd(), default); // must not throw
+
+        Assert.True(res.Accepted);           // the exchange has the order — never say "rejected"
+        Assert.Equal("EX-777", res.OrderId);
+        Assert.Null(res.RejectReason);
+        Assert.Equal(1, gw.PlaceCalls);
+        Assert.Equal(1, journal.MarkPlacedCalls);
+    }
+
+    [Fact]
+    public async Task A_cancelled_request_token_does_not_turn_a_placed_order_into_a_rejection()
+    {
+        var gw = new FakeGateway();
+        var journal = new CtHonouringJournal();
+        var svc = Make(gw, journal);
+        using var cts = new CancellationTokenSource();
+        var exchangeAccepts = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        gw.InFlightGate = exchangeAccepts.Task;
+
+        var call = Task.Run(() => svc.PlaceMarketAsync(Uid, Cmd(cid: "cid-cancel"), cts.Token));
+        for (var i = 0; gw.PlaceCalls == 0 && i < 5_000; i++) await Task.Delay(1); // order is in flight
+        cts.Cancel();                 // the caller walks away mid-flight
+        exchangeAccepts.SetResult();  // ...and only then does the exchange accept it
+
+        var res = await call;         // must not throw
+
+        Assert.True(res.Accepted);
+        Assert.Equal("EX-777", res.OrderId);
+        // Journaling the placement must not ride on the caller's token, or a live order is
+        // recorded (and reported) as a rejection.
+        Assert.Equal("placed", Assert.Single(journal.Rows).Value.Status);
+    }
+
+    // ── C2: idempotency must survive two truly concurrent requests ───────────
+    [Fact]
+    public async Task Two_concurrent_calls_with_the_same_client_order_id_place_exactly_once()
+    {
+        var gw = new FakeGateway();
+        var journal = new RaceJournal();
+        // Both calls are released from the price gate at the same instant, so they race
+        // into the journal claim rather than running one after the other. The claim winner
+        // then stays inside the exchange call until the loser has resolved its own outcome,
+        // so both attempts really are in flight at the same time.
+        var price = new RendezvousPriceSource(Price, parties: 2);
+        gw.InFlightGate = journal.LoserLookedUp.Task;
+        var svc = Make(gw, journal, price: price);
+
+        var a = Task.Run(() => svc.PlaceMarketAsync(Uid, Cmd(cid: "race-1"), default));
+        var b = Task.Run(() => svc.PlaceMarketAsync(Uid, Cmd(cid: "race-1"), default));
+        var results = await Task.WhenAll(a, b);
+
+        Assert.Equal(1, gw.PlaceCalls);                       // exactly one real order
+        Assert.Equal(1, results.Count(r => r.Accepted));      // exactly one caller told "accepted"
+        Assert.Single(journal.Rows);
+        Assert.Equal("placed", Assert.Single(journal.Rows).Value.Status);
+
+        var loser = Assert.Single(results, r => !r.Accepted);
+        Assert.Contains("in flight", loser.RejectReason!, StringComparison.OrdinalIgnoreCase);
+        Assert.Null(loser.OrderId);
+    }
+
+    // ── C3: 'placed' is terminal ─────────────────────────────────────────────
+    [Fact]
+    public async Task Mark_rejected_never_downgrades_a_placed_row()
+    {
+        var gw = new FakeGateway();
+        var journal = new InMemoryOrderJournal();
+        var svc = Make(gw, journal);
+
+        var res = await svc.PlaceMarketAsync(Uid, Cmd(cid: "terminal-1"), default);
+        Assert.True(res.Accepted);
+
+        await journal.MarkRejectedAsync(Uid, "terminal-1", "late failure", default);
+
+        var row = Assert.Single(journal.Rows).Value;
+        Assert.Equal("placed", row.Status);
+        Assert.Equal("EX-777", row.ExchangeOrderId);
+        Assert.Null(row.RejectReason);
+    }
+
+    // ── replay reports the recorded outcome, not a blanket success ───────────
+    [Fact]
+    public async Task Replaying_a_rejected_client_order_id_reports_the_stored_rejection()
+    {
+        var gw = new FakeGateway { Throw = true };
+        var journal = new InMemoryOrderJournal();
+        var svc = Make(gw, journal);
+
+        var first = await svc.PlaceMarketAsync(Uid, Cmd(cid: "replay-1"), default);
+        Assert.False(first.Accepted);
+
+        var replay = await svc.PlaceMarketAsync(Uid, Cmd(cid: "replay-1"), default);
+
+        Assert.False(replay.Accepted);
+        Assert.Null(replay.OrderId);
+        Assert.Contains("exchange down", replay.RejectReason!, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(1, gw.PlaceCalls); // the replay placed nothing
+    }
+
+    [Fact]
+    public async Task An_in_flight_duplicate_is_refused_rather_than_reported_as_accepted()
+    {
+        var gw = new FakeGateway();
+        var journal = new InMemoryOrderJournal();
+        var svc = Make(gw, journal);
+
+        // Someone else already claimed the key and has not finished yet.
+        Assert.True(await journal.TryClaimAsync(new TradeOrderRow(
+            Uid, "binance", "inflight-1", null, "BTCUSDT", "buy", 0.01m, false, "accepted", null), default));
+
+        var res = await svc.PlaceMarketAsync(Uid, Cmd(cid: "inflight-1"), default);
+
+        Assert.False(res.Accepted);
+        Assert.Contains("in flight", res.RejectReason!, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, gw.PlaceCalls);
+    }
+
+    // ── C4: cancel must carry the symbol or it is a silent no-op ─────────────
+    [Fact]
+    public async Task Cancel_passes_the_symbol_to_the_gateway()
+    {
+        var gw = new FakeGateway();
+        var journal = new InMemoryOrderJournal();
+        var svc = Make(gw, journal);
+
+        var res = await svc.CancelAsync(Uid, "binance", "BTCUSDT", "EX-777", default);
+
+        Assert.True(res.Ok);
+        Assert.Null(res.Error);
+        var (symbol, orderId) = Assert.Single(gw.Cancelled);
+        Assert.Equal("BTCUSDT", symbol); // the 1-arg overload would record ""
+        Assert.Equal("EX-777", orderId);
     }
 }
