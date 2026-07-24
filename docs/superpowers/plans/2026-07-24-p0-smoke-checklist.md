@@ -42,6 +42,25 @@ The desktop flag `USE_SERVER_TRADING` is **off by default** and `_serverTrading`
 constructed yet, so the terminal still trades through the in-process gateway. Wiring the client
 into DI is the first task of the next slice — until then the flag alone changes nothing.
 
+## BLOCKERS — must be fixed before `USE_SERVER_TRADING` is ever enabled
+
+An adversarial review of the finished slice found these. The slice is safe to **ship** (the flag
+is off and `_serverTrading` is never constructed, so the branch is dead code and the in-process
+path is untouched), but the server route must NOT be switched on until every item here is closed.
+
+| # | Defect | Why it matters |
+|---|---|---|
+| C1 | `MarkPlacedAsync` is inside the try in `TradingService.PlaceMarketAsync` | A DB blip or a cancelled request token **after** the exchange accepted the order rewrites the row to `rejected` and returns `Accepted=false`. A real position exists that no record acknowledges; the user re-clicks and doubles it. Move the journal write out of the try and use `CancellationToken.None` for post-placement writes. |
+| C2 | Idempotency is check-then-write (TOCTOU) | Two concurrent posts with the same `ClientOrderId` both pass `ExistsAsync` and both place a live order. Claim atomically with `ON CONFLICT DO NOTHING` + rows-affected. Also: OKX/Bybit/KuCoin never forward `ClientOrderId`, so the journal is their only dedupe. |
+| C3 | Upsert overwrites unconditionally | A racing rejection can rewrite a `placed` row to `rejected`. Add `WHERE trade_orders.status <> 'placed'`. |
+| C4 | Cancel is a silent no-op that reports success | `CancelAsync` uses the 1-arg `CancelOrderAsync(orderId)`; the gateway resolves the symbol from a per-instance cache, and the service builds a **fresh gateway per request**, so the cache is always empty. Pass the symbol and use the 2-arg overload. |
+| C5 | `db/018_trade_orders.sql` is never applied | `docker-compose.yml` mounts only `001`–`017`. On a fresh deploy the table is missing and the endpoint 500s. |
+
+Also required before enabling: **I1** stable retry-safe `ClientOrderId` (the desktop mints a new
+GUID per call, so the idempotency machinery is unreachable), **I3** the desktop must throw on
+`!Accepted` (today it returns a rejected `Order` that callers treat as a fill), **I4** leverage is
+silently ignored on OKX/Bybit (no `SetLeverageAsync` on the server path).
+
 ## Known gaps (deliberate, carried forward)
 
 - **No background fill poller.** The API emits `orderStatus` on accept and `notification` on
