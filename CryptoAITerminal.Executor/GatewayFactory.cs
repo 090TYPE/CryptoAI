@@ -11,8 +11,7 @@ namespace CryptoAITerminal.Executor;
 /// Builds a keyed <see cref="IExchangeGateway"/> from decrypted per-user credentials.
 /// Credentials JSON: { "key": "...", "secret": "...", "passphrase": "..." (OKX/KuCoin) }.
 ///
-/// Binance is not yet supported server-side — its gateway reads process-level env keys and has no
-/// per-instance credential path (needs a keyed constructor; Track 4 follow-up). Futures land in 4.3.
+/// Supports both spot and futures markets, for Binance, Bybit, OKX, and KuCoin.
 /// </summary>
 public sealed class GatewayFactory : IGatewayFactory
 {
@@ -20,11 +19,25 @@ public sealed class GatewayFactory : IGatewayFactory
 
     public IExchangeGateway Create(string exchange, string market, string credentialsJson)
     {
-        if (!string.Equals(market, "spot", StringComparison.OrdinalIgnoreCase))
-            throw new NotSupportedException($"market '{market}' not supported yet (spot only in Phase 4.1)");
-
         var c = ParseCreds(credentialsJson);
-        return exchange.ToLowerInvariant() switch
+        var ex = exchange.ToLowerInvariant();
+
+        if (string.Equals(market, "futures", StringComparison.OrdinalIgnoreCase))
+        {
+            return ex switch
+            {
+                "binance" => new BinanceFuturesGateway(null, c.Key, c.Secret),
+                "bybit"   => new BybitFuturesGateway(null, c.Key, c.Secret),
+                "okx"     => new OKXFuturesGateway(null, c.Key, c.Secret, c.Passphrase),
+                "kucoin"  => new KucoinFuturesGateway(null, c.Key, c.Secret, c.Passphrase),
+                _ => throw new NotSupportedException($"exchange '{exchange}' not supported")
+            };
+        }
+
+        if (!string.Equals(market, "spot", StringComparison.OrdinalIgnoreCase))
+            throw new NotSupportedException($"market '{market}' not supported");
+
+        return ex switch
         {
             "binance" => new BinanceGateway(null, c.Key, c.Secret),
             "bybit"   => new BybitGateway(null, c.Key, c.Secret),

@@ -1,10 +1,11 @@
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Executor;
+using CryptoAITerminal.Gateway.Bybit;
 
 namespace CryptoAITerminal.Core.Tests.Executor;
 
-/// <summary>Phase 4.1 — maps exchange/market to a keyed gateway. CEX spot supported; Binance and
-/// futures are explicitly not yet supported server-side (per-user keys / later phase).</summary>
+/// <summary>Maps exchange/market to a keyed gateway. CEX spot and futures are both supported
+/// server-side, per-user keys included.</summary>
 public class GatewayFactoryTests
 {
     private const string Creds = "{\"key\":\"k\",\"secret\":\"s\",\"passphrase\":\"p\"}";
@@ -30,8 +31,16 @@ public class GatewayFactoryTests
     }
 
     [Fact]
-    public void Futures_is_not_supported_yet()
+    public void Creates_keyed_futures_gateway_for_supported_cex()
     {
-        Assert.Throws<NotSupportedException>(() => Factory.Create("bybit", "futures", Creds));
+        var gw = Factory.Create("bybit", "futures", Creds);
+
+        Assert.IsType<BybitFuturesGateway>(gw);
+    }
+
+    [Fact]
+    public void Unknown_market_throws()
+    {
+        Assert.Throws<NotSupportedException>(() => Factory.Create("bybit", "margin", Creds));
     }
 }
