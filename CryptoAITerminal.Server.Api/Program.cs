@@ -53,6 +53,10 @@ builder.Services.AddSingleton<IManualRiskGate>(_ => new PerOrderCapManualRiskGat
 builder.Services.AddSingleton<IOrderJournal, OrderJournalRepository>();
 builder.Services.AddSingleton<ITradingService, TradingService>();
 
+// Live order-status / notification stream to the desktop terminal.
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<ITradeNotifier, TradeNotifier>();
+
 // License verification: same RSA-signed tokens the app issues. Override the key in prod
 // via LICENSE_PUBLIC_KEY_PEM; falls back to the app's embedded public key.
 var licensePubKey = builder.Configuration["LICENSE_PUBLIC_KEY_PEM"] ?? LicenseTokenValidator.DefaultPublicKeyPem;
@@ -490,6 +494,7 @@ app.MapPut("/api/keys/{provider}", async (string provider, KeyUpdate body, Provi
 
 // ── Manual trading (place / cancel / positions) ───────────────────────────────
 app.MapTradeEndpoints();
+app.MapHub<TradeHub>("/hubs/trade");
 
 app.Run();
 

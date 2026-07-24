@@ -14,8 +14,16 @@ public static class TradeEndpoints
     {
         static System.Guid Uid(HttpContext ctx) => (System.Guid)ctx.Items["uid"]!;
 
-        app.MapPost("/api/trade/order", async (HttpContext ctx, PlaceMarketCommand cmd, ITradingService svc) =>
-            Results.Ok(await svc.PlaceMarketAsync(Uid(ctx), cmd, ctx.RequestAborted)));
+        app.MapPost("/api/trade/order", async (HttpContext ctx, PlaceMarketCommand cmd, ITradingService svc, ITradeNotifier notif) =>
+        {
+            var uid = Uid(ctx);
+            var result = await svc.PlaceMarketAsync(uid, cmd, ctx.RequestAborted);
+            if (result.Accepted && result.OrderId is not null)
+                await notif.OrderStatusAsync(uid, new OrderStatusDto(result.OrderId, cmd.ClientOrderId, "placed", cmd.Quantity, 0m, System.DateTime.UtcNow));
+            else if (!result.Accepted)
+                await notif.NotifyAsync(uid, new NotificationDto("order", "error", result.RejectReason ?? "rejected", System.DateTime.UtcNow));
+            return Results.Ok(result);
+        });
 
         app.MapPost("/api/trade/order/{orderId}/cancel", async (HttpContext ctx, string orderId, string exchange, ITradingService svc) =>
             Results.Ok(await svc.CancelAsync(Uid(ctx), exchange, orderId, ctx.RequestAborted)));
