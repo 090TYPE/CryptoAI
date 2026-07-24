@@ -134,7 +134,11 @@ public sealed class TradingService : ITradingService
         {
             "placed" => new PlaceOrderResult(true, row.ExchangeOrderId, null),
             "rejected" => new PlaceOrderResult(false, null, row.RejectReason ?? "previously rejected"),
-            _ => new PlaceOrderResult(false, null, "duplicate ClientOrderId already in flight"),
+            // Still 'accepted': the first attempt holds the claim and has not finished. This is the
+            // ambiguous case — the order may already be live on the exchange — so the message must
+            // say so rather than read as a plain rejection, or the user re-clicks and doubles up.
+            _ => new PlaceOrderResult(false, null,
+                "an identical request is still in flight — the order may already be live; check positions before retrying"),
         };
     }
 

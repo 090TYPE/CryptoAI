@@ -33,7 +33,10 @@ public sealed class ServerTradingClient : IServerTradingClient, IAsyncDisposable
 
     /// <summary>One entry per EXTRA attempt after the first, so two entries = up to three POSTs.</summary>
     private static readonly TimeSpan[] DefaultRetryBackoff =
-        [TimeSpan.FromMilliseconds(400), TimeSpan.FromMilliseconds(800)];
+        // Deliberately longer than a typical exchange round-trip. Retrying sooner tends to land
+        // while the first attempt still holds the claim, which the server can only answer with the
+        // ambiguous "still in flight" — technically safe, but a confusing result for a live order.
+        [TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(4)];
 
     /// <param name="http">BaseAddress = server root, with the X-License default header set.</param>
     /// <param name="retryBackoff">Overridable so tests do not pay the real delays.</param>
