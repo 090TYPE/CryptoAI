@@ -10,7 +10,7 @@ namespace CryptoAITerminal.Gateway.DEX;
 /// When a watched wallet executes a DEX swap, emits a CopyTradeSignal.
 /// Supported: any EVM chain via standard eth_getLogs + Transfer event scanning.
 /// </summary>
-public sealed class WalletCopyTradeMonitor
+public sealed class WalletCopyTradeMonitor : IDisposable
 {
     // Swap(address,uint256,uint256,uint256,uint256,address) — Uniswap V2 / forks
     private const string SwapEventTopic = "0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822";
@@ -191,6 +191,8 @@ public sealed class WalletCopyTradeMonitor
         var big = BigInteger.Parse("0" + hex64.TrimStart('0'), System.Globalization.NumberStyles.HexNumber);
         return (decimal)Web3.Convert.FromWei(big);
     }
+
+    public void Dispose() => _http.Dispose();
 }
 
 public enum CopyTradeDirection { Buy, Sell }

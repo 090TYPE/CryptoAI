@@ -649,20 +649,130 @@ foreach (var candle in candles) // первая итерация: candle = candl
 | 12 | GridBot.cs | ВЫСОКИЙ | Race condition при отмене ордеров | ✅ |
 | 13 | RsiStrategy.cs | ВЫСОКИЙ | Не Wilder's RSI | ✅ |
 | 14 | SniperViewModel.cs | ВЫСОКИЙ | _executedBuys не очищается | ✅ |
-| 15 | AlertService.cs | СРЕДНИЙ | VolumeSpike молча не работает | ⬜ |
-| 16 | BestExecutionRouter.cs | СРЕДНИЙ | Мёртвый код wavgPrice | ⬜ |
-| 17 | BestExecutionRouter.cs | СРЕДНИЙ | Copy-paste в ternary | ⬜ |
-| 18 | PortfolioRebalanceService.cs | СРЕДНИЙ | Падает для "BTCUSDT" символов | ⬜ |
-| 19 | DcaBot.cs | СРЕДНИЙ | Hardcoded BinanceGateway | ⬜ |
-| 20 | BacktestEngine.cs | СРЕДНИЙ | Sharpe ≠ настоящий Sharpe | ⬜ |
-| 21 | RiskManager.cs | СРЕДНИЙ | Не thread-safe | ⬜ |
+| 15 | AlertService.cs | СРЕДНИЙ | VolumeSpike молча не работает | ✅ |
+| 16 | BestExecutionRouter.cs | СРЕДНИЙ | Мёртвый код wavgPrice | ✅ |
+| 17 | BestExecutionRouter.cs | СРЕДНИЙ | Copy-paste в ternary | ✅ |
+| 18 | PortfolioRebalanceService.cs | СРЕДНИЙ | Падает для "BTCUSDT" символов | ✅ |
+| 19 | DcaBot.cs | СРЕДНИЙ | Hardcoded BinanceGateway | ✅ |
+| 20 | BacktestEngine.cs | СРЕДНИЙ | Sharpe ≠ настоящий Sharpe | ✅ |
+| 21 | RiskManager.cs | СРЕДНИЙ | Не thread-safe | ✅ |
 | 22 | TradingBot.cs | НИЗКИЙ | async в Subscribe | ✅ |
 | 23 | GridBot.cs | НИЗКИЙ | Resume не очищает словари | ✅ |
 | 24 | FundingArbitrageService.cs | НИЗКИЙ | Статический HttpClient | ✅ |
 | 25 | BacktestEngine.cs | НИЗКИЙ | Дубль в equity curve | ✅ |
+| 26 | DcaBot.cs | ВЫСОКИЙ | async-void Timer крашит процесс | ✅ |
 
 ---
 
-## ✅ ВСЕ 25 БАГОВ ИСПРАВЛЕНЫ
+## ✅ 63 БАГА ИСПРАВЛЕНО (+ 3 задокументированных follow-up)
 
-Реестр закрыт. Дальнейшие задачи — в DEVELOPMENT_ROADMAP.md.
+Баги 01–25 закрыты ранее. 26–48 найдены новым многоагентным аудитом по слоям
+(конкурентность, утечки, торговая математика, гейтвеи, бэкенд/AI, god-object,
+серверные проекты) с adversarial-верификацией правок. Baseline до и после:
+**713/713 тестов пройдено**. Дальнейшие задачи — в DEVELOPMENT_ROADMAP.md.
+
+| # | Файл | Приоритет | Тема | Статус |
+|---|---|---|---|---|
+| 26 | DcaBot.cs | ВЫСОКИЙ | async-void Timer крашит процесс | ✅ |
+| 27 | Gateway.DEX/EvmMempoolMonitor.cs | СРЕДНИЙ | HttpClient не диспоузится (утечка) | ✅ |
+| 28 | Gateway.DEX/WalletCopyTradeMonitor.cs | СРЕДНИЙ | HttpClient не диспоузится (утечка) | ✅ |
+| 29 | Gateway.DEX/EvmDexFactoryMonitor.cs | СРЕДНИЙ | Web3/HttpClient не диспоузится | ✅ |
+| 30 | Gateway.Binance/*Gateway.cs | ВЫСОКИЙ | таймфрейм без нормализации регистра → свечи 1m | ✅ |
+| 31 | Gateway.OKX/OKXFuturesGateway.cs | ВЫСОКИЙ | SetMarginMode сбрасывает плечо в 1x | ✅ |
+| 32 | Gateway.KuCoin/KucoinFuturesGateway.cs | ВЫСОКИЙ | размер ордера без множителя контракта | ✅ |
+| 33 | StatArbService.cs | ВЫСОКИЙ | двойное открытие позиции + гонка Queue | ✅ |
+| 34 | MarketScannerService.cs | ВЫСОКИЙ | enumerate _levels без lock → краш скана | ✅ |
+| 35 | PnlDashboardService.cs | СРЕДНИЙ | _records/_knownIds без синхронизации | ✅ |
+| 36 | PortfolioDeskViewModel.cs | СРЕДНИЙ | async void без try/catch (краш) | ✅ |
+| 37 | TelegramSignalViewModel.cs | СРЕДНИЙ | async void SendSignal без try/catch | ✅ |
+| 38 | WebApi/Program.cs + SharedStateService.cs | ВЫСОКИЙ | webhook NRE на null-поле (анонимный 500) | ✅ |
+| 39 | AIEngine/AiJson.cs + 4 провайдера | СРЕДНИЙ | GetDecimal → FormatException мимо catch | ✅ |
+| 40 | Server.Api/Program.cs | ВЫСОКИЙ | /api/keys fail-open без ADMIN_TOKEN | ✅ |
+| 41 | Core/Trading/DexPerpPaperEngine.cs | СРЕДНИЙ | частичное сокращение не масштабирует margin (ROE) | ✅ |
+| 42 | FundingArbitrageService.cs | ВЫСОКИЙ | сбой perp-ноги → голый spot; добавлен откат | ✅ |
+| 43 | StatArbService.cs | ВЫСОКИЙ | сбой 2-й ноги → голая позиция; добавлен откат | ✅ |
+| 44 | CandleWorker/Notifier.cs | СРЕДНИЙ | channel-lookup вне try ломает контракт "never throws" | ✅ |
+| 45 | WhaleTracker/WhaleTrackerService.cs | СРЕДНИЙ | CancellationTokenSource не диспоузится | ✅ |
+| 46 | MainWindowViewModel.cs | ВЫСОКИЙ | Telegram-сигнал торгует АКТИВНЫМ символом, не символом сигнала | ✅ |
+| 47 | MainWindowViewModel.cs | СРЕДНИЙ | REVERSE в spot-режиме шлёт ошибочный 2-й sell | ✅ |
+| 48 | MainWindowViewModel.cs | ВЫСОКИЙ | TP/SL software на OKX/KuCoin futures — фантом, позиция без защиты | ✅ |
+
+Подробности по каждому — в коде (комментарии на месте правки со ссылкой на номер).
+
+## ✅ ПЕРП-АУДИТ (49–63) — все денежные операции в перп-режиме
+
+Отдельный сквозной аудит всех money-операций в perpetual/futures (4 CEX-гейтвея, ручной
+futures в MainWindowViewModel, боты, DEX-перп, funding-арбитраж) с трассировкой
+side/positionSide/размера/reduceOnly/плеча/margin/TP-SL/close/reverse и adversarial-проверкой.
+
+| # | Файл | Приоритет | Тема | Статус |
+|---|---|---|---|---|
+| 49 | Gateway.OKX/OKXFuturesGateway.cs | ВЫСОКИЙ | `sz` в контрактах, слался base → размер ~100× неверный (ctVal-конверсия) | ✅ |
+| 50 | Gateway.OKX/OKXFuturesGateway.cs | ВЫСОКИЙ | reduceOnly не передавался → close мог открыть обратную позицию | ✅ |
+| 51 | Gateway.OKX/OKXFuturesGateway.cs | СРЕДНИЙ | позиция в контрактах, не в base (× ctVal для согласованного round-trip) | ✅ |
+| 52 | Gateway.Bybit/BybitFuturesGateway.cs | ВЫСОКИЙ | размер позиции без знака → шорт не закрывался | ✅ |
+| 53 | Gateway.KuCoin/KucoinFuturesGateway.cs | ВЫСОКИЙ | позиция без знака + в контрактах → шорт не закрывался/двойное деление | ✅ |
+| 54 | Gateway.Binance/BinanceFuturesGateway.cs | СРЕДНИЙ | reduceOnly в hedge-режиме → -1106, close/TP/SL отклонялись | ✅ |
+| 55 | MainWindowViewModel.cs | ВЫСОКИЙ | смена плеча/margin не сбрасывала кэш → Bybit/OKX открывали со старым плечом | ✅ |
+| 56 | MainWindowViewModel.cs | СРЕДНИЙ | fallback позиции по чужому символу → TP/SL на не том инструменте | ✅ |
+| 57 | DexPerpTradingViewModel.cs | ВЫСОКИЙ | в LIVE позицию нельзя закрыть (Close звал бумажный движок) — честный отказ | ✅ |
+| 58 | DexPerpTradingViewModel.cs | СРЕДНИЙ | live-маркет как Gtc-лимит по mid → мог не исполниться (marketable-буфер) | ✅ |
+| 59 | Core/Trading/DexPerpMarketSimulator.cs | НИЗКИЙ | Reanchor не пересчитывал band/anchor (latent) | ✅ |
+| 60 | TerminalUI/Services/GridBot.cs | ВЫСОКИЙ | нет one-way/hedge fallback → грид не торговал на one-way; init-sells отклонялись | ✅ |
+| 61 | TerminalUI/Services/FundingArbitrageService.cs | ВЫСОКИЙ | нет one-way fallback; close мог оставить голый шорт; reinvest без отката | ✅ |
+| 62 | TerminalUI/Services/TradingBot.cs | СРЕДНИЙ | пирамидинг при повторных сигналах — TP/SL покрывал только последний вход | ✅ |
+| 63 | TerminalUI/Services/TpSlManager.cs | СРЕДНИЙ | сбой TP оставлял позицию только с SL (нет software-fallback) | ✅ |
+
+Проверено корректным (в аудите): TradingBot/AiTrader close и one-way-retry, TpSlManager
+reduceOnly-закрытия, Binance/Bybit нативный TP/SL, DexPerpPaperEngine open/add/reduce/close/
+liquidation/PnL/ROE, Hyperliquid/GMX маппинг аргументов, base-asset единицы во всех сервисах.
+
+### Найдено, НО осознанно не исправлено (требует дизайна/тестов; менять money-код вслепую опасно)
+
+Аудит нашёл ещё 3 реальных, но не-тривиальных пункта. Они задокументированы здесь как
+follow-up, чтобы не вносить непроверенные изменения в код, двигающий деньги:
+
+- **GridBotRunner.cs (Executor) — неидемпотентный старт грида.** Живой старт размещает всю
+  лестницу лимиток без детерминированного `clientOrderId`; краш до `MarkRunAsync` → повторное
+  размещение всей сетки. Фикс: детерминированный client-order-id на ячейку (как в DCA-пути) +
+  дедуп на бирже. Риск: меняет живое размещение ордеров — нужен аккуратный прогон на testnet.
+- **WithdrawalExecutorService.cs (Executor) — застрявший статус `executing`.** Краш между
+  claim и `CompleteAsync` навсегда оставляет вывод в `executing` (не ретраится, не отменяется).
+  Фикс: lease/timeout-reaper или идемпотентный ключ + сверка на старте. Дизайн-уровень.
+- **CrossExchangeArbitrageService.cs — частичный филл при параллельных ногах.** Если одна нога
+  исполнилась, а вторая — нет, позиция несбалансирована. НЕ добавлен авто-откат: модель тут
+  инвентарная (spot-ребаланс между биржами), авто-продажа могла бы продать активы, которые
+  пользователь хочет держать. Требует подтверждения намерения по инвентарной модели.
+
+---
+
+### ~~БАГ-26~~ — ✅ ИСПРАВЛЕН — DcaBot: async-void Timer крашит процесс
+
+**Файл:** `CryptoAITerminal.TerminalUI/Services/DcaBot.cs`
+**Строка:** 46
+
+**Код с багом:**
+```csharp
+_checkTimer = new Timer(async _ => await CheckAndExecuteAsync(), null,
+    TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+```
+
+**Почему баг:** Тот же класс, что БАГ-11 в GridBot. `async _ =>` в `Timer` — эквивалент
+`async void`: непойманное исключение улетает в ThreadPool и крашит приложение.
+`CheckAndExecuteAsync` защищает try/catch только вокруг `ExecuteCycleAsync`, но
+`await _executeLock.WaitAsync(0)` (строка 62) стоит ВНЕ try. После `StopAsync` + `Dispose`
+семафор освобождён, и висящий тик таймера вызывает `WaitAsync(0)` на задиспоуженном
+`SemaphoreSlim` → `ObjectDisposedException` → необработанное исключение → краш.
+
+**Исправление:** Как в GridBot (БАГ-11) — не передавать async-лямбду в `Timer`,
+обернуть в `SafeCheckAsync` с полным try/catch (включая `ObjectDisposedException`):
+```csharp
+_checkTimer = new Timer(_ => { _ = SafeCheckAsync(); }, null, ...);
+
+private async Task SafeCheckAsync()
+{
+    try { await CheckAndExecuteAsync(); }
+    catch (ObjectDisposedException) { /* бот остановлен */ }
+    catch (Exception ex) { OnLog?.Invoke($"Cycle error: {ex.Message}"); }
+}
+```

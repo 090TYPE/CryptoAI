@@ -8,6 +8,9 @@ public sealed record SecretInfo(Guid Id, string Kind, string? Label, string Exch
 /// <summary>The encrypted material — returned ONLY to the executor node for signing.</summary>
 public sealed record SecretCipher(Guid Id, byte[] Ciphertext, byte[] WrappedDek);
 
+/// <summary>Encrypted trade-key material plus its permissions — executor-only, for live bot orders.</summary>
+public sealed record SecretKeyMaterial(Guid Id, byte[] Ciphertext, byte[] WrappedDek, string? Permissions);
+
 /// <summary>
 /// Stores envelope-encrypted custodial secrets. The public API writes ciphertext (encrypted
 /// before it reaches here) and reads metadata only; decryption material is exposed solely via
@@ -53,6 +56,18 @@ public sealed class SecretsRepository
                              FROM secrets WHERE id = @id;";
         await using var conn = await _db.OpenConnectionAsync(ct);
         return await conn.QuerySingleOrDefaultAsync<SecretCipher>(new CommandDefinition(sql, new { id }, cancellationToken: ct));
+    }
+
+    /// <summary>Executor-only: newest CEX trade key for a user+exchange, with permissions for the trade-only gate.</summary>
+    public async Task<SecretKeyMaterial?> FindCexKeyAsync(Guid userId, string exchange, CancellationToken ct = default)
+    {
+        const string sql = @"SELECT id AS Id, ciphertext AS Ciphertext, wrapped_dek AS WrappedDek, permissions AS Permissions
+                             FROM secrets
+                             WHERE user_id = @userId AND kind = 'cex_api' AND exchange_or_chain = @exchange
+                             ORDER BY created_utc DESC LIMIT 1;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        return await conn.QuerySingleOrDefaultAsync<SecretKeyMaterial>(
+            new CommandDefinition(sql, new { userId, exchange }, cancellationToken: ct));
     }
 
     /// <summary>Executor-only: newest matching secret for a user (e.g. wallet_pk for a chain).</summary>

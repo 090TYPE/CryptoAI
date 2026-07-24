@@ -88,8 +88,19 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
         SelectOrderTypeCommand = ReactiveCommand.Create<string>(v => { if (!string.IsNullOrWhiteSpace(v)) OrderType = v; }, outputScheduler: App.UiScheduler);
         SelectMarginModeCommand = ReactiveCommand.Create<string>(v => { if (!string.IsNullOrWhiteSpace(v)) MarginMode = v; }, outputScheduler: App.UiScheduler);
         PlaceOrderCommand = ReactiveCommand.Create(PlaceOrder, outputScheduler: App.UiScheduler);
-        CloseCommand = ReactiveCommand.Create(() => { _engine.Close(); StatusMessage = "Position closed."; Republish(); }, outputScheduler: App.UiScheduler);
-        ReverseCommand = ReactiveCommand.Create(() => { _engine.Reverse(); StatusMessage = "Position reversed."; Republish(); }, outputScheduler: App.UiScheduler);
+        CloseCommand = ReactiveCommand.Create(() =>
+        {
+            // In LIVE mode the real position lives on the venue, not in the paper _engine —
+            // running _engine.Close() here would falsely report "closed" while the real
+            // Hyperliquid position stays open. This desk routes live ENTRIES only.
+            if (_isLiveTrading) { StatusMessage = "LIVE: close this position on the Hyperliquid venue — the desk routes live entries only, not exits."; return; }
+            _engine.Close(); StatusMessage = "Position closed."; Republish();
+        }, outputScheduler: App.UiScheduler);
+        ReverseCommand = ReactiveCommand.Create(() =>
+        {
+            if (_isLiveTrading) { StatusMessage = "LIVE: reverse by closing on the Hyperliquid venue, then opening the other side — the desk routes live entries only."; return; }
+            _engine.Reverse(); StatusMessage = "Position reversed."; Republish();
+        }, outputScheduler: App.UiScheduler);
         CancelOrderCommand = ReactiveCommand.Create<string>(id => { _engine.CancelOrder(id); Republish(); }, outputScheduler: App.UiScheduler);
         ClosePartialCommand = ReactiveCommand.Create<string>(ClosePartial, outputScheduler: App.UiScheduler);
         ArmTrailingCommand = ReactiveCommand.Create(ArmTrailing, outputScheduler: App.UiScheduler);
@@ -408,14 +419,20 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
         }
 
         var anchor = ResolveAnchor();
-        var price = IsLimit && _triggerPrice > 0m ? _triggerPrice : anchor;
+        var isBuy = IsLong;
+        // A Market order sends a marketable limit: cross the spread by a small buffer so it
+        // fills as taker immediately instead of resting at mid as a maker (Gtc). Limit orders
+        // keep their exact trigger price.
+        const decimal marketSlippage = 0.005m; // 0.5%
+        var price = IsLimit && _triggerPrice > 0m
+            ? _triggerPrice
+            : (isBuy ? anchor * (1m + marketSlippage) : anchor * (1m - marketSlippage));
         if (price <= 0m)
         {
             StatusMessage = "No live reference price yet — try again once the market loads.";
             return;
         }
 
-        var isBuy = IsLong;
         StatusMessage = $"Sending LIVE {(isBuy ? "LONG" : "SHORT")} {_sizeTokens} {coin} @ {Format(price)} to Hyperliquid…";
         try
         {

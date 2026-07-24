@@ -544,6 +544,23 @@ public sealed class UiLocalizationService
         ["Labeled Wallet Alerts"] = "Алерты метк. кошельков",
         ["Start Tracking"] = "Запустить слежение",
         ["Stop Tracking"] = "Остановить слежение",
+
+        // Copy-trading wallet watch + morning briefing. These used to be hardcoded Russian in
+        // the views/VM, which bypassed this dictionary and stayed Russian even in English mode.
+        // The source strings are English now, so the Russian lives here instead.
+        ["Wallet Watch"] = "Слежка за кошельками",
+        ["Watching is off"] = "Слежка выключена",
+        ["Wallet address (0x...)"] = "Адрес кошелька (0x...)",
+        ["Label (name)"] = "Метка (имя)",
+        ["+ Add"] = "+ Добавить",
+        ["Copy trades"] = "Копировать",
+        ["Stronger \"copy this\" alert on a buy (no auto-execution)"] =
+            "Усиленный алерт «скопируй» при покупке (без авто-сделки)",
+        ["Auto in the morning"] = "Авто утром",
+        ["Enter a valid wallet address and network."] = "Укажите корректный адрес кошелька и сеть.",
+        ["Watching stopped."] = "Слежка остановлена.",
+        ["Add other people's wallets, then press Start. You'll get alerts when they buy or sell. The Copy checkbox raises the alert priority (auto-execution ships in a later update)."] =
+            "Добавь чужие кошельки → жми «Старт». Будешь получать уведомления, что они покупают/продают. Галка «Копировать» = усиленный алерт (авто-исполнение сделок — в следующем обновлении).",
         ["Polling ETH · BSC · Solana"] = "Опрос ETH · BSC · Solana",
         ["Free keys increase rate limits from 1 req/5s to 5 req/s. Solscan uses public API."] =
             "Бесплатные ключи увеличивают лимит с 1 запроса/5с до 5 запросов/с. Solscan использует публичный API.",

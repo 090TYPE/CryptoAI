@@ -1,6 +1,9 @@
 using System.Text;
 using System.Text.Json;
 using System.Threading.RateLimiting;
+using CryptoAITerminal.Core.Contracts;
+using CryptoAITerminal.Executor;
+using CryptoAITerminal.Server.Api;
 using CryptoAITerminal.Server.Common;
 using CryptoAITerminal.Server.Data;
 
@@ -40,6 +43,20 @@ var kekB64 = builder.Configuration["CRYPTOAI_KEK_B64"];
 if (!string.IsNullOrWhiteSpace(kekB64))
     builder.Services.AddSingleton<IEnvelopeCipher>(LocalAesEnvelopeCipher.FromBase64(kekB64));
 
+// ── Manual trading (server-side execution) ───────────────────────────────────
+// Collaborators live in the executor project; the API owns only the HTTP surface.
+builder.Services.AddSingleton<IGatewayFactory, GatewayFactory>();
+builder.Services.AddSingleton<ICexKeyProvider, SecretsCexKeyProvider>();
+builder.Services.AddSingleton<IPriceSource>(new HttpPriceSource(new HttpClient { Timeout = TimeSpan.FromSeconds(15) }));
+builder.Services.AddSingleton<IManualRiskGate>(_ => new PerOrderCapManualRiskGate(
+    decimal.TryParse(Environment.GetEnvironmentVariable("MANUAL_MAX_NOTIONAL_USD"), out var cap) ? cap : 5000m));
+builder.Services.AddSingleton<IOrderJournal, OrderJournalRepository>();
+builder.Services.AddSingleton<ITradingService, TradingService>();
+
+// Live order-status / notification stream to the desktop terminal.
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<ITradeNotifier, TradeNotifier>();
+
 // License verification: same RSA-signed tokens the app issues. Override the key in prod
 // via LICENSE_PUBLIC_KEY_PEM; falls back to the app's embedded public key.
 var licensePubKey = builder.Configuration["LICENSE_PUBLIC_KEY_PEM"] ?? LicenseTokenValidator.DefaultPublicKeyPem;
@@ -73,7 +90,8 @@ app.UseCors();
 app.UseRateLimiter();
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
-// /health is open. /api/keys is admin-gated (X-Admin == ADMIN_TOKEN when set).
+// /health is open. /api/keys is admin-gated: requires X-Admin == ADMIN_TOKEN, and is
+// denied outright when ADMIN_TOKEN is unset (fail closed).
 // Everything else needs a valid X-License: the token's RSA signature is verified (shared
 // LicenseTokenValidator), then the license Name resolves to a user id in ctx.Items["uid"].
 app.Use(async (ctx, next) =>
@@ -88,8 +106,10 @@ app.Use(async (ctx, next) =>
 
     if (path.StartsWith("/api/keys", StringComparison.OrdinalIgnoreCase))
     {
+        // Fail CLOSED: this endpoint can read/overwrite server-held provider keys, so
+        // an unset ADMIN_TOKEN must deny access (not fall through unauthenticated).
         var admin = Environment.GetEnvironmentVariable("ADMIN_TOKEN");
-        if (!string.IsNullOrEmpty(admin) &&
+        if (string.IsNullOrEmpty(admin) ||
             !string.Equals(ctx.Request.Headers["X-Admin"], admin, StringComparison.Ordinal))
         {
             await Deny(ctx, "admin token required");
@@ -471,6 +491,10 @@ app.MapPut("/api/keys/{provider}", async (string provider, KeyUpdate body, Provi
     await keys.SetAsync(provider, body.ApiKey, body.Enabled, body.Note, ct);
     return Results.Ok(new { provider, body.Enabled });
 });
+
+// ── Manual trading (place / cancel / positions) ───────────────────────────────
+app.MapTradeEndpoints();
+app.MapHub<TradeHub>("/hubs/trade");
 
 app.Run();
 

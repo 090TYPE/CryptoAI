@@ -29,6 +29,22 @@ public sealed class GridBot : IDisposable
     private decimal _spacing;
     private Timer? _pollTimer;
     private volatile bool _isPaused;
+    // Futures account mode. Default one-way (retail default); flips to hedge on the first
+    // "position side mismatch" reject and retries, so the grid works on either account mode.
+    private bool _isHedgeMode;
+
+    private FuturesPositionSide GridPositionSide() =>
+        _cfg.MarketType == TradingMarketType.FuturesUsdM
+            ? (_isHedgeMode ? FuturesPositionSide.Long : FuturesPositionSide.Both)
+            : FuturesPositionSide.Both;
+
+    // Binance -2019/-1106, Bybit "position idx", OKX 51124 — the account is in the other mode.
+    private static bool IsPositionSideMismatch(Exception ex)
+    {
+        var msg = ex.Message?.ToLowerInvariant() ?? string.Empty;
+        return msg.Contains("position side") || msg.Contains("position mode")
+            || msg.Contains("position idx") || msg.Contains("51124");
+    }
     private volatile bool _isStopped;
     private readonly SemaphoreSlim _pollLock = new(1, 1);
 
@@ -103,12 +119,9 @@ public sealed class GridBot : IDisposable
                 await PlaceBuyAtLevelAsync(i);
                 buyCount++;
             }
-            else if (bottom >= currentPrice && _cfg.MarketType == TradingMarketType.FuturesUsdM)
-            {
-                // Futures only: sell (short entry) above current price
-                await PlaceSellAtLevelAsync(i + 1);
-                sellCount++;
-            }
+            // No init sells above price: this is a long-only grid, so there is no position to
+            // reduce at startup. A reduce-only sell here is rejected by the exchange. Sells are
+            // placed dynamically one level up when a buy fills (see PollFillsAsync).
         }
 
         OnLog?.Invoke($"Orders placed: {buyCount} buys, {sellCount} sells");
@@ -131,13 +144,23 @@ public sealed class GridBot : IDisposable
                 MarketType = _cfg.MarketType,
                 Leverage = _cfg.MarketType == TradingMarketType.FuturesUsdM ? _cfg.Leverage : null,
                 MarginMode = _cfg.MarginMode,
-                PositionSide = _cfg.MarketType == TradingMarketType.FuturesUsdM
-                    ? FuturesPositionSide.Long
-                    : FuturesPositionSide.Both
+                PositionSide = GridPositionSide()
             };
-            var placed = await _gateway.PlaceOrderAsync(order);
-            _activeBuyOrders[placed.Id] = levelIndex;
-            OnLog?.Invoke($"Buy L{levelIndex} @ {price:N4}");
+            try
+            {
+                var placed = await _gateway.PlaceOrderAsync(order);
+                _activeBuyOrders[placed.Id] = levelIndex;
+                OnLog?.Invoke($"Buy L{levelIndex} @ {price:N4}");
+            }
+            catch (Exception ex) when (IsPositionSideMismatch(ex))
+            {
+                _isHedgeMode = !_isHedgeMode;
+                order.PositionSide = GridPositionSide();
+                OnLog?.Invoke($"Position-side mismatch — switched to {(_isHedgeMode ? "hedge" : "one-way")} mode and retrying buy L{levelIndex}.");
+                var placed = await _gateway.PlaceOrderAsync(order);
+                _activeBuyOrders[placed.Id] = levelIndex;
+                OnLog?.Invoke($"Buy L{levelIndex} @ {price:N4}");
+            }
         }
         catch (Exception ex)
         {
@@ -162,15 +185,26 @@ public sealed class GridBot : IDisposable
                 MarketType = _cfg.MarketType,
                 Leverage = _cfg.MarketType == TradingMarketType.FuturesUsdM ? _cfg.Leverage : null,
                 MarginMode = _cfg.MarginMode,
-                // For Futures: close the Long position opened by the corresponding buy
-                PositionSide = _cfg.MarketType == TradingMarketType.FuturesUsdM
-                    ? FuturesPositionSide.Long
-                    : FuturesPositionSide.Both,
+                // For Futures: reduce-only sell closes the long opened by the corresponding buy
+                // (PositionSide.Long in hedge mode, Both in one-way).
+                PositionSide = GridPositionSide(),
                 ReduceOnly = _cfg.MarketType == TradingMarketType.FuturesUsdM
             };
-            var placed = await _gateway.PlaceOrderAsync(order);
-            _activeSellOrders[placed.Id] = levelIndex;
-            OnLog?.Invoke($"Sell L{levelIndex} @ {price:N4}");
+            try
+            {
+                var placed = await _gateway.PlaceOrderAsync(order);
+                _activeSellOrders[placed.Id] = levelIndex;
+                OnLog?.Invoke($"Sell L{levelIndex} @ {price:N4}");
+            }
+            catch (Exception ex) when (IsPositionSideMismatch(ex))
+            {
+                _isHedgeMode = !_isHedgeMode;
+                order.PositionSide = GridPositionSide();
+                OnLog?.Invoke($"Position-side mismatch — switched to {(_isHedgeMode ? "hedge" : "one-way")} mode and retrying sell L{levelIndex}.");
+                var placed = await _gateway.PlaceOrderAsync(order);
+                _activeSellOrders[placed.Id] = levelIndex;
+                OnLog?.Invoke($"Sell L{levelIndex} @ {price:N4}");
+            }
         }
         catch (Exception ex)
         {

@@ -21,6 +21,20 @@ services:
       - ./db/002_dex_data.sql:/docker-entrypoint-initdb.d/002_dex_data.sql:ro
       - ./db/003_more_data.sql:/docker-entrypoint-initdb.d/003_more_data.sql:ro
       - ./db/004_custodial.sql:/docker-entrypoint-initdb.d/004_custodial.sql:ro
+      - ./db/005_alerts.sql:/docker-entrypoint-initdb.d/005_alerts.sql:ro
+      - ./db/006_bots.sql:/docker-entrypoint-initdb.d/006_bots.sql:ro
+      - ./db/007_notifications.sql:/docker-entrypoint-initdb.d/007_notifications.sql:ro
+      - ./db/008_2fa.sql:/docker-entrypoint-initdb.d/008_2fa.sql:ro
+      - ./db/009_ai_scores.sql:/docker-entrypoint-initdb.d/009_ai_scores.sql:ro
+      - ./db/010_ai_anomalies.sql:/docker-entrypoint-initdb.d/010_ai_anomalies.sql:ro
+      - ./db/011_inbox.sql:/docker-entrypoint-initdb.d/011_inbox.sql:ro
+      - ./db/012_ai_digests.sql:/docker-entrypoint-initdb.d/012_ai_digests.sql:ro
+      - ./db/013_grid_orders.sql:/docker-entrypoint-initdb.d/013_grid_orders.sql:ro
+      - ./db/014_tsl_positions.sql:/docker-entrypoint-initdb.d/014_tsl_positions.sql:ro
+      - ./db/015_user_flags.sql:/docker-entrypoint-initdb.d/015_user_flags.sql:ro
+      - ./db/016_bot_orders_idempotency.sql:/docker-entrypoint-initdb.d/016_bot_orders_idempotency.sql:ro
+      - ./db/017_tsl_native_sl.sql:/docker-entrypoint-initdb.d/017_tsl_native_sl.sql:ro
+      - ./db/018_trade_orders.sql:/docker-entrypoint-initdb.d/018_trade_orders.sql:ro
     ports:
       - "5432:5432"   # dev: lets the host admin console (cryptoai-admin) connect. Remove in prod.
     networks: [core]
@@ -32,13 +46,13 @@ services:
 
   api:
     build:
-      context: ./CryptoAITerminal.Server.Api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: CryptoAITerminal.Server.Api/Dockerfile
     environment:
       DB_CONN: "Host=db;Database=cryptoai;Username=postgres;Password=${DB_PASSWORD:-postgres}"
       ASPNETCORE_URLS: "http://+:8080"
       # Secrets come from .env (gitignored). See .env.example.
-      CRYPTOAI_KEK_B64: ${CRYPTOAI_KEK_B64:?set CRYPTOAI_KEK_B64 in .env — generate: openssl rand -base64 32}
+      CRYPTOAI_KEK_B64: "${CRYPTOAI_KEK_B64:?set CRYPTOAI_KEK_B64 in .env — generate with openssl rand -base64 32}"
       ADMIN_TOKEN: ${ADMIN_TOKEN:?set ADMIN_TOKEN in .env}
       WITHDRAWAL_DELAY_MINUTES: ${WITHDRAWAL_DELAY_MINUTES:-30}
     ports:
@@ -51,8 +65,8 @@ services:
 
   worker:
     build:
-      context: ./CryptoAITerminal.CandleWorker
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: CryptoAITerminal.CandleWorker/Dockerfile
     environment:
       DB_CONN: "Host=db;Database=cryptoai;Username=postgres;Password=${DB_PASSWORD:-postgres}"
     depends_on:
@@ -63,8 +77,8 @@ services:
 
   executor:
     build:
-      context: ./CryptoAITerminal.Executor
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: CryptoAITerminal.Executor/Dockerfile
     environment:
       DB_CONN: "Host=db;Database=cryptoai;Username=postgres;Password=${DB_PASSWORD:-postgres}"
       # MUST match the API's KEK so it can decrypt what the API encrypted (from .env).

@@ -43,7 +43,7 @@ public sealed class AerodromePoolCreatedEventDto : IEventDTO
     public BigInteger PoolIndex { get; set; }
 }
 
-public sealed class EvmDexFactoryMonitor
+public sealed class EvmDexFactoryMonitor : IDisposable
 {
     private readonly Web3 _web3;
     private readonly EvmFactoryMonitorDefinition _definition;
@@ -155,6 +155,8 @@ public sealed class EvmDexFactoryMonitor
             stablePool,
             blockNumber);
     }
+
+    public void Dispose() => (_web3.Client as IDisposable)?.Dispose();
 }
 
 public sealed record EvmFactoryMonitorDefinition(

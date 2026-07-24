@@ -52,6 +52,7 @@ public sealed class PnlDashboardService
 
     private readonly List<TradeRecord> _records = new();
     private readonly HashSet<string>   _knownIds = new(StringComparer.Ordinal);
+    private readonly object _lock = new(); // bot callbacks (bg threads) vs dashboard reads (UI thread)
 
     // ── Persistence ──────────────────────────────────────────────────────────
 
@@ -62,9 +63,10 @@ public sealed class PnlDashboardService
         {
             var loaded = AtomicJsonFile.Read<List<TradeRecord>>(StoragePath);
             if (loaded is null) return;
-            foreach (var r in loaded)
-                if (_knownIds.Add(r.Id))
-                    _records.Add(r);
+            lock (_lock)
+                foreach (var r in loaded)
+                    if (_knownIds.Add(r.Id))
+                        _records.Add(r);
         }
         catch
         {
@@ -72,7 +74,12 @@ public sealed class PnlDashboardService
         }
     }
 
-    public void Save() => AtomicJsonFile.Write(StoragePath, _records, JsonOpts);
+    public void Save()
+    {
+        List<TradeRecord> snapshot;
+        lock (_lock) snapshot = _records.ToList();
+        AtomicJsonFile.Write(StoragePath, snapshot, JsonOpts);
+    }
 
     // ── Write ─────────────────────────────────────────────────────────────────
 
@@ -82,8 +89,11 @@ public sealed class PnlDashboardService
 
     public void RecordTrade(TradeRecord record)
     {
-        if (!_knownIds.Add(record.Id)) return; // de-dup
-        _records.Add(record);
+        lock (_lock)
+        {
+            if (!_knownIds.Add(record.Id)) return; // de-dup
+            _records.Add(record);
+        }
         Save();
         OnTradeRecorded?.Invoke(record);
     }
@@ -96,7 +106,7 @@ public sealed class PnlDashboardService
         foreach (var s in sniper)
         {
             var id = $"sniper:{s.TokenAddress}:{s.OpenedAtLocal:o}";
-            if (!_knownIds.Add(id)) continue;
+            lock (_lock) { if (!_knownIds.Add(id)) continue; }
 
             var r = new TradeRecord
             {
@@ -115,7 +125,7 @@ public sealed class PnlDashboardService
                 ExitReason  = s.ExitReason,
                 Notes       = s.ExecutionMode
             };
-            _records.Add(r);
+            lock (_lock) _records.Add(r);
             dirty = true;
         }
         if (dirty) Save();
@@ -123,14 +133,19 @@ public sealed class PnlDashboardService
 
     // ── Query / filter ────────────────────────────────────────────────────────
 
-    public IReadOnlyList<TradeRecord> GetAll() => _records.AsReadOnly();
+    public IReadOnlyList<TradeRecord> GetAll()
+    {
+        lock (_lock) return _records.ToList();
+    }
 
     public IReadOnlyList<TradeRecord> Filter(
         string period = "All",
         string source = "All")
     {
         var now = DateTime.UtcNow;
-        IEnumerable<TradeRecord> q = _records;
+        List<TradeRecord> snapshot;
+        lock (_lock) snapshot = _records.ToList();
+        IEnumerable<TradeRecord> q = snapshot;
 
         q = period switch
         {

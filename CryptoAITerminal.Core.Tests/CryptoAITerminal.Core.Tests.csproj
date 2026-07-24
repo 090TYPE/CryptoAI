@@ -30,6 +30,7 @@
     <ProjectReference Include="..\CryptoAITerminal.TerminalUI\CryptoAITerminal.TerminalUI.csproj" />
     <ProjectReference Include="..\CryptoAITerminal.LicenseBot\CryptoAITerminal.LicenseBot.csproj" />
     <ProjectReference Include="..\CryptoAITerminal.Backend\CryptoAITerminal.Backend.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.Executor\CryptoAITerminal.Executor.csproj" />
   </ItemGroup>
 
 </Project>

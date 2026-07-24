@@ -221,7 +221,9 @@ public class BybitFuturesGateway : IExchangeGateway
                 PositionSide = p.Side == PositionSide.Buy ? FuturesPositionSide.Long
                     : p.Side == PositionSide.Sell ? FuturesPositionSide.Short
                     : FuturesPositionSide.Both,
-                Quantity = p.Quantity,
+                // Bybit V5 size is always non-negative (direction is in Side). Sign it so the
+                // long +/short − contract holds and close-side selection picks the right side.
+                Quantity = p.Side == PositionSide.Sell ? -p.Quantity : p.Quantity,
                 EntryPrice = p.AveragePrice ?? 0m,
                 MarkPrice = p.MarkPrice ?? 0m,
                 UnrealizedPnl = p.UnrealizedPnl ?? 0m,

@@ -73,7 +73,7 @@ public sealed class PortfolioRebalanceAiProvider
                 var sym = o.TryGetProperty("symbol", out var s) ? s.GetString() ?? "" : "";
                 if (string.IsNullOrWhiteSpace(sym)) continue;
                 var pct = o.TryGetProperty("target_pct", out var p) && p.ValueKind == JsonValueKind.Number
-                    ? Math.Clamp(p.GetDecimal(), 0m, 100m) : 0m;
+                    && p.TryGetDecimal(out var rawPct) ? Math.Clamp(rawPct, 0m, 100m) : 0m;
                 var reason = o.TryGetProperty("reason", out var r) ? r.GetString() ?? "" : "";
                 targets.Add(new RebalanceTarget(sym.Trim().ToUpperInvariant(), pct, reason.Trim()));
             }

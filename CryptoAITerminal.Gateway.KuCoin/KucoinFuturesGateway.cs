@@ -20,8 +20,30 @@ public class KucoinFuturesGateway : IExchangeGateway, IDisposable
     private readonly Subject<MarketData> _marketDataSubject = new();
     private readonly IReadOnlyList<string> _symbols;
     private readonly ConcurrentDictionary<string, string> _orderSymbols = new();
+    private readonly ConcurrentDictionary<string, decimal> _contractMultipliers = new();
     private Timer? _tickerTimer;
     private int _defaultLeverage = 1;
+
+    /// <summary>
+    /// Returns the KuCoin futures contract multiplier (base-asset amount per 1 contract),
+    /// cached per symbol. Throws (rather than guessing 1) when it cannot be resolved, so a
+    /// transient API failure never places a wrong-sized order — and only successful lookups
+    /// are cached, so a failure is retried on the next order instead of being poisoned.
+    /// </summary>
+    private async Task<decimal> GetContractMultiplierAsync(string kucoinSymbol)
+    {
+        if (_contractMultipliers.TryGetValue(kucoinSymbol, out var cached))
+            return cached;
+
+        var contract = await _restClient.FuturesApi.ExchangeData.GetContractAsync(kucoinSymbol);
+        if (!contract.Success || contract.Data?.Multiplier is not > 0m)
+            throw new Exception(
+                $"KuCoin: cannot resolve contract multiplier for {kucoinSymbol} " +
+                $"({contract.Error}); refusing to size the order.");
+
+        _contractMultipliers[kucoinSymbol] = contract.Data.Multiplier;
+        return contract.Data.Multiplier;
+    }
 
     public IObservable<MarketData> MarketDataStream => _marketDataSubject;
 
@@ -121,8 +143,15 @@ public class KucoinFuturesGateway : IExchangeGateway, IDisposable
         var type = order.Type == CoreOrderType.Market ? KucoinNewOrderType.Market : KucoinNewOrderType.Limit;
         var kucoinSymbol = KucoinSymbolHelper.ToFuturesSymbol(order.Symbol);
 
-        // KuCoin Futures требует quantity в контрактах (int) и leverage.
-        var contracts = Math.Max(1, (int)Math.Round(order.Quantity));
+        // KuCoin Futures требует quantity в КОНТРАКТАХ (int), где 1 контракт =
+        // multiplier базового актива (напр. XBTUSDTM: 1 контракт = 0.001 BTC).
+        // order.Quantity — это количество базового актива, поэтому делим на multiplier.
+        var multiplier = await GetContractMultiplierAsync(kucoinSymbol);
+        var contracts = (int)Math.Round(order.Quantity / multiplier, MidpointRounding.AwayFromZero);
+        if (contracts <= 0)
+            throw new Exception(
+                $"KuCoin futures order too small: {order.Quantity} {order.Symbol} < 1 contract " +
+                $"({multiplier} base). Increase size.");
         var leverage  = order.Leverage ?? _defaultLeverage;
         decimal? price = order.Type == CoreOrderType.Limit ? order.Price : null;
 
@@ -197,21 +226,29 @@ public class KucoinFuturesGateway : IExchangeGateway, IDisposable
         var result = await _restClient.FuturesApi.Account.GetPositionsAsync();
         if (!result.Success) return [];
 
-        return result.Data
-            .Where(p => p.CurrentQuantity != 0m)
-            .Select(p => new FuturesPosition
+        var positions = new List<FuturesPosition>();
+        foreach (var p in result.Data.Where(p => p.CurrentQuantity != 0m))
+        {
+            // CurrentQuantity is in CONTRACTS, signed. Convert to SIGNED BASE asset
+            // (× multiplier) so the long +/short − contract holds and the close path
+            // GetOpenPositions→PlaceOrder round-trips to the right contract count.
+            decimal multiplier;
+            try { multiplier = await GetContractMultiplierAsync(p.Symbol); }
+            catch { multiplier = 1m; } // best-effort for display; PlaceOrder still guards strictly
+            positions.Add(new FuturesPosition
             {
                 Symbol     = KucoinSymbolHelper.FromKucoinSymbol(p.Symbol),
                 PositionSide = p.CurrentQuantity > 0m ? FuturesPositionSide.Long : FuturesPositionSide.Short,
-                Quantity   = Math.Abs(p.CurrentQuantity),
+                Quantity   = p.CurrentQuantity * multiplier,
                 EntryPrice = p.AverageEntryPrice,
                 MarkPrice  = p.MarkPrice,
                 UnrealizedPnl   = p.UnrealizedPnl,
                 LiquidationPrice = p.LiquidationPrice,
                 Leverage   = (int)p.RealLeverage,
                 UpdatedAtUtc = DateTime.UtcNow,
-            })
-            .ToList();
+            });
+        }
+        return positions;
     }
 
     public async Task<IReadOnlyList<DexOhlcvPoint>> GetCandlesAsync(string symbol, string timeframe, int limit = 180)

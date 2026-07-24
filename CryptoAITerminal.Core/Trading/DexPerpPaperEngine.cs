@@ -437,6 +437,9 @@ public sealed class DexPerpPaperEngine
             }
             else
             {
+                // Partial reduce: scale locked margin to the surviving size (do this
+                // BEFORE decrementing Size), else Margin stays inflated and ROE is wrong.
+                Position.Margin *= (Position.Size - sizeTokens) / Position.Size;
                 Position.Size -= sizeTokens;
                 Position.MarkPrice = price;
             }

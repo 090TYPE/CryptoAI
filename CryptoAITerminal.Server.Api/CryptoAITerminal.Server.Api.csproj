@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\CryptoAITerminal.Server.Data\CryptoAITerminal.Server.Data.csproj" />
     <ProjectReference Include="..\CryptoAITerminal.Server.Common\CryptoAITerminal.Server.Common.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.Executor\CryptoAITerminal.Executor.csproj" />
   </ItemGroup>
 
 </Project>

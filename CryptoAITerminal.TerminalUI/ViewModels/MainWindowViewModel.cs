@@ -322,6 +322,32 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         AlertsVM = new AlertsViewModel(alertService, _telegram, _discord, _ntfy, _email);
         AlertsVM.ToastRequested += ShowToast;
 
+        // ── Unified smart-notification hub ────────────────────────────────────
+        // One publish point fans out to every configured channel with antispam dedup + an in-app inbox.
+        NotificationInbox = new Services.Notifications.InMemoryNotificationInbox();
+        NotificationHubService = new Services.Notifications.NotificationHub(
+            new Services.Notifications.INotificationChannel[]
+            {
+                new Services.Notifications.DelegateChannel("Desktop",
+                    (n, _) => { ShowToast($"{n.Title}\n{n.Body}"); return System.Threading.Tasks.Task.FromResult(true); }),
+                new Services.Notifications.TelegramChannel(_telegram),
+                new Services.Notifications.DiscordChannel(_discord),
+                new Services.Notifications.NtfyChannel(_ntfy),
+                new Services.Notifications.EmailChannel(_email),
+            },
+            NotificationInbox);
+        // Route fired price alerts through the hub (deduped per alert id).
+        alertService.AlertFired += (_, e) => _ = NotificationHubService.PublishAsync(new Services.Notifications.AppNotification(
+            Title: $"Alert · {e.Alert.Symbol}",
+            Body: $"{e.Alert.ConditionLabel} (now {e.TriggerValue})",
+            Severity: Services.Notifications.NotificationSeverity.Warning,
+            Category: "alert",
+            Symbol: e.Alert.Symbol,
+            DedupKey: $"alert:{e.Alert.Id}",
+            // AlertService already delivers to Telegram/Discord/ntfy/email per the alert's own flags;
+            // the hub only adds the deduped desktop toast + inbox entry (no double external send).
+            ChannelsOnly: new[] { "Desktop" }));
+
         // ── API Credentials commands ──────────────────────────────────────────
         SaveBinanceCredentialsCommand = ReactiveCommand.Create(() =>
         {
@@ -1070,16 +1096,36 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             CompositeRuleVM.Engine.FeedMarketData(data.Symbol, data.LastPrice));
 
         // ── Telegram Inline Signals ───────────────────────────────────────
-        TelegramSignalVM.SignalAccepted += sig =>
+        TelegramSignalVM.SignalAccepted += async sig =>
         {
+            // Guard: PlaceCexMarketOrderAsync trades the desk's active symbol, so a signal
+            // for a different symbol would fire a market order on the WRONG asset with real
+            // funds. Refuse the mismatch instead of trading the wrong thing.
+            if (!string.Equals(sig.Symbol, SelectedTradingSymbol, StringComparison.OrdinalIgnoreCase))
+            {
+                AddLog($"[TG] Signal for {sig.Symbol} ignored — desk is on {SelectedTradingSymbol}. Switch symbol to trade it.");
+                ShowToast($"⚠️ TG signal for {sig.Symbol} skipped (desk on {SelectedTradingSymbol})");
+                return;
+            }
+
             AddLog($"[TG] Accepted: {sig.Side} {sig.Symbol} @ {sig.Price:N2}");
-            ShowToast($"✅ TG Signal executed: {sig.Side} {sig.Symbol}");
-            // Populate trade form and fire market order
             SelectedOrderSide = sig.Side;
+            var qty = sig.Quantity > 0 ? sig.Quantity : TradeQuantity;
             if (sig.Quantity > 0) TradeQuantity = sig.Quantity;
-            _ = sig.Side == "SELL"
-                ? PlaceCexMarketOrderAsync(Core.Enums.OrderSide.Sell, sig.Quantity > 0 ? sig.Quantity : TradeQuantity, reduceOnly: IsManualFuturesMode)
-                : PlaceCexMarketOrderAsync(Core.Enums.OrderSide.Buy,  sig.Quantity > 0 ? sig.Quantity : TradeQuantity);
+            try
+            {
+                // No forced reduceOnly: a SELL signal is an entry (open short on futures /
+                // sell on spot), not merely a position trim.
+                await (sig.Side == "SELL"
+                    ? PlaceCexMarketOrderAsync(Core.Enums.OrderSide.Sell, qty)
+                    : PlaceCexMarketOrderAsync(Core.Enums.OrderSide.Buy,  qty));
+                ShowToast($"✅ TG Signal executed: {sig.Side} {sig.Symbol}");
+            }
+            catch (Exception ex)
+            {
+                AddLog($"[TG] Execution failed: {ex.Message}");
+                ShowToast($"❌ TG Signal failed: {ex.Message}");
+            }
         };
         TelegramSignalVM.SignalSkipped += sig =>
         {
@@ -1472,6 +1518,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             this.RaiseAndSetIfChanged(ref _manualFuturesLeverage, normalized);
             this.RaisePropertyChanged(nameof(CexMarketModeSummary));
             this.RaisePropertyChanged(nameof(ManualLeverageLabel));
+            // Force re-apply on the next order: Bybit/OKX don't re-send leverage per order,
+            // so without this the exchange keeps the stale leverage while the UI shows the new one.
+            _manualFuturesSetupDone.Clear();
         }
     }
     public string ManualFuturesMarginMode
@@ -1488,6 +1537,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             this.RaiseAndSetIfChanged(ref _manualFuturesMarginMode, normalized);
             this.RaisePropertyChanged(nameof(CexMarketModeSummary));
             this.RaisePropertyChanged(nameof(CurrentFuturesMarginModeLabel));
+            // Re-apply margin mode (and leverage) on the next order — see leverage setter.
+            _manualFuturesSetupDone.Clear();
         }
     }
     public string SelectedTradingProfile
@@ -3550,6 +3601,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public SniperViewModel SniperVM { get; }
     public BacktestViewModel BacktestVM { get; }
     public AlertsViewModel AlertsVM { get; }
+
+    /// <summary>Unified smart-notification hub: one publish → antispam-deduped fan-out to all channels + inbox.</summary>
+    public Services.Notifications.NotificationHub NotificationHubService { get; }
+    /// <summary>In-app inbox backing the notification centre (newest first).</summary>
+    public Services.Notifications.InMemoryNotificationInbox NotificationInbox { get; }
+
     public CompositeRuleViewModel        CompositeRuleVM    { get; }
     public OrderTemplatesViewModel       OrderTemplatesVM   { get; }
     public AdvancedTrailingStopViewModel AdvancedTrailingVM { get; }
@@ -4363,7 +4420,10 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             string.Equals(position.Symbol, SelectedTradingSymbol, StringComparison.OrdinalIgnoreCase) &&
             position.Quantity != 0);
 
-        return matchingPosition ?? positions.FirstOrDefault(static position => position.Quantity != 0);
+        // Only the active symbol's position — no cross-symbol fallback. Returning an arbitrary
+        // other-symbol position here would arm TP/SL on the wrong instrument or stitch a foreign
+        // qty/PositionSide onto a reduce-only order for SelectedTradingSymbol.
+        return matchingPosition;
     }
 
     private async Task SyncExchangeManagedOrdersAsync(string symbol)
@@ -4492,15 +4552,16 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             }
             catch (NotSupportedException)
             {
-                // Exchange does not support native TP/SL — register as software-simulated working order.
-                var softId = Guid.NewGuid().ToString("N")[..8];
-                var softOrder = WorkingOrderViewModel.CreateExchangeProtection(
-                    kind, openPosition.Symbol, Math.Abs(openPosition.Quantity), triggerPrice,
-                    softId, 0m, "New", DateTime.Now, true, kind == WorkingOrderKind.TakeProfit ? "TAKE_PROFIT" : "STOP");
-                softOrder.AttachCancel(() => CancelSingleOrder(softOrder));
-                WorkingOrders.Add(softOrder);
-                RaiseWorkingOrdersCollectionChanged();
-                AddLog($"{softOrder.KindLabel} (software) registered at {triggerPrice:N2} — {SelectedFuturesExchange} does not support native conditional orders.");
+                // This exchange has no native futures TP/SL, and the software working-order
+                // engine (ExecuteWorkingOrderAsync / ResolveSoftwarePositionQuantityAsync) only
+                // closes SPOT holdings — it resolves size from the spot base-asset balance and
+                // sends a spot market order, so it cannot reduce a FUTURES position. Registering
+                // a software "protection" here previously showed a protected row that never
+                // triggered — a dangerous false sense of security. Fail honestly instead.
+                var label = kind == WorkingOrderKind.TakeProfit ? "take-profit" : "stop-loss";
+                AddLog($"⚠️ {SelectedFuturesExchange} has no native futures {label}, and software " +
+                       $"protection is spot-only — {label.ToUpperInvariant()} was NOT armed. Manage this " +
+                       $"position manually or use an exchange with native conditional orders.");
                 return;
             }
 
@@ -4693,6 +4754,16 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         return true;
     }
 
+    // Server-first routing for the manual futures market order. Off by default: the existing
+    // in-process gateway path stays the default until the server slice is proven end to end.
+    private readonly bool _useServerTrading =
+        string.Equals(Environment.GetEnvironmentVariable("USE_SERVER_TRADING"), "true", StringComparison.OrdinalIgnoreCase);
+    // Intentionally never assigned yet — DI wiring lands with the next slice, so the flag alone
+    // cannot switch routing. CS0649 is suppressed only for this field.
+#pragma warning disable CS0649
+    private IServerTradingClient? _serverTrading;
+#pragma warning restore CS0649
+
     // Кэш hedge/one-way mode per-symbol для manual торговли (как в TradingBot).
     private readonly Dictionary<string, bool> _manualHedgeModeBySymbol = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _manualFuturesSetupDone = new(StringComparer.OrdinalIgnoreCase);
@@ -4761,6 +4832,48 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
                 futuresQuantity = Math.Min(quantity <= 0 ? Math.Abs(openPosition.Quantity) : quantity, Math.Abs(openPosition.Quantity));
                 positionSide = openPosition.PositionSide;
+            }
+
+            // Server-first route (USE_SERVER_TRADING=true + a wired client). The desktop only sends
+            // the intent; the server owns the exchange gateway and streams status back over the hub.
+            if (_useServerTrading && _serverTrading is not null)
+            {
+                var cmd = new CryptoAITerminal.Core.Contracts.PlaceMarketCommand(
+                    Exchange: SelectedFuturesExchange,
+                    Symbol: SelectedTradingSymbol,
+                    Side: side,
+                    Quantity: Math.Abs(futuresQuantity),
+                    ReduceOnly: reduceOnly,
+                    Leverage: ManualFuturesLeverage,
+                    MarginMode: SelectedManualFuturesMarginModeEnum,
+                    PositionSide: positionSide,
+                    ClientOrderId: Guid.NewGuid().ToString("N"));
+
+                var serverResult = await _serverTrading.PlaceMarketAsync(cmd);
+                if (!serverResult.Accepted)
+                {
+                    AddLog($"Server rejected {cmd.Side} {cmd.Quantity} {cmd.Symbol}: {serverResult.RejectReason ?? "unknown reason"}");
+                    // Throw, exactly as an in-process gateway does on failure. Callers ignore
+                    // Order.Status, so returning a Rejected order here would have every layer
+                    // above (risk, journal, toasts) treat a refusal as a fill.
+                    throw new InvalidOperationException($"Server rejected the order: {serverResult.RejectReason ?? "unknown reason"}");
+                }
+
+                return new Order
+                {
+                    Id = serverResult.OrderId ?? string.Empty,
+                    ClientOrderId = cmd.ClientOrderId,
+                    Symbol = cmd.Symbol,
+                    Side = cmd.Side,
+                    Type = OrderType.Market,
+                    Quantity = cmd.Quantity,
+                    MarketType = TradingMarketType.FuturesUsdM,
+                    Leverage = cmd.Leverage,
+                    MarginMode = cmd.MarginMode,
+                    ReduceOnly = cmd.ReduceOnly,
+                    PositionSide = cmd.PositionSide,
+                    Status = OrderStatus.New
+                };
             }
 
             var order = new Order
@@ -5189,6 +5302,14 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private async Task ExecuteReversePosition()
     {
+        // Reverse only makes sense on futures (spot can't hold a short); guard here too
+        // in case this is invoked outside the button (e.g. agent actions).
+        if (!IsManualFuturesMode)
+        {
+            AddLog("Reverse is available in futures mode only.");
+            return;
+        }
+
         if (!WalletVM.TryApproveLiveExecution("CEX reverse position", out var executionReason))
         {
             AddLog(executionReason);
@@ -6836,6 +6957,13 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private string GetCexReverseBlockedReason()
     {
+        // Reverse = close, then open the OPPOSITE side. Spot cannot hold a short, so the
+        // open leg would fire a second erroneous sell of an asset no longer held.
+        if (!IsManualFuturesMode)
+        {
+            return "Reverse is available in futures mode only.";
+        }
+
         if (TradeQuantity <= 0m)
         {
             return "Set trade size above zero.";

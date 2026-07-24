@@ -26,7 +26,10 @@
       <Setter Property="FontSize" Value="13" />
       <Setter Property="FontWeight" Value="Bold" />
       <Setter Property="Foreground" Value="#E8F4FF" />
-      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+      <!-- Wrap instead of trimming: each chip is MaxWidth-constrained, so ellipsis was hiding
+           the tail of real values ("Balanced preset | B…", "BSC, Ethereum, Base, …"). Wrapping
+           keeps the same width and shows the whole value on a second line. -->
+      <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <!-- Terminal card -->
     <Style Selector="Border.tcard">
@@ -78,11 +81,14 @@
     </Style>
   </UserControl.Styles>
 
-  <Grid RowDefinitions="52,*" Background="#040B12">
+  <!-- Header row is Auto (was a hard 52px): once the strip values wrap instead of being
+       ellipsed, a fixed height clipped the last line of long values like SAFETY. -->
+  <Grid RowDefinitions="Auto,*" Background="#040B12">
 
     <!-- ═══════════════ TOP STATS STRIP ═══════════════ -->
-    <Border Grid.Row="0" Background="#050C14" BorderBrush="#0D1B27" BorderThickness="0,0,0,1">
-      <Grid ColumnDefinitions="*,Auto" Margin="16,0">
+    <Border Grid.Row="0" Background="#050C14" BorderBrush="#0D1B27" BorderThickness="0,0,0,1"
+            MinHeight="52">
+      <Grid ColumnDefinitions="*,Auto" Margin="16,6">
         <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="26" VerticalAlignment="Center">
           <StackPanel Spacing="1">
             <TextBlock Classes="stripLabel" Text="MODE" />

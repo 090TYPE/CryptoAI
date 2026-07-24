@@ -43,11 +43,21 @@ public sealed class DcaBot : IDisposable
         _nextExecutionUtc = executeImmediately ? DateTime.UtcNow : DateTime.UtcNow + GetInterval();
         OnLog?.Invoke($"DCA started. Next cycle: {_nextExecutionUtc:dd.MM HH:mm} UTC");
 
-        _checkTimer = new Timer(async _ => await CheckAndExecuteAsync(), null,
+        // Не передаём async-лямбду в Timer — это эквивалент async void и
+        // непойманное исключение крашит процесс (ср. БАГ-11 в GridBot).
+        // Оборачиваем в SafeCheckAsync.
+        _checkTimer = new Timer(_ => { _ = SafeCheckAsync(); }, null,
             TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
 
         if (executeImmediately)
             await CheckAndExecuteAsync();
+    }
+
+    private async Task SafeCheckAsync()
+    {
+        try { await CheckAndExecuteAsync(); }
+        catch (ObjectDisposedException) { /* бот остановлен, семафор/таймер уже освобождён */ }
+        catch (Exception ex) { OnLog?.Invoke($"Cycle error: {ex.Message}"); }
     }
 
     public async Task ForceExecuteNowAsync()

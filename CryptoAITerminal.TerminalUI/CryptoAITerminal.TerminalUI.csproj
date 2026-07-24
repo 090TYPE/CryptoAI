@@ -2,9 +2,9 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <Version>1.8.2</Version>
-    <FileVersion>1.8.2.0</FileVersion>
-    <AssemblyVersion>1.8.2.0</AssemblyVersion>
+    <Version>1.8.3</Version>
+    <FileVersion>1.8.3.0</FileVersion>
+    <AssemblyVersion>1.8.3.0</AssemblyVersion>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -25,6 +25,8 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Markdown.Avalonia" Version="12.0.0-a3" />
+    <!-- Pinned to 8.0.x to match the net8.0 server hub and avoid a Microsoft.Extensions.* downgrade (NU1605). -->
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.11" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
     <PackageReference Include="ReactiveUI" Version="23.2.1" />

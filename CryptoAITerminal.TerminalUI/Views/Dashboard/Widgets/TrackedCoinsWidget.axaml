@@ -21,7 +21,8 @@
     <Grid Grid.Row="1" ColumnDefinitions="34,*,66,Auto" ColumnSpacing="8" Margin="2,0,4,0">
       <TextBlock Grid.Column="1" Text="SYMBOL" Classes="StatLabel" />
       <TextBlock Grid.Column="2" Text="TREND" Classes="StatLabel" HorizontalAlignment="Center" />
-      <TextBlock Grid.Column="3" Text="PRICE / 24H" Classes="StatLabel" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="3" Text="PRICE / 24H" Classes="StatLabel"
+                 HorizontalAlignment="Right" MinWidth="92" TextAlignment="Right" />
     </Grid>
 
     <!-- Rows -->
@@ -49,9 +50,11 @@
                                   VerticalAlignment="Center"
                                   Points="{Binding ChartPoints}"
                                   IsPositiveTrend="{Binding IsPositiveTrend}" />
-              <!-- Price + change -->
+              <!-- Price + change. MinWidth guarantees the number never gets squeezed by the
+                   symbol column and clipped; the right margin keeps it clear of the
+                   auto-hiding scrollbar that overlays this list. -->
               <StackPanel Grid.Column="3" Spacing="2" VerticalAlignment="Center"
-                          HorizontalAlignment="Right">
+                          HorizontalAlignment="Right" MinWidth="92" Margin="0,0,6,0">
                 <TextBlock Classes="Mono" Text="{Binding LastPrice, StringFormat='{}{0:N2}'}"
                            Foreground="#E8F4FF" FontSize="12" FontWeight="SemiBold"
                            HorizontalAlignment="Right" />

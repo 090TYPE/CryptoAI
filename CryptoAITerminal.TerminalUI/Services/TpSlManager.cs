@@ -2,6 +2,7 @@ using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
 using System;
+using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -83,6 +84,9 @@ public sealed class TpSlManager : IDisposable
 
         if (marketType == TradingMarketType.FuturesUsdM)
         {
+            // Track native TP order ids so we can cancel them if a later leg fails and we
+            // fall back to software (else an orphaned native TP coexists with the simulation).
+            var placedTpIds = new List<string>();
             // Try exchange-native TP/SL — fall back to software on NotSupportedException.
             try
             {
@@ -104,19 +108,22 @@ public sealed class TpSlManager : IDisposable
 
                         if (tp1Qty > 0)
                         {
-                            await gateway.PlaceTakeProfitOrderAsync(symbol, closeSide, tp1Qty, tp1Price, posSide, reduceOnly: true);
+                            var tp1 = await gateway.PlaceTakeProfitOrderAsync(symbol, closeSide, tp1Qty, tp1Price, posSide, reduceOnly: true);
+                            if (tp1.Id is not null) placedTpIds.Add(tp1.Id);
                             OnEvent?.Invoke($"TP1 ({_cfg.PartialTpClosePercent}%) @ {tp1Price:N4}");
                         }
 
                         if (tp2Qty > 0)
                         {
-                            await gateway.PlaceTakeProfitOrderAsync(symbol, closeSide, tp2Qty, tp2Price, posSide, reduceOnly: true);
+                            var tp2 = await gateway.PlaceTakeProfitOrderAsync(symbol, closeSide, tp2Qty, tp2Price, posSide, reduceOnly: true);
+                            if (tp2.Id is not null) placedTpIds.Add(tp2.Id);
                             OnEvent?.Invoke($"TP2 (remaining) @ {tp2Price:N4}");
                         }
                     }
                     else
                     {
-                        await gateway.PlaceTakeProfitOrderAsync(symbol, closeSide, quantity, tp1Price, posSide, reduceOnly: true);
+                        var tp = await gateway.PlaceTakeProfitOrderAsync(symbol, closeSide, quantity, tp1Price, posSide, reduceOnly: true);
+                        if (tp.Id is not null) placedTpIds.Add(tp.Id);
                         OnEvent?.Invoke($"TP placed @ {tp1Price:N4}");
                     }
                     _usingExchangeTpSl = true;
@@ -130,7 +137,21 @@ public sealed class TpSlManager : IDisposable
             }
             catch (Exception ex)
             {
-                OnEvent?.Invoke($"TP/SL order failed: {ex.Message}");
+                // A non-NotSupported failure (bad trigger price, rate-limit) can leave only ONE
+                // leg live on the exchange (e.g. SL placed, TP threw). That would leave
+                // _usingExchangeTpSl=true and suppress the software stream → position runs with
+                // half its protection. Cancel any native SL and fall back fully to software.
+                if (_slOrderId is not null)
+                {
+                    try { await gateway.CancelOrderAsync(symbol, _slOrderId); } catch { /* best-effort */ }
+                }
+                foreach (var tpId in placedTpIds)
+                {
+                    try { await gateway.CancelOrderAsync(symbol, tpId); } catch { /* best-effort */ }
+                }
+                _usingExchangeTpSl = false;
+                _slOrderId = null;
+                OnEvent?.Invoke($"TP/SL order failed ({ex.Message}) — falling back to software simulation");
             }
         }
 

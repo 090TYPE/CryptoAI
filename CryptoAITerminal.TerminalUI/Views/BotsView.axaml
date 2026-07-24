@@ -22,7 +22,7 @@
                                FontWeight="SemiBold" FontSize="12" />
                   </Border>
                   <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                    <CheckBox Content="Авто утром" IsChecked="{Binding BriefingVM.AutoEnabled}"
+                    <CheckBox Content="Auto in the morning" IsChecked="{Binding BriefingVM.AutoEnabled}"
                               VerticalAlignment="Center"
                               ToolTip.Tip="Генерировать брифинг автоматически раз в день и слать уведомление" />
                     <NumericUpDown Value="{Binding BriefingVM.AutoHour}" Minimum="0" Maximum="23" Increment="1"
@@ -314,8 +314,9 @@
                                VerticalAlignment="Center" Margin="8,0,0,0" />
                     <NumericUpDown Grid.Column="3" Value="{Binding AIBotVM.BbDeviation}"
                                    Increment="0.1" Minimum="0.5" Maximum="5" />
-                    <TextBlock Grid.Column="4" Classes="Overline" Text="Breakout Period"
-                               VerticalAlignment="Center" Margin="14,0,0,0" />
+                    <!-- "Breakout Period" label removed: it had no control of its own — the real
+                         input lives in the next row as "Breakout N" (bound to BreakoutPeriod),
+                         so this was a stranded label sitting alone at the right edge. -->
                   </Grid>
 
                   <!-- Row 2f: Breakout + MACD parameters -->

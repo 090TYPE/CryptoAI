@@ -477,7 +477,7 @@ public sealed class SniperSignalStreamService
         ConcurrentDictionary<string, PendingLaunchSignal> pendingLaunches,
         CancellationToken cancellationToken)
     {
-        var monitor = new EvmDexFactoryMonitor(definition);
+        using var monitor = new EvmDexFactoryMonitor(definition);
         var consecutiveRpcFailures = 0;
         var isCoolingDown = false;
         var rpcFailureThreshold = definition.ChainId.Equals("bsc", StringComparison.OrdinalIgnoreCase)
@@ -899,7 +899,7 @@ public sealed class SniperSignalStreamService
         ConcurrentDictionary<string, PendingLaunchSignal> pendingLaunches,
         CancellationToken cancellationToken)
     {
-        var monitor = new EvmMempoolMonitor(
+        using var monitor = new EvmMempoolMonitor(
             definition.ChainId,
             definition.RpcUrl,
             definition.RouterAddresses);

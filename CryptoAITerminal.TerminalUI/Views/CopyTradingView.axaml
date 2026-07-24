@@ -9,8 +9,9 @@
 
             <!-- Header -->
             <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
-              <StackPanel Grid.Column="0" Spacing="2">
-                <TextBlock Classes="H1" Text="Copy Trading" />
+              <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                <!-- No H1 here: the shell already renders the section title, so repeating
+                     "Copy Trading" showed the heading twice. Keep only the mode subtitle. -->
                 <TextBlock Text="{Binding CopyTradingVM.ModeLabel}"
                            FontSize="11" Foreground="#8FA3B8" />
               </StackPanel>
@@ -52,13 +53,13 @@
               <StackPanel Spacing="10">
                 <Grid ColumnDefinitions="*,Auto,Auto">
                   <StackPanel Grid.Column="0" Spacing="2">
-                    <TextBlock Classes="H2" Text="Слежка за кошельками" />
+                    <TextBlock Classes="H2" Text="Wallet Watch" />
                     <TextBlock Text="{Binding CopyTradingVM.WatchStatus}" FontSize="11" Foreground="#8FA3B8" />
                   </StackPanel>
-                  <Button Grid.Column="1" Classes="GhostButton" Content="Старт"
+                  <Button Grid.Column="1" Classes="GhostButton" Content="Start"
                           Command="{Binding CopyTradingVM.StartWatchCommand}" Margin="0,0,8,0"
                           IsVisible="{Binding !CopyTradingVM.IsWatching}" />
-                  <Button Grid.Column="2" Classes="GhostButton" Content="Стоп"
+                  <Button Grid.Column="2" Classes="GhostButton" Content="Stop"
                           Command="{Binding CopyTradingVM.StopWatchCommand}"
                           IsVisible="{Binding CopyTradingVM.IsWatching}" />
                 </Grid>
@@ -66,12 +67,12 @@
                 <!-- Add wallet row -->
                 <Grid ColumnDefinitions="*,160,120,Auto" ColumnSpacing="8">
                   <TextBox Grid.Column="0" Text="{Binding CopyTradingVM.NewWalletAddress}"
-                           PlaceholderText="Адрес кошелька (0x...)" FontFamily="Consolas" FontSize="12" />
+                           PlaceholderText="Wallet address (0x...)" FontFamily="Consolas" FontSize="12" />
                   <TextBox Grid.Column="1" Text="{Binding CopyTradingVM.NewWalletLabel}"
-                           PlaceholderText="Метка (имя)" FontSize="12" />
+                           PlaceholderText="Label (name)" FontSize="12" />
                   <ComboBox Grid.Column="2" ItemsSource="{Binding CopyTradingVM.ChainOptions}"
                             SelectedItem="{Binding CopyTradingVM.SelectedWatchChain}" />
-                  <Button Grid.Column="3" Classes="GhostButton" Content="+ Добавить"
+                  <Button Grid.Column="3" Classes="GhostButton" Content="+ Add"
                           Command="{Binding CopyTradingVM.AddWatchedWalletCommand}" />
                 </Grid>
 
@@ -87,9 +88,9 @@
                             <TextBlock Text="{Binding Address}" Foreground="#5C6E82"
                                        FontFamily="Consolas" FontSize="10" />
                           </StackPanel>
-                          <CheckBox Grid.Column="1" Content="Копировать" IsChecked="{Binding Copy}"
+                          <CheckBox Grid.Column="1" Content="Copy trades" IsChecked="{Binding Copy}"
                                     VerticalAlignment="Center"
-                                    ToolTip.Tip="Усиленный алерт «скопируй» при покупке (без авто-сделки)" />
+                                    ToolTip.Tip="Stronger &quot;copy this&quot; alert on a buy (no auto-execution)" />
                           <Button Grid.Column="2" Classes="GhostButton" Content="✕"
                                   Command="{Binding $parent[ItemsControl].DataContext.CopyTradingVM.RemoveWatchedWalletCommand}"
                                   CommandParameter="{Binding}" VerticalAlignment="Center" />
@@ -99,7 +100,7 @@
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <TextBlock Text="Добавь чужие кошельки → жми «Старт». Будешь получать уведомления, что они покупают/продают. Галка «Копировать» = усиленный алерт (авто-исполнение сделок — в следующем обновлении)."
+                <TextBlock Text="Add other people's wallets, then press Start. You'll get alerts when they buy or sell. The Copy checkbox raises the alert priority (auto-execution ships in a later update)."
                            Foreground="#5A7A90" FontSize="11" TextWrapping="Wrap" />
               </StackPanel>
             </Border>

@@ -1,3 +1,4 @@
+using Binance.Net;
 using Binance.Net.Clients;
 using Binance.Net.Enums;
 using CryptoAITerminal.Core.Enums;
@@ -13,14 +14,21 @@ public class BinanceGateway : IExchangeGateway
     private readonly BinanceSocketClient _socketClient;
     private readonly Subject<MarketData> _marketDataSubject = new();
     private readonly List<string> _symbols;
+    private readonly string? _apiKey;
+    private readonly string? _apiSecret;
 
     public IObservable<MarketData> MarketDataStream => _marketDataSubject;
     public IReadOnlyList<string> Symbols => _symbols;
+    public bool HasPrivateApiCredentials => !string.IsNullOrWhiteSpace(_apiKey) && !string.IsNullOrWhiteSpace(_apiSecret);
 
-    public BinanceGateway(IEnumerable<string>? symbols = null)
+    public BinanceGateway(IEnumerable<string>? symbols = null, string? apiKey = null, string? apiSecret = null)
     {
-        _restClient = new BinanceRestClient();
-        _socketClient = new BinanceSocketClient();
+        _apiKey = string.IsNullOrWhiteSpace(apiKey) ? null : apiKey;
+        _apiSecret = string.IsNullOrWhiteSpace(apiSecret) ? null : apiSecret;
+        var credentials = HasPrivateApiCredentials ? new BinanceCredentials(_apiKey!, _apiSecret!) : null;
+
+        _restClient = new BinanceRestClient(options => options.ApiCredentials = credentials);
+        _socketClient = new BinanceSocketClient(options => options.ApiCredentials = credentials);
         _symbols = (symbols ?? ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"])
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -116,7 +124,7 @@ public class BinanceGateway : IExchangeGateway
             return await GetAllCandlesAsync(symbol);
         }
 
-        var interval = timeframe switch
+        var interval = (timeframe ?? string.Empty).Trim().ToUpperInvariant() switch
         {
             "1M" => KlineInterval.OneMinute,
             "5M" => KlineInterval.FiveMinutes,
@@ -152,7 +160,7 @@ public class BinanceGateway : IExchangeGateway
     public async Task<IReadOnlyList<DexOhlcvPoint>> GetCandlesByDateRangeAsync(
         string symbol, string timeframe, DateTime startDate, DateTime endDate)
     {
-        var interval = timeframe switch
+        var interval = (timeframe ?? string.Empty).Trim().ToUpperInvariant() switch
         {
             "1M"  => KlineInterval.OneMinute,
             "5M"  => KlineInterval.FiveMinutes,

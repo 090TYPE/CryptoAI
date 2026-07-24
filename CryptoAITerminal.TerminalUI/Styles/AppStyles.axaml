@@ -681,6 +681,13 @@
     <Setter Property="Opacity" Value="0.45" />
   </Style>
 
+  <!-- Wrap checkbox captions instead of letting them run off the edge. Russian labels are
+       15-30% longer than the English source, so fixed-width panels were cutting them
+       ("Включить защиту исполнения перед покуп…"). -->
+  <Style Selector="CheckBox /template/ ContentPresenter">
+    <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
+  </Style>
+
   <!-- ============================================================
        СПИСКИ
   ============================================================ -->

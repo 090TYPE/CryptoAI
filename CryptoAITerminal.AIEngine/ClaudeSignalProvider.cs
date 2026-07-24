@@ -75,7 +75,7 @@ public sealed class ClaudeSignalProvider
             var root = parsed.RootElement;
             var signal = root.TryGetProperty("signal", out var s) ? s.GetString() : null;
             var confidence = root.TryGetProperty("confidence", out var c) && c.ValueKind == JsonValueKind.Number
-                ? c.GetDecimal() : 0m;
+                && c.TryGetDecimal(out var conf) ? conf : 0m;
             var reason = root.TryGetProperty("reason", out var r) ? r.GetString() ?? "" : "";
 
             if (string.IsNullOrWhiteSpace(signal)) return null;

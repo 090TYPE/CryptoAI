@@ -23,6 +23,36 @@ public class OKXFuturesGateway : IExchangeGateway
     private readonly Subject<MarketData> _marketDataSubject = new();
     private readonly IReadOnlyList<string> _symbols;
     private readonly ConcurrentDictionary<string, string> _orderSymbols = new();
+    // OKX SetLeverage writes leverage for the (instrument, marginMode) pair, so
+    // setting margin mode and setting leverage go through the SAME endpoint.
+    // We remember the last requested leverage+mode per symbol and always re-apply
+    // both together, so changing one never silently clobbers the other.
+    private readonly ConcurrentDictionary<string, (int Leverage, OKXMarginMode Mode)> _leverageState = new();
+    // OKX SWAP order size (`sz`) is in CONTRACTS, not base asset. One contract = ctVal base
+    // (e.g. BTC-USDT-SWAP ctVal 0.01 BTC). We load ctVal for every swap once and convert
+    // base<->contracts consistently on BOTH order placement and position reads.
+    private readonly ConcurrentDictionary<string, decimal> _contractValues = new();
+    private volatile bool _ctValLoaded;
+
+    private async Task EnsureContractValuesAsync()
+    {
+        if (_ctValLoaded) return;
+        var result = await _restClient.UnifiedApi.ExchangeData.GetSymbolsAsync(InstrumentType.Swap);
+        if (result.Success && result.Data is not null)
+        {
+            foreach (var inst in result.Data)
+                if (inst.ContractValue is { } cv && cv > 0m)
+                    _contractValues[inst.Symbol] = cv;
+            _ctValLoaded = true;
+        }
+    }
+
+    /// <summary>ctVal (base per contract) for a swap symbol; throws rather than guessing, so a
+    /// missing value never sizes an order wrong.</summary>
+    private decimal ContractValueFor(string swapSymbol) =>
+        _contractValues.TryGetValue(swapSymbol, out var v) && v > 0m
+            ? v
+            : throw new Exception($"OKX: unknown contract value (ctVal) for {swapSymbol}; refusing to size the order.");
 
     public IObservable<MarketData> MarketDataStream => _marketDataSubject;
 
@@ -120,14 +150,24 @@ public class OKXFuturesGateway : IExchangeGateway
             _ => null  // net / one-way mode
         };
 
+        // order.Quantity is BASE asset; OKX swap `sz` is CONTRACTS → convert via ctVal.
+        var swap = OKXSymbolHelper.ToSwapSymbol(order.Symbol);
+        await EnsureContractValuesAsync();
+        var ctVal = ContractValueFor(swap);
+        var contracts = Math.Round(order.Quantity / ctVal, MidpointRounding.AwayFromZero);
+        if (contracts <= 0m)
+            throw new Exception(
+                $"OKX futures order too small: {order.Quantity} {order.Symbol} < 1 contract ({ctVal} base).");
+
         var result = await _restClient.UnifiedApi.Trading.PlaceOrderAsync(
-            OKXSymbolHelper.ToSwapSymbol(order.Symbol),
+            swap,
             side,
             type,
-            order.Quantity,
+            contracts,
             price,
             positionSide: posSide,
-            tradeMode: tradeMode);
+            tradeMode: tradeMode,
+            reduceOnly: order.ReduceOnly ? true : (bool?)null);
 
         if (!result.Success)
             throw new Exception($"OKX futures place order failed: {result.Error}");
@@ -184,6 +224,7 @@ public class OKXFuturesGateway : IExchangeGateway
         var result = await _restClient.UnifiedApi.Account.GetPositionsAsync(InstrumentType.Swap);
         if (!result.Success) return [];
 
+        await EnsureContractValuesAsync();
         return result.Data
             .Where(p => p.PositionsQuantity != 0m)
             .Select(p => new FuturesPosition
@@ -192,7 +233,10 @@ public class OKXFuturesGateway : IExchangeGateway
                 PositionSide = p.PositionSide == OKXPositionSide.Long ? FuturesPositionSide.Long
                     : p.PositionSide == OKXPositionSide.Short ? FuturesPositionSide.Short
                     : FuturesPositionSide.Both,
-                Quantity = p.PositionsQuantity ?? 0m,
+                // Contracts → base asset (same ctVal PlaceOrderAsync divides by), so the close
+                // path GetOpenPositions→PlaceOrder round-trips to the right contract count.
+                Quantity = (p.PositionsQuantity ?? 0m) *
+                           (_contractValues.TryGetValue(p.Symbol, out var cv) && cv > 0m ? cv : 1m),
                 EntryPrice = p.AveragePrice ?? 0m,
                 MarkPrice = p.MarkPrice ?? 0m,
                 UnrealizedPnl = p.UnrealizedProfitAndLoss ?? 0m,
@@ -204,21 +248,23 @@ public class OKXFuturesGateway : IExchangeGateway
 
     public async Task SetLeverageAsync(string symbol, int leverage)
     {
-        await _restClient.UnifiedApi.Account.SetLeverageAsync(
-            leverage,
-            OKXMarginMode.Cross,
-            OKXSymbolHelper.ToSwapSymbol(symbol));
+        var swap = OKXSymbolHelper.ToSwapSymbol(symbol);
+        // Preserve the previously chosen margin mode instead of forcing Cross.
+        var mode = _leverageState.TryGetValue(swap, out var s) ? s.Mode : OKXMarginMode.Cross;
+        _leverageState[swap] = (leverage, mode);
+        await _restClient.UnifiedApi.Account.SetLeverageAsync(leverage, mode, swap);
     }
 
     public async Task SetMarginModeAsync(string symbol, FuturesMarginMode marginMode)
     {
+        var swap = OKXSymbolHelper.ToSwapSymbol(symbol);
         var okxMode = marginMode == FuturesMarginMode.Isolated
             ? OKXMarginMode.Isolated
             : OKXMarginMode.Cross;
-        await _restClient.UnifiedApi.Account.SetLeverageAsync(
-            1,          // leverage placeholder — only margin mode matters here
-            okxMode,
-            OKXSymbolHelper.ToSwapSymbol(symbol));
+        // Re-apply the user's chosen leverage; forcing 1 here reset every position to 1x.
+        var leverage = _leverageState.TryGetValue(swap, out var s) ? s.Leverage : 1;
+        _leverageState[swap] = (leverage, okxMode);
+        await _restClient.UnifiedApi.Account.SetLeverageAsync(leverage, okxMode, swap);
     }
 
     public async Task<IReadOnlyList<DexOhlcvPoint>> GetCandlesAsync(string symbol, string timeframe, int limit = 180)

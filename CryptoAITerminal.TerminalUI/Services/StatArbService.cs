@@ -27,12 +27,22 @@ public sealed class StatArbService : IDisposable
     private decimal _hedgeRatio = 1m;
 
     private readonly Queue<decimal> _spreadHistory = new();
+    private readonly object _histLock = new();          // guards _spreadHistory (Rx threads vs UI reads)
+    private readonly SemaphoreSlim _evalGate = new(1, 1); // serializes signal evaluation → no double-open
 
     public StatArbPosition? CurrentPosition { get; private set; }
     public decimal CurrentZScore { get; private set; }
     public decimal CurrentSpread { get; private set; }
-    public IReadOnlyList<SpreadPoint> SpreadHistory => _spreadHistory.ToArray().Select(
-        (s, i) => new SpreadPoint(DateTime.UtcNow.AddSeconds(-(_spreadHistory.Count - i)), s, 0)).ToList();
+    public IReadOnlyList<SpreadPoint> SpreadHistory
+    {
+        get
+        {
+            decimal[] arr;
+            lock (_histLock) arr = _spreadHistory.ToArray();
+            return arr.Select(
+                (s, i) => new SpreadPoint(DateTime.UtcNow.AddSeconds(-(arr.Length - i)), s, 0)).ToList();
+        }
+    }
 
     public bool IsRunning { get; private set; }
     public decimal TotalPnlUsd => CurrentPosition?.PnlUsd ?? 0m;
@@ -103,9 +113,12 @@ public sealed class StatArbService : IDisposable
         var spread = (decimal)Math.Log((double)_priceA)
                    - _hedgeRatio * (decimal)Math.Log((double)_priceB);
 
-        _spreadHistory.Enqueue(spread);
-        if (_spreadHistory.Count > _cfg.Window * 2)
-            _spreadHistory.Dequeue();
+        lock (_histLock)
+        {
+            _spreadHistory.Enqueue(spread);
+            if (_spreadHistory.Count > _cfg.Window * 2)
+                _spreadHistory.Dequeue();
+        }
 
         CurrentSpread = spread;
         CurrentZScore = ComputeZScore(spread);
@@ -113,14 +126,26 @@ public sealed class StatArbService : IDisposable
         if (CurrentPosition is not null)
             CurrentPosition.CurrentZScore = CurrentZScore;
 
-        _ = EvaluateSignalAsync();
+        _ = EvaluateSignalGatedAsync();
 
         StateChanged?.Invoke();
     }
 
+    // Non-reentrant gate: if an evaluation is already running, skip this tick.
+    // Prevents two rapid ticks from both passing the CurrentPosition==null check
+    // and opening a duplicate delta-neutral position (double real exposure).
+    private async Task EvaluateSignalGatedAsync()
+    {
+        if (!await _evalGate.WaitAsync(0)) return;
+        try { await EvaluateSignalAsync(); }
+        catch (Exception ex) { Log($"Signal eval error: {ex.Message}"); }
+        finally { _evalGate.Release(); }
+    }
+
     private decimal ComputeZScore(decimal spread)
     {
-        var arr = _spreadHistory.ToArray();
+        decimal[] arr;
+        lock (_histLock) arr = _spreadHistory.ToArray();
         if (arr.Length < 5) return 0m;
         var window = arr.TakeLast(Math.Min(_cfg.Window, arr.Length)).ToArray();
         var mean   = window.Average();
@@ -177,14 +202,35 @@ public sealed class StatArbService : IDisposable
             {
                 Symbol = longSym, Side = OrderSide.Buy, Type = OrderType.Market, Quantity = longQty
             });
-            await _gateway.PlaceOrderAsync(new Order
+            try
             {
-                Symbol       = shortSym,
-                Side         = OrderSide.Sell,
-                Type         = OrderType.Market,
-                Quantity     = shortQty,
-                PositionSide = FuturesPositionSide.Short,
-            });
+                await _gateway.PlaceOrderAsync(new Order
+                {
+                    Symbol       = shortSym,
+                    Side         = OrderSide.Sell,
+                    Type         = OrderType.Market,
+                    Quantity     = shortQty,
+                    PositionSide = FuturesPositionSide.Short,
+                });
+            }
+            catch (Exception legEx)
+            {
+                // Second leg failed after the first filled — unwind the long leg so we
+                // don't hold naked, untracked exposure the strategy will never close.
+                Log($"Short leg {shortSym} failed ({legEx.Message}) — rolling back long {longSym}");
+                try
+                {
+                    await _gateway.PlaceOrderAsync(new Order
+                    {
+                        Symbol = longSym, Side = OrderSide.Sell, Type = OrderType.Market, Quantity = longQty
+                    });
+                }
+                catch (Exception rbEx)
+                {
+                    Log($"ROLLBACK FAILED for {longSym}: {rbEx.Message} — manual close required");
+                }
+                throw; // leave CurrentPosition null; outer catch logs the open failure
+            }
 
             CurrentPosition = new StatArbPosition
             {
@@ -265,8 +311,9 @@ public sealed class StatArbService : IDisposable
             _hedgeRatio = ComputeHedgeRatio(logA, logB);
 
             // Seed spread history
-            for (int i = 0; i < n; i++)
-                _spreadHistory.Enqueue(logA[i] - _hedgeRatio * logB[i]);
+            lock (_histLock)
+                for (int i = 0; i < n; i++)
+                    _spreadHistory.Enqueue(logA[i] - _hedgeRatio * logB[i]);
 
             Log($"Seeded {n} historical spreads  hedge_ratio={_hedgeRatio:N4}");
         }

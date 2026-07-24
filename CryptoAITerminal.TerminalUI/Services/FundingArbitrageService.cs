@@ -54,6 +54,37 @@ public sealed class FundingArbitrageService : IDisposable
     // ── Position state ────────────────────────────────────────────────────────
 
     private readonly List<FundingArbPosition> _positions = [];
+    // Futures account mode. Default one-way (retail default); flips to hedge on the first
+    // "position side mismatch" reject and retries, so the perp leg works on either mode.
+    private bool _isHedgeMode;
+
+    private FuturesPositionSide PerpShortSide() =>
+        _isHedgeMode ? FuturesPositionSide.Short : FuturesPositionSide.Both;
+
+    private static bool IsPositionSideMismatch(Exception ex)
+    {
+        var msg = ex.Message?.ToLowerInvariant() ?? string.Empty;
+        return msg.Contains("position side") || msg.Contains("position mode")
+            || msg.Contains("position idx") || msg.Contains("51124");
+    }
+
+    /// <summary>Places a market perp order, retrying once with the flipped account mode on a
+    /// position-side mismatch so it works on both one-way and hedge accounts.</summary>
+    private async Task PlacePerpAsync(IExchangeGateway futGw, string symbol, OrderSide side, decimal qty, bool reduceOnly)
+    {
+        var order = new Order
+        {
+            Symbol = symbol, Side = side, Type = OrderType.Market, Quantity = qty,
+            PositionSide = PerpShortSide(), Leverage = Leverage, ReduceOnly = reduceOnly,
+        };
+        try { await futGw.PlaceOrderAsync(order); }
+        catch (Exception ex) when (IsPositionSideMismatch(ex))
+        {
+            _isHedgeMode = !_isHedgeMode;
+            order.PositionSide = PerpShortSide();
+            await futGw.PlaceOrderAsync(order);
+        }
+    }
     public IReadOnlyList<FundingArbPosition> AllPositions     => _positions;
     public IReadOnlyList<FundingArbPosition> OpenPositions    =>
         _positions.Where(p => p.State == FundingArbPositionState.Open).ToList();
@@ -226,16 +257,24 @@ public sealed class FundingArbitrageService : IDisposable
                 Quantity = qty,
             });
 
-            // 3. Short perpetual
-            var perpOrder = await futGw.PlaceOrderAsync(new Order
+            // 3. Short perpetual — if this fails, unwind the spot buy so we don't
+            //    hold a naked, untracked long leg the strategy will never close.
+            try
             {
-                Symbol       = opp.Symbol,
-                Side         = OrderSide.Sell,
-                Type         = OrderType.Market,
-                Quantity     = qty,
-                PositionSide = FuturesPositionSide.Short,
-                Leverage     = Leverage,
-            });
+                await PlacePerpAsync(futGw, opp.Symbol, OrderSide.Sell, qty, reduceOnly: false);
+            }
+            catch (Exception perpEx)
+            {
+                try
+                {
+                    await spotGw.PlaceOrderAsync(new Order
+                    {
+                        Symbol = opp.Symbol, Side = OrderSide.Sell, Type = OrderType.Market, Quantity = qty,
+                    });
+                }
+                catch { /* rollback best-effort; surfaced via the returned error below */ }
+                return (false, $"Perp leg failed, spot rolled back: {perpEx.Message}");
+            }
 
             var entryPrice = opp.MarkPrice;   // approximation; exact fill via order.Price if available
 
@@ -278,24 +317,20 @@ public sealed class FundingArbitrageService : IDisposable
         var (spotGw, futGw) = GetGateways(pos.Exchange);
         var errors = new List<string>(2);
 
+        var perpClosed = futGw is null; // nothing to close on that leg
         if (futGw is not null)
         {
             try
             {
-                await futGw.PlaceOrderAsync(new Order
-                {
-                    Symbol       = pos.Symbol,
-                    Side         = OrderSide.Buy,
-                    Type         = OrderType.Market,
-                    Quantity     = pos.PerpQty,
-                    ReduceOnly   = true,
-                    PositionSide = FuturesPositionSide.Short,
-                });
+                await PlacePerpAsync(futGw, pos.Symbol, OrderSide.Buy, pos.PerpQty, reduceOnly: true);
+                perpClosed = true;
             }
             catch (Exception ex) { errors.Add($"Perp close: {ex.Message}"); }
         }
 
-        if (spotGw is not null)
+        // Only sell the spot hedge if the perp short actually closed. Selling spot while the
+        // perp is still open would leave a NAKED SHORT — keep the delta-neutral hedge instead.
+        if (spotGw is not null && perpClosed)
         {
             try
             {
@@ -308,6 +343,10 @@ public sealed class FundingArbitrageService : IDisposable
                 });
             }
             catch (Exception ex) { errors.Add($"Spot sell: {ex.Message}"); }
+        }
+        else if (spotGw is not null && !perpClosed)
+        {
+            errors.Add("Spot sell skipped: perp close failed — hedge kept to avoid a naked short.");
         }
 
         // Только при успешном закрытии обеих ног помечаем позицию закрытой.
@@ -375,14 +414,17 @@ public sealed class FundingArbitrageService : IDisposable
                 Type     = OrderType.Market,
                 Quantity = extraQty,
             });
-            await futGw.PlaceOrderAsync(new Order
+            try
             {
-                Symbol       = pos.Symbol,
-                Side         = OrderSide.Sell,
-                Type         = OrderType.Market,
-                Quantity     = extraQty,
-                PositionSide = FuturesPositionSide.Short,
-            });
+                await PlacePerpAsync(futGw, pos.Symbol, OrderSide.Sell, extraQty, reduceOnly: false);
+            }
+            catch
+            {
+                // Unwind the extra spot buy so the reinvest can't leave a naked long.
+                try { await spotGw.PlaceOrderAsync(new Order { Symbol = pos.Symbol, Side = OrderSide.Sell, Type = OrderType.Market, Quantity = extraQty }); }
+                catch { /* best-effort */ }
+                throw;
+            }
 
             pos.SpotQty    += extraQty;
             pos.PerpQty    += extraQty;
