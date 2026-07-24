@@ -142,8 +142,8 @@ public sealed class CopyTradingViewModel : ReactiveObject, IDisposable
     }
 
     public string WatchStatus => IsWatching
-        ? $"Слежка активна · {WatchedWallets.Count} кошельков"
-        : "Слежка выключена";
+        ? $"Watching · {WatchedWallets.Count} wallets"
+        : "Watching is off";
 
     // ── Commands ──────────────────────────────────────────────────────────────
 
@@ -192,7 +192,7 @@ public sealed class CopyTradingViewModel : ReactiveObject, IDisposable
         var addr = (NewWalletAddress ?? "").Trim();
         if (addr.Length < 8 || !WalletWatchService.IsChainSupported(SelectedWatchChain))
         {
-            AddLog("Укажите корректный адрес кошелька и сеть.");
+            AddLog("Enter a valid wallet address and network.");
             return;
         }
         if (WatchedWallets.Any(w => string.Equals(w.Address, addr, StringComparison.OrdinalIgnoreCase)
@@ -232,14 +232,14 @@ public sealed class CopyTradingViewModel : ReactiveObject, IDisposable
         }
         _walletWatch.Start(WatchedWallets.Select(w => (w.Address, w.Chain)));
         IsWatching = true;
-        AddLog($"Слежка запущена за {WatchedWallets.Count} кошельками.");
+        AddLog($"Watching started for {WatchedWallets.Count} wallets.");
     }
 
     private void StopWatch()
     {
         _walletWatch.Stop();
         IsWatching = false;
-        AddLog("Слежка остановлена.");
+        AddLog("Watching stopped.");
     }
 
     private void OnWalletSignal(CopyTradeSignal s)

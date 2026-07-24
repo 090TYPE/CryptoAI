@@ -9,7 +9,8 @@
 
             <!-- ── Header ── -->
             <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
-              <TextBlock Grid.Column="0" Classes="H1" Text="Trade Journal" VerticalAlignment="Center" />
+              <!-- No H1 here: the shell already renders the section title (CurrentSectionTitle),
+                   so repeating "Trade Journal" showed the heading twice in a row. -->
               <Button Grid.Column="1" Content="⟳ Refresh"
                       Command="{Binding TradeJournalVM.RefreshCommand}"
                       Classes="GhostButton" FontSize="11" />
