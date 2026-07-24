@@ -4754,6 +4754,16 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         return true;
     }
 
+    // Server-first routing for the manual futures market order. Off by default: the existing
+    // in-process gateway path stays the default until the server slice is proven end to end.
+    private readonly bool _useServerTrading =
+        string.Equals(Environment.GetEnvironmentVariable("USE_SERVER_TRADING"), "true", StringComparison.OrdinalIgnoreCase);
+    // Intentionally never assigned yet — DI wiring lands with the next slice, so the flag alone
+    // cannot switch routing. CS0649 is suppressed only for this field.
+#pragma warning disable CS0649
+    private IServerTradingClient? _serverTrading;
+#pragma warning restore CS0649
+
     // Кэш hedge/one-way mode per-symbol для manual торговли (как в TradingBot).
     private readonly Dictionary<string, bool> _manualHedgeModeBySymbol = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _manualFuturesSetupDone = new(StringComparer.OrdinalIgnoreCase);
@@ -4822,6 +4832,44 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
                 futuresQuantity = Math.Min(quantity <= 0 ? Math.Abs(openPosition.Quantity) : quantity, Math.Abs(openPosition.Quantity));
                 positionSide = openPosition.PositionSide;
+            }
+
+            // Server-first route (USE_SERVER_TRADING=true + a wired client). The desktop only sends
+            // the intent; the server owns the exchange gateway and streams status back over the hub.
+            if (_useServerTrading && _serverTrading is not null)
+            {
+                var cmd = new CryptoAITerminal.Core.Contracts.PlaceMarketCommand(
+                    Exchange: SelectedFuturesExchange,
+                    Symbol: SelectedTradingSymbol,
+                    Side: side,
+                    Quantity: Math.Abs(futuresQuantity),
+                    ReduceOnly: reduceOnly,
+                    Leverage: ManualFuturesLeverage,
+                    MarginMode: SelectedManualFuturesMarginModeEnum,
+                    PositionSide: positionSide,
+                    ClientOrderId: Guid.NewGuid().ToString("N"));
+
+                var serverResult = await _serverTrading.PlaceMarketAsync(cmd);
+                if (!serverResult.Accepted)
+                {
+                    AddLog($"Server rejected {cmd.Side} {cmd.Quantity} {cmd.Symbol}: {serverResult.RejectReason ?? "unknown reason"}");
+                }
+
+                return new Order
+                {
+                    Id = serverResult.OrderId ?? string.Empty,
+                    ClientOrderId = cmd.ClientOrderId,
+                    Symbol = cmd.Symbol,
+                    Side = cmd.Side,
+                    Type = OrderType.Market,
+                    Quantity = cmd.Quantity,
+                    MarketType = TradingMarketType.FuturesUsdM,
+                    Leverage = cmd.Leverage,
+                    MarginMode = cmd.MarginMode,
+                    ReduceOnly = cmd.ReduceOnly,
+                    PositionSide = cmd.PositionSide,
+                    Status = serverResult.Accepted ? OrderStatus.New : OrderStatus.Rejected
+                };
             }
 
             var order = new Order
