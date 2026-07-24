@@ -42,11 +42,11 @@ The desktop flag `USE_SERVER_TRADING` is **off by default** and `_serverTrading`
 constructed yet, so the terminal still trades through the in-process gateway. Wiring the client
 into DI is the first task of the next slice — until then the flag alone changes nothing.
 
-## BLOCKERS — must be fixed before `USE_SERVER_TRADING` is ever enabled
+## BLOCKERS — C1–C5 are now FIXED ✅
 
-An adversarial review of the finished slice found these. The slice is safe to **ship** (the flag
-is off and `_serverTrading` is never constructed, so the branch is dead code and the in-process
-path is untouched), but the server route must NOT be switched on until every item here is closed.
+All five criticals below were closed and pinned with regression tests (suite 724 → 731). Each fix
+was mutation-checked: reverting it makes its test fail. **Still open before the flag can be
+enabled: I1, I3, I4** (listed under the table).
 
 | # | Defect | Why it matters |
 |---|---|---|
