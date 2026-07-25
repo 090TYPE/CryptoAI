@@ -38,7 +38,9 @@ services:
       - ./db/019_demand_polling.sql:/docker-entrypoint-initdb.d/019_demand_polling.sql:ro
       - ./db/020_aggregate_policies.sql:/docker-entrypoint-initdb.d/020_aggregate_policies.sql:ro
     ports:
-      - "5432:5432"   # dev: lets the host admin console (cryptoai-admin) connect. Remove in prod.
+      # Bound to loopback, not 0.0.0.0: the host admin console still connects, but on a public IP
+      # this was Postgres exposed to the internet with the .env.example password.
+      - "127.0.0.1:5432:5432"
     networks: [core]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d cryptoai"]
@@ -77,19 +79,15 @@ services:
     networks: [core]
     restart: unless-stopped
 
-  executor:
-    build:
-      context: .
-      dockerfile: CryptoAITerminal.Executor/Dockerfile
-    environment:
-      DB_CONN: "Host=db;Database=cryptoai;Username=postgres;Password=${DB_PASSWORD:-postgres}"
-      # MUST match the API's KEK so it can decrypt what the API encrypted (from .env).
-      CRYPTOAI_KEK_B64: ${CRYPTOAI_KEK_B64:?set CRYPTOAI_KEK_B64 in .env}
-    depends_on:
-      db:
-        condition: service_healthy
-    networks: [core]
-    restart: unless-stopped
+  # The executor is deliberately NOT part of this contour.
+  #
+  # Trading and bots run on the user's machine, so nothing here needs to decrypt a user's exchange
+  # key or wallet private key — and the executor is the only component that holds CRYPTOAI_KEK_B64,
+  # the master key those secrets are wrapped with. Starting it alongside the public API would put
+  # that key on an internet-facing host to do work nobody asked it to do.
+  #
+  # If server-side execution is ever reinstated it belongs on a separate node with no public IP,
+  # exactly as db/004_custodial.sql describes.
 
 networks:
   edge: {}
