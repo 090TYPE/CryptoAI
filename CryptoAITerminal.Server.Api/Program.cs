@@ -114,7 +114,8 @@ app.Use(async (ctx, next) =>
         return;
     }
 
-    if (path.StartsWith("/api/keys", StringComparison.OrdinalIgnoreCase))
+    if (path.StartsWith("/api/keys", StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWith("/api/admin", StringComparison.OrdinalIgnoreCase))
     {
         // Fail CLOSED: this endpoint can read/overwrite server-held provider keys, so
         // an unset ADMIN_TOKEN must deny access (not fall through unauthenticated).
@@ -177,7 +178,42 @@ static async Task<bool> Verify2faAsync(HttpContext ctx, string? code)
     return await VerifyCodeAsync(ctx, code);
 }
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok", ts = DateTime.UtcNow }));
+// Answers 503 when the database is unreachable. It used to return 200 unconditionally, which meant
+// an uptime monitor pointed at it reported green while the whole contour was down. Result cached
+// briefly so this endpoint cannot itself become a way to hammer Postgres.
+app.MapGet("/health", async (ApiReadRepository read, SharedResponseCache cache) =>
+{
+    var payload = await cache.GetOrCreateAsync("health:db", TimeSpan.FromSeconds(5),
+        async ct => (await read.IsDatabaseReachableAsync(ct)).ToString());
+
+    var dbUp = string.Equals(payload.Json, bool.TrueString, StringComparison.OrdinalIgnoreCase);
+    return Results.Json(
+        new { status = dbUp ? "ok" : "degraded", database = dbUp ? "up" : "down", ts = DateTime.UtcNow },
+        statusCode: dbUp ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable);
+});
+
+// Admin-gated (X-Admin, fails closed without ADMIN_TOKEN). collector_runs was written on every pass
+// and read by nothing, so a collector that quietly stopped stayed stopped until someone noticed the
+// data had gone stale. Poll this from whatever watches the box.
+app.MapGet("/api/admin/collectors", async (ApiReadRepository read, IConfiguration cfg, CancellationToken ct) =>
+{
+    var staleAfter = int.TryParse(cfg["COLLECTOR_STALE_MINUTES"], out var m) && m > 0 ? m : 120;
+    var rows = await read.GetCollectorHealthAsync(ct);
+
+    var failing = rows.Where(r => r.LastOk == false).Select(r => r.Name).ToList();
+    var stale = rows.Where(r => r.MinutesAgo is null || r.MinutesAgo > staleAfter).Select(r => r.Name).ToList();
+
+    return Results.Json(new
+    {
+        degraded = failing.Count > 0 || stale.Count > 0,
+        staleAfterMinutes = staleAfter,
+        failing,
+        stale,
+        collectors = rows,
+    }, statusCode: failing.Count > 0 || stale.Count > 0
+        ? StatusCodes.Status503ServiceUnavailable
+        : StatusCodes.Status200OK);
+});
 
 // ── Favorites (per-user; writes drive 24/7 tracking via the DB trigger) ───────
 app.MapGet("/api/favorites", async (HttpContext ctx, FavoritesRepository favs) =>

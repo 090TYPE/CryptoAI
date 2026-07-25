@@ -5,6 +5,10 @@ namespace CryptoAITerminal.Server.Data;
 /// <summary>One entry of a user's watchlist: which token, not what we know about it.</summary>
 public sealed record WatchlistTokenId(string Chain, string TokenAddress, string? Symbol);
 
+/// <summary>One collector's last outcome, with how long ago it ran.</summary>
+public sealed record CollectorHealth(
+    string Name, DateTime? LastRunUtc, bool? LastOk, string? LastError, int? Items, double? MinutesAgo);
+
 /// <summary>Read-side queries the public API serves (token detail, news, sentiment).</summary>
 public sealed class ApiReadRepository
 {
@@ -94,6 +98,44 @@ public sealed class ApiReadRepository
                              ORDER BY chain, token_address;";
         await using var conn = await _db.OpenConnectionAsync(ct);
         var rows = await conn.QueryAsync<WatchlistTokenId>(new CommandDefinition(sql, new { userId }, cancellationToken: ct));
+        return rows.ToList();
+    }
+
+    /// <summary>
+    /// Cheapest possible liveness probe. /health used to answer 200 unconditionally, so a monitor
+    /// watching it would report green with Postgres flat on its back.
+    /// </summary>
+    public async Task<bool> IsDatabaseReachableAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            await using var conn = await _db.OpenConnectionAsync(ct);
+            await conn.ExecuteScalarAsync<int>(new CommandDefinition("SELECT 1;", cancellationToken: ct));
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// What every collector did last, and how long ago. collector_runs was already written on every
+    /// pass and read by nothing, so a collector that quietly died stayed dead until somebody noticed
+    /// the data was old.
+    /// </summary>
+    public async Task<IReadOnlyList<CollectorHealth>> GetCollectorHealthAsync(CancellationToken ct = default)
+    {
+        const string sql = @"SELECT name AS Name, last_run_utc AS LastRunUtc, last_ok AS LastOk,
+                                    last_error AS LastError, items AS Items,
+                                    -- Cast on the Postgres side: EXTRACT yields numeric, which
+                                    -- arrives as decimal and does not convert to the double? this
+                                    -- record declares.
+                                    (EXTRACT(EPOCH FROM (now() - last_run_utc)) / 60.0)::float8 AS MinutesAgo
+                             FROM collector_runs
+                             ORDER BY last_ok NULLS FIRST, last_run_utc NULLS FIRST;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        var rows = await conn.QueryAsync<CollectorHealth>(new CommandDefinition(sql, cancellationToken: ct));
         return rows.ToList();
     }
 

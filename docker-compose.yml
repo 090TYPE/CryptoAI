@@ -101,6 +101,31 @@ services:
     networks: [core]
     restart: unless-stopped
 
+  # Encrypted incremental backups of the database to S3. Off until RESTIC_REPOSITORY and
+  # RESTIC_PASSWORD are set - and it says so loudly rather than pretending to run, because until
+  # then the pgdata volume is the only copy of the licence database.
+  backup:
+    build:
+      context: ./docker/backup
+    environment:
+      PGPASSWORD: ${DB_PASSWORD:-postgres}
+      DB_HOST: db
+      DB_NAME: cryptoai
+      DB_USER: postgres
+      RESTIC_REPOSITORY: ${RESTIC_REPOSITORY:-}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:-}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-21600}
+      BACKUP_KEEP_DAILY: ${BACKUP_KEEP_DAILY:-7}
+      BACKUP_KEEP_WEEKLY: ${BACKUP_KEEP_WEEKLY:-4}
+      BACKUP_KEEP_MONTHLY: ${BACKUP_KEEP_MONTHLY:-6}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [core]
+    restart: unless-stopped
+
   # The executor is deliberately NOT part of this contour.
   #
   # Trading and bots run on the user's machine, so nothing here needs to decrypt a user's exchange
