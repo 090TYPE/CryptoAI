@@ -33,6 +33,10 @@ out/
 packages/
 *.nupkg
 
+# ── Tool output (large, regenerable — a `git add -A` would otherwise commit these) ──
+.mockup-preview/
+graphify-out/
+
 # ── OS ────────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db

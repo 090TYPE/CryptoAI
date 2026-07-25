@@ -36,6 +36,16 @@ builder.Services.AddSingleton<PersonalAiRepository>();
 builder.Services.AddSingleton<TrackedTokenRepository>();
 builder.Services.AddSingleton<AuditRepository>();
 
+// Shared-response cache for the endpoints that are identical for every user (see
+// SharedEndpoints). Cost scales with TTL, not with the number of connected terminals.
+builder.Services.AddSingleton<SharedResponseCache>();
+
+// AI spend controls. The proxy forwards with the SERVER's key, so the client must not get to
+// choose the model, the output length or the context size — see AiRequestPolicy / AiBudget.
+var aiPolicy = AiPolicyOptions.FromConfig(k => builder.Configuration[k]);
+builder.Services.AddSingleton(aiPolicy);
+builder.Services.AddSingleton(new AiBudget(aiPolicy.DailyTokenCapPerLicense));
+
 // Custodial envelope encryption. Registered only when a master key is provided
 // (base64 32-byte) — secrets endpoints return 503 otherwise. In production this is a
 // Vault-backed cipher on the isolated executor; here it's the local AES implementation.
@@ -191,31 +201,83 @@ app.MapDelete("/api/favorites/{chain}/{token}", async (HttpContext ctx, string c
     return Results.Ok(new { removed = token });
 });
 
-// ── AI proxy (server-held key; returns the model's answer) ────────────────────
-app.MapPost("/api/ai/message", async (HttpContext ctx, AiProxy ai) =>
-{
-    var body = await new StreamReader(ctx.Request.Body).ReadToEndAsync(ctx.RequestAborted);
-    var result = await ai.ForwardAnthropicAsync(body, ctx.RequestAborted);
-    return result is null
-        ? Results.Json(new { error = "ai_key_not_configured" }, statusCode: 503)
-        : Results.Content(result.Value.Body, "application/json", Encoding.UTF8, result.Value.Status);
-});
+// ── AI proxy (server-held key) ────────────────────────────────────────────────
+// The key never ships to clients, but that alone is not enough: the body used to be forwarded
+// verbatim, so a client picked the model, the output length and the context size while the
+// server paid for all three. Every call now goes through AiRequestPolicy (allowlisted model,
+// clamped max_tokens, capped body and message count, streaming forced off) and AiBudget
+// (per-licence daily token cap, charged from the vendor's own usage block).
 
-app.MapPost("/api/ai/openai", async (HttpContext ctx, AiProxy ai) =>
+// Bounded read: refuse an oversized body instead of buffering it into memory first.
+static async Task<string?> ReadBoundedBodyAsync(HttpContext ctx, int maxChars)
 {
-    var body = await new StreamReader(ctx.Request.Body).ReadToEndAsync(ctx.RequestAborted);
-    var result = await ai.ForwardOpenAiAsync(body, ctx.RequestAborted);
-    return result is null
-        ? Results.Json(new { error = "ai_key_not_configured" }, statusCode: 503)
-        : Results.Content(result.Value.Body, "application/json", Encoding.UTF8, result.Value.Status);
+    using var reader = new StreamReader(ctx.Request.Body, Encoding.UTF8);
+    var buffer = new char[8192];
+    var sb = new StringBuilder();
+    int read;
+    while ((read = await reader.ReadAsync(buffer, ctx.RequestAborted)) > 0)
+    {
+        sb.Append(buffer, 0, read);
+        if (sb.Length > maxChars) return null;
+    }
+    return sb.ToString();
+}
+
+static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiProxy ai,
+    AiPolicyOptions policy, AiBudget budget)
+{
+    var license = ctx.Request.Headers["X-License"].ToString();
+    if (!budget.HasHeadroom(license))
+        return Results.Json(new { error = "ai_daily_budget_exhausted", cap = budget.DailyCap }, statusCode: 429);
+
+    var raw = await ReadBoundedBodyAsync(ctx, policy.MaxRequestBytes);
+    if (raw is null)
+        return Results.Json(new { error = "request_too_large", maxBytes = policy.MaxRequestBytes }, statusCode: 413);
+
+    var gated = AiRequestPolicy.Apply(raw, policy, vendor);
+    if (!gated.Ok)
+        return Results.BadRequest(new { error = gated.Error });
+
+    var result = vendor == AiVendor.Anthropic
+        ? await ai.ForwardAnthropicAsync(gated.Body!, ctx.RequestAborted)
+        : await ai.ForwardOpenAiAsync(gated.Body!, ctx.RequestAborted);
+
+    if (result is null) return Results.Json(new { error = "ai_key_not_configured" }, statusCode: 503);
+
+    budget.Charge(license, AiRequestPolicy.CountUsage(result.Value.Body, vendor));
+    return Results.Content(result.Value.Body, "application/json", Encoding.UTF8, result.Value.Status);
+}
+
+app.MapPost("/api/ai/message", (HttpContext ctx, AiProxy ai, AiPolicyOptions policy, AiBudget budget) =>
+    ForwardAiAsync(ctx, AiVendor.Anthropic, ai, policy, budget));
+
+app.MapPost("/api/ai/openai", (HttpContext ctx, AiProxy ai, AiPolicyOptions policy, AiBudget budget) =>
+    ForwardAiAsync(ctx, AiVendor.OpenAi, ai, policy, budget));
+
+// So the terminal can show remaining allowance instead of discovering the cap via a 429.
+app.MapGet("/api/ai/budget", (HttpContext ctx, AiBudget budget) =>
+{
+    var license = ctx.Request.Headers["X-License"].ToString();
+    return Results.Ok(new
+    {
+        used = budget.Used(license),
+        remaining = budget.Remaining(license),
+        cap = budget.DailyCap,
+    });
 });
 
 // ── RAG: answer questions grounded in OUR collected data, not the model's memory ──
 app.MapPost("/api/ai/ask", async (HttpContext ctx, AskInput body, AiProxy ai,
-    PersonalAiRepository personal, AiDigestRepository digests) =>
+    PersonalAiRepository personal, AiDigestRepository digests, AiBudget budget, IConfiguration askCfg) =>
 {
     if (string.IsNullOrWhiteSpace(body.Question))
         return Results.BadRequest(new { error = "question required" });
+
+    // The server composes this request itself, so the model and length are already ours — but it
+    // still spends the server key, so it draws on the same per-licence daily budget.
+    var askLicense = ctx.Request.Headers["X-License"].ToString();
+    if (!budget.HasHeadroom(askLicense))
+        return Results.Json(new { error = "ai_daily_budget_exhausted", cap = budget.DailyCap }, statusCode: 429);
 
     // Context = what the server actually knows: this user's watchlist, the latest AI
     // digests and recent headlines. The model must answer from this or admit it can't.
@@ -228,7 +290,9 @@ app.MapPost("/api/ai/ask", async (HttpContext ctx, AskInput body, AiProxy ai,
 
     var request = JsonSerializer.Serialize(new
     {
-        model = "claude-3-5-haiku-20241022",
+        // Override with AI_ASK_MODEL. Default is the current Haiku — cheaper and better at the
+        // "answer strictly from this context, as JSON-ish prose" job than 3.5 Haiku was.
+        model = askCfg["AI_ASK_MODEL"] ?? "claude-haiku-4-5-20251001",
         max_tokens = 700,
         system = "Answer the trader's question using ONLY the provided context (their watchlist, our AI digests, " +
                  "recent headlines). Quote the numbers from it. If the context doesn't contain the answer, say so " +
@@ -238,6 +302,7 @@ app.MapPost("/api/ai/ask", async (HttpContext ctx, AskInput body, AiProxy ai,
 
     var res = await ai.ForwardAnthropicAsync(request, ctx.RequestAborted);
     if (res is null) return Results.Json(new { error = "ai_key_not_configured" }, statusCode: 503);
+    budget.Charge(askLicense, AiRequestPolicy.CountUsage(res.Value.Body, AiVendor.Anthropic));
     if (res.Value.Status != 200) return Results.Json(new { error = "upstream", status = res.Value.Status }, statusCode: 502);
 
     // Unwrap the model envelope so the terminal just gets the answer text.
@@ -254,40 +319,19 @@ app.MapPost("/api/ai/ask", async (HttpContext ctx, AskInput body, AiProxy ai,
     catch { return Results.Json(new { error = "unparsable_upstream" }, statusCode: 502); }
 });
 
-// ── DEX data (read) ───────────────────────────────────────────────────────────
-app.MapGet("/api/dex/candles", async (string chain, string token, string? tf, DateTime? from, DateTime? to, CandleRepository candles, CancellationToken ct) =>
-{
-    tf ??= "1m";
-    if (!CandleRepository.IsValidTimeframe(tf))
-        return Results.BadRequest(new { error = "tf must be one of 1m,5m,15m,1h,4h,1d" });
-    var toUtc = (to ?? DateTime.UtcNow).ToUniversalTime();
-    var fromUtc = (from ?? toUtc.AddDays(-1)).ToUniversalTime();
-    return Results.Ok(await candles.GetCandlesAsync(tf, chain, token, fromUtc, toUtc, ct));
-});
+// ── Shared reads: one server-side computation, served to every user ───────────
+// /api/dex/candles, /api/dex/token, /api/news, /api/sentiment, /api/gas, /api/onchain,
+// /api/whales, /api/liquidations, /api/digests + /api/cache/stats. All go through
+// SharedResponseCache with per-endpoint TTLs matched to the collector cadence, plus
+// ETag/304, so ~100 terminals cost one DB read per TTL rather than one per request.
+// Reading a token also stamps demand (last_read_utc), which is what lets the poller
+// back off charts nobody has open. See SharedEndpoints.cs.
+app.MapSharedEndpoints();
 
-app.MapGet("/api/dex/token/{chain}/{token}", async (string chain, string token, ApiReadRepository read, CancellationToken ct) =>
-{
-    var detail = await read.GetTokenDetailAsync(chain, token, ct);
-    return detail is null ? Results.NotFound(new { error = "not tracked" }) : Results.Ok(detail);
-});
-
-app.MapGet("/api/news", async (int? limit, ApiReadRepository read, CancellationToken ct) =>
-    Results.Ok(await read.GetNewsAsync(Math.Clamp(limit ?? 50, 1, 200), ct)));
-
-app.MapGet("/api/sentiment", async (ApiReadRepository read, CancellationToken ct) =>
-    Results.Ok(await read.GetLatestSentimentAsync(ct)));
-
-app.MapGet("/api/gas", async (ApiReadRepository read, CancellationToken ct) =>
-    Results.Ok(await read.GetGasAsync(ct)));
-
-app.MapGet("/api/onchain", async (string? asset, ApiReadRepository read, CancellationToken ct) =>
-    Results.Ok(await read.GetOnChainAsync((asset ?? "btc").ToLowerInvariant(), ct)));
-
-app.MapGet("/api/whales", async (int? limit, ApiReadRepository read, CancellationToken ct) =>
-    Results.Ok(await read.GetWhalesAsync(Math.Clamp(limit ?? 50, 1, 200), ct)));
-
-app.MapGet("/api/liquidations", async (int? limit, ApiReadRepository read, CancellationToken ct) =>
-    Results.Ok(await read.GetLiquidationsAsync(Math.Clamp(limit ?? 50, 1, 200), ct)));
+// Per-user COMPOSITION over those same shared parts: /api/watchlist (the AI-signals tab in one
+// request) and /api/dex/tokens (an explicit set). The list of tokens is per-user; every
+// analytics block inside it is a shared cache entry, so users watching the same coin share it.
+app.MapCompositeEndpoints();
 
 // ── Custodial secrets (envelope-encrypted; API never decrypts) ────────────────
 app.MapPost("/api/secrets", async (HttpContext ctx, SecretInput body, SecretsRepository secrets, AuditRepository audit) =>
@@ -430,12 +474,8 @@ app.MapGet("/api/alerts", async (HttpContext ctx, PriceAlertsRepository alerts) 
 app.MapDelete("/api/alerts/{id:guid}", async (HttpContext ctx, Guid id, PriceAlertsRepository alerts) =>
     Results.Ok(new { removed = await alerts.DeleteAsync(Uid(ctx), id, ctx.RequestAborted) }));
 
-// ── Shared AI digests (daily / movers / narratives / news_impact) ─────────────
-// Computed once on the server, served to every user.
-app.MapGet("/api/digests", async (HttpContext ctx, string? kind, int? limit, AiDigestRepository digests) =>
-    Results.Ok(await digests.ListRecentAsync(kind, Math.Clamp(limit ?? 20, 1, 100), ctx.RequestAborted)));
-
 // ── Inbox: how the desktop terminal receives server events (every user, no setup) ─
+// Per-user, so deliberately NOT in SharedEndpoints — never share an inbox cache entry.
 app.MapGet("/api/inbox", async (HttpContext ctx, bool? unread, int? limit, InboxRepository inbox) =>
     Results.Ok(await inbox.ListForUserAsync(Uid(ctx), unread ?? false, Math.Clamp(limit ?? 50, 1, 200), ctx.RequestAborted)));
 

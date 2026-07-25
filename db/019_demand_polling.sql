@@ -1,0 +1,23 @@
+-- ============================================================================
+--  CryptoAI server DB — migration 019: demand-driven polling.
+--  Apply AFTER 018. Idempotent.
+--
+--  Why: tracked_tokens was polled at a flat poll_interval_s (60s) for every active
+--  token, whether anyone was looking at it or not. With ~100 users the favourites set
+--  is far larger than the set actually on screen, so most of the upstream quota and
+--  most of the candle writes went to charts nobody had open.
+--
+--  last_read_utc records when a user last actually READ the token (candles or detail).
+--  TrackedTokenRepository.ClaimDueAsync uses it to pick the reschedule interval:
+--     read < 5 min ago      → poll_interval_s   (hot: someone is watching)
+--     read < 1 h ago        → 300s              (warm: recently open)
+--     never read / older    → 900s              (cold: keep it alive, cheaply)
+--  A token with an ACTIVE price alert always stays hot regardless — the AlertCollector
+--  reads token_snapshot every 20s and a backed-off token would fire late.
+--
+--  No index is added: last_read_utc is only ever evaluated per-row on tokens the claim
+--  query has already selected via ix_tracked_due, so an index would cost writes and buy
+--  nothing.
+-- ============================================================================
+
+ALTER TABLE tracked_tokens ADD COLUMN IF NOT EXISTS last_read_utc TIMESTAMPTZ;
