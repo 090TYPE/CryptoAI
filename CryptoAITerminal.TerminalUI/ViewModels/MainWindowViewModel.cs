@@ -7721,6 +7721,13 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         _extMarkets.Add(new ExtMarketDto("DEX", displaySymbol, resolvedChain, resolvedAddress));
         SaveExtMarkets();
 
+        // Mirror into the DEX desk's watchlist, which is the only list synced to the server, so a
+        // token added here is tracked 24/7 like one added on the DEX tab. Routed through that desk
+        // rather than pushed directly: FavoritesSyncService PUTs the whole set, so a second pusher
+        // with its own list would wipe the other one server-side.
+        DexTradingVM.AddToWatchlist(resolvedChain, resolvedAddress, displaySymbol,
+            token.PriceUsd, token.PriceChange24h);
+
         RefreshMarketExplorerCollections();
         RaiseMarketExplorerStateChanged();
         SelectedMarket = market;
@@ -7744,6 +7751,11 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             Markets.Remove(market);
             _extMarkets.Remove(extDto);
             SaveExtMarkets();
+
+            // Keep the synced watchlist in step, otherwise removing here would leave the server
+            // polling a token the user believes they deleted.
+            if (extDto.Exchange == "DEX" && !string.IsNullOrWhiteSpace(extDto.DexAddress))
+                DexTradingVM.RemoveFromWatchlist(extDto.DexAddress);
             if (ReferenceEquals(SelectedMarket, market)) SelectedMarket = Markets.FirstOrDefault();
             RefreshMarketExplorerCollections();
             RaiseMarketExplorerStateChanged();

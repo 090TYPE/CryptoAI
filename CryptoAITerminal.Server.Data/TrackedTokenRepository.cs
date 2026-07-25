@@ -63,6 +63,12 @@ public sealed class TrackedTokenRepository
                                      AND a.token_address = t.token_address
                                      AND a.status = 'active')
                           THEN t.poll_interval_s
+                     -- A token favourited moments ago IS demand, but it has no last_read_utc yet,
+                     -- so without this it fell straight to the cold tier and waited 15 minutes for
+                     -- its first candles — and its very first poll usually finds nothing, because
+                     -- the pool address has not been resolved that early.
+                     WHEN t.added_utc > now() - make_interval(secs => @hotWindowS)
+                          THEN t.poll_interval_s
                      WHEN t.last_read_utc > now() - make_interval(secs => @hotWindowS)
                           THEN t.poll_interval_s
                      WHEN t.last_read_utc > now() - make_interval(secs => @warmWindowS)

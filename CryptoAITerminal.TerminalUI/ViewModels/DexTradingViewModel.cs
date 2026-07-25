@@ -1103,6 +1103,30 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(IsSelectedWatched));
     }
 
+    /// <summary>
+    /// Add a token to the synced watchlist from outside this desk - the Markets tab's
+    /// "+ Add to Watchlist" uses it. Everything is routed through this one owner on purpose:
+    /// FavoritesSyncService PUTs the FULL list, so a second caller pushing its own set would
+    /// delete this one server-side.
+    /// </summary>
+    public void AddToWatchlist(string chainId, string tokenAddress, string symbol,
+        decimal priceUsd = 0m, decimal change24h = 0m)
+    {
+        if (string.IsNullOrWhiteSpace(chainId) || string.IsNullOrWhiteSpace(tokenAddress)) return;
+        if (WatchlistItems.Any(w => string.Equals(w.TokenAddress, tokenAddress, StringComparison.OrdinalIgnoreCase)))
+            return;
+
+        var item = new DexWatchItemViewModel(chainId, tokenAddress, symbol);
+        item.Update(priceUsd, change24h);
+        WatchlistItems.Add(item);
+        SaveWatchlist();
+        this.RaisePropertyChanged(nameof(HasWatchlist));
+        this.RaisePropertyChanged(nameof(IsSelectedWatched));
+    }
+
+    /// <summary>Counterpart of <see cref="AddToWatchlist"/> for callers outside this desk.</summary>
+    public void RemoveFromWatchlist(string address) => RemoveWatchlist(address);
+
     private void RemoveWatchlist(string address)
     {
         var existing = WatchlistItems.FirstOrDefault(w => string.Equals(w.TokenAddress, address, StringComparison.OrdinalIgnoreCase));

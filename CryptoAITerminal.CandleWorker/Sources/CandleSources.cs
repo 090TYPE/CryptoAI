@@ -24,7 +24,13 @@ public interface ICandleSource
     /// </summary>
     string? RequiredKey { get; }
 
-    Task<IReadOnlyList<CandleRow>> FetchAsync(CandleRequest req, string? apiKey, CancellationToken ct);
+    /// <summary>
+    /// Candles, or <c>null</c> when this source DECLINED: it is not applicable to the request and
+    /// made no call (no pool address, an unmapped chain, a missing key). An empty list means the
+    /// opposite - the call was made and the provider genuinely has nothing. Collapsing the two is
+    /// how a log ends up claiming a source was tried when it never left the process.
+    /// </summary>
+    Task<IReadOnlyList<CandleRow>?> FetchAsync(CandleRequest req, string? apiKey, CancellationToken ct);
 }
 
 internal static class CandleMapper
@@ -49,11 +55,14 @@ public sealed class GeckoTerminalCandleSource : ICandleSource
     public string Name => "geckoterminal";
     public string? RequiredKey => null;
 
-    public async Task<IReadOnlyList<CandleRow>> FetchAsync(CandleRequest req, string? apiKey, CancellationToken ct)
+    public async Task<IReadOnlyList<CandleRow>?> FetchAsync(CandleRequest req, string? apiKey, CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(req.PoolAddress)) return [];
+        // Declined rather than empty: this endpoint keys on the pool, so with no pool address there
+        // is nothing to ask. A freshly favourited token sits here until a collector resolves it.
+        if (string.IsNullOrEmpty(req.PoolAddress)) return null;
+
         var network = ChainMap.ToGeckoNetwork(req.Chain);
-        if (network is null) return [];
+        if (network is null) return null;
 
         var points = await _client.GetPoolOhlcvAsync(network, req.PoolAddress, "minute", aggregate: 1, req.Limit, ct)
             .ConfigureAwait(false);
@@ -62,7 +71,7 @@ public sealed class GeckoTerminalCandleSource : ICandleSource
 }
 
 /// <summary>
-/// CoinGecko Pro on-chain. Keyed, but keys on the TOKEN rather than the pool — so it also covers
+/// CoinGecko Pro on-chain. Keyed, but keys on the TOKEN rather than the pool, so it also covers
 /// tokens whose primary pool has not been resolved yet, which GeckoTerminal cannot.
 /// </summary>
 public sealed class CoinGeckoOnchainCandleSource : ICandleSource
@@ -73,10 +82,10 @@ public sealed class CoinGeckoOnchainCandleSource : ICandleSource
     public string Name => "coingecko";
     public string? RequiredKey => "coingecko";
 
-    public async Task<IReadOnlyList<CandleRow>> FetchAsync(CandleRequest req, string? apiKey, CancellationToken ct)
+    public async Task<IReadOnlyList<CandleRow>?> FetchAsync(CandleRequest req, string? apiKey, CancellationToken ct)
     {
         var network = ChainMap.ToGeckoNetwork(req.Chain);
-        if (network is null || string.IsNullOrWhiteSpace(apiKey)) return [];
+        if (network is null || string.IsNullOrWhiteSpace(apiKey)) return null;
 
         var client = new CoinGeckoOnchainClient(apiKey!, _http);
         var points = await client.GetTokenOhlcvAsync(network, req.TokenAddress, "minute", aggregate: 1, req.Limit, ct)
@@ -94,9 +103,9 @@ public sealed class BirdeyeCandleSource : ICandleSource
     public string Name => "birdeye";
     public string? RequiredKey => "birdeye";
 
-    public async Task<IReadOnlyList<CandleRow>> FetchAsync(CandleRequest req, string? apiKey, CancellationToken ct)
+    public async Task<IReadOnlyList<CandleRow>?> FetchAsync(CandleRequest req, string? apiKey, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(apiKey)) return [];
+        if (string.IsNullOrWhiteSpace(apiKey)) return null;
 
         var to = DateTimeOffset.UtcNow;
         var from = to.AddMinutes(-Math.Max(1, req.Limit));

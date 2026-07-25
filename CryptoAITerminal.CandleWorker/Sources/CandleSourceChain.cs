@@ -3,8 +3,14 @@ using Microsoft.Extensions.Logging;
 
 namespace CryptoAITerminal.CandleWorker.Sources;
 
-/// <summary>Which source answered, and what it returned.</summary>
-public sealed record CandleFetch(IReadOnlyList<CandleRow> Rows, string? Source, string? LastError);
+/// <summary>
+/// Which source answered, and what it returned.
+/// <paramref name="AnySourceFailed"/> separates "a provider is broken" from "every provider
+/// answered honestly and this token simply has no data" — without it the first drowns in the second,
+/// since an unservable token is retried for as long as it stays tracked.
+/// </summary>
+public sealed record CandleFetch(
+    IReadOnlyList<CandleRow> Rows, string? Source, string? LastError, bool AnySourceFailed);
 
 /// <summary>
 /// Tries every configured candle source in order and takes the first one that actually returns
@@ -39,7 +45,8 @@ public sealed class CandleSourceChain
     public async Task<CandleFetch> FetchAsync(CandleRequest req, CancellationToken ct)
     {
         string? lastError = null;
-        var skipped = 0;
+        var failed = false;
+        var tried = new List<string>();
 
         foreach (var source in _sources)
         {
@@ -49,25 +56,37 @@ public sealed class CandleSourceChain
             if (source.RequiredKey is { } needed)
             {
                 key = await _keys.GetAsync(needed, ct).ConfigureAwait(false);
-                if (string.IsNullOrWhiteSpace(key)) { skipped++; continue; }
+                if (string.IsNullOrWhiteSpace(key)) continue;
             }
 
             try
             {
                 var rows = await source.FetchAsync(req, key, ct).ConfigureAwait(false);
-                if (rows.Count > 0) return new CandleFetch(rows, source.Name, lastError);
+
+                // null means the source declined and made no call, so it must not be reported as
+                // tried: reading "tried: geckoterminal" in a log while it never left the process is
+                // exactly the wrong thing to believe when diagnosing a token that yields nothing.
+                if (rows is null) continue;
+
+                tried.Add(source.Name);
+                if (rows.Count > 0) return new CandleFetch(rows, source.Name, lastError, failed);
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
+                failed = true;
                 lastError = $"{source.Name}: {ex.Message}";
                 _log.LogDebug(ex, "candle source {Source} failed for {Chain}/{Token}", source.Name, req.Chain, req.TokenAddress);
             }
         }
 
-        if (lastError is null && skipped == _sources.Count)
-            lastError = "no candle source is configured (all keyed sources lack a key)";
+        // Always explain an empty result. Previously a run where every source returned an empty list
+        // without throwing produced no message at all, so "nothing to collect" was indistinguishable
+        // from "the worker never got here".
+        lastError ??= tried.Count == 0
+            ? "no candle source is configured — every keyed source is missing its provider_keys entry"
+            : $"no data from any source (tried: {string.Join(", ", tried)})";
 
-        return new CandleFetch([], null, lastError);
+        return new CandleFetch([], null, lastError, failed);
     }
 }

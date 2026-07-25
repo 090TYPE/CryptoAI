@@ -89,9 +89,13 @@ public sealed class CandlePollingService : BackgroundService
 
             if (fetch.Rows.Count == 0)
             {
-                // An empty result and a broken provider used to look the same. Say which it was.
-                if (fetch.LastError is not null)
+                // An empty result and a broken provider used to look the same, and an empty one used
+                // to say nothing at all. Both are reported now, at levels that keep a real provider
+                // failure from drowning in the steady noise of a token nobody can serve.
+                if (fetch.AnySourceFailed)
                     _log.LogWarning("{Chain}/{Token}: no candles — {Error}", t.Chain, t.TokenAddress, fetch.LastError);
+                else
+                    _log.LogInformation("{Chain}/{Token}: no candles — {Error}", t.Chain, t.TokenAddress, fetch.LastError);
 
                 await _tracked.MarkPolledAsync(t.Chain, t.TokenAddress, null, ct);
                 continue;
