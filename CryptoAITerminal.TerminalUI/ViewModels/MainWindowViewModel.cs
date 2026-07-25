@@ -1384,7 +1384,21 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         InitializeAiSignalStudio();
         RefreshQuickBacktestSnapshot();
         RaiseTimeframeStateChanged();
+        AttachDesks();
         _ = InitializeAsync();
+    }
+
+    /// <summary>
+    /// Hands the redesigned desks their live data sources. Each desk pulls what it
+    /// needs off the shell VM and subscribes for updates — no seeded sample rows.
+    /// </summary>
+    private void AttachDesks()
+    {
+        BotsDesk.Attach(this);
+        RulesDesk.Attach(this);
+        MarketFeedDesk.Attach(this);
+        AnalyticsDesk.Attach(this);
+        SettingsDesk.Attach(this);
     }
 
     public int SelectedTabIndex
@@ -2869,6 +2883,19 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public string LiquidationNavBackground => GetShellSectionBackground("liquidation");
     public string LiquidationNavForeground => GetShellSectionForeground("liquidation");
     public bool   IsRulesSectionVisible   => IsWorkspaceSection("rules");
+    /// <summary>Full-bleed redesigned desks (Bots, Rules, …) suppress the generic page title.</summary>
+    public bool   ShowSectionTitle        => !IsDeskSectionVisible;
+
+    /// <summary>True while one of the redesigned full-bleed desks owns the page.</summary>
+    public bool IsDeskSectionVisible =>
+        IsBotsSectionVisible || IsRulesSectionVisible || IsNewsSectionVisible || IsAnalyticsSectionVisible || IsSettingsSectionVisible;
+
+    // A desk draws its own chrome edge-to-edge, so the shared page frame steps out of the way.
+    public Avalonia.Thickness   PagePadding         => IsDeskSectionVisible ? new Avalonia.Thickness(0)  : new Avalonia.Thickness(26);
+    public Avalonia.Thickness   PageBorderThickness => IsDeskSectionVisible ? new Avalonia.Thickness(0)  : new Avalonia.Thickness(1);
+    public Avalonia.CornerRadius PageCornerRadius   => IsDeskSectionVisible ? new Avalonia.CornerRadius(0) : new Avalonia.CornerRadius(14);
+    public string               PageBackground      => IsDeskSectionVisible ? "#040b12" : "#07101A";
+    public Avalonia.Thickness   PageOuterMargin     => IsDeskSectionVisible ? new Avalonia.Thickness(0)  : new Avalonia.Thickness(18, 16, 18, 16);
     public string RulesNavBackground      => GetShellSectionBackground("rules");
     public string RulesNavForeground      => GetShellSectionForeground("rules");
     public bool   IsJournalSectionVisible    => IsWorkspaceSection("journal");
@@ -3521,6 +3548,24 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     public AIBotViewModel AIBotVM { get; }
     public AiTraderViewModel AiTraderVM { get; }
+
+    /// <summary>
+    /// Redesigned Bots tab (self-contained interactive desk prototype). Rendered
+    /// by <see cref="Views.BotsView"/> when the Bots section is visible.
+    /// </summary>
+    public BotsDesk.BotsDeskViewModel BotsDesk { get; } = new();
+
+    /// <summary>Redesigned Rules tab (self-contained interactive rule-engine desk).</summary>
+    public RulesDesk.RulesDeskViewModel RulesDesk { get; } = new();
+
+    /// <summary>Redesigned "Market feed" desk (News/Tape/Liquidations), hosted in the News section.</summary>
+    public MarketFeedDesk.MarketFeedDeskViewModel MarketFeedDesk { get; } = new();
+
+    /// <summary>Redesigned Analytics tab (trade-analytics dashboard).</summary>
+    public AnalyticsDesk.AnalyticsDeskViewModel AnalyticsDesk { get; } = new();
+
+    /// <summary>Redesigned Settings tab (provider / keys / notifications / alerts / execution).</summary>
+    public SettingsDesk.SettingsDeskViewModel SettingsDesk { get; } = new();
     public CopilotViewModel CopilotVM { get; private set; } = null!;
     public AutonomousAgentViewModel AutonomousVM { get; private set; } = null!;
     private Services.AppActions.AppAgentService? _appAgent;
@@ -7119,6 +7164,13 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(LiquidationNavBackground));
         this.RaisePropertyChanged(nameof(LiquidationNavForeground));
         this.RaisePropertyChanged(nameof(IsRulesSectionVisible));
+        this.RaisePropertyChanged(nameof(ShowSectionTitle));
+        this.RaisePropertyChanged(nameof(IsDeskSectionVisible));
+        this.RaisePropertyChanged(nameof(PagePadding));
+        this.RaisePropertyChanged(nameof(PageBorderThickness));
+        this.RaisePropertyChanged(nameof(PageCornerRadius));
+        this.RaisePropertyChanged(nameof(PageBackground));
+        this.RaisePropertyChanged(nameof(PageOuterMargin));
         this.RaisePropertyChanged(nameof(RulesNavBackground));
         this.RaisePropertyChanged(nameof(RulesNavForeground));
         this.RaisePropertyChanged(nameof(IsJournalSectionVisible));

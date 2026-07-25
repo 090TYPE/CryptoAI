@@ -1,0 +1,98 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:CryptoAITerminal.TerminalUI.Converters"
+             x:Class="CryptoAITerminal.TerminalUI.Views.RulesModals"
+             x:CompileBindings="False"
+             FontFamily="{StaticResource FontDisplay}">
+
+  <UserControl.Styles>
+    <Style Selector="Button">
+      <Setter Property="Cursor" Value="Hand" /><Setter Property="MinHeight" Value="0" /><Setter Property="MinWidth" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}">
+            <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+  </UserControl.Styles>
+
+  <Panel>
+    <!-- eval side-panel -->
+    <Grid IsVisible="{Binding ModalPanel}" Background="#8C020610" ZIndex="92">
+      <Button Command="{Binding CloseModalCommand}" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+      <Border Width="420" HorizontalAlignment="Right" VerticalAlignment="Stretch" Background="#07101a" BorderBrush="#152233" BorderThickness="1,0,0,0" BoxShadow="-20 0 60 0 #99000000">
+        <DockPanel LastChildFill="True">
+          <Border DockPanel.Dock="Top" BorderBrush="#0d1b27" BorderThickness="0,0,0,1" Padding="15,14">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="3">
+                <TextBlock Text="{Binding PanelTitle}" FontSize="13" FontWeight="SemiBold" Foreground="#e8f4ff" />
+                <TextBlock Text="{Binding PanelSub}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" />
+              </StackPanel>
+              <Button Grid.Column="1" Command="{Binding CloseModalCommand}" Background="Transparent" BorderThickness="0" Content="✕" Foreground="#2d4a5e" FontSize="15" />
+            </Grid>
+          </Border>
+          <Border DockPanel.Dock="Bottom" BorderBrush="#0d1b27" BorderThickness="0,1,0,0" Background="#060d14" Padding="15,12">
+            <Button Command="{Binding CloseModalCommand}" Height="29" HorizontalAlignment="Stretch" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="CLOSE" Foreground="#8fa3b8" FontSize="10" FontWeight="Bold" />
+          </Border>
+          <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="15,14">
+            <StackPanel>
+              <ItemsControl ItemsSource="{Binding PanelRows}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Border BorderBrush="#0a1520" BorderThickness="0,0,0,1" Padding="0,9">
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="{Binding Label}" FontSize="11" Foreground="#8fa3b8" />
+                        <TextBlock Grid.Column="1" Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <Border Margin="0,13,0,0" Padding="11" CornerRadius="8" Background="#061615" BorderBrush="#14302e" BorderThickness="1">
+                <TextBlock Text="{Binding PanelNote}" FontSize="11" LineHeight="17" Foreground="#a9c2d8" TextWrapping="Wrap" />
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </DockPanel>
+      </Border>
+    </Grid>
+
+    <!-- delete confirm -->
+    <Grid IsVisible="{Binding ModalConfirm}" Background="#BD020610" ZIndex="95">
+      <Button Command="{Binding CloseModalCommand}" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+      <Border Width="460" HorizontalAlignment="Center" VerticalAlignment="Center" CornerRadius="12" Background="#07101a" BorderBrush="#3a1620" BorderThickness="1" ClipToBounds="True" BoxShadow="0 30 80 0 #BF000000">
+        <StackPanel>
+          <StackPanel Margin="17,15">
+            <StackPanel Orientation="Horizontal" Spacing="9" Margin="0,0,0,10" VerticalAlignment="Center">
+              <TextBlock Text="⌫" FontSize="14" Foreground="#ff6b6b" />
+              <TextBlock Text="{Binding ConfirmTitle}" FontSize="13" FontWeight="SemiBold" Foreground="#e8f4ff" />
+            </StackPanel>
+            <TextBlock Text="{Binding ConfirmBody}" FontSize="11.5" LineHeight="18" Foreground="#8fa3b8" TextWrapping="Wrap" />
+          </StackPanel>
+          <Border BorderBrush="#0d1b27" BorderThickness="0,1,0,0" Background="#060d14" Padding="17,12">
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+              <Button Grid.Column="1" Command="{Binding CloseModalCommand}" Height="28" Padding="12,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="CANCEL" Foreground="#8fa3b8" FontSize="10" FontWeight="Bold" />
+              <Button Grid.Column="2" Command="{Binding ConfirmRunCommand}" Height="28" Padding="14,0" CornerRadius="6" Background="#14060a" BorderBrush="#ff6b6b" BorderThickness="1" Content="{Binding ConfirmCta}" Foreground="#ff6b6b" FontSize="10" FontWeight="Bold" />
+            </Grid>
+          </Border>
+        </StackPanel>
+      </Border>
+    </Grid>
+
+    <!-- toast -->
+    <Border IsVisible="{Binding HasToast}" ZIndex="99" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,40"
+            Padding="14,9" CornerRadius="8" Background="#07101a" BorderThickness="1" BoxShadow="0 16 40 0 #99000000" BorderBrush="{Binding ToastBorder, Converter={StaticResource StringToBrush}}">
+      <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+        <TextBlock Text="{Binding ToastIcon}" FontSize="11" Foreground="{Binding ToastColor, Converter={StaticResource StringToBrush}}" />
+        <TextBlock Text="{Binding ToastMsg}" FontSize="11.5" Foreground="#e8f4ff" />
+        <TextBlock Text="{Binding ToastMeta}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" />
+      </StackPanel>
+    </Border>
+  </Panel>
+</UserControl>

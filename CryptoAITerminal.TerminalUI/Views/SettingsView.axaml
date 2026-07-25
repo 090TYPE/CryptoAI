@@ -1,1189 +1,851 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
-             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             xmlns:conv="clr-namespace:CryptoAITerminal.TerminalUI.Converters"
              x:Class="CryptoAITerminal.TerminalUI.Views.SettingsView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <StackPanel Spacing="16" IsVisible="{Binding IsSettingsSectionVisible}">
+             x:CompileBindings="False"
+             FontFamily="{StaticResource FontDisplay}">
 
-            <!-- ═══ AI Assistant Provider (Claude / ChatGPT) ═══ -->
-            <Border Classes="Panel">
-              <StackPanel Spacing="12">
-                <TextBlock Classes="H2" Text="AI Assistant — Claude or ChatGPT" />
-                <TextBlock Foreground="#8FA3B8" FontSize="12" TextWrapping="Wrap"
-                           Text="Choose which AI powers every assistant in the terminal (copilot, daily briefing, pre-trade risk, alerts, scanner ranking, options, and the rest). Paste an API key for the provider you pick. Use the 'Log in / get key' button to open the provider's website, sign in, and create a key." />
+  <UserControl.Resources>
+    <SolidColorBrush x:Key="DeskBg" Color="#040b12" />
+  </UserControl.Resources>
 
-                <!-- Provider toggle -->
-                <StackPanel Orientation="Horizontal" Spacing="20">
-                  <RadioButton GroupName="AiProvider" Content="Claude (Anthropic)" IsChecked="{Binding AiIsClaude, Mode=TwoWay}" Foreground="#C5D2DE" />
-                  <RadioButton GroupName="AiProvider" Content="ChatGPT (OpenAI)"   IsChecked="{Binding AiIsChatGpt, Mode=TwoWay}" Foreground="#C5D2DE" />
+  <UserControl.Styles>
+    <Style Selector="Button">
+      <Setter Property="Cursor" Value="Hand" /><Setter Property="MinHeight" Value="0" /><Setter Property="MinWidth" Value="0" /><Setter Property="HorizontalContentAlignment" Value="Center" /><Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}">
+            <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="Button:pointerover"><Setter Property="Opacity" Value="0.86" /></Style>
+    <Style Selector="TextBox">
+      <Setter Property="MinHeight" Value="0" /><Setter Property="CaretBrush" Value="#21e6c1" /><Setter Property="Foreground" Value="#d0e4f4" />
+      <Setter Property="Background" Value="Transparent" /><Setter Property="BorderThickness" Value="0" /><Setter Property="Padding" Value="0" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBox /template/ Border#PART_BorderElement"><Setter Property="MinHeight" Value="0" /></Style>
+    <Style Selector="ComboBox">
+      <Setter Property="MinHeight" Value="0" /><Setter Property="Foreground" Value="#d0e4f4" /><Setter Property="FontSize" Value="11" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+  </UserControl.Styles>
+
+  <Border IsVisible="{Binding IsSettingsSectionVisible}" MinHeight="760" Height="{Binding $parent[ScrollViewer].Bounds.Height}">
+    <Grid DataContext="{Binding SettingsDesk}" Background="{StaticResource DeskBg}" ClipToBounds="True">
+      <DockPanel LastChildFill="True">
+
+        <!-- ═══ header ═══ -->
+        <Border DockPanel.Dock="Top" Height="54" Background="#050c14" BorderBrush="#0d1b27" BorderThickness="0,0,0,1" Padding="14,0">
+          <DockPanel LastChildFill="True">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="7" VerticalAlignment="Center" Margin="14,0,0,0">
+              <Button Command="{Binding RevertCommand}" Background="#060d14" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Padding="9,5" Content="REVERT" Foreground="#5a7a94" FontSize="9" FontWeight="Bold" />
+              <Button Command="{Binding ExportProfileCommand}" Background="#060d14" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Padding="9,5" Content="↑ EXPORT PROFILE" Foreground="#5a7a94" FontSize="9" FontWeight="Bold" />
+              <Button Command="{Binding SaveAllCommand}" Background="#0e2a2a" BorderBrush="#21e6c1" BorderThickness="1" CornerRadius="5" Padding="12,6" Content="SAVE ALL" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+              <Border Padding="0,0,16,0" BorderBrush="#0d1b27" BorderThickness="0,0,1,0">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <TextBlock Text="/" Foreground="#1e3048" FontSize="16" FontWeight="Light" />
+                  <TextBlock Text="Settings" Foreground="#21e6c1" FontSize="13" FontWeight="Bold" />
                 </StackPanel>
-
-                <!-- Claude credentials -->
-                <Border Background="#0E1B27" CornerRadius="6" Padding="12" IsVisible="{Binding AiIsClaude}">
-                  <StackPanel Spacing="8">
-                    <TextBlock Classes="Overline" Text="Claude (Anthropic) API key" />
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                      <TextBox Grid.Column="0" Text="{Binding AnthropicKeyInput}" PasswordChar="•" PlaceholderText="sk-ant-…" />
-                      <Button Grid.Column="1" Content="🌐 Log in / get key" Command="{Binding OpenAnthropicConsoleCommand}" />
-                    </Grid>
-                    <TextBlock Classes="Overline" Text="Model" />
-                    <TextBox Text="{Binding AnthropicModelInput}" PlaceholderText="claude-sonnet-4-6" />
-                  </StackPanel>
-                </Border>
-
-                <!-- ChatGPT credentials -->
-                <Border Background="#0E1B27" CornerRadius="6" Padding="12" IsVisible="{Binding AiIsChatGpt}">
-                  <StackPanel Spacing="8">
-                    <TextBlock Classes="Overline" Text="ChatGPT (OpenAI) API key" />
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                      <TextBox Grid.Column="0" Text="{Binding OpenAiKeyInput}" PasswordChar="•" PlaceholderText="sk-…" />
-                      <Button Grid.Column="1" Content="🌐 Log in / get key" Command="{Binding OpenOpenAiConsoleCommand}" />
-                    </Grid>
-                    <TextBlock Classes="Overline" Text="Model" />
-                    <TextBox Text="{Binding OpenAiModelInput}" PlaceholderText="gpt-4o" />
-                  </StackPanel>
-                </Border>
-
-                <StackPanel Orientation="Horizontal" Spacing="12">
-                  <Button Content="Save AI provider" Command="{Binding SaveAiSettingsCommand}"
-                          Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
-                  <TextBlock Text="{Binding AiSettingsStatus}" Foreground="#8FA3B8" FontSize="12"
-                             TextWrapping="Wrap" VerticalAlignment="Center" />
+              </Border>
+              <Border Padding="14,0" BorderBrush="#0d1b27" BorderThickness="0,0,1,0">
+                <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+                  <TextBlock Text="LICENSE" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                  <Border BorderBrush="{Binding LicBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="5" Background="{Binding LicBg, Converter={StaticResource StringToBrush}}" Padding="9,3">
+                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                      <Border Width="6" Height="6" CornerRadius="3" Background="{Binding LicColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding LicBadge}" Foreground="{Binding LicColor, Converter={StaticResource StringToBrush}}" FontSize="10" FontWeight="ExtraBold" />
+                    </StackPanel>
+                  </Border>
                 </StackPanel>
-
-                <TextBlock Foreground="#4A6880" FontSize="11" TextWrapping="Wrap"
-                           Text="Keys are stored encrypted on this PC (DPAPI) and never leave it except in calls to the provider you selected. The change applies immediately — no restart needed." />
-              </StackPanel>
-            </Border>
-            <!-- ═══ End AI Assistant Provider ═══ -->
-
-            <!-- License & activation -->
-            <Border Classes="Panel">
-              <StackPanel Spacing="12">
-                <TextBlock Classes="H2" Text="License &amp; Activation" />
-
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                  <Border Background="{Binding LicenseVM.StateBrush}" CornerRadius="3" Padding="8,3" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding LicenseVM.StateLabel}" Foreground="#06121C" FontSize="12" FontWeight="Bold" />
-                  </Border>
-                  <TextBlock Text="{Binding LicenseVM.DetailLabel}" Foreground="#8FA3B8" FontSize="12"
-                             TextWrapping="Wrap" VerticalAlignment="Center" />
+              </Border>
+              <Border Padding="14,0" BorderBrush="#0d1b27" BorderThickness="0,0,1,0">
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                  <TextBlock Text="EXCHANGE KEYS" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+                  <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom">
+                    <TextBlock Text="{Binding HdrKeys}" FontFamily="{StaticResource FontMono}" FontSize="16" Foreground="#e8f4ff" />
+                    <TextBlock Text="{Binding HdrKeysSub}" Foreground="#3d5a72" FontSize="9" Margin="0,0,0,2" VerticalAlignment="Bottom" />
+                  </StackPanel>
                 </StackPanel>
-
-                <StackPanel Spacing="6">
-                  <TextBlock Classes="Overline" Text="Your Machine ID (send this to the bot to bind your key)" />
-                  <TextBox Text="{Binding LicenseVM.MachineId, Mode=OneWay}" IsReadOnly="True"
-                           FontFamily="Consolas,Menlo,monospace" />
+              </Border>
+              <Border Padding="14,0" BorderBrush="#0d1b27" BorderThickness="0,0,1,0">
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                  <TextBlock Text="ALERT CHANNELS" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+                  <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom">
+                    <TextBlock Text="{Binding HdrChannels}" FontFamily="{StaticResource FontMono}" FontSize="16" Foreground="#21e6c1" />
+                    <TextBlock Text="{Binding HdrChannelsSub}" Foreground="#3d5a72" FontSize="9" Margin="0,0,0,2" VerticalAlignment="Bottom" />
+                  </StackPanel>
                 </StackPanel>
-
-                <StackPanel Spacing="6">
-                  <TextBlock Classes="Overline" Text="Activation key" />
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                    <TextBox Grid.Column="0" Text="{Binding LicenseVM.KeyInput}" PlaceholderText="Paste your license key here" />
-                    <Button Grid.Column="1" Content="Activate" Command="{Binding LicenseVM.ActivateCommand}"
-                            Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
-                  </Grid>
-                  <TextBlock Text="{Binding LicenseVM.StatusMessage}" Foreground="#F4B860" FontSize="12" TextWrapping="Wrap" />
+              </Border>
+              <Border Padding="14,0" BorderBrush="#0d1b27" BorderThickness="0,0,1,0">
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                  <TextBlock Text="ACTIVE ALERTS" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+                  <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom">
+                    <TextBlock Text="{Binding HdrAlerts}" FontFamily="{StaticResource FontMono}" FontSize="16" Foreground="#e8f4ff" />
+                    <TextBlock Text="{Binding HdrAlertsSub}" Foreground="#3d5a72" FontSize="9" Margin="0,0,0,2" VerticalAlignment="Bottom" />
+                  </StackPanel>
                 </StackPanel>
+              </Border>
+              <Border Padding="14,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding DirtyLabel}" FontFamily="{StaticResource FontMono}" FontSize="10.5" Foreground="{Binding DirtyColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+              </Border>
+            </StackPanel>
+          </DockPanel>
+        </Border>
 
-                <TextBlock Foreground="#4A6880" FontSize="11" TextWrapping="Wrap"
-                           Text="Buy a key in the Telegram bot. Send the Machine ID above to the bot before paying so your key is bound to this PC. Without a valid license, only Demo (paper) mode is available after the trial." />
-              </StackPanel>
-            </Border>
+        <!-- ═══ footer ═══ -->
+        <Border DockPanel.Dock="Bottom" Height="26" Background="#050c14" BorderBrush="#0d1b27" BorderThickness="0,1,0,0" Padding="14,0">
+          <DockPanel LastChildFill="True">
+            <TextBlock DockPanel.Dock="Right" Text="{Binding FooterSaved}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" VerticalAlignment="Center" />
+            <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+              <TextBlock Text="{Binding FooterState, StringFormat='● config {0}'}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="{Binding FooterColor, Converter={StaticResource StringToBrush}}" />
+              <TextBlock Text="{Binding FooterStore}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" />
+              <TextBlock Text="{Binding FooterEncryption}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" />
+              <TextBlock Text="{Binding FooterProfile}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" />
+            </StackPanel>
+          </DockPanel>
+        </Border>
 
-            <!-- Configuration profiles (save / load / share) -->
-            <Border Classes="Panel">
-              <StackPanel Spacing="12">
-                <TextBlock Classes="H2" Text="Configuration Profiles" />
-                <TextBlock Foreground="#4A6880" FontSize="11" TextWrapping="Wrap"
-                           Text="Save all bot / sniper / grid / risk settings as a named profile (API keys are never included). Export to share a setup; Import picks up files dropped into the shared folder." />
+        <!-- ═══ body: nav + content ═══ -->
+        <Grid Margin="8" ColumnDefinitions="218,8,*">
 
-                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
-                  <TextBox Grid.Column="0" Text="{Binding ProfileName}" PlaceholderText="Profile name" />
-                  <Button Grid.Column="1" Content="Save" Command="{Binding SaveProfileCommand}" />
-                  <Button Grid.Column="2" Content="Load" Command="{Binding LoadProfileCommand}" />
-                  <Button Grid.Column="3" Content="Delete" Command="{Binding DeleteProfileCommand}" />
-                </Grid>
-
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                  <Button Content="⬆ Export (share)" Command="{Binding ExportProfileCommand}" />
-                  <Button Content="⬇ Import" Command="{Binding ImportProfileCommand}" />
+          <!-- left nav -->
+          <Border Grid.Column="0" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" ClipToBounds="True">
+            <DockPanel LastChildFill="True">
+              <Border DockPanel.Dock="Top" Background="#060d14" BorderBrush="#0a1520" BorderThickness="0,0,0,1" Padding="11,9">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                  <TextBlock Text="⌕" Foreground="#2d4a5e" FontSize="9" VerticalAlignment="Center" />
+                  <TextBox Text="{Binding NavSearch, Mode=TwoWay}" Watermark="find a setting…" FontSize="10.5" VerticalAlignment="Center" Width="170" />
                 </StackPanel>
-
-                <TextBlock Text="{Binding ProfileStatus}" Foreground="#8FA3B8" FontSize="12" TextWrapping="Wrap" />
-
-                <StackPanel Spacing="4">
-                  <TextBlock Classes="Overline" Text="Saved profiles" />
-                  <ItemsControl ItemsSource="{Binding AvailableProfiles}">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate>
-                        <TextBlock Text="{Binding}" Foreground="#C5D2DE" FontSize="12" />
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                </StackPanel>
-              </StackPanel>
-            </Border>
-
-            <!-- Telegram setup -->
-            <Border Classes="Panel">
-              <StackPanel Spacing="12">
-                <TextBlock Classes="H2" Text="Telegram Notifications" />
-                <Grid ColumnDefinitions="*,*,Auto,Auto" ColumnSpacing="12">
-                  <StackPanel Grid.Column="0" Spacing="6">
-                    <TextBlock Classes="Overline" Text="Bot Token" />
-                    <TextBox Text="{Binding AlertsVM.TelegramBotToken}" PasswordChar="•" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="1" Spacing="6">
-                    <TextBlock Classes="Overline" Text="Chat ID" />
-                    <TextBox Text="{Binding AlertsVM.TelegramChatId}" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="2" Spacing="6">
-                    <TextBlock Classes="Overline" Text=" " />
-                    <Button Command="{Binding AlertsVM.TestTelegramCommand}" Content="Test" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="3" Spacing="6">
-                    <TextBlock Classes="Overline" Text="Status" />
-                    <TextBlock Text="{Binding AlertsVM.TelegramStatus}" Foreground="#8FA3B8" VerticalAlignment="Center" />
-                  </StackPanel>
-                </Grid>
-              </StackPanel>
-            </Border>
-
-            <!-- Telegram Account (MTProto user login) -->
-            <Border Classes="Panel" DataContext="{Binding TelegramAccountVM}">
-              <StackPanel Spacing="10">
-                <TextBlock Classes="H2" Text="Telegram Account" />
-                <TextBlock Text="Sign in with your Telegram account to talk to the bot from inside the app."
-                           FontSize="11" Foreground="#5C6E82" TextWrapping="Wrap" />
-                <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="#21E6C1" />
-                <TextBox Text="{Binding Phone, Mode=TwoWay}" PlaceholderText="+1 234 567 8900"
-                         IsVisible="{Binding !IsConnected}" />
-                <TextBox Text="{Binding Code, Mode=TwoWay}" PlaceholderText="Login code"
-                         IsVisible="{Binding IsCodeVisible}" />
-                <TextBox Text="{Binding Password, Mode=TwoWay}" PlaceholderText="Two-factor password"
-                         PasswordChar="●" IsVisible="{Binding IsPasswordVisible}" />
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                  <Button Content="Connect" Command="{Binding ConnectCommand}" IsVisible="{Binding !IsConnected}" />
-                  <Button Content="Disconnect" Command="{Binding DisconnectCommand}" IsVisible="{Binding IsConnected}" />
-                </StackPanel>
-              </StackPanel>
-            </Border>
-
-            <!-- Discord webhook setup -->
-            <Border Classes="Panel">
-              <StackPanel Spacing="12">
-                <TextBlock Classes="H2" Text="Discord Notifications" />
-                <TextBlock Text="Paste a Discord channel webhook URL. Alerts marked Send→Discord will be POSTed to it (Markdown-formatted)."
-                           Foreground="#4A6880" FontSize="11" TextWrapping="Wrap" />
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
-                  <StackPanel Grid.Column="0" Spacing="6">
-                    <TextBlock Classes="Overline" Text="Webhook URL" />
-                    <TextBox Text="{Binding AlertsVM.DiscordWebhookUrl}" PasswordChar="•"
-                             PlaceholderText="https://discord.com/api/webhooks/..." />
-                  </StackPanel>
-                  <StackPanel Grid.Column="1" Spacing="6">
-                    <TextBlock Classes="Overline" Text=" " />
-                    <Button Command="{Binding AlertsVM.TestDiscordCommand}" Content="Test" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="2" Spacing="6">
-                    <TextBlock Classes="Overline" Text="Status" />
-                    <TextBlock Text="{Binding AlertsVM.DiscordStatus}" Foreground="#8FA3B8" VerticalAlignment="Center" />
-                  </StackPanel>
-                </Grid>
-              </StackPanel>
-            </Border>
-
-            <!-- ntfy.sh push setup -->
-            <Border Classes="Panel">
-              <StackPanel Spacing="12">
-                <TextBlock Classes="H2" Text="ntfy.sh Push" />
-                <TextBlock Text="Free, anonymous push to phone or browser. Install the ntfy app (iOS/Android/web), subscribe to the same topic. Anyone with the topic name can publish — use a long random string."
-                           Foreground="#4A6880" FontSize="11" TextWrapping="Wrap" />
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
-                  <StackPanel Grid.Column="0" Spacing="6">
-                    <TextBlock Classes="Overline" Text="Topic (or full URL)" />
-                    <TextBox Text="{Binding AlertsVM.NtfyTopic}"
-                             PlaceholderText="crypto-ai-a8f3d7b2c1e9...  or  https://ntfy.sh/my-topic" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="1" Spacing="6">
-                    <TextBlock Classes="Overline" Text=" " />
-                    <Button Command="{Binding AlertsVM.TestNtfyCommand}" Content="Test" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="2" Spacing="6">
-                    <TextBlock Classes="Overline" Text="Status" />
-                    <TextBlock Text="{Binding AlertsVM.NtfyStatus}" Foreground="#8FA3B8" VerticalAlignment="Center" />
-                  </StackPanel>
-                </Grid>
-              </StackPanel>
-            </Border>
-
-            <!-- Email SMTP setup -->
-            <Border Classes="Panel">
-              <StackPanel Spacing="12">
-                <TextBlock Classes="H2" Text="Email Notifications" />
-                <TextBlock Text="SMTP-based fallback channel. For Gmail use smtp.gmail.com / port 587 / SSL on + an App Password (not your real password — Google rejects plain auth)."
-                           Foreground="#4A6880" FontSize="11" TextWrapping="Wrap" />
-                <Grid ColumnDefinitions="2*,Auto,Auto,Auto" ColumnSpacing="12">
-                  <StackPanel Grid.Column="0" Spacing="6">
-                    <TextBlock Classes="Overline" Text="SMTP host" />
-                    <TextBox Text="{Binding AlertsVM.EmailHost}" PlaceholderText="smtp.gmail.com" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="1" Spacing="6">
-                    <TextBlock Classes="Overline" Text="Port" />
-                    <NumericUpDown Value="{Binding AlertsVM.EmailPort}" Minimum="1" Maximum="65535" Increment="1" Width="90" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="2" Spacing="6" VerticalAlignment="Bottom">
-                    <TextBlock Classes="Overline" Text="SSL/TLS" />
-                    <CheckBox IsChecked="{Binding AlertsVM.EmailUseSsl}" Content="STARTTLS" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="3" Spacing="6" VerticalAlignment="Bottom">
-                    <TextBlock Classes="Overline" Text=" " />
-                    <Button Command="{Binding AlertsVM.TestEmailCommand}" Content="Send test" />
-                  </StackPanel>
-                </Grid>
-                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                  <StackPanel Grid.Column="0" Spacing="6">
-                    <TextBlock Classes="Overline" Text="SMTP username" />
-                    <TextBox Text="{Binding AlertsVM.EmailUsername}" PlaceholderText="you@example.com" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="1" Spacing="6">
-                    <TextBlock Classes="Overline" Text="SMTP password" />
-                    <TextBox Text="{Binding AlertsVM.EmailPassword}" PasswordChar="•" />
-                  </StackPanel>
-                </Grid>
-                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                  <StackPanel Grid.Column="0" Spacing="6">
-                    <TextBlock Classes="Overline" Text="From address" />
-                    <TextBox Text="{Binding AlertsVM.EmailFrom}" PlaceholderText="bot@example.com" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="1" Spacing="6">
-                    <TextBlock Classes="Overline" Text="To address" />
-                    <TextBox Text="{Binding AlertsVM.EmailTo}" PlaceholderText="me@example.com" />
-                  </StackPanel>
-                </Grid>
-                <TextBlock Text="{Binding AlertsVM.EmailStatus}" Foreground="#8FA3B8" />
-              </StackPanel>
-            </Border>
-
-            <!-- ═══ Binance API Keys ═══ -->
-            <Border Classes="Panel">
-              <StackPanel Spacing="14">
-
-                <!-- Header: title + source badge + ? button -->
-                <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
-                  <TextBlock Grid.Column="0" Classes="H2" Text="Binance API Keys" VerticalAlignment="Center" />
-                  <Border Grid.Column="1" CornerRadius="6" Padding="7,2" VerticalAlignment="Center"
-                          Background="{Binding BinanceCredentialSourceBadgeBrush}">
-                    <TextBlock Text="{Binding BinanceCredentialSourceLabel}"
-                               FontSize="10" FontWeight="Bold" Foreground="#0A121A" />
-                  </Border>
-                  <TextBlock Grid.Column="2"
-                             Text="{Binding BinanceApiKeyMask}"
-                             FontFamily="Consolas" FontSize="12" Foreground="#F0B90B"
-                             VerticalAlignment="Center" Margin="6,0,0,0" />
-                  <Button Grid.Column="3"
-                          Content="?"
-                          Classes="GhostButton"
-                          Width="28" Height="28"
-                          FontWeight="Bold" FontSize="13"
-                          Padding="0"
-                          ToolTip.Tip="How to create Binance API keys"
-                          Command="{Binding ToggleBinanceHelpCommand}" />
-                </Grid>
-
-                <!-- Help panel (collapsible) -->
-                <Border IsVisible="{Binding IsBinanceHelpVisible}"
-                        Background="#080F18" BorderBrush="#1E3A52" BorderThickness="1"
-                        CornerRadius="8" Padding="14,12">
-                  <StackPanel Spacing="8">
-                    <TextBlock Text="How to get Binance API keys" FontWeight="Bold"
-                               Foreground="#F0B90B" FontSize="13" />
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="1." FontWeight="Bold" /> <Run Text="Log in to " />
-                      <Run Text="binance.com" FontWeight="Bold" Foreground="#F0B90B" />
-                      <Run Text=" → profile → API Management" />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="2." FontWeight="Bold" /> <Run Text="Create API → select permissions: " />
-                      <Run Text="Enable Spot &amp; Margin Trading" FontWeight="Bold" />
-                      <Run Text=" and " />
-                      <Run Text="Enable Futures" FontWeight="Bold" />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="3." FontWeight="Bold" /> <Run Text="Copy API Key and Secret Key — the Secret is shown " />
-                      <Run Text="only once!" FontWeight="Bold" Foreground="#FFAA33" />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="4." FontWeight="Bold" /> <Run Text="Paste below and click «Save»." />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="18"
-                               Foreground="#5C6E82" Margin="0,4,0,0">
-                      <Run Text="Keys are stored in " />
-                      <Run FontFamily="Consolas" Text="%LOCALAPPDATA%\CryptoAITerminal\api-credentials.json" />
-                      <Run Text=" (only for your Windows account). Environment variables BINANCE_API_KEY / BINANCE_API_SECRET take priority." />
-                    </TextBlock>
-                  </StackPanel>
-                </Border>
-
-                <!-- Env var active notice -->
-                <Border Background="#0E1E10" CornerRadius="6" Padding="10,6"
-                        IsVisible="{Binding IsBinanceCredSourceEnv}">
-                  <TextBlock FontSize="11" Foreground="#4CAF50" TextWrapping="Wrap">
-                    <Run Text="✓ Environment variable BINANCE_API_KEY is active." />
-                    <Run Text=" Values below are not applied while it is set." />
-                  </TextBlock>
-                </Border>
-
-                <!-- Key input row -->
-                <Grid ColumnDefinitions="90,*,Auto" ColumnSpacing="8" VerticalAlignment="Center">
-                  <TextBlock Grid.Column="0" Text="API Key" FontSize="12" Foreground="#8FA3B8"
-                             VerticalAlignment="Center" />
-                  <Panel Grid.Column="1">
-                    <TextBox Text="{Binding BinanceKeyInput}" PasswordChar="●"
-                             IsVisible="{Binding !IsShowingBinanceKey}"
-                             PlaceholderText="paste API Key…" />
-                    <TextBox Text="{Binding BinanceKeyInput}"
-                             IsVisible="{Binding IsShowingBinanceKey}"
-                             PlaceholderText="paste API Key…" />
-                  </Panel>
-                  <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Show / hide"
-                          Command="{Binding ToggleBinanceKeyVisibilityCommand}" />
-                </Grid>
-
-                <!-- Secret input row -->
-                <Grid ColumnDefinitions="90,*,Auto" ColumnSpacing="8" VerticalAlignment="Center">
-                  <TextBlock Grid.Column="0" Text="API Secret" FontSize="12" Foreground="#8FA3B8"
-                             VerticalAlignment="Center" />
-                  <Panel Grid.Column="1">
-                    <TextBox Text="{Binding BinanceSecretInput}" PasswordChar="●"
-                             IsVisible="{Binding !IsShowingBinanceSecret}"
-                             PlaceholderText="paste API Secret…" />
-                    <TextBox Text="{Binding BinanceSecretInput}"
-                             IsVisible="{Binding IsShowingBinanceSecret}"
-                             PlaceholderText="paste API Secret…" />
-                  </Panel>
-                  <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Show / hide"
-                          Command="{Binding ToggleBinanceSecretVisibilityCommand}" />
-                </Grid>
-
-                <!-- Save row -->
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                  <Button Grid.Column="0" Content="💾 Save"
-                          Classes="GhostButton" Padding="14,6"
-                          Command="{Binding SaveBinanceCredentialsCommand}" />
-                  <TextBlock Grid.Column="1"
-                             Text="{Binding BinanceSaveStatus}"
-                             FontSize="12" Foreground="#F0B90B"
-                             VerticalAlignment="Center" />
-                </Grid>
-
-              </StackPanel>
-            </Border>
-            <!-- ═══ End Binance API Keys ═══ -->
-
-            <!-- ═══ Bybit API Keys ═══ -->
-            <Border Classes="Panel">
-              <StackPanel Spacing="14">
-
-                <!-- Header: title + source badge + ? button -->
-                <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
-                  <TextBlock Grid.Column="0" Classes="H2" Text="Bybit API Keys" VerticalAlignment="Center" />
-                  <!-- Source badge: ENV / FILE / — -->
-                  <Border Grid.Column="1" CornerRadius="6" Padding="7,2" VerticalAlignment="Center"
-                          Background="{Binding BybitCredentialSourceBadgeBrush}">
-                    <TextBlock Text="{Binding BybitCredentialSourceLabel}"
-                               FontSize="10" FontWeight="Bold" Foreground="#0A121A" />
-                  </Border>
-                  <!-- Current masked key -->
-                  <TextBlock Grid.Column="2"
-                             Text="{Binding BybitApiKeyMask}"
-                             FontFamily="Consolas" FontSize="12" Foreground="#21E6C1"
-                             VerticalAlignment="Center" Margin="6,0,0,0" />
-                  <!-- ? help toggle -->
-                  <Button Grid.Column="3"
-                          Content="?"
-                          Classes="GhostButton"
-                          Width="28" Height="28"
-                          FontWeight="Bold" FontSize="13"
-                          Padding="0"
-                          ToolTip.Tip="How to create Bybit API keys"
-                          Command="{Binding ToggleBybitHelpCommand}" />
-                </Grid>
-
-                <!-- Help panel (collapsible) -->
-                <Border IsVisible="{Binding IsBybitHelpVisible}"
-                        Background="#080F18" BorderBrush="#1E3A52" BorderThickness="1"
-                        CornerRadius="8" Padding="14,12">
-                  <StackPanel Spacing="8">
-                    <TextBlock Text="How to get Bybit API keys" FontWeight="Bold"
-                               Foreground="#21E6C1" FontSize="13" />
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="1." FontWeight="Bold" /> <Run Text="Log in to " />
-                      <Run Text="bybit.com" FontWeight="Bold" Foreground="#21E6C1" />
-                      <Run Text=" → top-right corner → Account → API" />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="2." FontWeight="Bold" /> <Run Text="Create a new key → select permissions: " />
-                      <Run Text="Trade" FontWeight="Bold" /> <Run Text=" and " />
-                      <Run Text="Account Info" FontWeight="Bold" />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="3." FontWeight="Bold" /> <Run Text="Copy API Key and Secret Key — the Secret is shown " />
-                      <Run Text="only once!" FontWeight="Bold" Foreground="#FFAA33" />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="4." FontWeight="Bold" /> <Run Text="Paste below and click «Save»." />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="18"
-                               Foreground="#5C6E82" Margin="0,4,0,0">
-                      <Run Text="Keys are stored in " />
-                      <Run FontFamily="Consolas" Text="%LOCALAPPDATA%\CryptoAITerminal\api-credentials.json" />
-                      <Run Text=" (only for your Windows account). Environment variables BYBIT_API_KEY / BYBIT_API_SECRET take priority." />
-                    </TextBlock>
-                  </StackPanel>
-                </Border>
-
-                <!-- Env var active notice -->
-                <Border Background="#0E1E10" CornerRadius="6" Padding="10,6"
-                        IsVisible="{Binding IsBybitCredSourceEnv}">
-                  <TextBlock FontSize="11" Foreground="#4CAF50" TextWrapping="Wrap">
-                    <Run Text="✓ Environment variable BYBIT_API_KEY is active." />
-                    <Run Text=" Values below are not applied while it is set." />
-                  </TextBlock>
-                </Border>
-
-                <!-- Key input row -->
-                <Grid ColumnDefinitions="90,*,Auto" ColumnSpacing="8" VerticalAlignment="Center">
-                  <TextBlock Grid.Column="0" Text="API Key" FontSize="12" Foreground="#8FA3B8"
-                             VerticalAlignment="Center" />
-                  <Panel Grid.Column="1">
-                    <TextBox Text="{Binding BybitKeyInput}" PasswordChar="●"
-                             IsVisible="{Binding !IsShowingBybitKey}"
-                             PlaceholderText="paste API Key…" />
-                    <TextBox Text="{Binding BybitKeyInput}"
-                             IsVisible="{Binding IsShowingBybitKey}"
-                             PlaceholderText="paste API Key…" />
-                  </Panel>
-                  <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Show / hide"
-                          Command="{Binding ToggleBybitKeyVisibilityCommand}" />
-                </Grid>
-
-                <!-- Secret input row -->
-                <Grid ColumnDefinitions="90,*,Auto" ColumnSpacing="8" VerticalAlignment="Center">
-                  <TextBlock Grid.Column="0" Text="API Secret" FontSize="12" Foreground="#8FA3B8"
-                             VerticalAlignment="Center" />
-                  <Panel Grid.Column="1">
-                    <TextBox Text="{Binding BybitSecretInput}" PasswordChar="●"
-                             IsVisible="{Binding !IsShowingBybitSecret}"
-                             PlaceholderText="paste API Secret…" />
-                    <TextBox Text="{Binding BybitSecretInput}"
-                             IsVisible="{Binding IsShowingBybitSecret}"
-                             PlaceholderText="paste API Secret…" />
-                  </Panel>
-                  <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Show / hide"
-                          Command="{Binding ToggleBybitSecretVisibilityCommand}" />
-                </Grid>
-
-                <!-- Save row -->
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                  <Button Grid.Column="0" Content="💾 Save"
-                          Classes="GhostButton" Padding="14,6"
-                          Command="{Binding SaveBybitCredentialsCommand}" />
-                  <TextBlock Grid.Column="1"
-                             Text="{Binding BybitSaveStatus}"
-                             FontSize="12" Foreground="#21E6C1"
-                             VerticalAlignment="Center" />
-                </Grid>
-
-              </StackPanel>
-            </Border>
-            <!-- ═══ End Bybit API Keys ═══ -->
-
-            <!-- ═══ OKX API Keys ═══ -->
-            <Border Classes="Panel">
-              <StackPanel Spacing="14">
-
-                <!-- Header: title + source badge + ? button -->
-                <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
-                  <TextBlock Grid.Column="0" Classes="H2" Text="OKX API Keys" VerticalAlignment="Center" />
-                  <Border Grid.Column="1" CornerRadius="6" Padding="7,2" VerticalAlignment="Center"
-                          Background="{Binding OkxCredentialSourceBadgeBrush}">
-                    <TextBlock Text="{Binding OkxCredentialSourceLabel}"
-                               FontSize="10" FontWeight="Bold" Foreground="#0A121A" />
-                  </Border>
-                  <TextBlock Grid.Column="2"
-                             Text="{Binding OkxApiKeyMask}"
-                             FontFamily="Consolas" FontSize="12" Foreground="#21E6C1"
-                             VerticalAlignment="Center" Margin="6,0,0,0" />
-                  <Button Grid.Column="3"
-                          Content="?"
-                          Classes="GhostButton"
-                          Width="28" Height="28"
-                          FontWeight="Bold" FontSize="13"
-                          Padding="0"
-                          ToolTip.Tip="How to create OKX API keys"
-                          Command="{Binding ToggleOkxHelpCommand}" />
-                </Grid>
-
-                <!-- Help panel -->
-                <Border IsVisible="{Binding IsOkxHelpVisible}"
-                        Background="#080F18" BorderBrush="#1E3A52" BorderThickness="1"
-                        CornerRadius="8" Padding="14,12">
-                  <StackPanel Spacing="8">
-                    <TextBlock Text="How to get OKX API keys" FontWeight="Bold"
-                               Foreground="#21E6C1" FontSize="13" />
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="1." FontWeight="Bold" /> <Run Text="Log in to " />
-                      <Run Text="okx.com" FontWeight="Bold" Foreground="#21E6C1" />
-                      <Run Text=" → avatar (top-right corner) → API Keys" />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="2." FontWeight="Bold" /> <Run Text="Create API Key → set a Passphrase (remember it!)." />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="3." FontWeight="Bold" /> <Run Text="Permissions: " />
-                      <Run Text="Trade" FontWeight="Bold" /> <Run Text=" + " />
-                      <Run Text="Read" FontWeight="Bold" />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="4." FontWeight="Bold" />
-                      <Run Text=" Copy API Key, Secret Key and Passphrase — the Secret is shown " />
-                      <Run Text="only once!" FontWeight="Bold" Foreground="#FFAA33" />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="5." FontWeight="Bold" /> <Run Text="Paste all three fields below and click «Save»." />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="18"
-                               Foreground="#5C6E82" Margin="0,4,0,0">
-                      <Run Text="Keys are stored in " />
-                      <Run FontFamily="Consolas" Text="%LOCALAPPDATA%\CryptoAITerminal\api-credentials.json" />
-                      <Run Text=". Environment variables OKX_API_KEY / OKX_API_SECRET / OKX_API_PASSPHRASE take priority." />
-                    </TextBlock>
-                  </StackPanel>
-                </Border>
-
-                <!-- Env var active notice -->
-                <Border Background="#0E1E10" CornerRadius="6" Padding="10,6"
-                        IsVisible="{Binding IsOkxCredSourceEnv}">
-                  <TextBlock FontSize="11" Foreground="#4CAF50" TextWrapping="Wrap">
-                    <Run Text="✓ Environment variable OKX_API_KEY is active." />
-                    <Run Text=" Values below are not applied while it is set." />
-                  </TextBlock>
-                </Border>
-
-                <!-- Key input row -->
-                <Grid ColumnDefinitions="90,*,Auto" ColumnSpacing="8">
-                  <TextBlock Grid.Column="0" Text="API Key" FontSize="12" Foreground="#8FA3B8"
-                             VerticalAlignment="Center" />
-                  <Panel Grid.Column="1">
-                    <TextBox Text="{Binding OkxKeyInput}" PasswordChar="●"
-                             IsVisible="{Binding !IsShowingOkxKey}"
-                             PlaceholderText="paste API Key…" />
-                    <TextBox Text="{Binding OkxKeyInput}"
-                             IsVisible="{Binding IsShowingOkxKey}"
-                             PlaceholderText="paste API Key…" />
-                  </Panel>
-                  <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Show / hide"
-                          Command="{Binding ToggleOkxKeyVisibilityCommand}" />
-                </Grid>
-
-                <!-- Secret input row -->
-                <Grid ColumnDefinitions="90,*,Auto" ColumnSpacing="8">
-                  <TextBlock Grid.Column="0" Text="API Secret" FontSize="12" Foreground="#8FA3B8"
-                             VerticalAlignment="Center" />
-                  <Panel Grid.Column="1">
-                    <TextBox Text="{Binding OkxSecretInput}" PasswordChar="●"
-                             IsVisible="{Binding !IsShowingOkxSecret}"
-                             PlaceholderText="paste API Secret…" />
-                    <TextBox Text="{Binding OkxSecretInput}"
-                             IsVisible="{Binding IsShowingOkxSecret}"
-                             PlaceholderText="paste API Secret…" />
-                  </Panel>
-                  <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Show / hide"
-                          Command="{Binding ToggleOkxSecretVisibilityCommand}" />
-                </Grid>
-
-                <!-- Passphrase input row (OKX-specific) -->
-                <Grid ColumnDefinitions="90,*,Auto" ColumnSpacing="8">
-                  <TextBlock Grid.Column="0" Text="Passphrase" FontSize="12" Foreground="#8FA3B8"
-                             VerticalAlignment="Center" />
-                  <Panel Grid.Column="1">
-                    <TextBox Text="{Binding OkxPassphraseInput}" PasswordChar="●"
-                             IsVisible="{Binding !IsShowingOkxPassphrase}"
-                             PlaceholderText="your API Key Passphrase…" />
-                    <TextBox Text="{Binding OkxPassphraseInput}"
-                             IsVisible="{Binding IsShowingOkxPassphrase}"
-                             PlaceholderText="your API Key Passphrase…" />
-                  </Panel>
-                  <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Show / hide"
-                          Command="{Binding ToggleOkxPassphraseVisibilityCommand}" />
-                </Grid>
-
-                <!-- Save row -->
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                  <Button Grid.Column="0" Content="💾 Save"
-                          Classes="GhostButton" Padding="14,6"
-                          Command="{Binding SaveOkxCredentialsCommand}" />
-                  <TextBlock Grid.Column="1"
-                             Text="{Binding OkxSaveStatus}"
-                             FontSize="12" Foreground="#21E6C1"
-                             VerticalAlignment="Center" />
-                </Grid>
-
-              </StackPanel>
-            </Border>
-            <!-- ═══ End OKX API Keys ═══ -->
-
-            <!-- ═══ KuCoin API Keys ═══ -->
-            <Border Classes="Panel">
-              <StackPanel Spacing="14">
-
-                <!-- Header: title + source badge + ? button -->
-                <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
-                  <TextBlock Grid.Column="0" Classes="H2" Text="KuCoin API Keys" VerticalAlignment="Center" />
-                  <Border Grid.Column="1" CornerRadius="6" Padding="7,2" VerticalAlignment="Center"
-                          Background="{Binding KucoinCredentialSourceBadgeBrush}">
-                    <TextBlock Text="{Binding KucoinCredentialSourceLabel}"
-                               FontSize="10" FontWeight="Bold" Foreground="#0A121A" />
-                  </Border>
-                  <TextBlock Grid.Column="2"
-                             Text="{Binding KucoinApiKeyMask}"
-                             FontFamily="Consolas" FontSize="12" Foreground="#21E6C1"
-                             VerticalAlignment="Center" Margin="6,0,0,0" />
-                  <Button Grid.Column="3"
-                          Content="?"
-                          Classes="GhostButton"
-                          Width="28" Height="28"
-                          FontWeight="Bold" FontSize="13"
-                          Padding="0"
-                          ToolTip.Tip="How to create KuCoin API keys"
-                          Command="{Binding ToggleKucoinHelpCommand}" />
-                </Grid>
-
-                <!-- Help panel (collapsible) -->
-                <Border IsVisible="{Binding IsKucoinHelpVisible}"
-                        Background="#080F18" BorderBrush="#1E3A52" BorderThickness="1"
-                        CornerRadius="8" Padding="14,12">
-                  <StackPanel Spacing="8">
-                    <TextBlock Text="How to get KuCoin API keys" FontWeight="Bold"
-                               Foreground="#21E6C1" FontSize="13" />
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="1." FontWeight="Bold" /> <Run Text="Log in to " />
-                      <Run Text="kucoin.com" FontWeight="Bold" Foreground="#21E6C1" />
-                      <Run Text=" → avatar (top-right corner) → API Management" />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="2." FontWeight="Bold" /> <Run Text="Create API → set an API Name and Trading Password (Passphrase)." />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="3." FontWeight="Bold" /> <Run Text="Permissions: " />
-                      <Run Text="General + Trade" FontWeight="Bold" />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="4." FontWeight="Bold" />
-                      <Run Text=" Copy API Key, Secret and Passphrase — the Secret is shown " />
-                      <Run Text="only once!" FontWeight="Bold" Foreground="#FFAA33" />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="#C8D6E5">
-                      <Run Text="5." FontWeight="Bold" /> <Run Text="Paste all three fields below and click «Save»." />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="18"
-                               Foreground="#5C6E82" Margin="0,4,0,0">
-                      <Run Text="Keys are stored in " />
-                      <Run FontFamily="Consolas" Text="%LOCALAPPDATA%\CryptoAITerminal\api-credentials.json" />
-                      <Run Text=". Environment variables KUCOIN_API_KEY / KUCOIN_API_SECRET / KUCOIN_API_PASSPHRASE take priority." />
-                    </TextBlock>
-                  </StackPanel>
-                </Border>
-
-                <!-- Env var active notice -->
-                <Border Background="#0E1E10" CornerRadius="6" Padding="10,6"
-                        IsVisible="{Binding IsKucoinCredSourceEnv}">
-                  <TextBlock FontSize="11" Foreground="#4CAF50" TextWrapping="Wrap">
-                    <Run Text="✓ Environment variable KUCOIN_API_KEY is active." />
-                    <Run Text=" Values below are not applied while it is set." />
-                  </TextBlock>
-                </Border>
-
-                <!-- Key input row -->
-                <Grid ColumnDefinitions="90,*,Auto" ColumnSpacing="8">
-                  <TextBlock Grid.Column="0" Text="API Key" FontSize="12" Foreground="#8FA3B8"
-                             VerticalAlignment="Center" />
-                  <Panel Grid.Column="1">
-                    <TextBox Text="{Binding KucoinKeyInput}" PasswordChar="●"
-                             IsVisible="{Binding !IsShowingKucoinKey}"
-                             PlaceholderText="paste API Key…" />
-                    <TextBox Text="{Binding KucoinKeyInput}"
-                             IsVisible="{Binding IsShowingKucoinKey}"
-                             PlaceholderText="paste API Key…" />
-                  </Panel>
-                  <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Show / hide"
-                          Command="{Binding ToggleKucoinKeyVisibilityCommand}" />
-                </Grid>
-
-                <!-- Secret input row -->
-                <Grid ColumnDefinitions="90,*,Auto" ColumnSpacing="8">
-                  <TextBlock Grid.Column="0" Text="API Secret" FontSize="12" Foreground="#8FA3B8"
-                             VerticalAlignment="Center" />
-                  <Panel Grid.Column="1">
-                    <TextBox Text="{Binding KucoinSecretInput}" PasswordChar="●"
-                             IsVisible="{Binding !IsShowingKucoinSecret}"
-                             PlaceholderText="paste API Secret…" />
-                    <TextBox Text="{Binding KucoinSecretInput}"
-                             IsVisible="{Binding IsShowingKucoinSecret}"
-                             PlaceholderText="paste API Secret…" />
-                  </Panel>
-                  <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Show / hide"
-                          Command="{Binding ToggleKucoinSecretVisibilityCommand}" />
-                </Grid>
-
-                <!-- Passphrase input row -->
-                <Grid ColumnDefinitions="90,*,Auto" ColumnSpacing="8">
-                  <TextBlock Grid.Column="0" Text="Passphrase" FontSize="12" Foreground="#8FA3B8"
-                             VerticalAlignment="Center" />
-                  <Panel Grid.Column="1">
-                    <TextBox Text="{Binding KucoinPassphraseInput}" PasswordChar="●"
-                             IsVisible="{Binding !IsShowingKucoinPassphrase}"
-                             PlaceholderText="your API Key Passphrase…" />
-                    <TextBox Text="{Binding KucoinPassphraseInput}"
-                             IsVisible="{Binding IsShowingKucoinPassphrase}"
-                             PlaceholderText="your API Key Passphrase…" />
-                  </Panel>
-                  <Button Grid.Column="2" Content="👁" Classes="GhostButton" Padding="6,4" FontSize="13"
-                          ToolTip.Tip="Show / hide"
-                          Command="{Binding ToggleKucoinPassphraseVisibilityCommand}" />
-                </Grid>
-
-                <!-- Save row -->
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                  <Button Grid.Column="0" Content="💾 Save"
-                          Classes="GhostButton" Padding="14,6"
-                          Command="{Binding SaveKucoinCredentialsCommand}" />
-                  <TextBlock Grid.Column="1"
-                             Text="{Binding KucoinSaveStatus}"
-                             FontSize="12" Foreground="#21E6C1"
-                             VerticalAlignment="Center" />
-                </Grid>
-
-              </StackPanel>
-            </Border>
-            <!-- ═══ End KuCoin API Keys ═══ -->
-
-            <!-- ═══ Affiliate / Referral Links ═══ -->
-            <Border Classes="SurfaceCard">
-              <StackPanel Spacing="10">
-                <TextBlock Classes="H2" Text="Affiliate / Referral Links" />
-                <TextBlock Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap"
-                           Text="Add your referral links here. The 'Open' button launches the URL in the browser so you can share it with users. Binance pays up to 40 %, Bybit up to 30 %, OKX up to 50 % of referred users' trading fees." />
-
-                <!-- Binance -->
-                <Grid ColumnDefinitions="80,*,Auto" ColumnSpacing="8" VerticalAlignment="Center">
-                  <TextBlock Grid.Column="0" Text="Binance" Foreground="#F4B860" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
-                  <TextBox   Grid.Column="1" Text="{Binding BinanceAffiliateUrl}"
-                             PlaceholderText="https://www.binance.com/en/activity/referral/..."
-                             FontFamily="Consolas" FontSize="11" />
-                  <Button    Grid.Column="2" Classes="GhostButton" Content="Open"
-                             Command="{Binding OpenBinanceAffiliateCommand}" />
-                </Grid>
-
-                <!-- Bybit -->
-                <Grid ColumnDefinitions="80,*,Auto" ColumnSpacing="8" VerticalAlignment="Center">
-                  <TextBlock Grid.Column="0" Text="Bybit" Foreground="#FFAA00" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
-                  <TextBox   Grid.Column="1" Text="{Binding BybitAffiliateUrl}"
-                             PlaceholderText="https://www.bybit.com/invite?ref=..."
-                             FontFamily="Consolas" FontSize="11" />
-                  <Button    Grid.Column="2" Classes="GhostButton" Content="Open"
-                             Command="{Binding OpenBybitAffiliateCommand}" />
-                </Grid>
-
-                <!-- OKX -->
-                <Grid ColumnDefinitions="80,*,Auto" ColumnSpacing="8" VerticalAlignment="Center">
-                  <TextBlock Grid.Column="0" Text="OKX" Foreground="#3BBFFF" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
-                  <TextBox   Grid.Column="1" Text="{Binding OkxAffiliateUrl}"
-                             PlaceholderText="https://www.okx.com/join/..."
-                             FontFamily="Consolas" FontSize="11" />
-                  <Button    Grid.Column="2" Classes="GhostButton" Content="Open"
-                             Command="{Binding OpenOkxAffiliateCommand}" />
-                </Grid>
-
-                <!-- KuCoin -->
-                <Grid ColumnDefinitions="80,*,Auto" ColumnSpacing="8" VerticalAlignment="Center">
-                  <TextBlock Grid.Column="0" Text="KuCoin" Foreground="#24AE8F" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
-                  <TextBox   Grid.Column="1" Text="{Binding KucoinAffiliateUrl}"
-                             PlaceholderText="https://www.kucoin.com/r/..."
-                             FontFamily="Consolas" FontSize="11" />
-                  <Button    Grid.Column="2" Classes="GhostButton" Content="Open"
-                             Command="{Binding OpenKucoinAffiliateCommand}" />
-                </Grid>
-
-                <!-- Save row -->
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                  <Button Grid.Column="0" Content="💾 Save Links"
-                          Classes="GhostButton" Padding="14,6"
-                          Command="{Binding SaveAffiliateLinksCommand}" />
-                  <TextBlock Grid.Column="1"
-                             Text="{Binding AffiliateSaveStatus}"
-                             FontSize="12" Foreground="#21E6C1"
-                             VerticalAlignment="Center" />
-                </Grid>
-              </StackPanel>
-            </Border>
-            <!-- ═══ End Affiliate / Referral Links ═══ -->
-
-            <!-- ═══ Trading Hotkeys ═══ -->
-            <Border Classes="SurfaceCard">
-              <StackPanel Spacing="10">
-                <TextBlock Classes="H2" Text="Trading Hotkeys" />
-                <TextBlock Text="Single-key shortcuts active when no input field is focused."
-                           Foreground="#4A6880" FontSize="11" TextWrapping="Wrap" />
-
-                <!-- Hotkey table -->
-                <Grid ColumnDefinitions="160,60,*" ColumnSpacing="12">
-                  <TextBlock Grid.Column="0" Text="ACTION"    Classes="Overline" />
-                  <TextBlock Grid.Column="1" Text="KEY"       Classes="Overline" />
-                  <TextBlock Grid.Column="2" Text="CONFIGURE" Classes="Overline" />
-                </Grid>
-
-                <!-- Buy Market -->
-                <Grid ColumnDefinitions="160,60,120" ColumnSpacing="12">
-                  <TextBlock Grid.Column="0" Text="Buy Market" Foreground="#D7E3EE" FontSize="11" VerticalAlignment="Center" />
-                  <Border Grid.Column="1" Background="#0D1828" CornerRadius="4" Padding="8,3">
-                    <TextBlock Text="{Binding HotkeySettings.BuyMarketDisplay}"
-                               Foreground="#21E6C1" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" />
-                  </Border>
-                  <TextBox Grid.Column="2" Text="{Binding HotkeySettings.BuyMarket}"
-                           FontSize="11" Background="#111821" PlaceholderText="e.g. B" />
-                </Grid>
-
-                <!-- Sell Market -->
-                <Grid ColumnDefinitions="160,60,120" ColumnSpacing="12">
-                  <TextBlock Grid.Column="0" Text="Sell Market" Foreground="#D7E3EE" FontSize="11" VerticalAlignment="Center" />
-                  <Border Grid.Column="1" Background="#0D1828" CornerRadius="4" Padding="8,3">
-                    <TextBlock Text="{Binding HotkeySettings.SellMarketDisplay}"
-                               Foreground="#FF6B6B" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" />
-                  </Border>
-                  <TextBox Grid.Column="2" Text="{Binding HotkeySettings.SellMarket}"
-                           FontSize="11" Background="#111821" PlaceholderText="e.g. S" />
-                </Grid>
-
-                <!-- Allocation 25 / 50 / 100 -->
-                <Grid ColumnDefinitions="160,60,120" ColumnSpacing="12">
-                  <TextBlock Grid.Column="0" Text="Allocation 25%" Foreground="#D7E3EE" FontSize="11" VerticalAlignment="Center" />
-                  <Border Grid.Column="1" Background="#0D1828" CornerRadius="4" Padding="8,3">
-                    <TextBlock Text="{Binding HotkeySettings.Allocation25Display}"
-                               Foreground="#F4B860" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" />
-                  </Border>
-                  <TextBox Grid.Column="2" Text="{Binding HotkeySettings.Allocation25}"
-                           FontSize="11" Background="#111821" PlaceholderText="e.g. D1" />
-                </Grid>
-                <Grid ColumnDefinitions="160,60,120" ColumnSpacing="12">
-                  <TextBlock Grid.Column="0" Text="Allocation 50%" Foreground="#D7E3EE" FontSize="11" VerticalAlignment="Center" />
-                  <Border Grid.Column="1" Background="#0D1828" CornerRadius="4" Padding="8,3">
-                    <TextBlock Text="{Binding HotkeySettings.Allocation50Display}"
-                               Foreground="#F4B860" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" />
-                  </Border>
-                  <TextBox Grid.Column="2" Text="{Binding HotkeySettings.Allocation50}"
-                           FontSize="11" Background="#111821" PlaceholderText="e.g. D2" />
-                </Grid>
-                <Grid ColumnDefinitions="160,60,120" ColumnSpacing="12">
-                  <TextBlock Grid.Column="0" Text="Allocation 100%" Foreground="#D7E3EE" FontSize="11" VerticalAlignment="Center" />
-                  <Border Grid.Column="1" Background="#0D1828" CornerRadius="4" Padding="8,3">
-                    <TextBlock Text="{Binding HotkeySettings.Allocation100Display}"
-                               Foreground="#F4B860" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" />
-                  </Border>
-                  <TextBox Grid.Column="2" Text="{Binding HotkeySettings.Allocation100}"
-                           FontSize="11" Background="#111821" PlaceholderText="e.g. D3" />
-                </Grid>
-
-                <!-- Cancel All Orders -->
-                <Grid ColumnDefinitions="160,60,120" ColumnSpacing="12">
-                  <TextBlock Grid.Column="0" Text="Cancel All Orders" Foreground="#D7E3EE" FontSize="11" VerticalAlignment="Center" />
-                  <Border Grid.Column="1" Background="#0D1828" CornerRadius="4" Padding="8,3">
-                    <TextBlock Text="{Binding HotkeySettings.CancelOrdersDisplay}"
-                               Foreground="#FF6B6B" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" />
-                  </Border>
-                  <TextBox Grid.Column="2" Text="{Binding HotkeySettings.CancelOrders}"
-                           FontSize="11" Background="#111821" PlaceholderText="e.g. Escape" />
-                </Grid>
-
-                <!-- Focus Trading Pair -->
-                <Grid ColumnDefinitions="160,60,120" ColumnSpacing="12">
-                  <TextBlock Grid.Column="0" Text="Focus Trading Pair" Foreground="#D7E3EE" FontSize="11" VerticalAlignment="Center" />
-                  <Border Grid.Column="1" Background="#0D1828" CornerRadius="4" Padding="8,3">
-                    <TextBlock Text="{Binding HotkeySettings.FocusPairDisplay}"
-                               Foreground="#8FA3B8" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" />
-                  </Border>
-                  <TextBox Grid.Column="2" Text="{Binding HotkeySettings.FocusPair}"
-                           FontSize="11" Background="#111821" PlaceholderText="e.g. F" />
-                </Grid>
-
-                <TextBlock Text="Changes take effect immediately — no restart needed."
-                           Foreground="#4A6880" FontSize="10" />
-              </StackPanel>
-            </Border>
-
-            <!-- ═══ Telegram Inline Button Signals ═══ -->
-            <Border Classes="SurfaceCard">
-              <StackPanel Spacing="10">
-                <TextBlock Classes="H2" Text="Telegram Inline Signals" />
-                <TextBlock Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap"
-                           Text="When enabled, alert and bot signals are sent to Telegram with [✅ Accept] [❌ Skip] inline buttons. Pressing Accept executes a market order in the terminal (via polling — no port-forwarding needed)." />
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                  <CheckBox Grid.Column="0"
-                            IsChecked="{Binding TelegramSignalVM.InlineButtonsEnabled}"
-                            Content="Enable inline-button signals" />
-                </Grid>
-                <!-- Pending signals list (live panel) -->
-                <TextBlock Text="PENDING SIGNALS" Classes="Overline"
-                           IsVisible="{Binding TelegramSignalVM.HasPendingSignals}" />
-                <ItemsControl ItemsSource="{Binding TelegramSignalVM.PendingRows}"
-                              IsVisible="{Binding TelegramSignalVM.HasPendingSignals}">
+              </Border>
+              <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding NavGroups}" Margin="6">
                   <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:TelegramSignalRowVM">
-                      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,3">
-                        <StackPanel Grid.Column="0" Spacing="2">
-                          <TextBlock Text="{Binding Label}"
-                                     Foreground="{Binding SideBrush}"
-                                     FontSize="12" FontWeight="SemiBold" />
-                          <TextBlock Text="{Binding Description}"
-                                     Foreground="#8FA3B8" FontSize="10" />
-                        </StackPanel>
-                        <Button Grid.Column="1" Content="✅ Accept"
-                                Command="{Binding AcceptCommand}"
-                                Classes="GhostButton" FontSize="11"
-                                Foreground="#21E6C1" />
-                        <Button Grid.Column="2" Content="❌ Skip"
-                                Command="{Binding SkipCommand}"
-                                Classes="GhostButton" FontSize="11"
-                                Foreground="#FF6B6B" />
-                      </Grid>
+                    <DataTemplate>
+                      <StackPanel Margin="0,0,0,8">
+                        <TextBlock Text="{Binding Label}" FontSize="8.5" FontWeight="Bold" Foreground="#1e3048" Padding="7,6,7,4" />
+                        <ItemsControl ItemsSource="{Binding Items}">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                              <Button Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderThickness="0" CornerRadius="6" Padding="8,7" Margin="0,1">
+                                <Grid ColumnDefinitions="2,8,*,Auto">
+                                  <Border Grid.Column="0" Width="2" Height="14" CornerRadius="1" Background="{Binding Mark, Converter={StaticResource StringToBrush}}" />
+                                  <TextBlock Grid.Column="2" Text="{Binding Label}" FontSize="11.5" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                  <TextBlock Grid.Column="3" Text="{Binding Badge}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="{Binding BadgeColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                                </Grid>
+                              </Button>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </StackPanel>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <TextBlock Text="No pending signals."
-                           Foreground="#4A6880" FontSize="11"
-                           IsVisible="{Binding TelegramSignalVM.HasNoSignals}" />
-              </StackPanel>
-            </Border>
+              </ScrollViewer>
+            </DockPanel>
+          </Border>
 
-            <!-- ── AI alert builder (natural language → alert form) ── -->
-            <Border Classes="Panel">
-              <StackPanel Spacing="8">
-                <StackPanel Spacing="2">
-                  <TextBlock Classes="H2" Text="🧠 Describe an alert" />
-                  <TextBlock Text="e.g. &quot;ping me when BTC breaks 75k&quot; or &quot;tell me if ETH drops 10% in 1h&quot;. Fills the form below for review."
-                             Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
-                </StackPanel>
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                  <TextBox Grid.Column="0" Text="{Binding AlertsVM.NlPrompt}"
-                           PlaceholderText="Alert me when…" />
-                  <Button Grid.Column="1" Content="Generate" Command="{Binding AlertsVM.GenerateAlertFromTextCommand}"
-                          IsEnabled="{Binding !AlertsVM.NlRunning}" />
-                </Grid>
-                <TextBlock Text="{Binding AlertsVM.NlStatus}" Foreground="#21E6C1" FontSize="11"
-                           TextWrapping="Wrap" />
-              </StackPanel>
-            </Border>
+          <!-- content -->
+          <ScrollViewer Grid.Column="2" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" Padding="0,0,2,0">
+            <StackPanel Spacing="7">
 
-            <!-- New alert form -->
-            <Border Classes="Panel">
-              <StackPanel Spacing="12">
-                <TextBlock Classes="H2" Text="Add Alert" />
-                <Grid ColumnDefinitions="*,*,*,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12">
-                  <StackPanel Grid.Column="0" Spacing="6">
-                    <TextBlock Classes="Overline" Text="Symbol" />
-                    <TextBox Text="{Binding AlertsVM.NewAlertSymbol}" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="1" Spacing="6">
-                    <TextBlock Classes="Overline" Text="Condition" />
-                    <ComboBox ItemsSource="{Binding AlertsVM.AvailableConditions}"
-                              SelectedItem="{Binding AlertsVM.SelectedCondition}" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="2" Spacing="6">
-                    <TextBlock Classes="Overline" Text="Threshold" />
-                    <NumericUpDown Value="{Binding AlertsVM.NewAlertThreshold}" Increment="100" Minimum="0" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="3" Spacing="6">
-                    <TextBlock Classes="Overline" Text="Telegram" />
-                    <CheckBox IsChecked="{Binding AlertsVM.NewAlertSendTelegram}" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="4" Spacing="6">
-                    <TextBlock Classes="Overline" Text="Discord" />
-                    <CheckBox IsChecked="{Binding AlertsVM.NewAlertSendDiscord}" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="5" Spacing="6">
-                    <TextBlock Classes="Overline" Text="ntfy" />
-                    <CheckBox IsChecked="{Binding AlertsVM.NewAlertSendNtfy}" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="6" Spacing="6">
-                    <TextBlock Classes="Overline" Text="Email" />
-                    <CheckBox IsChecked="{Binding AlertsVM.NewAlertSendEmail}" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="7" Spacing="6">
-                    <TextBlock Classes="Overline" Text="Repeat" />
-                    <CheckBox IsChecked="{Binding AlertsVM.NewAlertRepeat}" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="8" Spacing="6">
-                    <TextBlock Classes="Overline" Text=" " />
-                    <Button Command="{Binding AlertsVM.AddAlertCommand}" Content="+ Add" Classes="AccentButton" />
-                  </StackPanel>
-                </Grid>
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="20" Margin="0,4,0,0">
-                  <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <CheckBox IsChecked="{Binding AlertsVM.SoundEnabled}" VerticalAlignment="Center" />
-                    <TextBlock Text="Sound on alert" Foreground="#8FA3B8" VerticalAlignment="Center" FontSize="12" />
-                  </StackPanel>
-                  <TextBlock Grid.Column="1" Text="Note: VolumeSpike requires exchange volume data not available in the live stream." Foreground="#4A6070" FontSize="11" VerticalAlignment="Center" TextWrapping="Wrap" />
-                </Grid>
-              </StackPanel>
-            </Border>
-
-            <!-- Alert list -->
-            <Border Classes="Panel">
-              <StackPanel Spacing="10">
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
-                  <TextBlock Classes="H2" Text="Active Alerts" VerticalAlignment="Center" />
-                  <Button Grid.Column="1" Command="{Binding AlertsVM.ClearFiredCommand}" Content="Clear Fired" />
-                </Grid>
-                <ListBox ItemsSource="{Binding AlertsVM.Alerts}" Background="Transparent" MaxHeight="240">
-                  <ListBox.ItemTemplate>
-                    <DataTemplate x:DataType="vm:AlertItemViewModel">
-                      <Grid ColumnDefinitions="80,*,80,60,Auto" ColumnSpacing="12">
-                        <TextBlock Grid.Column="0" Text="{Binding Symbol}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="1" Text="{Binding ConditionLabel}" Foreground="#8FA3B8" VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="2" Text="{Binding StatusLabel}" Foreground="{Binding StatusColor}" VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="3" Text="{Binding SendTelegram}" Foreground="#8FA3B8" VerticalAlignment="Center" />
-                        <Button Grid.Column="4" Content="✕" FontSize="11"
-                                Command="{Binding $parent[Window].DataContext.AlertsVM.DeleteAlertCommand}"
-                                CommandParameter="{Binding Id}" />
+              <!-- ══════════ AI PROVIDER ══════════ -->
+              <StackPanel Spacing="7" IsVisible="{Binding IsAi}">
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14">
+                  <StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="9" Margin="0,0,0,4">
+                      <TextBlock Text="AI assistant" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
+                      <Border BorderBrush="#14302e" BorderThickness="1" CornerRadius="4" Background="#061615" Padding="7,2" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding AiActiveBadge}" Foreground="#21e6c1" FontSize="8" FontWeight="ExtraBold" />
+                      </Border>
+                    </StackPanel>
+                    <TextBlock TextWrapping="Wrap" MaxWidth="760" HorizontalAlignment="Left" FontSize="11.5" LineHeight="18" Foreground="#4a6a82"
+                               Text="Powers every assistant in the terminal — copilot, daily briefing, pre-trade risk, alert builder, scanner ranking, options advisor. Keys are stored encrypted on this PC (DPAPI) and only leave it in calls to the provider you pick." />
+                    <ItemsControl ItemsSource="{Binding Providers}" Margin="0,13,0,0">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Button Command="{Binding Command}" Margin="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="9" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Padding="12">
+                            <StackPanel>
+                              <Grid ColumnDefinitions="Auto,8,Auto,*,Auto" Margin="0,0,0,5">
+                                <Border Grid.Column="0" Width="12" Height="12" CornerRadius="6" BorderBrush="{Binding DotBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" Background="{Binding DotBg, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="2" Text="{Binding Name}" FontSize="12.5" FontWeight="SemiBold" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="4" Text="{Binding Status}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="{Binding StatusColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                              </Grid>
+                              <TextBlock Text="{Binding Hint}" TextWrapping="Wrap" FontSize="10.5" LineHeight="15" Foreground="#4a6a82" />
+                            </StackPanel>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Grid ColumnDefinitions="1.6*,10,1*" Margin="0,13,0,0">
+                      <StackPanel Grid.Column="0" Spacing="5">
+                        <TextBlock Text="{Binding AiKeyLabel}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                          <Border Width="330" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
+                            <TextBox Text="{Binding AiKey, Mode=TwoWay}" PasswordChar="{Binding AiKeyChar}" Watermark="{Binding AiKeyPlaceholder}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
+                          </Border>
+                          <Button Command="{Binding RevealCommand}" Width="44" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Content="{Binding AiRevealIcon}" Foreground="#5a7a94" FontSize="8" FontWeight="Bold" />
+                          <Button Command="{Binding AiConsoleCommand}" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="11,0" Content="GET KEY" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
+                        </StackPanel>
+                      </StackPanel>
+                      <StackPanel Grid.Column="2" Spacing="5">
+                        <TextBlock Text="MODEL" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                        <Border Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
+                          <TextBox Text="{Binding AiModel, Mode=TwoWay}" Watermark="{Binding AiModelPlaceholder}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
+                        </Border>
+                      </StackPanel>
+                    </Grid>
+                    <Border BorderBrush="#0a1520" BorderThickness="0,1,0,0" Margin="0,13,0,0" Padding="0,12,0,0">
+                      <Grid ColumnDefinitions="Auto,8,Auto,*,Auto">
+                        <Button Grid.Column="0" Command="{Binding AiSaveCommand}" Height="29" BorderBrush="#21e6c1" BorderThickness="1" CornerRadius="6" Background="#0e2a2a" Padding="13,0" Content="SAVE PROVIDER" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                        <Button Grid.Column="2" Command="{Binding AiTestCommand}" Height="29" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="11,0" Content="TEST CONNECTION" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
+                        <TextBlock Grid.Column="4" Text="{Binding AiStatusText}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="{Binding AiStatusColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
                       </Grid>
-                    </DataTemplate>
-                  </ListBox.ItemTemplate>
-                </ListBox>
-                <TextBlock Text="{Binding AlertsVM.LogText}" Foreground="#8FA3B8" FontFamily="Courier New" FontSize="11"
-                           TextWrapping="Wrap" MaxHeight="80" />
-              </StackPanel>
-            </Border>
+                    </Border>
+                  </StackPanel>
+                </Border>
 
-            <!-- Fired alert history -->
-            <Border Classes="Panel">
-              <StackPanel Spacing="10">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                  <TextBlock Classes="H2" Text="Alert History" VerticalAlignment="Center" />
-                  <Button Grid.Column="1" Command="{Binding AlertsVM.ClearHistoryCommand}" Content="Clear" />
-                </Grid>
-                <Grid ColumnDefinitions="80,*,80,100" ColumnSpacing="12" Margin="0,0,0,4">
-                  <TextBlock Grid.Column="0" Classes="Overline" Text="Symbol" />
-                  <TextBlock Grid.Column="1" Classes="Overline" Text="Condition" />
-                  <TextBlock Grid.Column="2" Classes="Overline" Text="Price" />
-                  <TextBlock Grid.Column="3" Classes="Overline" Text="Fired At" />
-                </Grid>
-                <ListBox ItemsSource="{Binding AlertsVM.AlertHistory}" Background="Transparent" MaxHeight="220">
-                  <ListBox.ItemTemplate>
-                    <DataTemplate x:DataType="vm:AlertHistoryItemViewModel">
-                      <Grid ColumnDefinitions="80,*,80,100" ColumnSpacing="12">
-                        <TextBlock Grid.Column="0" Text="{Binding Symbol}" FontWeight="SemiBold" Foreground="#F4B860" VerticalAlignment="Center" FontSize="12" />
-                        <TextBlock Grid.Column="1" Text="{Binding ConditionLabel}" Foreground="#8FA3B8" VerticalAlignment="Center" FontSize="12" />
-                        <TextBlock Grid.Column="2" Text="{Binding TriggerValueFormatted}" Foreground="#E0E8F0" VerticalAlignment="Center" FontSize="12" />
-                        <TextBlock Grid.Column="3" Text="{Binding FiredAtFormatted}" Foreground="#4A6070" VerticalAlignment="Center" FontSize="11" />
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14" IsVisible="{Binding HasFeatures}">
+                  <StackPanel>
+                    <TextBlock Text="Where AI is used" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" Margin="0,0,0,11" />
+                    <ItemsControl ItemsSource="{Binding Features}">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Button Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" BorderThickness="0" CornerRadius="6" Background="Transparent" Padding="9,8">
+                            <Grid ColumnDefinitions="*,12,Auto">
+                              <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock Text="{Binding Label}" FontSize="11.5" Foreground="#d0e4f4" />
+                                <TextBlock Text="{Binding Hint}" FontSize="9.5" Foreground="#2d4a5e" TextTrimming="CharacterEllipsis" />
+                              </StackPanel>
+                              <Border Grid.Column="2" Width="28" Height="15" CornerRadius="8" Background="{Binding TrackBg, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center">
+                                <Canvas><Border Canvas.Left="{Binding KnobLeft}" Canvas.Top="2" Width="11" Height="11" CornerRadius="6" Background="{Binding Knob, Converter={StaticResource StringToBrush}}" /></Canvas>
+                              </Border>
+                            </Grid>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+
+              <!-- ══════════ LICENSE & PROFILES ══════════ -->
+              <StackPanel Spacing="7" IsVisible="{Binding IsLicense}">
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14">
+                  <StackPanel>
+                    <Grid ColumnDefinitions="Auto,9,Auto,*,Auto" Margin="0,0,0,12">
+                      <TextBlock Grid.Column="0" Text="License &amp; activation" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
+                      <Border Grid.Column="2" BorderBrush="{Binding LicBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="4" Background="{Binding LicBg, Converter={StaticResource StringToBrush}}" Padding="8,2" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding LicBadge}" Foreground="{Binding LicColor, Converter={StaticResource StringToBrush}}" FontSize="8" FontWeight="ExtraBold" />
+                      </Border>
+                      <TextBlock Grid.Column="4" Text="{Binding LicDetail}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="#4a6a82" VerticalAlignment="Center" />
+                    </Grid>
+                    <TextBlock Text="MACHINE ID — SEND THIS TO THE BOT BEFORE PAYING" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" Margin="0,0,0,5" />
+                    <StackPanel Orientation="Horizontal" Spacing="7">
+                      <Border Width="620" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
+                        <TextBox Text="{Binding MachineId, Mode=OneWay}" IsReadOnly="True" Foreground="#8fa3b8" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
+                      </Border>
+                      <Button Command="{Binding LicCopyCommand}" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="11,0" Content="COPY" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
+                    </StackPanel>
+                    <TextBlock Text="ACTIVATION KEY" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" Margin="0,11,0,5" />
+                    <StackPanel Orientation="Horizontal" Spacing="7">
+                      <Border Width="620" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
+                        <TextBox Text="{Binding LicKey, Mode=TwoWay}" Watermark="Paste your license key here" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
+                      </Border>
+                      <Button Command="{Binding LicActivateCommand}" Height="30" BorderBrush="#21e6c1" BorderThickness="1" CornerRadius="6" Background="#0e2a2a" Padding="14,0" Content="ACTIVATE" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding LicStatus}" FontFamily="{StaticResource FontMono}" FontSize="10.5" Foreground="{Binding LicStatusColor, Converter={StaticResource StringToBrush}}" Margin="0,9,0,0" />
+                    <Border Margin="0,12,0,0" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="8" Background="#050f14" Padding="11">
+                      <TextBlock TextWrapping="Wrap" FontSize="10.5" LineHeight="16" Foreground="#4a6a82"
+                                 Text="Buy a key in the Telegram bot. Without a valid license only Demo (paper) mode is available after the trial — bots still run, but every order is simulated." />
+                    </Border>
+                  </StackPanel>
+                </Border>
+
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14">
+                  <StackPanel>
+                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,11">
+                      <TextBlock Grid.Column="0" Text="Configuration profiles" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Text="{Binding ProfStatus}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="#4a6a82" VerticalAlignment="Center" />
+                    </Grid>
+                    <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="16" Foreground="#4a6a82" Margin="0,0,0,11"
+                               Text="Saves every bot / sniper / grid / risk setting as a named profile. API keys are never included, so a profile is safe to share." />
+                    <StackPanel Orientation="Horizontal" Spacing="7">
+                      <Border Width="560" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
+                        <TextBox Text="{Binding ProfileName, Mode=TwoWay}" Watermark="Profile name" FontSize="12" VerticalAlignment="Center" />
+                      </Border>
+                      <Button Command="{Binding ProfSaveCommand}" Height="30" BorderBrush="#21e6c1" BorderThickness="1" CornerRadius="6" Background="#0e2a2a" Padding="12,0" Content="SAVE" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                      <Button Command="{Binding ProfImportCommand}" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="11,0" Content="↓ IMPORT" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding Profiles}" Margin="0,11,0,0">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Border BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="7" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Padding="9,8" Margin="0,0,0,3">
+                            <Grid ColumnDefinitions="*,Auto,9,Auto,5,Auto,5,Auto">
+                              <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="11.5" Foreground="#d0e4f4" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="1" Text="{Binding Meta}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" VerticalAlignment="Center" />
+                              <Button Grid.Column="3" Command="{Binding LoadCommand}" Height="22" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Background="#060d14" Padding="9,0" Content="LOAD" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                              <Button Grid.Column="5" Command="{Binding ExportCommand}" Height="22" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Background="#060d14" Padding="9,0" Content="EXPORT" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
+                              <Button Grid.Column="7" Command="{Binding DeleteCommand}" Width="22" Height="22" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Background="#060d14" Padding="0" Content="✕" Foreground="#4a6a82" FontSize="9" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+
+              <!-- ══════════ EXCHANGE KEYS ══════════ -->
+              <StackPanel Spacing="7" IsVisible="{Binding IsKeys}">
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14">
+                  <StackPanel>
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                      <TextBlock Grid.Column="0" Text="Exchange API keys" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
+                      <Button Grid.Column="2" Command="{Binding ExToggleHelpCommand}" Width="26" Height="26" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="0" Content="?" Foreground="#8fa3b8" FontSize="12" FontWeight="Bold" />
+                    </Grid>
+                    <Border IsVisible="{Binding ExHelp}" Margin="0,11,0,0" BorderBrush="#2a3a12" BorderThickness="1" CornerRadius="8" Background="#0d1004" Padding="12">
+                      <StackPanel Spacing="5">
+                        <TextBlock Text="How to create keys" FontSize="11.5" FontWeight="Bold" Foreground="#f0b90b" Margin="0,0,0,2" />
+                        <ItemsControl ItemsSource="{Binding HelpSteps}">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                              <Grid ColumnDefinitions="Auto,8,*" Margin="0,0,0,3">
+                                <TextBlock Grid.Column="0" Text="{Binding Item1}" FontFamily="{StaticResource FontMono}" FontSize="10.5" Foreground="#f0b90b" />
+                                <TextBlock Grid.Column="2" Text="{Binding Item2}" TextWrapping="Wrap" FontSize="11" LineHeight="16" Foreground="#a9c2d8" />
+                              </Grid>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="{Binding HelpPath}" FontFamily="{StaticResource FontMono}" FontSize="10" LineHeight="16" Foreground="#4a6a82" Margin="0,4,0,0" />
+                      </StackPanel>
+                    </Border>
+                    <Border Margin="0,12,0,0" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="8" Background="#060d14" Padding="3">
+                      <ItemsControl ItemsSource="{Binding ExTabs}">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Button Command="{Binding Command}" Height="30" BorderThickness="0" CornerRadius="6" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Margin="1,0" HorizontalAlignment="Stretch">
+                              <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+                                <Border Width="6" Height="6" CornerRadius="3" Background="{Binding Dot, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Label}" FontSize="11" FontWeight="SemiBold" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding State}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="{Binding StateColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                              </StackPanel>
+                            </Button>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </Border>
+                    <Border Margin="0,12,0,0" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="9" Background="#050f14" Padding="13">
+                      <StackPanel>
+                        <Grid ColumnDefinitions="Auto,9,Auto,9,Auto,*,Auto" Margin="0,0,0,11">
+                          <TextBlock Grid.Column="0" Text="{Binding ExCurName}" FontSize="12.5" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
+                          <Border Grid.Column="2" BorderBrush="{Binding ExSrcBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="4" Background="{Binding ExSrcBg, Converter={StaticResource StringToBrush}}" Padding="7,2" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding ExSrcLabel}" Foreground="{Binding ExSrcColor, Converter={StaticResource StringToBrush}}" FontSize="8" FontWeight="ExtraBold" />
+                          </Border>
+                          <TextBlock Grid.Column="4" Text="{Binding ExMask}" FontFamily="{StaticResource FontMono}" FontSize="10.5" Foreground="#f0b90b" VerticalAlignment="Center" />
+                          <Button Grid.Column="6" Command="{Binding TestnetCommand}" BorderBrush="{Binding TnBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="6" Background="{Binding TnBg, Converter={StaticResource StringToBrush}}" Padding="9,4">
+                            <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+                              <Border Width="24" Height="13" CornerRadius="7" Background="{Binding TnTrack, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center">
+                                <Canvas><Border Canvas.Left="{Binding TnKnobLeft}" Canvas.Top="2" Width="9" Height="9" CornerRadius="5" Background="{Binding TnKnob, Converter={StaticResource StringToBrush}}" /></Canvas>
+                              </Border>
+                              <TextBlock Text="TESTNET" FontSize="9.5" FontWeight="Bold" Foreground="{Binding TnColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                            </StackPanel>
+                          </Button>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding ExFields}">
+                          <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                              <StackPanel Spacing="5" Margin="5">
+                                <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                                <Border Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="9,0">
+                                  <TextBox Text="{Binding Value, Mode=TwoWay}" PasswordChar="{Binding PasswordChar}" Watermark="{Binding Placeholder}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
+                                </Border>
+                              </StackPanel>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,12,0,0" VerticalAlignment="Center" IsVisible="{Binding HasPerms}">
+                          <TextBlock Text="PERMISSIONS" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" Margin="0,0,3,0" VerticalAlignment="Center" />
+                          <ItemsControl ItemsSource="{Binding Perms}">
+                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="5" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate>
+                                <Button Command="{Binding Command}" Height="22" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="5" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Padding="9,0" Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" />
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </StackPanel>
+                        <Border BorderBrush="#0a1520" BorderThickness="0,1,0,0" Margin="0,13,0,0" Padding="0,12,0,0">
+                          <Grid ColumnDefinitions="Auto,7,Auto,7,Auto,*,Auto">
+                            <Button Grid.Column="0" Command="{Binding ExSaveCommand}" Height="28" BorderBrush="#21e6c1" BorderThickness="1" CornerRadius="6" Background="#0e2a2a" Padding="13,0" Content="SAVE KEYS" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                            <Button Grid.Column="2" Command="{Binding ExTestCommand}" Height="28" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="11,0" Content="TEST CONNECTION" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
+                            <Button Grid.Column="4" Command="{Binding ExClearCommand}" Height="28" BorderBrush="#3a1620" BorderThickness="1" CornerRadius="6" Background="#14060a" Padding="11,0" Content="REMOVE KEYS" Foreground="#ff6b6b" FontSize="9" FontWeight="Bold" />
+                            <TextBlock Grid.Column="6" Text="{Binding ExStatus}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="{Binding ExStatusColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                          </Grid>
+                        </Border>
+                      </StackPanel>
+                    </Border>
+                  </StackPanel>
+                </Border>
+
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14">
+                  <StackPanel>
+                    <TextBlock Text="Affiliate / referral links" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" Margin="0,0,0,4" />
+                    <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="16" Foreground="#4a6a82" Margin="0,0,0,11"
+                               Text="Used by the “open account” buttons around the terminal. Leave blank to use the plain exchange URL." />
+                    <ItemsControl ItemsSource="{Binding AffFields}">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <StackPanel Spacing="5" Margin="5">
+                            <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                            <Border Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
+                              <TextBox Text="{Binding Value, Mode=TwoWay}" Watermark="{Binding Placeholder}" FontSize="11.5" VerticalAlignment="Center" />
+                            </Border>
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14">
+                  <StackPanel>
+                    <Grid ColumnDefinitions="Auto,9,Auto,*,Auto" Margin="0,0,0,11">
+                      <TextBlock Grid.Column="0" Text="Wallet session" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
+                      <Border Grid.Column="2" BorderBrush="{Binding WalletBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="4" Background="{Binding WalletBg, Converter={StaticResource StringToBrush}}" Padding="7,2" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding WalletBadge}" Foreground="{Binding WalletColor, Converter={StaticResource StringToBrush}}" FontSize="8" FontWeight="ExtraBold" />
+                      </Border>
+                      <TextBlock Grid.Column="4" Text="{Binding WalletDetail}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="#4a6a82" VerticalAlignment="Center" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*,*">
+                      <StackPanel Grid.Column="0" Spacing="3">
+                        <TextBlock Text="Address" FontSize="9.5" Foreground="#2d4a5e" />
+                        <TextBlock Text="{Binding WalletAddr}" FontFamily="{StaticResource FontMono}" FontSize="12" Foreground="{Binding WalletAddrColor, Converter={StaticResource StringToBrush}}" />
+                      </StackPanel>
+                      <StackPanel Grid.Column="1" Spacing="3">
+                        <TextBlock Text="Session expires" FontSize="9.5" Foreground="#2d4a5e" />
+                        <TextBlock Text="{Binding WalletExpires}" FontFamily="{StaticResource FontMono}" FontSize="12" Foreground="{Binding WalletExpiresColor, Converter={StaticResource StringToBrush}}" />
+                      </StackPanel>
+                      <StackPanel Grid.Column="2" Spacing="3">
+                        <TextBlock Text="Status" FontSize="9.5" Foreground="#2d4a5e" />
+                        <TextBlock Text="{Binding WalletBadge}" FontFamily="{StaticResource FontMono}" FontSize="12" Foreground="{Binding WalletColor, Converter={StaticResource StringToBrush}}" />
+                      </StackPanel>
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" Spacing="7" Margin="0,13,0,0">
+                      <Button Command="{Binding WalletCommand}" Height="28" BorderBrush="{Binding WalletBtnBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="6" Background="{Binding WalletBtnBg, Converter={StaticResource StringToBrush}}" Padding="12,0" Content="{Binding WalletBtnLabel}" Foreground="{Binding WalletBtnColor, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" />
+                      <Button Command="{Binding WalletRotateCommand}" Height="28" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="11,0" Content="ROTATE SESSION KEY" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+
+              <!-- ══════════ NOTIFICATIONS ══════════ -->
+              <StackPanel Spacing="7" IsVisible="{Binding IsNotify}">
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14">
+                  <StackPanel>
+                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,11">
+                      <TextBlock Grid.Column="0" Text="Notification channels" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
+                      <Button Grid.Column="2" Command="{Binding NtTestAllCommand}" Height="26" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="11,0" Content="TEST ALL CHANNELS" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding NtChannels}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Border BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="9" Background="#050f14" Margin="0,0,0,7" ClipToBounds="True">
+                            <StackPanel>
+                              <Button Command="{Binding ToggleOpenCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" BorderThickness="0" Background="Transparent" Padding="12,10">
+                                <Grid ColumnDefinitions="Auto,9,Auto,9,Auto,*,Auto,9,Auto">
+                                  <Border Grid.Column="0" Width="7" Height="7" CornerRadius="4" Background="{Binding Dot, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                                  <TextBlock Grid.Column="2" Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
+                                  <TextBlock Grid.Column="4" Text="{Binding Status}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="{Binding StatusColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                                  <TextBlock Grid.Column="6" Text="{Binding Summary}" FontSize="10" Foreground="#2d4a5e" VerticalAlignment="Center" />
+                                  <TextBlock Grid.Column="8" Text="{Binding Caret}" Foreground="#1e3048" FontSize="9" VerticalAlignment="Center" />
+                                </Grid>
+                              </Button>
+                              <StackPanel IsVisible="{Binding Open}" Margin="12,0,12,12">
+                                <TextBlock Text="{Binding Hint}" TextWrapping="Wrap" FontSize="10.5" LineHeight="16" Foreground="#4a6a82" Margin="0,0,0,10" />
+                                <ItemsControl ItemsSource="{Binding Fields}">
+                                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding Cols}" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                  <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                      <StackPanel Spacing="5" Margin="5">
+                                        <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                                        <Border Height="29" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="9,0">
+                                          <TextBox Text="{Binding Value, Mode=TwoWay}" PasswordChar="{Binding PasswordChar}" Watermark="{Binding Placeholder}" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
+                                        </Border>
+                                      </StackPanel>
+                                    </DataTemplate>
+                                  </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Button IsVisible="{Binding HasSsl}" Command="{Binding SslCommand}" HorizontalAlignment="Left" BorderThickness="0" CornerRadius="6" Background="Transparent" Padding="8,6" Margin="0,10,0,0">
+                                  <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <Border Width="13" Height="13" BorderBrush="{Binding SslBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="3" Background="{Binding SslBg, Converter={StaticResource StringToBrush}}">
+                                      <TextBlock Text="{Binding SslMark}" Foreground="#04101a" FontSize="8" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Text="Use STARTTLS (required by Gmail)" FontSize="11" Foreground="#8fa3b8" VerticalAlignment="Center" />
+                                  </StackPanel>
+                                </Button>
+                                <Grid ColumnDefinitions="Auto,7,Auto,*,Auto" Margin="0,12,0,0">
+                                  <Button Grid.Column="0" Command="{Binding TestCommand}" Height="27" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="11,0" Content="SEND TEST" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                                  <Button Grid.Column="2" Command="{Binding EnableCommand}" Height="27" BorderBrush="{Binding EnBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="6" Background="{Binding EnBg, Converter={StaticResource StringToBrush}}" Padding="11,0" Content="{Binding EnLabel}" Foreground="{Binding EnColor, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" />
+                                  <TextBlock Grid.Column="4" Text="{Binding Last}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="#2d4a5e" VerticalAlignment="Center" />
+                                </Grid>
+                              </StackPanel>
+                            </StackPanel>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14">
+                  <StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="9" Margin="0,0,0,4">
+                      <TextBlock Text="Telegram account &amp; inline signals" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
+                      <Border BorderBrush="{Binding TgBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="4" Background="{Binding TgBg, Converter={StaticResource StringToBrush}}" Padding="7,2" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding TgBadge}" Foreground="{Binding TgColor, Converter={StaticResource StringToBrush}}" FontSize="8" FontWeight="ExtraBold" />
+                      </Border>
+                    </StackPanel>
+                    <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="16" Foreground="#4a6a82" Margin="0,0,0,11"
+                               Text="Signing in with your own Telegram account lets you talk to the bot from inside the app. With inline signals on, every alert arrives with Accept / Skip buttons — Accept places a market order through the terminal." />
+                    <Grid ColumnDefinitions="Auto,10,Auto,*,Auto" VerticalAlignment="Bottom">
+                      <StackPanel Grid.Column="0" Spacing="5" Width="170">
+                        <TextBlock Text="PHONE" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                        <Border Height="29" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
+                          <TextBox Text="{Binding TgPhone, Mode=TwoWay}" Watermark="+1 234 567 8900" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
+                        </Border>
+                      </StackPanel>
+                      <StackPanel Grid.Column="2" Spacing="5" Width="120" IsVisible="{Binding TgNeedCode}">
+                        <TextBlock Text="LOGIN CODE" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                        <Border Height="29" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
+                          <TextBox Text="{Binding TgCode, Mode=TwoWay}" Watermark="12345" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
+                        </Border>
+                      </StackPanel>
+                      <Button Grid.Column="3" Command="{Binding TgConnectCommand}" HorizontalAlignment="Left" Height="29" BorderBrush="{Binding TgBtnBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="6" Background="{Binding TgBtnBg, Converter={StaticResource StringToBrush}}" Padding="13,0" Content="{Binding TgBtnLabel}" Foreground="{Binding TgBtnColor, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" Margin="10,0,0,0" />
+                      <TextBlock Grid.Column="4" Text="{Binding TgStatus}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="{Binding TgStatusColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Bottom" Margin="0,0,0,8" />
+                    </Grid>
+                    <Button Command="{Binding TgToggleInlineCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,12,0,0" BorderBrush="{Binding TgInlineBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="7" Background="{Binding TgInlineBg, Converter={StaticResource StringToBrush}}" Padding="10,9">
+                      <Grid ColumnDefinitions="*,12,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                          <TextBlock Text="Inline-button signals" FontSize="11.5" Foreground="#d0e4f4" />
+                          <TextBlock Text="Accept executes a market order · Skip discards the signal" FontSize="9.5" Foreground="#2d4a5e" />
+                        </StackPanel>
+                        <Border Grid.Column="2" Width="28" Height="15" CornerRadius="8" Background="{Binding TgInlineTrack, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center">
+                          <Canvas><Border Canvas.Left="{Binding TgInlineKnobLeft}" Canvas.Top="2" Width="11" Height="11" CornerRadius="6" Background="{Binding TgInlineKnob, Converter={StaticResource StringToBrush}}" /></Canvas>
+                        </Border>
                       </Grid>
-                    </DataTemplate>
-                  </ListBox.ItemTemplate>
-                </ListBox>
+                    </Button>
+                    <StackPanel IsVisible="{Binding TgHasPending}" Margin="0,11,0,0">
+                      <TextBlock Text="PENDING SIGNALS" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" Margin="0,0,0,7" />
+                      <ItemsControl ItemsSource="{Binding Pending}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Border BorderBrush="#152233" BorderThickness="1" CornerRadius="7" Background="#050f14" Padding="10,8" Margin="0,0,0,5">
+                              <Grid ColumnDefinitions="*,9,Auto,5,Auto">
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                  <TextBlock Text="{Binding Label}" FontSize="11.5" FontWeight="SemiBold" Foreground="{Binding SideColor, Converter={StaticResource StringToBrush}}" />
+                                  <TextBlock Text="{Binding Desc}" FontSize="9.5" Foreground="#2d4a5e" />
+                                </StackPanel>
+                                <Button Grid.Column="2" Command="{Binding AcceptCommand}" Height="24" BorderBrush="#14302e" BorderThickness="1" CornerRadius="5" Background="#061615" Padding="10,0" Content="✓ ACCEPT" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                                <Button Grid.Column="4" Command="{Binding SkipCommand}" Height="24" BorderBrush="#3a1620" BorderThickness="1" CornerRadius="5" Background="#14060a" Padding="10,0" Content="✕ SKIP" Foreground="#ff6b6b" FontSize="9" FontWeight="Bold" />
+                              </Grid>
+                            </Border>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                    <Border IsVisible="{Binding TgNoPending}" Margin="0,11,0,0" BorderBrush="#152233" BorderThickness="1" CornerRadius="7" Padding="11">
+                      <TextBlock Text="No pending signals." FontSize="11" Foreground="#2d4a5e" HorizontalAlignment="Center" />
+                    </Border>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+
+              <!-- ══════════ ALERTS ══════════ -->
+              <StackPanel Spacing="7" IsVisible="{Binding IsAlerts}">
+                <Border BorderBrush="#14302e" BorderThickness="1" CornerRadius="11" Background="#061615" Padding="13">
+                  <StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8" VerticalAlignment="Center">
+                      <Border Width="5" Height="5" CornerRadius="3" Background="#21e6c1" VerticalAlignment="Center" />
+                      <TextBlock Text="DESCRIBE AN ALERT" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding NlStatus}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#2d6b64" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="7">
+                      <Border Width="560" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="10,0">
+                        <TextBox Text="{Binding NlPrompt, Mode=TwoWay}" Watermark="ping me when BTC breaks 75k" FontSize="12" VerticalAlignment="Center" />
+                      </Border>
+                      <Button Command="{Binding NlGenerateCommand}" Height="30" BorderBrush="#21e6c1" BorderThickness="1" CornerRadius="6" Background="#0e2a2a" Padding="13,0" Content="{Binding NlBtn}" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding Examples}" Margin="0,8,0,0">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Button Command="{Binding Command}" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Background="#050f14" Padding="9,4" Content="{Binding Label}" Foreground="#5a7a94" FontSize="10" Margin="0,0,6,0" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14">
+                  <StackPanel>
+                    <TextBlock Text="Add alert" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" Margin="0,0,0,11" />
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+                      <StackPanel Spacing="5" Width="120">
+                        <TextBlock Text="SYMBOL" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                        <Border Height="29" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
+                          <TextBox Text="{Binding NaSym, Mode=TwoWay}" Watermark="BTCUSDT" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
+                        </Border>
+                      </StackPanel>
+                      <StackPanel Spacing="5" Width="176">
+                        <TextBlock Text="CONDITION" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                        <ComboBox ItemsSource="{Binding Conditions}" SelectedItem="{Binding NaCond, Mode=TwoWay}" Height="29" Padding="7,0" CornerRadius="6" Background="#050f14" BorderBrush="#152233" BorderThickness="1" HorizontalAlignment="Stretch" />
+                      </StackPanel>
+                      <StackPanel Spacing="5" Width="120">
+                        <TextBlock Text="THRESHOLD" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                        <Border Height="29" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
+                          <TextBox Text="{Binding NaThr, Mode=TwoWay}" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
+                        </Border>
+                      </StackPanel>
+                      <StackPanel Spacing="5">
+                        <TextBlock Text="SEND TO" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                        <ItemsControl ItemsSource="{Binding NewChannels}">
+                          <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="5" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                              <Button Command="{Binding Command}" Height="29" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="6" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Padding="10,0" Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" />
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </StackPanel>
+                      <StackPanel Spacing="5">
+                        <TextBlock Text="REPEAT" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                        <Button Command="{Binding RepeatCommand}" Height="29" BorderBrush="{Binding RepeatBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="6" Background="{Binding RepeatBg, Converter={StaticResource StringToBrush}}" Padding="10,0">
+                          <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+                            <Border Width="13" Height="13" BorderBrush="{Binding RepeatBoxBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="3" Background="{Binding RepeatBoxBg, Converter={StaticResource StringToBrush}}">
+                              <TextBlock Text="{Binding RepeatMark}" Foreground="#04101a" FontSize="8" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="{Binding RepeatLabel}" FontSize="10" Foreground="{Binding RepeatColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                          </StackPanel>
+                        </Button>
+                      </StackPanel>
+                      <StackPanel Spacing="5">
+                        <TextBlock Text=" " FontSize="9" />
+                        <Button Command="{Binding AlAddCommand}" Height="29" BorderBrush="#21e6c1" BorderThickness="1" CornerRadius="6" Background="#0e2a2a" Padding="14,0" Content="+ ADD ALERT" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                      </StackPanel>
+                    </StackPanel>
+                    <Border BorderBrush="#0a1520" BorderThickness="0,1,0,0" Margin="0,13,0,0" Padding="0,12,0,0">
+                      <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <Button Command="{Binding SoundCommand}" BorderThickness="0" Background="Transparent" Padding="0">
+                          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Border Width="13" Height="13" BorderBrush="{Binding SoundBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="3" Background="{Binding SoundBg, Converter={StaticResource StringToBrush}}">
+                              <TextBlock Text="{Binding SoundMark}" Foreground="#04101a" FontSize="8" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="Sound on alert" FontSize="11" Foreground="#8fa3b8" VerticalAlignment="Center" />
+                          </StackPanel>
+                        </Button>
+                        <TextBlock Text="{Binding AlNote}" FontSize="10.5" Foreground="#2d4a5e" VerticalAlignment="Center" />
+                      </StackPanel>
+                    </Border>
+                  </StackPanel>
+                </Border>
+
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" ClipToBounds="True">
+                  <StackPanel>
+                    <Border Background="#060d14" BorderBrush="#0a1520" BorderThickness="0,0,0,1" Padding="12,9">
+                      <Grid ColumnDefinitions="Auto,8,Auto,*,Auto">
+                        <TextBlock Grid.Column="0" Text="ACTIVE ALERTS" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2" Text="{Binding ActiveMeta}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#26405a" VerticalAlignment="Center" />
+                        <Button Grid.Column="4" Command="{Binding ClearTriggeredCommand}" BorderThickness="0" Background="Transparent" Padding="0" Content="CLEAR TRIGGERED" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" />
+                      </Grid>
+                    </Border>
+                    <ItemsControl ItemsSource="{Binding Alerts}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Border Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderBrush="#0a1520" BorderThickness="0,0,0,1" Padding="12,9">
+                            <Grid ColumnDefinitions="7,10,104,*,Auto,10,Auto,10,62,10,Auto,5,Auto">
+                              <Border Grid.Column="0" Width="7" Height="7" CornerRadius="4" Background="{Binding Dot, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="2" Text="{Binding Symbol}" FontFamily="{StaticResource FontMono}" FontSize="11.5" Foreground="#e8f4ff" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="3" Text="{Binding Rule}" FontSize="11.5" Foreground="#a9c2d8" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="4" Text="{Binding Distance}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="{Binding DistColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                              <ItemsControl Grid.Column="6" ItemsSource="{Binding Channels}" VerticalAlignment="Center">
+                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate>
+                                    <Border BorderBrush="#152233" BorderThickness="1" CornerRadius="4" Background="#050f14" Padding="6,2">
+                                      <TextBlock Text="{Binding}" Foreground="#5a7a94" FontSize="8" FontWeight="Bold" />
+                                    </Border>
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+                              <TextBlock Grid.Column="8" Text="{Binding Repeat}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                              <Button Grid.Column="10" Command="{Binding ToggleCommand}" Height="22" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Background="#060d14" Padding="9,0" Content="{Binding ToggleLabel}" Foreground="{Binding ToggleColor, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" />
+                              <Button Grid.Column="12" Command="{Binding DeleteCommand}" Width="22" Height="22" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Background="#060d14" Padding="0" Content="✕" Foreground="#4a6a82" FontSize="9" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock IsVisible="{Binding NoActive}" Text="No alerts yet — describe one above or fill the form." Padding="22" HorizontalAlignment="Center" FontSize="11.5" Foreground="#2d4a5e" />
+                  </StackPanel>
+                </Border>
+
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" ClipToBounds="True">
+                  <StackPanel>
+                    <Border Background="#060d14" BorderBrush="#0a1520" BorderThickness="0,0,0,1" Padding="12,9">
+                      <Grid ColumnDefinitions="Auto,*,Auto">
+                        <TextBlock Grid.Column="0" Text="ALERT HISTORY" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                        <Button Grid.Column="2" Command="{Binding ClearHistoryCommand}" BorderThickness="0" Background="Transparent" Padding="0" Content="CLEAR" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" />
+                      </Grid>
+                    </Border>
+                    <ScrollViewer MaxHeight="168" VerticalScrollBarVisibility="Auto" Padding="12,8">
+                      <ItemsControl ItemsSource="{Binding History}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Grid ColumnDefinitions="Auto,11,78,*" Margin="0,0,0,2">
+                              <TextBlock Grid.Column="0" Text="{Binding Time}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#1e3048" />
+                              <TextBlock Grid.Column="2" Text="{Binding Channel}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                              <TextBlock Grid.Column="3" Text="{Binding Msg}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#8fa3b8" />
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </ScrollViewer>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+
+              <!-- ══════════ EXECUTION & HOTKEYS ══════════ -->
+              <StackPanel Spacing="7" IsVisible="{Binding IsExec}">
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14">
+                  <StackPanel>
+                    <TextBlock Text="Execution defaults" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" Margin="0,0,0,4" />
+                    <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="16" Foreground="#4a6a82" Margin="0,0,0,12"
+                               Text="Applied to every new order unless a bot overrides them. Changes take effect on the next order, not on open ones." />
+                    <ItemsControl ItemsSource="{Binding ExecFields}">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <StackPanel Spacing="5" Margin="6">
+                            <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                            <ComboBox IsVisible="{Binding IsSelect}" ItemsSource="{Binding Options}" SelectedItem="{Binding Value, Mode=TwoWay}" Height="29" Padding="7,0" CornerRadius="6" Background="#050f14" BorderBrush="#152233" BorderThickness="1" HorizontalAlignment="Stretch" />
+                            <Border IsVisible="{Binding IsText}" Height="29" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
+                              <Grid ColumnDefinitions="*,6,Auto">
+                                <TextBox Grid.Column="0" Text="{Binding Value, Mode=TwoWay}" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="2" Text="{Binding Unit}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#26405a" VerticalAlignment="Center" />
+                              </Grid>
+                            </Border>
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Border BorderBrush="#0a1520" BorderThickness="0,1,0,0" Margin="0,13,0,0" Padding="0,12,0,0">
+                      <ItemsControl ItemsSource="{Binding ExecFlags}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Button Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" BorderThickness="0" CornerRadius="6" Background="Transparent" Padding="9,8">
+                              <Grid ColumnDefinitions="*,12,Auto">
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                  <TextBlock Text="{Binding Label}" FontSize="11.5" Foreground="#d0e4f4" />
+                                  <TextBlock Text="{Binding Hint}" FontSize="9.5" Foreground="#2d4a5e" />
+                                </StackPanel>
+                                <Border Grid.Column="2" Width="28" Height="15" CornerRadius="8" Background="{Binding TrackBg, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center">
+                                  <Canvas><Border Canvas.Left="{Binding KnobLeft}" Canvas.Top="2" Width="11" Height="11" CornerRadius="6" Background="{Binding Knob, Converter={StaticResource StringToBrush}}" /></Canvas>
+                                </Border>
+                              </Grid>
+                            </Button>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </Border>
+                  </StackPanel>
+                </Border>
+
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14">
+                  <StackPanel>
+                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,4">
+                      <TextBlock Grid.Column="0" Text="Trading hotkeys" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
+                      <Button Grid.Column="2" Command="{Binding HkResetCommand}" Height="24" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="10,0" Content="RESET DEFAULTS" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
+                    </Grid>
+                    <TextBlock TextWrapping="Wrap" FontSize="11" LineHeight="16" Foreground="#4a6a82" Margin="0,0,0,11"
+                               Text="Single-key shortcuts, active only when no input field is focused. Changes apply immediately." />
+                    <ItemsControl ItemsSource="{Binding Hotkeys}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Border CornerRadius="6" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Padding="9,7" Margin="0,0,0,3">
+                            <Grid ColumnDefinitions="*,10,52,10,112,10,Auto">
+                              <TextBlock Grid.Column="0" Text="{Binding Label}" FontSize="11.5" Foreground="#d0e4f4" VerticalAlignment="Center" />
+                              <Border Grid.Column="2" CornerRadius="5" Background="#050f14" Padding="0,3">
+                                <TextBlock Text="{Binding Display}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="{Binding KeyColor, Converter={StaticResource StringToBrush}}" HorizontalAlignment="Center" />
+                              </Border>
+                              <Border Grid.Column="4" Height="26" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="8,0">
+                                <TextBox Text="{Binding Value, Mode=TwoWay}" Watermark="{Binding Placeholder}" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
+                              </Border>
+                              <Button Grid.Column="6" Command="{Binding CaptureCommand}" Height="26" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="9,0" Content="{Binding CaptureLabel}" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+      </DockPanel>
+
+      <!-- ═══ confirm modal ═══ -->
+      <Border IsVisible="{Binding ModalConfirm}" Background="#BC02060A" ZIndex="95">
+        <Border Width="460" VerticalAlignment="Center" HorizontalAlignment="Center" BorderBrush="{Binding ConfirmAccent, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="12" Background="#07101a" ClipToBounds="True">
+          <StackPanel>
+            <StackPanel Margin="17,15,17,14">
+              <StackPanel Orientation="Horizontal" Spacing="9" Margin="0,0,0,10" VerticalAlignment="Center">
+                <TextBlock Text="{Binding ConfirmIcon}" FontSize="14" Foreground="{Binding ConfirmIconColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding ConfirmTitle}" FontSize="13" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
+              </StackPanel>
+              <TextBlock Text="{Binding ConfirmBody}" TextWrapping="Wrap" FontSize="11.5" LineHeight="18" Foreground="#8fa3b8" />
+              <StackPanel IsVisible="{Binding ConfirmHasType}" Margin="0,12,0,0">
+                <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,0,6">
+                  <TextBlock Text="type" FontSize="10" Foreground="#4a6a82" />
+                  <TextBlock Text="{Binding ConfirmTypeWord}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="#f4b860" />
+                  <TextBlock Text="to confirm" FontSize="10" Foreground="#4a6a82" />
+                </StackPanel>
+                <Border Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="9,0">
+                  <TextBox Text="{Binding ConfirmTyped, Mode=TwoWay}" Watermark="{Binding ConfirmTypeWord}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
+                </Border>
+              </StackPanel>
+            </StackPanel>
+            <Border Background="#060d14" BorderBrush="#0d1b27" BorderThickness="0,1,0,0" Padding="17,12">
+              <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                <Button Command="{Binding CloseModalCommand}" Height="28" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="12,0" Content="CANCEL" Foreground="#8fa3b8" FontSize="10" FontWeight="Bold" />
+                <Button Command="{Binding ConfirmRunCommand}" Height="28" BorderBrush="{Binding ConfirmBtnBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="6" Background="{Binding ConfirmBtnBg, Converter={StaticResource StringToBrush}}" Padding="14,0" Content="{Binding ConfirmCta}" Foreground="{Binding ConfirmBtnFg, Converter={StaticResource StringToBrush}}" FontSize="10" FontWeight="Bold" Opacity="{Binding ConfirmBtnOpacity}" />
               </StackPanel>
             </Border>
-
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
-              <Border Classes="SectionPanel">
-                <StackPanel Spacing="12">
-                  <TextBlock Classes="H2" Text="Execution Defaults" />
-                  <TextBlock Text="{Binding SettingsConnectivitySummary}" Foreground="#8FA3B8" TextWrapping="Wrap" />
-                  <StackPanel Spacing="6">
-                    <TextBlock Classes="Overline" Text="Quote Asset" />
-                    <ComboBox ItemsSource="{Binding WalletVM.GlobalQuoteAssetOptions}"
-                              SelectedItem="{Binding WalletVM.GlobalQuoteAssetSymbol}" />
-                  </StackPanel>
-                  <StackPanel Spacing="6">
-                    <TextBlock Classes="Overline" Text="Position Sizing" />
-                    <WrapPanel Orientation="Horizontal">
-                      <Button Classes="GhostButton"
-                              Content="25%"
-                              Margin="0,0,10,10"
-                              Command="{Binding WalletVM.ApplyGlobalPositionSizingCommand}"
-                              CommandParameter="25" />
-                      <Button Classes="GhostButton"
-                              Content="50%"
-                              Margin="0,0,10,10"
-                              Command="{Binding WalletVM.ApplyGlobalPositionSizingCommand}"
-                              CommandParameter="50" />
-                      <Button Classes="GhostButton"
-                              Content="75%"
-                              Margin="0,0,10,10"
-                              Command="{Binding WalletVM.ApplyGlobalPositionSizingCommand}"
-                              CommandParameter="75" />
-                      <Button Classes="GhostButton"
-                              Content="100%"
-                              Margin="0,0,10,10"
-                              Command="{Binding WalletVM.ApplyGlobalPositionSizingCommand}"
-                              CommandParameter="100" />
-                    </WrapPanel>
-                  </StackPanel>
-                  <WrapPanel Orientation="Horizontal">
-                    <Button Classes="GhostButton"
-                            Content="Paper Only"
-                            Margin="0,0,10,10"
-                            Command="{Binding WalletVM.ApplyGlobalExecutionModeCommand}"
-                            CommandParameter="PAPER" />
-                    <Button Classes="GhostButton"
-                            Content="Live Allowed"
-                            Margin="0,0,10,10"
-                            Command="{Binding WalletVM.ApplyGlobalExecutionModeCommand}"
-                            CommandParameter="LIVE" />
-                  </WrapPanel>
-                </StackPanel>
-              </Border>
-
-              <Border Classes="SectionPanel">
-                <StackPanel Spacing="12">
-                  <TextBlock Classes="H2" Text="Wallet Session" />
-                  <StackPanel Spacing="6">
-                    <TextBlock Classes="Overline" Text="Provider" />
-                    <ComboBox ItemsSource="{Binding WalletVM.AvailableProviders}"
-                              SelectedItem="{Binding WalletVM.SelectedProvider}" />
-                  </StackPanel>
-                  <StackPanel Spacing="6">
-                    <TextBlock Classes="Overline" Text="Network" />
-                    <ComboBox ItemsSource="{Binding WalletVM.AvailableNetworks}"
-                              SelectedItem="{Binding WalletVM.SelectedNetwork}" />
-                  </StackPanel>
-                  <WrapPanel Orientation="Horizontal">
-                    <Button Classes="GhostButton"
-                            Content="Refresh Wallet"
-                            Margin="0,0,10,10"
-                            Command="{Binding WalletVM.RefreshWalletCommand}" />
-                    <Button Classes="GhostButton"
-                            Content="Open Provider"
-                            Margin="0,0,10,10"
-                            Command="{Binding WalletVM.OpenProviderCommand}" />
-                    <Button Classes="GhostButton"
-                            Content="Disconnect"
-                            Margin="0,0,10,10"
-                            Command="{Binding WalletVM.DisconnectWalletCommand}" />
-                  </WrapPanel>
-                </StackPanel>
-              </Border>
-            </Grid>
           </StackPanel>
+        </Border>
+      </Border>
+
+      <!-- ═══ toast ═══ -->
+      <Border IsVisible="{Binding HasToast}" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,40" ZIndex="99"
+              BorderBrush="{Binding ToastBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="8" Background="#07101a" Padding="14,9">
+        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <TextBlock Text="{Binding ToastIcon}" Foreground="{Binding ToastColor, Converter={StaticResource StringToBrush}}" FontSize="11" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding ToastMsg}" FontSize="11.5" Foreground="#e8f4ff" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding ToastMeta}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" VerticalAlignment="Center" />
+        </StackPanel>
+      </Border>
+
+    </Grid>
+  </Border>
 </UserControl>

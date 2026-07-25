@@ -31,6 +31,7 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
     private readonly LiquidationDataService _svc;
     private readonly DispatcherTimer _refreshTimer;  // full reload every 5 min
     private readonly DispatcherTimer _priceTimer;    // lightweight price tick every 5 sec
+    private readonly DispatcherTimer _streamTimer;   // projects the live liquidation socket onto the UI
     private CancellationTokenSource _cts = new();
 
     private string   _symbol          = "BTCUSDT";
@@ -61,7 +62,11 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
     public string Symbol
     {
         get => _symbol;
-        set => this.RaiseAndSetIfChanged(ref _symbol, value?.ToUpperInvariant() ?? "BTCUSDT");
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _symbol, value?.ToUpperInvariant() ?? "BTCUSDT");
+            _streamProjected = false;   // per-symbol stream totals must be recomputed
+        }
     }
     public bool IsLoading
     {
@@ -154,6 +159,107 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
     /// proportional to the notional size of the cluster.
     /// </summary>
     public IReadOnlyList<LiqClusterOverlay> ClusterOverlay { get; private set; } = [];
+
+    // ── Real liquidation stream (Binance USD-M forceOrder) ────────────────────
+    // Independent of the level map above: the map is an ESTIMATE from a leverage model,
+    // everything below is exchange-reported and only exists once the socket delivers it.
+
+    private const int FeedCap = 40;
+
+    private readonly LiquidationStreamService _stream = new();
+    private long _renderedEvents = -1;
+    private LiquidationStreamState _renderedState = LiquidationStreamState.Stopped;
+    private bool _streamProjected;
+
+    /// <summary>Most recent real liquidations across all symbols, newest first. Empty until the socket delivers.</summary>
+    public IReadOnlyList<LiquidationEvent> LiquidationFeed { get; private set; } = [];
+
+    /// <summary>Aggregates over the buffered stream window (up to 24 h / 500 events).</summary>
+    public LiquidationStreamStats LiquidationStats { get; private set; } = LiquidationStreamStats.Empty;
+
+    public bool HasLiquidationStream => LiquidationFeed.Count > 0;
+
+    /// <summary>Label that marks this feed as real, as opposed to <see cref="DataSourceLabel"/>.</summary>
+    public string LiquidationStreamSource => LiquidationStreamService.SourceLabel;
+
+    /// <summary>"connected · 128 events" / "reconnecting · 12 events" / "stopped".</summary>
+    public string LiquidationStreamStatus { get; private set; } = "stopped";
+
+    public LiquidationStreamState StreamState { get; private set; } = LiquidationStreamState.Stopped;
+
+    public string LiquidationStreamColor => StreamState switch
+    {
+        LiquidationStreamState.Connected => "#21E6C1",
+        LiquidationStreamState.Connecting => "#F4B860",
+        LiquidationStreamState.Reconnecting => "#F4B860",
+        _ => "#8FA3B8",
+    };
+
+    /// <summary>Events accepted since the stream started, including ones aged out of the buffer.</summary>
+    public long LiquidationEventsReceived { get; private set; }
+
+    /// <summary>Liquidated notional for <see cref="Symbol"/> alone, within the buffered window.</summary>
+    public decimal SymbolLiquidationUsd { get; private set; }
+
+    /// <summary>Last transport error from the socket, empty while it is healthy.</summary>
+    public string LiquidationStreamError { get; private set; } = "";
+
+    /// <summary>Honest description of the aggregation window ("last 42 min · 128 events").</summary>
+    public string LiquidationWindowLabel { get; private set; } = "no events yet";
+
+    /// <summary>
+    /// Per-venue health, e.g. "Binance connected · no data · Bybit connected · OKX connecting".
+    /// A venue whose futures host is blocked on this network shows up here instead of being
+    /// hidden behind a green aggregate status.
+    /// </summary>
+    public string LiquidationVenues { get; private set; } = "";
+
+    /// <summary>Per-venue connection health for the UI to render row by row.</summary>
+    public IReadOnlyList<LiquidationVenueStatus> StreamVenues { get; private set; } = Array.Empty<LiquidationVenueStatus>();
+
+    /// <summary>
+    /// Pulls the socket's buffer onto the UI thread. Runs on a timer instead of a callback so
+    /// a liquidation cascade cannot flood the dispatcher, and so nothing crosses threads.
+    /// </summary>
+    private void ProjectStream()
+    {
+        var received = _stream.ReceivedCount;
+        var state = _stream.State;
+        var venues = _stream.VenueSummary;
+        if (_streamProjected && received == _renderedEvents && state == _renderedState
+            && string.Equals(venues, LiquidationVenues, StringComparison.Ordinal)) return;
+
+        _streamProjected = true;
+        _renderedEvents = received;
+        _renderedState = state;
+
+        LiquidationFeed = _stream.Snapshot(FeedCap);
+        LiquidationStats = _stream.GetStats();
+        SymbolLiquidationUsd = _stream.GetStats(_symbol).TotalUsd;
+        LiquidationEventsReceived = received;
+        StreamState = state;
+        LiquidationStreamError = _stream.LastError ?? "";
+        LiquidationStreamStatus = received > 0 ? $"{_stream.StateLabel} · {received} events" : _stream.StateLabel;
+        LiquidationVenues = venues;
+        StreamVenues = _stream.VenueStatuses;
+        LiquidationWindowLabel = LiquidationStats.Events == 0
+            ? "no events yet"
+            : $"last {FormatSpan(LiquidationStats.Window)} · {LiquidationStats.Events} events";
+
+        foreach (var n in new[]
+                 {
+                     nameof(LiquidationFeed), nameof(LiquidationStats), nameof(HasLiquidationStream),
+                     nameof(LiquidationStreamStatus), nameof(StreamState), nameof(LiquidationStreamColor),
+                     nameof(LiquidationEventsReceived), nameof(SymbolLiquidationUsd),
+                     nameof(LiquidationStreamError), nameof(LiquidationWindowLabel), nameof(LiquidationVenues), nameof(StreamVenues),
+                 })
+            this.RaisePropertyChanged(n);
+    }
+
+    private static string FormatSpan(TimeSpan span) =>
+        span.TotalMinutes < 1 ? $"{Math.Max(0, (int)span.TotalSeconds)}s"
+        : span.TotalHours < 1 ? $"{(int)span.TotalMinutes}m"
+        : $"{span.TotalHours:0.#}h";
 
     /// <summary>
     /// Raised (on UI thread) when price approaches a major liquidation cluster.
@@ -267,6 +373,12 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
             RenderHeatmap();
             StatusLabel = $"Live  {DateTime.Now:HH:mm:ss}  ·  {FormatPrice((double)price)}";
         };
+
+        // Projects the liquidation socket onto the UI. The socket itself is NOT started here —
+        // only Activate() opens it, so creating this VM performs no network work.
+        // 1.2 s: fast enough to feel live, slow enough that a cascade cannot thrash the desk rebuild.
+        _streamTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1200) };
+        _streamTimer.Tick += (_, _) => ProjectStream();
     }
 
     // ── Activation (gated to section visibility) ──────────────────────────────
@@ -284,13 +396,21 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
         }
         if (!_refreshTimer.IsEnabled) _refreshTimer.Start();
         if (!_priceTimer.IsEnabled)   _priceTimer.Start();
+
+        // Real liquidation feed: all symbols, so a quiet single symbol does not look like an outage.
+        _stream.Start();
+        if (!_streamTimer.IsEnabled) _streamTimer.Start();
+        ProjectStream();
     }
 
-    /// <summary>Called when the section is hidden: stop both timers.</summary>
+    /// <summary>Called when the section is hidden: stop the timers and close the liquidation socket.</summary>
     public void Deactivate()
     {
         _refreshTimer.Stop();
         _priceTimer.Stop();
+        _streamTimer.Stop();
+        _stream.Stop();
+        ProjectStream();   // reflect "stopped" instead of leaving a stale "connected"
     }
 
     // ── Data loading ──────────────────────────────────────────────────────────
@@ -541,7 +661,9 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
     {
         _refreshTimer.Stop();
         _priceTimer.Stop();
+        _streamTimer.Stop();
         _cts.Cancel();
+        _stream.Dispose();
         _svc.Dispose();
     }
 }

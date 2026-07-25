@@ -457,7 +457,7 @@
       </Grid>
     </Border>
 
-    <Grid Grid.Column="1" Grid.Row="1" Margin="18,16,18,16">
+    <Grid Grid.Column="1" Grid.Row="1" Margin="{Binding PageOuterMargin}">
     <TabControl SelectedIndex="{Binding SelectedTabIndex}"
                 Classes="PrimaryNavTabs">
       <TabItem Header="Dashboard">
@@ -861,14 +861,18 @@
       </TabItem>
     </TabControl>
 
-    <Border IsVisible="{Binding IsPlaceholderSectionVisible}" Classes="Panel" Padding="26" ZIndex="5">
+    <Border IsVisible="{Binding IsPlaceholderSectionVisible}" Classes="Panel" ZIndex="5"
+            Padding="{Binding PagePadding}" BorderThickness="{Binding PageBorderThickness}"
+            CornerRadius="{Binding PageCornerRadius}"
+            Background="{Binding PageBackground, Converter={StaticResource StringToBrush}}">
       <ScrollViewer Classes="PageScroll">
         <!-- Spacing intentionally 0: every section UserControl below stays
              always-visible (its inner panel toggles IsVisible), so any Spacing
              here accumulates between ~23 zero-height wrappers and pushes the
              active page down. Title gets its own margin instead. -->
         <StackPanel Spacing="0">
-          <TextBlock Classes="H1" Text="{Binding CurrentSectionTitle}" Margin="0,0,0,16" />
+          <TextBlock Classes="H1" Text="{Binding CurrentSectionTitle}" Margin="0,0,0,16"
+                     IsVisible="{Binding ShowSectionTitle}" />
 
           <views:RiskView />
 

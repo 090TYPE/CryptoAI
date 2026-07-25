@@ -86,6 +86,9 @@ public sealed class AutonomousAgentViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _sessionBudgetUsd, value < 0m ? 0m : value);
     }
 
+    /// <summary>How much of the session budget the guardrails have actually spent.</summary>
+    public decimal SessionSpentUsd => _rails.SpentUsd;
+
     public int MaxTrades
     {
         get => _maxTrades;

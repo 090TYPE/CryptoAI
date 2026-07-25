@@ -225,6 +225,64 @@ public sealed class PnlDashboardService
         return points;
     }
 
+    // ── Per-bot series (Bots desk: EQUITY 7D / MAX DD columns) ────────────────
+
+    /// <summary>
+    /// Closed trades one bot booked inside a window, oldest first. The bot key matches the
+    /// grouping <see cref="ComputeByBot"/> uses, so the desk can address a row by its label.
+    /// </summary>
+    private static List<TradeRecord> BotWindow(
+        IReadOnlyList<TradeRecord> trades, string botName, DateTime fromUtc, DateTime toUtc)
+        => trades
+            .Where(t => string.Equals(t.BotName ?? t.SourceLabel, botName, StringComparison.OrdinalIgnoreCase)
+                        && t.ClosedAtUtc > fromUtc && t.ClosedAtUtc <= toUtc)
+            .OrderBy(t => t.ClosedAtUtc)
+            .ToList();
+
+    /// <summary>
+    /// Cumulative realized P&amp;L of one bot over [fromUtc, toUtc], resampled onto
+    /// <paramref name="points"/> evenly spaced samples — each sample is the sum of every
+    /// trade the bot closed up to that instant (a step curve, no interpolation invented).
+    /// Empty when the bot closed nothing in the window, so the caller draws no line at all
+    /// instead of a flat zero.
+    /// </summary>
+    public IReadOnlyList<decimal> ComputeEquitySeries(
+        IReadOnlyList<TradeRecord> trades, string botName,
+        DateTime fromUtc, DateTime toUtc, int points)
+    {
+        if (points < 2 || toUtc <= fromUtc) return [];
+
+        var window = BotWindow(trades, botName, fromUtc, toUtc);
+        if (window.Count == 0) return [];
+
+        var series = new decimal[points];
+        long span = (toUtc - fromUtc).Ticks;
+        int idx = 0;
+        decimal cumulative = 0m;
+
+        for (int i = 0; i < points; i++)
+        {
+            var at = fromUtc.AddTicks(span * i / (points - 1));
+            while (idx < window.Count && window[idx].ClosedAtUtc <= at)
+                cumulative += window[idx++].PnlUsd;
+            series[i] = cumulative;
+        }
+        return series;
+    }
+
+    /// <summary>
+    /// <see cref="ComputeMetrics"/> restricted to one bot and one window — same rolling-peak
+    /// drawdown, same win-rate maths, just a narrower trade set. Null when the bot closed
+    /// nothing in the window (the desk then shows "—" rather than a zero drawdown).
+    /// </summary>
+    public PnlMetrics? ComputeBotMetrics(
+        IReadOnlyList<TradeRecord> trades, string botName,
+        DateTime fromUtc, DateTime toUtc)
+    {
+        var window = BotWindow(trades, botName, fromUtc, toUtc);
+        return window.Count == 0 ? null : ComputeMetrics(window);
+    }
+
     // ── Period breakdown ──────────────────────────────────────────────────────
 
     public IReadOnlyList<PeriodRow> ComputeByDay(IReadOnlyList<TradeRecord> trades, int maxDays = 30)

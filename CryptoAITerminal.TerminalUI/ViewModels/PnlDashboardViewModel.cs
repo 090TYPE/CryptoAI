@@ -166,9 +166,11 @@ public class PnlDashboardViewModel : ReactiveObject
         foreach (var row in _service.ComputeByAsset(filtered))
             ByAssetRows.Add(new SourceRowViewModel(row));
 
-        // Trade rows (most recent first, cap to 200 for UI performance)
+        // Trade rows (most recent first). Capped high rather than at 200: the analytics
+        // desk aggregates off these rows, so a low cap would make its equity curve and
+        // breakdowns disagree with the KPI tiles, which cover the whole filtered set.
         TradeRows.Clear();
-        foreach (var t in filtered.Take(200))
+        foreach (var t in filtered.Take(5000))
             TradeRows.Add(new TradeRowViewModel(t));
 
         StatusMessage = _totalTrades == 0
@@ -337,5 +339,7 @@ public sealed class TradeRowViewModel
     public string PnlBrush    => _t.PnlUsd >= 0 ? "#3DDC84" : "#FF5D73";
     public string Duration    => _t.DurationLabel;
     public string ExitReason  => _t.ExitReason;
+    /// <summary>The underlying record, so consumers can compute on real numbers instead of parsing labels.</summary>
+    public TradeRecord Model  => _t;
     public TradeRowViewModel(TradeRecord t) => _t = t;
 }

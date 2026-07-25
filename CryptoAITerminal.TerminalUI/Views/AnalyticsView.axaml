@@ -1,362 +1,442 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
-             xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             xmlns:conv="clr-namespace:CryptoAITerminal.TerminalUI.Converters"
+             xmlns:views="clr-namespace:CryptoAITerminal.TerminalUI.Views"
              x:Class="CryptoAITerminal.TerminalUI.Views.AnalyticsView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <StackPanel Spacing="16" IsVisible="{Binding IsAnalyticsSectionVisible}">
+             x:CompileBindings="False"
+             FontFamily="{StaticResource FontDisplay}">
 
-            <!-- ── Filters + action bar ── -->
-            <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="10">
-              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                <TextBlock Classes="Overline" Text="Period" VerticalAlignment="Center" />
-                <ComboBox ItemsSource="{Binding PnlDashboardVM.AvailablePeriods}"
-                          SelectedItem="{Binding PnlDashboardVM.SelectedPeriod}"
-                          MinWidth="80" />
-              </StackPanel>
-              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                <TextBlock Classes="Overline" Text="Source" VerticalAlignment="Center" />
-                <ComboBox ItemsSource="{Binding PnlDashboardVM.AvailableSources}"
-                          SelectedItem="{Binding PnlDashboardVM.SelectedSource}"
-                          MinWidth="80" />
-              </StackPanel>
-              <TextBlock Grid.Column="2" Text="{Binding PnlDashboardVM.StatusMessage}"
-                         Foreground="#4D5F70" FontSize="11" VerticalAlignment="Center" Margin="12,0,0,0" />
-              <Button Grid.Column="3" Classes="SecondaryButton" Command="{Binding PnlDashboardVM.RefreshCommand}">↻ Refresh</Button>
-              <Button Grid.Column="4" Classes="SecondaryButton" Command="{Binding PnlDashboardVM.ExportCsvCommand}">⬇ Export CSV</Button>
-            </Grid>
+  <UserControl.Resources>
+    <conv:RatioToStarConverter x:Key="RatioStar" />
+    <SolidColorBrush x:Key="DeskBg" Color="#040b12" />
+  </UserControl.Resources>
 
-            <!-- ── KPI cards ── -->
-            <Grid ColumnDefinitions="*,*,*,*,*,*" ColumnSpacing="12">
-              <Border Grid.Column="0" Classes="SurfaceCard">
-                <StackPanel Spacing="4">
-                  <TextBlock Classes="Overline" Text="Total P&amp;L" />
-                  <TextBlock Text="{Binding PnlDashboardVM.TotalPnlLabel}"
-                             Foreground="{Binding PnlDashboardVM.TotalPnlBrush}"
-                             FontSize="16" FontWeight="SemiBold" />
+  <UserControl.Styles>
+    <Style Selector="Button">
+      <Setter Property="Cursor" Value="Hand" /><Setter Property="MinHeight" Value="0" /><Setter Property="MinWidth" Value="0" /><Setter Property="HorizontalContentAlignment" Value="Center" /><Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}">
+            <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="Button:pointerover"><Setter Property="Opacity" Value="0.86" /></Style>
+    <Style Selector="TextBox"><Setter Property="MinHeight" Value="0" /><Setter Property="CaretBrush" Value="#21e6c1" /><Setter Property="Foreground" Value="#d0e4f4" /></Style>
+    <Style Selector="TextBox /template/ Border#PART_BorderElement"><Setter Property="MinHeight" Value="0" /></Style>
+    <Style Selector="ComboBox"><Setter Property="MinHeight" Value="0" /><Setter Property="Foreground" Value="#8fa3b8" /><Setter Property="FontSize" Value="10" /></Style>
+  </UserControl.Styles>
+
+  <Border IsVisible="{Binding IsAnalyticsSectionVisible}" MinHeight="760" Height="{Binding $parent[ScrollViewer].Bounds.Height}">
+    <Grid DataContext="{Binding AnalyticsDesk}" Background="{StaticResource DeskBg}" ClipToBounds="True">
+      <DockPanel LastChildFill="True">
+
+        <!-- header -->
+        <Border DockPanel.Dock="Top" Height="54" Background="#050c14" BorderBrush="#0d1b27" BorderThickness="0,0,0,1" Padding="14,0">
+          <DockPanel LastChildFill="True">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="7" VerticalAlignment="Center" Margin="14,0,0,0">
+              <ComboBox ItemsSource="{Binding Sources}" SelectedItem="{Binding Source, Mode=TwoWay}" Height="27" Padding="7,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" />
+              <Button Command="{Binding RefreshCommand}" Background="#060d14" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Padding="9,5" Content="↻ REFRESH" Foreground="#5a7a94" FontSize="9" FontWeight="Bold" />
+              <Button Command="{Binding ExportCommand}" Background="#060d14" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Padding="9,5" Content="⬇ CSV" Foreground="#5a7a94" FontSize="9" FontWeight="Bold" />
+              <Button Command="{Binding AiReviewCommand}" Background="#0e2a2a" BorderBrush="#21e6c1" BorderThickness="1" CornerRadius="5" Padding="12,6" Content="{Binding AiBtnLabel}" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+              <Border Padding="0,0,16,0" BorderBrush="#0d1b27" BorderThickness="0,0,1,0">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <TextBlock Text="/" Foreground="#1e3048" FontSize="16" FontWeight="Light" />
+                  <TextBlock Text="Analytics" Foreground="#21e6c1" FontSize="13" FontWeight="Bold" />
                 </StackPanel>
               </Border>
-              <Border Grid.Column="1" Classes="SurfaceCard">
-                <StackPanel Spacing="4">
-                  <TextBlock Classes="Overline" Text="Win Rate" />
-                  <TextBlock Text="{Binding PnlDashboardVM.WinRateLabel}" Foreground="#21E6C1" FontSize="16" FontWeight="SemiBold" />
-                  <TextBlock Text="{Binding PnlDashboardVM.TradeCountLabel}" Foreground="#4D5F70" FontSize="11" />
-                </StackPanel>
-              </Border>
-              <Border Grid.Column="2" Classes="SurfaceCard">
-                <StackPanel Spacing="4">
-                  <TextBlock Classes="Overline" Text="Avg Win" />
-                  <TextBlock Text="{Binding PnlDashboardVM.AvgWinLabel}" Foreground="#3DDC84" FontSize="16" FontWeight="SemiBold" />
-                </StackPanel>
-              </Border>
-              <Border Grid.Column="3" Classes="SurfaceCard">
-                <StackPanel Spacing="4">
-                  <TextBlock Classes="Overline" Text="Avg Loss" />
-                  <TextBlock Text="{Binding PnlDashboardVM.AvgLossLabel}" Foreground="#FF5D73" FontSize="16" FontWeight="SemiBold" />
-                </StackPanel>
-              </Border>
-              <Border Grid.Column="4" Classes="SurfaceCard">
-                <StackPanel Spacing="4">
-                  <TextBlock Classes="Overline" Text="Max Drawdown" />
-                  <TextBlock Text="{Binding PnlDashboardVM.MaxDrawdownLabel}" Foreground="#F4B860" FontSize="16" FontWeight="SemiBold" />
-                </StackPanel>
-              </Border>
-              <Border Grid.Column="5" Classes="SurfaceCard">
-                <StackPanel Spacing="4">
-                  <TextBlock Classes="Overline" Text="Profit Factor" />
-                  <TextBlock Text="{Binding PnlDashboardVM.ProfitFactorLabel}" Foreground="#A78BFA" FontSize="16" FontWeight="SemiBold" />
-                </StackPanel>
-              </Border>
-            </Grid>
-
-            <!-- ── Equity curve ── -->
-            <Border Classes="Panel" Padding="16,12">
-              <StackPanel Spacing="8">
-                <!-- Header row: title + min/max + legend -->
-                <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10">
-                  <TextBlock Grid.Column="0" Classes="H2" Text="Equity Curve" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" Text="{Binding PnlDashboardVM.EquityCurveMaxLabel}"
-                             Foreground="#3DDC84" FontSize="11" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="2" Text="{Binding PnlDashboardVM.EquityCurveMinLabel}"
-                             Foreground="#FF5D73" FontSize="11" VerticalAlignment="Center" />
-                  <!-- Legend -->
-                  <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                    <Border Width="12" Height="2" Background="#21E6C1" VerticalAlignment="Center" />
-                    <TextBlock Text="Active" Foreground="#8FA3B8" FontSize="10" VerticalAlignment="Center" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center"
-                              IsVisible="{Binding PnlDashboardVM.HasHoldLine}">
-                    <Border Width="12" Height="2" Background="#5A6A7A" VerticalAlignment="Center" />
-                    <TextBlock Text="Hold" Foreground="#8FA3B8" FontSize="10" VerticalAlignment="Center" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                    <Border Width="10" Height="10" Background="#FF5D7340" CornerRadius="2" VerticalAlignment="Center" />
-                    <TextBlock Text="Drawdown" Foreground="#8FA3B8" FontSize="10" VerticalAlignment="Center" />
-                  </StackPanel>
-                  <TextBlock Grid.Column="6" Text="{Binding PnlDashboardVM.HoldDeltaLabel}"
-                             Foreground="#F4B860" FontSize="10" VerticalAlignment="Center"
-                             IsVisible="{Binding PnlDashboardVM.HasHoldLine}" />
-                </Grid>
-
-                <!-- Chart canvas -->
-                <Border Background="#070F18" CornerRadius="4" Height="142" IsVisible="{Binding PnlDashboardVM.EquityCurveHasData}">
-                  <Canvas Width="560" Height="130" VerticalAlignment="Center" HorizontalAlignment="Left">
-                    <!-- Drawdown fill (red translucent area below rolling peak) -->
-                    <Path Fill="#33FF5D73" Stroke="Transparent"
-                          Data="{Binding PnlDashboardVM.DrawdownPathData}" />
-                    <!-- Hold comparison line (gray dashed) -->
-                    <Path Stroke="#4D5F70" StrokeThickness="1" StrokeDashArray="5,3" Fill="Transparent"
-                          Data="{Binding PnlDashboardVM.HoldPathData}"
-                          IsVisible="{Binding PnlDashboardVM.HasHoldLine}" />
-                    <!-- Zero line (dynamic Y position via TranslateTransform) -->
-                    <Line StartPoint="0,0" EndPoint="560,0"
-                          Stroke="#1A2E3A" StrokeThickness="1" StrokeDashArray="4,4">
-                      <Line.RenderTransform>
-                        <TranslateTransform Y="{Binding PnlDashboardVM.ZeroLineY}" />
-                      </Line.RenderTransform>
-                    </Line>
-                    <!-- Equity curve (teal solid line) -->
-                    <Path Stroke="#21E6C1" StrokeThickness="1.5" Fill="Transparent"
-                          Data="{Binding PnlDashboardVM.EquityCurvePathData}" />
-                  </Canvas>
-                </Border>
-
-                <!-- Placeholder when no data -->
-                <Border Background="#070F18" CornerRadius="4" Height="60"
-                        IsVisible="{Binding PnlDashboardVM.EquityCurveIsEmpty}">
-                  <TextBlock Text="No trade data yet. Complete a trade to see the equity curve."
-                             Foreground="#2A3D4F" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" />
-                </Border>
-              </StackPanel>
-            </Border>
-
-            <!-- ── Breakdown tables — row 1: By Day + By Source ── -->
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
-
-              <!-- By day -->
-              <Border Grid.Column="0" Classes="Panel" Padding="0">
-                <StackPanel>
-                  <Border Padding="16,10" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
-                    <TextBlock Classes="H2" Text="P&amp;L by Day" />
-                  </Border>
-                  <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10" Margin="16,8">
-                    <TextBlock Grid.Column="0" Classes="Overline" Text="Date" />
-                    <TextBlock Grid.Column="1" Classes="Overline" Text="Trades" />
-                    <TextBlock Grid.Column="2" Classes="Overline" Text="Win %" />
-                    <TextBlock Grid.Column="3" Classes="Overline" Text="P&amp;L" />
-                  </Grid>
-                  <ScrollViewer MaxHeight="240" VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding PnlDashboardVM.ByDayRows}">
+              <Border Padding="14,0" BorderBrush="#0d1b27" BorderThickness="0,0,1,0">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <TextBlock Text="PERIOD" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" />
+                  <Border Padding="2" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="7" Background="#060d14">
+                    <ItemsControl ItemsSource="{Binding Periods}">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:PeriodRowViewModel">
-                          <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10"
-                                Margin="16,5" VerticalAlignment="Center">
-                            <TextBlock Grid.Column="0" Text="{Binding Label}" Foreground="#C8D8E8" />
-                            <TextBlock Grid.Column="1" Text="{Binding Trades}" Foreground="#8FA3B8" />
-                            <TextBlock Grid.Column="2" Text="{Binding WinRate}" Foreground="#8FA3B8" />
-                            <TextBlock Grid.Column="3" Text="{Binding PnlLabel}"
-                                       Foreground="{Binding PnlBrush}" FontWeight="SemiBold" />
-                          </Grid>
+                        <DataTemplate>
+                          <Button Command="{Binding Command}" Height="22" Padding="9,0" CornerRadius="5" BorderThickness="0" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" />
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                  </ScrollViewer>
+                  </Border>
                 </StackPanel>
               </Border>
+              <Border Padding="14,0" BorderBrush="#0d1b27" BorderThickness="0,0,1,0">
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                  <TextBlock Text="{Binding HdrPeriodLabel, StringFormat='NET P&amp;L · {0}'}" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+                  <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom">
+                    <TextBlock Text="{Binding HdrPnl}" FontFamily="{StaticResource FontMono}" FontSize="16" Foreground="{Binding HdrPnlColor, Converter={StaticResource StringToBrush}}" />
+                    <TextBlock Text="{Binding HdrPnlSub}" Foreground="#3d5a72" FontSize="9" Margin="0,0,0,2" VerticalAlignment="Bottom" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+              <Border Padding="14,0" BorderBrush="#0d1b27" BorderThickness="0,0,1,0">
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                  <TextBlock Text="TRADES CLOSED" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+                  <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom">
+                    <TextBlock Text="{Binding HdrTrades}" FontFamily="{StaticResource FontMono}" FontSize="16" Foreground="#e8f4ff" />
+                    <TextBlock Text="{Binding HdrTradesSub}" Foreground="#3d5a72" FontSize="9" Margin="0,0,0,2" VerticalAlignment="Bottom" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+              <Button Command="{Binding BenchmarkCommand}" Background="Transparent" BorderThickness="0,0,1,0" BorderBrush="#0d1b27" Padding="14,0" HorizontalContentAlignment="Left">
+                <StackPanel VerticalAlignment="Center" Spacing="3">
+                  <TextBlock Text="VS BUY &amp; HOLD" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+                  <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding HdrHold}" FontFamily="{StaticResource FontMono}" FontSize="12" Foreground="{Binding HdrHoldColor, Converter={StaticResource StringToBrush}}" />
+                    <Border Width="54" Height="3" CornerRadius="2" Background="#0a1520" ClipToBounds="True" VerticalAlignment="Center">
+                      <Grid>
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="{Binding HdrHoldRatio, Converter={StaticResource RatioStar}}" />
+                          <ColumnDefinition Width="{Binding HdrHoldRatio, Converter={StaticResource RatioStar}, ConverterParameter=rest}" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="{Binding HdrHoldColor, Converter={StaticResource StringToBrush}}" />
+                      </Grid>
+                    </Border>
+                  </StackPanel>
+                </StackPanel>
+              </Button>
+            </StackPanel>
+            <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Padding="14,0">
+              <ItemsControl ItemsSource="{Binding Ticker}" VerticalAlignment="Center">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="22" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Tag}" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" />
+                      <TextBlock Text="{Binding Text}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#8fa3b8" />
+                      <TextBlock Text="{Binding Val}" FontSize="10" FontWeight="SemiBold" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </DockPanel>
+        </Border>
 
-              <!-- By source -->
-              <Border Grid.Column="1" Classes="Panel" Padding="0">
+        <!-- footer -->
+        <Border DockPanel.Dock="Bottom" Height="26" Background="#050c14" BorderBrush="#0d1b27" BorderThickness="0,1,0,0" Padding="14,0">
+          <DockPanel LastChildFill="True">
+            <TextBlock DockPanel.Dock="Right" Text="{Binding FooterSync}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" VerticalAlignment="Center" />
+            <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+              <TextBlock FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#3ddc84" Text="{Binding FooterRows, StringFormat='● trade store {0}'}" />
+              <TextBlock FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" Text="{Binding FooterPeriod}" />
+              <TextBlock FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" Text="{Binding FooterSource}" />
+              <TextBlock FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" Text="{Binding FooterFees}" />
+            </StackPanel>
+          </DockPanel>
+        </Border>
+
+        <!-- body -->
+        <Grid ColumnDefinitions="*,8,322" Margin="8">
+          <!-- LEFT -->
+          <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="7">
+              <!-- KPIs -->
+              <ItemsControl ItemsSource="{Binding Kpis}">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="6" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Button Command="{Binding Command}" Margin="0,0,7,0" HorizontalContentAlignment="Left" Padding="12,11" CornerRadius="10" Background="#07101a" BorderBrush="#0d1b27" BorderThickness="1">
+                      <StackPanel Spacing="5">
+                        <TextBlock Text="{Binding Label}" Foreground="#2d4a5e" FontSize="8.5" FontWeight="Bold" />
+                        <TextBlock Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="18" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                        <TextBlock Text="{Binding Sub}" FontSize="10" Foreground="#4a6a82" />
+                      </StackPanel>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+
+              <!-- equity curve -->
+              <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="13,12">
                 <StackPanel>
-                  <Border Padding="16,10" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
-                    <TextBlock Classes="H2" Text="P&amp;L by Source" />
+                  <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,0,0,10" VerticalAlignment="Center">
+                    <TextBlock Text="EQUITY CURVE" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding EqMaxLabel}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="#3ddc84" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding EqMinLabel}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="#ff6b6b" VerticalAlignment="Center" />
+                    <ItemsControl ItemsSource="{Binding EqToggles}" HorizontalAlignment="Right">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="6" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Button Command="{Binding Command}" Height="22" Padding="8,0" CornerRadius="5" BorderThickness="1" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}">
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                              <Border Width="12" Height="2" Background="{Binding Swatch, Converter={StaticResource StringToBrush}}" />
+                              <TextBlock Text="{Binding Label}" FontSize="9.5" FontWeight="Bold" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" />
+                            </StackPanel>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{Binding EqHoldDelta}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="#f4b860" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <Border Height="168" CornerRadius="8" Background="#04101a" ClipToBounds="True">
+                    <Panel>
+                      <Viewbox Stretch="Fill">
+                        <Canvas Width="1000" Height="168">
+                          <Polygon Points="{Binding DdPoints}" Fill="#29ff6b6b" IsVisible="{Binding ShowDrawdown}" />
+                          <Line StartPoint="0,154" EndPoint="1000,154" Stroke="#12283a" StrokeThickness="1" StrokeDashArray="5,4" />
+                          <Polyline Points="{Binding HoldPoints}" Stroke="#3d5a72" StrokeThickness="1.4" StrokeDashArray="6,4" IsVisible="{Binding ShowHold}" />
+                          <Polyline Points="{Binding EqPoints}" Stroke="#21e6c1" StrokeThickness="1.8" StrokeJoin="Round" IsVisible="{Binding ShowEquity}" />
+                        </Canvas>
+                      </Viewbox>
+                      <TextBlock Text="{Binding EqAxisTop}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#26405a" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,8" />
+                      <TextBlock Text="{Binding EqAxisBottom}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#26405a" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="10,8" />
+                    </Panel>
                   </Border>
-                  <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10" Margin="16,8">
-                    <TextBlock Grid.Column="0" Classes="Overline" Text="Source" />
-                    <TextBlock Grid.Column="1" Classes="Overline" Text="Trades" />
-                    <TextBlock Grid.Column="2" Classes="Overline" Text="Win %" />
-                    <TextBlock Grid.Column="3" Classes="Overline" Text="P&amp;L" />
-                  </Grid>
-                  <ItemsControl ItemsSource="{Binding PnlDashboardVM.BySourceRows}">
+                  <ItemsControl ItemsSource="{Binding EqMarks}" Margin="0,9,0,0">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
-                      <DataTemplate x:DataType="vm:SourceRowViewModel">
-                        <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10"
-                              Margin="16,6" VerticalAlignment="Center">
-                          <TextBlock Grid.Column="0" Text="{Binding Label}" Foreground="#C8D8E8" FontWeight="SemiBold" />
-                          <TextBlock Grid.Column="1" Text="{Binding Trades}" Foreground="#8FA3B8" />
-                          <TextBlock Grid.Column="2" Text="{Binding WinRate}" Foreground="#8FA3B8" />
-                          <TextBlock Grid.Column="3" Text="{Binding PnlLabel}"
-                                     Foreground="{Binding PnlBrush}" FontWeight="SemiBold" />
-                        </Grid>
+                      <DataTemplate>
+                        <Button Command="{Binding Command}" Margin="2,0" Padding="0,5,0,3" Background="Transparent" BorderThickness="0,2,0,0" BorderBrush="#0d1b27">
+                          <StackPanel Spacing="2">
+                            <TextBlock Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="9.5" TextAlignment="Center" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                            <TextBlock Text="{Binding Label}" FontSize="8.5" TextAlignment="Center" Foreground="#26405a" />
+                          </StackPanel>
+                        </Button>
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
                 </StackPanel>
               </Border>
 
-            </Grid>
-
-            <!-- ── Breakdown tables — row 2: By Bot, By Exchange, By Asset ── -->
-            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16">
-
-              <!-- By Bot -->
-              <Border Grid.Column="0" Classes="Panel" Padding="0">
-                <StackPanel>
-                  <Border Padding="16,10" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
-                    <Grid ColumnDefinitions="Auto,*">
-                      <TextBlock Grid.Column="0" Classes="H2" Text="P&amp;L by Bot" />
-                      <TextBlock Grid.Column="1" Text="Grid · DCA · AI · CEX Arb · Funding"
-                                 Foreground="#3A5068" FontSize="10" VerticalAlignment="Center" Margin="8,0,0,0" />
-                    </Grid>
-                  </Border>
-                  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10" Margin="16,8">
-                    <TextBlock Grid.Column="0" Classes="Overline" Text="Bot" />
-                    <TextBlock Grid.Column="1" Classes="Overline" Text="W/T" />
-                    <TextBlock Grid.Column="2" Classes="Overline" Text="P&amp;L" />
-                  </Grid>
-                  <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding PnlDashboardVM.ByBotRows}">
-                      <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:SourceRowViewModel">
-                          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10"
-                                Margin="16,5" VerticalAlignment="Center">
-                            <TextBlock Grid.Column="0" Text="{Binding Label}"
-                                       Foreground="#C8D8E8" FontWeight="SemiBold" />
-                            <TextBlock Grid.Column="1" Text="{Binding Trades}" Foreground="#8FA3B8" FontSize="11" />
-                            <TextBlock Grid.Column="2" Text="{Binding PnlLabel}"
-                                       Foreground="{Binding PnlBrush}" FontWeight="SemiBold" />
+              <!-- breakdowns -->
+              <ItemsControl ItemsSource="{Binding Breakdowns}">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Border Margin="0,0,7,0" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" ClipToBounds="True">
+                      <StackPanel>
+                        <Border Background="#060d14" BorderBrush="#0a1520" BorderThickness="0,0,0,1" Padding="11,9">
+                          <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="{Binding Title}" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Command="{Binding SortCommand}" Background="Transparent" BorderThickness="0" Content="{Binding SortLabel}" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" />
                           </Grid>
-                        </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                  </ScrollViewer>
-                </StackPanel>
-              </Border>
+                        </Border>
+                        <Border Height="22" Padding="11,0">
+                          <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Col1}" Foreground="#1e3048" FontSize="8" FontWeight="Bold" Width="120" />
+                            <TextBlock Text="W/T" Foreground="#1e3048" FontSize="8" FontWeight="Bold" Width="62" TextAlignment="Right" />
+                            <TextBlock Text="P&amp;L" Foreground="#1e3048" FontSize="8" FontWeight="Bold" Width="78" TextAlignment="Right" />
+                          </StackPanel>
+                        </Border>
+                        <ScrollViewer MaxHeight="178" VerticalScrollBarVisibility="Auto">
+                          <ItemsControl ItemsSource="{Binding Rows}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate>
+                                <Button Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="11,7" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderThickness="0,1,0,0" BorderBrush="#0a1520">
+                                  <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <StackPanel Width="120" Spacing="3" VerticalAlignment="Center">
+                                      <TextBlock Text="{Binding Label}" FontSize="11" FontWeight="Medium" Foreground="#d0e4f4" TextTrimming="CharacterEllipsis" />
+                                      <Border Height="3" CornerRadius="2" Background="#0a1520" ClipToBounds="True">
+                                        <Grid>
+                                          <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="{Binding BarRatio, Converter={StaticResource RatioStar}}" />
+                                            <ColumnDefinition Width="{Binding BarRatio, Converter={StaticResource RatioStar}, ConverterParameter=rest}" />
+                                          </Grid.ColumnDefinitions>
+                                          <Border Grid.Column="0" Background="{Binding BarColor, Converter={StaticResource StringToBrush}}" />
+                                        </Grid>
+                                      </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding Wt}" Width="62" TextAlignment="Right" FontFamily="{StaticResource FontMono}" FontSize="10.5" Foreground="#4a6a82" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Pnl}" Width="78" TextAlignment="Right" FontFamily="{StaticResource FontMono}" FontSize="11.5" Foreground="{Binding PnlColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                                  </StackPanel>
+                                </Button>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </ScrollViewer>
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
 
-              <!-- By Exchange -->
-              <Border Grid.Column="1" Classes="Panel" Padding="0">
-                <StackPanel>
-                  <Border Padding="16,10" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
-                    <TextBlock Classes="H2" Text="P&amp;L by Exchange" />
+              <!-- trade history -->
+              <Border MinHeight="260" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" ClipToBounds="True">
+                <DockPanel LastChildFill="True">
+                  <Border DockPanel.Dock="Top" Background="#060d14" BorderBrush="#0a1520" BorderThickness="0,0,0,1" Padding="11,9">
+                    <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+                      <TextBlock Text="TRADE HISTORY" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding ThMeta}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#26405a" VerticalAlignment="Center" />
+                      <Border Height="24" Padding="8,0" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" HorizontalAlignment="Right">
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                          <TextBlock Text="⌕" Foreground="#2d4a5e" FontSize="10" VerticalAlignment="Center" />
+                          <TextBox Text="{Binding Search, Mode=TwoWay}" Watermark="symbol, source, exit…" Width="140" Background="Transparent" BorderThickness="0" Padding="0" FontSize="10.5" VerticalAlignment="Center" />
+                        </StackPanel>
+                      </Border>
+                      <Border Padding="2" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14">
+                        <ItemsControl ItemsSource="{Binding ThFilters}">
+                          <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                              <Button Command="{Binding Command}" Height="20" Padding="8,0" CornerRadius="4" BorderThickness="0" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" />
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </Border>
+                    </StackPanel>
                   </Border>
-                  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10" Margin="16,8">
-                    <TextBlock Grid.Column="0" Classes="Overline" Text="Exchange" />
-                    <TextBlock Grid.Column="1" Classes="Overline" Text="W/T" />
-                    <TextBlock Grid.Column="2" Classes="Overline" Text="P&amp;L" />
-                  </Grid>
-                  <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding PnlDashboardVM.ByExchangeRows}">
-                      <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:SourceRowViewModel">
-                          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10"
-                                Margin="16,5" VerticalAlignment="Center">
-                            <TextBlock Grid.Column="0" Text="{Binding Label}"
-                                       Foreground="#C8D8E8" FontWeight="SemiBold" />
-                            <TextBlock Grid.Column="1" Text="{Binding Trades}" Foreground="#8FA3B8" FontSize="11" />
-                            <TextBlock Grid.Column="2" Text="{Binding PnlLabel}"
-                                       Foreground="{Binding PnlBrush}" FontWeight="SemiBold" />
-                          </Grid>
-                        </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                  <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                    <DockPanel LastChildFill="True" MinWidth="750">
+                      <Border DockPanel.Dock="Top" Height="26" Background="#060d14" BorderBrush="#0a1520" BorderThickness="0,0,0,1" Padding="11,0">
+                        <ItemsControl ItemsSource="{Binding ThCols}" VerticalAlignment="Center">
+                          <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                              <Button Command="{Binding Command}" Width="{Binding Width}" Background="Transparent" BorderThickness="0" Padding="0" HorizontalContentAlignment="Stretch">
+                                <TextBlock Text="{Binding Label}" TextAlignment="{Binding Align}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" FontSize="8" FontWeight="Bold" />
+                              </Button>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </Border>
+                      <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                          <ItemsControl ItemsSource="{Binding ThRows}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate>
+                                <Button Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Height="30" Padding="11,0" BorderThickness="0,0,0,1" BorderBrush="#0a1520" Background="{Binding Bg, Converter={StaticResource StringToBrush}}">
+                                  <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Width="112" Text="{Binding Date}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#4a6a82" />
+                                    <TextBlock Width="106" Text="{Binding Symbol}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#e8f4ff" />
+                                    <TextBlock Width="106" Text="{Binding Source}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="{Binding SrcColor, Converter={StaticResource StringToBrush}}" />
+                                    <TextBlock Width="66" Text="{Binding Side}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="{Binding SideColor, Converter={StaticResource StringToBrush}}" />
+                                    <TextBlock Width="92" Text="{Binding Pnl}" FontFamily="{StaticResource FontMono}" FontSize="11" TextAlignment="Right" Foreground="{Binding PnlColor, Converter={StaticResource StringToBrush}}" />
+                                    <TextBlock Width="82" Text="{Binding PnlPct}" FontFamily="{StaticResource FontMono}" FontSize="11" TextAlignment="Right" Foreground="{Binding PnlColor, Converter={StaticResource StringToBrush}}" />
+                                    <TextBlock Width="86" Text="{Binding Duration}" FontFamily="{StaticResource FontMono}" FontSize="11" TextAlignment="Right" Foreground="#8fa3b8" />
+                                    <TextBlock Width="200" Text="{Binding Exit}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#2d4a5e" Margin="14,0,0,0" TextTrimming="CharacterEllipsis" />
+                                  </StackPanel>
+                                </Button>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                          <TextBlock IsVisible="{Binding ThEmpty}" Text="No trades match this filter." Foreground="#2d4a5e" FontSize="12" HorizontalAlignment="Center" Margin="26" />
+                        </StackPanel>
+                      </ScrollViewer>
+                    </DockPanel>
                   </ScrollViewer>
-                </StackPanel>
+                </DockPanel>
               </Border>
+            </StackPanel>
+          </ScrollViewer>
 
-              <!-- By Asset -->
-              <Border Grid.Column="2" Classes="Panel" Padding="0">
-                <StackPanel>
-                  <Border Padding="16,10" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
-                    <TextBlock Classes="H2" Text="P&amp;L by Asset" />
-                  </Border>
-                  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10" Margin="16,8">
-                    <TextBlock Grid.Column="0" Classes="Overline" Text="Asset" />
-                    <TextBlock Grid.Column="1" Classes="Overline" Text="W/T" />
-                    <TextBlock Grid.Column="2" Classes="Overline" Text="P&amp;L" />
-                  </Grid>
-                  <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding PnlDashboardVM.ByAssetRows}">
-                      <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:SourceRowViewModel">
-                          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10"
-                                Margin="16,5" VerticalAlignment="Center">
-                            <TextBlock Grid.Column="0" Text="{Binding Label}"
-                                       Foreground="#C8D8E8" FontWeight="SemiBold" />
-                            <TextBlock Grid.Column="1" Text="{Binding Trades}" Foreground="#8FA3B8" FontSize="11" />
-                            <TextBlock Grid.Column="2" Text="{Binding PnlLabel}"
-                                       Foreground="{Binding PnlBrush}" FontWeight="SemiBold" />
-                          </Grid>
-                        </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                  </ScrollViewer>
-                </StackPanel>
-              </Border>
-
-            </Grid>
-
-            <!-- ── Trade history table ── -->
-            <Border Classes="Panel" Padding="0">
-              <StackPanel>
-                <Border Padding="16,10" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
-                  <TextBlock Classes="H2" Text="Trade History" />
+          <!-- RAIL -->
+          <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="7">
+              <Grid ColumnDefinitions="*,Auto" Margin="2,0">
+                <TextBlock Text="AI DESK · ANALYTICS" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                <Border Grid.Column="1" CornerRadius="9" Padding="8,3" Background="#060d14" BorderBrush="#1a3030" BorderThickness="1">
+                  <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                    <Ellipse Width="5" Height="5" Fill="#21e6c1" />
+                    <TextBlock Text="{Binding AiProvider}" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                  </StackPanel>
                 </Border>
-                <!-- Column headers -->
-                <Grid ColumnDefinitions="120,*,80,70,80,80,80,*" ColumnSpacing="10" Margin="16,8">
-                  <TextBlock Grid.Column="0" Classes="Overline" Text="Date" />
-                  <TextBlock Grid.Column="1" Classes="Overline" Text="Symbol" />
-                  <TextBlock Grid.Column="2" Classes="Overline" Text="Source" />
-                  <TextBlock Grid.Column="3" Classes="Overline" Text="Side" />
-                  <TextBlock Grid.Column="4" Classes="Overline" Text="P&amp;L" />
-                  <TextBlock Grid.Column="5" Classes="Overline" Text="P&amp;L %" />
-                  <TextBlock Grid.Column="6" Classes="Overline" Text="Duration" />
-                  <TextBlock Grid.Column="7" Classes="Overline" Text="Exit" />
-                </Grid>
-                <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto">
-                  <ItemsControl ItemsSource="{Binding PnlDashboardVM.TradeRows}">
+              </Grid>
+
+              <Border CornerRadius="11" Background="#061615" BorderBrush="#14302e" BorderThickness="1" Padding="12">
+                <StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="7" Margin="0,0,0,9" VerticalAlignment="Center">
+                    <Ellipse Width="5" Height="5" Fill="#21e6c1" />
+                    <TextBlock Text="PERFORMANCE REVIEW" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                    <TextBlock Text="{Binding ReviewMeta}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#2d6b64" HorizontalAlignment="Right" />
+                  </StackPanel>
+                  <TextBlock Text="{Binding ReviewSummary}" FontSize="11.5" LineHeight="18" Foreground="#a9c2d8" TextWrapping="Wrap" />
+                  <ItemsControl ItemsSource="{Binding ReviewFindings}" Margin="0,9,0,0">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="5" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
-                      <DataTemplate x:DataType="vm:TradeRowViewModel">
-                        <Border Padding="16,6" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
-                          <Grid ColumnDefinitions="120,*,80,70,80,80,80,*" ColumnSpacing="10">
-                            <TextBlock Grid.Column="0" Text="{Binding DateLabel}"  Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="1" Text="{Binding Symbol}"     Foreground="#C8D8E8" FontWeight="SemiBold" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="2" Text="{Binding Source}"     Foreground="#4D7EA8" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="3" Text="{Binding Direction}"  Foreground="#8FA3B8" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="4" Text="{Binding PnlLabel}"   Foreground="{Binding PnlBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="5" Text="{Binding PnlPctLabel}" Foreground="{Binding PnlBrush}" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="6" Text="{Binding Duration}"   Foreground="#8FA3B8" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="7" Text="{Binding ExitReason}" Foreground="#4D5F70" FontSize="11" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                      <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                          <TextBlock Text="•" Foreground="{Binding Dot, Converter={StaticResource StringToBrush}}" FontSize="10" />
+                          <TextBlock Text="{Binding Text}" FontSize="10.5" LineHeight="15" Foreground="#4a6a82" TextWrapping="Wrap" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,11,0,0">
+                    <Button Command="{Binding DeepCommand}" Height="26" Padding="10,0" CornerRadius="5" Background="#0e2a2a" BorderBrush="#21e6c1" BorderThickness="1" Content="DEEP DIVE" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                    <Button Command="{Binding CoachCommand}" Height="26" Padding="10,0" CornerRadius="5" Background="Transparent" BorderBrush="#152233" BorderThickness="1" Content="JOURNAL COACH" Foreground="#5a7a94" FontSize="9" FontWeight="Bold" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
+              <Border CornerRadius="11" Background="#07101a" BorderBrush="#0d1b27" BorderThickness="1" Padding="12">
+                <StackPanel>
+                  <TextBlock Text="RISK-ADJUSTED" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" Margin="0,0,0,10" />
+                  <ItemsControl ItemsSource="{Binding Ratios}">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <StackPanel Spacing="3" Margin="0,0,0,11">
+                          <TextBlock Text="{Binding Label}" FontSize="9.5" Foreground="#2d4a5e" />
+                          <TextBlock Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="14" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                          <TextBlock Text="{Binding Hint}" FontSize="9" Foreground="#26405a" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+
+              <Border CornerRadius="11" Background="#07101a" BorderBrush="#0d1b27" BorderThickness="1" Padding="12">
+                <StackPanel>
+                  <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+                    <TextBlock Text="P&amp;L DISTRIBUTION" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{Binding DistMeta}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#26405a" />
+                  </Grid>
+                  <Border Height="82">
+                    <ItemsControl ItemsSource="{Binding DistBars}">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Grid Margin="1.5,0" VerticalAlignment="Stretch">
+                            <Button Command="{Binding Command}" ToolTip.Tip="{Binding Title}" Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                            <Grid VerticalAlignment="Stretch" IsHitTestVisible="False">
+                              <Grid.RowDefinitions>
+                                <RowDefinition Height="{Binding HeightRatio, Converter={StaticResource RatioStar}, ConverterParameter=rest}" />
+                                <RowDefinition Height="{Binding HeightRatio, Converter={StaticResource RatioStar}}" />
+                              </Grid.RowDefinitions>
+                              <Border Grid.Row="1" MinHeight="2" CornerRadius="2,2,0,0" Background="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                            </Grid>
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </Border>
+                  <Grid ColumnDefinitions="*,*,*" Margin="0,7,0,0">
+                    <TextBlock Grid.Column="0" Text="{Binding DistLeft}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#26405a" HorizontalAlignment="Left" />
+                    <TextBlock Grid.Column="1" Text="0" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#26405a" HorizontalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding DistRight}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#26405a" HorizontalAlignment="Right" />
+                  </Grid>
+                </StackPanel>
+              </Border>
+
+              <Border CornerRadius="11" Background="#07101a" BorderBrush="#0d1b27" BorderThickness="1" Padding="12">
+                <StackPanel>
+                  <TextBlock Text="STREAKS &amp; HABITS" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" Margin="0,0,0,10" />
+                  <ItemsControl ItemsSource="{Binding Habits}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border BorderBrush="#0a1520" BorderThickness="0,0,0,1" Padding="0,8">
+                          <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="{Binding Label}" FontSize="11" Foreground="#8fa3b8" />
+                            <TextBlock Grid.Column="1" Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="11.5" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
                           </Grid>
                         </Border>
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
-                </ScrollViewer>
-              </StackPanel>
-            </Border>
+                  <Button Command="{Binding OpenJournalCommand}" Margin="0,11,0,0" Height="27" HorizontalAlignment="Stretch" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="OPEN FULL JOURNAL ↗" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+      </DockPanel>
 
-            <!-- ── Session summary (existing, kept for legacy compatibility) ── -->
-            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16">
-              <Border Grid.Column="0" Classes="SurfaceCard">
-                <StackPanel Spacing="6">
-                  <TextBlock Classes="Overline" Text="Session P&amp;L" />
-                  <TextBlock Classes="Metric" Text="{Binding SessionPnlLabel}" />
-                  <TextBlock Text="{Binding SessionPnlPercentLabel}" Foreground="{Binding SessionPnlBrush}" />
-                </StackPanel>
-              </Border>
-              <Border Grid.Column="1" Classes="SurfaceCard">
-                <StackPanel Spacing="6">
-                  <TextBlock Classes="Overline" Text="Execution" />
-                  <TextBlock Text="{Binding AnalyticsExecutionSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                </StackPanel>
-              </Border>
-              <Border Grid.Column="2" Classes="SurfaceCard">
-                <StackPanel Spacing="6">
-                  <TextBlock Classes="Overline" Text="Market Breadth" />
-                  <TextBlock Text="{Binding AnalyticsMarketSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                </StackPanel>
-              </Border>
-            </Grid>
-
-          </StackPanel>
+      <views:AnalyticsModals />
+    </Grid>
+  </Border>
 </UserControl>
