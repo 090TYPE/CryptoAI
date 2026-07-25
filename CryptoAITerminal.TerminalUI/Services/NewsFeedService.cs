@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using CryptoAITerminal.AIEngine;
 
 namespace CryptoAITerminal.TerminalUI.Services;
 
@@ -34,6 +35,10 @@ public sealed class NewsFeedService : IDisposable
     private readonly string?    _panicToken;
     private CancellationTokenSource? _cts;
     private readonly HashSet<long>   _seenIds = [];
+
+    // One value for the whole app: the server keys its shared cache on `news:{n}`, so a second
+    // limit anywhere would fork a second entry and halve the fan-in the endpoint exists for.
+    private const int ServerNewsLimit = 100;
 
     public TimeSpan PollInterval { get; set; } = TimeSpan.FromSeconds(90);
     public bool     IsConfigured => true;
@@ -116,6 +121,20 @@ public sealed class NewsFeedService : IDisposable
 
     private async Task<List<NewsItem>> FetchAllSourcesAsync(CancellationToken ct)
     {
+        // The server already collects these same headlines for every licensed user, so a hundred
+        // terminals must not each pull five RSS hosts and CryptoPanic for identical articles.
+        if (ServerDataClient.IsBound)
+        {
+            var served = await ServerDataClient.GetNewsAsync(ServerNewsLimit, ct).ConfigureAwait(false);
+            if (served is not null)
+            {
+                // Empty means a fresh deploy whose news collector has not run yet — showing the RSS
+                // feed beats showing an empty panel, so only a non-empty result short-circuits.
+                var fromServer = ParseServerNews(served);
+                if (fromServer.Count > 0) return fromServer;
+            }
+        }
+
         // Fetch all RSS feeds in parallel
         var rssTasks = RssFeeds.Select(feed => FetchRssAsync(feed.Name, feed.Url, ct));
         var rssResults = await Task.WhenAll(rssTasks).ConfigureAwait(false);
@@ -243,6 +262,80 @@ public sealed class NewsFeedService : IDisposable
             }
         }
         catch { }
+        return result;
+    }
+
+    // ── Server feed parser ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Maps /api/news rows (Source, Title, Url, Summary, PublishedUtc — PascalCase, the endpoint
+    /// serializes with default options) onto <see cref="NewsItem"/>. The server stores no sentiment,
+    /// votes or id for a row, so those are recomputed with the very expressions the RSS path uses:
+    /// a bound terminal must not classify a headline differently from an unbound one.
+    /// Returns an empty list on anything unparsable so the caller falls through to RSS.
+    /// </summary>
+    private static List<NewsItem> ParseServerNews(string json)
+    {
+        var result = new List<NewsItem>();
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != System.Text.Json.JsonValueKind.Array) return result;
+
+            foreach (var row in doc.RootElement.EnumerateArray())
+            {
+                var title   = row.TryGetProperty("Title",   out var tEl) ? tEl.GetString()?.Trim() ?? "" : "";
+                var link    = row.TryGetProperty("Url",     out var uEl) ? uEl.GetString()?.Trim() ?? "" : "";
+                var source  = row.TryGetProperty("Source",  out var sEl) ? sEl.GetString()?.Trim() ?? "" : "";
+                var summary = row.TryGetProperty("Summary", out var mEl) ? mEl.GetString() ?? "" : "";
+
+                if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(link))
+                    continue;
+
+                // published_utc is nullable and CryptoPanic rows can land without a date; the RSS
+                // path stamps UtcNow in exactly that case. AssumeUniversal is what makes this
+                // Kind-proof — the column is TIMESTAMPTZ, so a value that arrives without an
+                // offset is still a UTC instant and must not be shifted by the local offset.
+                var publishedAt = DateTime.UtcNow;
+                if (row.TryGetProperty("PublishedUtc", out var pEl) &&
+                    pEl.ValueKind == System.Text.Json.JsonValueKind.String &&
+                    DateTime.TryParse(pEl.GetString(),
+                                      System.Globalization.CultureInfo.InvariantCulture,
+                                      System.Globalization.DateTimeStyles.AdjustToUniversal |
+                                      System.Globalization.DateTimeStyles.AssumeUniversal,
+                                      out var parsed))
+                    publishedAt = parsed;
+
+                // Same formula as the RSS path, so _seenIds keeps de-duplicating batches.
+                var id = (long)(uint)link.GetHashCode() |
+                         ((long)(uint)source.GetHashCode() << 32);
+
+                // Summary stands in for the RSS description — dropping it would silently empty the
+                // symbol filter for every server-sourced item.
+                var currencies  = ExtractCurrencies(title + " " + summary);
+                var isImportant = BullishKeywords.Concat(BearishKeywords)
+                    .Any(kw => title.Contains(kw, StringComparison.OrdinalIgnoreCase));
+
+                result.Add(new NewsItem
+                {
+                    Id          = id,
+                    Title       = title,
+                    Source      = source,
+                    Url         = link,
+                    PublishedAt = publishedAt,
+                    Sentiment   = ClassifySentiment(title, 0, 0),
+                    Currencies  = currencies,
+                    IsImportant = isImportant,
+                    Votes       = 0,
+                });
+            }
+        }
+        // A malformed body must not escalate into FetchAndFireAsync's catch, which would blank the
+        // feed and set LastError; an empty list sends the caller to the RSS path instead.
+        catch { return []; }
+
+        // Deliberately unsorted: the endpoint already orders by COALESCE(published_utc, fetched_utc)
+        // DESC, and re-sorting on PublishedAt would float the UtcNow-stamped rows to the top.
         return result;
     }
 

@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using CryptoAITerminal.AIEngine;
 
 namespace CryptoAITerminal.TerminalUI.Services;
 
@@ -85,6 +86,18 @@ public sealed class GasOracleService
             return null;
         }
 
+        // The server already samples eth_gasPrice from these very RPCs for everyone, so one
+        // shared read spares a hundred terminals from each hammering publicnode. Null (unbound,
+        // chain absent or stale) falls through to the direct RPC below.
+        if (ServerDataClient.IsBound)
+        {
+            var served = await ServerDataClient.GetGasAsync(ct).ConfigureAwait(false);
+            if (ServerGwei(served, chain) is { } gwei)
+            {
+                return gwei;
+            }
+        }
+
         try
         {
             const string body = "{\"jsonrpc\":\"2.0\",\"method\":\"eth_gasPrice\",\"params\":[],\"id\":1}";
@@ -110,4 +123,69 @@ public sealed class GasOracleService
     private static decimal RoundGwei(decimal gwei) => gwei >= 1m
         ? Math.Round(gwei, 1, MidpointRounding.AwayFromZero)
         : Math.Round(gwei, 3, MidpointRounding.AwayFromZero);
+
+    /// <summary>Base gwei for a chain from an /api/gas body. Null when absent, unusable or stale.</summary>
+    private static decimal? ServerGwei(string? json, string chain)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        // The collector stores Ethereum as "eth", while this service also accepts the
+        // "ethereum" alias — without folding it the row would never be found.
+        var key = chain.Trim();
+        if (key.Equals("ethereum", StringComparison.OrdinalIgnoreCase))
+        {
+            key = "eth";
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            foreach (var row in doc.RootElement.EnumerateArray())
+            {
+                if (row.ValueKind != JsonValueKind.Object ||
+                    !row.TryGetProperty("Chain", out var c) ||
+                    c.ValueKind != JsonValueKind.String ||
+                    !string.Equals(c.GetString(), key, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                // Standard is nullable server-side; a missing price must reach the caller as
+                // null so DefaultBaseGwei still applies, never as a zero that floors the ladder.
+                if (!row.TryGetProperty("Standard", out var s) ||
+                    s.ValueKind != JsonValueKind.Number ||
+                    !s.TryGetDecimal(out var gwei) ||
+                    gwei <= 0m)
+                {
+                    return null;
+                }
+
+                // A collector that stopped writing must not pin the ticket to an old gwei forever.
+                if (row.TryGetProperty("Ts", out var ts) &&
+                    ts.ValueKind == JsonValueKind.String &&
+                    DateTime.TryParse(ts.GetString(), CultureInfo.InvariantCulture,
+                        DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var stamp) &&
+                    DateTime.UtcNow - stamp > TimeSpan.FromMinutes(10))
+                {
+                    return null;
+                }
+
+                return gwei;
+            }
+        }
+        catch (JsonException)
+        {
+            // malformed payload — degrade to the direct RPC
+        }
+
+        return null;
+    }
 }

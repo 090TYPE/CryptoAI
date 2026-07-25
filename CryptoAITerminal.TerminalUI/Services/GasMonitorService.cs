@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using CryptoAITerminal.AIEngine;
 
 namespace CryptoAITerminal.TerminalUI.Services;
 
@@ -185,6 +186,17 @@ public sealed class GasMonitorService : IDisposable
             catch { }
         }
 
+        // BSC's fallback ladder is synthesized from a single eth_gasPrice, which is exactly the
+        // number the server already collects for every user — so when bound, one shared read
+        // replaces this RPC instead of a hundred terminals each polling it. ETH and Solana stay
+        // direct on purpose: the server stores no fast/slow tiers and no TPS at all.
+        if (ServerDataClient.IsBound)
+        {
+            var served = ServerBscGwei(await ServerDataClient.GetGasAsync(ct));
+            if (served > 0m)
+                return (Math.Round(served * 0.85m, 3), Math.Round(served, 3), Math.Round(served * 1.25m, 3));
+        }
+
         // Fallback: official Binance public BSC RPC — eth_gasPrice
         try
         {
@@ -254,6 +266,36 @@ public sealed class GasMonitorService : IDisposable
     private static decimal ParseDecimal(string? s) =>
         decimal.TryParse(s, System.Globalization.NumberStyles.Any,
             System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0m;
+
+    /// <summary>BSC gas price (gwei) from an /api/gas body. 0 when absent, unparsable or stale.</summary>
+    private static decimal ServerBscGwei(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return 0m;
+        try
+        {
+            var rows = JsonNode.Parse(json) as JsonArray;
+            if (rows is null) return 0m;
+
+            foreach (var row in rows)
+            {
+                if (!string.Equals(row?["Chain"]?.GetValue<string>(), "bsc", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // A collector that stopped writing must not freeze the panel on an old price.
+                var ts = row?["Ts"]?.GetValue<string>();
+                if (DateTime.TryParse(ts, System.Globalization.CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.AdjustToUniversal |
+                        System.Globalization.DateTimeStyles.AssumeUniversal, out var stamp) &&
+                    DateTime.UtcNow - stamp > TimeSpan.FromMinutes(10))
+                    return 0m;
+
+                // Standard is nullable server-side; 0 keeps the caller on its direct RPC.
+                return row?["Standard"]?.GetValue<decimal>() ?? 0m;
+            }
+        }
+        catch { /* malformed payload — degrade to the direct RPC */ }
+        return 0m;
+    }
 
     public void Dispose()
     {

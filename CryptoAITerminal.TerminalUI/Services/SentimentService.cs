@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using CryptoAITerminal.AIEngine;
 
 namespace CryptoAITerminal.TerminalUI.Services;
 
@@ -21,6 +22,10 @@ public sealed class SentimentService : IDisposable
 {
     private readonly HttpClient _http;
     private bool _disposed;
+
+    // /api/sentiment is latest-per-metric by construction, so the day-over-day reading the arrow
+    // is derived from has to be remembered here — the server has no history endpoint to ask.
+    private int? _lastFearGreed;
 
     public SentimentService()
     {
@@ -46,6 +51,23 @@ public sealed class SentimentService : IDisposable
     {
         try
         {
+            // The server already collects fear & greed for every licensed user, and the number is
+            // market-wide, so a hundred terminals must not each poll alternative.me for it.
+            // Inside the existing try on purpose: a surprise here still lands in the neutral catch.
+            if (ServerDataClient.IsBound)
+            {
+                var served = await ServerDataClient.GetSentimentAsync(ct).ConfigureAwait(false);
+                if (served is not null && TryReadFearGreed(served, out var sv, out var sl))
+                {
+                    // Only report a previous reading once one actually differs, so the VM's arrow
+                    // stays blank until a rollover instead of implying a delta we never observed.
+                    var prev = _lastFearGreed is { } last && last != sv ? last : sv;
+                    _lastFearGreed = sv;
+                    return (sv, prev, sl);
+                }
+                // Null body, no fear_greed row or a null value → the direct fetch below still runs.
+            }
+
             var json = await _http.GetStringAsync("https://api.alternative.me/fng/?limit=2", ct)
                                   .ConfigureAwait(false);
             using var doc = JsonDocument.Parse(json);
@@ -123,6 +145,53 @@ public sealed class SentimentService : IDisposable
         catch
         {
             return (0m, 0m);
+        }
+    }
+
+    /// <summary>
+    /// Pulls the fear &amp; greed row out of /api/sentiment — an array of
+    /// (Metric, Value, Label, Ts), PascalCase, one latest row per metric. False on anything
+    /// unusable so the caller reaches its alternative.me fetch rather than the neutral default.
+    /// </summary>
+    private static bool TryReadFearGreed(string json, out int value, out string label)
+    {
+        value = 50;
+        label = "Neutral";
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != JsonValueKind.Array) return false;
+
+            foreach (var row in doc.RootElement.EnumerateArray())
+            {
+                // The exact literal the collector writes. Anything else is a metric we cannot map.
+                if (!row.TryGetProperty("Metric", out var mEl) ||
+                    !string.Equals(mEl.GetString(), "fear_greed", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (!row.TryGetProperty("Value", out var vEl)) return false;
+
+                decimal raw;
+                if (vEl.ValueKind == JsonValueKind.Number)
+                    raw = vEl.GetDecimal();
+                else if (vEl.ValueKind == JsonValueKind.String &&
+                         decimal.TryParse(vEl.GetString(), NumberStyles.Number,
+                                          CultureInfo.InvariantCulture, out var parsed))
+                    raw = parsed;
+                else
+                    return false;   // value is nullable NUMERIC — a null row carries nothing usable
+
+                value = (int)Math.Round(raw);
+                if (row.TryGetProperty("Label", out var lEl) &&
+                    lEl.GetString() is { } l && !string.IsNullOrWhiteSpace(l))
+                    label = l;
+                return true;
+            }
+            return false;
+        }
+        catch
+        {
+            return false;
         }
     }
 
