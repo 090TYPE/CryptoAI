@@ -62,6 +62,9 @@ builder.Services.AddSingleton<CandleSourceChain>();
 builder.Services.AddHostedService<CandlePollingService>();
 
 // Data collectors — add a source by registering another IDataCollector here.
+// Runs before the others matter: GeckoTerminal keys on the pool, so a token without one can never
+// be asked for candles at all.
+builder.Services.AddSingleton<IDataCollector, PoolResolverCollector>();
 builder.Services.AddSingleton<IDataCollector, MarketDataCollector>();
 builder.Services.AddSingleton<IDataCollector, SecurityCollector>();
 builder.Services.AddSingleton<IDataCollector, SocialsCollector>();

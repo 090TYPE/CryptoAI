@@ -150,6 +150,23 @@ public sealed class TrackedTokenRepository
         await conn.ExecuteAsync(new CommandDefinition(sql, new { chain, token, symbol }, cancellationToken: ct));
     }
 
+    /// <summary>
+    /// Active tokens with no pool address yet. GeckoTerminal keys on the pool, so until this is
+    /// filled the free candle source cannot be asked at all and the token yields nothing.
+    /// Backed by the partial index ix_tracked_needs_pool.
+    /// </summary>
+    public async Task<IReadOnlyList<ActiveToken>> ListNeedingPoolAsync(int limit, CancellationToken ct = default)
+    {
+        const string sql = @"SELECT chain AS Chain, token_address AS TokenAddress, pool_address AS PoolAddress
+                             FROM tracked_tokens
+                             WHERE is_active AND pool_address IS NULL
+                             ORDER BY added_utc
+                             LIMIT @limit;";
+        await using var conn = await _db.OpenConnectionAsync(ct);
+        var rows = await conn.QueryAsync<ActiveToken>(new CommandDefinition(sql, new { limit }, cancellationToken: ct));
+        return rows.ToList();
+    }
+
     /// <summary>Persist the resolved primary pool for a token (done once).</summary>
     public async Task SetPoolAsync(string chain, string token, string poolAddress, CancellationToken ct = default)
     {
