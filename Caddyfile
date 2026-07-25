@@ -1,0 +1,37 @@
+# Edge for the CryptoAI API.
+#
+# The site address comes from CRYPTOAI_DOMAIN, which compose defaults to ":80" when it is unset or
+# empty. Caddy's own "{$VAR:default}" only fires when a variable is absent, not when it is present
+# and blank, and compose always passes it - so the fallback lives on the compose side instead.
+#
+# Set CRYPTOAI_DOMAIN to a real hostname and Caddy obtains and renews a certificate on its own.
+# Left at ":80" it serves plain HTTP, which is fine on a laptop and NOT fine on a public host: the
+# terminal sends its licence in the X-License header on every request, so without TLS that token
+# travels in clear text along with everything it protects.
+
+{$CRYPTOAI_DOMAIN} {
+	encode zstd gzip
+
+	# The API is reached over the compose network; it publishes nothing beyond loopback itself.
+	# No response timeout is set on purpose: an AI call goes out to Anthropic and back, and a full
+	# agent turn can legitimately run well past a minute. Capping it here would surface as an AI
+	# panel reporting a timeout the upstream never actually hit.
+	reverse_proxy api:8080 {
+		header_up X-Real-IP {remote_host}
+	}
+
+	header {
+		# The API is consumed by a desktop client rather than a browser, so these cost nothing and
+		# close the obvious holes if a browser ever does reach it.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

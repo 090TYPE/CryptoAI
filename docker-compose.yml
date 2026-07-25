@@ -60,11 +60,33 @@ services:
       ADMIN_TOKEN: ${ADMIN_TOKEN:?set ADMIN_TOKEN in .env}
       WITHDRAWAL_DELAY_MINUTES: ${WITHDRAWAL_DELAY_MINUTES:-30}
     ports:
-      - "8080:8080"
+      # Loopback only. The internet reaches the API through caddy, which terminates TLS; this
+      # binding is kept so curl and the admin console still work on the host itself.
+      - "127.0.0.1:8080:8080"
     depends_on:
       db:
         condition: service_healthy
     networks: [edge, core]
+    restart: unless-stopped
+
+  # TLS terminator and the only service with public ports. Set CRYPTOAI_DOMAIN in .env and it
+  # obtains a certificate by itself; unset, it serves plain HTTP on :80 for local use.
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      # ":80" when unset OR empty. Caddy's own default syntax only covers "unset", and compose
+      # always passes the variable, so the fallback has to be here.
+      CRYPTOAI_DOMAIN: ${CRYPTOAI_DOMAIN:-:80}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data      # certificates and ACME account - losing this re-issues on next boot
+      - caddy_config:/config
+    depends_on: [api]
+    networks: [edge]
     restart: unless-stopped
 
   worker:
@@ -95,3 +117,5 @@ networks:
 
 volumes:
   pgdata: {}
+  caddy_data: {}
+  caddy_config: {}
