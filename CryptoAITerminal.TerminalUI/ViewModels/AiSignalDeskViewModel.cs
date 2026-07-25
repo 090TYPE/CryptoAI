@@ -63,6 +63,13 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
         _      => "#21e6c1",
     };
 
+    // Neutral palette for the offline empty states — deliberately unlike the bull/bear
+    // badges so an idle card never reads as a live bullish or bearish call.
+    private static readonly string IdleBg = Rgba(13, 27, 39, 0.6);
+    private const string IdleBorder = "#0d1b27";
+    private const string IdleColor = "#3d5a72";
+    private const string IdleNote = "No live AI — connect a server or add an API key.";
+
     // ── Master signal model ─────────────────────────────────────────────
     private sealed record SignalModel(
         string Sym, string Logo, string LogoBg, string Dir, string Tf, string Exch,
@@ -93,12 +100,15 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
     private List<double[]> _hmConf = [];
 
     // ── State ───────────────────────────────────────────────────────────
+    private const string OfflineLabel = "offline · heuristic";
+
     private string _filter = "all";
     private int _selIdx;
     private string _detailTab = "signal";
     private string _chatInput = string.Empty;
     private bool _isGenerating;
-    private string _sourceLabel = "offline · heuristic";
+    private string _sourceLabel = OfflineLabel;
+    private string _aiError = string.Empty;
     private bool _loadedOnce;
     private CancellationTokenSource? _refreshCts;
 
@@ -138,7 +148,6 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
     {
         _contextProvider = contextProvider;
         _service = service;
-        _sourceLabel = service?.SourceLabel ?? "offline · heuristic";
 
         SetFilterCommand = ReactiveCommand.Create<string>(SetFilter);
         SelectSignalCommand = ReactiveCommand.Create<AiSignalCardViewModel>(SelectSignal);
@@ -167,8 +176,6 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
 
     private async Task RefreshAsync()
     {
-        SourceLabel = _service?.SourceLabel ?? "offline · heuristic";
-
         AiSignalDeskContext? ctx = null;
         try { ctx = _contextProvider?.Invoke(); }
         catch { ctx = null; }
@@ -182,7 +189,13 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
         }
 
         if (_service is null || ctx?.Markets is not { Count: > 0 } || !_service.IsConfigured)
-            return; // feed already reflects tracked markets (offline heuristic)
+        {
+            // Feed already reflects tracked markets (offline heuristic). Nothing was attempted,
+            // so there is no reason to report — but the badge must name the heuristic, not a model.
+            SourceLabel = OfflineLabel;
+            AiError = string.Empty;
+            return;
+        }
 
         _refreshCts?.Cancel();
         var cts = _refreshCts = new CancellationTokenSource();
@@ -196,6 +209,14 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
             {
                 ApplyResult(result, ctx);
                 SourceLabel = result.Source;
+                AiError = string.Empty;
+            }
+            else
+            {
+                // The desk is showing the heuristic, so the badge must say so instead of keeping
+                // the model name over content the model never produced.
+                SourceLabel = OfflineLabel;
+                AiError = _service.LastError ?? "The AI response could not be used — showing the offline read.";
             }
         }
         catch (OperationCanceledException) { }
@@ -375,6 +396,19 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
         private set => this.RaiseAndSetIfChanged(ref _sourceLabel, value);
     }
 
+    /// <summary>User-safe reason the desk fell back to the heuristic; empty when the last pass was clean.</summary>
+    public string AiError
+    {
+        get => _aiError;
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _aiError, value);
+            this.RaisePropertyChanged(nameof(HasAiError));
+        }
+    }
+
+    public bool HasAiError => _aiError.Length > 0;
+
     // ── Regime / news display state ──────────────────────────────────────
     public string RegimeLabel { get; private set; } = "TRENDING UP";
     public string RegimeSummary { get; private set; } = "Strong directional momentum across majors.";
@@ -391,7 +425,7 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
     public string NewsBadgeColor { get; private set; } = "#3ddc84";
 
     public string JournalSummary { get; private set; } =
-        "Good momentum identification, but exits too early. Average winner is 1.4× average loser — hold breakouts longer for better R:R.";
+        "No AI review of your trade history yet — connect a server or add an API key.";
 
     // ── Filter handling ─────────────────────────────────────────────────
     private void SetFilter(string key)
@@ -614,6 +648,7 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
         this.RaisePropertyChanged(nameof(ShowSuggestions));
 
         string? reply = null;
+        string? failure = null;
         if (_service is not null && _service.IsConfigured)
         {
             var system =
@@ -622,13 +657,17 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
                 $"({sig.Change}). Signal reasoning: {sig.Reason}. Answer the user's question concisely and practically " +
                 "for an active trader. Plain text, no markdown.";
             try { reply = await _service.AskAsync(system, text).ConfigureAwait(true); }
-            catch { reply = null; }
+            catch (Exception ex) { reply = null; failure = AiFailure.Describe(ex); }
+            if (string.IsNullOrWhiteSpace(reply)) failure ??= _service.LastError;
         }
 
         if (string.IsNullOrWhiteSpace(reply))
         {
-            await Task.Delay(700).ConfigureAwait(true);
-            reply = ResponseFor(text, sig, conf);
+            var offline = ResponseFor(text, sig, conf);
+            // The canned answer still gets shown, but a failed live call is named first so the
+            // heuristic is never mistaken for the model's own reply.
+            reply = failure is null ? offline : $"[{OfflineLabel} · {failure}]\n\n{offline}";
+            if (failure is not null) AiError = failure;
         }
 
         ChatMessages.Remove(typing);
@@ -669,20 +708,17 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
         DexTokens.Add(new AiSignalDexTokenViewModel("WIF",   "WF", "#160c1a", "SOL", 72, "EARLY",    "#21e6c1", "+44%"));
         DexTokens.Add(new AiSignalDexTokenViewModel("TURBO", "TB", "#2a1a0c", "ETH", 41, "FADING",   "#f4b860", "+12%"));
 
-        var longBg = Rgba(29, 74, 46, 0.55);
-        var shortBg = Rgba(74, 26, 30, 0.55);
-        Opportunities.Add(new AiSignalOpportunityViewModel("INJ/USDT",  "Binance", 91, "LONG",  longBg,  "#1a4a2e", "#3ddc84", 0.91, "Accumulation + RSI reset, volume confirms"));
-        Opportunities.Add(new AiSignalOpportunityViewModel("BTC/USDT",  "Binance", 87, "LONG",  longBg,  "#1a4a2e", "#3ddc84", 0.87, "Breakout above key resistance with volume"));
-        Opportunities.Add(new AiSignalOpportunityViewModel("ARB/USDT",  "Bybit",   74, "LONG",  longBg,  "#1a4a2e", "#3ddc84", 0.74, "Wedge breakout, strong momentum setup"));
-        Opportunities.Add(new AiSignalOpportunityViewModel("AVAX/USDT", "OKX",     83, "SHORT", shortBg, "#4a1a1e", "#ff6b6b", 0.83, "H&S neckline break, distribution confirmed"));
-        Opportunities.Add(new AiSignalOpportunityViewModel("OP/USDT",   "OKX",     69, "SHORT", shortBg, "#4a1a1e", "#ff6b6b", 0.69, "Double top, bearish MACD cross, high funding"));
+        // Offline there is no scored-opportunity feed. One placeholder row keeps the panel
+        // shaped while saying so — invented pairs, scores and setups read as real calls.
+        Opportunities.Add(new AiSignalOpportunityViewModel(
+            "—", "", 0, "—", IdleBg, IdleBorder, IdleColor, 0,
+            "No live AI opportunities — connect a server or add an API key."));
 
-        var accumBg = Rgba(29, 74, 46, 0.5);
-        var warnBg = Rgba(74, 56, 16, 0.4);
-        Insights.Add(new AiSignalInsightViewModel("WHALE FLOW",   "ACCUM",    "#3ddc84", accumBg, "#1a4a2e", "$820M BTC added by large wallets in last 6h"));
-        Insights.Add(new AiSignalInsightViewModel("SENTIMENT",    "BULLISH",  "#3ddc84", accumBg, "#1a4a2e", "Fear & Greed at 71 — Greed zone, risk-on"));
-        Insights.Add(new AiSignalInsightViewModel("ON-CHAIN",     "NEUTRAL",  "#f4b860", warnBg,  "#3a2c10", "Exchange flows balanced, stablecoin minting flat"));
-        Insights.Add(new AiSignalInsightViewModel("LIQUIDATIONS", "ELEVATED", "#f4b860", warnBg,  "#3a2c10", "$420M longs at risk if BTC drops below 66,800"));
+        // Same for the insight cards: keep the four slots, drop the invented flows/levels.
+        Insights.Add(new AiSignalInsightViewModel("WHALE FLOW",   "N/A", IdleColor, IdleBg, IdleBorder, IdleNote));
+        Insights.Add(new AiSignalInsightViewModel("SENTIMENT",    "N/A", IdleColor, IdleBg, IdleBorder, IdleNote));
+        Insights.Add(new AiSignalInsightViewModel("ON-CHAIN",     "N/A", IdleColor, IdleBg, IdleBorder, IdleNote));
+        Insights.Add(new AiSignalInsightViewModel("LIQUIDATIONS", "N/A", IdleColor, IdleBg, IdleBorder, IdleNote));
 
         foreach (var tf in HmTfs) HeatmapTimeframes.Add(tf);
 
@@ -700,31 +736,18 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
     private void BuildRegimeNewsDemo()
     {
         NewsBullets.Clear();
-        NewsBullets.Add(new AiSignalNewsBulletViewModel("Spot BTC ETF inflows +$840M in 24h — 3-week streak", "#21e6c1"));
-        NewsBullets.Add(new AiSignalNewsBulletViewModel("Fed pause expected — risk appetite elevated", "#21e6c1"));
-        NewsBullets.Add(new AiSignalNewsBulletViewModel("Mt. Gox repayment timeline uncertainty persists", "#f4b860"));
+        // No headline feed offline — one honest line, not three invented headlines.
+        NewsBullets.Add(new AiSignalNewsBulletViewModel(IdleNote, IdleColor));
     }
 
     private void BuildJournalDemo()
     {
-        ReplaceList(JournalStrengths,
-        [
-            "Accurate trend direction (68% win rate on breakouts)",
-            "Disciplined stop-loss adherence",
-            "Good entry timing on reversals",
-        ]);
-        ReplaceList(JournalLeaks,
-        [
-            "Premature profit-taking on winners",
-            "Overtrading in ranging markets",
-            "Position sizing inconsistency",
-        ]);
-        ReplaceList(JournalSuggestions,
-        [
-            "Set min hold: 2 bars before moving TP",
-            "Skip signals when hourly ATR < 0.3%",
-            "Fixed 2% risk per trade, every trade",
-        ]);
+        // Until a live AI pass runs (ApplyCoach replaces all three lists), the desk has
+        // reviewed nothing: invented strengths/leaks read as a verdict on the user's own
+        // trading history.
+        ReplaceList(JournalStrengths, [IdleNote]);
+        ReplaceList(JournalLeaks, ["Nothing reviewed yet."]);
+        ReplaceList(JournalSuggestions, ["Nothing to suggest yet."]);
     }
 
     /// <summary>

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -15,7 +15,8 @@ public sealed class BacktestReviewAiProvider
 
     public BacktestReviewAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // Only fatal when unbound — a bound terminal has no local key and the server holds it.
+        if (!ChatClient.CanCallModel(apiKey))
             throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
@@ -32,7 +33,7 @@ public sealed class BacktestReviewAiProvider
                 "You are a quantitative strategy reviewer. Judge whether a backtest result is " +
                 "trustworthy or likely overfit. Watch for: too few trades, returns that only beat " +
                 "buy&hold by luck, sky-high Sharpe on tiny samples, and large drawdowns. " +
-                "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
+                "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"verdict\":\"ROBUST\"|\"PROMISING\"|\"WEAK\"|\"OVERFIT\",\"summary\":string,\"risks\":[string]}.",
             userContent: prompt, _http, ct).ConfigureAwait(false);
 

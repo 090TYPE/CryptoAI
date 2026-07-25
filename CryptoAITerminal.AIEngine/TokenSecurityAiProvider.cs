@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using CryptoAITerminal.Core.Models;
 
 namespace CryptoAITerminal.AIEngine;
@@ -16,7 +16,8 @@ public sealed class TokenSecurityAiProvider
 
     public TokenSecurityAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // Only fatal when unbound — a bound terminal has no local key and the server holds it.
+        if (!ChatClient.CanCallModel(apiKey))
             throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
@@ -40,7 +41,7 @@ public sealed class TokenSecurityAiProvider
             _apiKey, _model, maxTokens: 320, temperature: 0.2,
             system:
                 "You are a crypto due-diligence analyst screening freshly-listed DEX/CEX tokens for rug-pull and honeypot risk. " +
-                "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
+                "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"risk\":0..100,\"verdict\":\"AVOID\"|\"RISKY\"|\"NEUTRAL\"|\"FAVORABLE\",\"red_flags\":[string],\"reason\":string}. " +
                 "Higher risk = more dangerous. Be conservative: thin liquidity, parabolic pumps, and fresh deployers are red flags.",
             userContent: prompt, _http, ct).ConfigureAwait(false);

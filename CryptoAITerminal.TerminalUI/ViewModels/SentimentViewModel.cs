@@ -235,12 +235,17 @@ public class SentimentViewModel : ReactiveObject, IDisposable
             var result = await _insight.InterpretAsync(
                 "You are a market-sentiment analyst. Extreme fear is contrarian-bullish, extreme greed contrarian-bearish; crowded long positioning is a risk.",
                 lines, ["BULLISH", "BEARISH", "NEUTRAL"], offline).ConfigureAwait(true);
-            InsightSummary = result.Summary; InsightSignal = result.Signal;
+            // The AI SIGNAL cell has no slot of its own for a failure, so the reason leads the
+            // summary; the heuristic signal and its text still render underneath.
+            var error = _insight.LastError;
+            InsightSummary = error is null ? result.Summary : $"⚠ {error}\n{result.Summary}";
+            InsightSignal = result.Signal;
             InsightBullets = result.Bullets.Length > 0 ? "• " + string.Join("\n• ", result.Bullets) : "";
             InsightSource = result.Source; HasInsight = true;
             this.RaisePropertyChanged(nameof(InsightSignalBrush));
         }
-        catch (Exception ex) { InsightSummary = $"AI failed: {ex.Message}"; HasInsight = true; }
+        // Never ex.Message here — it can carry the raw AI response body.
+        catch (Exception ex) { InsightSummary = CryptoAITerminal.AIEngine.AiFailure.Describe(ex); HasInsight = true; }
         finally { InsightRunning = false; }
     }
 

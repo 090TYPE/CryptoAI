@@ -119,18 +119,21 @@
             <Border Background="#060d14" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="6" Padding="10,4">
               <TextBlock Text="{Binding SourceLabel}" Foreground="#3d5a72" FontSize="9" FontWeight="Bold" />
             </Border>
+            <!-- 180, not 300: this sits in an Auto-width column, so a wider error line steals that
+                 much space from the '*' ticker strip beside it. Full text stays in the tooltip. -->
+            <TextBlock Text="{Binding AiError}" Foreground="#f4b860" FontSize="9" FontWeight="Bold"
+                       VerticalAlignment="Center" MaxWidth="180" TextTrimming="CharacterEllipsis"
+                       IsVisible="{Binding HasAiError}" ToolTip.Tip="{Binding AiError}" />
             <Border Background="#060d14" BorderBrush="#152233" BorderThickness="1" CornerRadius="10" Padding="11,5">
               <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
                 <Ellipse Width="6" Height="6" Fill="#3ddc84" />
                 <TextBlock Text="LIVE" Foreground="#5a7a94" FontSize="10" FontWeight="Bold" />
               </StackPanel>
             </Border>
-            <Border Background="#060d14" BorderBrush="#1a3030" BorderThickness="1" CornerRadius="10" Padding="11,5">
-              <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                <Ellipse Width="6" Height="6" Fill="#21e6c1" />
-                <TextBlock Text="AI ON" Foreground="#21e6c1" FontSize="10" FontWeight="Bold" />
-              </StackPanel>
-            </Border>
+            <!-- The hardcoded "AI ON" lamp was removed: it was lit unconditionally, so the header
+                 read "offline · heuristic" and "Daily AI limit reached" next to a green AI ON. The
+                 SourceLabel border above already states the real state. -->
+
           </StackPanel>
         </Border>
       </Grid>

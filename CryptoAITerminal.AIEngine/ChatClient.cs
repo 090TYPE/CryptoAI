@@ -32,6 +32,19 @@ public static class ChatClient
     private static string? LicenseToken => LicenseTokenProvider?.Invoke();
 
     /// <summary>
+    /// Whether a real model call is possible right now — the single predicate every AI feature
+    /// should gate its offline fallback on.
+    ///
+    /// It is true when the caller holds a vendor key OR the terminal is bound to a server, because
+    /// in the bound case the server holds the key and <see cref="CompleteTextAsync"/> deliberately
+    /// accepts an empty <c>apiKey</c>. Testing only for a client-held key — which every
+    /// <c>UsesLiveModel</c> used to do — silently downgrades the entire app to heuristics on a
+    /// server-bound terminal that has no local key, which is the normal configuration for a
+    /// licensed user.
+    /// </summary>
+    public static bool CanCallModel(string? apiKey) => UseServer || !string.IsNullOrWhiteSpace(apiKey);
+
+    /// <summary>
     /// Sends a single-turn completion and returns the assistant's text (already
     /// extracted from the vendor's response envelope). Throws
     /// <see cref="HttpRequestException"/> on a non-success status so callers can fall
@@ -94,7 +107,7 @@ public static class ChatClient
         using var res = await http.SendAsync(req, ct).ConfigureAwait(false);
         var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
         if (!res.IsSuccessStatusCode)
-            throw new HttpRequestException($"Anthropic API {(int)res.StatusCode}: {body}");
+            throw AiCallException.FromResponse("Anthropic", (int)res.StatusCode, body);
 
         using var doc = JsonDocument.Parse(body);
         if (!doc.RootElement.TryGetProperty("content", out var contentArr) ||
@@ -145,7 +158,7 @@ public static class ChatClient
         using var res = await http.SendAsync(req, ct).ConfigureAwait(false);
         var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
         if (!res.IsSuccessStatusCode)
-            throw new HttpRequestException($"OpenAI API {(int)res.StatusCode}: {body}");
+            throw AiCallException.FromResponse("OpenAI", (int)res.StatusCode, body);
 
         using var doc = JsonDocument.Parse(body);
         if (!doc.RootElement.TryGetProperty("choices", out var choices) ||

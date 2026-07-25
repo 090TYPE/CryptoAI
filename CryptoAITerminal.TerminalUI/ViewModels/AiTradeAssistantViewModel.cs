@@ -37,6 +37,8 @@ public sealed class AiTradeAssistantViewModel : ReactiveObject
     private string _intent = string.Empty;
     private decimal _riskPercentPerTrade;
     private bool _watchMode;
+    private bool _isAnalyzing;
+    private string? _aiError;
     private bool _riskOverridePrimed;
     private TradeSetup? _setup;
     private PreTradeRiskResult? _risk;
@@ -83,6 +85,9 @@ public sealed class AiTradeAssistantViewModel : ReactiveObject
 
     public bool WatchMode { get => _watchMode; private set { this.RaiseAndSetIfChanged(ref _watchMode, value); this.RaisePropertyChanged(nameof(WatchLabel)); } }
     public string WatchLabel => _watchMode ? "WATCHING" : "WATCH";
+
+    /// <summary>True while a rationale call is in flight, so the view can disable Analyze.</summary>
+    public bool IsAnalyzing { get => _isAnalyzing; private set => this.RaiseAndSetIfChanged(ref _isAnalyzing, value); }
 
     public bool IsRiskConservative => Is(_riskProfile, "Conservative");
     public bool IsRiskBalanced => Is(_riskProfile, "Balanced");
@@ -166,6 +171,9 @@ public sealed class AiTradeAssistantViewModel : ReactiveObject
 
     private async Task AnalyzeAsync()
     {
+        // Watch mode ticks every 6 s while a rationale call can take 30 s — never stack two.
+        if (_isAnalyzing) return;
+
         var candles = _candles() ?? Array.Empty<DexOhlcvPoint>();
         var price = _price();
 
@@ -201,13 +209,24 @@ public sealed class AiTradeAssistantViewModel : ReactiveObject
         _riskOverridePrimed = false;
 
         Setup = setup;
-        StatusMessage = $"{_venueLabel} setup ready · risk {Risk!.Verdict} — review and Apply.";
 
-        // Optional live-model narrative (degrades silently to the deterministic one).
+        // Optional live-model narrative (degrades to the deterministic one). "Ready" waits for it:
+        // announcing it before a call that can take 30 s made the panel read finished mid-flight.
         if (_ai.UsesLiveModel)
         {
-            await EnrichRationaleAsync(setup, Risk);
+            IsAnalyzing = true;
+            StatusMessage = $"{_venueLabel} setup drafted · asking the model for the rationale…";
+            try
+            {
+                await EnrichRationaleAsync(setup, Risk);
+            }
+            finally
+            {
+                IsAnalyzing = false;
+            }
         }
+
+        StatusMessage = $"{_venueLabel} setup ready · risk {Risk!.Verdict} — review and Apply.";
     }
 
     private async Task EnrichRationaleAsync(TradeSetup setup, PreTradeRiskResult risk)
@@ -232,18 +251,30 @@ public sealed class AiTradeAssistantViewModel : ReactiveObject
             var insight = await _ai.InterpretAsync(role, lines, new[] { "LONG", "SHORT", "WAIT" },
                 () => new InsightResult(setup.Rationale, setup.Bias, risk.Reasons.ToArray(), "offline", true));
 
-            if (insight is { IsFallback: false } && !string.IsNullOrWhiteSpace(insight.Summary) &&
-                ReferenceEquals(_setup, setup))
+            if (!ReferenceEquals(_setup, setup)) return;   // a newer analyze already replaced it
+
+            if (insight is { IsFallback: false } && !string.IsNullOrWhiteSpace(insight.Summary))
             {
                 LiveRationale = insight.Summary;
                 RationaleSource = insight.Source;
-                this.RaisePropertyChanged(nameof(RationaleText));
-                this.RaisePropertyChanged(nameof(RationaleSourceLabel));
+                _aiError = null;
             }
+            else
+            {
+                // The planner's own rationale stays on screen; without this the source slot went
+                // blank and a deterministic read looked like the model's.
+                _aiError = _ai.LastError;
+            }
+
+            this.RaisePropertyChanged(nameof(RationaleText));
+            this.RaisePropertyChanged(nameof(RationaleSourceLabel));
         }
-        catch
+        catch (Exception ex)
         {
-            // keep the deterministic rationale
+            // Keep the deterministic rationale, but label it and say why the model is missing.
+            if (!ReferenceEquals(_setup, setup)) return;
+            _aiError = AiFailure.Describe(ex);
+            this.RaisePropertyChanged(nameof(RationaleSourceLabel));
         }
     }
 
@@ -279,6 +310,7 @@ public sealed class AiTradeAssistantViewModel : ReactiveObject
         {
             LiveRationale = null;
             RationaleSource = null;
+            _aiError = null;
             this.RaiseAndSetIfChanged(ref _setup, value);
             this.RaisePropertyChanged(nameof(HasSetup));
             this.RaisePropertyChanged(nameof(BiasLabel));
@@ -323,7 +355,16 @@ public sealed class AiTradeAssistantViewModel : ReactiveObject
     public double ConfidenceValue => _setup?.Confidence ?? 0;
     public string ConfluenceLabel => _setup is null ? "--" : $"{_setup.Confluence}%";
     public string RationaleText => LiveRationale ?? _setup?.Rationale ?? "The assistant will explain its read of the chart here.";
-    public string RationaleSourceLabel => RationaleSource is null ? string.Empty : $"— {RationaleSource}";
+
+    /// <summary>
+    /// Names whose rationale is on screen. An empty slot used to be the only sign the model never
+    /// answered, so a fallback is labelled and carries the reason when the service reported one.
+    /// </summary>
+    public string RationaleSourceLabel =>
+        RationaleSource is not null ? $"— {RationaleSource}"
+        : _setup is null            ? string.Empty
+        : _aiError is not null      ? $"— planner rationale (AI unavailable)\n{_aiError}"
+        :                             "— planner rationale";
 
     public bool HasRisk => _risk is not null;
     public string RiskVerdictLabel => _risk is null ? "--" : $"{_risk.Verdict} · {_risk.Score}/100";

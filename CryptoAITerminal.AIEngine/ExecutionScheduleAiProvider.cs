@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -14,7 +14,8 @@ public sealed class ExecutionScheduleAiProvider
 
     public ExecutionScheduleAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // Only fatal when unbound — a bound terminal has no local key and the server holds it.
+        if (!ChatClient.CanCallModel(apiKey))
             throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
@@ -35,7 +36,7 @@ public sealed class ExecutionScheduleAiProvider
                 "You are an execution trader. Slice a large order to keep each child small vs available " +
                 "liquidity (rule of thumb: a child should be a small fraction of top-of-book depth). More " +
                 "slices and longer intervals for large-vs-liquidity orders; fewer/faster when urgent. " +
-                "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
+                "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"slices\":int,\"interval_seconds\":int,\"slice_usd\":number,\"rationale\":string}.",
             userContent: prompt, _http, ct).ConfigureAwait(false);
 

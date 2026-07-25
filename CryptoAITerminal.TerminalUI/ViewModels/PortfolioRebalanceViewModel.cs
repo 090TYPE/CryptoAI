@@ -164,13 +164,14 @@ public class PortfolioRebalanceViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> SuggestWithAiCommand { get; private set; } = null!;
     private readonly PortfolioRebalanceAiService _aiRebalance = new();
     private string _selectedRiskProfile = "Balanced";
-    private string _aiCommentary = "", _aiSource = "";
+    private string _aiCommentary = "", _aiSource = "", _aiError = "";
     private bool _aiRunning;
 
     public IReadOnlyList<string> AvailableRiskProfiles { get; } = ["Conservative", "Balanced", "Aggressive"];
     public string SelectedRiskProfile { get => _selectedRiskProfile; set => this.RaiseAndSetIfChanged(ref _selectedRiskProfile, value); }
     public string AiCommentary { get => _aiCommentary; private set => this.RaiseAndSetIfChanged(ref _aiCommentary, value); }
     public string AiSource { get => _aiSource; private set => this.RaiseAndSetIfChanged(ref _aiSource, value); }
+    public string AiError { get => _aiError; private set => this.RaiseAndSetIfChanged(ref _aiError, value); }
     public bool AiRunning { get => _aiRunning; private set => this.RaiseAndSetIfChanged(ref _aiRunning, value); }
 
     public void ConfigureAi(string apiKey, string model)
@@ -188,20 +189,43 @@ public class PortfolioRebalanceViewModel : ReactiveObject, IDisposable
         if (holdings.Count == 0) { StatusLabel = "Add assets before asking AI."; return; }
 
         AiRunning = true;
+        AiError = "";
         try
         {
             var plan = await _aiRebalance.SuggestAsync(holdings, SelectedRiskProfile).ConfigureAwait(true);
-            foreach (var target in plan.Targets)
+
+            // The offline split reads like a real answer ("Balanced profile: ~55% majors…"), so writing
+            // it to the rows and persisting it would leave the user with a rule-based allocation they
+            // believe the model chose. Show it, name its source, but never overwrite their targets.
+            if (plan.IsFallback)
             {
-                var row = Allocations.FirstOrDefault(r => string.Equals(r.Symbol, target.Symbol, StringComparison.OrdinalIgnoreCase));
-                if (row is not null) row.TargetPct = (double)target.TargetPct;
+                AiError = _aiRebalance.LastError
+                    ?? (_aiRebalance.UsesLiveModel
+                            ? "The AI returned no usable weights."
+                            : "AI is not configured on this terminal.");
+                AiError += " Targets left unchanged — the split below is rule-based, not from the model.";
+                StatusLabel = "AI unavailable — targets unchanged.";
             }
-            RecalcTargetSum();
-            SaveAllocations();
+            else
+            {
+                foreach (var target in plan.Targets)
+                {
+                    var row = Allocations.FirstOrDefault(r => string.Equals(r.Symbol, target.Symbol, StringComparison.OrdinalIgnoreCase));
+                    if (row is not null) row.TargetPct = (double)target.TargetPct;
+                }
+                RecalcTargetSum();
+                SaveAllocations();
+            }
+
             AiCommentary = plan.Commentary;
             AiSource = plan.Source;
         }
-        catch (Exception ex) { StatusLabel = $"AI rebalance failed: {ex.Message}"; }
+        catch (Exception ex)
+        {
+            // Describe, never ex.Message: the raw message can carry the AI response body.
+            AiError = CryptoAITerminal.AIEngine.AiFailure.Describe(ex);
+            StatusLabel = $"AI rebalance failed: {AiError}";
+        }
         finally { AiRunning = false; }
     }
 

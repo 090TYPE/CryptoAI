@@ -207,10 +207,6 @@
                          Foreground="#5A7A94" VerticalAlignment="Center" />
             </StackPanel>
           </Border>
-          <Border Background="#06181A" CornerRadius="999" Padding="10,4">
-            <TextBlock Text="AI ON" FontSize="9" FontWeight="Bold"
-                       Foreground="#21E6C1" VerticalAlignment="Center" />
-          </Border>
         </StackPanel>
       </Grid>
     </Border>
@@ -703,7 +699,7 @@
                          FontSize="11" FontWeight="Bold" Foreground="#C8DCEF" />
             </Grid>
 
-            <!-- AI signal -->
+            <!-- momentum signal (local change/activity heuristic — no AI involved) -->
             <Border Background="{Binding AiSignalCardBackground}"
                     BorderBrush="{Binding AiSignalCardBorder}" BorderThickness="1"
                     CornerRadius="12" Padding="12,14">
@@ -712,7 +708,7 @@
                          VerticalAlignment="Top" Margin="0,4,0,0" />
                 <StackPanel Spacing="4">
                   <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBlock Text="AI SIGNAL" Classes="cap" VerticalAlignment="Center" />
+                    <TextBlock Text="MOMENTUM SIGNAL" Classes="cap" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding AiSignalLabel}" FontSize="14" FontWeight="Bold"
                                Foreground="{Binding AiSignalForeground}" />
                   </StackPanel>

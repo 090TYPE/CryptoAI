@@ -524,8 +524,14 @@
                 <Border Background="#160a05" BorderBrush="#3d1a00" BorderThickness="0,0,0,1" Padding="14,8" IsVisible="{Binding HasAlerts}">
                   <TextBlock Text="{Binding AlertSummary}" Foreground="#ff8888" FontSize="11" FontFamily="{StaticResource FontMono}" TextWrapping="Wrap" />
                 </Border>
+                <Border Background="#1a1005" BorderBrush="#3d2a00" BorderThickness="0,0,0,1" Padding="14,8" IsVisible="{Binding AiError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                  <TextBlock Text="{Binding AiError}" Foreground="#ffaa33" FontSize="11" TextWrapping="Wrap" />
+                </Border>
                 <Border Background="#0d1826" Padding="14,8" IsVisible="{Binding AiCommentary, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                  <TextBlock Text="{Binding AiCommentary}" Foreground="#8fa3b8" FontSize="11" TextWrapping="Wrap" />
+                  <StackPanel Spacing="3">
+                    <TextBlock Text="{Binding AiSource}" Foreground="#5a7a94" FontSize="9" FontWeight="Bold" IsVisible="{Binding AiSource, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    <TextBlock Text="{Binding AiCommentary}" Foreground="#8fa3b8" FontSize="11" TextWrapping="Wrap" />
+                  </StackPanel>
                 </Border>
               </StackPanel>
               <!-- Rows -->

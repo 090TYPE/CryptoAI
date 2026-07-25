@@ -1,11 +1,11 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
 /// <summary>
-/// Domain-agnostic "interpret raw data → one-paragraph narrative + a labelled signal
+/// Domain-agnostic "interpret raw data в†’ one-paragraph narrative + a labelled signal
 /// + a few bullets" provider. Reused by whale-flow, on-chain, sentiment and
-/// liquidation insight services — the caller supplies the role, the data lines and
+/// liquidation insight services вЂ” the caller supplies the role, the data lines and
 /// the allowed signal vocabulary. The vendor call goes through <see cref="ChatClient"/>.
 /// </summary>
 public sealed class MarketInsightAiProvider
@@ -16,7 +16,8 @@ public sealed class MarketInsightAiProvider
 
     public MarketInsightAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // Only fatal when unbound — a bound terminal has no local key and the server holds it.
+        if (!ChatClient.CanCallModel(apiKey))
             throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
@@ -39,7 +40,7 @@ public sealed class MarketInsightAiProvider
             roleSentence + " " +
             "Read the data and explain what it means in ONE or TWO sentences, give a signal label, " +
             "and list a few concrete observations. " +
-            "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
+            "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
             "Schema: {\"summary\":string,\"signal\":\"" + vocab + "\",\"bullets\":[string]}.";
 
         var text = await ChatClient.CompleteTextAsync(

@@ -42,7 +42,9 @@ public sealed class AppAgentService
     public string? Model { get; set; }
     private string Key => ApiKey ?? CryptoAITerminal.AIEngine.AiRuntime.ActiveApiKey;
     private string Mdl => Model ?? CryptoAITerminal.AIEngine.AiRuntime.ActiveModel;
-    public bool UsesLiveModel => !string.IsNullOrWhiteSpace(Key);
+    // A server-bound terminal holds no local key — the server injects it — so testing only for
+    // Key would leave Ctrl+K permanently on the "add an API key" message for licensed users.
+    public bool UsesLiveModel => CryptoAITerminal.AIEngine.ChatClient.CanCallModel(Key);
     public event Action<AgentEvent>? OnEvent;
 
     /// <summary>Build one AgentTool per action; the delegate routes through <see cref="InvokeActionToolAsync"/>.</summary>

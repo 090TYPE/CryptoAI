@@ -24,14 +24,25 @@ public sealed class DexTokenAiVerdictViewModel : ReactiveObject
     public bool IsBusy
     {
         get => _isBusy;
-        set => this.RaiseAndSetIfChanged(ref _isBusy, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isBusy, value);
+            this.RaisePropertyChanged(nameof(IsScanning));
+        }
     }
 
     public bool DeepScanBusy
     {
         get => _deepScanBusy;
-        set => this.RaiseAndSetIfChanged(ref _deepScanBusy, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _deepScanBusy, value);
+            this.RaisePropertyChanged(nameof(IsScanning));
+        }
     }
+
+    /// <summary>Either the initial assessment or a deep scan is in flight; the card shows one progress hint for both.</summary>
+    public bool IsScanning => _isBusy || _deepScanBusy;
 
     public string? DeepScanNote
     {
@@ -51,6 +62,12 @@ public sealed class DexTokenAiVerdictViewModel : ReactiveObject
     public string Reason => _verdict.Reason;
     public string RedFlagsText => _verdict.RedFlagsText;
     public string SourceLabel => _verdict.Source;
+
+    /// <summary>Hidden on the pending verdict, which has no source yet.</summary>
+    public bool HasSourceLabel => !string.IsNullOrWhiteSpace(_verdict.Source);
+
+    /// <summary>Amber for the offline heuristic, muted for a live model — a buyer must tell the two apart at a glance.</summary>
+    public string SourceHex => _verdict.IsFallback ? "#f4b860" : "#5a7a94";
 
     public void ApplyVerdict(TokenAiVerdict verdict)
     {
@@ -75,5 +92,7 @@ public sealed class DexTokenAiVerdictViewModel : ReactiveObject
         this.RaisePropertyChanged(nameof(Reason));
         this.RaisePropertyChanged(nameof(RedFlagsText));
         this.RaisePropertyChanged(nameof(SourceLabel));
+        this.RaisePropertyChanged(nameof(HasSourceLabel));
+        this.RaisePropertyChanged(nameof(SourceHex));
     }
 }

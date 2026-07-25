@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -14,7 +14,8 @@ public sealed class DexTrendingAiProvider
 
     public DexTrendingAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // Only fatal when unbound — a bound terminal has no local key and the server holds it.
+        if (!ChatClient.CanCallModel(apiKey))
             throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
@@ -35,7 +36,7 @@ public sealed class DexTrendingAiProvider
             system:
                 "You are a DEX momentum analyst. Rank tokens by genuine momentum while penalising rug risk " +
                 "(thin liquidity, parabolic-then-fading, volume >> liquidity churn). " +
-                "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
+                "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"tokens\":[{\"symbol\":string,\"address\":string,\"score\":0..100,\"signal\":\"MOMENTUM\"|\"EARLY\"|\"FADING\"|\"AVOID\",\"reason\":string}]}.",
             userContent: prompt, _http, ct).ConfigureAwait(false);
 

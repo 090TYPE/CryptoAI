@@ -67,7 +67,8 @@
                 ToolTip.Tip="Re-analyze automatically as new candles arrive" />
       </Grid>
 
-      <Button Content="✦ ANALYZE CHART" Classes="TdPrimary dex" Height="38" Command="{Binding AnalyzeCommand}" />
+      <Button Content="✦ ANALYZE CHART" Classes="TdPrimary dex" Height="38" Command="{Binding AnalyzeCommand}"
+              IsEnabled="{Binding !IsAnalyzing}" />
 
       <!-- Backtest the current rules over history -->
       <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
@@ -130,7 +131,7 @@
           <TextBlock Text="{Binding RiskReasonsText}" Foreground="#8a97a8" FontSize="9" TextWrapping="Wrap" IsVisible="{Binding HasRisk}" />
 
           <TextBlock Text="{Binding RationaleText}" Foreground="#8fa3b8" FontSize="10" TextWrapping="Wrap" LineHeight="15" />
-          <TextBlock Text="{Binding RationaleSourceLabel}" Foreground="#5a7a94" FontSize="9" />
+          <TextBlock Text="{Binding RationaleSourceLabel}" Foreground="#5a7a94" FontSize="9" TextWrapping="Wrap" />
 
           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
             <Button Grid.Column="0" Content="APPLY TO TICKET" Classes="TdPrimary dex" Height="34" Command="{Binding ApplyCommand}" />

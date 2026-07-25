@@ -9,13 +9,19 @@
     <!-- AI Market Pulse summary -->
     <Border Background="#060D14" BorderBrush="#111C28" BorderThickness="1"
             CornerRadius="6" Padding="10,8">
-      <Grid ColumnDefinitions="Auto,*">
+      <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
         <Border Grid.Column="0" Background="{Binding NewsFeedVM.PulseBrush}" CornerRadius="3" Padding="6,2">
           <TextBlock Text="{Binding NewsFeedVM.PulseLabel}" Foreground="#06121C" FontSize="11" FontWeight="Bold" />
         </Border>
         <TextBlock Grid.Column="1" Text="{Binding NewsFeedVM.AiDigest}"
                    Foreground="{Binding NewsFeedVM.AiDigestBrush}"
                    FontSize="11" TextWrapping="Wrap" Margin="8,0,0,0" MaxLines="2" />
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="Refreshing AI digest…"
+                   IsVisible="{Binding NewsFeedVM.AiDigestRunning}"
+                   Foreground="#4A6880" FontSize="9" Margin="0,4,0,0" />
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding NewsFeedVM.AiDigestSource}"
+                   IsVisible="{Binding !NewsFeedVM.AiDigestRunning}"
+                   Foreground="#4A6880" FontSize="9" TextWrapping="Wrap" Margin="0,4,0,0" />
       </Grid>
     </Border>
 

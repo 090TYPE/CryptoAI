@@ -11,31 +11,39 @@ namespace CryptoAITerminal.TerminalUI.Services;
 /// <summary>
 /// Produces an <see cref="TokenAiVerdict"/> for a sniper candidate.
 ///
-/// When an Anthropic API key is configured it asks Claude; otherwise (or on
-/// any failure) it falls back to a deterministic offline heuristic so the
-/// "AI verdict" is always visible — including in the demo / paper flow
-/// without any keys. Results are cached per token to avoid repeat calls.
+/// It asks the model whenever one is reachable (local key, or a server-bound
+/// terminal whose server holds the key); otherwise (or on any failure) it falls
+/// back to a deterministic offline heuristic so the "AI verdict" is always
+/// visible — including in the demo / paper flow with neither. Results are
+/// cached per token to avoid repeat calls.
 /// </summary>
 public sealed class TokenSecurityAiService
 {
     private readonly ConcurrentDictionary<string, TokenAiVerdict> _cache =
         new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Anthropic API key. Empty → heuristic-only mode.</summary>
+    /// <summary>Vendor API key. Empty on a server-bound terminal — the server holds the key.</summary>
     private string? _apiKey;
     public string ApiKey { get => _apiKey ?? AiRuntime.ActiveApiKey; set => _apiKey = value; }
 
     private string? _model;
     public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
 
-    /// <summary>True when a live model will be queried (key present).</summary>
-    public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
+    /// <summary>True when a live model will be queried (local key, or a bound server holding the key).</summary>
+    public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
+
+    /// <summary>User-safe reason the last call fell back to the offline path, or null on success.</summary>
+    public string? LastError { get; private set; }
 
     public async Task<TokenAiVerdict> AssessAsync(
         DexTokenInfo token,
         string? securitySummary = null,
         CancellationToken ct = default)
     {
+        // Cleared up front so no path — cache hit, no key, or a live answer — reports a failure
+        // left over from an earlier token.
+        LastError = null;
+
         var key = $"{token.ChainId}:{token.TokenAddress}";
         if (_cache.TryGetValue(key, out var cached))
             return cached;
@@ -53,10 +61,13 @@ public sealed class TokenSecurityAiService
             {
                 throw;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // Network / API / parse failure — never block the sniper, degrade to heuristic.
-                verdict = BuildHeuristic(token, securitySummary);
+                LastError = AiFailure.Describe(ex);
+                // Returned WITHOUT caching: a budget/timeout failure would otherwise pin the
+                // heuristic to this token for the whole session, even once AI works again.
+                return BuildHeuristic(token, securitySummary);
             }
         }
         else

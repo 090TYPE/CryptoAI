@@ -103,9 +103,21 @@ public class AiProviderSwitchTests
     public async Task ChatClient_NonSuccess_Throws()
     {
         var failing = new HttpClient(new ThrowingHandler());
-        await Assert.ThrowsAsync<HttpRequestException>(() =>
+
+        // AiCallException derives from HttpRequestException so existing catch clauses still work,
+        // but Assert.ThrowsAsync demands an exact type — assert the real one.
+        var ex = await Assert.ThrowsAsync<AiCallException>(() =>
             WithVendor(AiVendor.OpenAi, () =>
                 ChatClient.CompleteTextAsync("k", "gpt-4o", 50, null, "s", "u", failing)));
+
+        Assert.IsAssignableFrom<HttpRequestException>(ex);
+        Assert.Equal(429, ex.StatusCode);
+
+        // The whole reason this type exists: the body may carry server internals, so it must reach
+        // the diagnostic Message but never the string a panel shows a user.
+        Assert.Contains("rate", ex.Message);
+        Assert.DoesNotContain("rate", ex.UserMessage);
+        Assert.Equal(ex.UserMessage, AiFailure.Describe(ex));
     }
 
     private sealed class ThrowingHandler : HttpMessageHandler

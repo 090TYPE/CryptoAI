@@ -9,9 +9,10 @@ using CryptoAITerminal.Core.Models;
 namespace CryptoAITerminal.TerminalUI.Services;
 
 /// <summary>
-/// Ranks the strongest scanner opportunities. Uses Claude when a key is configured,
-/// otherwise a deterministic offline heuristic — so the scanner always shows an
-/// "AI picks" panel, including in the demo flow without keys.
+/// Ranks the strongest scanner opportunities. Uses the model whenever one is reachable
+/// (local key, or a bound server that holds the key), otherwise a deterministic offline
+/// heuristic — so the scanner always shows an "AI picks" panel, including in the demo
+/// flow without keys.
 /// </summary>
 public sealed class MarketRankingAiService
 {
@@ -21,7 +22,7 @@ public sealed class MarketRankingAiService
     private string? _model;
     public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
 
-    public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
+    public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
     public async Task<MarketRankingResult> RankAsync(
         IReadOnlyList<ScanResult> results,

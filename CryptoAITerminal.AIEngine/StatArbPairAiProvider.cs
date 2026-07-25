@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -14,7 +14,8 @@ public sealed class StatArbPairAiProvider
 
     public StatArbPairAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // Only fatal when unbound — a bound terminal has no local key and the server holds it.
+        if (!ChatClient.CanCallModel(apiKey))
             throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
@@ -38,7 +39,7 @@ public sealed class StatArbPairAiProvider
                 "(reasonable half-life) and the z-score is stretched beyond the entry threshold. " +
                 "Signal LONG_A_SHORT_B when z is very negative (A cheap vs B), SHORT_A_LONG_B when very positive, " +
                 "WAIT when inside thresholds, AVOID when correlation/half-life are poor. " +
-                "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
+                "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"tradeable\":boolean,\"score\":0..100,\"signal\":\"LONG_A_SHORT_B\"|\"SHORT_A_LONG_B\"|\"WAIT\"|\"AVOID\",\"reason\":string}.",
             userContent: prompt, _http, ct).ConfigureAwait(false);
 

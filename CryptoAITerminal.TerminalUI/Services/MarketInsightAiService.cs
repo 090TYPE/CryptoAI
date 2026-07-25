@@ -11,7 +11,8 @@ namespace CryptoAITerminal.TerminalUI.Services;
 /// Reusable "interpret raw data → narrative + signal" service backing the whale-flow,
 /// on-chain, sentiment and liquidation insight panels. Callers (which own the domain
 /// data) supply pre-formatted lines, the allowed signal vocabulary, and a deterministic
-/// offline fallback — so every panel shows an AI read, with or without an API key.
+/// offline fallback — so every panel shows an AI read whether the model is reached with a
+/// local key, through a bound server, or not at all.
 /// </summary>
 public sealed class MarketInsightAiService
 {
@@ -21,7 +22,10 @@ public sealed class MarketInsightAiService
     private string? _model;
     public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
 
-    public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
+    public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
+
+    /// <summary>User-safe reason the last call fell back to the offline path, or null on success.</summary>
+    public string? LastError { get; private set; }
 
     public async Task<InsightResult> InterpretAsync(
         string roleSentence,
@@ -30,6 +34,10 @@ public sealed class MarketInsightAiService
         Func<InsightResult> offline,
         CancellationToken ct = default)
     {
+        // Cleared up front so no path — including "no data" and "no key" — reports a failure
+        // left over from an earlier call.
+        LastError = null;
+
         if (dataLines is null || dataLines.Count == 0)
             return offline();
 
@@ -42,7 +50,7 @@ public sealed class MarketInsightAiService
                 if (result is not null) return result;
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception) { /* degrade to offline */ }
+            catch (Exception ex) { LastError = AiFailure.Describe(ex); /* degrade to offline */ }
         }
 
         return offline();

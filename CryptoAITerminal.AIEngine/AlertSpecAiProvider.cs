@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -16,7 +16,8 @@ public sealed class AlertSpecAiProvider
 
     public AlertSpecAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // Only fatal when unbound — a bound terminal has no local key and the server holds it.
+        if (!ChatClient.CanCallModel(apiKey))
             throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
@@ -37,7 +38,7 @@ public sealed class AlertSpecAiProvider
             "Symbol is an exchange pair like BTCUSDT (append USDT if the user names a bare coin). " +
             "Threshold is a number: an absolute price for PriceAbove/PriceBelow, a percent for the " +
             "ChangePercent conditions, or a volume multiplier for VolumeSpike. " +
-            "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
+            "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
             "Schema: {\"symbol\":string,\"condition\":string,\"threshold\":number}.";
 
         var raw = await ChatClient.CompleteTextAsync(

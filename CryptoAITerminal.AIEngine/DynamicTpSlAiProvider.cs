@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -14,7 +14,8 @@ public sealed class DynamicTpSlAiProvider
 
     public DynamicTpSlAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // Only fatal when unbound — a bound terminal has no local key and the server holds it.
+        if (!ChatClient.CanCallModel(apiKey))
             throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
@@ -34,8 +35,8 @@ public sealed class DynamicTpSlAiProvider
             _apiKey, _model, maxTokens: 300, temperature: 0.2,
             system:
                 "You are a risk manager. Set TP/SL adapted to volatility: wider stops in choppy/high-ATR " +
-                "markets, tighter in calm ones; keep reward:risk ≥ 1.3. Both values are positive percentages " +
-                "from entry. Reply ONLY with a single compact JSON object — no prose, no markdown. " +
+                "markets, tighter in calm ones; keep reward:risk в‰Ґ 1.3. Both values are positive percentages " +
+                "from entry. Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"tp_percent\":number,\"sl_percent\":number,\"trailing\":boolean,\"rationale\":string}.",
             userContent: prompt, _http, ct).ConfigureAwait(false);
 

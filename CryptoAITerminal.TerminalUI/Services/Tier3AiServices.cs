@@ -11,7 +11,8 @@ namespace CryptoAITerminal.TerminalUI.Services;
 // ════════════════════════════════════════════════════════════════════════════
 //  Tier 3 AI services — DEX trending (#9), dynamic TP/SL (#10),
 //  StatArb pair scoring (#11), execution scheduling (#12).
-//  Same pattern as the rest: Claude when keyed, deterministic offline otherwise.
+//  Same pattern as the rest: live model when keyed or server-bound, deterministic
+//  offline otherwise.
 // ════════════════════════════════════════════════════════════════════════════
 
 internal static class AiKeys
@@ -20,6 +21,17 @@ internal static class AiKeys
         Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY")
         ?? Environment.GetEnvironmentVariable("CRYPTOAI_CLAUDE_KEY")
         ?? string.Empty;
+
+    /// <summary>
+    /// The key to hand a Tier-3 provider constructor. Those constructors reject an empty key, yet on
+    /// a server-bound terminal the real key lives on the server and <see cref="ChatClient"/> never
+    /// reads this value (it authenticates with the license token instead) — so a stand-in is what
+    /// keeps the live path reachable rather than throwing straight into the offline heuristic. Only
+    /// ever reached once <see cref="ChatClient.CanCallModel"/> has approved the call, so an empty key
+    /// here always means "bound to a server".
+    /// </summary>
+    public static string ForProvider(string apiKey) =>
+        string.IsNullOrWhiteSpace(apiKey) ? "server-held" : apiKey;
 }
 
 /// <summary>#9 — rank trending DEX tokens by momentum vs rug risk.</summary>
@@ -29,7 +41,7 @@ public sealed class DexTrendingAiService
     public string ApiKey { get => _apiKey ?? AiRuntime.ActiveApiKey; set => _apiKey = value; }
     private string? _model;
     public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
-    public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
+    public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
     public Task<DexTrendingResult> RankAsync(IReadOnlyList<DexTokenInfo> tokens, int topN = 5, CancellationToken ct = default)
     {
@@ -50,7 +62,7 @@ public sealed class DexTrendingAiService
         {
             try
             {
-                var provider = new DexTrendingAiProvider(ApiKey, Model);
+                var provider = new DexTrendingAiProvider(AiKeys.ForProvider(ApiKey), Model);
                 var ranked = await provider.RankAsync(rows, topN, ct).ConfigureAwait(false);
                 if (ranked is not null && ranked.Tokens.Count > 0) return ranked;
             }
@@ -99,7 +111,7 @@ public sealed class DynamicTpSlAiService
     public string ApiKey { get => _apiKey ?? AiRuntime.ActiveApiKey; set => _apiKey = value; }
     private string? _model;
     public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
-    public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
+    public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
     public async Task<TpSlSuggestion> SuggestAsync(TpSlContext ctx, CancellationToken ct = default)
     {
@@ -107,7 +119,7 @@ public sealed class DynamicTpSlAiService
         {
             try
             {
-                var provider = new DynamicTpSlAiProvider(ApiKey, Model);
+                var provider = new DynamicTpSlAiProvider(AiKeys.ForProvider(ApiKey), Model);
                 var s = await provider.SuggestAsync(ctx, ct).ConfigureAwait(false);
                 if (s is not null) return s;
             }
@@ -139,7 +151,7 @@ public sealed class StatArbPairAiService
     public string ApiKey { get => _apiKey ?? AiRuntime.ActiveApiKey; set => _apiKey = value; }
     private string? _model;
     public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
-    public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
+    public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
     public async Task<StatArbPairVerdict> EvaluateAsync(StatArbPairStats s, CancellationToken ct = default)
     {
@@ -147,7 +159,7 @@ public sealed class StatArbPairAiService
         {
             try
             {
-                var provider = new StatArbPairAiProvider(ApiKey, Model);
+                var provider = new StatArbPairAiProvider(AiKeys.ForProvider(ApiKey), Model);
                 var v = await provider.EvaluateAsync(s, ct).ConfigureAwait(false);
                 if (v is not null) return v;
             }
@@ -192,7 +204,7 @@ public sealed class ExecutionScheduleAiService
     public string ApiKey { get => _apiKey ?? AiRuntime.ActiveApiKey; set => _apiKey = value; }
     private string? _model;
     public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
-    public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
+    public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
     public async Task<ExecutionPlan> PlanAsync(OrderExecutionContext ctx, CancellationToken ct = default)
     {
@@ -200,7 +212,7 @@ public sealed class ExecutionScheduleAiService
         {
             try
             {
-                var provider = new ExecutionScheduleAiProvider(ApiKey, Model);
+                var provider = new ExecutionScheduleAiProvider(AiKeys.ForProvider(ApiKey), Model);
                 var p = await provider.PlanAsync(ctx, ct).ConfigureAwait(false);
                 if (p is not null) return p;
             }

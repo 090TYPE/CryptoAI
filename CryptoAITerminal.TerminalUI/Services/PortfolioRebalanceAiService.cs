@@ -8,9 +8,10 @@ using CryptoAITerminal.AIEngine;
 namespace CryptoAITerminal.TerminalUI.Services;
 
 /// <summary>
-/// Suggests target portfolio weights for a risk profile. Claude when a key is set,
-/// otherwise a deterministic rule-based allocation (tier assets into majors / alts /
-/// cash and weight by profile) so the rebalancer always has an "AI suggest" action.
+/// Suggests target portfolio weights for a risk profile. Uses the model whenever one is
+/// reachable (local key, or a server-bound terminal whose server holds the key), otherwise
+/// a deterministic rule-based allocation (tier assets into majors / alts / cash and weight
+/// by profile) so the rebalancer always has an "AI suggest" action.
 /// </summary>
 public sealed class PortfolioRebalanceAiService
 {
@@ -20,7 +21,10 @@ public sealed class PortfolioRebalanceAiService
     private string? _model;
     public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
 
-    public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
+    public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
+
+    /// <summary>User-safe reason the last call fell back to the offline path, or null on success.</summary>
+    public string? LastError { get; private set; }
 
     private static readonly HashSet<string> Majors = new(StringComparer.OrdinalIgnoreCase) { "BTC", "ETH", "WBTC", "WETH" };
     private static readonly HashSet<string> Stables = new(StringComparer.OrdinalIgnoreCase) { "USDT", "USDC", "BUSD", "DAI", "TUSD", "FDUSD" };
@@ -30,6 +34,10 @@ public sealed class PortfolioRebalanceAiService
         string riskProfile,
         CancellationToken ct = default)
     {
+        // Cleared before the early returns too: a plan produced without calling the model must not
+        // carry the previous call's failure into the UI.
+        LastError = null;
+
         if (holdings is null || holdings.Count == 0)
             return new RebalancePlan([], "No holdings to rebalance.", "Heuristic (offline)", true);
 
@@ -42,7 +50,10 @@ public sealed class PortfolioRebalanceAiService
                 if (plan is not null && plan.Targets.Count > 0) return Normalize(plan);
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception) { /* degrade to offline */ }
+            catch (Exception ex)
+            {
+                LastError = AiFailure.Describe(ex); // degrade to offline, but say why
+            }
         }
 
         return BuildOffline(holdings, riskProfile);

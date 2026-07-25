@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -15,7 +15,8 @@ public sealed class BotParameterAiProvider
 
     public BotParameterAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // Only fatal when unbound — a bound terminal has no local key and the server holds it.
+        if (!ChatClient.CanCallModel(apiKey))
             throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
@@ -41,7 +42,7 @@ public sealed class BotParameterAiProvider
                 $"You are a trading-bot configurator. Suggest safe, sensible starting parameters for a {botType} bot " +
                 "given the market context (price, volatility, 24h range, trend). " +
                 "Provide a numeric value for EVERY requested key. " +
-                "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
+                "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"params\":{<key>:number,...},\"rationale\":string}.",
             userContent: prompt, _http, ct).ConfigureAwait(false);
 

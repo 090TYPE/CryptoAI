@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -14,7 +14,8 @@ public sealed class PortfolioRebalanceAiProvider
 
     public PortfolioRebalanceAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // Only fatal when unbound — a bound terminal has no local key and the server holds it.
+        if (!ChatClient.CanCallModel(apiKey))
             throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
@@ -40,7 +41,7 @@ public sealed class PortfolioRebalanceAiProvider
                 "profile: Conservative leans to BTC/ETH and stablecoins; Aggressive allows more alt " +
                 "exposure; Balanced sits between. Weights must sum to ~100. Only use symbols present in " +
                 "the holdings (you may add USDT as a cash buffer). " +
-                "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
+                "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"targets\":[{\"symbol\":string,\"target_pct\":0..100,\"reason\":string}],\"commentary\":string}.",
             userContent: prompt, _http, ct).ConfigureAwait(false);
 

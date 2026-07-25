@@ -95,6 +95,7 @@ public sealed class NewsFeedViewModel : ReactiveObject, IDisposable
     private string _aiDigestBias = "NEUTRAL";
     private string _aiDigestSource = string.Empty;
     private bool _aiDigestRunning;
+    private bool _hasDigest;                   // a real digest arrived at least once
     private DateTime _lastDigestUtc = DateTime.MinValue;
     private static readonly TimeSpan DigestThrottle = TimeSpan.FromMinutes(3);
 
@@ -364,11 +365,24 @@ public sealed class NewsFeedViewModel : ReactiveObject, IDisposable
 
             AiDigest       = digest.Summary;
             AiDigestBias   = digest.Bias;
-            AiDigestSource = digest.Source;
+            // The service still returns its offline digest when the model fails — say why it did.
+            AiDigestSource = _aiSummary.LastError is { } reason
+                ? $"{digest.Source} · {reason}"
+                : digest.Source;
+            _hasDigest     = true;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Keep the previous digest; never surface as a crash.
+            // The 25 s budget above is ours, so even a cancellation is a real failure here.
+            // Staying silent left a cold start pinned on the "AI digest pending…" placeholder
+            // forever, with nothing anywhere telling the user the digest never arrived.
+            var reason = AiFailure.Describe(ex);
+            AiDigestSource = reason;
+            if (!_hasDigest)
+            {
+                AiDigest     = "AI digest unavailable. " + reason;
+                AiDigestBias = "NEUTRAL";
+            }
         }
         finally
         {

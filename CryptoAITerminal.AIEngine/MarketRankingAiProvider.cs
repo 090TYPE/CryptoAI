@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -14,7 +14,8 @@ public sealed class MarketRankingAiProvider
 
     public MarketRankingAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // Only fatal when unbound — a bound terminal has no local key and the server holds it.
+        if (!ChatClient.CanCallModel(apiKey))
             throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
@@ -37,7 +38,7 @@ public sealed class MarketRankingAiProvider
                 "You are a crypto market analyst. From a live scanner snapshot, pick the strongest " +
                 $"trade candidates RIGHT NOW (at most {topN}). Consider momentum (24h change), liquidity " +
                 "(24h volume), RSI extremes (oversold<30 / overbought>70), and tick activity. " +
-                "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
+                "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"opportunities\":[{\"symbol\":string,\"score\":0..100,\"bias\":\"LONG\"|\"SHORT\"|\"WATCH\",\"reason\":string}]}. " +
                 "Higher score = stronger setup. Only include symbols present in the input.",
             userContent: prompt, _http, ct).ConfigureAwait(false);

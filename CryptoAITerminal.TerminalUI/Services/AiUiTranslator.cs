@@ -25,7 +25,9 @@ public static class AiUiTranslator
     public static async Task<IReadOnlyList<string>?> TranslateAsync(
         IReadOnlyList<string> english, CancellationToken ct)
     {
-        if (english.Count == 0 || !AiRuntime.IsConfigured)
+        // AiRuntime.IsConfigured only looks for a local key, which left Russian localization dead
+        // on a server-bound terminal: strings silently stayed English with no explanation.
+        if (english.Count == 0 || !ChatClient.CanCallModel(AiRuntime.ActiveApiKey))
         {
             return null;
         }
@@ -37,7 +39,11 @@ public static class AiUiTranslator
         {
             raw = await ChatClient.CompleteTextAsync(
                 AiRuntime.ActiveApiKey, AiRuntime.ActiveModel,
-                maxTokens: 4000, temperature: 0.0,
+                // 2000, not 4000: the server clamps to AI_MAX_TOKENS_CAP (2048) SILENTLY, and a
+                // truncated JSON array fails the length check below and returns null — i.e. the
+                // whole batch vanishes with no error. Keep the request under the cap and keep
+                // batches small enough to fit.
+                maxTokens: 2000, temperature: 0.0,
                 system: System, userContent: user, ct: ct).ConfigureAwait(false);
         }
         catch

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -16,7 +16,8 @@ public sealed class RuleBuilderAiProvider
 
     public RuleBuilderAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // Only fatal when unbound — a bound terminal has no local key and the server holds it.
+        if (!ChatClient.CanCallModel(apiKey))
             throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
@@ -38,13 +39,13 @@ public sealed class RuleBuilderAiProvider
         var system =
             "You convert a trader's plain-English instruction into ONE automation rule. " +
             "Map each clause onto the allowed enum values EXACTLY (case-sensitive). " +
-            "ConditionType ∈ [" + string.Join(", ", conditionTypes) + "]. " +
-            "ActionType ∈ [" + string.Join(", ", actionTypes) + "]. " +
-            "RuleCooldown ∈ [" + string.Join(", ", cooldowns) + "]. " +
+            "ConditionType в€€ [" + string.Join(", ", conditionTypes) + "]. " +
+            "ActionType в€€ [" + string.Join(", ", actionTypes) + "]. " +
+            "RuleCooldown в€€ [" + string.Join(", ", cooldowns) + "]. " +
             "For each condition: Symbol (e.g. BTCUSDT or ANY), Param1 (period or threshold), " +
             "Param2 (threshold or multiplier). For RSI conditions Param1=period(14), Param2=level. " +
             "For Price24hChange conditions Param1=percent. For actions: Symbol, Amount (USD), Message. " +
-            "Logic ∈ [And, Or]. Reply ONLY with a single compact JSON object — no prose, no markdown. " +
+            "Logic в€€ [And, Or]. Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
             "Schema: {\"name\":string,\"logic\":\"And\"|\"Or\",\"cooldown\":string," +
             "\"conditions\":[{\"type\":string,\"symbol\":string,\"param1\":number,\"param2\":number}]," +
             "\"actions\":[{\"type\":string,\"symbol\":string,\"amount\":number,\"message\":string}]}.";

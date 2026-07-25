@@ -1,11 +1,11 @@
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
-// ── Input context (real, live market data supplied by the caller) ──────────
+// в”Ђв”Ђ Input context (real, live market data supplied by the caller) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
-/// <summary>One live market row the signal engine reasons over. Prices are real —
+/// <summary>One live market row the signal engine reasons over. Prices are real вЂ”
 /// the model is told to use them and never invent numbers.</summary>
 public sealed record AiSignalMarketRow(
     string Sym,        // base asset, e.g. "BTC"
@@ -24,7 +24,7 @@ public sealed record AiSignalDeskContext(
     IReadOnlyList<AiSignalMarketRow> Markets,
     IReadOnlyList<string> DexTrending);
 
-// ── Output DTOs (AI narrative + labels; prices come from context) ──────────
+// в”Ђв”Ђ Output DTOs (AI narrative + labels; prices come from context) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 public sealed record AiDeskRegime(string Label, string Tone, string Summary, string Meta);
 public sealed record AiDeskNewsBullet(string Text, string Tone);
@@ -64,7 +64,8 @@ public sealed class AiSignalDeskProvider
 
     public AiSignalDeskProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // Only fatal when unbound — a bound terminal has no local key and the server holds it.
+        if (!ChatClient.CanCallModel(apiKey))
             throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
@@ -77,11 +78,11 @@ public sealed class AiSignalDeskProvider
 
         var system =
             "You are a professional crypto trading signal engine. You are given a live snapshot of " +
-            "real market data (prices are REAL — never invent or change prices). For EACH listed symbol " +
+            "real market data (prices are REAL вЂ” never invent or change prices). For EACH listed symbol " +
             "produce a trade signal with a direction, a 0..1 confidence and a one-sentence technical reason. " +
             "Also produce an overall market regime, a short news/market digest, a few ranked opportunities, " +
             "a few market-intelligence insights, and a brief trading-journal coach read. " +
-            "Reply ONLY with a single compact JSON object — no prose, no markdown fences. Schema: " +
+            "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown fences. Schema: " +
             "{\"regime\":{\"label\":string,\"tone\":\"bull\"|\"bear\"|\"neutral\",\"summary\":string,\"meta\":string}," +
             "\"news\":{\"bias\":\"BULLISH\"|\"BEARISH\"|\"NEUTRAL\",\"summary\":string,\"bullets\":[{\"text\":string,\"tone\":\"bull\"|\"bear\"|\"warn\"}]}," +
             "\"signals\":[{\"sym\":string,\"dir\":\"BUY\"|\"SELL\"|\"HOLD\",\"conf\":number,\"tf\":string,\"exch\":string,\"reason\":string}]," +
@@ -120,7 +121,7 @@ public sealed class AiSignalDeskProvider
         return sb.ToString();
     }
 
-    // ── Parsing (public so it can be unit-tested without the wire call) ──────
+    // в”Ђв”Ђ Parsing (public so it can be unit-tested without the wire call) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
     public static AiSignalDeskResult? Parse(string text, string source)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
@@ -140,7 +141,7 @@ public sealed class AiSignalDeskProvider
             var root = doc.RootElement;
 
             var signals = ParseSignals(root);
-            if (signals.Count == 0) return null; // nothing usable → let caller fall back
+            if (signals.Count == 0) return null; // nothing usable в†’ let caller fall back
 
             return new AiSignalDeskResult(
                 ParseRegime(root),
@@ -252,7 +253,7 @@ public sealed class AiSignalDeskProvider
             StrList(c, "suggestions"));
     }
 
-    // ── Small helpers ────────────────────────────────────────────────────────
+    // в”Ђв”Ђ Small helpers в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
     private static string Str(JsonElement e, string name, string fallback) =>
         e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String
             ? v.GetString() ?? fallback : fallback;

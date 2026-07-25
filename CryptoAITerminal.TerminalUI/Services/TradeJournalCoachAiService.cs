@@ -20,7 +20,7 @@ public sealed class TradeJournalCoachAiService
     private string? _model;
     public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
 
-    public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
+    public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
     public async Task<JournalReview> ReviewAsync(IReadOnlyList<TradeRecord> trades, CancellationToken ct = default)
     {

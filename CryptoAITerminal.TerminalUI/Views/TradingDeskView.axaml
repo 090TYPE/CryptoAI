@@ -2043,12 +2043,23 @@
                       <Border Grid.Column="0" Background="{Binding DexTradingVM.TokenVerdict.AccentHex}" CornerRadius="4" Padding="8,3" VerticalAlignment="Center">
                         <TextBlock Text="{Binding DexTradingVM.TokenVerdict.Badge}" Foreground="White" FontWeight="Bold" FontSize="12" />
                       </Border>
-                      <TextBlock Grid.Column="1" VerticalAlignment="Center" Classes="TdSub" Text="{Binding DexTradingVM.TokenVerdict.ScoreLabel, StringFormat=risk {0}}" />
+                      <!-- Nested grid so the scanning hint gets its own cell: both are visible at
+                           once (IsScanning is true while the previous verdict still shows), and two
+                           siblings in one cell overlap on a narrow panel instead of sharing it. -->
+                      <Grid Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                        <TextBlock Grid.Column="0" VerticalAlignment="Center" Classes="TdSub" Text="{Binding DexTradingVM.TokenVerdict.ScoreLabel, StringFormat=risk {0}}" />
+                        <TextBlock Grid.Column="1" VerticalAlignment="Center" Classes="TdSub" FontSize="10"
+                                   Text="scanning…" IsVisible="{Binding DexTradingVM.TokenVerdict.IsScanning}" />
+                      </Grid>
                       <Button Grid.Column="2" Content="Deep scan" Classes="TdSeg dex" FontSize="11" Padding="8,3"
                               Command="{Binding DexTradingVM.DeepScanTokenCommand}" IsEnabled="{Binding !DexTradingVM.TokenVerdict.DeepScanBusy}" />
                     </Grid>
                     <TextBlock Text="{Binding DexTradingVM.TokenVerdict.RedFlagsText}" Foreground="#c8dcef" FontSize="11" TextWrapping="Wrap" />
                     <TextBlock Classes="TdSub" Text="{Binding DexTradingVM.TokenVerdict.Reason}" FontSize="11" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding DexTradingVM.TokenVerdict.SourceLabel}" Foreground="{Binding DexTradingVM.TokenVerdict.SourceHex}"
+                               FontSize="9" FontWeight="Bold" IsVisible="{Binding DexTradingVM.TokenVerdict.HasSourceLabel}" />
+                    <TextBlock Text="{Binding DexTradingVM.TokenVerdict.DeepScanNote}" Foreground="#f4b860" FontSize="10" TextWrapping="Wrap"
+                               IsVisible="{Binding DexTradingVM.TokenVerdict.HasDeepScanNote}" />
                   </StackPanel>
                 </Border>
                 <ListBox ItemsSource="{Binding DexTradingVM.Tokens}" SelectedItem="{Binding DexTradingVM.SelectedToken}" MaxHeight="360">

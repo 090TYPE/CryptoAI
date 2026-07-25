@@ -8,10 +8,10 @@ using CryptoAITerminal.AIEngine;
 namespace CryptoAITerminal.TerminalUI.Services;
 
 /// <summary>
-/// Produces a short market-pulse digest from recent headlines. Uses Claude when
-/// an API key is configured, otherwise a deterministic offline summary built
-/// from the keyword-sentiment tallies — so the dashboard always shows something,
-/// including in the demo flow without keys.
+/// Produces a short market-pulse digest from recent headlines. Uses the model whenever
+/// one is reachable (local key, or a bound server that holds the key), otherwise a
+/// deterministic offline summary built from the keyword-sentiment tallies — so the
+/// dashboard always shows something, including in the demo flow without keys.
 /// </summary>
 public sealed class NewsAiSummaryService
 {
@@ -21,7 +21,10 @@ public sealed class NewsAiSummaryService
     private string? _model;
     public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
 
-    public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
+    public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
+
+    /// <summary>User-safe reason the last call fell back to the offline path, or null on success.</summary>
+    public string? LastError { get; private set; }
 
     public async Task<NewsDigest> SummarizeAsync(
         IReadOnlyList<string> headlines,
@@ -30,6 +33,10 @@ public sealed class NewsAiSummaryService
         int neutral,
         CancellationToken ct = default)
     {
+        // Cleared up front so no path — including "no headlines" and "no key" — reports a
+        // failure left over from an earlier call.
+        LastError = null;
+
         if (UsesLiveModel && headlines.Count > 0)
         {
             try
@@ -42,9 +49,10 @@ public sealed class NewsAiSummaryService
             {
                 throw;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Degrade silently to the offline digest.
+                // Degrade to the offline digest, but tell the caller why.
+                LastError = AiFailure.Describe(ex);
             }
         }
 

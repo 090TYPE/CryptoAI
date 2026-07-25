@@ -71,8 +71,12 @@ public sealed class CopilotAgentService
     /// <summary>Model for the active vendor; falls back to <see cref="AiRuntime.ActiveModel"/>.</summary>
     public string Model { get => _model ?? CryptoAITerminal.AIEngine.AiRuntime.ActiveModel; set => _model = value; }
 
-    /// <summary>True when a key is set — the agentic path is used; otherwise the offline assistant.</summary>
-    public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
+    /// <summary>
+    /// True when a real model call is possible — a local key OR a server binding, since a bound
+    /// terminal keeps the key on the server. The agentic path is used then; otherwise the offline
+    /// assistant. Genuinely unbound and keyless still falls through to <see cref="AnswerOfflineAsync"/>.
+    /// </summary>
+    public bool UsesLiveModel => CryptoAITerminal.AIEngine.ChatClient.CanCallModel(ApiKey);
 
     /// <summary>Streams every agent step (thinking, tool call, result) for a live UI log.</summary>
     public event Action<AgentEvent>? OnEvent;

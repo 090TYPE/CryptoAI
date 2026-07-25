@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -15,7 +15,8 @@ public sealed class NewsDigestAiProvider
 
     public NewsDigestAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // Only fatal when unbound — a bound terminal has no local key and the server holds it.
+        if (!ChatClient.CanCallModel(apiKey))
             throw new ArgumentException("AI API key is required.", nameof(apiKey));
         _apiKey = apiKey;
         _model  = string.IsNullOrWhiteSpace(model) ? "claude-sonnet-4-6" : model;
@@ -36,7 +37,7 @@ public sealed class NewsDigestAiProvider
             _apiKey, _model, maxTokens: 256, temperature: 0.3,
             system:
                 "You are a crypto market analyst. Read the headlines and write a concise market-pulse digest. " +
-                "Reply ONLY with a single compact JSON object — no prose, no markdown. " +
+                "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"summary\":string,\"bias\":\"BULLISH\"|\"BEARISH\"|\"NEUTRAL\"}.",
             userContent: prompt, _http, ct).ConfigureAwait(false);
 

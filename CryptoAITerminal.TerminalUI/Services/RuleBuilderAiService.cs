@@ -9,10 +9,10 @@ using CryptoAITerminal.AIEngine;
 namespace CryptoAITerminal.TerminalUI.Services;
 
 /// <summary>
-/// Builds a <see cref="CompositeRule"/> from a natural-language instruction. Claude
-/// maps the full sentence when a key is configured; otherwise a regex offline parser
-/// handles the common patterns (RSI thresholds, 24h moves, close-all, notify) so the
-/// feature still demos without a key.
+/// Builds a <see cref="CompositeRule"/> from a natural-language instruction. The model maps
+/// the full sentence whenever it is reachable (local key, or a server-bound terminal whose
+/// server holds the key); otherwise a regex offline parser handles the common patterns (RSI
+/// thresholds, 24h moves, close-all, notify) so the feature still demos with neither.
 /// </summary>
 public sealed class RuleBuilderAiService
 {
@@ -22,7 +22,7 @@ public sealed class RuleBuilderAiService
     private string? _model;
     public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
 
-    public bool UsesLiveModel => !string.IsNullOrWhiteSpace(ApiKey);
+    public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
     public sealed record Result(CompositeRule? Rule, string Source, bool IsFallback, string Note);
 
