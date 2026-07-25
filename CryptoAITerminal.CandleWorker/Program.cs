@@ -1,5 +1,6 @@
 using CryptoAITerminal.CandleWorker;
 using CryptoAITerminal.CandleWorker.Collectors;
+using CryptoAITerminal.CandleWorker.Sources;
 using CryptoAITerminal.Gateway.DEX;
 using CryptoAITerminal.Server.Data;
 
@@ -47,6 +48,15 @@ builder.Services.AddSingleton(new GeckoTerminalClient());
 builder.Services.AddSingleton(new DexScreenerClient());
 builder.Services.AddSingleton(new TokenSecurityService());
 builder.Services.AddSingleton(new DeployerWalletAnalyzer());
+
+// Candle sources, tried in this order. Free and keyless first, so a paid key is only spent when
+// the free path could not answer — a token GeckoTerminal does not index, a rate-limit, an outage.
+// A keyed source with no key in provider_keys is skipped, so adding a key later needs no redeploy.
+builder.Services.AddSingleton(new HttpClient { Timeout = TimeSpan.FromSeconds(20) });
+builder.Services.AddSingleton<ICandleSource>(sp => new GeckoTerminalCandleSource(sp.GetRequiredService<GeckoTerminalClient>()));
+builder.Services.AddSingleton<ICandleSource>(sp => new CoinGeckoOnchainCandleSource(sp.GetRequiredService<HttpClient>()));
+builder.Services.AddSingleton<ICandleSource>(sp => new BirdeyeCandleSource(sp.GetRequiredService<HttpClient>()));
+builder.Services.AddSingleton<CandleSourceChain>();
 
 // Candle worker (1m OHLCV for favorites)
 builder.Services.AddHostedService<CandlePollingService>();

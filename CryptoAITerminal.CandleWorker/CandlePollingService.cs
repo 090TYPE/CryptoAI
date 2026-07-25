@@ -1,3 +1,4 @@
+using CryptoAITerminal.CandleWorker.Sources;
 using CryptoAITerminal.Gateway.DEX;
 using CryptoAITerminal.Server.Data;
 using Microsoft.Extensions.Configuration;
@@ -15,23 +16,25 @@ public sealed class CandlePollingService : BackgroundService
 {
     private readonly TrackedTokenRepository _tracked;
     private readonly CandleRepository _candles;
-    private readonly GeckoTerminalClient _gecko;
+    private readonly CandleSourceChain _sources;
     private readonly ILogger<CandlePollingService> _log;
     private readonly int _batch;
     private readonly TimeSpan _tick;
     private readonly PollDemand _demand;
+    private readonly int _candleLimit;
 
     public CandlePollingService(
         TrackedTokenRepository tracked,
         CandleRepository candles,
-        GeckoTerminalClient gecko,
+        CandleSourceChain sources,
         IConfiguration cfg,
         ILogger<CandlePollingService> log)
     {
         _tracked = tracked;
         _candles = candles;
-        _gecko = gecko;
+        _sources = sources;
         _log = log;
+        _candleLimit = Cfg(cfg, "POLL_CANDLE_LIMIT", 60);
         _batch = int.TryParse(cfg["POLL_BATCH"], out var b) ? b : 50;
         _tick = TimeSpan.FromSeconds(int.TryParse(cfg["POLL_TICK_SECONDS"], out var t) ? t : 5);
 
@@ -54,6 +57,7 @@ public sealed class CandlePollingService : BackgroundService
             "CandleWorker started (batch={Batch}, tick={Tick}s, demand hot<{Hot}s warm<{Warm}s → {WarmI}s, cold → {ColdI}s)",
             _batch, _tick.TotalSeconds, _demand.HotWindowS, _demand.WarmWindowS,
             _demand.WarmIntervalS, _demand.ColdIntervalS);
+        _log.LogInformation("candle sources: {Order}", _sources.Order);
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -77,40 +81,30 @@ public sealed class CandlePollingService : BackgroundService
         var due = await _tracked.ClaimDueAsync(_batch, _demand, ct);
         foreach (var t in due)
         {
-            if (string.IsNullOrEmpty(t.PoolAddress))
-            {
-                // Pool auto-resolution (DexScreener/GeckoTerminal search) lands in the next increment.
-                _log.LogWarning("no pool for {Chain}/{Token} — skipping", t.Chain, t.TokenAddress);
-                continue;
-            }
+            // No pool guard here any more: the keyed sources key on the token address, so a token
+            // whose primary pool is still unresolved is now served by one of them instead of being
+            // skipped outright as it was when GeckoTerminal was the only source.
+            var fetch = await _sources.FetchAsync(
+                new CandleRequest(t.Chain, t.TokenAddress, t.PoolAddress, _candleLimit), ct);
 
-            var network = ChainMap.ToGeckoNetwork(t.Chain);
-            if (network is null)
+            if (fetch.Rows.Count == 0)
             {
-                _log.LogWarning("unknown chain '{Chain}' — skipping", t.Chain);
-                continue;
-            }
+                // An empty result and a broken provider used to look the same. Say which it was.
+                if (fetch.LastError is not null)
+                    _log.LogWarning("{Chain}/{Token}: no candles — {Error}", t.Chain, t.TokenAddress, fetch.LastError);
 
-            var points = await _gecko.GetPoolOhlcvAsync(network, t.PoolAddress, "minute", aggregate: 1, limit: 60, ct);
-            if (points.Count == 0)
-            {
                 await _tracked.MarkPolledAsync(t.Chain, t.TokenAddress, null, ct);
                 continue;
             }
 
-            var rows = points
-                .Select(p => new CandleRow(
-                    DateTime.SpecifyKind(p.Timestamp.ToUniversalTime(), DateTimeKind.Utc),
-                    p.Open, p.High, p.Low, p.Close, p.Volume))
-                .ToList();
-
+            var rows = fetch.Rows;
             var n = await _candles.UpsertCandlesAsync(t.Chain, t.TokenAddress, rows, ct);
             var last = rows[^1];
             await _candles.UpdateSnapshotAsync(t.Chain, t.TokenAddress, last.C, null, null, null, null, null, ct);
             await _tracked.MarkPolledAsync(t.Chain, t.TokenAddress, last.Ts, ct);
 
-            _log.LogInformation("{Chain}/{Token}: {N} candles (last close={Close})",
-                t.Chain, t.TokenAddress, n, last.C);
+            _log.LogInformation("{Chain}/{Token}: {N} candles from {Source} (last close={Close})",
+                t.Chain, t.TokenAddress, n, fetch.Source, last.C);
         }
 
         var orphans = await _tracked.DeactivateOrphansAsync(ct);
