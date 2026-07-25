@@ -207,6 +207,30 @@
                         <TextBlock Grid.Column="4" Text="{Binding AiStatusText}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="{Binding AiStatusColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
                       </Grid>
                     </Border>
+
+                    <!-- CryptoAI server. Without this the only way to bind a terminal was to create
+                         server_url.txt by hand, so for a customer every server feature stayed off
+                         and looked identical to being broken. -->
+                    <Border BorderBrush="#0a1520" BorderThickness="0,1,0,0" Margin="0,13,0,0" Padding="0,12,0,0">
+                      <StackPanel Spacing="5">
+                        <Grid ColumnDefinitions="Auto,8,Auto">
+                          <TextBlock Grid.Column="0" Text="CRYPTOAI SERVER" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" VerticalAlignment="Center" />
+                          <Border Grid.Column="2" Background="#060d14" BorderBrush="#152233" BorderThickness="1" CornerRadius="8" Padding="8,2">
+                            <TextBlock Text="{Binding ServerBadge}" FontSize="9" FontWeight="Bold"
+                                       Foreground="{Binding ServerStatusColor, Converter={StaticResource StringToBrush}}" />
+                          </Border>
+                        </Grid>
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                          <Border Width="330" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
+                            <TextBox Text="{Binding ServerUrl, Mode=TwoWay}" Watermark="{Binding ServerUrlPlaceholder}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
+                          </Border>
+                          <Button Command="{Binding ServerSaveCommand}" Height="30" BorderBrush="#21e6c1" BorderThickness="1" CornerRadius="6" Background="#0e2a2a" Padding="13,0" Content="CONNECT" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding ServerStatusText}" FontFamily="{StaticResource FontMono}" FontSize="10" TextWrapping="Wrap"
+                                   Foreground="{Binding ServerStatusColor, Converter={StaticResource StringToBrush}}" />
+                        <TextBlock Text="Leave empty to disconnect and run fully locally." FontSize="9" Foreground="#2d4a5e" />
+                      </StackPanel>
+                    </Border>
                   </StackPanel>
                 </Border>
 
