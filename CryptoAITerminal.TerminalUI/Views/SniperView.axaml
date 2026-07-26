@@ -123,15 +123,15 @@
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
           <Button Command="{Binding SniperVM.ToggleArmCommand}"
                   Background="{DynamicResource Surface1}"
-                  BorderBrush="{Binding SniperVM.ArmBorderHex}"
+                  BorderBrush="{Binding SniperVM.ArmBorderHex, Converter={StaticResource StringToBrush}}"
                   BorderThickness="1"
                   CornerRadius="999"
                   Padding="14,6">
             <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
-              <Ellipse Width="7" Height="7" Fill="{Binding SniperVM.ArmDotHex}" VerticalAlignment="Center" />
+              <Ellipse Width="7" Height="7" Fill="{Binding SniperVM.ArmDotHex, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
               <TextBlock Text="{Binding SniperVM.ArmStatusLabel}"
                          FontSize="{DynamicResource FsMicro}" FontWeight="Bold"
-                         Foreground="{Binding SniperVM.ArmDotHex}" VerticalAlignment="Center" />
+                         Foreground="{Binding SniperVM.ArmDotHex, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
           <Border Background="{DynamicResource AccentTint}" CornerRadius="999" Padding="12,6">
@@ -212,7 +212,7 @@
             <StackPanel Spacing="8">
               <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Grid.Column="0" Classes="secLabel" Text="EXECUTION MODE" VerticalAlignment="Center" />
-                <Border Grid.Column="1" Background="{Binding SniperVM.PaperPillHex}" CornerRadius="999" Padding="10,2">
+                <Border Grid.Column="1" Background="{Binding SniperVM.PaperPillHex, Converter={StaticResource StringToBrush}}" CornerRadius="999" Padding="10,2">
                   <TextBlock Text="{Binding SniperVM.PaperPillLabel}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                 </Border>
               </Grid>
@@ -229,7 +229,7 @@
                 <StackPanel Spacing="8" Margin="0,6,0,0">
                   <CheckBox FontSize="{DynamicResource FsCaption}" Content="Stable-first quote routing" IsChecked="{Binding SniperVM.PreferStableQuote}" />
                   <TextBlock Text="{Binding SniperVM.StableQuoteSpendableLabel}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding SniperVM.StableQuoteAvailabilityMessage}" Foreground="{Binding SniperVM.StableQuoteAvailabilityBrush}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding SniperVM.StableQuoteAvailabilityMessage}" Foreground="{Binding SniperVM.StableQuoteAvailabilityBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
                   <TextBlock Text="{Binding SniperVM.QuoteRoutingSummary}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" />
                   <TextBlock Text="{Binding SniperVM.SupportedQuoteRoutesSummary}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" />
                 </StackPanel>
@@ -392,9 +392,9 @@
               <StackPanel Spacing="8">
                 <TextBlock Classes="secLabel" Text="MANUAL SNIPE — CONTRACT ADDRESS" />
                 <TextBox FontSize="{DynamicResource FsCaption}" Text="{Binding SniperVM.ManualSnipeAddress, Mode=TwoWay}" PlaceholderText="0x… or Solana address" />
-                <TextBlock Text="{Binding SniperVM.ManualSnipeInfoLabel}" Foreground="{Binding SniperVM.ManualSnipeInfoBrush}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
+                <TextBlock Text="{Binding SniperVM.ManualSnipeInfoLabel}" Foreground="{Binding SniperVM.ManualSnipeInfoBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
                            IsVisible="{Binding SniperVM.ManualSnipeInfoLabel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                <TextBlock Text="{Binding SniperVM.ManualSnipeQuoteLabel}" Foreground="{Binding SniperVM.ManualSnipeQuoteBrush}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold"
+                <TextBlock Text="{Binding SniperVM.ManualSnipeQuoteLabel}" Foreground="{Binding SniperVM.ManualSnipeQuoteBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold"
                            IsVisible="{Binding SniperVM.ManualSnipeQuoteLabel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 <TextBlock Text="Sell amount" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}" />
                 <NumericUpDown Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.ManualSnipeSellAmount}" Increment="1000" Minimum="0" FormatString="0.########" />
@@ -417,9 +417,9 @@
             </Border>
 
             <!-- Guard status -->
-            <Border Background="{DynamicResource PositiveTint}" BorderBrush="{Binding SniperVM.SniperGuardStatusBrush}" BorderThickness="1" CornerRadius="10" Padding="12,10">
+            <Border Background="{DynamicResource PositiveTint}" BorderBrush="{Binding SniperVM.SniperGuardStatusBrush, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="10" Padding="12,10">
               <StackPanel Spacing="4">
-                <TextBlock Text="{Binding SniperVM.SniperGuardStatusLabel}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{Binding SniperVM.SniperGuardStatusBrush}" />
+                <TextBlock Text="{Binding SniperVM.SniperGuardStatusLabel}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{Binding SniperVM.SniperGuardStatusBrush, Converter={StaticResource StringToBrush}}" />
                 <TextBlock Text="{Binding SniperVM.SniperGuardSummary}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" />
                 <TextBlock Text="{Binding SniperVM.SniperGuardDetail}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
               </StackPanel>
@@ -428,8 +428,8 @@
             <!-- Action row -->
             <StackPanel Spacing="6">
               <Button Content="{Binding SniperVM.ArmToggleLabel}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                      Background="{Binding SniperVM.ArmFillHex}" Foreground="{Binding SniperVM.ArmTextHex}"
-                      BorderBrush="{Binding SniperVM.ArmBorderHex}" BorderThickness="1" CornerRadius="8"
+                      Background="{Binding SniperVM.ArmFillHex, Converter={StaticResource StringToBrush}}" Foreground="{Binding SniperVM.ArmTextHex, Converter={StaticResource StringToBrush}}"
+                      BorderBrush="{Binding SniperVM.ArmBorderHex, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="8"
                       FontSize="{DynamicResource FsSmall}" FontWeight="Bold" Padding="0,10"
                       Command="{Binding SniperVM.ToggleArmCommand}" />
               <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
@@ -593,9 +593,9 @@
                                   Command="{Binding $parent[Window].DataContext.DexTrendingVM.OpenInSniperCommand}" CommandParameter="{Binding}" />
                           <Grid Grid.Column="10" ColumnDefinitions="44,*" VerticalAlignment="Center">
                             <Border Grid.Column="0" Height="5" CornerRadius="3" Background="{DynamicResource PanelStroke}" ClipToBounds="True" VerticalAlignment="Center">
-                              <Border HorizontalAlignment="Left" CornerRadius="3" Background="{Binding ScoreColorHex}" Width="{Binding ScoreBarWidth}" />
+                              <Border HorizontalAlignment="Left" CornerRadius="3" Background="{Binding ScoreColorHex, Converter={StaticResource StringToBrush}}" Width="{Binding ScoreBarWidth}" />
                             </Border>
-                            <TextBlock Grid.Column="1" Margin="6,0,0,0" Text="{Binding SecurityScore}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{Binding ScoreColorHex}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Margin="6,0,0,0" Text="{Binding SecurityScore}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{Binding ScoreColorHex, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
                           </Grid>
                         </Grid>
                       </Border>
@@ -619,15 +619,15 @@
                     <StackPanel Spacing="8">
                       <Grid ColumnDefinitions="*,Auto">
                         <TextBlock Grid.Column="0" Text="{Binding DisplayName}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
-                        <TextBlock Grid.Column="1" Text="{Binding PaperPnlLabel}" FontFamily="Consolas, monospace" FontSize="{DynamicResource FsSmall}" FontWeight="Bold" Foreground="{Binding PnlAccentHex}" />
+                        <TextBlock Grid.Column="1" Text="{Binding PaperPnlLabel}" FontFamily="Consolas, monospace" FontSize="{DynamicResource FsSmall}" FontWeight="Bold" Foreground="{Binding PnlAccentHex, Converter={StaticResource StringToBrush}}" />
                       </Grid>
                       <TextBlock Text="{Binding PairLabel}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}" />
                       <WrapPanel Orientation="Horizontal">
-                        <TextBlock Text="{Binding RiskBadgeText}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{Binding RiskAccentHex}" Margin="0,0,10,0" />
+                        <TextBlock Text="{Binding RiskBadgeText}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{Binding RiskAccentHex, Converter={StaticResource StringToBrush}}" Margin="0,0,10,0" />
                         <TextBlock Text="{Binding Reason}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" MaxWidth="520" />
                       </WrapPanel>
                       <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding SecurityScanComplete}">
-                        <Border Background="{Binding SecurityVerdictColor}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                        <Border Background="{Binding SecurityVerdictColor, Converter={StaticResource StringToBrush}}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
                           <TextBlock Text="{Binding SecurityVerdict}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="White" />
                         </Border>
                         <TextBlock Text="{Binding SecurityChecksSummary}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="480" />
@@ -738,7 +738,7 @@
                 <StackPanel Spacing="6">
                   <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.DetailPriceLabel}" FontFamily="Consolas, monospace" FontSize="{DynamicResource FsH2}" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
                   <StackPanel Orientation="Horizontal" Spacing="6">
-                    <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.DetailChangeLabel}" FontFamily="Consolas, monospace" FontSize="{DynamicResource FsSmall}" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.DetailChangeHex}" />
+                    <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.DetailChangeLabel}" FontFamily="Consolas, monospace" FontSize="{DynamicResource FsSmall}" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.DetailChangeHex, Converter={StaticResource StringToBrush}}" />
                     <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.MarketTickLabel}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                   </StackPanel>
                 </StackPanel>
@@ -747,10 +747,10 @@
               <!-- Stat grid -->
               <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="10">
                 <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource Surface1}" CornerRadius="9" Padding="10">
-                  <StackPanel Spacing="3"><TextBlock Text="RISK SCORE" Classes="secLabel" /><TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.RiskScoreLabel}" FontFamily="Consolas, monospace" FontSize="{DynamicResource FsBody}" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.RiskAccentHex}" /></StackPanel>
+                  <StackPanel Spacing="3"><TextBlock Text="RISK SCORE" Classes="secLabel" /><TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.RiskScoreLabel}" FontFamily="Consolas, monospace" FontSize="{DynamicResource FsBody}" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.RiskAccentHex, Converter={StaticResource StringToBrush}}" /></StackPanel>
                 </Border>
                 <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource Surface1}" CornerRadius="9" Padding="10">
-                  <StackPanel Spacing="3"><TextBlock Text="SECURITY" Classes="secLabel" /><TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.SecurityVerdict}" FontFamily="Consolas, monospace" FontSize="{DynamicResource FsBody}" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.SecurityVerdictColor}" /></StackPanel>
+                  <StackPanel Spacing="3"><TextBlock Text="SECURITY" Classes="secLabel" /><TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.SecurityVerdict}" FontFamily="Consolas, monospace" FontSize="{DynamicResource FsBody}" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.SecurityVerdictColor, Converter={StaticResource StringToBrush}}" /></StackPanel>
                 </Border>
                 <Border Grid.Row="1" Grid.Column="0" Background="{DynamicResource Surface1}" CornerRadius="9" Padding="10">
                   <StackPanel Spacing="3"><TextBlock Text="LIQUIDITY" Classes="secLabel" /><TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.LiquidityLabel}" FontFamily="Consolas, monospace" FontSize="{DynamicResource FsBody}" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" /></StackPanel>
@@ -771,7 +771,7 @@
                 <StackPanel Spacing="6">
                   <TextBlock Text="MICRO TREND" Classes="secLabel" />
                   <Viewbox Height="90" Stretch="Fill" HorizontalAlignment="Stretch">
-                    <Polyline Points="{Binding SniperVM.SelectedSniperCandidate.MicroTrendPoints}" Stroke="{Binding SniperVM.SelectedSniperCandidate.DetailChangeHex}" StrokeThickness="1.6" />
+                    <Polyline Points="{Binding SniperVM.SelectedSniperCandidate.MicroTrendPoints}" Stroke="{Binding SniperVM.SelectedSniperCandidate.DetailChangeHex, Converter={StaticResource StringToBrush}}" StrokeThickness="1.6" />
                   </Viewbox>
                 </StackPanel>
               </Border>
@@ -780,10 +780,10 @@
               <Border Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1" CornerRadius="10" Padding="10,10">
                 <StackPanel Spacing="6">
                   <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
-                    <Border Grid.Column="0" Background="{Binding SniperVM.SelectedSniperCandidate.SecurityVerdictColor}" CornerRadius="4" Padding="8,2" VerticalAlignment="Center">
+                    <Border Grid.Column="0" Background="{Binding SniperVM.SelectedSniperCandidate.SecurityVerdictColor, Converter={StaticResource StringToBrush}}" CornerRadius="4" Padding="8,2" VerticalAlignment="Center">
                       <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.SecurityVerdict}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="White" />
                     </Border>
-                    <TextBlock Grid.Column="1" Text="{Binding SniperVM.SelectedSniperCandidate.SecurityScoreLabel}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.SecurityVerdictColor}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{Binding SniperVM.SelectedSniperCandidate.SecurityScoreLabel}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.SecurityVerdictColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
                     <TextBlock Grid.Column="3" Text="GoPlus + RugCheck" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                   </Grid>
                   <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.SecurityChecksSummary}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
@@ -793,11 +793,11 @@
               <!-- AI verdict -->
               <Border Background="{DynamicResource PositiveTint}" BorderBrush="#1F5C4A" BorderThickness="1" CornerRadius="12" Padding="12,12">
                 <StackPanel Orientation="Horizontal" Spacing="10">
-                  <Ellipse Width="8" Height="8" Fill="{Binding SniperVM.SelectedSniperCandidate.AiAccentHex}" VerticalAlignment="Top" Margin="0,4,0,0" />
+                  <Ellipse Width="8" Height="8" Fill="{Binding SniperVM.SelectedSniperCandidate.AiAccentHex, Converter={StaticResource StringToBrush}}" VerticalAlignment="Top" Margin="0,4,0,0" />
                   <StackPanel Spacing="4">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <TextBlock Text="AI SIGNAL" Classes="secLabel" VerticalAlignment="Center" />
-                      <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.AiVerdictLabel}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.AiAccentHex}" />
+                      <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.AiVerdictLabel}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.AiAccentHex, Converter={StaticResource StringToBrush}}" />
                     </StackPanel>
                     <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.AiReason}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" MaxWidth="320" />
                   </StackPanel>
@@ -808,7 +808,7 @@
               <Border Background="{DynamicResource Surface1}" CornerRadius="10" Padding="10,10">
                 <StackPanel Spacing="4">
                   <TextBlock Text="STRUCTURE GUARD" Classes="secLabel" />
-                  <TextBlock Text="{Binding SniperVM.LatestStructureVerdict}" FontSize="{DynamicResource FsSmall}" FontWeight="Bold" Foreground="{Binding SniperVM.LatestStructureAccentHex}" />
+                  <TextBlock Text="{Binding SniperVM.LatestStructureVerdict}" FontSize="{DynamicResource FsSmall}" FontWeight="Bold" Foreground="{Binding SniperVM.LatestStructureAccentHex, Converter={StaticResource StringToBrush}}" />
                   <TextBlock Text="{Binding SniperVM.LatestStructureNarrative}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
@@ -855,10 +855,10 @@
                       <TextBlock Text="{Binding SniperVM.RemainingSessionBuys, StringFormat=Remaining buys: {0}}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextMuted}" />
                     </StackPanel>
                   </Border>
-                  <Border Background="{DynamicResource Surface1}" CornerRadius="9" Padding="10" BorderBrush="{Binding SniperVM.LatestRiskAccentHex}" BorderThickness="1">
+                  <Border Background="{DynamicResource Surface1}" CornerRadius="9" Padding="10" BorderBrush="{Binding SniperVM.LatestRiskAccentHex, Converter={StaticResource StringToBrush}}" BorderThickness="1">
                     <StackPanel Spacing="4">
                       <TextBlock Text="RISK VERDICT" Classes="secLabel" />
-                      <TextBlock Text="{Binding SniperVM.LatestRiskVerdictTitle}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" Foreground="{Binding SniperVM.LatestRiskAccentHex}" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding SniperVM.LatestRiskVerdictTitle}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" Foreground="{Binding SniperVM.LatestRiskAccentHex, Converter={StaticResource StringToBrush}}" TextWrapping="Wrap" />
                       <TextBlock Text="{Binding SniperVM.LatestRiskNarrative}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
                     </StackPanel>
                   </Border>

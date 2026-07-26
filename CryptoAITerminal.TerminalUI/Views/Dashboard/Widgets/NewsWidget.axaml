@@ -10,11 +10,11 @@
     <Border Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1"
             CornerRadius="6" Padding="10,8">
       <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
-        <Border Grid.Column="0" Background="{Binding NewsFeedVM.PulseBrush}" CornerRadius="3" Padding="6,2">
+        <Border Grid.Column="0" Background="{Binding NewsFeedVM.PulseBrush, Converter={StaticResource StringToBrush}}" CornerRadius="3" Padding="6,2">
           <TextBlock Text="{Binding NewsFeedVM.PulseLabel}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
         </Border>
         <TextBlock Grid.Column="1" Text="{Binding NewsFeedVM.AiDigest}"
-                   Foreground="{Binding NewsFeedVM.AiDigestBrush}"
+                   Foreground="{Binding NewsFeedVM.AiDigestBrush, Converter={StaticResource StringToBrush}}"
                    FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" Margin="8,0,0,0" MaxLines="2" />
         <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="Refreshing AI digest…"
                    IsVisible="{Binding NewsFeedVM.AiDigestRunning}"
@@ -46,7 +46,7 @@
       <ItemsControl ItemsSource="{Binding NewsFeedVM.Rows}">
         <ItemsControl.ItemTemplate>
           <DataTemplate DataType="{x:Type vm:NewsItemRowVM}">
-            <Border Background="{Binding SentimentBackground}"
+            <Border Background="{Binding SentimentBackground, Converter={StaticResource StringToBrush}}"
                     CornerRadius="3" Padding="8,4" Margin="0,1"
                     BorderBrush="{DynamicResource PanelStroke}" BorderThickness="0,0,0,1">
               <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
@@ -56,7 +56,7 @@
                     <SolidColorBrush Color="{Binding SentimentBrush}" Opacity="0.15" />
                   </Border.Background>
                   <TextBlock Text="{Binding SentimentLabel}"
-                             Foreground="{Binding SentimentBrush}"
+                             Foreground="{Binding SentimentBrush, Converter={StaticResource StringToBrush}}"
                              FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                 </Border>
                 <!-- Title + meta -->
@@ -71,7 +71,7 @@
                 </StackPanel>
                 <!-- Votes -->
                 <TextBlock Grid.Column="2" Text="{Binding VotesLabel}"
-                           Foreground="{Binding VotesBrush}"
+                           Foreground="{Binding VotesBrush, Converter={StaticResource StringToBrush}}"
                            FontSize="{DynamicResource FsMicro}" FontWeight="Bold"
                            VerticalAlignment="Top" Margin="0,1,0,0" />
               </Grid>

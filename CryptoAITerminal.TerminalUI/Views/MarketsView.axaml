@@ -187,10 +187,10 @@
                 <TextBlock Text="{Binding Label}" Classes="cap" FontSize="{DynamicResource FsMicro}" />
                 <TextBlock Text="{Binding Value}" Classes="mono"
                            FontSize="{DynamicResource FsBody}" FontWeight="Bold"
-                           Foreground="{Binding ValueBrush}" />
+                           Foreground="{Binding ValueBrush, Converter={StaticResource StringToBrush}}" />
                 <TextBlock Text="{Binding Delta}" Classes="mono"
                            FontSize="{DynamicResource FsMicro}" FontWeight="SemiBold"
-                           Foreground="{Binding DeltaBrush}"
+                           Foreground="{Binding DeltaBrush, Converter={StaticResource StringToBrush}}"
                            IsVisible="{Binding HasDelta}" />
               </StackPanel>
             </DataTemplate>
@@ -428,7 +428,7 @@
                     <!-- favourite -->
                     <Button Grid.Column="0" Classes="star"
                             Content="{Binding FavoriteStar}"
-                            Foreground="{Binding FavoriteStarBrush}"
+                            Foreground="{Binding FavoriteStarBrush, Converter={StaticResource StringToBrush}}"
                             HorizontalAlignment="Left"
                             Command="{Binding $parent[Window].DataContext.ToggleMarketFavoriteCommand}"
                             CommandParameter="{Binding .}" />
@@ -437,10 +437,10 @@
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="9"
                                 VerticalAlignment="Center">
                       <Border Width="28" Height="28" CornerRadius="8"
-                              Background="{Binding RowIconBackground}"
+                              Background="{Binding RowIconBackground, Converter={StaticResource StringToBrush}}"
                               VerticalAlignment="Center">
                         <TextBlock Text="{Binding IconText}"
-                                   Foreground="{Binding RowIconForeground}"
+                                   Foreground="{Binding RowIconForeground, Converter={StaticResource StringToBrush}}"
                                    FontSize="{DynamicResource FsMicro}" FontWeight="Bold"
                                    HorizontalAlignment="Center" VerticalAlignment="Center" />
                       </Border>
@@ -448,10 +448,10 @@
                         <TextBlock Text="{Binding BaseAssetSymbol}" FontSize="{DynamicResource FsSmall}"
                                    FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" />
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                          <Border Background="{Binding VenueBadgeBackground}"
+                          <Border Background="{Binding VenueBadgeBackground, Converter={StaticResource StringToBrush}}"
                                   CornerRadius="3" Padding="4,1">
                             <TextBlock Text="{Binding VenueBadge}"
-                                       Foreground="{Binding VenueBadgeForeground}"
+                                       Foreground="{Binding VenueBadgeForeground, Converter={StaticResource StringToBrush}}"
                                        FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                           </Border>
                           <TextBlock Text="{Binding QuoteBadge}" FontSize="{DynamicResource FsMicro}"
@@ -468,11 +468,11 @@
 
                     <!-- 24h % pill -->
                     <Border Grid.Column="3" HorizontalAlignment="Right" VerticalAlignment="Center"
-                            Background="{Binding ChangePillBackground}"
+                            Background="{Binding ChangePillBackground, Converter={StaticResource StringToBrush}}"
                             CornerRadius="5" Padding="6,2">
                       <TextBlock Text="{Binding ChangePercentLabel}" Classes="mono"
                                  FontSize="{DynamicResource FsCaption}" FontWeight="Bold"
-                                 Foreground="{Binding ChangePillForeground}" />
+                                 Foreground="{Binding ChangePillForeground, Converter={StaticResource StringToBrush}}" />
                     </Border>
 
                     <!-- volume -->
@@ -490,7 +490,7 @@
                              HorizontalAlignment="Center" VerticalAlignment="Center"
                              Stretch="None" IsVisible="{Binding ShowSparkline}">
                       <Polyline Points="{Binding SparklinePoints}"
-                                Stroke="{Binding SparklineBrush}"
+                                Stroke="{Binding SparklineBrush, Converter={StaticResource StringToBrush}}"
                                 StrokeThickness="1.4"
                                 StrokeLineCap="Round" StrokeJoin="Round" />
                     </Viewbox>
@@ -516,8 +516,8 @@
             <!-- header -->
             <Grid ColumnDefinitions="Auto,*,Auto">
               <Border Grid.Column="0" Width="38" Height="38" CornerRadius="10"
-                      Background="{Binding RowIconBackground}" VerticalAlignment="Center">
-                <TextBlock Text="{Binding IconText}" Foreground="{Binding RowIconForeground}"
+                      Background="{Binding RowIconBackground, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center">
+                <TextBlock Text="{Binding IconText}" Foreground="{Binding RowIconForeground, Converter={StaticResource StringToBrush}}"
                            FontSize="{DynamicResource FsSmall}" FontWeight="Bold"
                            HorizontalAlignment="Center" VerticalAlignment="Center" />
               </Border>
@@ -532,7 +532,7 @@
               </StackPanel>
               <Button Grid.Column="2" Content="☆ Save"
                       Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1"
-                      Foreground="{Binding FavoriteBrush}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold"
+                      Foreground="{Binding FavoriteBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold"
                       Padding="10,6" CornerRadius="7" MinHeight="0"
                       VerticalAlignment="Center"
                       Command="{Binding $parent[Window].DataContext.ToggleMarketFavoriteCommand}"
@@ -547,7 +547,7 @@
                 <StackPanel Orientation="Horizontal" Spacing="6">
                   <TextBlock Text="{Binding ChangePercentLabel}" Classes="mono"
                              FontSize="{DynamicResource FsBody}" FontWeight="Bold"
-                             Foreground="{Binding ChangePillForeground}" />
+                             Foreground="{Binding ChangePillForeground, Converter={StaticResource StringToBrush}}" />
                   <TextBlock Text="· 24h · Updated" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}"
                              VerticalAlignment="Center" />
                   <TextBlock Text="{Binding UpdatedLabel}" Classes="mono" FontSize="{DynamicResource FsCaption}"
@@ -700,17 +700,17 @@
             </Grid>
 
             <!-- momentum signal (local change/activity heuristic — no AI involved) -->
-            <Border Background="{Binding AiSignalCardBackground}"
-                    BorderBrush="{Binding AiSignalCardBorder}" BorderThickness="1"
+            <Border Background="{Binding AiSignalCardBackground, Converter={StaticResource StringToBrush}}"
+                    BorderBrush="{Binding AiSignalCardBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1"
                     CornerRadius="12" Padding="12,14">
               <StackPanel Orientation="Horizontal" Spacing="12">
-                <Ellipse Width="8" Height="8" Fill="{Binding AiSignalForeground}"
+                <Ellipse Width="8" Height="8" Fill="{Binding AiSignalForeground, Converter={StaticResource StringToBrush}}"
                          VerticalAlignment="Top" Margin="0,4,0,0" />
                 <StackPanel Spacing="4">
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock Text="MOMENTUM SIGNAL" Classes="cap" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding AiSignalLabel}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"
-                               Foreground="{Binding AiSignalForeground}" />
+                               Foreground="{Binding AiSignalForeground, Converter={StaticResource StringToBrush}}" />
                   </StackPanel>
                   <TextBlock Text="{Binding AiSignalDetail}" FontSize="{DynamicResource FsCaption}"
                              Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" MaxWidth="260" />

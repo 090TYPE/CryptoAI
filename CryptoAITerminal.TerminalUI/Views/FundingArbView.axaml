@@ -144,7 +144,7 @@
                                 </Border.Background>
                                 <TextBlock Text="{Binding Exchange}"
                                            FontSize="{DynamicResource FsMicro}" FontWeight="Bold"
-                                           Foreground="{Binding ExchangeBadgeColor}" />
+                                           Foreground="{Binding ExchangeBadgeColor, Converter={StaticResource StringToBrush}}" />
                               </Border>
                               <!-- Symbol -->
                               <TextBlock Grid.Column="1" Text="{Binding Symbol}"

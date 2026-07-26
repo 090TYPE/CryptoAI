@@ -37,7 +37,7 @@ public sealed class TapeRowVM
         ? $"{w[..6]}…{w[^4..]}"
         : Trade.Trader ?? "—";
 
-    public string SideBrush  => Trade.Side == "SELL" ? SemanticColor.Negative : SemanticColor.Positive;
+    public string SideBrush  => Trade.Side == "SELL" ? SemanticColor.Keys.Negative : SemanticColor.Keys.Positive;
     public string RowBrush   => IsLarge ? "#1A2A3A" : "Transparent";
     public string Weight     => IsLarge ? "Bold" : "Normal";
 }

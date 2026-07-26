@@ -83,14 +83,14 @@
               <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                 <TextBlock Text="{Binding Coin}" Foreground="{DynamicResource TextPrimary}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
                 <Border Background="#0d1b12" CornerRadius="3" Padding="4,0">
-                  <TextBlock Text="{Binding Side}" Foreground="{Binding SideBrush}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                  <TextBlock Text="{Binding Side}" Foreground="{Binding SideBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                 </Border>
                 <TextBlock Text="{Binding LeverageLabel}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
               </StackPanel>
               <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding SizeLabel}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" VerticalAlignment="Center" />
               <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding EntryLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" VerticalAlignment="Center" />
               <TextBlock Grid.Column="3" Classes="TdNum" Text="{Binding LiqLabel}" Foreground="#ff9f45" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" VerticalAlignment="Center" />
-              <TextBlock Grid.Column="4" Classes="TdNum" Text="{Binding PnlLabel}" Foreground="{Binding PnlBrush}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="4" Classes="TdNum" Text="{Binding PnlLabel}" Foreground="{Binding PnlBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" VerticalAlignment="Center" />
             </Grid>
           </Border>
         </DataTemplate>

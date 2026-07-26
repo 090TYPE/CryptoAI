@@ -34,7 +34,7 @@
                 </Grid>
                 <StackPanel Spacing="5" IsVisible="{Binding OnChainVM.HasInsight}">
                   <TextBlock Text="{Binding OnChainVM.InsightSignal}"
-                             Foreground="{Binding OnChainVM.InsightSignalBrush}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
+                             Foreground="{Binding OnChainVM.InsightSignalBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
                   <TextBlock Text="{Binding OnChainVM.InsightSummary}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
                   <TextBlock Text="{Binding OnChainVM.InsightBullets}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
                              IsVisible="{Binding OnChainVM.InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
@@ -61,11 +61,11 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="10">
                       <TextBlock Text="{Binding OnChainVM.BtcMvrvLabel}"
-                                 Foreground="{Binding OnChainVM.BtcMvrvColor}"
+                                 Foreground="{Binding OnChainVM.BtcMvrvColor, Converter={StaticResource StringToBrush}}"
                                  FontSize="{DynamicResource FsH2}" FontWeight="Bold" />
                       <Border Background="{DynamicResource Surface1}" CornerRadius="3" Padding="6,2" VerticalAlignment="Center">
                         <TextBlock Text="{Binding OnChainVM.BtcMvrvPhase}"
-                                   Foreground="{Binding OnChainVM.BtcMvrvColor}"
+                                   Foreground="{Binding OnChainVM.BtcMvrvColor, Converter={StaticResource StringToBrush}}"
                                    FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
                       </Border>
                     </StackPanel>
@@ -89,11 +89,11 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="10">
                       <TextBlock Text="{Binding OnChainVM.BtcNuplLabel}"
-                                 Foreground="{Binding OnChainVM.BtcNuplColor}"
+                                 Foreground="{Binding OnChainVM.BtcNuplColor, Converter={StaticResource StringToBrush}}"
                                  FontSize="{DynamicResource FsH2}" FontWeight="Bold" />
                       <Border Background="{DynamicResource Surface1}" CornerRadius="3" Padding="6,2" VerticalAlignment="Center">
                         <TextBlock Text="{Binding OnChainVM.BtcNuplPhase}"
-                                   Foreground="{Binding OnChainVM.BtcNuplColor}"
+                                   Foreground="{Binding OnChainVM.BtcNuplColor, Converter={StaticResource StringToBrush}}"
                                    FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
                       </Border>
                     </StackPanel>
@@ -113,7 +113,7 @@
                   <StackPanel Spacing="4">
                     <TextBlock Text="Exchange Net Flow" Classes="Overline" />
                     <TextBlock Text="{Binding OnChainVM.BtcNetFlowLabel}"
-                               Foreground="{Binding OnChainVM.BtcNetFlowColor}"
+                               Foreground="{Binding OnChainVM.BtcNetFlowColor, Converter={StaticResource StringToBrush}}"
                                FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" />
                     <TextBlock Text="positive = coins flowing IN (sell pressure) · negative = flowing OUT (accumulation)"
                                Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
@@ -143,7 +143,7 @@
                   <StackPanel Spacing="4">
                     <TextBlock Text="MVRV Ratio" Classes="Overline" />
                     <TextBlock Text="{Binding OnChainVM.EthMvrvLabel}"
-                               Foreground="{Binding OnChainVM.EthMvrvColor}"
+                               Foreground="{Binding OnChainVM.EthMvrvColor, Converter={StaticResource StringToBrush}}"
                                FontSize="{DynamicResource FsH2}" FontWeight="Bold" />
                   </StackPanel>
 
@@ -151,7 +151,7 @@
                   <StackPanel Spacing="4">
                     <TextBlock Text="Exchange Net Flow" Classes="Overline" />
                     <TextBlock Text="{Binding OnChainVM.EthNetFlowLabel}"
-                               Foreground="{Binding OnChainVM.EthNetFlowColor}"
+                               Foreground="{Binding OnChainVM.EthNetFlowColor, Converter={StaticResource StringToBrush}}"
                                FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" />
                   </StackPanel>
 

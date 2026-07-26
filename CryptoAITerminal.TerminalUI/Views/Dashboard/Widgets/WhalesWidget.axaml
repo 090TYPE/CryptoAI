@@ -50,11 +50,11 @@
               <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
                 <!-- Chain badge -->
                 <Border Grid.Column="0" CornerRadius="3" Padding="4,1" Background="{DynamicResource Surface3}" VerticalAlignment="Center">
-                  <TextBlock Text="{Binding ChainBadge}" Foreground="{Binding ChainBrush}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                  <TextBlock Text="{Binding ChainBadge}" Foreground="{Binding ChainBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                 </Border>
                 <!-- Alert type -->
                 <Border Grid.Column="1" CornerRadius="3" Padding="4,1" Background="{DynamicResource Surface3}" VerticalAlignment="Center">
-                  <TextBlock Text="{Binding AlertBadge}" Foreground="{Binding AlertBrush}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                  <TextBlock Text="{Binding AlertBadge}" Foreground="{Binding AlertBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                 </Border>
                 <!-- Amount + description -->
                 <StackPanel Grid.Column="2" Spacing="1" VerticalAlignment="Center">

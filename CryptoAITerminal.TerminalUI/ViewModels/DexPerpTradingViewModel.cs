@@ -486,10 +486,10 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
     public string EquityCurvePoints => BuildEquityCurve();
     public string EquityLabel => $"{_engine.AccountEquity:N2} USDT";
     public string RealizedPnlLabel => $"{_engine.RealizedPnl:+0.00;-0.00;0.00} USDT";
-    public string RealizedPnlBrush => _engine.RealizedPnl >= 0m ? SemanticColor.Positive : SemanticColor.Negative;
+    public string RealizedPnlBrush => _engine.RealizedPnl >= 0m ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
 
     public string PositionSideLabel => _engine.Position?.Side.ToString().ToUpperInvariant() ?? "FLAT";
-    public string PositionSideBrush => _engine.Position is null ? "#5a7a94" : _engine.Position.Side == PerpSide.Long ? SemanticColor.Positive : SemanticColor.Negative;
+    public string PositionSideBrush => _engine.Position is null ? "#5a7a94" : _engine.Position.Side == PerpSide.Long ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
     public string PositionSizeLabel => _engine.Position is null ? "--" : $"{_engine.Position.Size:0.####}";
     public string EntryLabel => _engine.Position is null ? "--" : Format(_engine.Position.EntryPrice);
     public string LiquidationLabel => _engine.Position is null ? "--" : Format(_engine.Position.LiquidationPrice);
@@ -656,14 +656,14 @@ public sealed class DexPerpPositionRowViewModel : ReactiveObject
     {
         Symbol = symbol;
         SideLabel = p.Side.ToString().ToUpperInvariant();
-        SideBrush = p.Side == PerpSide.Long ? SemanticColor.Positive : SemanticColor.Negative;
+        SideBrush = p.Side == PerpSide.Long ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
         SizeLabel = p.Size.ToString("0.####", CultureInfo.InvariantCulture);
         EntryLabel = DexPerpFormat.Price(p.EntryPrice);
         MarkLabel = DexPerpFormat.Price(p.MarkPrice);
         LiqLabel = DexPerpFormat.Price(p.LiquidationPrice);
         MarginLabel = p.Margin.ToString("N2", CultureInfo.InvariantCulture);
         UpnlLabel = p.UnrealizedPnl.ToString("+0.00;-0.00;0.00", CultureInfo.InvariantCulture);
-        UpnlBrush = p.UnrealizedPnl >= 0m ? SemanticColor.Positive : SemanticColor.Negative;
+        UpnlBrush = p.UnrealizedPnl >= 0m ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
         RoeLabel = (p.Roe * 100m).ToString("+0.0;-0.0;0.0", CultureInfo.InvariantCulture) + "%";
         LeverageLabel = $"{p.Leverage}× {p.MarginMode.ToString().ToUpperInvariant()}";
     }
@@ -688,7 +688,7 @@ public sealed class DexPerpOrderRowViewModel : ReactiveObject
     {
         Id = o.Id;
         SideLabel = o.Side.ToString().ToUpperInvariant();
-        SideBrush = o.Side == PerpSide.Long ? SemanticColor.Positive : SemanticColor.Negative;
+        SideBrush = o.Side == PerpSide.Long ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
         TypeLabel = o.PlanId is null ? o.Kind.ToString().ToUpperInvariant()
             : o.PlanId.StartsWith("GRID", StringComparison.OrdinalIgnoreCase) ? "GRID"
             : o.PlanId.StartsWith("DCA", StringComparison.OrdinalIgnoreCase) ? "DCA"
@@ -712,7 +712,7 @@ public sealed class DexPerpFillRowViewModel : ReactiveObject
     public DexPerpFillRowViewModel(DexPerpFill f)
     {
         SideLabel = f.Side.ToString().ToUpperInvariant();
-        SideBrush = f.Side == PerpSide.Long ? SemanticColor.Positive : SemanticColor.Negative;
+        SideBrush = f.Side == PerpSide.Long ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
         KindLabel = f.Kind;
         KindBrush = f.Kind switch { "LIQ" => SemanticColor.Negative, "CLOSE" => SemanticColor.Warning, _ => SemanticColor.Muted };
         PriceLabel = DexPerpFormat.Price(f.Price);

@@ -71,10 +71,10 @@
                            Foreground="{DynamicResource TextSecondary}" FontWeight="SemiBold" FontSize="{DynamicResource FsCaption}"
                            VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="{Binding FundingRatePct}" TextTrimming="CharacterEllipsis"
-                           Foreground="{Binding RateColor}" FontWeight="Bold"
+                           Foreground="{Binding RateColor, Converter={StaticResource StringToBrush}}" FontWeight="Bold"
                            HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="{DynamicResource FsCaption}" />
                 <TextBlock Grid.Column="2" Text="{Binding AnnualizedLabel}" TextTrimming="CharacterEllipsis"
-                           Foreground="{Binding RateColor}"
+                           Foreground="{Binding RateColor, Converter={StaticResource StringToBrush}}"
                            HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="{DynamicResource FsMicro}" />
                 <TextBlock Grid.Column="3" Text="{Binding MarkPriceLabel}" TextTrimming="CharacterEllipsis"
                            Foreground="{DynamicResource TextMuted}"

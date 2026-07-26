@@ -59,7 +59,7 @@ public sealed class UnifiedPositionRowVM : ReactiveObject
     }
 
     // ── Computed display labels ───────────────────────────────────────────────
-    public string SideBrush       => Side == "Short" ? SemanticColor.Negative : SemanticColor.Positive;
+    public string SideBrush       => Side == "Short" ? SemanticColor.Keys.Negative : SemanticColor.Keys.Positive;
     // Цвета бирж — часть их бренда, а не палитры приложения: остаются литералами.
     public string ExchangeBrush   => Exchange switch
     {
@@ -76,7 +76,7 @@ public sealed class UnifiedPositionRowVM : ReactiveObject
     public string LiqLabel        => LiquidationPrice > 0 ? $"{LiquidationPrice:N2}" : "–";
     public string NotionalLabel   => $"{Size * EntryPrice:N0} USDT";
     public string PnlLabel        => $"{_unrealizedPnl:+#,##0.00;-#,##0.00;0.00} ({_pnlPct:+0.##;-0.##;0}%)";
-    public string PnlBrush        => _unrealizedPnl >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
+    public string PnlBrush        => _unrealizedPnl >= 0 ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
 
     public UnifiedPositionRowVM(string exchange, FuturesPosition pos, IExchangeGateway gateway)
     {
@@ -106,7 +106,7 @@ public sealed class AllPositionsViewModel : ReactiveObject
     private readonly IReadOnlyList<(string Name, IExchangeGateway Gateway)> _gateways;
 
     private string _totalPnlLabel   = "–";
-    private string _totalPnlBrush   = SemanticColor.Muted;
+    private string _totalPnlBrush   = SemanticColor.Keys.Muted;
     private string _totalSizeLabel  = "–";
     private string _statusLabel     = "No data yet — press Refresh";
     private string _sortBy          = "PnlPct";
@@ -380,7 +380,7 @@ public sealed class AllPositionsViewModel : ReactiveObject
         if (Rows.Count == 0)
         {
             TotalPnlLabel  = "–";
-            TotalPnlBrush  = SemanticColor.Muted;
+            TotalPnlBrush  = SemanticColor.Keys.Muted;
             TotalSizeLabel = "–";
             return;
         }
@@ -391,7 +391,7 @@ public sealed class AllPositionsViewModel : ReactiveObject
         TotalPnlLabel  = totalPnl >= 0
             ? $"+{totalPnl:N2} USDT"
             : $"{totalPnl:N2} USDT";
-        TotalPnlBrush  = totalPnl >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
+        TotalPnlBrush  = totalPnl >= 0 ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
         TotalSizeLabel = $"{totalNotl:N0} USDT notional";
     }
 

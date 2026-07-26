@@ -323,7 +323,7 @@ public sealed class UniswapV3Executor
         string tokenIn, BigInteger amountIn, CancellationToken ct)
     {
         BigInteger bestOut = BigInteger.Zero;
-        var bestFee = _config.PreferredFeeTiers[0];
+        uint? bestFee = null;
 
         foreach (var fee in _config.PreferredFeeTiers)
         {
@@ -336,10 +336,22 @@ public sealed class UniswapV3Executor
                     bestFee = fee;
                 }
             }
-            catch { }
+            catch
+            {
+                // Pool may not exist for this fee tier — try next
+            }
         }
 
-        return bestFee;
+        // Failing every tier used to return the first configured one anyway. The caller then
+        // re-quoted on that tier, failed again, and swapped with amountOutMinimum = 0 — a sell
+        // with no slippage protection at all, which on a public mempool is a free sandwich.
+        // Refuse instead: no tier quoting means no depth to sell into, and the tx would burn gas
+        // reverting in the best case. Mirrors the guard BuyWithNativeAsync already has.
+        if (bestFee is null)
+            throw new InvalidOperationException(
+                $"No V3 pool quoted a sell for token {tokenIn} on {_config.NetworkName}");
+
+        return bestFee.Value;
     }
 }
 

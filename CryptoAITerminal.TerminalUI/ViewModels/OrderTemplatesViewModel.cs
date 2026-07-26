@@ -22,7 +22,7 @@ public sealed class OrderTemplateRowVM : ReactiveObject
     public string SummaryLabel =>
         $"{Model.Side}  {Model.Symbol}  {Model.OrderType}" +
         $"  Lmt {Model.LimitOffsetPct:+0.00;-0.00}%  TP +{Model.TakeProfitPct:0.##}%  SL -{Model.StopLossPct:0.##}%";
-    public string SideBrush    => Model.Side == "SELL" ? SemanticColor.Negative : SemanticColor.Accent;
+    public string SideBrush    => Model.Side == "SELL" ? SemanticColor.Keys.Negative : SemanticColor.Keys.Accent;
 
     public OrderTemplateRowVM(
         OrderTemplate model,

@@ -232,7 +232,7 @@ public class WhaleAlertViewModel : ReactiveObject
 
     // ── Alchemy price-trend enrichment (populated asynchronously) ─────────────
     private string _priceTrendLabel = "";
-    private string _priceTrendBrush = SemanticColor.Muted;
+    private string _priceTrendBrush = SemanticColor.Keys.Muted;
     private bool   _hasPriceTrend;
 
     public string PriceTrendLabel
@@ -258,8 +258,8 @@ public class WhaleAlertViewModel : ReactiveObject
     {
         var sign = changePct >= 0 ? "+" : "";
         PriceTrendLabel = $"{sign}{changePct:N2}%  1h";
-        PriceTrendBrush = changePct >=  0.5m ? SemanticColor.Accent
-                        : changePct <= -0.5m ? SemanticColor.Negative
+        PriceTrendBrush = changePct >=  0.5m ? SemanticColor.Keys.Accent
+                        : changePct <= -0.5m ? SemanticColor.Keys.Negative
                         : "#F4D03F";
         HasPriceTrend = true;
     }

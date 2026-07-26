@@ -225,7 +225,20 @@ public sealed class FundingArbitrageService : IDisposable
 
                 results.Add(MakeOpportunity("OKX", sym, rate, 0m, nftMs));
             }
-            catch { }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // Обновление отменили — дожимать оставшиеся семь символов незачем. Ловим по
+                // токену, а не по типу: таймаут HttpClient — это тоже TaskCanceledException,
+                // и он должен вести себя как обычная ошибка символа (ниже).
+                break;
+            }
+            catch
+            {
+                // Ставка по одному символу — необязательные данные для витрины: без неё пара
+                // просто не попадёт в список возможностей, Binance и Bybit отрисуются. Не
+                // логируем: цикл крутится раз в 30 с по восьми символам, и недоступный OKX
+                // забил бы лог тысячей строк в час, вытеснив настоящие падения.
+            }
 
             await Task.Delay(80, ct);   // gentle rate-limit
         }

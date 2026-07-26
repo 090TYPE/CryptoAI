@@ -54,7 +54,7 @@
                 </Grid>
                 <StackPanel Spacing="5" IsVisible="{Binding LiquidationHeatmapVM.HasInsight}">
                   <TextBlock Text="{Binding LiquidationHeatmapVM.InsightSignal}"
-                             Foreground="{Binding LiquidationHeatmapVM.InsightSignalBrush}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
+                             Foreground="{Binding LiquidationHeatmapVM.InsightSignalBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
                   <TextBlock Text="{Binding LiquidationHeatmapVM.InsightSummary}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
                   <TextBlock Text="{Binding LiquidationHeatmapVM.InsightBullets}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
                              IsVisible="{Binding LiquidationHeatmapVM.InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />

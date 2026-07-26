@@ -76,7 +76,7 @@ public partial class MainWindowViewModel
 
     /// <summary>Live perp position side badge for the right-rail position card.</summary>
     public string PositionSideLabel => PositionQuantity > 0m ? "LONG" : PositionQuantity < 0m ? "SHORT" : "FLAT";
-    public string PositionSideBrush => PositionQuantity > 0m ? "#3ddc84" : PositionQuantity < 0m ? "#ff6b6b" : "#5a7a94";
+    public string PositionSideBrush => PositionQuantity > 0m ? SemanticColor.Keys.Positive : PositionQuantity < 0m ? SemanticColor.Keys.Negative : "#5a7a94";
     public string PositionSideBackground => PositionQuantity > 0m ? "#07221a" : PositionQuantity < 0m ? "#200a0a" : "#0a1622";
     public string ManualLeverageLabel => $"{ManualFuturesLeverage}×";
 

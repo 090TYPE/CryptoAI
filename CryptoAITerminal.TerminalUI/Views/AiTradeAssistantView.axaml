@@ -84,7 +84,7 @@
         <StackPanel Spacing="7">
           <Grid ColumnDefinitions="Auto,*,Auto">
             <Border Background="{DynamicResource Surface2}" CornerRadius="4" Padding="8,2">
-              <TextBlock Text="{Binding BiasLabel}" Foreground="{Binding BiasBrush}" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" />
+              <TextBlock Text="{Binding BiasLabel}" Foreground="{Binding BiasBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" />
             </Border>
             <TextBlock Grid.Column="2" Text="{Binding RiskRewardLabel}" Foreground="{DynamicResource AccentPurpleBright}" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
           </Grid>
@@ -124,7 +124,7 @@
           <!-- Risk gate + confluence -->
           <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding HasRisk}">
             <Border Background="{DynamicResource Surface2}" CornerRadius="4" Padding="6,2">
-              <TextBlock Text="{Binding RiskVerdictLabel}" Foreground="{Binding RiskVerdictBrush}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" />
+              <TextBlock Text="{Binding RiskVerdictLabel}" Foreground="{Binding RiskVerdictBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" />
             </Border>
             <TextBlock Grid.Column="2" Text="{Binding ConfluenceLabel, StringFormat=confluence {0}}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
           </Grid>

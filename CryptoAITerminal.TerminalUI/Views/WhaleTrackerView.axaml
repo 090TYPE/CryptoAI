@@ -60,7 +60,7 @@
                 </Grid>
                 <StackPanel Spacing="5" IsVisible="{Binding WhaleTrackerVM.HasInsight}">
                   <TextBlock Text="{Binding WhaleTrackerVM.InsightSignal}"
-                             Foreground="{Binding WhaleTrackerVM.InsightSignalBrush}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
+                             Foreground="{Binding WhaleTrackerVM.InsightSignalBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
                   <TextBlock Text="{Binding WhaleTrackerVM.InsightSummary}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
                   <TextBlock Text="{Binding WhaleTrackerVM.InsightBullets}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
                              IsVisible="{Binding WhaleTrackerVM.InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
@@ -86,12 +86,12 @@
 
                               <!-- Chain badge -->
                               <Border Grid.Column="0" CornerRadius="3" Padding="4,2" Background="{DynamicResource Surface3}" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding ChainBadge}" Foreground="{Binding ChainBrush}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                <TextBlock Text="{Binding ChainBadge}" Foreground="{Binding ChainBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                               </Border>
 
                               <!-- Alert type -->
                               <Border Grid.Column="1" CornerRadius="3" Padding="4,2" Background="{DynamicResource Surface3}" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding AlertBadge}" Foreground="{Binding AlertBrush}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                <TextBlock Text="{Binding AlertBadge}" Foreground="{Binding AlertBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                               </Border>
 
                               <!-- Main info -->
@@ -112,7 +112,7 @@
                                       Background="{DynamicResource Surface3}" VerticalAlignment="Center"
                                       IsVisible="{Binding HasPriceTrend}">
                                 <TextBlock Text="{Binding PriceTrendLabel}"
-                                           Foreground="{Binding PriceTrendBrush}"
+                                           Foreground="{Binding PriceTrendBrush, Converter={StaticResource StringToBrush}}"
                                            FontSize="{DynamicResource FsMicro}" FontWeight="SemiBold" />
                               </Border>
 

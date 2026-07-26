@@ -38,7 +38,7 @@
                 <StackPanel Spacing="5" IsVisible="{Binding StatArbVM.HasPairVerdict}">
                   <StackPanel Orientation="Horizontal" Spacing="10">
                     <TextBlock Text="{Binding StatArbVM.PairSignal}"
-                               Foreground="{Binding StatArbVM.PairSignalBrush}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
+                               Foreground="{Binding StatArbVM.PairSignalBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
                     <TextBlock Text="{Binding StatArbVM.PairScore, StringFormat='score {0}/100'}"
                                Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
                   </StackPanel>

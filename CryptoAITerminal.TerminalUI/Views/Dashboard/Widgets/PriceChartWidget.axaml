@@ -15,22 +15,22 @@
         <TextBlock Classes="Mono" Text="{Binding SelectedMarket.LastPrice, StringFormat='{}{0:N2}'}"
                    Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" VerticalAlignment="Center" />
         <TextBlock Text="{Binding SelectedMarket.ChangePercentLabel}"
-                   Foreground="{Binding SelectedMarket.ChangeBrush}" FontSize="{DynamicResource FsSmall}"
+                   Foreground="{Binding SelectedMarket.ChangeBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsSmall}"
                    FontWeight="SemiBold" VerticalAlignment="Center" />
       </StackPanel>
       <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
         <Button Classes="TfButton" Content="1m"  Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1M"
-                Background="{Binding Timeframe1MBackground}"  Foreground="{Binding Timeframe1MForeground}" />
+                Background="{Binding Timeframe1MBackground, Converter={StaticResource StringToBrush}}"  Foreground="{Binding Timeframe1MForeground, Converter={StaticResource StringToBrush}}" />
         <Button Classes="TfButton" Content="5m"  Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="5M"
-                Background="{Binding Timeframe5MBackground}"  Foreground="{Binding Timeframe5MForeground}" />
+                Background="{Binding Timeframe5MBackground, Converter={StaticResource StringToBrush}}"  Foreground="{Binding Timeframe5MForeground, Converter={StaticResource StringToBrush}}" />
         <Button Classes="TfButton" Content="15m" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="15M"
-                Background="{Binding Timeframe15MBackground}" Foreground="{Binding Timeframe15MForeground}" />
+                Background="{Binding Timeframe15MBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding Timeframe15MForeground, Converter={StaticResource StringToBrush}}" />
         <Button Classes="TfButton" Content="1H"  Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1H"
-                Background="{Binding Timeframe1HBackground}"  Foreground="{Binding Timeframe1HForeground}" />
+                Background="{Binding Timeframe1HBackground, Converter={StaticResource StringToBrush}}"  Foreground="{Binding Timeframe1HForeground, Converter={StaticResource StringToBrush}}" />
         <Button Classes="TfButton" Content="4H"  Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="4H"
-                Background="{Binding Timeframe4HBackground}"  Foreground="{Binding Timeframe4HForeground}" />
+                Background="{Binding Timeframe4HBackground, Converter={StaticResource StringToBrush}}"  Foreground="{Binding Timeframe4HForeground, Converter={StaticResource StringToBrush}}" />
         <Button Classes="TfButton" Content="1D"  Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1D"
-                Background="{Binding Timeframe1DBackground}"  Foreground="{Binding Timeframe1DForeground}" />
+                Background="{Binding Timeframe1DBackground, Converter={StaticResource StringToBrush}}"  Foreground="{Binding Timeframe1DForeground, Converter={StaticResource StringToBrush}}" />
       </StackPanel>
     </Grid>
 

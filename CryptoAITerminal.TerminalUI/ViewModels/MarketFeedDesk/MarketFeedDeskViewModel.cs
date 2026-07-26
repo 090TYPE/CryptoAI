@@ -270,7 +270,7 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
     public ICommand AnalyzeCommand { get; }
     public ICommand TradeCommand { get; }
     public ICommand CloseModalCommand { get; }
-    public ICommand AlertCreateCommand { get; private set; }
+    public ICommand AlertCreateCommand { get; }
 
     // ── cached derived ───────────────────────────────────────────────────────
     private int _pressurePct, _largeCount, _tapeCount;
@@ -483,7 +483,128 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
         RebuildFooter(news, tape);
 
         FooterSync = Live ? "last update " + Now() : "no updates yet";
-        this.RaisePropertyChanged(string.Empty);
+        RaiseProjected();
+    }
+
+    /// <summary>Last value published for each scalar in <see cref="RaiseProjected"/>, in call order.</summary>
+    private readonly List<object?> _published = new();
+
+    /// <summary>
+    /// Publishes the scalars a rebuild can move. This used to be <c>RaisePropertyChanged(string.Empty)</c>,
+    /// which asked every binding on the desk — all nineteen collections included — to re-read itself on
+    /// each coalesced tick, five times a second. Each value is compared with what was last published, so
+    /// a tick that only moves the clock now raises one property instead of the whole view model.
+    ///
+    /// Deliberately absent: the collections (they notify through ObservableCollection), the constants
+    /// (<see cref="Networks"/>, <see cref="SourcesNote"/>), the panel and toast scalars (raised where
+    /// they are written) and <see cref="Side2ActionCommand"/> (raised by RebuildRail, which assigns it).
+    /// A property added to the rebuilds above belongs here too, or its binding goes stale.
+    /// </summary>
+    private void RaiseProjected()
+    {
+        var i = 0;
+        void Raise(string name, object? value)
+        {
+            var known = i < _published.Count;
+            if (known && Equals(_published[i], value)) { i++; return; }
+            if (known) _published[i] = value; else _published.Add(value);
+            i++;
+            this.RaisePropertyChanged(name);
+        }
+
+        // view switch
+        Raise(nameof(ViewNews), ViewNews);
+        Raise(nameof(ViewTape), ViewTape);
+        Raise(nameof(ViewLiq), ViewLiq);
+
+        // header: pulse, the two KPIs, the stream badge
+        Raise(nameof(PulseLabel), PulseLabel);
+        Raise(nameof(PulseColor), PulseColor);
+        Raise(nameof(PulseBorder), PulseBorder);
+        Raise(nameof(PulseBg), PulseBg);
+        Raise(nameof(M1Label), M1Label);
+        Raise(nameof(M1Value), M1Value);
+        Raise(nameof(M1Sub), M1Sub);
+        Raise(nameof(M1Color), M1Color);
+        Raise(nameof(M2Label), M2Label);
+        Raise(nameof(M2Value), M2Value);
+        Raise(nameof(M2Sub), M2Sub);
+        Raise(nameof(M2Color), M2Color);
+        Raise(nameof(StreamLabel), StreamLabel);
+        Raise(nameof(StreamColor), StreamColor);
+        Raise(nameof(StreamBorder), StreamBorder);
+        Raise(nameof(StreamBg), StreamBg);
+        Raise(nameof(AiBtn), AiBtn);
+
+        // digest
+        Raise(nameof(DigestTitle), DigestTitle);
+        Raise(nameof(DigestSignal), DigestSignal);
+        Raise(nameof(DigestBadgeColor), DigestBadgeColor);
+        Raise(nameof(DigestBadgeBg), DigestBadgeBg);
+        Raise(nameof(DigestBadgeBorder), DigestBadgeBorder);
+        Raise(nameof(DigestMeta), DigestMeta);
+        Raise(nameof(DigestText), DigestText);
+        Raise(nameof(DigestBtnLabel), DigestBtnLabel);
+        Raise(nameof(DigestBtnColor), DigestBtnColor);
+
+        // news view
+        Raise(nameof(ImpMark), ImpMark);
+        Raise(nameof(ImpBoxBorder), ImpBoxBorder);
+        Raise(nameof(ImpBoxBg), ImpBoxBg);
+        Raise(nameof(ImpColor), ImpColor);
+        Raise(nameof(ImpBorder), ImpBorder);
+        Raise(nameof(ImpBg), ImpBg);
+        Raise(nameof(HasUnread), HasUnread);
+        Raise(nameof(UnreadLabel), UnreadLabel);
+        Raise(nameof(NewsMeta), NewsMeta);
+        Raise(nameof(NewsEmpty), NewsEmpty);
+        Raise(nameof(NewsEmptyNote), NewsEmptyNote);
+
+        // tape view
+        Raise(nameof(IsCex), IsCex);
+        Raise(nameof(IsDex), IsDex);
+        Raise(nameof(TapeHint), TapeHint);
+        Raise(nameof(TapePressure), TapePressure);
+        Raise(nameof(TapePressureColor), TapePressureColor);
+        Raise(nameof(TapePressureRatio), TapePressureRatio);
+        Raise(nameof(TapeStatus), TapeStatus);
+
+        // liquidations view
+        Raise(nameof(LiqAlertOn), LiqAlertOn);
+        Raise(nameof(LiqAlertText), LiqAlertText);
+        Raise(nameof(LiqSource), LiqSource);
+        Raise(nameof(LiqPriceLabel), LiqPriceLabel);
+
+        // rail
+        Raise(nameof(RailTitle), RailTitle);
+        Raise(nameof(InsightTitle), InsightTitle);
+        Raise(nameof(InsightMeta), InsightMeta);
+        Raise(nameof(InsightSignal), InsightSignal);
+        Raise(nameof(InsightSignalColor), InsightSignalColor);
+        Raise(nameof(InsightSummary), InsightSummary);
+        Raise(nameof(InsightBtnLabel), InsightBtnLabel);
+        Raise(nameof(Side1Title), Side1Title);
+        Raise(nameof(Side1Meta), Side1Meta);
+        Raise(nameof(Side2Title), Side2Title);
+        Raise(nameof(Side2ActionLabel), Side2ActionLabel);
+
+        // footer
+        Raise(nameof(FooterState), FooterState);
+        Raise(nameof(FooterColor), FooterColor);
+        Raise(nameof(FooterF1), FooterF1);
+        Raise(nameof(FooterF2), FooterF2);
+        Raise(nameof(FooterF3), FooterF3);
+        Raise(nameof(FooterSync), FooterSync);
+
+        // input mirrors: the desk does not own these, the source view models do, so a change
+        // made anywhere else has to reach the boxes — that is what the blanket raise did for them.
+        Raise(nameof(NewsSearch), NewsSearch);
+        Raise(nameof(NewsSymbol), NewsSymbol);
+        Raise(nameof(TapeSymbol), TapeSymbol);
+        Raise(nameof(TapeThreshold), TapeThreshold);
+        Raise(nameof(TapePool), TapePool);
+        Raise(nameof(TapeNetwork), TapeNetwork);
+        Raise(nameof(LiqCustom), LiqCustom);
     }
 
     private void ComputeTapeStats(List<TapeRowVM> tape)
@@ -996,7 +1117,6 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
         LiqSource = _liqVm is null
             ? "source: not connected"
             : "map: " + _liqVm.DataSourceLabel + "  ·  stream: " + LiqStreamStatus + " (real)";
-        AlertCreateCommand = new RelayCommand(() => Toast("Alerts are configured in Settings → Alerts", "info"));
 
         LiqSymbols.Clear();
         foreach (var x in new[] { "BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "DOGEUSDT" })

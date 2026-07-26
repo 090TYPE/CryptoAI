@@ -96,7 +96,7 @@
                        VerticalAlignment="Center" />
           </Grid>
           <TextBlock Text="{Binding SentimentVM.InsightSignal}"
-                     Foreground="{Binding SentimentVM.InsightSignalBrush}"
+                     Foreground="{Binding SentimentVM.InsightSignalBrush, Converter={StaticResource StringToBrush}}"
                      FontWeight="Bold" FontSize="{DynamicResource FsSubhead}"
                      IsVisible="{Binding SentimentVM.HasInsight}" />
           <TextBlock Text="{Binding SentimentVM.InsightSummary}" Foreground="{DynamicResource TextSecondary}"

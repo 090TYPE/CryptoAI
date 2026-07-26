@@ -14,7 +14,7 @@
                    Text="{Binding SelectedMarket.LastPrice, StringFormat='{}{0:N2}'}" />
         <TextBlock FontSize="{DynamicResource FsMicro}" FontWeight="SemiBold"
                    Text="{Binding SelectedMarket.ChangePercentLabel}"
-                   Foreground="{Binding SelectedMarket.ChangeBrush}" />
+                   Foreground="{Binding SelectedMarket.ChangeBrush, Converter={StaticResource StringToBrush}}" />
       </StackPanel>
     </Border>
 
@@ -46,10 +46,10 @@
         <TextBlock Classes="StatLabel" Text="24H CHANGE" />
         <TextBlock Classes="Mono" FontSize="{DynamicResource FsTitle}" FontWeight="Bold"
                    Text="{Binding SelectedMarket.ChangePercentLabel}"
-                   Foreground="{Binding SelectedMarket.ChangeBrush}" />
+                   Foreground="{Binding SelectedMarket.ChangeBrush, Converter={StaticResource StringToBrush}}" />
         <TextBlock FontSize="{DynamicResource FsMicro}"
                    Text="{Binding SelectedMarket.TrendLabel}"
-                   Foreground="{Binding SelectedMarket.TrendBrush}" />
+                   Foreground="{Binding SelectedMarket.TrendBrush, Converter={StaticResource StringToBrush}}" />
       </StackPanel>
     </Border>
 

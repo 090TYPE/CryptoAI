@@ -101,14 +101,14 @@
                               <!-- Rate -->
                               <TextBlock Grid.Column="1"
                                          Text="{Binding FundingRatePct}"
-                                         Foreground="{Binding RateColor}"
+                                         Foreground="{Binding RateColor, Converter={StaticResource StringToBrush}}"
                                          FontWeight="Bold"
                                          HorizontalAlignment="Right"
                                          VerticalAlignment="Center" />
                               <!-- Annualised -->
                               <TextBlock Grid.Column="2"
                                          Text="{Binding AnnualizedLabel}"
-                                         Foreground="{Binding RateColor}"
+                                         Foreground="{Binding RateColor, Converter={StaticResource StringToBrush}}"
                                          FontSize="{DynamicResource FsCaption}"
                                          HorizontalAlignment="Right"
                                          VerticalAlignment="Center" />
@@ -208,11 +208,11 @@
                                            VerticalAlignment="Center" />
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding DisplayLabel}"
-                                           Foreground="{Binding Color}"
+                                           Foreground="{Binding Color, Converter={StaticResource StringToBrush}}"
                                            FontSize="{DynamicResource FsSmall}" FontWeight="SemiBold"
                                            VerticalAlignment="Center" />
                                 <Border Grid.Column="2"
-                                        Background="{Binding Color}"
+                                        Background="{Binding Color, Converter={StaticResource StringToBrush}}"
                                         CornerRadius="2" Padding="4,1">
                                   <TextBlock Text="{Binding Direction}"
                                              Foreground="White"

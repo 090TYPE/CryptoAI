@@ -25,7 +25,7 @@ public sealed class JournalEntryRowVM : ReactiveObject
     public string  DirectionLabel => Model.Direction == TradeDirection.Long ? "▲ L" : "▼ S";
     public string  DirectionBrush => Model.Direction == TradeDirection.Long ? SemanticColor.Accent : SemanticColor.Negative;
     public string  PnlLabel       => $"{(Model.PnlUsd >= 0 ? "+" : "")}{Model.PnlUsd:0.00} USD";
-    public string  PnlBrush       => Model.PnlUsd >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
+    public string  PnlBrush       => Model.PnlUsd >= 0 ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
     public string  PnlPctLabel    => $"{(Model.PnlPercent >= 0 ? "+" : "")}{Model.PnlPercent:0.00}%";
     public string  ExchangeLabel  => string.IsNullOrWhiteSpace(Model.Exchange) ? Model.Source.ToString() : Model.Exchange;
 

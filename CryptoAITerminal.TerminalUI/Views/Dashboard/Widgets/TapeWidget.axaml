@@ -13,7 +13,7 @@
     <!-- Pressure + status summary -->
     <StackPanel Spacing="3">
       <TextBlock Text="{Binding MarketTapeVM.PressureLabel}" FontWeight="SemiBold"
-                 Foreground="{Binding MarketTapeVM.PressureBrush}" FontSize="{DynamicResource FsSmall}" />
+                 Foreground="{Binding MarketTapeVM.PressureBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsSmall}" />
       <TextBlock Text="{Binding MarketTapeVM.StatusLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" />
     </StackPanel>
 
@@ -45,7 +45,7 @@
       <ItemsControl ItemsSource="{Binding MarketTapeVM.Rows}">
         <ItemsControl.ItemTemplate>
           <DataTemplate>
-            <Border Background="{Binding RowBrush}" CornerRadius="2" Padding="2,1">
+            <Border Background="{Binding RowBrush, Converter={StaticResource StringToBrush}}" CornerRadius="2" Padding="2,1">
               <Grid>
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="0.5*"  MinWidth="24" />
@@ -57,11 +57,11 @@
                   <ColumnDefinition Width="1.05*" MinWidth="40" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="{Binding VenueLabel}" TextTrimming="CharacterEllipsis"
-                           Foreground="{Binding VenueBrush}" FontSize="{DynamicResource FsMicro}" FontWeight="SemiBold" />
+                           Foreground="{Binding VenueBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="SemiBold" />
                 <TextBlock Grid.Column="1" Text="{Binding TimeLabel}" TextTrimming="CharacterEllipsis"
                            FontFamily="Cascadia Code,Consolas,monospace" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />
                 <TextBlock Grid.Column="2" Text="{Binding Side}" TextTrimming="CharacterEllipsis"
-                           Foreground="{Binding SideBrush}" FontWeight="{Binding Weight}" FontSize="{DynamicResource FsCaption}" />
+                           Foreground="{Binding SideBrush, Converter={StaticResource StringToBrush}}" FontWeight="{Binding Weight}" FontSize="{DynamicResource FsCaption}" />
                 <TextBlock Grid.Column="3" Text="{Binding PriceLabel}" TextTrimming="CharacterEllipsis"
                            FontFamily="Cascadia Code,Consolas,monospace" FontWeight="{Binding Weight}" FontSize="{DynamicResource FsCaption}" />
                 <TextBlock Grid.Column="4" Text="{Binding QtyLabel}" TextTrimming="CharacterEllipsis"

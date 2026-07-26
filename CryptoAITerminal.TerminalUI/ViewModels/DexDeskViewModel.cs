@@ -87,7 +87,7 @@ public sealed class DexExchangeMarketViewModel : ReactiveObject
         Symbol = m.Symbol;
         PriceLabel = m.Price >= 1000m ? $"{m.Price:N1}" : m.Price >= 1m ? $"{m.Price:N3}" : $"{m.Price:N5}";
         ChangeLabel = $"{m.Change24hPct:+0.00;-0.00;0.00}%";
-        ChangeBrush = m.Change24hPct >= 0m ? SemanticColor.Positive : SemanticColor.Negative;
+        ChangeBrush = m.Change24hPct >= 0m ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
         VolLabel = DexExchangeDataService.FormatUsdCompact(m.Volume24hUsd);
         FundingLabel = $"{m.Funding8hPct:+0.###;-0.###;0}%";
         FundingBrush = m.Funding8hPct >= 0m ? SemanticColor.Warning : SemanticColor.Positive;

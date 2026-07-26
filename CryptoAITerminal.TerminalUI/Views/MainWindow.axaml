@@ -85,7 +85,7 @@
                                  FontSize="{DynamicResource FsSmall}" FontWeight="SemiBold" VerticalAlignment="Center" />
                       <TextBlock Classes="Mono" Text="{Binding LastPrice, StringFormat='{}{0:N2}'}"
                                  Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
-                      <TextBlock Text="{Binding ChangePercentLabel}" Foreground="{Binding ChangeBrush}"
+                      <TextBlock Text="{Binding ChangePercentLabel}" Foreground="{Binding ChangeBrush, Converter={StaticResource StringToBrush}}"
                                  FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                     </StackPanel>
                   </Border>
@@ -105,7 +105,7 @@
                                  FontSize="{DynamicResource FsSmall}" FontWeight="SemiBold" VerticalAlignment="Center" />
                       <TextBlock Classes="Mono" Text="{Binding LastPrice, StringFormat='{}{0:N2}'}"
                                  Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
-                      <TextBlock Text="{Binding ChangePercentLabel}" Foreground="{Binding ChangeBrush}"
+                      <TextBlock Text="{Binding ChangePercentLabel}" Foreground="{Binding ChangeBrush, Converter={StaticResource StringToBrush}}"
                                  FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                     </StackPanel>
                   </Border>
@@ -275,31 +275,31 @@
 
           <!-- ── TRADING ─────────────────────────────────── -->
           <TextBlock Classes="SideNavGroup" IsVisible="{Binding IsSidebarLabelsVisible}" Text="TRADING" Margin="8,0,0,6" />
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="dashboard" Background="{Binding DashboardNavBackground}" Foreground="{Binding DashboardNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="dashboard" Background="{Binding DashboardNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding DashboardNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2zM9 22V12h6v10" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Dashboard" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="markets" Background="{Binding MarketsNavBackground}" Foreground="{Binding MarketsNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="markets" Background="{Binding MarketsNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding MarketsNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M4 20V12M12 20V4M20 20v-8" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Markets" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="trading" Background="{Binding TradingNavBackground}" Foreground="{Binding TradingNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="trading" Background="{Binding TradingNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding TradingNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M13 2L3 14h9l-1 8 10-12h-9z" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Trading" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="ai-signals" Background="{Binding SignalsNavBackground}" Foreground="{Binding SignalsNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="ai-signals" Background="{Binding SignalsNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding SignalsNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="AI Signals" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="sniper" Background="{Binding SniperNavBackground}" Foreground="{Binding SniperNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="sniper" Background="{Binding SniperNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding SniperNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M12 2a10 10 0 100 20A10 10 0 0012 2zm0 6a4 4 0 010 8 4 4 0 010-8zm0 2a2 2 0 010 4 2 2 0 010-4z" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Sniper" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
@@ -308,19 +308,19 @@
 
           <!-- ── PORTFOLIO ─────────────────────────────────── -->
           <TextBlock Classes="SideNavGroup" IsVisible="{Binding IsSidebarLabelsVisible}" Text="PORTFOLIO" Margin="8,10,0,6" />
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="portfolio" Background="{Binding PortfolioNavBackground}" Foreground="{Binding PortfolioNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="portfolio" Background="{Binding PortfolioNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding PortfolioNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Portfolio" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="positions" Background="{Binding PositionsNavBackground}" Foreground="{Binding PositionsNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="positions" Background="{Binding PositionsNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding PositionsNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Positions" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="risk" Background="{Binding RiskNavBackground}" Foreground="{Binding RiskNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="risk" Background="{Binding RiskNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding RiskNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Risk" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
@@ -329,25 +329,25 @@
 
           <!-- ── AUTOMATION ────────────────────────────── -->
           <TextBlock Classes="SideNavGroup" IsVisible="{Binding IsSidebarLabelsVisible}" Text="AUTOMATION" Margin="8,10,0,6" />
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="bots" Background="{Binding BotsNavBackground}" Foreground="{Binding BotsNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="bots" Background="{Binding BotsNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding BotsNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M12 2a3 3 0 013 3v1h1a2 2 0 012 2v2a2 2 0 01-2 2h-1v1a3 3 0 01-6 0v-1H8a2 2 0 01-2-2V8a2 2 0 012-2h1V5a3 3 0 013-3zM9 14a3 3 0 006 0" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Bots" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="rules" Background="{Binding RulesNavBackground}" Foreground="{Binding RulesNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="rules" Background="{Binding RulesNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding RulesNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M13 10V3L4 14h7v7l9-11h-7z" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Rules" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="backtest" Background="{Binding BacktestNavBackground}" Foreground="{Binding BacktestNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="backtest" Background="{Binding BacktestNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding BacktestNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M3 3v18h18M7 16l4-4 4 4 6-6" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Backtest" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="journal" Background="{Binding JournalNavBackground}" Foreground="{Binding JournalNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="journal" Background="{Binding JournalNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding JournalNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M4 4h13a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2zM4 4v16M8 8h6M8 12h6" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Journal" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
@@ -356,25 +356,25 @@
 
           <!-- ── ARB & COPY ──────────────────────────── -->
           <TextBlock Classes="SideNavGroup" IsVisible="{Binding IsSidebarLabelsVisible}" Text="ARB &amp; COPY" Margin="8,10,0,6" />
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="funding" Background="{Binding FundingNavBackground}" Foreground="{Binding FundingNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="funding" Background="{Binding FundingNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding FundingNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Funding" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="arb" Background="{Binding ArbNavBackground}" Foreground="{Binding ArbNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="arb" Background="{Binding ArbNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding ArbNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Arb" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="copy" Background="{Binding CopyNavBackground}" Foreground="{Binding CopyNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="copy" Background="{Binding CopyNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding CopyNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8m14 2v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Copy" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="statarb" Background="{Binding StatArbNavBackground}" Foreground="{Binding StatArbNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="statarb" Background="{Binding StatArbNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding StatArbNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M18 20V10M12 20V4M6 20v-6" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Stat Arb" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
@@ -383,7 +383,7 @@
 
           <!-- ── DATA & ANALYTICS ───────────────────────── -->
           <TextBlock Classes="SideNavGroup" IsVisible="{Binding IsSidebarLabelsVisible}" Text="DATA &amp; ANALYTICS" Margin="8,10,0,6" />
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="news" Background="{Binding NewsNavBackground}" Foreground="{Binding NewsNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="news" Background="{Binding NewsNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding NewsNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Panel Width="18" Height="18" VerticalAlignment="Center">
                 <Viewbox Width="17" Height="17"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9h4M18 14h-8M15 18h-5M10 6h8v4h-8z" /></Canvas></Viewbox>
@@ -397,31 +397,31 @@
               <TextBlock Grid.Column="1" Text="News" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="onchain" Background="{Binding OnChainNavBackground}" Foreground="{Binding OnChainNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="onchain" Background="{Binding OnChainNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding OnChainNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="On-Chain" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="whale" Background="{Binding WhaleNavBackground}" Foreground="{Binding WhaleNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="whale" Background="{Binding WhaleNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding WhaleNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7zM12 9a3 3 0 100 6 3 3 0 000-6z" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Whales" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="tape" Background="{Binding TapeNavBackground}" Foreground="{Binding TapeNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="tape" Background="{Binding TapeNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding TapeNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M8 6l4-4 4 4M16 18l-4 4-4-4M12 2v20" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Live Tape" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="liquidation" Background="{Binding LiquidationNavBackground}" Foreground="{Binding LiquidationNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="liquidation" Background="{Binding LiquidationNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding LiquidationNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 5.5l6 4.5-6 4.5z" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Liq Map" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="analytics" Background="{Binding AnalyticsNavBackground}" Foreground="{Binding AnalyticsNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="analytics" Background="{Binding AnalyticsNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding AnalyticsNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M21 21H4.5V4.5M7 14l4-5 4 3 4-4" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Analytics" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
@@ -430,25 +430,25 @@
 
           <!-- ── INFRASTRUCTURE ───────────────────────────── -->
           <TextBlock Classes="SideNavGroup" IsVisible="{Binding IsSidebarLabelsVisible}" Text="INFRASTRUCTURE" Margin="8,10,0,6" />
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="gas" Background="{Binding GasNavBackground}" Foreground="{Binding GasNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="gas" Background="{Binding GasNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding GasNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M3 22V4a1 1 0 011-1h9a1 1 0 011 1v18M3 22h12M3 10h11M17 7l3 3v9a2 2 0 01-4 0v-4h-2M20 10v-2" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Gas" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="router" Background="{Binding RouterNavBackground}" Foreground="{Binding RouterNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="router" Background="{Binding RouterNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding RouterNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Router" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="scanner" Background="{Binding ScannerNavBackground}" Foreground="{Binding ScannerNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="scanner" Background="{Binding ScannerNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding ScannerNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M11 3a8 8 0 100 16A8 8 0 0011 3zM21 21l-4.35-4.35" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Scanner" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
             </Grid>
           </Button>
-          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="settings" Background="{Binding SettingsNavBackground}" Foreground="{Binding SettingsNavForeground}">
+          <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="settings" Background="{Binding SettingsNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding SettingsNavForeground, Converter={StaticResource StringToBrush}}">
             <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
               <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" /></Canvas></Viewbox>
               <TextBlock Grid.Column="1" Text="Settings" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
@@ -459,13 +459,13 @@
 
         <Border Grid.Row="2" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Padding="8,10">
           <StackPanel Spacing="8">
-            <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="help" Background="{Binding HelpNavBackground}" Foreground="{Binding HelpNavForeground}">
+            <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="help" Background="{Binding HelpNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding HelpNavForeground, Converter={StaticResource StringToBrush}}">
               <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
                 <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M22 12a10 10 0 11-20 0 10 10 0 0120 0zM9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01" /></Canvas></Viewbox>
                 <TextBlock Grid.Column="1" Text="Help" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
               </Grid>
             </Button>
-            <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="logout" Background="{Binding LogoutNavBackground}" Foreground="{Binding LogoutNavForeground}">
+            <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="logout" Background="{Binding LogoutNavBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding LogoutNavForeground, Converter={StaticResource StringToBrush}}">
               <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
                 <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{DynamicResource Negative}" Data="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" /></Canvas></Viewbox>
                 <TextBlock Grid.Column="1" Text="Logout" VerticalAlignment="Center" Foreground="{DynamicResource Negative}" IsVisible="{Binding IsSidebarLabelsVisible}" />
@@ -530,7 +530,7 @@
         <TabItem.Header>
           <StackPanel Orientation="Horizontal" Spacing="8">
             <TextBlock Text="Sniper" VerticalAlignment="Center" />
-            <Border Background="{Binding WalletVM.GlobalQuoteAssetModeBrush}" CornerRadius="8" Padding="6,1">
+            <Border Background="{Binding WalletVM.GlobalQuoteAssetModeBrush, Converter={StaticResource StringToBrush}}" CornerRadius="8" Padding="6,1">
               <TextBlock Text="{Binding WalletVM.GlobalQuoteTabBadgeLabel}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
             </Border>
           </StackPanel>
@@ -544,7 +544,7 @@
         <TabItem.Header>
           <StackPanel Orientation="Horizontal" Spacing="8">
             <TextBlock Text="DEX" VerticalAlignment="Center" />
-            <Border Background="{Binding WalletVM.GlobalQuoteAssetModeBrush}" CornerRadius="8" Padding="6,1">
+            <Border Background="{Binding WalletVM.GlobalQuoteAssetModeBrush, Converter={StaticResource StringToBrush}}" CornerRadius="8" Padding="6,1">
               <TextBlock Text="{Binding WalletVM.GlobalQuoteTabBadgeLabel}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
             </Border>
           </StackPanel>
@@ -727,9 +727,9 @@
                           <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
                             <Border Classes="GuardChip"
                                     Background="#10251F"
-                                    BorderBrush="{Binding DexTradingVM.DexGuardStatusBrush}">
+                                    BorderBrush="{Binding DexTradingVM.DexGuardStatusBrush, Converter={StaticResource StringToBrush}}">
                               <TextBlock Text="{Binding DexTradingVM.DexGuardStatusLabel}"
-                                         Foreground="{Binding DexTradingVM.DexGuardStatusBrush}"
+                                         Foreground="{Binding DexTradingVM.DexGuardStatusBrush, Converter={StaticResource StringToBrush}}"
                                          FontWeight="Bold" />
                             </Border>
                             <StackPanel Grid.Column="1" Spacing="4">
@@ -746,7 +746,7 @@
                                    FontWeight="SemiBold"
                                    TextWrapping="Wrap" />
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                          <Border Background="{Binding WalletVM.WalletReadinessBrush}" CornerRadius="10" Padding="10,4">
+                          <Border Background="{Binding WalletVM.WalletReadinessBrush, Converter={StaticResource StringToBrush}}" CornerRadius="10" Padding="10,4">
                             <TextBlock Text="{Binding WalletVM.WalletReadinessLabel}" Foreground="{DynamicResource OnAccentText}" FontWeight="Bold" />
                           </Border>
                           <TextBlock Grid.Column="1"
@@ -759,7 +759,7 @@
                                    Foreground="{DynamicResource TextMuted}"
                                    TextWrapping="Wrap" />
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                          <Border Background="{Binding DexTradingVM.QuoteAssetModeBrush}" CornerRadius="10" Padding="10,4">
+                          <Border Background="{Binding DexTradingVM.QuoteAssetModeBrush, Converter={StaticResource StringToBrush}}" CornerRadius="10" Padding="10,4">
                             <TextBlock Text="{Binding DexTradingVM.QuoteAssetModeLabel}" Foreground="{DynamicResource OnAccentText}" FontWeight="Bold" />
                           </Border>
                           <TextBlock Grid.Column="1" Text="{Binding DexTradingVM.QuoteAssetSummary}"
@@ -774,10 +774,10 @@
                                    Foreground="{DynamicResource Accent}"
                                    TextWrapping="Wrap" />
                         <TextBlock Text="{Binding DexTradingVM.PairCompatibilityMessage}"
-                                   Foreground="{Binding DexTradingVM.QuoteAssetModeBrush}"
+                                   Foreground="{Binding DexTradingVM.QuoteAssetModeBrush, Converter={StaticResource StringToBrush}}"
                                    TextWrapping="Wrap" />
                         <TextBlock Text="{Binding DexTradingVM.BuyAvailabilityMessage}"
-                                   Foreground="{Binding DexTradingVM.BuyAvailabilityBrush}"
+                                   Foreground="{Binding DexTradingVM.BuyAvailabilityBrush, Converter={StaticResource StringToBrush}}"
                                    TextWrapping="Wrap" />
                         <Button Content="OPEN WALLET HUB"
                                 Command="{Binding OpenWalletTabCommand}"
@@ -816,7 +816,7 @@
                                   Command="{Binding DexTradingVM.UseMaxBuyAmountCommand}" />
                         </Grid>
                         <TextBlock Text="{Binding DexTradingVM.BuyQuoteLabel}"
-                                   Foreground="{Binding DexTradingVM.BuyQuoteBrush}"
+                                   Foreground="{Binding DexTradingVM.BuyQuoteBrush, Converter={StaticResource StringToBrush}}"
                                    IsVisible="{Binding DexTradingVM.HasSelectedToken}"
                                    TextWrapping="Wrap" />
 
@@ -1219,10 +1219,10 @@
     <Border IsVisible="{Binding LicenseVM.ShowTrialBanner}"
             HorizontalAlignment="Right" VerticalAlignment="Top"
             Margin="0,16,24,0" Padding="12,6"
-            Background="#0D2233" BorderBrush="{Binding LicenseVM.StateBrush}"
+            Background="#0D2233" BorderBrush="{Binding LicenseVM.StateBrush, Converter={StaticResource StringToBrush}}"
             BorderThickness="1" CornerRadius="8" ZIndex="90">
       <StackPanel Orientation="Horizontal" Spacing="10">
-        <TextBlock Text="{Binding LicenseVM.StateLabel}" Foreground="{Binding LicenseVM.StateBrush}"
+        <TextBlock Text="{Binding LicenseVM.StateLabel}" Foreground="{Binding LicenseVM.StateBrush, Converter={StaticResource StringToBrush}}"
                    FontSize="{DynamicResource FsSmall}" FontWeight="SemiBold" VerticalAlignment="Center" />
         <Button Content="Activate" Command="{Binding SelectMainTabCommand}" CommandParameter="settings"
                 Padding="10,2" Background="{DynamicResource Accent}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
@@ -1471,7 +1471,7 @@
                     <ItemsControl.ItemTemplate>
                       <DataTemplate>
                         <Grid ColumnDefinitions="Auto,*" Margin="0,1">
-                          <TextBlock Grid.Column="0" Text="{Binding Glyph}" Foreground="{Binding GlyphBrush}"
+                          <TextBlock Grid.Column="0" Text="{Binding Glyph}" Foreground="{Binding GlyphBrush, Converter={StaticResource StringToBrush}}"
                                      FontSize="{DynamicResource FsSmall}" Margin="0,0,8,0" />
                           <TextBlock Grid.Column="1" Text="{Binding Text}" Foreground="#B9C9D8"
                                      FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />

@@ -140,7 +140,7 @@ public class TapeTradeViewModel
     public DateTime TimeLocal { get; }
 
     public string SideLabel => IsBuy ? "BUY" : "SELL";
-    public string SideBrush => IsBuy ? SemanticColor.Positive : SemanticColor.Negative;
+    public string SideBrush => IsBuy ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
     public string PriceLabel => Price.ToString("N2", CultureInfo.InvariantCulture);
     public string QuantityLabel => Quantity.ToString("0.###", CultureInfo.InvariantCulture);
     public string TimeLabel => TimeLocal.ToString("HH:mm:ss");

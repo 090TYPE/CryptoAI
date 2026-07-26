@@ -63,8 +63,8 @@
         <Border Grid.Column="1" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,1,0" Padding="14,0">
           <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
             <TextBlock Text="REGIME" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Center" />
-            <Border Background="{Binding RegimeBadgeBg}" BorderBrush="{Binding RegimeBadgeBorder}" BorderThickness="1" CornerRadius="5" Padding="8,2">
-              <TextBlock Text="{Binding RegimeLabel}" Foreground="{Binding RegimeBadgeColor}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
+            <Border Background="{Binding RegimeBadgeBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding RegimeBadgeBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="5" Padding="8,2">
+              <TextBlock Text="{Binding RegimeLabel}" Foreground="{Binding RegimeBadgeColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
             </Border>
           </StackPanel>
         </Border>
@@ -101,7 +101,7 @@
                 <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                   <TextBlock Text="{Binding Sym}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                   <TextBlock Text="{Binding Price}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" FontFamily="{StaticResource FontMono}" />
-                  <TextBlock Text="{Binding Chg}" Foreground="{Binding ChgColor}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding Chg}" Foreground="{Binding ChgColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" />
                 </StackPanel>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
@@ -166,9 +166,9 @@
                   <Button Classes="Pill"
                           Margin="1,0"
                           Content="{Binding Label}"
-                          Background="{Binding Background}"
-                          BorderBrush="{Binding BorderBrush}"
-                          Foreground="{Binding Foreground}"
+                          Background="{Binding Background, Converter={StaticResource StringToBrush}}"
+                          BorderBrush="{Binding BorderBrush, Converter={StaticResource StringToBrush}}"
+                          Foreground="{Binding Foreground, Converter={StaticResource StringToBrush}}"
                           HorizontalAlignment="Stretch"
                           Command="{Binding Command}"
                           CommandParameter="{Binding Key}" />
@@ -185,13 +185,13 @@
               <DataTemplate x:DataType="vm:AiSignalCardViewModel">
                 <Button Classes="Flat" HorizontalAlignment="Stretch" Margin="0,0,0,4"
                         Command="{Binding Command}" CommandParameter="{Binding .}">
-                  <Border Background="{Binding CardBg}" BorderBrush="{Binding CardBorder}" BorderThickness="1"
+                  <Border Background="{Binding CardBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding CardBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1"
                           CornerRadius="10" Padding="10,8">
                     <StackPanel Spacing="7">
                       <!-- symbol + badge -->
                       <Grid ColumnDefinitions="*,Auto">
                         <StackPanel Orientation="Horizontal" Spacing="7">
-                          <Border Width="26" Height="26" CornerRadius="7" Background="{Binding LogoBg}"
+                          <Border Width="26" Height="26" CornerRadius="7" Background="{Binding LogoBg, Converter={StaticResource StringToBrush}}"
                                   BorderBrush="#1a2d3e" BorderThickness="1">
                             <TextBlock Text="{Binding Logo}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -201,9 +201,9 @@
                             <TextBlock Text="{Binding TfExch}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
                           </StackPanel>
                         </StackPanel>
-                        <Border Grid.Column="1" Background="{Binding DirBg}" BorderBrush="{Binding DirBorder}"
+                        <Border Grid.Column="1" Background="{Binding DirBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding DirBorder, Converter={StaticResource StringToBrush}}"
                                 BorderThickness="1" CornerRadius="5" Padding="6,2" VerticalAlignment="Center">
-                          <TextBlock Text="{Binding DirLabel}" Foreground="{Binding DirColor}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
+                          <TextBlock Text="{Binding DirLabel}" Foreground="{Binding DirColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
                         </Border>
                       </Grid>
                       <!-- confidence bar -->
@@ -212,14 +212,14 @@
                           <ColumnDefinition Width="{Binding ConfW, Converter={StaticResource StarRatioConverter}}" />
                           <ColumnDefinition Width="{Binding ConfW, Converter={StaticResource StarRatioConverter}, ConverterParameter=rest}" />
                         </Grid.ColumnDefinitions>
-                        <Border Grid.Column="0" Background="{Binding DirColor}" Opacity="0.8" />
+                        <Border Grid.Column="0" Background="{Binding DirColor, Converter={StaticResource StringToBrush}}" Opacity="0.8" />
                       </Grid>
                       <!-- reason -->
                       <TextBlock Text="{Binding Reason}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap"
                                  MaxLines="2" TextTrimming="CharacterEllipsis" LineHeight="14" />
                       <!-- footer -->
                       <Grid ColumnDefinitions="*,Auto">
-                        <TextBlock Text="{Binding ConfPct}" Foreground="{Binding DirColor}" FontSize="{DynamicResource FsMicro}"
+                        <TextBlock Text="{Binding ConfPct}" Foreground="{Binding DirColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}"
                                    FontFamily="{StaticResource FontMono}" FontWeight="Bold" />
                         <TextBlock Grid.Column="1" Text="{Binding Time}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}"
                                    FontFamily="{StaticResource FontMono}" />
@@ -247,7 +247,7 @@
                   <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Padding="0,4">
                     <Grid ColumnDefinitions="*,Auto">
                       <StackPanel Orientation="Horizontal" Spacing="6">
-                        <Border Width="22" Height="22" CornerRadius="5" Background="{Binding Bg}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1">
+                        <Border Width="22" Height="22" CornerRadius="5" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1">
                           <TextBlock Text="{Binding Logo}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold"
                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
@@ -257,7 +257,7 @@
                         </StackPanel>
                       </StackPanel>
                       <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Signal}" Foreground="{Binding SigColor}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" />
+                        <TextBlock Text="{Binding Signal}" Foreground="{Binding SigColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" />
                         <TextBlock Text="{Binding Change}" Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsMicro}" FontFamily="{StaticResource FontMono}" FontWeight="SemiBold" HorizontalAlignment="Right" />
                       </StackPanel>
                     </Grid>
@@ -285,8 +285,8 @@
                 </Border>
               </Grid>
               <StackPanel Orientation="Horizontal" Spacing="10">
-                <Border Background="{Binding RegimeBadgeBg}" BorderBrush="{Binding RegimeBadgeBorder}" BorderThickness="1" CornerRadius="7" Padding="12,4" VerticalAlignment="Center">
-                  <TextBlock Text="{Binding RegimeLabel}" Foreground="{Binding RegimeBadgeColor}" FontSize="{DynamicResource FsSubhead}" FontWeight="ExtraBold" />
+                <Border Background="{Binding RegimeBadgeBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding RegimeBadgeBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="7" Padding="12,4" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding RegimeLabel}" Foreground="{Binding RegimeBadgeColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsSubhead}" FontWeight="ExtraBold" />
                 </Border>
                 <StackPanel VerticalAlignment="Center" Spacing="2">
                   <TextBlock Text="{Binding RegimeSummary}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}"
@@ -302,8 +302,8 @@
             <StackPanel Spacing="8">
               <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Text="NEWS DIGEST" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
-                <Border Grid.Column="1" Background="{Binding NewsBadgeBg}" BorderBrush="{Binding NewsBadgeBorder}" BorderThickness="1" CornerRadius="5" Padding="8,2">
-                  <TextBlock Text="{Binding NewsBias}" Foreground="{Binding NewsBadgeColor}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
+                <Border Grid.Column="1" Background="{Binding NewsBadgeBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding NewsBadgeBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="5" Padding="8,2">
+                  <TextBlock Text="{Binding NewsBias}" Foreground="{Binding NewsBadgeColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
                 </Border>
               </Grid>
               <TextBlock Text="{Binding NewsSummary}"
@@ -317,7 +317,7 @@
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:AiSignalNewsBulletViewModel">
                     <StackPanel Orientation="Horizontal" Spacing="6">
-                      <Ellipse Width="4" Height="4" Fill="{Binding DotColor}" VerticalAlignment="Center" />
+                      <Ellipse Width="4" Height="4" Fill="{Binding DotColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
                       <TextBlock Text="{Binding Text}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                   </DataTemplate>
@@ -346,9 +346,9 @@
                           <TextBlock Text="{Binding Sym}" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
                           <TextBlock Text="{Binding Exch}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
                         </StackPanel>
-                        <Border Grid.Column="1" Background="{Binding BiasBg}" BorderBrush="{Binding BiasBorder}" BorderThickness="1"
+                        <Border Grid.Column="1" Background="{Binding BiasBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding BiasBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1"
                                 CornerRadius="4" Padding="6,2" VerticalAlignment="Center" Margin="0,0,8,0">
-                          <TextBlock Text="{Binding Bias}" Foreground="{Binding BiasColor}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
+                          <TextBlock Text="{Binding Bias}" Foreground="{Binding BiasColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
                         </Border>
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" Margin="0,0,8,0">
                           <TextBlock Text="{Binding Score}" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsSmall}" FontWeight="Bold"
@@ -358,7 +358,7 @@
                               <ColumnDefinition Width="{Binding Bar, Converter={StaticResource StarRatioConverter}}" />
                               <ColumnDefinition Width="{Binding Bar, Converter={StaticResource StarRatioConverter}, ConverterParameter=rest}" />
                             </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Background="{Binding BiasColor}" Opacity="0.85" CornerRadius="2" />
+                            <Border Grid.Column="0" Background="{Binding BiasColor, Converter={StaticResource StringToBrush}}" Opacity="0.85" CornerRadius="2" />
                           </Grid>
                         </StackPanel>
                         <TextBlock Grid.Column="3" Text="{Binding Reason}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" LineHeight="13"
@@ -385,8 +385,8 @@
                 <StackPanel Spacing="6">
                   <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Text="{Binding Label}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Center" />
-                    <Border Grid.Column="1" Background="{Binding SigBg}" BorderBrush="{Binding SigBorder}" BorderThickness="1" CornerRadius="4" Padding="6,2">
-                      <TextBlock Text="{Binding Sig}" Foreground="{Binding SigColor}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
+                    <Border Grid.Column="1" Background="{Binding SigBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding SigBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="4" Padding="6,2">
+                      <TextBlock Text="{Binding Sig}" Foreground="{Binding SigColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
                     </Border>
                   </Grid>
                   <TextBlock Text="{Binding Summary}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" LineHeight="13" TextWrapping="Wrap" />
@@ -451,9 +451,9 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                           <DataTemplate x:DataType="vm:AiSignalHeatmapCellViewModel">
-                            <Border Height="26" CornerRadius="4" Margin="1,0" Background="{Binding Background}"
-                                    BorderBrush="{Binding Border}" BorderThickness="1">
-                              <TextBlock Text="{Binding Text}" Foreground="{Binding Foreground}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold"
+                            <Border Height="26" CornerRadius="4" Margin="1,0" Background="{Binding Background, Converter={StaticResource StringToBrush}}"
+                                    BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1">
+                              <TextBlock Text="{Binding Text}" Foreground="{Binding Foreground, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold"
                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                           </DataTemplate>
@@ -477,7 +477,7 @@
             <StackPanel Spacing="10">
               <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                  <Border Width="34" Height="34" CornerRadius="9" Background="{Binding SelLogoBg}" BorderBrush="#1a2d3e" BorderThickness="1">
+                  <Border Width="34" Height="34" CornerRadius="9" Background="{Binding SelLogoBg, Converter={StaticResource StringToBrush}}" BorderBrush="#1a2d3e" BorderThickness="1">
                     <TextBlock Text="{Binding SelLogo}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold"
                                HorizontalAlignment="Center" VerticalAlignment="Center" />
                   </Border>
@@ -491,9 +491,9 @@
                     </TextBlock>
                   </StackPanel>
                 </StackPanel>
-                <Border Grid.Column="1" Background="{Binding SelDirBg}" BorderBrush="{Binding SelDirBorder}" BorderThickness="1"
+                <Border Grid.Column="1" Background="{Binding SelDirBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding SelDirBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1"
                         CornerRadius="6" Padding="10,4" VerticalAlignment="Center">
-                  <TextBlock Text="{Binding SelDirLabel}" Foreground="{Binding SelDirColor}" FontSize="{DynamicResource FsSmall}" FontWeight="ExtraBold" />
+                  <TextBlock Text="{Binding SelDirLabel}" Foreground="{Binding SelDirColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsSmall}" FontWeight="ExtraBold" />
                 </Border>
               </Grid>
 
@@ -501,8 +501,8 @@
               <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
                 <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                   <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBlock Text="{Binding SelConf}" Foreground="{Binding SelDirColor}" FontSize="{DynamicResource FsH1}" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}" />
-                    <TextBlock Text="%" Foreground="{Binding SelDirColor}" FontSize="{DynamicResource FsH1}" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}" />
+                    <TextBlock Text="{Binding SelConf}" Foreground="{Binding SelDirColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsH1}" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}" />
+                    <TextBlock Text="%" Foreground="{Binding SelDirColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsH1}" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}" />
                   </StackPanel>
                   <TextBlock Text="CONFIDENCE" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0" />
                 </StackPanel>
@@ -512,11 +512,11 @@
                       <ColumnDefinition Width="{Binding SelConfW, Converter={StaticResource StarRatioConverter}}" />
                       <ColumnDefinition Width="{Binding SelConfW, Converter={StaticResource StarRatioConverter}, ConverterParameter=rest}" />
                     </Grid.ColumnDefinitions>
-                    <Border Grid.Column="0" Background="{Binding SelDirColor}" Opacity="0.85" CornerRadius="3" />
+                    <Border Grid.Column="0" Background="{Binding SelDirColor, Converter={StaticResource StringToBrush}}" Opacity="0.85" CornerRadius="3" />
                   </Grid>
                   <StackPanel Orientation="Horizontal" Spacing="6">
                     <TextBlock Text="{Binding SelPrice}" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" FontFamily="{StaticResource FontMono}" />
-                    <TextBlock Text="{Binding SelChange}" Foreground="{Binding SelChangeColor}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Bottom" Margin="0,0,0,1" />
+                    <TextBlock Text="{Binding SelChange}" Foreground="{Binding SelChangeColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Bottom" Margin="0,0,0,1" />
                   </StackPanel>
                 </StackPanel>
               </Grid>
@@ -533,8 +533,8 @@
               </ItemsControl.ItemsPanel>
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:AiSignalDetailTabViewModel">
-                  <Button Classes="Tab" Content="{Binding Label}" Foreground="{Binding Foreground}"
-                          BorderBrush="{Binding BorderColor}" HorizontalAlignment="Stretch"
+                  <Button Classes="Tab" Content="{Binding Label}" Foreground="{Binding Foreground, Converter={StaticResource StringToBrush}}"
+                          BorderBrush="{Binding BorderColor, Converter={StaticResource StringToBrush}}" HorizontalAlignment="Stretch"
                           Command="{Binding Command}" CommandParameter="{Binding Key}" />
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
@@ -581,7 +581,7 @@
                       <TextBlock Text="{Binding ConsensusCount}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsH2}" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}" VerticalAlignment="Center" />
                       <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="timeframes agree" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" />
-                        <TextBlock Text="{Binding ConsensusLabel}" Foreground="{Binding SelDirColor}" FontSize="{DynamicResource FsMicro}" />
+                        <TextBlock Text="{Binding ConsensusLabel}" Foreground="{Binding SelDirColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" />
                       </StackPanel>
                     </StackPanel>
                     <ItemsControl ItemsSource="{Binding ConsensusBars}">
@@ -592,7 +592,7 @@
                       </ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:AiSignalConsensusBarViewModel">
-                          <Border Height="4" CornerRadius="2" Margin="1,0" Background="{Binding Color}" />
+                          <Border Height="4" CornerRadius="2" Margin="1,0" Background="{Binding Color, Converter={StaticResource StringToBrush}}" />
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -601,8 +601,8 @@
 
                 <!-- Quick execute -->
                 <Button Content="{Binding SelDirLabelExecute}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                        Background="{Binding SelDirBg}" BorderBrush="{Binding SelDirBorder}" BorderThickness="1"
-                        Foreground="{Binding SelDirColor}" FontSize="{DynamicResource FsBody}" FontWeight="ExtraBold" CornerRadius="8" Padding="0,10" />
+                        Background="{Binding SelDirBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding SelDirBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1"
+                        Foreground="{Binding SelDirColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsBody}" FontWeight="ExtraBold" CornerRadius="8" Padding="0,10" />
               </StackPanel>
             </ScrollViewer>
 
@@ -869,7 +869,7 @@
                     </TextBox.KeyBindings>
                   </TextBox>
                   <Button Grid.Column="1" Width="28" Height="28" CornerRadius="6" Padding="0"
-                          Background="{Binding ChatSendBg}" Foreground="{Binding ChatSendFg}" BorderThickness="0"
+                          Background="{Binding ChatSendBg, Converter={StaticResource StringToBrush}}" Foreground="{Binding ChatSendFg, Converter={StaticResource StringToBrush}}" BorderThickness="0"
                           Content="↑" FontSize="{DynamicResource FsSubhead}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                           ToolTip.Tip="Send" AutomationProperties.Name="Send chat message"
                           Command="{Binding SendChatCommand}" />

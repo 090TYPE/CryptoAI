@@ -171,8 +171,16 @@ public sealed class SniperSignalStreamService
         {
             await Task.WhenAll(sourceTasks);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            // Normal shutdown: the caller dropped the token, the reader is going away anyway.
+        }
+        catch (Exception ex)
+        {
+            // A source loop dying looks exactly like a quiet market from the reader's side —
+            // signals just stop arriving. Previously this escaped a fire-and-forget task and only
+            // surfaced whenever the finalizer got around to it, with no idea which stream it was.
+            CrashLog.Write("WARN", $"Sniper signal stream stopped early: {ex}");
         }
         finally
         {

@@ -1329,10 +1329,10 @@
                   <TextBlock Text="Send a real TRC20 transfer from the armed Tron session — built, signed locally, broadcast via Tron RPC." Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <Button Classes="FlatChrome" Content="USE USDC" Command="{Binding ApplyTronTokenPresetCommand}" CommandParameter="USDC"
-                            Background="{Binding TronUsdcPresetBackground}" Foreground="{Binding TronUsdcPresetForeground}"
+                            Background="{Binding TronUsdcPresetBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding TronUsdcPresetForeground, Converter={StaticResource StringToBrush}}"
                             Padding="14,6" CornerRadius="7" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                     <Button Classes="FlatChrome" Content="USE USDT" Command="{Binding ApplyTronTokenPresetCommand}" CommandParameter="USDT"
-                            Background="{Binding TronUsdtPresetBackground}" Foreground="{Binding TronUsdtPresetForeground}"
+                            Background="{Binding TronUsdtPresetBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding TronUsdtPresetForeground, Converter={StaticResource StringToBrush}}"
                             Padding="14,6" CornerRadius="7" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                   </StackPanel>
                   <TextBlock Text="{Binding TronTrc20BalanceLabel, StringFormat='Tracked token balance: {0}'}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" />

@@ -261,7 +261,7 @@ public sealed class NewsFeedService : IDisposable
                 });
             }
         }
-        catch { }
+        catch { /* optional source layered on top of RSS — whatever parsed so far still ships */ }
         return result;
     }
 

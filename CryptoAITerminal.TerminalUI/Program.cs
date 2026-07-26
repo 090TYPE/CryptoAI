@@ -17,10 +17,14 @@ class Program
         CrashLog.Install();
         CrashLog.Write("INFO", $"terminal starting (v{typeof(Program).Assembly.GetName().Version})");
 
+        // Composition root, built before anything can resolve out of it.
+        AppServices.Init();
+
         // Route AI through the CryptoAI server when one is configured (the server holds the
         // vendor key; the app authenticates with its license token). Null → direct-to-vendor.
         ChatClient.ServerBaseUrl = ServerEndpoint.ResolveBaseUrl();
-        ChatClient.LicenseTokenProvider = () => new LicenseService().GetToken();
+        var license = AppServices.Get<LicenseService>();
+        ChatClient.LicenseTokenProvider = () => license.GetToken();
 
         try
         {

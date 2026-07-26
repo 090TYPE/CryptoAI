@@ -183,7 +183,7 @@ public partial class MainWindowViewModel
         : AvailableBalanceUsdt + (PositionQuantity * CurrentTradePrice);
     public string AccountEquityLabel => $"{AccountEquityUsdt:N2} USDT";
     public string SessionPnlLabel => $"{(UnrealizedPnl + RealizedPnl):+0.00;-0.00;0.00} USDT";
-    public string SessionPnlBrush => (UnrealizedPnl + RealizedPnl) >= 0 ? "#3DDC84" : "#FF6B6B";
+    public string SessionPnlBrush => (UnrealizedPnl + RealizedPnl) >= 0 ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
     public decimal SessionPnlPercent => AccountEquityUsdt <= 0 ? 0m : ((UnrealizedPnl + RealizedPnl) / AccountEquityUsdt) * 100m;
     public string SessionPnlPercentLabel => $"{SessionPnlPercent:+0.##;-0.##;0.##}%";
     public decimal StrategyEntryPrice => LimitPrice > 0 ? LimitPrice : CurrentTradePrice;

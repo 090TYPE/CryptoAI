@@ -1,4 +1,4 @@
-﻿using Avalonia.Layout;
+using Avalonia.Layout;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
@@ -2169,7 +2169,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public string CurrentFuturesLeverageLabel => IsManualFuturesMode ? $"{ManualFuturesLeverage}x" : "--";
     public bool IsFuturesPrivateApiReady => ActiveFuturesGateway.HasPrivateApiCredentials;
     public string FuturesPrivateApiStatusLabel => IsFuturesPrivateApiReady ? "Private API Ready" : "Private API Missing";
-    public string FuturesPrivateApiStatusBrush => IsFuturesPrivateApiReady ? "#3DDC84" : "#FF6B6B";
+    public string FuturesPrivateApiStatusBrush => IsFuturesPrivateApiReady ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
 
     // ── API Credentials (editable in Settings) ───────────────────────────────
 
@@ -2739,7 +2739,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     public string CurrentSectionRoadmap => GetCurrentWorkspaceRoadmap();
     public string RiskRuntimeStatusLabel => WalletVM.GlobalPaperOnlyMode ? "Protected by paper mode" : "Live risk guard active";
-    public string RiskRuntimeStatusBrush => WalletVM.GlobalPaperOnlyMode ? "#F4B860" : "#3DDC84";
+    public string RiskRuntimeStatusBrush => WalletVM.GlobalPaperOnlyMode ? SemanticColor.Keys.Warning : SemanticColor.Keys.Positive;
     public string RiskRuntimeSummary => $"{WalletVM.GlobalRiskCapLabel} | {WalletVM.GlobalRiskSummary}";
     public string RiskSniperGuardSummary => $"Open slots {SniperVM.OpenPositionCount}/{SniperVM.MaxSimultaneousPositions} | Session buys left {SniperVM.RemainingSessionBuys} | Consecutive live losses {SniperVM.ConsecutiveLiveLossCount}";
     public string RiskCexExposureSummary => $"Ticket {TradeNotional:N2} USDT | Exposure {PortfolioExposureLabel} | Equity {AccountEquityLabel}";
@@ -8423,7 +8423,7 @@ public sealed class WorkingOrderViewModel
     public string StatusLabel => string.IsNullOrWhiteSpace(ExplicitStatusLabel) ? (IsExchangeManaged ? "Live" : "New") : ExplicitStatusLabel;
     public string StatusBrush => IsExchangeManaged ? "#21E6C1" : "#4FA9FF";
     public ReactiveCommand<Unit, Unit> CancelCommand => ReactiveCommand.Create(() => _cancel?.Invoke());
-    public string SideBrush => Kind is WorkingOrderKind.LimitBuy ? "#3DDC84" : "#FF6B6B";
+    public string SideBrush => Kind is WorkingOrderKind.LimitBuy ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
 
     public static WorkingOrderViewModel CreateLimit(OrderSide side, string symbol, decimal quantity, decimal price, string timeInForce, string executionExchange = "") =>
         new(side == OrderSide.Buy ? WorkingOrderKind.LimitBuy : WorkingOrderKind.LimitSell, symbol, quantity, price, timeInForce, executionExchange: executionExchange);
@@ -8477,7 +8477,7 @@ public sealed class TradeFillViewModel
     public string PriceLabel => $"{Price:N2}";
     public string QuantityLabel => $"{Quantity:0.0000}";
     public string TimeLabel => TimestampLocal.ToString("HH:mm:ss");
-    public string SideBrush => Side == OrderSide.Buy ? "#3DDC84" : "#FF6B6B";
+    public string SideBrush => Side == OrderSide.Buy ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
     public string StatusBrush => Status.Equals("FILLED", StringComparison.OrdinalIgnoreCase) ? "#21E6C1" : "#F4B860";
 }
 
@@ -8510,7 +8510,7 @@ public sealed class PositionRowViewModel
     public decimal MarginValue => Math.Abs(Quantity * EntryPrice) * 0.60m;
     public string MarginLabel => $"{MarginValue:N2}";
     public string RoeLabel => $"{PnlPercent:+0.##;-0.##;0.##}%";
-    public string UnrealizedPnlBrush => UnrealizedPnl >= 0 ? "#3DDC84" : "#FF6B6B";
+    public string UnrealizedPnlBrush => UnrealizedPnl >= 0 ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
     public string RealizedPnlBrush => RealizedPnl >= 0 ? "#3DDC84" : "#FF6B6B";
 }
 

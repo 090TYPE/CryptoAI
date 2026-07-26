@@ -150,8 +150,20 @@ public sealed class GridBot : IDisposable
 
         if (_cfg.MarketType == TradingMarketType.FuturesUsdM)
         {
-            try { await _gateway.SetLeverageAsync(_cfg.Symbol, _cfg.Leverage); } catch { }
-            try { await _gateway.SetMarginModeAsync(_cfg.Symbol, _cfg.MarginMode); } catch { }
+            // Биржа отбивает смену плеча и режима маржи, когда по символу уже есть позиция —
+            // это штатно и не повод не стартовать. Но молчать нельзя: тогда сетка торгует на
+            // том плече и режиме, что остались в аккаунте, а пользователь уверен, что на своих.
+            try { await _gateway.SetLeverageAsync(_cfg.Symbol, _cfg.Leverage); }
+            catch (Exception ex)
+            {
+                OnLog?.Invoke($"⚠ Leverage {_cfg.Leverage}× not applied ({ex.Message}) — the account's current leverage stays in force.");
+            }
+
+            try { await _gateway.SetMarginModeAsync(_cfg.Symbol, _cfg.MarginMode); }
+            catch (Exception ex)
+            {
+                OnLog?.Invoke($"⚠ Margin mode {_cfg.MarginMode} not applied ({ex.Message}) — the account's current mode stays in force.");
+            }
         }
 
         decimal currentPrice = await GetCurrentPriceAsync();
@@ -546,7 +558,14 @@ public sealed class GridBot : IDisposable
             if (bid > 0) return bid;
             if (ask > 0) return ask;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            // По этой цене раскладывается вся стартовая лестница: уровни ниже становятся
+            // покупками, выше — продажами. Середина диапазона — не рынок, а догадка, и если
+            // реальная цена ушла за границы, сетка встанет не той стороной. Стартовать всё же
+            // даём — отказ из-за одного сбойного запроса стакана хуже, — но не молча.
+            OnLog?.Invoke($"⚠ Could not read {_cfg.Symbol} price ({ex.Message}) — assuming the middle of the range; grid sides may be placed wrong.");
+        }
 
         return (_cfg.LowerPrice + _cfg.UpperPrice) / 2m;
     }

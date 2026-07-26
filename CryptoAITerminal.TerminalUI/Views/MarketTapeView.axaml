@@ -15,10 +15,10 @@
         <!-- venue toggle -->
         <StackPanel Orientation="Horizontal" Spacing="8">
           <Button Content="CEX" Width="80"
-                  Background="{Binding MarketTapeVM.CexTabBrush}" Foreground="{Binding MarketTapeVM.CexTabFg}"
+                  Background="{Binding MarketTapeVM.CexTabBrush, Converter={StaticResource StringToBrush}}" Foreground="{Binding MarketTapeVM.CexTabFg, Converter={StaticResource StringToBrush}}"
                   Command="{Binding MarketTapeVM.SelectCexCommand}" />
           <Button Content="DEX" Width="80"
-                  Background="{Binding MarketTapeVM.DexTabBrush}" Foreground="{Binding MarketTapeVM.DexTabFg}"
+                  Background="{Binding MarketTapeVM.DexTabBrush, Converter={StaticResource StringToBrush}}" Foreground="{Binding MarketTapeVM.DexTabFg, Converter={StaticResource StringToBrush}}"
                   Command="{Binding MarketTapeVM.SelectDexCommand}" />
         </StackPanel>
 
@@ -54,7 +54,7 @@
         </StackPanel>
 
         <TextBlock Text="{Binding MarketTapeVM.PressureLabel}" FontWeight="SemiBold"
-                   Foreground="{Binding MarketTapeVM.PressureBrush}" />
+                   Foreground="{Binding MarketTapeVM.PressureBrush, Converter={StaticResource StringToBrush}}" />
         <TextBlock Text="{Binding MarketTapeVM.StatusLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
       </StackPanel>
     </Border>
@@ -73,14 +73,14 @@
         <ItemsControl ItemsSource="{Binding MarketTapeVM.Rows}">
           <ItemsControl.ItemTemplate>
             <DataTemplate>
-              <Border Background="{Binding RowBrush}" CornerRadius="3" Padding="2,1">
+              <Border Background="{Binding RowBrush, Converter={StaticResource StringToBrush}}" CornerRadius="3" Padding="2,1">
                 <Grid ColumnDefinitions="44,90,60,*,*,80,110">
                   <TextBlock Grid.Column="0" Text="{Binding VenueLabel}"
-                             Foreground="{Binding VenueBrush}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" />
+                             Foreground="{Binding VenueBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" />
                   <TextBlock Grid.Column="1" Text="{Binding TimeLabel}"
                              FontFamily="Cascadia Code,Consolas,monospace" FontSize="{DynamicResource FsSmall}" Foreground="{DynamicResource TextMuted}" />
                   <TextBlock Grid.Column="2" Text="{Binding Side}"
-                             Foreground="{Binding SideBrush}" FontWeight="{Binding Weight}" FontSize="{DynamicResource FsSmall}" />
+                             Foreground="{Binding SideBrush, Converter={StaticResource StringToBrush}}" FontWeight="{Binding Weight}" FontSize="{DynamicResource FsSmall}" />
                   <TextBlock Grid.Column="3" Text="{Binding PriceLabel}"
                              FontFamily="Cascadia Code,Consolas,monospace" FontWeight="{Binding Weight}" FontSize="{DynamicResource FsSmall}" />
                   <TextBlock Grid.Column="4" Text="{Binding QtyLabel}"

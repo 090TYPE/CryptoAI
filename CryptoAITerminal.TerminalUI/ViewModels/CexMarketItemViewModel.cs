@@ -253,10 +253,10 @@ public class CexMarketItemViewModel : ReactiveObject
     public string SpreadPercentLabel => Spread > 0 ? $"{SpreadPercent:0.###}%" : "--";
     public string RangeLabel => SessionHigh > 0 && SessionLow > 0 ? $"{SessionLow:N2} - {SessionHigh:N2}" : "--";
     public string TrendLabel => !HasPriceHistory ? "Warmup" : IsPositiveTrend ? "Bullish" : "Bearish";
-    public string TrendBrush => !HasPriceHistory ? SemanticColor.Muted : IsPositiveTrend ? SemanticColor.Positive : SemanticColor.Negative;
+    public string TrendBrush => !HasPriceHistory ? SemanticColor.Keys.Muted : IsPositiveTrend ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
     public string UpdatedLabel => LastUpdated == default ? "--" : LastUpdated.ToString("HH:mm:ss");
     public string ActivityScoreLabel => $"{ActivityScore:0}";
-    public string ChangeBrush => ChangePercent >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
+    public string ChangeBrush => ChangePercent >= 0 ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
 
     // ============================================================
     //  Reference-terminal (Markets board) display helpers.

@@ -120,7 +120,11 @@ public sealed class GasMonitorService : IDisposable
                 var fast = ParseDecimal(node?["FastGasPrice"]?.GetValue<string>());
                 if (slow > 0) return (slow, std, fast);
             }
-            catch { }
+            catch
+            {
+                // The oracle is only a nicety the API key buys; the public RPC below produces the
+                // same three tiers unauthenticated. Nothing here is worth a log line every 30 s.
+            }
         }
 
         // Fallback: public Ethereum RPC — eth_feeHistory (EIP-1559)
@@ -183,7 +187,11 @@ public sealed class GasMonitorService : IDisposable
                 var fast = ParseDecimal(node?["FastGasPrice"]?.GetValue<string>());
                 if (slow > 0) return (slow, std, fast);
             }
-            catch { }
+            catch
+            {
+                // Same as the Ethereum oracle above: two further fallbacks (the bound server, then
+                // the public BSC RPC) cover this, so a failed key is a degradation, not an outage.
+            }
         }
 
         // BSC's fallback ladder is synthesized from a single eth_gasPrice, which is exactly the

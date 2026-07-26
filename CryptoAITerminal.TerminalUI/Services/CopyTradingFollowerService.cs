@@ -126,6 +126,7 @@ public sealed class CopyTradingFollowerService : IDisposable
         Task? loop;
         lock (_lifecycleLock)
         {
+            // Как и в Stop(): цикл мог уже освободить свой CTS в finally — отменять нечего.
             try { _cts?.Cancel(); } catch (ObjectDisposedException) { }
             _cts = null;
             loop = _loopTask;

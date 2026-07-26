@@ -129,7 +129,7 @@
                   <TextBlock Classes="Overline" Text="Status" />
                   <TextBlock Classes="Metric" Text="{Binding BacktestVM.StatusLabel}" />
                   <TextBlock Text="{Binding BacktestVM.WindowLabel}"
-                             Foreground="{Binding BacktestVM.StatusBrush}"
+                             Foreground="{Binding BacktestVM.StatusBrush, Converter={StaticResource StringToBrush}}"
                              TextWrapping="Wrap" FontSize="{DynamicResource FsCaption}" />
                 </StackPanel>
               </Border>
@@ -145,7 +145,7 @@
                   <TextBlock Classes="Overline" Text="Net Return" />
                   <TextBlock Classes="Metric"
                              Text="{Binding BacktestVM.NetReturnLabel}"
-                             Foreground="{Binding BacktestVM.NetReturnColor}" />
+                             Foreground="{Binding BacktestVM.NetReturnColor, Converter={StaticResource StringToBrush}}" />
                   <TextBlock Text="{Binding BacktestVM.DrawdownLabel, StringFormat='Max DD {0}'}"
                              Foreground="{DynamicResource TextMuted}" />
                 </StackPanel>
@@ -280,23 +280,23 @@
                           <Border Padding="0,2" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="0,0,0,1">
                             <Grid ColumnDefinitions="180,70,80,70,80,70,70,70,60,Auto" ColumnSpacing="6">
                               <TextBlock Grid.Column="0" Text="{Binding Params}"
-                                         Foreground="{Binding NameColor}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center"
+                                         Foreground="{Binding NameColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center"
                                          TextTrimming="CharacterEllipsis" />
                               <TextBlock Grid.Column="1" Text="{Binding IsSharpe}"
                                          Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="2" Text="{Binding IsReturn}"
                                          Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="3" Text="{Binding OosSharpe}"
-                                         Foreground="{Binding EffColor}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
+                                         Foreground="{Binding EffColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="4" Text="{Binding OosReturn}"
-                                         Foreground="{Binding ReturnColor}" FontWeight="SemiBold"
+                                         Foreground="{Binding ReturnColor, Converter={StaticResource StringToBrush}}" FontWeight="SemiBold"
                                          FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="5" Text="{Binding OosMaxDD}"
                                          Foreground="#FF8A4C" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="6" Text="{Binding Efficiency}"
-                                         Foreground="{Binding EffColor}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
+                                         Foreground="{Binding EffColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="7" Text="{Binding WfScore}"
-                                         Foreground="{Binding ScoreColor}" FontWeight="SemiBold"
+                                         Foreground="{Binding ScoreColor, Converter={StaticResource StringToBrush}}" FontWeight="SemiBold"
                                          FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="8" Text="{Binding TimesLabel}"
                                          Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
@@ -397,7 +397,7 @@
                   <Border CornerRadius="6" Padding="10,6" Background="{DynamicResource Surface1}">
                     <StackPanel Spacing="4">
                       <TextBlock Text="{Binding BacktestVM.AiReviewVerdict}"
-                                 Foreground="{Binding BacktestVM.AiVerdictBrush}"
+                                 Foreground="{Binding BacktestVM.AiVerdictBrush, Converter={StaticResource StringToBrush}}"
                                  FontWeight="Bold" FontSize="{DynamicResource FsSubhead}" />
                       <TextBlock Text="{Binding BacktestVM.AiReviewSummary}"
                                  Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
@@ -439,14 +439,14 @@
                       <DataTemplate x:DataType="vm:StrategyComparisonRow">
                         <Grid ColumnDefinitions="180,55,70,90,70,70,90" ColumnSpacing="8" Margin="0,2">
                           <TextBlock Grid.Column="0" Text="{Binding Name}"
-                                     Foreground="{Binding NameColor}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center"
+                                     Foreground="{Binding NameColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center"
                                      TextTrimming="CharacterEllipsis" />
                           <TextBlock Grid.Column="1" Text="{Binding TradeCount}"
                                      Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
                           <TextBlock Grid.Column="2" Text="{Binding WinRate}"
                                      Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
                           <TextBlock Grid.Column="3" Text="{Binding NetReturn}"
-                                     Foreground="{Binding ReturnColor}" FontWeight="SemiBold"
+                                     Foreground="{Binding ReturnColor, Converter={StaticResource StringToBrush}}" FontWeight="SemiBold"
                                      FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
                           <TextBlock Grid.Column="4" Text="{Binding MaxDD}"
                                      Foreground="#FF8A4C" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
@@ -496,7 +496,7 @@
                         <TextBlock Grid.Column="4" Text="{Binding Duration}"
                                    Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                         <TextBlock Grid.Column="5" Text="{Binding ReturnLabel}"
-                                   Foreground="{Binding ReturnColor}"
+                                   Foreground="{Binding ReturnColor, Converter={StaticResource StringToBrush}}"
                                    FontWeight="SemiBold" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                       </Grid>
                     </DataTemplate>

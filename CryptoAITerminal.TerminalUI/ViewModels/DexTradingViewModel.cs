@@ -3220,13 +3220,13 @@ public sealed class HyperliquidPositionViewModel
     {
         Coin = p.Coin;
         Side = p.Side;
-        SideBrush = p.IsLong ? SemanticColor.Positive : SemanticColor.Negative;
+        SideBrush = p.IsLong ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
         SizeLabel = Math.Abs(p.Size).ToString("0.######");
         EntryLabel = p.EntryPrice > 0m ? $"$ {p.EntryPrice:0.####}" : "—";
         LiqLabel = p.LiquidationPrice > 0m ? $"$ {p.LiquidationPrice:0.####}" : "—";
         LeverageLabel = $"{p.Leverage}x {p.LeverageType}";
         PnlLabel = (p.UnrealizedPnl >= 0m ? "+$ " : "-$ ") + Math.Abs(p.UnrealizedPnl).ToString("N2");
-        PnlBrush = p.UnrealizedPnl >= 0m ? SemanticColor.Positive : SemanticColor.Negative;
+        PnlBrush = p.UnrealizedPnl >= 0m ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
         ValueLabel = $"$ {p.PositionValueUsd:N2}";
     }
 
@@ -3263,7 +3263,7 @@ public sealed class DexWatchItemViewModel : ReactiveObject
     public decimal PriceValue => _price;
     public string PriceLabel => _price > 0m ? $"$ {DexPerpFormat.Price(_price)}" : "—";
     public string ChangeLabel => _price > 0m ? $"{_change24h:+0.0;-0.0;0}%" : "";
-    public string ChangeBrush => _change24h >= 0m ? SemanticColor.Positive : SemanticColor.Negative;
+    public string ChangeBrush => _change24h >= 0m ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
 
     public void Update(decimal price, decimal change24h)
     {
@@ -3285,7 +3285,7 @@ public sealed class DexKeeperOrderViewModel
         TypeLabel = o.PlanId is not null && o.PlanId.StartsWith("DCA", StringComparison.OrdinalIgnoreCase)
             ? $"DCA {side}"
             : $"{o.Kind.ToString().ToUpperInvariant()} {side}";
-        SideBrush = o.Side == KeeperSide.Buy ? SemanticColor.Positive : SemanticColor.Negative;
+        SideBrush = o.Side == KeeperSide.Buy ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
         Symbol = o.Symbol;
         TriggerLabel = o.Kind == KeeperOrderKind.Trailing
             ? $"−{o.TrailingDistancePct:0.##}%"
@@ -3325,7 +3325,7 @@ public sealed class DexMarketTradeViewModel
     {
         IsBuy = string.Equals(t.Side, "buy", StringComparison.OrdinalIgnoreCase);
         SideLabel = IsBuy ? "BUY" : "SELL";
-        SideBrush = IsBuy ? SemanticColor.Positive : SemanticColor.Negative;
+        SideBrush = IsBuy ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
         AmountLabel = t.AmountUsd >= 1000m ? $"${t.AmountUsd / 1000m:0.#}K" : $"${t.AmountUsd:0}";
         TimeLabel = t.TimeUtc.ToLocalTime().ToString("HH:mm:ss");
     }
@@ -3348,7 +3348,7 @@ public sealed class DexTradeRecordViewModel : ReactiveObject
     public DateTime TimeUtc { get; }
 
     public string SideLabel    => Side;
-    public string SideBrush    => Side == "BUY" ? SemanticColor.Positive : SemanticColor.Negative;
+    public string SideBrush    => Side == "BUY" ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
     public string AmountLabel  => $"{Amount:0.########}";
     public string PriceLabel   => Price > 0 ? $"$ {Price:N6}" : "--";
     public string TxHashShort  => TxHash.Length > 10 ? TxHash[..10] + "..." : (TxHash.Length > 0 ? TxHash : "FAILED");

@@ -82,7 +82,7 @@
                         <Border Grid.Column="0" CornerRadius="3" Padding="6,2"
                                 Background="{DynamicResource Surface2}">
                           <TextBlock Text="{Binding TagLabel}"
-                                     Foreground="{Binding TagBrush}"
+                                     Foreground="{Binding TagBrush, Converter={StaticResource StringToBrush}}"
                                      FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" />
                         </Border>
                         <TextBlock Grid.Column="1" Text="{Binding Trades}"
@@ -90,7 +90,7 @@
                         <TextBlock Grid.Column="2" Text="{Binding WinRateLabel}"
                                    Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                         <TextBlock Grid.Column="3" Text="{Binding PnlLabel}"
-                                   Foreground="{Binding PnlBrush}"
+                                   Foreground="{Binding PnlBrush, Converter={StaticResource StringToBrush}}"
                                    FontSize="{DynamicResource FsSmall}" FontWeight="Bold" VerticalAlignment="Center" />
                       </Grid>
                     </DataTemplate>
@@ -130,11 +130,11 @@
                               <TextBlock Grid.Column="1" Text="{Binding SymbolLabel}"
                                          Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="2" Text="{Binding DirectionLabel}"
-                                         Foreground="{Binding DirectionBrush}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
+                                         Foreground="{Binding DirectionBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="3" Text="{Binding PnlLabel}"
-                                         Foreground="{Binding PnlBrush}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" VerticalAlignment="Center" />
+                                         Foreground="{Binding PnlBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="4" Text="{Binding PnlPctLabel}"
-                                         Foreground="{Binding PnlBrush}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
+                                         Foreground="{Binding PnlBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="5" Text="{Binding ExchangeLabel}"
                                          Foreground="#4A7090" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                               <!-- Notes (editable on click) -->

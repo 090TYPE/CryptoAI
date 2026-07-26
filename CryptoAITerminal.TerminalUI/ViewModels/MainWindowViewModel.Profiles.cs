@@ -131,7 +131,7 @@ public partial class MainWindowViewModel
     public string CexReverseBlockedReason => GetCexReverseBlockedReason();
     public string PrimaryOrderBlockedReason => GetPrimaryOrderBlockedReason();
     public string TradingGuardStatusLabel => CanPlacePrimaryOrder ? "ORDER PATH READY" : "EXECUTION BLOCKED";
-    public string TradingGuardStatusBrush => CanPlacePrimaryOrder ? "#21E6C1" : "#F4B860";
+    public string TradingGuardStatusBrush => CanPlacePrimaryOrder ? SemanticColor.Keys.Accent : SemanticColor.Keys.Warning;
     public string TradingGuardSummary => CanPlacePrimaryOrder
         ? $"{SelectedOrderType} {SelectedOrderSide} ticket is armed for {SelectedTradingSymbol}. Guard mode: {WalletVM.GlobalExecutionModeLabel}."
         : PrimaryOrderBlockedReason;

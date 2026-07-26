@@ -14,7 +14,7 @@
         <StackPanel Spacing="2">
           <TextBlock Text="P&amp;L" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
           <TextBlock Text="{Binding PnlDashboardVM.TotalPnlLabel}"
-                     Foreground="{Binding PnlDashboardVM.TotalPnlBrush}"
+                     Foreground="{Binding PnlDashboardVM.TotalPnlBrush, Converter={StaticResource StringToBrush}}"
                      FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
@@ -91,8 +91,8 @@
                 <TextBlock Grid.Column="0" Text="{Binding DateLabel}"  Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="{Binding Symbol}"     Foreground="{DynamicResource TextSecondary}" FontWeight="SemiBold" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="2" Text="{Binding Direction}"  Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="3" Text="{Binding PnlLabel}"   Foreground="{Binding PnlBrush}" FontWeight="SemiBold" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="4" Text="{Binding PnlPctLabel}" Foreground="{Binding PnlBrush}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="3" Text="{Binding PnlLabel}"   Foreground="{Binding PnlBrush, Converter={StaticResource StringToBrush}}" FontWeight="SemiBold" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="4" Text="{Binding PnlPctLabel}" Foreground="{Binding PnlBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="5" Text="{Binding ExitReason}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
               </Grid>
             </Border>

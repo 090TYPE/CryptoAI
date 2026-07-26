@@ -72,7 +72,7 @@
                           </Border>
                           <StackPanel Grid.Column="1" Spacing="0" Margin="8,0" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Symbol}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsBody}" />
-                            <TextBlock Text="{Binding Bias}" Foreground="{Binding BiasBrush}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
+                            <TextBlock Text="{Binding Bias}" Foreground="{Binding BiasBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
                           </StackPanel>
                           <TextBlock Grid.Column="2" Text="{Binding Reason}" Foreground="{DynamicResource TextMuted}"
                                      FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" VerticalAlignment="Center" />
@@ -550,9 +550,9 @@
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
                           <Border Classes="GuardChip"
                                   Background="#10251F"
-                                  BorderBrush="{Binding DexGuardStatusBrush}">
+                                  BorderBrush="{Binding DexGuardStatusBrush, Converter={StaticResource StringToBrush}}">
                             <TextBlock Text="{Binding DexGuardStatusLabel}"
-                                       Foreground="{Binding DexGuardStatusBrush}"
+                                       Foreground="{Binding DexGuardStatusBrush, Converter={StaticResource StringToBrush}}"
                                        FontWeight="Bold" />
                           </Border>
                           <StackPanel Grid.Column="1" Spacing="4">
@@ -586,7 +586,7 @@
                       <TextBlock Text="{Binding SpendableQuoteBalanceLabel}"
                                  Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" />
                       <TextBlock Text="{Binding PairCompatibilityMessage}"
-                                 Foreground="{Binding QuoteAssetModeBrush}"
+                                 Foreground="{Binding QuoteAssetModeBrush, Converter={StaticResource StringToBrush}}"
                                  FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" />
 
                       <!-- Quote asset + slippage -->
@@ -627,7 +627,7 @@
                                 Command="{Binding UseMaxBuyAmountCommand}" />
                       </Grid>
                       <TextBlock Text="{Binding BuyQuoteLabel}"
-                                 Foreground="{Binding BuyQuoteBrush}"
+                                 Foreground="{Binding BuyQuoteBrush, Converter={StaticResource StringToBrush}}"
                                  FontWeight="SemiBold"
                                  IsVisible="{Binding HasSelectedToken}" />
 

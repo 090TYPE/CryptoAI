@@ -18,7 +18,7 @@
           <TextBlock Text="{Binding WalletVM.ActiveWalletBanner}"
                      Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" TextWrapping="Wrap" />
           <TextBlock Text="{Binding WalletVM.WalletReadinessLabel}"
-                     Foreground="{Binding WalletVM.WalletReadinessBrush}"
+                     Foreground="{Binding WalletVM.WalletReadinessBrush, Converter={StaticResource StringToBrush}}"
                      FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" />
         </StackPanel>
       </Border>
@@ -29,7 +29,7 @@
           <TextBlock Text="{Binding WalletVM.NativeBalanceLabel}"
                      Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
           <TextBlock Text="{Binding WalletVM.RouteReadinessLabel}"
-                     Foreground="{Binding WalletVM.RouteReadinessBrush}"
+                     Foreground="{Binding WalletVM.RouteReadinessBrush, Converter={StaticResource StringToBrush}}"
                      FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" />
         </StackPanel>
       </Border>

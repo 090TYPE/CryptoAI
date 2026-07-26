@@ -86,7 +86,15 @@ public sealed class CopyTradingLeaderService : IDisposable
             if (loaded is { Count: > 0 })
                 _trades.AddRange(loaded.TakeLast(MaxTrades));
         }
-        catch { }
+        catch (Exception ex)
+        {
+            // Starting empty is survivable, but the next PublishTrade rewrites the file whole —
+            // so a truncated or locked history is quietly destroyed, and followers reading
+            // /api/copy-trades see the leader's past disappear. Leave a trail with the path so
+            // the file can still be salvaged by hand.
+            CrashLog.Write("WARN",
+                $"Copy-trade history at {_filePath} could not be loaded ({ex.Message}) — starting empty; the next published trade overwrites it.");
+        }
     }
 
     public void Dispose() { }

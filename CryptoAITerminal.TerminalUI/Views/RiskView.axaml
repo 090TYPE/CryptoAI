@@ -12,7 +12,7 @@
                   <TextBlock Classes="Overline" Text="Execution Guard" />
                   <TextBlock Classes="Metric" Text="{Binding WalletVM.GlobalExecutionModeLabel}" />
                   <TextBlock Text="{Binding WalletVM.GlobalExecutionGuardStatusLabel}"
-                             Foreground="{Binding RiskRuntimeStatusBrush}" TextWrapping="Wrap" />
+                             Foreground="{Binding RiskRuntimeStatusBrush, Converter={StaticResource StringToBrush}}" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="1" Classes="SurfaceCard">
@@ -37,7 +37,7 @@
                 <StackPanel Spacing="4">
                   <TextBlock Classes="Overline" Text="Realized P&amp;L" />
                   <TextBlock Classes="Metric" Text="{Binding PnlDashboardVM.TotalPnlLabel}"
-                             Foreground="{Binding PnlDashboardVM.TotalPnlBrush}" />
+                             Foreground="{Binding PnlDashboardVM.TotalPnlBrush, Converter={StaticResource StringToBrush}}" />
                   <TextBlock Text="{Binding PnlDashboardVM.TradeCountLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
                 </StackPanel>
               </Border>
@@ -45,7 +45,7 @@
                 <StackPanel Spacing="4">
                   <TextBlock Classes="Overline" Text="Open P&amp;L (unrealized)" />
                   <TextBlock Classes="Metric" Text="{Binding AllPositionsVM.TotalPnlLabel}"
-                             Foreground="{Binding AllPositionsVM.TotalPnlBrush}" />
+                             Foreground="{Binding AllPositionsVM.TotalPnlBrush, Converter={StaticResource StringToBrush}}" />
                   <TextBlock Text="{Binding AllPositionsVM.StatusLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
@@ -87,9 +87,9 @@
                 <TextBlock Text="{Binding RiskBudgetDailyLossLabel}" FontWeight="SemiBold" />
                 <TextBlock Text="{Binding RiskBudgetRemainingLabel}" Foreground="{DynamicResource TextMuted}" />
                 <TextBlock Text="{Binding RiskBudgetWarningLabel}" FontWeight="SemiBold"
-                           Foreground="{Binding RiskBudgetWarningBrush}" TextWrapping="Wrap" />
+                           Foreground="{Binding RiskBudgetWarningBrush, Converter={StaticResource StringToBrush}}" TextWrapping="Wrap" />
                 <TextBlock Text="{Binding RiskBudgetBlockReason}"
-                           Foreground="{Binding RiskBudgetBlockBrush}" TextWrapping="Wrap" />
+                           Foreground="{Binding RiskBudgetBlockBrush, Converter={StaticResource StringToBrush}}" TextWrapping="Wrap" />
                 <Button Classes="GhostButton" Content="Reset Daily Loss"
                         HorizontalAlignment="Left"
                         Command="{Binding ResetDailyRiskCommand}" />
@@ -106,7 +106,7 @@
                   <Border Background="{DynamicResource Surface2}" CornerRadius="6" Padding="8" Height="64"
                           IsVisible="{Binding HasRiskDailyLossSparkline}">
                     <Polyline Points="{Binding RiskDailyLossSparkline}"
-                              Stroke="{Binding RiskBudgetWarningBrush}" StrokeThickness="2"
+                              Stroke="{Binding RiskBudgetWarningBrush, Converter={StaticResource StringToBrush}}" StrokeThickness="2"
                               StrokeJoin="Round" />
                   </Border>
                   <TextBlock Text="No realized losses recorded today."
@@ -170,7 +170,7 @@
                   <TextBlock Classes="H2" Text="Readiness Notes" />
                   <TextBlock Text="{Binding WalletVM.GlobalExecutionSummary}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
                   <TextBlock Text="{Binding WalletVM.GlobalQuoteAssetSummary}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding FuturesPrivateApiStatusLabel}" Foreground="{Binding FuturesPrivateApiStatusBrush}" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding FuturesPrivateApiStatusLabel}" Foreground="{Binding FuturesPrivateApiStatusBrush, Converter={StaticResource StringToBrush}}" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
             </Grid>
