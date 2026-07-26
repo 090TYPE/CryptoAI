@@ -31,6 +31,20 @@
     <KeyBinding Gesture="Ctrl+K" Command="{Binding OpenCommandPaletteCommand}" />
   </Window.KeyBindings>
 
+  <Window.Styles>
+    <!-- Переключатель языка. Активная кнопка помечается классом active из code-behind, сами
+         цвета остаются здесь: раньше RefreshLanguageButtons раздавал Brush.Parse с литералами
+         палитры и был единственным местом, где C# знал про акцентный цвет. -->
+    <Style Selector="Button.LangPill">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource TextDim}" />
+    </Style>
+    <Style Selector="Button.LangPill.active">
+      <Setter Property="Background" Value="{DynamicResource Accent}" />
+      <Setter Property="Foreground" Value="{DynamicResource OnAccentText}" />
+    </Style>
+  </Window.Styles>
+
   <Grid>
     <Grid x:Name="MainContentRoot"
           ColumnDefinitions="Auto,*"
@@ -107,7 +121,7 @@
                   Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1"
                   CornerRadius="8" Padding="10,6" MinHeight="0">
             <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-              <Viewbox Width="13" Height="13" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="#5A7A94" Data="M11 3a8 8 0 100 16A8 8 0 0011 3zM21 21l-4.35-4.35" /></Canvas></Viewbox>
+              <Viewbox Width="13" Height="13" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{DynamicResource TextQuiet}" Data="M11 3a8 8 0 100 16A8 8 0 0011 3zM21 21l-4.35-4.35" /></Canvas></Viewbox>
               <TextBlock Text="Ask AI…" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
               <Border Background="{DynamicResource Surface3}" CornerRadius="4" Padding="4,1">
                 <TextBlock Text="Ctrl K" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="SemiBold" />
@@ -117,10 +131,10 @@
           <Border Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="7"
                   Padding="2" Margin="0,0,10,0" VerticalAlignment="Center">
             <StackPanel Orientation="Horizontal" Spacing="2">
-              <Button x:Name="EnglishLanguageButton" Content="EN" Click="OnSetEnglishLanguageClick"
+              <Button x:Name="EnglishLanguageButton" Classes="LangPill" Content="EN" Click="OnSetEnglishLanguageClick"
                       MinHeight="0" Padding="8,2" CornerRadius="5" BorderThickness="0"
                       FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
-              <Button x:Name="RussianLanguageButton" Content="RU" Click="OnSetRussianLanguageClick"
+              <Button x:Name="RussianLanguageButton" Classes="LangPill" Content="RU" Click="OnSetRussianLanguageClick"
                       MinHeight="0" Padding="8,2" CornerRadius="5" BorderThickness="0"
                       FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
             </StackPanel>
@@ -133,7 +147,7 @@
                          FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" VerticalAlignment="Center" />
             </StackPanel>
           </Border>
-          <Border Background="#06181A" BorderBrush="#0E2A2C" BorderThickness="1" CornerRadius="999"
+          <Border Background="{DynamicResource AccentTint}" BorderBrush="{DynamicResource AccentSoft}" BorderThickness="1" CornerRadius="999"
                   Padding="10,6" Margin="0,0,10,0">
             <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
               <Ellipse Classes="PulseDot" Width="7" Height="7" Fill="{DynamicResource Accent}" VerticalAlignment="Center" />
@@ -149,7 +163,7 @@
                   Margin="0,0,10,0"
                   Click="OnOpenNotificationsClick">
             <Panel>
-              <Viewbox Width="16" Height="16"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="#8FA3B8" Data="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></Canvas></Viewbox>
+              <Viewbox Width="16" Height="16"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{DynamicResource TextMuted}" Data="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></Canvas></Viewbox>
               <Border IsVisible="{Binding HasNotifications}"
                       Background="{DynamicResource Negative}" CornerRadius="7" MinWidth="14" Height="14"
                       Padding="2,0" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0">
@@ -167,7 +181,7 @@
                   Margin="0,0,10,0"
                   Command="{Binding SelectMainTabCommand}"
                   CommandParameter="settings">
-            <Viewbox Width="16" Height="16"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="#8FA3B8" Data="M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" /></Canvas></Viewbox>
+            <Viewbox Width="16" Height="16"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{DynamicResource TextMuted}" Data="M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" /></Canvas></Viewbox>
           </Button>
           <Button Classes="GhostButton"
                   ToolTip.Tip="Portfolio / Wallet"
@@ -178,7 +192,7 @@
                   Margin="0,0,10,0"
                   Command="{Binding SelectMainTabCommand}"
                   CommandParameter="portfolio">
-            <Viewbox Width="16" Height="16"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="#8FA3B8" Data="M21 12V7H5a2 2 0 010-4h14v4M3 5v14a2 2 0 002 2h16v-5M18 12a2 2 0 000 4h4v-4z" /></Canvas></Viewbox>
+            <Viewbox Width="16" Height="16"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{DynamicResource TextMuted}" Data="M21 12V7H5a2 2 0 010-4h14v4M3 5v14a2 2 0 002 2h16v-5M18 12a2 2 0 000 4h4v-4z" /></Canvas></Viewbox>
           </Button>
 
           <!-- Equity -->
@@ -232,8 +246,8 @@
         <!-- Logo + collapse toggle -->
         <Border Grid.Row="0" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Padding="12,12" Height="57">
           <Grid ColumnDefinitions="Auto,*,Auto">
-            <Border Grid.Column="0" Width="30" Height="30" Background="#081416" CornerRadius="8"
-                    BorderBrush="#12312E" BorderThickness="1" VerticalAlignment="Center"
+            <Border Grid.Column="0" Width="30" Height="30" Background="{DynamicResource AccentTint}" CornerRadius="8"
+                    BorderBrush="{DynamicResource AccentTintStroke}" BorderThickness="1" VerticalAlignment="Center"
                     IsVisible="{Binding IsSidebarLabelsVisible}">
               <Grid Margin="6">
                 <Path Data="M 14 2 L 26 26 L 2 26 Z" Fill="{DynamicResource Accent}" Stretch="Uniform" />
@@ -517,7 +531,7 @@
           <StackPanel Orientation="Horizontal" Spacing="8">
             <TextBlock Text="Sniper" VerticalAlignment="Center" />
             <Border Background="{Binding WalletVM.GlobalQuoteAssetModeBrush}" CornerRadius="8" Padding="6,1">
-              <TextBlock Text="{Binding WalletVM.GlobalQuoteTabBadgeLabel}" Foreground="#081018" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
+              <TextBlock Text="{Binding WalletVM.GlobalQuoteTabBadgeLabel}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
             </Border>
           </StackPanel>
         </TabItem.Header>
@@ -531,7 +545,7 @@
           <StackPanel Orientation="Horizontal" Spacing="8">
             <TextBlock Text="DEX" VerticalAlignment="Center" />
             <Border Background="{Binding WalletVM.GlobalQuoteAssetModeBrush}" CornerRadius="8" Padding="6,1">
-              <TextBlock Text="{Binding WalletVM.GlobalQuoteTabBadgeLabel}" Foreground="#081018" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
+              <TextBlock Text="{Binding WalletVM.GlobalQuoteTabBadgeLabel}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
             </Border>
           </StackPanel>
         </TabItem.Header>
@@ -733,7 +747,7 @@
                                    TextWrapping="Wrap" />
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
                           <Border Background="{Binding WalletVM.WalletReadinessBrush}" CornerRadius="10" Padding="10,4">
-                            <TextBlock Text="{Binding WalletVM.WalletReadinessLabel}" Foreground="#081018" FontWeight="Bold" />
+                            <TextBlock Text="{Binding WalletVM.WalletReadinessLabel}" Foreground="{DynamicResource OnAccentText}" FontWeight="Bold" />
                           </Border>
                           <TextBlock Grid.Column="1"
                                      Text="{Binding WalletVM.RouteReadinessSummary}"
@@ -746,7 +760,7 @@
                                    TextWrapping="Wrap" />
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
                           <Border Background="{Binding DexTradingVM.QuoteAssetModeBrush}" CornerRadius="10" Padding="10,4">
-                            <TextBlock Text="{Binding DexTradingVM.QuoteAssetModeLabel}" Foreground="#081018" FontWeight="Bold" />
+                            <TextBlock Text="{Binding DexTradingVM.QuoteAssetModeLabel}" Foreground="{DynamicResource OnAccentText}" FontWeight="Bold" />
                           </Border>
                           <TextBlock Grid.Column="1" Text="{Binding DexTradingVM.QuoteAssetSummary}"
                                      Foreground="{DynamicResource TextMuted}"
@@ -1196,7 +1210,7 @@
                   Padding="12,4" Background="Transparent" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1" Foreground="{DynamicResource TextSecondary}" />
           <Button Content="Обновить сейчас" Command="{Binding InstallUpdateCommand}"
                   IsEnabled="{Binding !IsUpdateDownloading}"
-                  Padding="14,4" Background="{DynamicResource Accent}" Foreground="#06121C" FontWeight="Bold" />
+                  Padding="14,4" Background="{DynamicResource Accent}" Foreground="{DynamicResource OnAccentText}" FontWeight="Bold" />
         </StackPanel>
       </StackPanel>
     </Border>
@@ -1211,7 +1225,7 @@
         <TextBlock Text="{Binding LicenseVM.StateLabel}" Foreground="{Binding LicenseVM.StateBrush}"
                    FontSize="{DynamicResource FsSmall}" FontWeight="SemiBold" VerticalAlignment="Center" />
         <Button Content="Activate" Command="{Binding SelectMainTabCommand}" CommandParameter="settings"
-                Padding="10,2" Background="{DynamicResource Accent}" Foreground="#06121C" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
+                Padding="10,2" Background="{DynamicResource Accent}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
       </StackPanel>
     </Border>
 
@@ -1278,7 +1292,7 @@
                     Command="{Binding StartDemoCommand}"
                     Padding="20,10"
                     Background="{DynamicResource Accent}"
-                    Foreground="#06121C"
+                    Foreground="{DynamicResource OnAccentText}"
                     FontWeight="Bold" />
           </StackPanel>
         </StackPanel>
@@ -1301,7 +1315,7 @@
           <Button DockPanel.Dock="Bottom"
                   Content="Закрыть" Command="{Binding CloseWhatsNewCommand}"
                   HorizontalAlignment="Right" Margin="0,16,0,0"
-                  Padding="20,10" Background="{DynamicResource Accent}" Foreground="#06121C" FontWeight="Bold" />
+                  Padding="20,10" Background="{DynamicResource Accent}" Foreground="{DynamicResource OnAccentText}" FontWeight="Bold" />
           <md:MarkdownScrollViewer Markdown="{Binding WhatsNewMarkdown}" />
         </DockPanel>
       </Border>
@@ -1360,7 +1374,7 @@
               <Button Content="Back" Command="{Binding OnboardingVM.BackCommand}"
                       Padding="16,8" Background="Transparent" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1" Foreground="{DynamicResource TextSecondary}" />
               <Button Content="Save securely" Command="{Binding OnboardingVM.SaveKeysCommand}"
-                      Padding="16,8" Background="{DynamicResource Accent}" Foreground="#06121C" FontWeight="Bold" />
+                      Padding="16,8" Background="{DynamicResource Accent}" Foreground="{DynamicResource OnAccentText}" FontWeight="Bold" />
             </StackPanel>
           </StackPanel>
 
@@ -1372,7 +1386,7 @@
             <Button Content="Done"
                     Command="{Binding OnboardingVM.FinishCommand}"
                     HorizontalAlignment="Right" Padding="20,10"
-                    Background="{DynamicResource Accent}" Foreground="#06121C" FontWeight="Bold" />
+                    Background="{DynamicResource Accent}" Foreground="{DynamicResource OnAccentText}" FontWeight="Bold" />
           </StackPanel>
 
         </StackPanel>
@@ -1387,7 +1401,7 @@
             IsVisible="{Binding !IsCommandPaletteOpen}">
       <Button Command="{Binding OpenCommandPaletteCommand}"
               Width="52" Height="52" CornerRadius="26" Padding="0"
-              Background="{DynamicResource Accent}" Foreground="#06121C"
+              Background="{DynamicResource Accent}" Foreground="{DynamicResource OnAccentText}"
               FontSize="{DynamicResource FsH2}" Content="🧠"
               HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
               ToolTip.Tip="Ask AI · Ctrl+K">
@@ -1439,7 +1453,7 @@
 
             <StackPanel Orientation="Horizontal" Spacing="10">
               <Button Content="Run" Command="{Binding RunCommandPaletteCommand}"
-                      Background="{DynamicResource Accent}" Foreground="#06121C" FontWeight="Bold" Padding="16,8" />
+                      Background="{DynamicResource Accent}" Foreground="{DynamicResource OnAccentText}" FontWeight="Bold" Padding="16,8" />
               <TextBlock Text="Thinking…" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"
                          IsVisible="{Binding CommandPaletteBusy}" />
             </StackPanel>
@@ -1495,7 +1509,7 @@
             </ScrollViewer>
 
             <!-- AUTO consent strip (mirrors the Bots panel) -->
-            <Border IsVisible="{Binding CopilotVM.ShowAutoConsent}" Background="#200A0A"
+            <Border IsVisible="{Binding CopilotVM.ShowAutoConsent}" Background="{DynamicResource NegativeFill}"
                     BorderBrush="#4A1A1E" BorderThickness="1" CornerRadius="8" Padding="10">
               <StackPanel Spacing="8">
                 <TextBlock TextWrapping="Wrap" Foreground="#FF9D9D" FontSize="{DynamicResource FsCaption}"

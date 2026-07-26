@@ -240,7 +240,7 @@
                     BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Padding="10,6">
               <Grid ColumnDefinitions="Auto,*">
                 <Path Grid.Column="0" Width="12" Height="12" Margin="0,0,8,0"
-                      VerticalAlignment="Center" Stroke="#3D5A72" StrokeThickness="1.4"
+                      VerticalAlignment="Center" Stroke="{DynamicResource TextInactive}" StrokeThickness="1.4"
                       Data="M5,5 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0 M8,8 L11,11" />
                 <TextBox Grid.Column="1" Classes="search"
                          Text="{Binding MarketsSearchText}"

@@ -29,7 +29,7 @@
       <Setter Property="FontWeight" Value="Bold" />
     </Style>
     <Style Selector="Button.Pill:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#0c1e2e" />
+      <Setter Property="Background" Value="{DynamicResource Surface3}" />
     </Style>
     <Style Selector="Button.Tab">
       <Setter Property="Background" Value="Transparent" />
@@ -340,7 +340,7 @@
               <ItemsControl ItemsSource="{Binding Opportunities}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:AiSignalOpportunityViewModel">
-                    <Border BorderBrush="#06111a" BorderThickness="0,0,0,1" Padding="12,6">
+                    <Border BorderBrush="{DynamicResource Surface1}" BorderThickness="0,0,0,1" Padding="12,6">
                       <Grid ColumnDefinitions="90,Auto,64,*">
                         <StackPanel Grid.Column="0" VerticalAlignment="Center">
                           <TextBlock Text="{Binding Sym}" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
@@ -610,7 +610,7 @@
             <ScrollViewer IsVisible="{Binding IsTpSlTab}" Padding="12,12" VerticalScrollBarVisibility="Auto">
               <StackPanel Spacing="10">
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                  <Border Grid.Column="0" Background="{DynamicResource Surface0}" BorderBrush="#0c2a1a" BorderThickness="1" CornerRadius="9" Padding="10,10">
+                  <Border Grid.Column="0" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PositiveTintStroke}" BorderThickness="1" CornerRadius="9" Padding="10,10">
                     <StackPanel Spacing="3">
                       <TextBlock Text="TAKE PROFIT" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                       <TextBlock Text="{Binding TpslTp}" Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsTitle}" FontWeight="ExtraBold" FontFamily="{StaticResource FontMono}" />
@@ -714,7 +714,7 @@
                         <TextBlock Text=" / " Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                         <TextBlock Text="BNB" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsSubhead}" FontWeight="ExtraBold" />
                       </StackPanel>
-                      <Border Grid.Column="1" Background="#734A3810" BorderBrush="#3a2c10" BorderThickness="1" CornerRadius="5" Padding="8,2" VerticalAlignment="Center">
+                      <Border Grid.Column="1" Background="#734A3810" BorderBrush="{DynamicResource WarningTintStroke}" BorderThickness="1" CornerRadius="5" Padding="8,2" VerticalAlignment="Center">
                         <TextBlock Text="WAIT" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                       </Border>
                     </Grid>
@@ -793,7 +793,7 @@
                       <TextBlock Text="ping me if BTC breaks 70k..." Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontFamily="{StaticResource FontMono}" />
                     </Border>
                     <Button Content="Set Alert via AI →" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                            Background="#1421E6C1" BorderBrush="#1a3030" BorderThickness="1" Foreground="{DynamicResource Accent}"
+                            Background="#1421E6C1" BorderBrush="{DynamicResource AccentTintStroke}" BorderThickness="1" Foreground="{DynamicResource Accent}"
                             FontSize="{DynamicResource FsMicro}" FontWeight="Bold" CornerRadius="6" Padding="0,6" />
                   </StackPanel>
                 </Border>

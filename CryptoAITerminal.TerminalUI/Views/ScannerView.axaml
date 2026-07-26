@@ -25,7 +25,7 @@
                                Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
                   </StackPanel>
                 </Border>
-                <Border Background="#0A1F16" CornerRadius="8" Padding="14,8">
+                <Border Background="{DynamicResource PositiveTint}" CornerRadius="8" Padding="14,8">
                   <StackPanel Spacing="1" HorizontalAlignment="Center">
                     <TextBlock Text="🔥 Hot" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
                     <TextBlock Text="{Binding HotCount}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"
@@ -39,7 +39,7 @@
                                Foreground="{DynamicResource Accent}" HorizontalAlignment="Center" />
                   </StackPanel>
                 </Border>
-                <Border Background="#1F0A0A" CornerRadius="8" Padding="14,8">
+                <Border Background="{DynamicResource NegativeFill}" CornerRadius="8" Padding="14,8">
                   <StackPanel Spacing="1" HorizontalAlignment="Center">
                     <TextBlock Text="▼ Losers" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
                     <TextBlock Text="{Binding LosersCount}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"
@@ -104,38 +104,38 @@
                   <TextBlock Grid.Column="0" Text="Symbol" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                   <TextBox Grid.Column="2" Text="{Binding SymbolSearch, Mode=TwoWay}"
                            PlaceholderText="BTC, ETH…"
-                           FontSize="{DynamicResource FsSmall}" Background="#131F2E" Foreground="{DynamicResource TextPrimary}"
-                           BorderBrush="#445E78" CornerRadius="8" Padding="10,8" MinHeight="38" />
+                           FontSize="{DynamicResource FsSmall}" Background="{DynamicResource FieldSurface}" Foreground="{DynamicResource TextPrimary}"
+                           BorderBrush="{DynamicResource FieldStroke}" CornerRadius="8" Padding="10,8" MinHeight="38" />
 
                   <TextBlock Grid.Column="4" Text="Change %" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                   <NumericUpDown Grid.Column="6" Value="{Binding MinChange, Mode=TwoWay}"
                                  FormatString="F1" Increment="0.5"
-                                 Background="#131F2E" Foreground="{DynamicResource TextPrimary}"
-                                 BorderBrush="#445E78" CornerRadius="8" Padding="8,6" MinHeight="38" />
+                                 Background="{DynamicResource FieldSurface}" Foreground="{DynamicResource TextPrimary}"
+                                 BorderBrush="{DynamicResource FieldStroke}" CornerRadius="8" Padding="8,6" MinHeight="38" />
                   <TextBlock Grid.Column="7" Text="…" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" HorizontalAlignment="Center" />
                   <NumericUpDown Grid.Column="8" Value="{Binding MaxChange, Mode=TwoWay}"
                                  FormatString="F1" Increment="0.5"
-                                 Background="#131F2E" Foreground="{DynamicResource TextPrimary}"
-                                 BorderBrush="#445E78" CornerRadius="8" Padding="8,6" MinHeight="38" />
+                                 Background="{DynamicResource FieldSurface}" Foreground="{DynamicResource TextPrimary}"
+                                 BorderBrush="{DynamicResource FieldStroke}" CornerRadius="8" Padding="8,6" MinHeight="38" />
 
                   <TextBlock Grid.Column="10" Text="RSI" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                   <NumericUpDown Grid.Column="12" Value="{Binding MinRsi, Mode=TwoWay}"
                                  Minimum="0" Maximum="100" Increment="5"
                                  FormatString="F0"
-                                 Background="#131F2E" Foreground="{DynamicResource TextPrimary}"
-                                 BorderBrush="#445E78" CornerRadius="8" Padding="8,6" MinHeight="38" />
+                                 Background="{DynamicResource FieldSurface}" Foreground="{DynamicResource TextPrimary}"
+                                 BorderBrush="{DynamicResource FieldStroke}" CornerRadius="8" Padding="8,6" MinHeight="38" />
                   <TextBlock Grid.Column="13" Text="…" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" HorizontalAlignment="Center" />
                   <NumericUpDown Grid.Column="14" Value="{Binding MaxRsi, Mode=TwoWay}"
                                  Minimum="0" Maximum="100" Increment="5"
                                  FormatString="F0"
-                                 Background="#131F2E" Foreground="{DynamicResource TextPrimary}"
-                                 BorderBrush="#445E78" CornerRadius="8" Padding="8,6" MinHeight="38" />
+                                 Background="{DynamicResource FieldSurface}" Foreground="{DynamicResource TextPrimary}"
+                                 BorderBrush="{DynamicResource FieldStroke}" CornerRadius="8" Padding="8,6" MinHeight="38" />
 
                   <TextBlock Grid.Column="16" Text="Volume min $" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                   <NumericUpDown Grid.Column="18" Value="{Binding MinVolume, Mode=TwoWay}"
                                  Minimum="0" Increment="1000000" FormatString="N0"
-                                 Background="#131F2E" Foreground="{DynamicResource TextPrimary}"
-                                 BorderBrush="#445E78" CornerRadius="8" Padding="8,6" MinHeight="38" />
+                                 Background="{DynamicResource FieldSurface}" Foreground="{DynamicResource TextPrimary}"
+                                 BorderBrush="{DynamicResource FieldStroke}" CornerRadius="8" Padding="8,6" MinHeight="38" />
                 </Grid>
               </StackPanel>
             </Border>
@@ -283,12 +283,12 @@
                     <Grid ColumnDefinitions="*,6,*,6,Auto">
                       <TextBox Grid.Column="0" Text="{Binding LevelSymbol, Mode=TwoWay}"
                                PlaceholderText="BTCUSDT" FontSize="{DynamicResource FsSmall}"
-                               Background="#131F2E" Foreground="{DynamicResource TextPrimary}"
-                               BorderBrush="#445E78" CornerRadius="8" Padding="10,8" MinHeight="38" />
+                               Background="{DynamicResource FieldSurface}" Foreground="{DynamicResource TextPrimary}"
+                               BorderBrush="{DynamicResource FieldStroke}" CornerRadius="8" Padding="10,8" MinHeight="38" />
                       <NumericUpDown Grid.Column="2" Value="{Binding LevelPrice, Mode=TwoWay}"
                                      Minimum="0" FormatString="N2" Increment="100"
-                                     Background="#131F2E" Foreground="{DynamicResource TextPrimary}"
-                                     BorderBrush="#445E78" CornerRadius="8" Padding="8,6" MinHeight="38" />
+                                     Background="{DynamicResource FieldSurface}" Foreground="{DynamicResource TextPrimary}"
+                                     BorderBrush="{DynamicResource FieldStroke}" CornerRadius="8" Padding="8,6" MinHeight="38" />
                       <Button Grid.Column="4" Command="{Binding AddLevelCommand}"
                               Background="#1A3A5C" Foreground="{DynamicResource Accent}"
                               CornerRadius="8" Padding="12,8" FontSize="{DynamicResource FsSmall}" MinHeight="38">

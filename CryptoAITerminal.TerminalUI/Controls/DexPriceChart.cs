@@ -17,6 +17,26 @@ public class DexPriceChart : Control
     public static readonly StyledProperty<bool> ShowVwapProperty =
         AvaloniaProperty.Register<DexPriceChart, bool>(nameof(ShowVwap), defaultValue: true);
 
+    // Палитра читается из ресурсов один раз при инициализации типа. Кисти и перья свечей тоже
+    // живут здесь: раньше цикл по свечам аллоцировал кисть и два пера на каждую свечу кадра.
+    private static readonly SolidColorBrush BullBrush = ChartPalette.Brush("Positive", "#3DDC84");
+    private static readonly SolidColorBrush BearBrush = ChartPalette.Brush("Negative", "#FF6B6B");
+    private static readonly Pen BullWickPen = new(BullBrush, 1.3);
+    private static readonly Pen BearWickPen = new(BearBrush, 1.3);
+    private static readonly Pen BullBodyPen = new(BullBrush, 1);
+    private static readonly Pen BearBodyPen = new(BearBrush, 1);
+    private static readonly Pen BackdropBorderPen = new(new SolidColorBrush(Color.Parse("#24303D")), 1);
+    private static readonly LinearGradientBrush BackdropBrush = new()
+    {
+        StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+        EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
+        GradientStops =
+        {
+            new GradientStop(Color.Parse("#111820"), 0),
+            new GradientStop(ChartPalette.Get("Surface0", "#060D14"), 1)
+        }
+    };
+
     private INotifyCollectionChanged? _subscribedCollection;
     private bool _attached;
 
@@ -142,7 +162,7 @@ public class DexPriceChart : Control
             var highY = MapY(candle.High);
             var lowY = MapY(candle.Low);
             var bullish = candle.Close >= candle.Open;
-            var brush = new SolidColorBrush(Color.Parse(bullish ? "#2EA043" : "#F85149"));
+            var brush = bullish ? BullBrush : BearBrush;
 
             closePoints.Add(new Point(centerX, closeY));
 
@@ -152,13 +172,13 @@ public class DexPriceChart : Control
                 continue;
             }
 
-            context.DrawLine(new Pen(brush, 1.3), new Point(centerX, highY), new Point(centerX, lowY));
+            context.DrawLine(bullish ? BullWickPen : BearWickPen, new Point(centerX, highY), new Point(centerX, lowY));
 
             var bodyTop = Math.Min(openY, closeY);
             var bodyBottom = Math.Max(openY, closeY);
             var bodyHeight = Math.Max(3d, bodyBottom - bodyTop);
             var bodyRect = new Rect(centerX - (candleBodyWidth / 2d), bodyTop, candleBodyWidth, bodyHeight);
-            context.DrawRectangle(brush, new Pen(brush, 1), bodyRect, 2, 2);
+            context.DrawRectangle(brush, bullish ? BullBodyPen : BearBodyPen, bodyRect, 2, 2);
         }
 
         for (var index = 1; index < closePoints.Count; index++)
@@ -177,18 +197,7 @@ public class DexPriceChart : Control
 
     private static void DrawBackdrop(DrawingContext context, Rect bounds)
     {
-        var background = new LinearGradientBrush
-        {
-            StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-            EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
-            GradientStops =
-            {
-                new GradientStop(Color.Parse("#111820"), 0),
-                new GradientStop(Color.Parse("#0A0F15"), 1)
-            }
-        };
-
-        context.DrawRectangle(background, new Pen(new SolidColorBrush(Color.Parse("#24303D")), 1), bounds, 12, 12);
+        context.DrawRectangle(BackdropBrush, BackdropBorderPen, bounds, 12, 12);
     }
 
     private static void DrawGrid(DrawingContext context, Rect bounds)

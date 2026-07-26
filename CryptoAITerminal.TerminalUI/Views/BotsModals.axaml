@@ -34,7 +34,7 @@
                             Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}">
                       <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                         <Border Width="12" Height="12" CornerRadius="3" BorderThickness="1" Background="{Binding BoxBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding BoxBorder, Converter={StaticResource StringToBrush}}">
-                          <TextBlock Text="{Binding Mark}" Foreground="#04101a" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          <TextBlock Text="{Binding Mark}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsCaption}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" />
                       </StackPanel>
@@ -193,13 +193,13 @@
                       <Button Classes="FlatChrome" Command="{Binding WizBacktestCommand}" Margin="0,2,0,0" Height="27" HorizontalAlignment="Stretch" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="RUN WALK-FORWARD + MONTE-CARLO" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                     </StackPanel>
                   </Border>
-                  <Border Padding="12" BorderBrush="#14302e" BorderThickness="1" CornerRadius="10" Background="#061615">
+                  <Border Padding="12" BorderBrush="{DynamicResource AccentTintStroke}" BorderThickness="1" CornerRadius="10" Background="{DynamicResource AccentTint}">
                     <StackPanel>
                       <StackPanel Orientation="Horizontal" Spacing="7" Margin="0,0,0,8" VerticalAlignment="Center">
                         <Ellipse Width="5" Height="5" Fill="{DynamicResource Accent}" />
                         <TextBlock Text="AI REVIEW OF THIS CONFIG" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                       </StackPanel>
-                      <TextBlock Text="{Binding WizAiNote}" Foreground="#a9c2d8" FontSize="{DynamicResource FsCaption}" LineHeight="18" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding WizAiNote}" Foreground="{DynamicResource TextNote}" FontSize="{DynamicResource FsCaption}" LineHeight="18" TextWrapping="Wrap" />
                       <Button Classes="FlatChrome" Command="{Binding WizAiTuneCommand}" Margin="0,10,0,0" Height="26" Padding="10,0" HorizontalAlignment="Left" CornerRadius="5" Background="{DynamicResource AccentSoft}" BorderBrush="{DynamicResource Accent}" BorderThickness="1" Content="LET AI TUNE PARAMETERS" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                     </StackPanel>
                   </Border>
@@ -226,7 +226,7 @@
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
-                      <Border IsVisible="{Binding WizLiveWarning}" Margin="0,10,0,0" Padding="10,8" CornerRadius="7" Background="#150f04" BorderBrush="#3a2a12" BorderThickness="1">
+                      <Border IsVisible="{Binding WizLiveWarning}" Margin="0,10,0,0" Padding="10,8" CornerRadius="7" Background="{DynamicResource WarningTint}" BorderBrush="{DynamicResource WarningTintStroke}" BorderThickness="1">
                         <TextBlock Text="LIVE needs paper-only OFF, a RiskManager pre-trade pass and typed consent — LiveGate blocks the first order otherwise." FontSize="{DynamicResource FsCaption}" LineHeight="16" Foreground="{DynamicResource Warning}" TextWrapping="Wrap" />
                       </Border>
                     </StackPanel>
@@ -297,9 +297,9 @@
                   <Button Classes="FlatChrome" Command="{Binding Command}" Padding="8,8" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch">
                     <StackPanel Orientation="Horizontal" Spacing="9">
                       <Border Width="13" Height="13" CornerRadius="3" BorderThickness="1" Margin="0,1,0,0" VerticalAlignment="Top" Background="{Binding BoxBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding BoxBorder, Converter={StaticResource StringToBrush}}">
-                        <TextBlock Text="{Binding Mark}" Foreground="#04101a" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Mark}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                       </Border>
-                      <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsCaption}" LineHeight="15" Foreground="#a9c2d8" TextWrapping="Wrap" MaxWidth="360" />
+                      <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsCaption}" LineHeight="15" Foreground="{DynamicResource TextNote}" TextWrapping="Wrap" MaxWidth="360" />
                     </StackPanel>
                   </Button>
                 </DataTemplate>
@@ -325,7 +325,7 @@
     </Grid>
 
     <!-- ═══════════ SIDE PANEL ═══════════ -->
-    <Grid IsVisible="{Binding ModalPanel}" Background="#8C020610" ZIndex="92">
+    <Grid IsVisible="{Binding ModalPanel}" Background="{DynamicResource ModalScrim}" ZIndex="92">
       <Button Classes="FlatChrome" Command="{Binding CloseModalCommand}" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
       <Border Width="420" HorizontalAlignment="Right" VerticalAlignment="Stretch" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1,0,0,0" BoxShadow="-20 0 60 0 #99000000">
         <DockPanel LastChildFill="True">
@@ -355,8 +355,8 @@
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
-              <Border Margin="0,12,0,0" Padding="10" CornerRadius="8" Background="#061615" BorderBrush="#14302e" BorderThickness="1">
-                <TextBlock Text="{Binding PanelNote}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="#a9c2d8" TextWrapping="Wrap" />
+              <Border Margin="0,12,0,0" Padding="10" CornerRadius="8" Background="{DynamicResource AccentTint}" BorderBrush="{DynamicResource AccentTintStroke}" BorderThickness="1">
+                <TextBlock Text="{Binding PanelNote}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="{DynamicResource TextNote}" TextWrapping="Wrap" />
               </Border>
             </StackPanel>
           </ScrollViewer>

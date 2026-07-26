@@ -27,11 +27,22 @@
          это минимум, а не пожелание. Прежний #2d4a5e давал 2,1:1 и стоял на 378 подписях, включая
          данные, а не только заголовки колонок. Для рамок и разделителей тёмные оттенки остались
          как были — там контраст текста ни при чём. -->
+    <SolidColorBrush x:Key="TextBright" Color="#F4F7FB" />
     <SolidColorBrush x:Key="TextPrimary" Color="#E8F4FF" />
     <SolidColorBrush x:Key="TextSecondary" Color="#D0E4F4" />
+    <SolidColorBrush x:Key="TextBody" Color="#C8DCEF" />
+    <SolidColorBrush x:Key="TextNote" Color="#A9C2D8" />
     <SolidColorBrush x:Key="TextMuted" Color="#8FA3B8" />
     <SolidColorBrush x:Key="TextSoft" Color="#7C97AF" />
     <SolidColorBrush x:Key="TextDim" Color="#6A85A0" />
+    <!-- Ниже TextDim контраста на данные уже не хватает: эти четыре ступени стоят на
+         неактивных подписях, пунктирных направляющих графиков и тонких рамках — там же,
+         где код зовёт их Faint/Ghost. Тон один и тот же и для текста, и для волосяной
+         линии, поэтому отдельных Stroke-близнецов у них нет. -->
+    <SolidColorBrush x:Key="TextQuiet" Color="#5A7A94" />
+    <SolidColorBrush x:Key="TextInactive" Color="#3D5A72" />
+    <SolidColorBrush x:Key="TextFaint" Color="#2D4A5E" />
+    <SolidColorBrush x:Key="TextGhost" Color="#1E3048" />
     <!-- Fluent paints ToggleSwitch, Slider and selection highlights with the Windows accent colour,
          which is whatever the user picked in personalisation — by default blue. The switches here
          arm real money (Auto-Execute, Auto-Reinvest, auto mode), so they must read as this app's
@@ -51,6 +62,44 @@
     <SolidColorBrush x:Key="Positive" Color="#3DDC84" />
     <SolidColorBrush x:Key="Negative" Color="#FF6B6B" />
     <SolidColorBrush x:Key="Warning" Color="#F4B860" />
+
+    <!-- Тинты состояний.
+         Бейдж/панель состояния — это всегда пара «тёмная заливка + рамка того же тона»,
+         и одна и та же пара повторяется по 20–50 раз в Views и ViewModels. Tint — тихая
+         подложка (шапки, чипы), Fill — заливка кнопочного веса, у обеих свой Stroke. -->
+    <SolidColorBrush x:Key="AccentTint" Color="#061615" />
+    <SolidColorBrush x:Key="AccentTintStroke" Color="#14302E" />
+    <SolidColorBrush x:Key="AccentTintActive" Color="#17373B" />
+    <SolidColorBrush x:Key="PositiveTint" Color="#061E14" />
+    <SolidColorBrush x:Key="PositiveTintStroke" Color="#0D2A1E" />
+    <SolidColorBrush x:Key="PositiveFill" Color="#0A2D1E" />
+    <SolidColorBrush x:Key="PositiveFillStroke" Color="#0D3D28" />
+    <SolidColorBrush x:Key="NegativeTint" Color="#14060A" />
+    <SolidColorBrush x:Key="NegativeTintStroke" Color="#3A1620" />
+    <SolidColorBrush x:Key="NegativeFill" Color="#200A0A" />
+    <SolidColorBrush x:Key="NegativeFillStroke" Color="#3D0D0D" />
+    <SolidColorBrush x:Key="WarningTint" Color="#150F04" />
+    <SolidColorBrush x:Key="WarningTintStroke" Color="#3A2A12" />
+    <SolidColorBrush x:Key="PurpleTint" Color="#150A20" />
+    <SolidColorBrush x:Key="PurpleTintStroke" Color="#3A1F6E" />
+    <SolidColorBrush x:Key="PurpleStrokeBright" Color="#6A2A9A" />
+    <!-- Рамка синих (информационных) чипов: whale-концентрация, STAKE/PERP-бейджи. -->
+    <SolidColorBrush x:Key="InfoTintStroke" Color="#0D2240" />
+
+    <!-- Второй фиолетовый — ветка DEX. Ярче AccentPurple и НЕ равен ему:
+         AccentPurple #A78BFA живёт на подписях, AccentPurpleBright — на заливках. -->
+    <SolidColorBrush x:Key="AccentPurpleBright" Color="#A855F7" />
+
+    <!-- Почти чёрный текст поверх акцентной заливки (галка чекбокса, надпись на
+         AccentButton, метки на Accent/Positive/Negative-пилюлях). -->
+    <SolidColorBrush x:Key="OnAccentText" Color="#04101A" />
+
+    <!-- Хром полей ввода: поверхность и рамка TextBox / NumericUpDown / ComboBox. -->
+    <SolidColorBrush x:Key="FieldSurface" Color="#131F2E" />
+    <SolidColorBrush x:Key="FieldStroke" Color="#445E78" />
+
+    <!-- Затемняющая подложка модалок. Альфа в токене: подложка бесполезна без неё. -->
+    <SolidColorBrush x:Key="ModalScrim" Color="#8C020610" />
 
     <!-- Устаревшие алиасы (обратная совместимость) -->
     <SolidColorBrush x:Key="PanelBg" Color="#07101A" />
@@ -78,7 +127,7 @@
        WINDOW
   ============================================================ -->
   <Style Selector="Window">
-    <Setter Property="Background" Value="#060D14" />
+    <Setter Property="Background" Value="{DynamicResource AppBg}" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
     <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, Inter, Arial" />
   </Style>
@@ -93,9 +142,9 @@
 
   <!-- Панель дашборда — плоская карточка в стиле референса. -->
   <Style Selector="Border.Panel">
-    <Setter Property="Background" Value="#07101A" />
+    <Setter Property="Background" Value="{DynamicResource Surface1}" />
     <Setter Property="CornerRadius" Value="14" />
-    <Setter Property="BorderBrush" Value="#152233" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStroke}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="Padding" Value="14" />
   </Style>
@@ -118,9 +167,9 @@
   </Style>
 
   <Style Selector="Border.SoftPanel">
-    <Setter Property="Background" Value="#07101A" />
+    <Setter Property="Background" Value="{DynamicResource Surface1}" />
     <Setter Property="CornerRadius" Value="14" />
-    <Setter Property="BorderBrush" Value="#152233" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStroke}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="Padding" Value="14" />
   </Style>
@@ -142,26 +191,26 @@
   </Style>
 
   <Style Selector="Border.SurfaceCard">
-    <Setter Property="Background" Value="#07101A" />
+    <Setter Property="Background" Value="{DynamicResource Surface1}" />
     <Setter Property="CornerRadius" Value="14" />
-    <Setter Property="BorderBrush" Value="#152233" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStroke}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="Padding" Value="14" />
   </Style>
 
   <!-- Сайдбар: плоская панель во всю высоту, только правая граница -->
   <Style Selector="Border.SidebarShell">
-    <Setter Property="Background" Value="#050C14" />
+    <Setter Property="Background" Value="{DynamicResource AppBg}" />
     <Setter Property="CornerRadius" Value="0" />
-    <Setter Property="BorderBrush" Value="#0D1B27" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStrokeSubtle}" />
     <Setter Property="BorderThickness" Value="0,0,1,0" />
   </Style>
 
   <!-- Топбар: плоская панель, только нижняя граница -->
   <Style Selector="Border.TopBarShell">
-    <Setter Property="Background" Value="#050C14" />
+    <Setter Property="Background" Value="{DynamicResource AppBg}" />
     <Setter Property="CornerRadius" Value="0" />
-    <Setter Property="BorderBrush" Value="#0D1B27" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStrokeSubtle}" />
     <Setter Property="BorderThickness" Value="0,0,0,1" />
   </Style>
 
@@ -247,7 +296,7 @@
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="BorderBrush" Value="Transparent" />
     <Setter Property="Background" Value="Transparent" />
-    <Setter Property="Foreground" Value="#5A7A94" />
+    <Setter Property="Foreground" Value="{DynamicResource TextQuiet}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="MinHeight" Value="34" />
     <Setter Property="FontSize" Value="{DynamicResource FsBody}" />
@@ -256,8 +305,8 @@
   <!-- Fluent applies the hover/pressed visual to PART_ContentPresenter, so a Background
        setter on the Button itself is overridden and never shows. -->
   <Style Selector="Button.SideNavButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="#0A1826" />
-    <Setter Property="Foreground" Value="#C8DCEF" />
+    <Setter Property="Background" Value="{DynamicResource Surface2}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBody}" />
   </Style>
 
   <!-- Активный пункт меню — плоская заливка -->
@@ -274,7 +323,7 @@
     <Setter Property="CornerRadius" Value="10" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="FontSize" Value="{DynamicResource FsBody}" />
-    <Setter Property="Background" Value="#121A24" />
+    <Setter Property="Background" Value="{DynamicResource Surface3}" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
     <Setter Property="BorderBrush" Value="{DynamicResource PanelStrokeBright}" />
     <Setter Property="BorderThickness" Value="1" />
@@ -307,7 +356,7 @@
         <GradientStop Color="#21E6C1" Offset="1" />
       </LinearGradientBrush>
     </Setter>
-    <Setter Property="Foreground" Value="#051018" />
+    <Setter Property="Foreground" Value="{DynamicResource OnAccentText}" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="Padding" Value="16,8" />
     <Setter Property="FontWeight" Value="SemiBold" />
@@ -317,7 +366,7 @@
        setter on the Button itself is overridden and never shows. -->
   <Style Selector="Button.AccentButton:disabled /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="#1A2E3A" />
-    <Setter Property="Foreground" Value="#3A5570" />
+    <Setter Property="Foreground" Value="{DynamicResource TextInactive}" />
   </Style>
 
   <Style Selector="Button.BuyButton">
@@ -343,15 +392,15 @@
   </Style>
 
   <Style Selector="Button.GhostButton">
-    <Setter Property="Background" Value="#0F1721" />
+    <Setter Property="Background" Value="{DynamicResource Surface2}" />
     <Setter Property="BorderBrush" Value="#2A3A4B" />
   </Style>
 
   <!-- Timeframe button: active state (selected) -->
   <Style Selector="Button.GhostButton.active">
     <Setter Property="Background"   Value="#132030" />
-    <Setter Property="BorderBrush"  Value="#21E6C1" />
-    <Setter Property="Foreground"   Value="#21E6C1" />
+    <Setter Property="BorderBrush"  Value="{DynamicResource Accent}" />
+    <Setter Property="Foreground"   Value="{DynamicResource Accent}" />
     <Setter Property="BorderThickness" Value="1" />
   </Style>
 
@@ -396,9 +445,9 @@
        ФОРМ-ЭЛЕМЕНТЫ
   ============================================================ -->
   <Style Selector="TextBox">
-    <Setter Property="Background" Value="#131F2E" />
+    <Setter Property="Background" Value="{DynamicResource FieldSurface}" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
-    <Setter Property="BorderBrush" Value="#445E78" />
+    <Setter Property="BorderBrush" Value="{DynamicResource FieldStroke}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="10" />
     <Setter Property="Padding" Value="12,10" />
@@ -419,7 +468,7 @@
   </Style>
 
   <Style Selector="TextBox.LogBox">
-    <Setter Property="Background" Value="#0B1119" />
+    <Setter Property="Background" Value="{DynamicResource Surface1}" />
     <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
     <Setter Property="FontFamily" Value="Consolas, Cascadia Code, monospace" />
     <Setter Property="FontSize" Value="{DynamicResource FsSmall}" />
@@ -433,9 +482,9 @@
   </Style>
 
   <Style Selector="NumericUpDown">
-    <Setter Property="Background" Value="#131F2E" />
+    <Setter Property="Background" Value="{DynamicResource FieldSurface}" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
-    <Setter Property="BorderBrush" Value="#445E78" />
+    <Setter Property="BorderBrush" Value="{DynamicResource FieldStroke}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="10" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -462,9 +511,9 @@
   </Style>
 
   <Style Selector="ComboBox">
-    <Setter Property="Background" Value="#131F2E" />
+    <Setter Property="Background" Value="{DynamicResource FieldSurface}" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
-    <Setter Property="BorderBrush" Value="#445E78" />
+    <Setter Property="BorderBrush" Value="{DynamicResource FieldStroke}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="10" />
     <Setter Property="Padding" Value="10,10" />
@@ -478,7 +527,7 @@
   </Style>
 
   <Style Selector="ComboBoxItem">
-    <Setter Property="Background" Value="#101821" />
+    <Setter Property="Background" Value="{DynamicResource Surface2}" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
     <Setter Property="Padding" Value="12,10" />
   </Style>
@@ -533,14 +582,14 @@
                   Grid.Column="0"
                   Width="22" Height="22"
                   CornerRadius="6"
-                  Background="#0E151E"
+                  Background="{DynamicResource Surface2}"
                   BorderBrush="#3C566E"
                   BorderThickness="1.4"
                   VerticalAlignment="Center">
             <Path Name="Check"
                   Stretch="Uniform"
                   Width="12" Height="12"
-                  Stroke="#04101A"
+                  Stroke="{DynamicResource OnAccentText}"
                   StrokeThickness="2.4"
                   StrokeJoin="Round"
                   StrokeLineCap="Round"
@@ -573,7 +622,7 @@
   </Style>
 
   <Style Selector="CheckBox:indeterminate /template/ Border#Box">
-    <Setter Property="Background" Value="#173D3D" />
+    <Setter Property="Background" Value="{DynamicResource AccentTintActive}" />
     <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
   </Style>
 
@@ -603,7 +652,7 @@
   </Style>
 
   <Style Selector="ListBoxItem /template/ ContentPresenter">
-    <Setter Property="Background" Value="#111924" />
+    <Setter Property="Background" Value="{DynamicResource Surface3}" />
     <Setter Property="CornerRadius" Value="14" />
     <Setter Property="Padding" Value="12" />
   </Style>
@@ -640,7 +689,7 @@
   </Style>
 
   <Style Selector="TabControl > TabItem /template/ ContentPresenter">
-    <Setter Property="Background" Value="#101822" />
+    <Setter Property="Background" Value="{DynamicResource Surface2}" />
     <Setter Property="CornerRadius" Value="12" />
     <Setter Property="Padding" Value="14,8" />
   </Style>
@@ -703,7 +752,7 @@
   </Style>
 
   <Style Selector="TabControl.DeskTabs > TabItem">
-    <Setter Property="Foreground" Value="#8FA3B8" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Padding" Value="0" />
     <Setter Property="Margin" Value="0,0,22,0" />
@@ -718,7 +767,7 @@
 
   <Style Selector="TabControl.DeskTabs > TabItem:selected /template/ ContentPresenter">
     <Setter Property="Background" Value="Transparent" />
-    <Setter Property="BorderBrush" Value="#21E6C1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
     <Setter Property="BorderThickness" Value="0,0,0,2" />
   </Style>
 
@@ -726,7 +775,7 @@
        МЕНЮ
   ============================================================ -->
   <Style Selector="Menu">
-    <Setter Property="Background" Value="#0C121A" />
+    <Setter Property="Background" Value="{DynamicResource Surface1}" />
     <Setter Property="BorderBrush" Value="#1D2733" />
     <Setter Property="BorderThickness" Value="0,0,0,1" />
     <Setter Property="Padding" Value="10,6" />
@@ -775,7 +824,7 @@
        EXPANDER
   ============================================================ -->
   <Style Selector="Expander">
-    <Setter Property="Background" Value="#111924" />
+    <Setter Property="Background" Value="{DynamicResource Surface3}" />
     <Setter Property="BorderBrush" Value="{DynamicResource PanelStroke}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="14" />
@@ -897,7 +946,7 @@
     <Setter Property="FontSize" Value="{DynamicResource FsH1}" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="LetterSpacing" Value="2.2" />
-    <Setter Property="Foreground" Value="#F6FBFF" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBright}" />
   </Style>
 
   <Style Selector="TextBlock.SplashSubtitle">
@@ -933,7 +982,7 @@
   </Style>
 
   <Style Selector="Border.SplashMetricChip">
-    <Setter Property="Background" Value="#0D1721" />
+    <Setter Property="Background" Value="{DynamicResource Surface2}" />
     <Setter Property="BorderBrush" Value="#223242" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="999" />
@@ -950,7 +999,7 @@
     <Setter Property="FontSize" Value="{DynamicResource FsSmall}" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="LetterSpacing" Value="1.2" />
-    <Setter Property="Foreground" Value="#8FA3B8" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
   </Style>
 
   <!-- Микро-подпись (метка над числом) -->
@@ -958,7 +1007,7 @@
     <Setter Property="FontSize" Value="{DynamicResource FsMicro}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="LetterSpacing" Value="0.8" />
-    <Setter Property="Foreground" Value="#5A7A94" />
+    <Setter Property="Foreground" Value="{DynamicResource TextQuiet}" />
   </Style>
 
   <!-- Моноширинное число (цены, объёмы) -->
@@ -969,17 +1018,17 @@
 
   <!-- Плоская стат-ячейка (внутри виджета) -->
   <Style Selector="Border.StatCell">
-    <Setter Property="Background" Value="#060D14" />
+    <Setter Property="Background" Value="{DynamicResource SurfaceInner}" />
     <Setter Property="CornerRadius" Value="10" />
-    <Setter Property="BorderBrush" Value="#111C28" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStrokeSubtle}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="Padding" Value="12,10" />
   </Style>
 
   <!-- Бейдж-счётчик (напр. «8 coins») справа в шапке -->
   <Style Selector="Border.CountBadge">
-    <Setter Property="Background" Value="#0A1422" />
-    <Setter Property="BorderBrush" Value="#152233" />
+    <Setter Property="Background" Value="{DynamicResource Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStroke}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="999" />
     <Setter Property="Padding" Value="8,2" />
@@ -987,8 +1036,8 @@
 
   <!-- Бейдж LIVE -->
   <Style Selector="Border.LivePill">
-    <Setter Property="Background" Value="#0E2A2A" />
-    <Setter Property="BorderBrush" Value="#21E6C1" />
+    <Setter Property="Background" Value="{DynamicResource AccentSoft}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="999" />
     <Setter Property="Padding" Value="10,5" />
@@ -1003,15 +1052,15 @@
     <Setter Property="CornerRadius" Value="7" />
     <Setter Property="FontSize" Value="{DynamicResource FsCaption}" />
     <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="Background" Value="#0A1422" />
-    <Setter Property="BorderBrush" Value="#152233" />
+    <Setter Property="Background" Value="{DynamicResource Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStroke}" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="Foreground" Value="#8FA3B8" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
   </Style>
   <Style Selector="Button.TfButton.active">
-    <Setter Property="Background" Value="#0E2A2A" />
-    <Setter Property="BorderBrush" Value="#21E6C1" />
-    <Setter Property="Foreground" Value="#21E6C1" />
+    <Setter Property="Background" Value="{DynamicResource AccentSoft}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+    <Setter Property="Foreground" Value="{DynamicResource Accent}" />
   </Style>
 
   <!-- Маленькая «таблеточная» кнопка действия в виджете (Trade/Watch) -->
@@ -1021,8 +1070,8 @@
     <Setter Property="CornerRadius" Value="7" />
     <Setter Property="FontSize" Value="{DynamicResource FsMicro}" />
     <Setter Property="FontWeight" Value="Bold" />
-    <Setter Property="Background" Value="#0A1422" />
-    <Setter Property="BorderBrush" Value="#22384F" />
+    <Setter Property="Background" Value="{DynamicResource Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStrokeBright}" />
     <Setter Property="BorderThickness" Value="1" />
   </Style>
 

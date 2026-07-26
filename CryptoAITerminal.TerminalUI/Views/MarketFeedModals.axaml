@@ -4,7 +4,7 @@
              x:CompileBindings="False"
              FontFamily="{StaticResource FontDisplay}">
   <Panel>
-    <Grid IsVisible="{Binding ModalPanel}" Background="#8C020610" ZIndex="92">
+    <Grid IsVisible="{Binding ModalPanel}" Background="{DynamicResource ModalScrim}" ZIndex="92">
       <Button Classes="FlatChrome" Command="{Binding CloseModalCommand}" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
       <Border Width="430" HorizontalAlignment="Right" VerticalAlignment="Stretch" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1,0,0,0" BoxShadow="-20 0 60 0 #99000000">
         <DockPanel LastChildFill="True">
@@ -37,8 +37,8 @@
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
-              <Border Margin="0,12,0,0" Padding="10" CornerRadius="8" Background="#061615" BorderBrush="#14302e" BorderThickness="1">
-                <TextBlock Text="{Binding PanelNote}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="#a9c2d8" TextWrapping="Wrap" />
+              <Border Margin="0,12,0,0" Padding="10" CornerRadius="8" Background="{DynamicResource AccentTint}" BorderBrush="{DynamicResource AccentTintStroke}" BorderThickness="1">
+                <TextBlock Text="{Binding PanelNote}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="{DynamicResource TextNote}" TextWrapping="Wrap" />
               </Border>
             </StackPanel>
           </ScrollViewer>

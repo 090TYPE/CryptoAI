@@ -302,7 +302,7 @@
             </Border>
 
             <!-- Execution guard (checks as chips) -->
-            <Border Background="#061e14" BorderBrush="#0d2a1e" BorderThickness="1" CornerRadius="9" Padding="10,10">
+            <Border Background="{DynamicResource PositiveTint}" BorderBrush="{DynamicResource PositiveTintStroke}" BorderThickness="1" CornerRadius="9" Padding="10,10">
               <StackPanel Spacing="7">
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock Text="EXECUTION GUARD" Classes="TdLabel" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
@@ -394,7 +394,7 @@
                   <Button Content="1D" Classes="TdSeg mini" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1D" Classes.active="{Binding SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=1D}" />
                   <Button Content="1W" Classes="TdSeg mini" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1W" Classes.active="{Binding SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=1W}" />
                 </StackPanel>
-                <Border Grid.Column="1" Width="1" Background="#152535" Margin="6,2" />
+                <Border Grid.Column="1" Width="1" Background="{DynamicResource PanelStroke}" Margin="6,2" />
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5">
                   <Button Content="Candles" Classes="TdSeg mini" Command="{Binding SelectChartTypeCommand}" CommandParameter="Candles" Classes.active="{Binding SelectedChartType, Converter={StaticResource StrEq}, ConverterParameter=Candles}" />
                   <Button Content="HA" Classes="TdSeg mini" Command="{Binding SelectChartTypeCommand}" CommandParameter="HA" Classes.active="{Binding SelectedChartType, Converter={StaticResource StrEq}, ConverterParameter=HA}" />
@@ -740,13 +740,13 @@
                       <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.MidPriceLabel}" Foreground="{DynamicResource TextSecondary}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
                     </StackPanel>
                   </Border>
-                  <Border Grid.Column="1" Background="#061e14" CornerRadius="4" Padding="4,2">
+                  <Border Grid.Column="1" Background="{DynamicResource PositiveTint}" CornerRadius="4" Padding="4,2">
                     <StackPanel Spacing="1" HorizontalAlignment="Center">
                       <TextBlock Text="TP" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
                       <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.High24hLabel}" Foreground="{DynamicResource Positive}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
                     </StackPanel>
                   </Border>
-                  <Border Grid.Column="2" Background="#200a0a" CornerRadius="4" Padding="4,2">
+                  <Border Grid.Column="2" Background="{DynamicResource NegativeFill}" CornerRadius="4" Padding="4,2">
                     <StackPanel Spacing="1" HorizontalAlignment="Center">
                       <TextBlock Text="SL" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
                       <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.Low24hLabel}" Foreground="{DynamicResource Negative}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
@@ -889,14 +889,14 @@
 
             <!-- Identity -->
             <Grid Grid.Column="0" ColumnDefinitions="Auto,Auto" ColumnSpacing="12" VerticalAlignment="Center">
-              <Border Width="42" Height="42" Background="#150a20" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="10" VerticalAlignment="Center">
-                <TextBlock Text="◈" Foreground="#a855f7" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{DynamicResource FsTitle}" FontWeight="Bold" />
+              <Border Width="42" Height="42" Background="{DynamicResource PurpleTint}" BorderBrush="{DynamicResource PurpleTintStroke}" BorderThickness="1" CornerRadius="10" VerticalAlignment="Center">
+                <TextBlock Text="◈" Foreground="{DynamicResource AccentPurpleBright}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{DynamicResource FsTitle}" FontWeight="Bold" />
               </Border>
               <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBlock Text="{Binding DexTradingVM.SelectedTokenTitle}" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" VerticalAlignment="Center" />
                   <Border Classes="TdDexBadge" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding DexDeskVM.SymbolTypeLabel}" Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                    <TextBlock Text="{Binding DexDeskVM.SymbolTypeLabel}" Foreground="{DynamicResource AccentPurpleBright}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                   </Border>
                 </StackPanel>
                 <TextBlock Text="{Binding DexTradingVM.SelectedTokenSubtitle}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" LetterSpacing="0.5" TextTrimming="CharacterEllipsis" MaxWidth="260" />
@@ -907,7 +907,7 @@
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="24" VerticalAlignment="Center">
               <StackPanel Spacing="3">
                 <TextBlock Classes="TdLabel" Text="PRICE USD" />
-                <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.SelectedToken.PriceUsd, StringFormat=\$ {0:N6}}" Foreground="#a855f7" FontWeight="Bold" FontSize="{DynamicResource FsSubhead}" />
+                <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.SelectedToken.PriceUsd, StringFormat=\$ {0:N6}}" Foreground="{DynamicResource AccentPurpleBright}" FontWeight="Bold" FontSize="{DynamicResource FsSubhead}" />
               </StackPanel>
               <StackPanel Spacing="3">
                 <TextBlock Classes="TdLabel" Text="LIQUIDITY" />
@@ -968,7 +968,7 @@
               <!-- ─ SWAP TICKET ─ -->
               <StackPanel Spacing="10" IsVisible="{Binding DexDeskVM.IsSwapMode}">
 
-                <Border Background="#150a20" BorderBrush="{Binding DexTradingVM.DexGuardStatusBrush}" BorderThickness="1" CornerRadius="8" Padding="10,8">
+                <Border Background="{DynamicResource PurpleTint}" BorderBrush="{Binding DexTradingVM.DexGuardStatusBrush}" BorderThickness="1" CornerRadius="8" Padding="10,8">
                   <StackPanel Spacing="3">
                     <Grid ColumnDefinitions="*,Auto">
                       <TextBlock Classes="TdLabel" Text="ROUTE GUARD" VerticalAlignment="Center" />
@@ -1018,7 +1018,7 @@
                   <StackPanel Spacing="7">
                     <Grid ColumnDefinitions="*,Auto">
                       <TextBlock Classes="TdLabel" Text="SLIPPAGE TOLERANCE" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexTradingVM.SlippagePercent, StringFormat={}{0:0.##}%}" Foreground="#a855f7" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" />
+                      <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexTradingVM.SlippagePercent, StringFormat={}{0:0.##}%}" Foreground="{DynamicResource AccentPurpleBright}" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" />
                     </Grid>
                     <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="4">
                       <Button Grid.Column="0" Content="0.1" Classes="TdSeg dex fill" Command="{Binding DexTradingVM.SelectSlippagePresetCommand}" CommandParameter="0.1" Classes.active="{Binding DexTradingVM.SlippagePresetKey, Converter={StaticResource StrEq}, ConverterParameter=0.1}" />
@@ -1072,8 +1072,8 @@
                   <StackPanel Spacing="5">
                     <Grid ColumnDefinitions="*,Auto">
                       <TextBlock Classes="TdLabel" Text="SWAP PREVIEW" VerticalAlignment="Center" />
-                      <Border Grid.Column="1" Background="#150a20" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="4" Padding="6,1" IsVisible="{Binding DexTradingVM.HasAggQuote}">
-                        <TextBlock Text="BEST ROUTE" Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                      <Border Grid.Column="1" Background="{DynamicResource PurpleTint}" BorderBrush="{DynamicResource PurpleTintStroke}" BorderThickness="1" CornerRadius="4" Padding="6,1" IsVisible="{Binding DexTradingVM.HasAggQuote}">
+                        <TextBlock Text="BEST ROUTE" Foreground="{DynamicResource AccentPurpleBright}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                       </Border>
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*">
@@ -1090,11 +1090,11 @@
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding DexTradingVM.HasAggQuote}">
                       <TextBlock Text="Route via" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-                      <TextBlock Grid.Column="1" Text="{Binding DexTradingVM.AggRouteLabel}" Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Grid.Column="1" Text="{Binding DexTradingVM.AggRouteLabel}" Foreground="{DynamicResource AccentPurpleBright}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" />
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*">
                       <TextBlock Text="Route" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-                      <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexTradingVM.SelectedTokenSubtitle}" Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexTradingVM.SelectedTokenSubtitle}" Foreground="{DynamicResource AccentPurpleBright}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" />
                     </Grid>
                     <Border Height="1" Background="{DynamicResource Surface3}" />
                     <Grid ColumnDefinitions="Auto,*">
@@ -1190,7 +1190,7 @@
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock Classes="TdH2" Text="PERP Ticket" VerticalAlignment="Center" />
                   <Border Grid.Column="1" Classes="TdDexBadge" VerticalAlignment="Center">
-                    <TextBlock Text="PAPER" Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                    <TextBlock Text="PAPER" Foreground="{DynamicResource AccentPurpleBright}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                   </Border>
                 </Grid>
 
@@ -1231,7 +1231,7 @@
                       <Button Content="ISOLATED" Classes="TdSeg left amber" Command="{Binding DexDeskVM.Perp.SelectMarginModeCommand}" CommandParameter="Isolated" Classes.active="{Binding DexDeskVM.Perp.IsIsolated}" />
                     </StackPanel>
                     <TextBlock Classes="TdLabel" Text="EST. MARGIN" Margin="0,4,0,0" />
-                    <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.EstMarginLabel}" Foreground="#a855f7" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" />
+                    <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.EstMarginLabel}" Foreground="{DynamicResource AccentPurpleBright}" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" />
                   </StackPanel>
                 </Grid>
 
@@ -1390,7 +1390,7 @@
                   </StackPanel>
                 </Border>
 
-                <TextBlock Text="{Binding DexDeskVM.Perp.StatusMessage}" Foreground="#a855f7" TextWrapping="Wrap" FontSize="{DynamicResource FsCaption}" />
+                <TextBlock Text="{Binding DexDeskVM.Perp.StatusMessage}" Foreground="{DynamicResource AccentPurpleBright}" TextWrapping="Wrap" FontSize="{DynamicResource FsCaption}" />
               </StackPanel>
             </Grid>
           </ScrollViewer>
@@ -1406,7 +1406,7 @@
                 <StackPanel Orientation="Horizontal" Spacing="28">
                   <StackPanel Spacing="3">
                     <TextBlock Classes="TdLabel" Text="PRICE USD" />
-                    <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.SelectedToken.PriceUsd, StringFormat=\$ {0:N6}}" Foreground="#a855f7" FontWeight="Bold" FontSize="{DynamicResource FsTitle}" />
+                    <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.SelectedToken.PriceUsd, StringFormat=\$ {0:N6}}" Foreground="{DynamicResource AccentPurpleBright}" FontWeight="Bold" FontSize="{DynamicResource FsTitle}" />
                   </StackPanel>
                   <StackPanel Spacing="3">
                     <TextBlock Classes="TdLabel" Text="LIQUIDITY" />
@@ -1474,11 +1474,11 @@
                 <StackPanel Orientation="Horizontal" Spacing="16" HorizontalAlignment="Right">
                   <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" IsVisible="{Binding DexDeskVM.IsSwapMode}">
                     <TextBlock Classes="TdLabel" Text="TRADES" />
-                    <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.RecentDexTrades.Count}" Foreground="#a855f7" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
+                    <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.RecentDexTrades.Count}" Foreground="{DynamicResource AccentPurpleBright}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
                   </StackPanel>
                   <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" IsVisible="{Binding DexDeskVM.IsPerpMode}">
                     <TextBlock Classes="TdLabel" Text="EQUITY" />
-                    <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.EquityLabel}" Foreground="#a855f7" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
+                    <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.EquityLabel}" Foreground="{DynamicResource AccentPurpleBright}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
                     <TextBlock Classes="TdLabel" Text="  PnL" />
                     <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.RealizedPnlLabel}" Foreground="{Binding DexDeskVM.Perp.RealizedPnlBrush}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
                   </StackPanel>
@@ -1634,7 +1634,7 @@
                                 <Grid ColumnDefinitions="0.6*,0.6*,0.7*,0.9*,0.7*,0.7*,0.5*" ColumnSpacing="10">
                                   <TextBlock Classes="TdNum" Text="{Binding Id}" Foreground="{DynamicResource TextSoft}" />
                                   <TextBlock Grid.Column="1" Text="{Binding SideLabel}" Foreground="{Binding SideBrush}" FontWeight="Bold" />
-                                  <TextBlock Grid.Column="2" Text="{Binding TypeLabel}" Foreground="#a855f7" />
+                                  <TextBlock Grid.Column="2" Text="{Binding TypeLabel}" Foreground="{DynamicResource AccentPurpleBright}" />
                                   <TextBlock Grid.Column="3" Classes="TdNum" Text="{Binding TriggerLabel}" HorizontalAlignment="Right" />
                                   <TextBlock Grid.Column="4" Classes="TdNum" Text="{Binding SizeLabel}" HorizontalAlignment="Right" />
                                   <TextBlock Grid.Column="5" Text="{Binding StatusLabel}" Foreground="{DynamicResource Warning}" HorizontalAlignment="Center" FontSize="{DynamicResource FsCaption}" />
@@ -1735,11 +1735,11 @@
                 <TextBlock Classes="TdH2" Text="Order Book · Position" IsVisible="{Binding DexDeskVM.IsPerpMode}" />
 
                 <!-- Selected exchange: live feed badge + stats + markets -->
-                <Border Background="#0a0616" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="8" Padding="8">
+                <Border Background="#0a0616" BorderBrush="{DynamicResource PurpleTintStroke}" BorderThickness="1" CornerRadius="8" Padding="8">
                   <StackPanel Spacing="7">
                     <Grid ColumnDefinitions="*,Auto">
                       <TextBlock Text="{Binding DexDeskVM.SelectedExchangeName}" Foreground="{DynamicResource TextPrimary}" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
-                      <Border Grid.Column="1" Background="#07221a" BorderBrush="#0e3a2a" BorderThickness="1" CornerRadius="999" Padding="6,1">
+                      <Border Grid.Column="1" Background="{DynamicResource PositiveTint}" BorderBrush="{DynamicResource PositiveFillStroke}" BorderThickness="1" CornerRadius="999" Padding="6,1">
                         <StackPanel Orientation="Horizontal" Spacing="4">
                           <Ellipse Width="5" Height="5" Fill="{DynamicResource Positive}" VerticalAlignment="Center" IsVisible="{Binding DexDeskVM.SelectedExchangeIsLive}" />
                           <TextBlock Text="{Binding DexDeskVM.SelectedExchangeFeedLabel}" Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
@@ -1750,7 +1750,7 @@
                     <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="6">
                       <StackPanel Spacing="1">
                         <TextBlock Text="CHAIN" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-                        <TextBlock Text="{Binding DexDeskVM.SelectedExchangeChainBadge}" Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding DexDeskVM.SelectedExchangeChainBadge}" Foreground="{DynamicResource AccentPurpleBright}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
                       </StackPanel>
                       <StackPanel Grid.Column="1" Spacing="1">
                         <TextBlock Text="FEE" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
@@ -1798,8 +1798,8 @@
                   <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                     <Ellipse Width="6" Height="6" Fill="{DynamicResource Positive}" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding DexTradingVM.DexProtocolLabel}" Foreground="{DynamicResource TextPrimary}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
-                    <Border Background="#150a20" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding DexTradingVM.DexChainBadge}" Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                    <Border Background="{DynamicResource PurpleTint}" BorderBrush="{DynamicResource PurpleTintStroke}" BorderThickness="1" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding DexTradingVM.DexChainBadge}" Foreground="{DynamicResource AccentPurpleBright}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                     </Border>
                   </StackPanel>
                   <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
@@ -1856,13 +1856,13 @@
                           <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Assistant.EntryLabel}" Foreground="{DynamicResource TextSecondary}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
                         </StackPanel>
                       </Border>
-                      <Border Grid.Column="1" Background="#061e14" CornerRadius="4" Padding="4,2">
+                      <Border Grid.Column="1" Background="{DynamicResource PositiveTint}" CornerRadius="4" Padding="4,2">
                         <StackPanel Spacing="1" HorizontalAlignment="Center">
                           <TextBlock Text="TP" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
                           <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Assistant.TakeProfitLabel}" Foreground="{DynamicResource Positive}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
                         </StackPanel>
                       </Border>
-                      <Border Grid.Column="2" Background="#200a0a" CornerRadius="4" Padding="4,2">
+                      <Border Grid.Column="2" Background="{DynamicResource NegativeFill}" CornerRadius="4" Padding="4,2">
                         <StackPanel Spacing="1" HorizontalAlignment="Center">
                           <TextBlock Text="SL" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
                           <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Assistant.StopLossLabel}" Foreground="{DynamicResource Negative}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
@@ -1887,7 +1887,7 @@
                     </StackPanel>
                     <StackPanel Grid.Column="2" Margin="8,6" Spacing="3">
                       <TextBlock Text="MKT CAP" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
-                      <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexMarketCapLabel}" Foreground="#a855f7" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" />
+                      <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexMarketCapLabel}" Foreground="{DynamicResource AccentPurpleBright}" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" />
                     </StackPanel>
                     <StackPanel Grid.Column="3" Margin="8,6" Spacing="3">
                       <TextBlock Text="24H FEES" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
@@ -1900,8 +1900,8 @@
                   <!-- Fee tiers -->
                   <StackPanel Orientation="Horizontal" Spacing="8" Margin="12,8" VerticalAlignment="Center">
                     <TextBlock Text="FEE TIERS" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Center" />
-                    <Border Background="#150a20" BorderBrush="#6a2a9a" BorderThickness="1" CornerRadius="4" Padding="8,2">
-                      <TextBlock Text="0.30%" Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                    <Border Background="{DynamicResource PurpleTint}" BorderBrush="{DynamicResource PurpleStrokeBright}" BorderThickness="1" CornerRadius="4" Padding="8,2">
+                      <TextBlock Text="0.30%" Foreground="{DynamicResource AccentPurpleBright}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                     </Border>
                     <Border Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1" CornerRadius="4" Padding="8,2">
                       <TextBlock Text="0.01%" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
@@ -1925,7 +1925,7 @@
                         <Border Grid.Column="1" Height="13" Background="#1e3ddc84" CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
                         <Border Grid.Column="2" Height="19" Background="#2a3ddc84" CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
                         <Border Grid.Column="3" Height="22" Background="{DynamicResource Positive}"  CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
-                        <Border Grid.Column="4" Height="22" Background="#a855f7"  CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
+                        <Border Grid.Column="4" Height="22" Background="{DynamicResource AccentPurpleBright}"  CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
                         <Border Grid.Column="5" Height="22" Background="{DynamicResource Negative}"  CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
                         <Border Grid.Column="6" Height="19" Background="#2aff6b6b" CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
                         <Border Grid.Column="7" Height="13" Background="#1eff6b6b" CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
@@ -1943,7 +1943,7 @@
                       </StackPanel>
                       <StackPanel Grid.Column="2" Spacing="1">
                         <TextBlock Text="PRICE" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-                        <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.SelectedToken.PriceUsd, StringFormat=\$ {0:N6}}" Foreground="#a855f7" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
+                        <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.SelectedToken.PriceUsd, StringFormat=\$ {0:N6}}" Foreground="{DynamicResource AccentPurpleBright}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
                       </StackPanel>
                     </Grid>
                   </StackPanel>
@@ -1973,7 +1973,7 @@
                 </ItemsControl>
                 <Border Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1" Padding="2,6" Margin="0,2">
                   <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.MarkPriceLabel}" Foreground="#a855f7" FontWeight="Bold" FontSize="{DynamicResource FsSubhead}" />
+                    <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.MarkPriceLabel}" Foreground="{DynamicResource AccentPurpleBright}" FontWeight="Bold" FontSize="{DynamicResource FsSubhead}" />
                     <StackPanel Grid.Column="1" Spacing="1" HorizontalAlignment="Right">
                       <TextBlock Text="Funding" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" />
                       <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.FundingRateLabel}" Foreground="{Binding DexDeskVM.Perp.FundingBrush}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" HorizontalAlignment="Right" />
@@ -2077,7 +2077,7 @@
                       <Border Classes="TdCardTight" Margin="0,0,0,6">
                         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="4">
                           <TextBlock Grid.Row="0" Text="{Binding DisplayName}" Foreground="{DynamicResource TextSecondary}" FontWeight="Bold" />
-                          <TextBlock Grid.Row="0" Grid.Column="1" Classes="TdNum" Text="{Binding PriceUsd, StringFormat=\$ {0:N6}}" Foreground="#a855f7" />
+                          <TextBlock Grid.Row="0" Grid.Column="1" Classes="TdNum" Text="{Binding PriceUsd, StringFormat=\$ {0:N6}}" Foreground="{DynamicResource AccentPurpleBright}" />
                           <TextBlock Grid.Row="1" Classes="TdSub" Text="{Binding PairLabel}" />
                           <TextBlock Grid.Row="1" Grid.Column="1" Classes="TdNum" Text="{Binding Volume24h, StringFormat=Vol \$ {0:N0}}" Foreground="{DynamicResource TextSoft}" />
                         </Grid>

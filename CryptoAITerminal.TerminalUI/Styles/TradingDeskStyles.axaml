@@ -2,47 +2,71 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <!--
     Trading-desk design system — faithful to the reference mockup.
-    Palette: near-black panels (#050c14 / #07111a), thin cool borders,
-    teal accent (#21e6c1), tight 5-8px radii. Fonts: Space Grotesk (UI) +
+    Palette: near-black panels (Surface0 / Surface1), thin cool borders,
+    teal accent, tight 5-8px radii. Fonts: Space Grotesk (UI) +
     DM Mono (numeric). Scoped via Td* classes so other screens are untouched.
   -->
 
+  <Styles.Resources>
+    <!-- Компонентные токены деска. Общая палитра (Accent/Positive/Surface*/Text*/Purple*)
+         объявлена в AppStyles.axaml и видна отсюда через DynamicResource — этот словарь
+         подключается вместе со стилями в UserControl.Styles тех же View. Здесь лежит
+         только то, что существует единственно на торговом деске.
+
+         TdAccentFill — заливка активного сегмента и «таблетки». Численно она почти
+         совпадает с PositiveTint, но смысл другой («выбрано», а не «прибыль»), поэтому
+         остаётся своим токеном: перекраска Positive не должна утащить за собой бирюзу. -->
+    <SolidColorBrush x:Key="TdAccentFill" Color="#07221A" />
+    <SolidColorBrush x:Key="TdAccentFillHover" Color="#092A20" />
+    <SolidColorBrush x:Key="TdAccentStroke" Color="#0E3A2A" />
+    <SolidColorBrush x:Key="TdPrimaryHover" Color="#2FF2CD" />
+    <SolidColorBrush x:Key="TdPrimaryDisabledFill" Color="#123A33" />
+    <SolidColorBrush x:Key="TdPrimaryDisabledText" Color="#6FBFAE" />
+    <SolidColorBrush x:Key="TdDexHoverFill" Color="#1C0D2B" />
+    <SolidColorBrush x:Key="TdDexPrimaryHover" Color="#B968FF" />
+    <SolidColorBrush x:Key="TdDexDisabledFill" Color="#2A1540" />
+    <SolidColorBrush x:Key="TdDexDisabledText" Color="#B79AD8" />
+    <SolidColorBrush x:Key="TdOnPurpleText" Color="#0A0212" />
+    <SolidColorBrush x:Key="TdSideSellFill" Color="#2B0D0D" />
+    <SolidColorBrush x:Key="TdDangerStroke" Color="#3A1414" />
+  </Styles.Resources>
+
   <!-- ── Panels & cards ─────────────────────────────────────────────── -->
   <Style Selector="Border.TdPanel">
-    <Setter Property="Background" Value="#050c14" />
-    <Setter Property="BorderBrush" Value="#0d1b27" />
+    <Setter Property="Background" Value="{DynamicResource Surface0}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStrokeSubtle}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="10" />
     <Setter Property="Padding" Value="14" />
   </Style>
 
   <Style Selector="Border.TdCard">
-    <Setter Property="Background" Value="#07111a" />
-    <Setter Property="BorderBrush" Value="#152535" />
+    <Setter Property="Background" Value="{DynamicResource Surface1}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStroke}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="8" />
     <Setter Property="Padding" Value="12" />
   </Style>
 
   <Style Selector="Border.TdCardTight">
-    <Setter Property="Background" Value="#07111a" />
-    <Setter Property="BorderBrush" Value="#152535" />
+    <Setter Property="Background" Value="{DynamicResource Surface1}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStroke}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="6" />
     <Setter Property="Padding" Value="8,6" />
   </Style>
 
   <Style Selector="Border.TdMid">
-    <Setter Property="Background" Value="#0a1622" />
-    <Setter Property="BorderBrush" Value="#152535" />
+    <Setter Property="Background" Value="{DynamicResource Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PanelStroke}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="6" />
     <Setter Property="Padding" Value="8,5" />
   </Style>
 
   <Style Selector="Border.TdPill">
-    <Setter Property="Background" Value="#07221a" />
-    <Setter Property="BorderBrush" Value="#0e3a2a" />
+    <Setter Property="Background" Value="{DynamicResource TdAccentFill}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource TdAccentStroke}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="999" />
     <Setter Property="Padding" Value="10,3" />
@@ -50,34 +74,34 @@
 
   <!-- ── Typography ─────────────────────────────────────────────────── -->
   <Style Selector="TextBlock.TdLabel">
-    <Setter Property="Foreground" Value="#5a7a94" />
+    <Setter Property="Foreground" Value="{DynamicResource TextQuiet}" />
     <Setter Property="FontSize" Value="{DynamicResource FsMicro}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="LetterSpacing" Value="0.6" />
   </Style>
 
   <Style Selector="TextBlock.TdSub">
-    <Setter Property="Foreground" Value="#8fa3b8" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
     <Setter Property="FontSize" Value="{DynamicResource FsCaption}" />
   </Style>
 
   <Style Selector="TextBlock.TdH2">
-    <Setter Property="Foreground" Value="#e8f4ff" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
     <Setter Property="FontSize" Value="{DynamicResource FsSubhead}" />
     <Setter Property="FontWeight" Value="Bold" />
   </Style>
 
   <Style Selector="TextBlock.TdNum">
     <Setter Property="FontFamily" Value="{DynamicResource FontMono}" />
-    <Setter Property="Foreground" Value="#c8dcef" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBody}" />
   </Style>
 
   <!-- ── Segmented buttons ──────────────────────────────────────────── -->
   <Style Selector="Button.TdSeg">
-    <Setter Property="Background" Value="#07111a" />
-    <Setter Property="BorderBrush" Value="#1e3248" />
+    <Setter Property="Background" Value="{DynamicResource Surface1}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource TextGhost}" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="Foreground" Value="#8fa3b8" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
     <Setter Property="CornerRadius" Value="5" />
     <Setter Property="Padding" Value="10,7" />
     <Setter Property="FontSize" Value="{DynamicResource FsCaption}" />
@@ -86,34 +110,34 @@
     <Setter Property="HorizontalContentAlignment" Value="Center" />
   </Style>
   <Style Selector="Button.TdSeg:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="#0a1a26" />
-    <Setter Property="BorderBrush" Value="#2d4a5e" />
+    <Setter Property="Background" Value="{DynamicResource Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource TextFaint}" />
   </Style>
   <Style Selector="Button.TdSeg.active:not(.amber):not(.buy):not(.sell):not(.dex)">
-    <Setter Property="Background" Value="#07221a" />
-    <Setter Property="BorderBrush" Value="#21e6c1" />
-    <Setter Property="Foreground" Value="#21e6c1" />
+    <Setter Property="Background" Value="{DynamicResource TdAccentFill}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+    <Setter Property="Foreground" Value="{DynamicResource Accent}" />
   </Style>
   <Style Selector="Button.TdSeg.active:not(.amber):not(.buy):not(.sell):not(.dex):pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="#092a20" />
-    <Setter Property="BorderBrush" Value="#21e6c1" />
+    <Setter Property="Background" Value="{DynamicResource TdAccentFillHover}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
   </Style>
 
   <!-- ── DEX purple accent (venue / mode / gas / slippage segments) ──────── -->
   <Style Selector="Button.TdSeg.active.dex">
-    <Setter Property="Background" Value="#150a20" />
-    <Setter Property="BorderBrush" Value="#6a2a9a" />
-    <Setter Property="Foreground" Value="#a855f7" />
+    <Setter Property="Background" Value="{DynamicResource PurpleTint}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PurpleStrokeBright}" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentPurpleBright}" />
   </Style>
   <Style Selector="Button.TdSeg.active.dex:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="#1c0d2b" />
-    <Setter Property="BorderBrush" Value="#6a2a9a" />
+    <Setter Property="Background" Value="{DynamicResource TdDexHoverFill}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PurpleStrokeBright}" />
   </Style>
 
   <!-- purple badge chip (SWAP·DEX / PERP·DEX) -->
   <Style Selector="Border.TdDexBadge">
-    <Setter Property="Background" Value="#150a20" />
-    <Setter Property="BorderBrush" Value="#3a1f6e" />
+    <Setter Property="Background" Value="{DynamicResource PurpleTint}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource PurpleTintStroke}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="4" />
     <Setter Property="Padding" Value="6,1" />
@@ -121,17 +145,17 @@
 
   <!-- purple primary (DEX execute) -->
   <Style Selector="Button.TdPrimary.dex">
-    <Setter Property="Background" Value="#a855f7" />
-    <Setter Property="Foreground" Value="#0a0212" />
+    <Setter Property="Background" Value="{DynamicResource AccentPurpleBright}" />
+    <Setter Property="Foreground" Value="{DynamicResource TdOnPurpleText}" />
   </Style>
   <Style Selector="Button.TdPrimary.dex:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="#b968ff" />
+    <Setter Property="Background" Value="{DynamicResource TdDexPrimaryHover}" />
   </Style>
   <Style Selector="Button.TdPrimary.dex:disabled /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="#2a1540" />
+    <Setter Property="Background" Value="{DynamicResource TdDexDisabledFill}" />
     <!-- inherited down to the label TextBlocks: without it the near-black enabled
          foreground stays on the dark disabled fill and the caption disappears -->
-    <Setter Property="Foreground" Value="#B79AD8" />
+    <Setter Property="Foreground" Value="{DynamicResource TdDexDisabledText}" />
   </Style>
   <!-- compact toolbar variant -->
   <Style Selector="Button.TdSeg.mini">
@@ -157,10 +181,10 @@
 
   <!-- seamless BUY/SELL side toggle (inside one bordered, clipped container) -->
   <Style Selector="Button.TdSide">
-    <Setter Property="Background" Value="#07111a" />
+    <Setter Property="Background" Value="{DynamicResource Surface1}" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="CornerRadius" Value="0" />
-    <Setter Property="Foreground" Value="#5a7a94" />
+    <Setter Property="Foreground" Value="{DynamicResource TextQuiet}" />
     <Setter Property="FontSize" Value="{DynamicResource FsBody}" />
     <Setter Property="FontWeight" Value="ExtraBold" />
     <Setter Property="Padding" Value="0,11" />
@@ -168,12 +192,12 @@
     <Setter Property="HorizontalContentAlignment" Value="Center" />
   </Style>
   <Style Selector="Button.TdSide.active.buy">
-    <Setter Property="Background" Value="#0d2b1a" />
-    <Setter Property="Foreground" Value="#3ddc84" />
+    <Setter Property="Background" Value="{DynamicResource PositiveFill}" />
+    <Setter Property="Foreground" Value="{DynamicResource Positive}" />
   </Style>
   <Style Selector="Button.TdSide.active.sell">
-    <Setter Property="Background" Value="#2b0d0d" />
-    <Setter Property="Foreground" Value="#ff6b6b" />
+    <Setter Property="Background" Value="{DynamicResource TdSideSellFill}" />
+    <Setter Property="Foreground" Value="{DynamicResource Negative}" />
   </Style>
 
   <!-- transparent inline field (limit price / TP / SL / slippage) -->
@@ -183,7 +207,7 @@
     <Setter Property="Padding" Value="0" />
     <Setter Property="MinHeight" Value="0" />
     <Setter Property="FontFamily" Value="{DynamicResource FontMono}" />
-    <Setter Property="CaretBrush" Value="#c8dcef" />
+    <Setter Property="CaretBrush" Value="{DynamicResource TextBody}" />
   </Style>
   <Style Selector="TextBox.TdInput /template/ Border#PART_BorderElement">
     <Setter Property="Background" Value="Transparent" />
@@ -192,26 +216,26 @@
 
   <!-- amber variant (leverage / futures mode) -->
   <Style Selector="Button.TdSeg.active.amber">
-    <Setter Property="Background" Value="#1a1000" />
-    <Setter Property="BorderBrush" Value="#f4b860" />
-    <Setter Property="Foreground" Value="#f4b860" />
+    <Setter Property="Background" Value="{DynamicResource WarningTint}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Warning}" />
+    <Setter Property="Foreground" Value="{DynamicResource Warning}" />
   </Style>
   <!-- buy / sell variants -->
   <Style Selector="Button.TdSeg.active.buy">
-    <Setter Property="Background" Value="#07221a" />
-    <Setter Property="BorderBrush" Value="#3ddc84" />
-    <Setter Property="Foreground" Value="#3ddc84" />
+    <Setter Property="Background" Value="{DynamicResource TdAccentFill}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Positive}" />
+    <Setter Property="Foreground" Value="{DynamicResource Positive}" />
   </Style>
   <Style Selector="Button.TdSeg.active.sell">
-    <Setter Property="Background" Value="#200a0a" />
-    <Setter Property="BorderBrush" Value="#ff6b6b" />
-    <Setter Property="Foreground" Value="#ff6b6b" />
+    <Setter Property="Background" Value="{DynamicResource NegativeFill}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Negative}" />
+    <Setter Property="Foreground" Value="{DynamicResource Negative}" />
   </Style>
 
   <!-- Big primary side button -->
   <Style Selector="Button.TdPrimary">
-    <Setter Property="Background" Value="#21e6c1" />
-    <Setter Property="Foreground" Value="#051018" />
+    <Setter Property="Background" Value="{DynamicResource Accent}" />
+    <Setter Property="Foreground" Value="{DynamicResource OnAccentText}" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="CornerRadius" Value="7" />
     <Setter Property="FontWeight" Value="Bold" />
@@ -219,19 +243,19 @@
     <Setter Property="HorizontalContentAlignment" Value="Center" />
   </Style>
   <Style Selector="Button.TdPrimary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="#2ff2cd" />
+    <Setter Property="Background" Value="{DynamicResource TdPrimaryHover}" />
   </Style>
   <!-- :not(.dex) so the purple disabled pair above is not overridden by declaration order -->
   <Style Selector="Button.TdPrimary:not(.dex):disabled /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="#123a33" />
-    <Setter Property="Foreground" Value="#6FBFAE" />
+    <Setter Property="Background" Value="{DynamicResource TdPrimaryDisabledFill}" />
+    <Setter Property="Foreground" Value="{DynamicResource TdPrimaryDisabledText}" />
   </Style>
 
   <Style Selector="Button.TdDanger">
-    <Setter Property="Background" Value="#200a0a" />
-    <Setter Property="BorderBrush" Value="#3a1414" />
+    <Setter Property="Background" Value="{DynamicResource NegativeFill}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource TdDangerStroke}" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="Foreground" Value="#ff6b6b" />
+    <Setter Property="Foreground" Value="{DynamicResource Negative}" />
     <Setter Property="CornerRadius" Value="6" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />

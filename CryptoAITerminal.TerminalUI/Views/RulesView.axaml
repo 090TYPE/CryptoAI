@@ -8,7 +8,6 @@
 
   <UserControl.Resources>
     <conv:RatioToStarConverter x:Key="RatioStar" />
-    <SolidColorBrush x:Key="DeskBg" Color="#040b12" />
   </UserControl.Resources>
 
   <UserControl.Styles>
@@ -20,7 +19,7 @@
   <!-- No fixed 760px floor: on a 1280x720 screen it forced an outer scroll over the desk's own
        scrollers and pushed the bottom of the page past the edge. -->
   <Border IsVisible="{Binding IsRulesSectionVisible}" MinHeight="460">
-    <Grid DataContext="{Binding RulesDesk}" Background="{StaticResource DeskBg}" ClipToBounds="True">
+    <Grid DataContext="{Binding RulesDesk}" Background="{DynamicResource AppBg}" ClipToBounds="True">
       <DockPanel LastChildFill="True">
 
         <!-- ───────── header ───────── -->
@@ -122,7 +121,7 @@
         <Grid RowDefinitions="Auto,*" RowSpacing="7" Margin="8">
 
           <!-- NL bar -->
-          <Border Grid.Row="0" BorderBrush="#14302e" BorderThickness="1" CornerRadius="11" Background="#061615" ClipToBounds="True">
+          <Border Grid.Row="0" BorderBrush="{DynamicResource AccentTintStroke}" BorderThickness="1" CornerRadius="11" Background="{DynamicResource AccentTint}" ClipToBounds="True">
             <StackPanel Margin="12,10" Spacing="7">
               <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                 <Ellipse Width="5" Height="5" Fill="{DynamicResource Accent}" />
@@ -291,7 +290,7 @@
                   </Border>
                   <Border DockPanel.Dock="Bottom" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Padding="12,10">
                     <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
-                      <Button Classes="FlatChrome" Grid.Column="0" Command="{Binding DeleteCommand}" Height="28" Padding="10,0" CornerRadius="6" Background="#14060a" BorderBrush="#3a1620" BorderThickness="1" Content="DELETE" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                      <Button Classes="FlatChrome" Grid.Column="0" Command="{Binding DeleteCommand}" Height="28" Padding="10,0" CornerRadius="6" Background="{DynamicResource NegativeTint}" BorderBrush="{DynamicResource NegativeTintStroke}" BorderThickness="1" Content="DELETE" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                       <TextBlock Grid.Column="2" Text="{Binding DirtyLabel}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{Binding DirtyColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" Margin="0,0,4,0" />
                       <Button Classes="FlatChrome" Grid.Column="3" Command="{Binding CancelCommand}" Height="28" Padding="12,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="CANCEL" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                       <Button Classes="FlatChrome" Grid.Column="4" Command="{Binding SaveCommand}" Height="28" Padding="14,0" CornerRadius="6" Background="{DynamicResource AccentSoft}" BorderBrush="{DynamicResource Accent}" BorderThickness="1" Content="✓ SAVE RULE" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
@@ -404,7 +403,7 @@
                                     </ItemsControl.ItemTemplate>
                                   </ItemsControl>
                                 </StackPanel>
-                                <Border IsVisible="{Binding Risky}" Padding="8,8" CornerRadius="6" Background="#150f04" BorderBrush="#3a2a12" BorderThickness="1">
+                                <Border IsVisible="{Binding Risky}" Padding="8,8" CornerRadius="6" Background="{DynamicResource WarningTint}" BorderBrush="{DynamicResource WarningTintStroke}" BorderThickness="1">
                                   <TextBlock Text="{Binding RiskNote}" FontSize="{DynamicResource FsMicro}" LineHeight="15" Foreground="{DynamicResource Warning}" TextWrapping="Wrap" />
                                 </Border>
                                 <TextBlock Text="{Binding Summary}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="#7a6030" />
@@ -421,7 +420,7 @@
                       <Border Margin="0,14,0,0" Padding="12,10" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="8" Background="{DynamicResource Surface0}">
                         <StackPanel Spacing="7">
                           <TextBlock Text="PREVIEW" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
-                          <TextBlock Text="{Binding Preview}" FontSize="{DynamicResource FsCaption}" LineHeight="18" Foreground="#a9c2d8" TextWrapping="Wrap" />
+                          <TextBlock Text="{Binding Preview}" FontSize="{DynamicResource FsCaption}" LineHeight="18" Foreground="{DynamicResource TextNote}" TextWrapping="Wrap" />
                         </StackPanel>
                       </Border>
                     </StackPanel>

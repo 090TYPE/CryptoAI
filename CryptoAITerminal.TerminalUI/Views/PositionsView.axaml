@@ -38,7 +38,7 @@
                 <Border IsVisible="{Binding AllPositionsVM.CloseAllConfirmRequested}"
                         Background="{DynamicResource Negative}" CornerRadius="3" Padding="6,2"
                         VerticalAlignment="Center">
-                  <TextBlock Text="⚠ ARMED — click again" Foreground="#0A1018"
+                  <TextBlock Text="⚠ ARMED — click again" Foreground="{DynamicResource OnAccentText}"
                              FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
                 </Border>
               </StackPanel>
@@ -138,19 +138,19 @@
                         <StackPanel Grid.Column="8" Orientation="Horizontal" Spacing="3"
                                     VerticalAlignment="Center" HorizontalAlignment="Right">
                           <Button Content="25%" Background="{DynamicResource Surface2}" Foreground="{DynamicResource TextMuted}"
-                                  BorderBrush="#2D4A5A" BorderThickness="1" CornerRadius="3"
+                                  BorderBrush="{DynamicResource TextFaint}" BorderThickness="1" CornerRadius="3"
                                   Padding="4,2" FontSize="{DynamicResource FsMicro}"
                                   Command="{Binding $parent[ItemsControl].((vm:AllPositionsViewModel)DataContext).Close25Command}"
                                   CommandParameter="{Binding}"
                                   ToolTip.Tip="Reduce 25% of position size (reduce-only market order)." />
                           <Button Content="50%" Background="{DynamicResource Surface2}" Foreground="{DynamicResource TextMuted}"
-                                  BorderBrush="#2D4A5A" BorderThickness="1" CornerRadius="3"
+                                  BorderBrush="{DynamicResource TextFaint}" BorderThickness="1" CornerRadius="3"
                                   Padding="4,2" FontSize="{DynamicResource FsMicro}"
                                   Command="{Binding $parent[ItemsControl].((vm:AllPositionsViewModel)DataContext).Close50Command}"
                                   CommandParameter="{Binding}"
                                   ToolTip.Tip="Reduce 50% of position size." />
                           <Button Content="75%" Background="{DynamicResource Surface2}" Foreground="{DynamicResource TextMuted}"
-                                  BorderBrush="#2D4A5A" BorderThickness="1" CornerRadius="3"
+                                  BorderBrush="{DynamicResource TextFaint}" BorderThickness="1" CornerRadius="3"
                                   Padding="4,2" FontSize="{DynamicResource FsMicro}"
                                   Command="{Binding $parent[ItemsControl].((vm:AllPositionsViewModel)DataContext).Close75Command}"
                                   CommandParameter="{Binding}"

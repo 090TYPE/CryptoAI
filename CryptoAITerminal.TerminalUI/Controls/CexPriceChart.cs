@@ -16,6 +16,25 @@ public class CexPriceChart : Control
     public static readonly StyledProperty<bool> IsPositiveTrendProperty =
         AvaloniaProperty.Register<CexPriceChart, bool>(nameof(IsPositiveTrend), true);
 
+    // Палитра читается из ресурсов один раз при инициализации типа — из Render в словарь
+    // ресурсов не ходим, там остаётся только сборка кистей из уже готовых цветов.
+    private static readonly Color PositiveColor = ChartPalette.Get("Positive", "#3DDC84");
+    private static readonly Color NegativeColor = ChartPalette.Get("Negative", "#FF6B6B");
+    private static readonly SolidColorBrush AccentBrush = ChartPalette.Brush("Accent", "#21E6C1");
+    private static readonly SolidColorBrush SubtitleBrush = ChartPalette.Brush("TextMuted", "#8FA3B8");
+    private static readonly Pen BorderPen = new(new SolidColorBrush(Color.Parse("#233040")), 1);
+    private static readonly Pen GridPen = new(ChartPalette.Brush("PanelStroke", "#152233"), 1);
+    private static readonly LinearGradientBrush BackgroundBrush = new()
+    {
+        StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+        EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
+        GradientStops =
+        {
+            new GradientStop(ChartPalette.Get("SurfaceInner2", "#0A131E"), 0),
+            new GradientStop(ChartPalette.Get("Surface1", "#07101A"), 1)
+        }
+    };
+
     private INotifyCollectionChanged? _subscribedCollection;
     private bool _attached;
 
@@ -121,14 +140,15 @@ public class CexPriceChart : Control
 
         if (scaled.Count == 1)
         {
+            // Одна точка — тренда ещё нет, поэтому цвет бренда, а не знака.
             var single = scaled[0];
-            context.DrawEllipse(new SolidColorBrush(Color.Parse("#21E6C1")), null, single, 5, 5);
+            context.DrawEllipse(AccentBrush, null, single, 5, 5);
             return;
         }
 
-        var lineColor = Color.Parse(IsPositiveTrend ? "#21E6C1" : "#FF6B6B");
-        var areaColor = Color.Parse(IsPositiveTrend ? "#2D21E6C1" : "#2DFF6B6B");
-        var softLineColor = Color.Parse(IsPositiveTrend ? "#7021E6C1" : "#70FF6B6B");
+        var lineColor = IsPositiveTrend ? PositiveColor : NegativeColor;
+        var areaColor = ChartPalette.Fade(lineColor, 0x2D);
+        var softLineColor = ChartPalette.Fade(lineColor, 0x70);
         var pen = new Pen(new SolidColorBrush(lineColor), 2.6);
         var guidePen = new Pen(new SolidColorBrush(softLineColor), 1.2);
 
@@ -167,42 +187,29 @@ public class CexPriceChart : Control
 
         var lastPoint = scaled[^1];
         context.DrawLine(guidePen, new Point(bounds.Left, lastPoint.Y), new Point(bounds.Right, lastPoint.Y));
-        context.DrawEllipse(new SolidColorBrush(Color.Parse("#4021E6C1")), null, lastPoint, 10, 10);
+        // Ореол берёт цвет линии: до перевода на токены он был жёстко акцентным и на падении
+        // расходился с красной линией.
+        context.DrawEllipse(new SolidColorBrush(ChartPalette.Fade(lineColor, 0x40)), null, lastPoint, 10, 10);
         context.DrawEllipse(new SolidColorBrush(lineColor), null, lastPoint, 4, 4);
     }
 
     private static void DrawBackground(DrawingContext context, Rect bounds)
     {
-        context.DrawRectangle(
-            new LinearGradientBrush
-            {
-                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-                EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
-                GradientStops =
-                {
-                    new GradientStop(Color.Parse("#0C131B"), 0),
-                    new GradientStop(Color.Parse("#0A1017"), 1)
-                }
-            },
-            new Pen(new SolidColorBrush(Color.Parse("#233040")), 1),
-            bounds,
-            14,
-            14);
+        context.DrawRectangle(BackgroundBrush, BorderPen, bounds, 14, 14);
     }
 
     private static void DrawGrid(DrawingContext context, Rect bounds)
     {
-        var pen = new Pen(new SolidColorBrush(Color.Parse("#17212D")), 1);
         for (var index = 1; index < 5; index++)
         {
             var y = bounds.Top + ((bounds.Height / 5d) * index);
-            context.DrawLine(pen, new Point(bounds.Left, y), new Point(bounds.Right, y));
+            context.DrawLine(GridPen, new Point(bounds.Left, y), new Point(bounds.Right, y));
         }
 
         for (var index = 1; index < 6; index++)
         {
             var x = bounds.Left + ((bounds.Width / 6d) * index);
-            context.DrawLine(pen, new Point(x, bounds.Top), new Point(x, bounds.Bottom));
+            context.DrawLine(GridPen, new Point(x, bounds.Top), new Point(x, bounds.Bottom));
         }
     }
 
@@ -214,7 +221,7 @@ public class CexPriceChart : Control
             FlowDirection.LeftToRight,
             new Typeface("Segoe UI"),
             16,
-            new SolidColorBrush(Color.Parse("#21E6C1")));
+            AccentBrush);
 
         var subtitle = new FormattedText(
             "The line chart appears automatically as soon as live price points accumulate.",
@@ -222,7 +229,7 @@ public class CexPriceChart : Control
             FlowDirection.LeftToRight,
             new Typeface("Segoe UI"),
             12,
-            new SolidColorBrush(Color.Parse("#8FA3B8")));
+            SubtitleBrush);
 
         context.DrawText(title, new Point(bounds.Left + 22, bounds.Top + 22));
         context.DrawText(subtitle, new Point(bounds.Left + 22, bounds.Top + 52));

@@ -520,10 +520,9 @@ public partial class MainWindow : Window
     private void RefreshLanguageButtons()
     {
         var isEnglish = _localization.CurrentLanguage == UiLanguage.English;
-        EnglishLanguageButton.Background = isEnglish ? Brush.Parse("#21E6C1") : Brush.Parse("Transparent");
-        EnglishLanguageButton.Foreground = isEnglish ? Brush.Parse("#04121C") : Brush.Parse("#3D5A72");
-        RussianLanguageButton.Background = isEnglish ? Brush.Parse("Transparent") : Brush.Parse("#21E6C1");
-        RussianLanguageButton.Foreground = isEnglish ? Brush.Parse("#3D5A72") : Brush.Parse("#04121C");
+        // Цвета живут в Window.Styles (Button.LangPill / .active) — здесь только состояние.
+        EnglishLanguageButton.Classes.Set("active", isEnglish);
+        RussianLanguageButton.Classes.Set("active", !isEnglish);
     }
 
     private void AttachLocalizationObservers()

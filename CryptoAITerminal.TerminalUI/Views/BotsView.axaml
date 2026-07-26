@@ -8,7 +8,6 @@
 
   <UserControl.Resources>
     <conv:RatioToStarConverter x:Key="RatioStar" />
-    <SolidColorBrush x:Key="DeskBg" Color="#040b12" />
   </UserControl.Resources>
 
   <UserControl.Styles>
@@ -16,7 +15,7 @@
     <Style Selector="TextBox">
       <Setter Property="MinHeight" Value="0" />
       <Setter Property="CaretBrush" Value="{DynamicResource Accent}" />
-      <Setter Property="SelectionBrush" Value="#14302e" />
+      <Setter Property="SelectionBrush" Value="{DynamicResource AccentTintStroke}" />
       <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
     </Style>
     <Style Selector="TextBox /template/ Border#PART_BorderElement">
@@ -40,7 +39,7 @@
   <!-- Gate on the section. No fixed 760px floor: on a 1280x720 screen it forced an outer scroll
        on top of the desk's own scrollers and pushed the footer past the bottom edge. -->
   <Border IsVisible="{Binding IsBotsSectionVisible}" MinHeight="460">
-    <Grid DataContext="{Binding BotsDesk}" Background="{StaticResource DeskBg}" ClipToBounds="True">
+    <Grid DataContext="{Binding BotsDesk}" Background="{DynamicResource AppBg}" ClipToBounds="True">
 
       <!-- ═══════════════ MAIN LAYER (header · body · footer) ═══════════════ -->
       <DockPanel LastChildFill="True">
@@ -63,7 +62,7 @@
                   <TextBlock Text="{Binding PaperLabel}" Foreground="{Binding PaperColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                 </StackPanel>
               </Button>
-              <Button Classes="FlatChrome" Command="{Binding KillAllCommand}" Background="#14060a" BorderBrush="#3a1620" BorderThickness="1"
+              <Button Classes="FlatChrome" Command="{Binding KillAllCommand}" Background="{DynamicResource NegativeTint}" BorderBrush="{DynamicResource NegativeTintStroke}" BorderThickness="1"
                       CornerRadius="5" Padding="10,4" Content="⛔ KILL ALL" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
               <Button Classes="FlatChrome" Command="{Binding NewBotCommand}" Background="{DynamicResource AccentSoft}" BorderBrush="{DynamicResource Accent}" BorderThickness="1"
                       CornerRadius="5" Padding="12,6" Content="+ NEW BOT" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
@@ -184,7 +183,7 @@
                     </Border>
                     <TextBlock Text="{Binding BriefMeta}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                   </StackPanel>
-                  <TextBlock Text="{Binding BriefSummary}" Foreground="#a9c2d8" FontSize="{DynamicResource FsCaption}" LineHeight="17" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding BriefSummary}" Foreground="{DynamicResource TextNote}" FontSize="{DynamicResource FsCaption}" LineHeight="17" TextWrapping="Wrap" />
                   <ItemsControl ItemsSource="{Binding Bullets}" Margin="0,2,0,0">
                     <ItemsControl.ItemsPanel>
                       <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
@@ -283,7 +282,7 @@
                       <Border Width="24">
                         <Button Classes="FlatChrome" Command="{Binding ToggleSelectAllCommand}" Width="12" Height="12" Padding="0" CornerRadius="3" BorderThickness="1"
                                 Background="{Binding AllBoxBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding AllBoxBorder, Converter={StaticResource StringToBrush}}"
-                                Content="{Binding AllBoxMark}" Foreground="#04101a" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Left" />
+                                Content="{Binding AllBoxMark}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Left" />
                       </Border>
                       <TextBlock Width="232" Text="BOT · STRATEGY" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Center" />
                       <TextBlock Width="138" Text="VENUE · MARKET" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Center" IsVisible="{Binding ColVenue}" />
@@ -320,7 +319,7 @@
                                       <Border Width="24">
                                         <Button Classes="FlatChrome" Command="{Binding SelectCommand}" Width="12" Height="12" Padding="0" CornerRadius="3" BorderThickness="1"
                                                 Background="{Binding BoxBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding BoxBorder, Converter={StaticResource StringToBrush}}"
-                                                Content="{Binding BoxMark}" Foreground="#04101a" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Left" />
+                                                Content="{Binding BoxMark}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Left" />
                                       </Border>
                                       <StackPanel Width="232" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                                         <TextBlock Text="▶" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" Width="10" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
@@ -505,19 +504,19 @@
                                                         </ItemsControl.ItemTemplate>
                                                       </ItemsControl>
                                                       <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
-                                                        <Button Classes="FlatChrome" Command="{Binding ClosePositionCommand}" Height="26" Padding="10,0" CornerRadius="5" Background="#14060a" BorderBrush="#3a1620" BorderThickness="1" Content="CLOSE AT MARKET" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                        <Button Classes="FlatChrome" Command="{Binding ClosePositionCommand}" Height="26" Padding="10,0" CornerRadius="5" Background="{DynamicResource NegativeTint}" BorderBrush="{DynamicResource NegativeTintStroke}" BorderThickness="1" Content="CLOSE AT MARKET" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                                                         <Button Classes="FlatChrome" Command="{Binding HedgeCommand}" Height="26" Padding="10,0" CornerRadius="5" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="{Binding HedgeVenue, StringFormat='HEDGE · {0}'}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                                                       </StackPanel>
                                                     </StackPanel>
                                                   </Border>
-                                                  <Border Padding="12" BorderBrush="#14302e" BorderThickness="1" CornerRadius="10" Background="#061615">
+                                                  <Border Padding="12" BorderBrush="{DynamicResource AccentTintStroke}" BorderThickness="1" CornerRadius="10" Background="{DynamicResource AccentTint}">
                                                     <StackPanel>
                                                       <StackPanel Orientation="Horizontal" Spacing="7" Margin="0,0,0,8" VerticalAlignment="Center">
                                                         <Ellipse Width="5" Height="5" Fill="{DynamicResource Accent}" />
                                                         <TextBlock Text="AI PARAMETER REVIEW" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                                                         <TextBlock Text="{Binding AiSource}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="#2d6b64" />
                                                       </StackPanel>
-                                                      <TextBlock Text="{Binding AiNote}" Foreground="#a9c2d8" FontSize="{DynamicResource FsCaption}" LineHeight="18" TextWrapping="Wrap" />
+                                                      <TextBlock Text="{Binding AiNote}" Foreground="{DynamicResource TextNote}" FontSize="{DynamicResource FsCaption}" LineHeight="18" TextWrapping="Wrap" />
                                                       <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,10,0,0">
                                                         <Button Classes="FlatChrome" Command="{Binding ApplyAiCommand}" Height="25" Padding="10,0" CornerRadius="5" Background="{DynamicResource AccentSoft}" BorderBrush="{DynamicResource Accent}" BorderThickness="1" Content="APPLY SUGGESTION" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                                                         <Button Classes="FlatChrome" Command="{Binding AskAiCommand}" Height="25" Padding="10,0" CornerRadius="5" Background="Transparent" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="ASK WHY" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
@@ -611,7 +610,7 @@
                                                           <Grid ColumnDefinitions="Auto,146,92,*" ColumnSpacing="10" Margin="0,1.5" Background="{Binding RowBg, Converter={StaticResource StringToBrush}}">
                                                             <Button Classes="FlatChrome" Grid.Column="0" Command="{Binding ToggleCommand}" Width="13" Height="13" Padding="0" CornerRadius="3" BorderThickness="1"
                                                                     Background="{Binding BoxBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding BoxBorder, Converter={StaticResource StringToBrush}}"
-                                                                    Content="{Binding Mark}" Foreground="#04101a" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" Margin="6,6,0,6" />
+                                                                    Content="{Binding Mark}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" Margin="6,6,0,6" />
                                                             <TextBlock Grid.Column="1" Text="{Binding Label}" FontSize="{DynamicResource FsCaption}" Foreground="{Binding LabelColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
                                                             <Border Grid.Column="2" Height="26" Padding="8,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Opacity="{Binding InputOpacity}" VerticalAlignment="Center">
                                                               <Grid ColumnDefinitions="*,Auto">
@@ -839,7 +838,7 @@
             <StackPanel Spacing="7">
               <Grid ColumnDefinitions="*,Auto" Margin="2,0">
                 <TextBlock Text="AI DESK · BOTS" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Center" />
-                <Border Grid.Column="1" CornerRadius="9" Padding="8,2" Background="{DynamicResource Surface0}" BorderBrush="#1a3030" BorderThickness="1">
+                <Border Grid.Column="1" CornerRadius="9" Padding="8,2" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource AccentTintStroke}" BorderThickness="1">
                   <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
                     <Ellipse Width="5" Height="5" Fill="{DynamicResource Accent}" />
                     <TextBlock Text="{Binding AiProvider}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
@@ -886,7 +885,7 @@
                             </Border>
                             <TextBlock Text="{Binding RiskScore, StringFormat='risk {0}'}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" />
                           </StackPanel>
-                          <TextBlock Text="{Binding RiskRationale}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="#a9c2d8" TextWrapping="Wrap" />
+                          <TextBlock Text="{Binding RiskRationale}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="{DynamicResource TextNote}" TextWrapping="Wrap" />
                           <ItemsControl ItemsSource="{Binding RiskReasons}" Margin="0,8,0,0">
                             <ItemsControl.ItemTemplate>
                               <DataTemplate>
@@ -920,7 +919,7 @@
                     <StackPanel IsVisible="{Binding CorrHasResult}" Margin="0,10,0,0">
                       <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Padding="0,10,0,0">
                         <StackPanel>
-                          <TextBlock Text="{Binding CorrSummary}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="#a9c2d8" TextWrapping="Wrap" />
+                          <TextBlock Text="{Binding CorrSummary}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="{DynamicResource TextNote}" TextWrapping="Wrap" />
                           <ItemsControl ItemsSource="{Binding CorrBullets}" Margin="0,8,0,0">
                             <ItemsControl.ItemTemplate>
                               <DataTemplate>
@@ -967,7 +966,7 @@
                             <Border CornerRadius="5" Padding="8,4" Background="{DynamicResource Surface1}"><TextBlock Text="{Binding OptsStrategy}" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" /></Border>
                             <TextBlock Text="{Binding OptsIv}" FontSize="{DynamicResource FsMicro}" FontWeight="SemiBold" Foreground="{Binding OptsIvColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
                           </StackPanel>
-                          <TextBlock Text="{Binding OptsRationale}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="#a9c2d8" TextWrapping="Wrap" />
+                          <TextBlock Text="{Binding OptsRationale}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="{DynamicResource TextNote}" TextWrapping="Wrap" />
                         </StackPanel>
                       </Border>
                     </StackPanel>

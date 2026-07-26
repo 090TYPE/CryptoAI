@@ -19,7 +19,7 @@
                      Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
         </StackPanel>
       </Border>
-      <Border Background="#0A1F16" CornerRadius="6" Padding="10,4">
+      <Border Background="{DynamicResource PositiveTint}" CornerRadius="6" Padding="10,4">
         <StackPanel Spacing="1" HorizontalAlignment="Center">
           <TextBlock Text="Hot" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
           <TextBlock Text="{Binding ScannerVM.HotCount}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"
@@ -33,7 +33,7 @@
                      Foreground="{DynamicResource Accent}" HorizontalAlignment="Center" />
         </StackPanel>
       </Border>
-      <Border Background="#1F0A0A" CornerRadius="6" Padding="10,4">
+      <Border Background="{DynamicResource NegativeFill}" CornerRadius="6" Padding="10,4">
         <StackPanel Spacing="1" HorizontalAlignment="Center">
           <TextBlock Text="Losers" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
           <TextBlock Text="{Binding ScannerVM.LosersCount}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"

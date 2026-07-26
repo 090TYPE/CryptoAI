@@ -8,7 +8,6 @@
 
   <UserControl.Resources>
     <conv:RatioToStarConverter x:Key="RatioStar" />
-    <SolidColorBrush x:Key="DeskBg" Color="#040b12" />
   </UserControl.Resources>
 
   <UserControl.Styles>
@@ -20,7 +19,7 @@
   <!-- No fixed 760px floor: on a 1280x720 screen it forced an outer scroll over the desk's own
        scrollers and pushed the bottom of the page past the edge. -->
   <Border IsVisible="{Binding IsAnalyticsSectionVisible}" MinHeight="460">
-    <Grid DataContext="{Binding AnalyticsDesk}" Background="{StaticResource DeskBg}" ClipToBounds="True">
+    <Grid DataContext="{Binding AnalyticsDesk}" Background="{DynamicResource AppBg}" ClipToBounds="True">
       <DockPanel LastChildFill="True">
 
         <!-- header -->
@@ -169,7 +168,7 @@
                         <Canvas Width="1000" Height="168">
                           <Polygon Points="{Binding DdPoints}" Fill="#29ff6b6b" IsVisible="{Binding ShowDrawdown}" />
                           <Line StartPoint="0,154" EndPoint="1000,154" Stroke="{DynamicResource PanelStroke}" StrokeThickness="1" StrokeDashArray="5,4" />
-                          <Polyline Points="{Binding HoldPoints}" Stroke="#3d5a72" StrokeThickness="1.4" StrokeDashArray="6,4" IsVisible="{Binding ShowHold}" />
+                          <Polyline Points="{Binding HoldPoints}" Stroke="{DynamicResource TextInactive}" StrokeThickness="1.4" StrokeDashArray="6,4" IsVisible="{Binding ShowHold}" />
                           <Polyline Points="{Binding EqPoints}" Stroke="{DynamicResource Accent}" StrokeThickness="1.8" StrokeJoin="Round" IsVisible="{Binding ShowEquity}" />
                         </Canvas>
                       </Viewbox>
@@ -319,7 +318,7 @@
             <StackPanel Spacing="7">
               <Grid ColumnDefinitions="*,Auto" Margin="2,0">
                 <TextBlock Text="AI DESK · ANALYTICS" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Center" />
-                <Border Grid.Column="1" CornerRadius="9" Padding="8,2" Background="{DynamicResource Surface0}" BorderBrush="#1a3030" BorderThickness="1">
+                <Border Grid.Column="1" CornerRadius="9" Padding="8,2" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource AccentTintStroke}" BorderThickness="1">
                   <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
                     <Ellipse Width="5" Height="5" Fill="{DynamicResource Accent}" />
                     <TextBlock Text="{Binding AiProvider}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
@@ -327,14 +326,14 @@
                 </Border>
               </Grid>
 
-              <Border CornerRadius="11" Background="#061615" BorderBrush="#14302e" BorderThickness="1" Padding="12">
+              <Border CornerRadius="11" Background="{DynamicResource AccentTint}" BorderBrush="{DynamicResource AccentTintStroke}" BorderThickness="1" Padding="12">
                 <StackPanel>
                   <StackPanel Orientation="Horizontal" Spacing="7" Margin="0,0,0,8" VerticalAlignment="Center">
                     <Ellipse Width="5" Height="5" Fill="{DynamicResource Accent}" />
                     <TextBlock Text="PERFORMANCE REVIEW" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                     <TextBlock Text="{Binding ReviewMeta}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="#2d6b64" HorizontalAlignment="Right" />
                   </StackPanel>
-                  <TextBlock Text="{Binding ReviewSummary}" FontSize="{DynamicResource FsCaption}" LineHeight="18" Foreground="#a9c2d8" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding ReviewSummary}" FontSize="{DynamicResource FsCaption}" LineHeight="18" Foreground="{DynamicResource TextNote}" TextWrapping="Wrap" />
                   <ItemsControl ItemsSource="{Binding ReviewFindings}" Margin="0,8,0,0">
                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="5" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>

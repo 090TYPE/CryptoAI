@@ -11,7 +11,7 @@
             CornerRadius="6" Padding="10,8">
       <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
         <Border Grid.Column="0" Background="{Binding NewsFeedVM.PulseBrush}" CornerRadius="3" Padding="6,2">
-          <TextBlock Text="{Binding NewsFeedVM.PulseLabel}" Foreground="#06121C" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
+          <TextBlock Text="{Binding NewsFeedVM.PulseLabel}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
         </Border>
         <TextBlock Grid.Column="1" Text="{Binding NewsFeedVM.AiDigest}"
                    Foreground="{Binding NewsFeedVM.AiDigestBrush}"

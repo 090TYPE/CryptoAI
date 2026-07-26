@@ -86,7 +86,7 @@
           <!-- Logo + title -->
           <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,1,0" Padding="10,0" MinWidth="230">
             <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-              <Border Width="36" Height="36" CornerRadius="10" Background="#061e14" BorderBrush="#0d2a1e" BorderThickness="1">
+              <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource PositiveTint}" BorderBrush="{DynamicResource PositiveTintStroke}" BorderThickness="1">
                 <TextBlock Text="◈" FontSize="{DynamicResource FsSubhead}" FontWeight="Black" Foreground="{DynamicResource Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
               </Border>
               <StackPanel VerticalAlignment="Center">
@@ -134,7 +134,7 @@
         <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1,0,1,0" Padding="12,0">
           <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
             <Button Classes="FlatChrome" Content="+ ADD WALLET" Command="{Binding OpenModalCommand}"
-                    Padding="14,6" CornerRadius="7" BorderBrush="#0d2a1e" BorderThickness="1" Background="#061e14"
+                    Padding="14,6" CornerRadius="7" BorderBrush="{DynamicResource PositiveTintStroke}" BorderThickness="1" Background="{DynamicResource PositiveTint}"
                     Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsCaption}" FontWeight="ExtraBold" FontFamily="{StaticResource FontDisplay}" />
             <Button Classes="FlatChrome" Content="DIAGNOSTICS" Command="{Binding OpenStudioCommand}"
                     Padding="14,6" CornerRadius="7" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Background="{DynamicResource Surface1}"
@@ -425,7 +425,7 @@
                   <ItemsControl ItemsSource="{Binding AssetRows}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="pd:PfAssetRow">
-                        <Border BorderBrush="#07111a" BorderThickness="0,0,0,1" Padding="12,6">
+                        <Border BorderBrush="{DynamicResource Surface1}" BorderThickness="0,0,0,1" Padding="12,6">
                           <Grid ColumnDefinitions="40,*,90,110,100,100,90,80" VerticalAlignment="Center">
                             <Border Grid.Column="0" Width="24" Height="24" CornerRadius="6" HorizontalAlignment="Left"
                                     Background="{Binding IconBg, Converter={StaticResource StringToBrush}}"
@@ -485,11 +485,11 @@
                   </Border>
                   <Border Width="0" HorizontalAlignment="Stretch" />
                   <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
-                    <TextBlock Text="🤖 AI weights" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="#a855f7" VerticalAlignment="Center" />
+                    <TextBlock Text="🤖 AI weights" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource AccentPurpleBright}" VerticalAlignment="Center" />
                     <ComboBox ItemsSource="{Binding AvailableRiskProfiles}" SelectedItem="{Binding SelectedRiskProfile}" MinWidth="120" FontSize="{DynamicResource FsCaption}" />
                     <Button Classes="FlatChrome" Content="SUGGEST" Command="{Binding SuggestWithAiCommand}" IsEnabled="{Binding !AiRunning}"
-                            Padding="14,4" CornerRadius="7" BorderBrush="#3a1f6e" BorderThickness="1" Background="#1AA855F7"
-                            Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" FontFamily="{StaticResource FontDisplay}" />
+                            Padding="14,4" CornerRadius="7" BorderBrush="{DynamicResource PurpleTintStroke}" BorderThickness="1" Background="#1AA855F7"
+                            Foreground="{DynamicResource AccentPurpleBright}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" FontFamily="{StaticResource FontDisplay}" />
                   </StackPanel>
                   <Button Classes="FlatChrome" Content="↺ REFRESH" Command="{Binding RefreshCommand}"
                           Padding="14,4" CornerRadius="7" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1" Background="{DynamicResource Surface1}"
@@ -530,7 +530,7 @@
                   <ItemsControl ItemsSource="{Binding Allocations}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="vm:PortfolioAllocationRowViewModel">
-                        <Border BorderBrush="#07111a" BorderThickness="0,0,0,1" Padding="12,8">
+                        <Border BorderBrush="{DynamicResource Surface1}" BorderThickness="0,0,0,1" Padding="12,8">
                           <Grid ColumnDefinitions="32,90,100,80,110,110,90,*,80" VerticalAlignment="Center">
                             <TextBlock Grid.Column="0" Text="{Binding StatusIcon}" Foreground="{Binding StatusBrush}" FontSize="{DynamicResource FsSmall}" FontWeight="Bold" HorizontalAlignment="Center" />
                             <StackPanel Grid.Column="1">
@@ -548,7 +548,7 @@
                             <TextBlock Grid.Column="7" Text="{Binding RebalanceOrderLabel}" Foreground="{Binding RebalanceOrderBrush}" FontSize="{DynamicResource FsCaption}" FontFamily="{StaticResource FontMono}" VerticalAlignment="Center" />
                             <Button Classes="FlatChrome" Grid.Column="8" Content="×" HorizontalAlignment="Right" Width="22" Height="22" Padding="0" FontSize="{DynamicResource FsSmall}"
                                     ToolTip.Tip="Remove asset" AutomationProperties.Name="Remove asset from rebalance"
-                                    Background="#0FFF6B6B" BorderBrush="#3d0d0d" BorderThickness="1" Foreground="{DynamicResource Negative}" CornerRadius="4"
+                                    Background="#0FFF6B6B" BorderBrush="{DynamicResource NegativeFillStroke}" BorderThickness="1" Foreground="{DynamicResource Negative}" CornerRadius="4"
                                     Command="{Binding $parent[ItemsControl].DataContext.RemoveAssetCommand}" CommandParameter="{Binding}" />
                           </Grid>
                         </Border>
@@ -565,7 +565,7 @@
                   <NumericUpDown Value="{Binding NewAssetTargetPct}" Minimum="0.1" Maximum="100" Increment="1" FormatString="F1" Width="110" FontSize="{DynamicResource FsCaption}" />
                   <TextBlock Text="%" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                   <Button Classes="FlatChrome" Content="+ ADD" Command="{Binding AddAssetCommand}"
-                          Padding="14,4" CornerRadius="6" BorderBrush="#0d2a1e" BorderThickness="1" Background="#1421E6C1"
+                          Padding="14,4" CornerRadius="6" BorderBrush="{DynamicResource PositiveTintStroke}" BorderThickness="1" Background="#1421E6C1"
                           Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" FontFamily="{StaticResource FontDisplay}" />
                   <Border Width="0" HorizontalAlignment="Stretch" />
                   <TextBlock Text="{Binding StatusLabel}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" FontFamily="{StaticResource FontMono}" VerticalAlignment="Center" />
@@ -610,7 +610,7 @@
                     <ItemsControl ItemsSource="{Binding FilteredTokens}">
                       <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:DexTokenRowViewModel">
-                          <Border BorderBrush="#07111a" BorderThickness="0,0,0,1" Padding="12,6">
+                          <Border BorderBrush="{DynamicResource Surface1}" BorderThickness="0,0,0,1" Padding="12,6">
                             <Grid ColumnDefinitions="28,*,90,70,90,90,70,80,56" VerticalAlignment="Center">
                               <Border Grid.Column="0" Width="24" Height="24" CornerRadius="12" Background="{DynamicResource Surface2}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1">
                                 <TextBlock Text="{Binding ChainIcon}" FontSize="{DynamicResource FsCaption}" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -626,7 +626,7 @@
                               <TextBlock Grid.Column="6" Text="{Binding SecurityScore}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" Foreground="{DynamicResource Accent}" FontFamily="{StaticResource FontMono}" TextAlignment="Center" />
                               <TextBlock Grid.Column="7" Text="{Binding SecurityBadge}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource Warning}" TextAlignment="Right" VerticalAlignment="Center" />
                               <Button Classes="FlatChrome" Grid.Column="8" Content="OPEN" Command="{Binding $parent[ItemsControl].DataContext.OpenInSniperCommand}" CommandParameter="{Binding}"
-                                      Padding="8,2" CornerRadius="5" Background="#061e14" BorderBrush="#0d2a1e" BorderThickness="1" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                      Padding="8,2" CornerRadius="5" Background="{DynamicResource PositiveTint}" BorderBrush="{DynamicResource PositiveTintStroke}" BorderThickness="1" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                             </Grid>
                           </Border>
                         </DataTemplate>
@@ -660,7 +660,7 @@
                                    HorizontalAlignment="Center" VerticalAlignment="Center" />
                       </Border>
                       <Ellipse Width="8" Height="8" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                               Fill="{Binding SelWalletDot, Converter={StaticResource StringToBrush}}" Stroke="#050c14" StrokeThickness="2" />
+                               Fill="{Binding SelWalletDot, Converter={StaticResource StringToBrush}}" Stroke="{DynamicResource AppBg}" StrokeThickness="2" />
                     </Panel>
                     <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
                       <StackPanel Orientation="Horizontal" Spacing="6">
@@ -706,9 +706,9 @@
                   <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
                   <TextBox Text="{Binding PrivateKeyInput}" PasswordChar="•" PlaceholderText="Private key to arm trading (memory-only this session)" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" />
                   <StackPanel Orientation="Horizontal" Spacing="6">
-                    <Button Classes="FlatChrome" Content="ARM TRADING" Command="{Binding ImportPrivateKeyCommand}" Padding="12,6" CornerRadius="6" Background="#0a2d1e" BorderBrush="#0d3d28" BorderThickness="1" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
+                    <Button Classes="FlatChrome" Content="ARM TRADING" Command="{Binding ImportPrivateKeyCommand}" Padding="12,6" CornerRadius="6" Background="{DynamicResource PositiveFill}" BorderBrush="{DynamicResource PositiveFillStroke}" BorderThickness="1" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
                     <Button Classes="FlatChrome" Content="WATCH ONLY" Command="{Binding ConnectWatchCommand}" Padding="12,6" CornerRadius="6" Background="{DynamicResource Surface3}" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1" Foreground="{DynamicResource AccentBlue}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
-                    <Button Classes="FlatChrome" Content="DISCONNECT" Command="{Binding DisconnectWalletCommand}" Padding="12,6" CornerRadius="6" Background="#1a0505" BorderBrush="#3d0d0d" BorderThickness="1" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                    <Button Classes="FlatChrome" Content="DISCONNECT" Command="{Binding DisconnectWalletCommand}" Padding="12,6" CornerRadius="6" Background="{DynamicResource NegativeFill}" BorderBrush="{DynamicResource NegativeFillStroke}" BorderThickness="1" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                   </StackPanel>
                 </StackPanel>
               </Border>
@@ -968,13 +968,13 @@
     <!-- ══════════ ADD WALLET MODAL ══════════ -->
     <Border IsVisible="{Binding ShowModal}" Background="#D9040b12" ZIndex="200">
       <Border Width="580" MaxHeight="720" HorizontalAlignment="Center" VerticalAlignment="Center"
-              Background="{DynamicResource Surface0}" BorderBrush="#0d2a1e" BorderThickness="1" CornerRadius="16" ClipToBounds="True">
+              Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PositiveTintStroke}" BorderThickness="1" CornerRadius="16" ClipToBounds="True">
         <Grid RowDefinitions="Auto,*,Auto">
 
           <!-- Modal header -->
-          <Border Grid.Row="0" Background="#061e14" BorderBrush="#0d2a1e" BorderThickness="0,0,0,1" Padding="20,16">
+          <Border Grid.Row="0" Background="{DynamicResource PositiveTint}" BorderBrush="{DynamicResource PositiveTintStroke}" BorderThickness="0,0,0,1" Padding="20,16">
             <Grid ColumnDefinitions="34,*,Auto,Auto">
-              <Border Grid.Column="0" Width="34" Height="34" CornerRadius="10" Background="#0a2d1e" BorderBrush="#0d3d28" BorderThickness="1">
+              <Border Grid.Column="0" Width="34" Height="34" CornerRadius="10" Background="{DynamicResource PositiveFill}" BorderBrush="{DynamicResource PositiveFillStroke}" BorderThickness="1">
                 <TextBlock Text="+" FontSize="{DynamicResource FsSubhead}" FontWeight="Black" Foreground="{DynamicResource Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
               </Border>
               <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
@@ -1113,7 +1113,7 @@
                     <TextBlock Text="WALLET ADDRESS" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
                     <TextBox Text="{Binding NewWalletAddress}" PlaceholderText="{Binding AddrPlaceholder}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" />
                   </StackPanel>
-                  <Border IsVisible="{Binding ModalIsMeme}" Background="#1a0505" BorderBrush="#3d0d0d" BorderThickness="1" CornerRadius="8" Padding="12,10">
+                  <Border IsVisible="{Binding ModalIsMeme}" Background="{DynamicResource NegativeFill}" BorderBrush="{DynamicResource NegativeFillStroke}" BorderThickness="1" CornerRadius="8" Padding="12,10">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <TextBlock Text="⚠️" FontSize="{DynamicResource FsSubhead}" />
                       <StackPanel Width="440">
@@ -1228,7 +1228,7 @@
               <!-- step2 footer -->
               <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding ModalIsStep2}" HorizontalAlignment="Stretch">
                 <Button Classes="FlatChrome" Content="BACK" Command="{Binding ModalBackCommand}" Padding="20,10" CornerRadius="8" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Background="{DynamicResource Surface1}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsSmall}" FontWeight="Bold" />
-                <Button Classes="FlatChrome" Content="CONTINUE →" Command="{Binding ModalNextCommand}" HorizontalAlignment="Stretch" Width="420" Padding="10" CornerRadius="8" Background="#0a2d1e" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsBody}" FontWeight="ExtraBold" HorizontalContentAlignment="Center" />
+                <Button Classes="FlatChrome" Content="CONTINUE →" Command="{Binding ModalNextCommand}" HorizontalAlignment="Stretch" Width="420" Padding="10" CornerRadius="8" Background="{DynamicResource PositiveFill}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsBody}" FontWeight="ExtraBold" HorizontalContentAlignment="Center" />
               </StackPanel>
               <!-- step3 footer -->
               <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding ModalIsStep3}">
@@ -1248,11 +1248,11 @@
     <!-- ══════════ CONNECTION STUDIO (advanced connect + diagnostics) ══════════ -->
     <Border IsVisible="{Binding ConnectionStudioVisible}" Background="#D9040b12" ZIndex="210">
       <Border Width="640" MaxHeight="760" HorizontalAlignment="Center" VerticalAlignment="Center"
-              Background="{DynamicResource Surface0}" BorderBrush="#0d2240" BorderThickness="1" CornerRadius="16" ClipToBounds="True">
+              Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource InfoTintStroke}" BorderThickness="1" CornerRadius="16" ClipToBounds="True">
         <Grid RowDefinitions="Auto,*">
 
           <!-- Header (desk context: close command) -->
-          <Border Grid.Row="0" Background="{DynamicResource Surface3}" BorderBrush="#0d2240" BorderThickness="0,0,0,1" Padding="20,16">
+          <Border Grid.Row="0" Background="{DynamicResource Surface3}" BorderBrush="{DynamicResource InfoTintStroke}" BorderThickness="0,0,0,1" Padding="20,16">
             <Grid ColumnDefinitions="34,*,Auto">
               <Border Grid.Column="0" Width="34" Height="34" CornerRadius="10" Background="#0d2a40" BorderBrush="#12395c" BorderThickness="1">
                 <TextBlock Text="🔑" FontSize="{DynamicResource FsSubhead}" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -1288,7 +1288,7 @@
                   <TextBlock Text="SOLANA SELF-TEST" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
                   <TextBlock Text="Safe end-to-end probe: wallet, RPC, blockhash, signing, memo simulation, Jupiter quote &amp; signed swap simulation." Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
                   <Button Classes="FlatChrome" Content="RUN SOLANA SELF-TEST" Command="{Binding RunSolanaDiagnosticsCommand}" IsEnabled="{Binding CanRunSolanaDiagnostics}"
-                          HorizontalAlignment="Left" Padding="14,6" CornerRadius="7" Background="#0a2d1e" BorderBrush="#0d3d28" BorderThickness="1" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
+                          HorizontalAlignment="Left" Padding="14,6" CornerRadius="7" Background="{DynamicResource PositiveFill}" BorderBrush="{DynamicResource PositiveFillStroke}" BorderThickness="1" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
                   <TextBlock Text="{Binding SolanaDiagnosticsSummary}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" TextWrapping="Wrap" />
                   <ScrollViewer MaxHeight="150">
                     <ItemsControl ItemsSource="{Binding SolanaDiagnosticSteps}">
@@ -1308,7 +1308,7 @@
                   <TextBlock Text="TRON SELF-TEST" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
                   <TextBlock Text="Safe Tron smoke-check: wallet, RPC, TRC20 metadata, SunSwap quote &amp; unsigned swap preview (no broadcast)." Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
                   <Button Classes="FlatChrome" Content="RUN TRON SELF-TEST" Command="{Binding RunTronDiagnosticsCommand}" IsEnabled="{Binding CanRunTronDiagnostics}"
-                          HorizontalAlignment="Left" Padding="14,6" CornerRadius="7" Background="#0a2d1e" BorderBrush="#0d3d28" BorderThickness="1" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
+                          HorizontalAlignment="Left" Padding="14,6" CornerRadius="7" Background="{DynamicResource PositiveFill}" BorderBrush="{DynamicResource PositiveFillStroke}" BorderThickness="1" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
                   <TextBlock Text="{Binding TronDiagnosticsSummary}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" TextWrapping="Wrap" />
                   <ScrollViewer MaxHeight="150">
                     <ItemsControl ItemsSource="{Binding TronDiagnosticSteps}">
@@ -1350,7 +1350,7 @@
                   </Grid>
                   <Button Classes="FlatChrome" Content="SEND TRC20" Command="{Binding SendTronPaymentCommand}" IsEnabled="{Binding CanSendTronPaymentLive}"
                           ToolTip.Tip="{Binding TronPaymentBlockedReason}" HorizontalAlignment="Left"
-                          Padding="16,6" CornerRadius="7" Background="#0a2d1e" BorderBrush="#0d3d28" BorderThickness="1" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
+                          Padding="16,6" CornerRadius="7" Background="{DynamicResource PositiveFill}" BorderBrush="{DynamicResource PositiveFillStroke}" BorderThickness="1" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
                   <TextBlock Text="{Binding TronPaymentBlockedReason}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" IsVisible="{Binding !CanSendTronPaymentLive}" />
                   <TextBlock Text="{Binding TronPaymentStatus}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" TextWrapping="Wrap" />
                 </StackPanel>

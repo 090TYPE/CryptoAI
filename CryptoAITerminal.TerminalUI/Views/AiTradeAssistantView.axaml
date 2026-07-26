@@ -8,15 +8,15 @@
     <StyleInclude Source="avares://CryptoAITerminal.TerminalUI/Styles/TradingDeskStyles.axaml" />
   </UserControl.Styles>
 
-  <Border Background="#0a0616" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="10" Padding="12">
+  <Border Background="#0a0616" BorderBrush="{DynamicResource PurpleTintStroke}" BorderThickness="1" CornerRadius="10" Padding="12">
     <StackPanel Spacing="9">
 
       <!-- Header -->
       <Grid ColumnDefinitions="Auto,*,Auto">
-        <TextBlock Text="✦" Foreground="#a855f7" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" VerticalAlignment="Center" />
+        <TextBlock Text="✦" Foreground="{DynamicResource AccentPurpleBright}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" VerticalAlignment="Center" />
         <TextBlock Grid.Column="1" Text="AI TRADE ASSISTANT" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsSmall}" FontWeight="Bold" Margin="6,0,0,0" VerticalAlignment="Center" />
         <Border Grid.Column="2" Classes="TdDexBadge" VerticalAlignment="Center">
-          <TextBlock Text="{Binding ConfidenceLabel}" Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+          <TextBlock Text="{Binding ConfidenceLabel}" Foreground="{DynamicResource AccentPurpleBright}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
         </Border>
       </Grid>
 
@@ -75,18 +75,18 @@
         <Button Grid.Column="0" Content="BACKTEST" Classes="TdSeg" Command="{Binding BacktestCommand}" Padding="10,4" />
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" IsVisible="{Binding HasBacktest}">
           <TextBlock Text="{Binding BacktestWinRateLabel, StringFormat=win {0}}" Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
-          <TextBlock Text="{Binding BacktestExpectancyLabel}" Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+          <TextBlock Text="{Binding BacktestExpectancyLabel}" Foreground="{DynamicResource AccentPurpleBright}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
         </StackPanel>
       </Grid>
 
       <!-- Result -->
-      <Border Background="{DynamicResource Surface1}" BorderBrush="#1e2f45" BorderThickness="1" CornerRadius="8" Padding="10" IsVisible="{Binding HasSetup}">
+      <Border Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource TextGhost}" BorderThickness="1" CornerRadius="8" Padding="10" IsVisible="{Binding HasSetup}">
         <StackPanel Spacing="7">
           <Grid ColumnDefinitions="Auto,*,Auto">
             <Border Background="{DynamicResource Surface2}" CornerRadius="4" Padding="8,2">
               <TextBlock Text="{Binding BiasLabel}" Foreground="{Binding BiasBrush}" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" />
             </Border>
-            <TextBlock Grid.Column="2" Text="{Binding RiskRewardLabel}" Foreground="#a855f7" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2" Text="{Binding RiskRewardLabel}" Foreground="{DynamicResource AccentPurpleBright}" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
           </Grid>
 
           <Grid ColumnDefinitions="*,*,*" ColumnSpacing="6">
@@ -115,11 +115,11 @@
             </StackPanel>
             <StackPanel Grid.Column="2" Spacing="1">
               <TextBlock Classes="TdLabel" Text="CONFIDENCE" />
-              <TextBlock Classes="TdNum" Text="{Binding ConfidenceLabel}" Foreground="#a855f7" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
+              <TextBlock Classes="TdNum" Text="{Binding ConfidenceLabel}" Foreground="{DynamicResource AccentPurpleBright}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
             </StackPanel>
           </Grid>
 
-          <ProgressBar Minimum="0" Maximum="100" Value="{Binding ConfidenceValue}" Height="4" Foreground="#a855f7" Background="#152535" />
+          <ProgressBar Minimum="0" Maximum="100" Value="{Binding ConfidenceValue}" Height="4" Foreground="{DynamicResource AccentPurpleBright}" Background="{DynamicResource PanelStroke}" />
 
           <!-- Risk gate + confluence -->
           <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding HasRisk}">
@@ -142,7 +142,7 @@
         </StackPanel>
       </Border>
 
-      <TextBlock Text="{Binding StatusMessage}" Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
+      <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource AccentPurpleBright}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
     </StackPanel>
   </Border>
 </UserControl>

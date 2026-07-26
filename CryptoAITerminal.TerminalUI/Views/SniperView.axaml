@@ -134,7 +134,7 @@
                          Foreground="{Binding SniperVM.ArmDotHex}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
-          <Border Background="#06181A" CornerRadius="999" Padding="12,6">
+          <Border Background="{DynamicResource AccentTint}" CornerRadius="999" Padding="12,6">
             <TextBlock Text="AI ON" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource Accent}" />
           </Border>
         </StackPanel>
@@ -213,7 +213,7 @@
               <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Grid.Column="0" Classes="secLabel" Text="EXECUTION MODE" VerticalAlignment="Center" />
                 <Border Grid.Column="1" Background="{Binding SniperVM.PaperPillHex}" CornerRadius="999" Padding="10,2">
-                  <TextBlock Text="{Binding SniperVM.PaperPillLabel}" Foreground="#081018" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                  <TextBlock Text="{Binding SniperVM.PaperPillLabel}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                 </Border>
               </Grid>
               <CheckBox FontSize="{DynamicResource FsCaption}" Content="Enable full auto-buy on accepted pairs" IsChecked="{Binding SniperVM.AutoBuyEnabled}" />
@@ -406,7 +406,7 @@
                 </Grid>
                 <Grid ColumnDefinitions="*,*,*" ColumnSpacing="6">
                   <Button Grid.Column="0" Content="BUY" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                          Background="{DynamicResource Accent}" Foreground="#081018" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" CornerRadius="6"
+                          Background="{DynamicResource Accent}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" CornerRadius="6"
                           Command="{Binding SniperVM.ManualSnipeBuyCommand}" />
                   <Button Grid.Column="1" Classes="tf" Content="SELL" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding SniperVM.ManualSnipeSellCommand}" />
                   <Button Grid.Column="2" Classes="tf" Content="PROBE" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding SniperVM.ManualSnipeProbeCommand}" />
@@ -417,7 +417,7 @@
             </Border>
 
             <!-- Guard status -->
-            <Border Background="#0A1F1A" BorderBrush="{Binding SniperVM.SniperGuardStatusBrush}" BorderThickness="1" CornerRadius="10" Padding="12,10">
+            <Border Background="{DynamicResource PositiveTint}" BorderBrush="{Binding SniperVM.SniperGuardStatusBrush}" BorderThickness="1" CornerRadius="10" Padding="12,10">
               <StackPanel Spacing="4">
                 <TextBlock Text="{Binding SniperVM.SniperGuardStatusLabel}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{Binding SniperVM.SniperGuardStatusBrush}" />
                 <TextBlock Text="{Binding SniperVM.SniperGuardSummary}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" />
@@ -592,7 +592,7 @@
                                   HorizontalAlignment="Left" VerticalAlignment="Center"
                                   Command="{Binding $parent[Window].DataContext.DexTrendingVM.OpenInSniperCommand}" CommandParameter="{Binding}" />
                           <Grid Grid.Column="10" ColumnDefinitions="44,*" VerticalAlignment="Center">
-                            <Border Grid.Column="0" Height="5" CornerRadius="3" Background="#152233" ClipToBounds="True" VerticalAlignment="Center">
+                            <Border Grid.Column="0" Height="5" CornerRadius="3" Background="{DynamicResource PanelStroke}" ClipToBounds="True" VerticalAlignment="Center">
                               <Border HorizontalAlignment="Left" CornerRadius="3" Background="{Binding ScoreColorHex}" Width="{Binding ScoreBarWidth}" />
                             </Border>
                             <TextBlock Grid.Column="1" Margin="6,0,0,0" Text="{Binding SecurityScore}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{Binding ScoreColorHex}" VerticalAlignment="Center" />
@@ -633,10 +633,10 @@
                         <TextBlock Text="{Binding SecurityChecksSummary}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="480" />
                       </StackPanel>
                       <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Content="BUY NOW" Background="{DynamicResource Accent}" Foreground="#081018" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" CornerRadius="6" Padding="16,6"
+                        <Button Content="BUY NOW" Background="{DynamicResource Accent}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" CornerRadius="6" Padding="16,6"
                                 IsVisible="{Binding !$parent[Window].DataContext.SniperVM.IsPositionsTab}"
                                 Command="{Binding $parent[Window].DataContext.SniperVM.BuyCandidateCommand}" CommandParameter="{Binding}" />
-                        <Button Content="EMERGENCY CLOSE" Background="{DynamicResource Negative}" Foreground="#081018" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" CornerRadius="6" Padding="16,6"
+                        <Button Content="EMERGENCY CLOSE" Background="{DynamicResource Negative}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" CornerRadius="6" Padding="16,6"
                                 IsVisible="{Binding $parent[Window].DataContext.SniperVM.IsPositionsTab}"
                                 Command="{Binding $parent[Window].DataContext.SniperVM.EmergencyClosePositionCommand}" CommandParameter="{Binding}" />
                         <Button Content="CLEAR" Classes="tf" Padding="16,6"
@@ -791,7 +791,7 @@
               </Border>
 
               <!-- AI verdict -->
-              <Border Background="#0A1F1A" BorderBrush="#1F5C4A" BorderThickness="1" CornerRadius="12" Padding="12,12">
+              <Border Background="{DynamicResource PositiveTint}" BorderBrush="#1F5C4A" BorderThickness="1" CornerRadius="12" Padding="12,12">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                   <Ellipse Width="8" Height="8" Fill="{Binding SniperVM.SelectedSniperCandidate.AiAccentHex}" VerticalAlignment="Top" Margin="0,4,0,0" />
                   <StackPanel Spacing="4">

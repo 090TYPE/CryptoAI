@@ -18,8 +18,8 @@
       <Button Grid.Column="1" Content="↻ Refresh" Classes="TdSeg dex" Padding="10,4" VerticalAlignment="Center" Command="{Binding RefreshLivePerpCommand}" />
     </Grid>
 
-    <Border Background="#150a20" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="6" Padding="8,4">
-      <TextBlock Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap"
+    <Border Background="{DynamicResource PurpleTint}" BorderBrush="{DynamicResource PurpleTintStroke}" BorderThickness="1" CornerRadius="6" Padding="8,4">
+      <TextBlock Foreground="{DynamicResource AccentPurpleBright}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap"
                  Text="Positions below are your real Hyperliquid account (read-only). The LIVE ORDER panel is gated — off until you validate signing on testnet." />
     </Border>
 

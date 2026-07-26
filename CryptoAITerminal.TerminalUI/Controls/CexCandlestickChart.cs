@@ -68,22 +68,30 @@ public class CexCandlestickChart : Control
 
     // Every colour on this chart is a compile-time constant, so the brushes and pens are built
     // once here instead of inside the render loop — the candle loop alone ran a Color.Parse and
-    // two allocations per candle, on every repaint.
-    private static readonly SolidColorBrush BackdropBrush = new(Color.Parse("#091018"));
-    private static readonly SolidColorBrush ChartFillBrush = new(Color.Parse("#0B131C"));
-    private static readonly SolidColorBrush PriceFillBrush = new(Color.Parse("#0E1721"));
-    private static readonly SolidColorBrush TimeFillBrush = new(Color.Parse("#0C141D"));
-    private static readonly SolidColorBrush BullBrush = new(Color.Parse("#21E6C1"));
-    private static readonly SolidColorBrush BearBrush = new(Color.Parse("#FF6B6B"));
-    private static readonly SolidColorBrush AreaFillBrush = new(Color.FromArgb(60, 0x21, 0xE6, 0xC1));
+    // two allocations per candle, on every repaint. Palette tokens obey the same rule: the
+    // application resources are read from these initialisers only, never from Render.
+    private static readonly Color AccentColor = ChartPalette.Get("Accent", "#21E6C1");
+    private static readonly Color PositiveColor = ChartPalette.Get("Positive", "#3DDC84");
+    private static readonly Color NegativeColor = ChartPalette.Get("Negative", "#FF6B6B");
+    private static readonly Color WarningColor = ChartPalette.Get("Warning", "#F4B860");
+
+    private static readonly SolidColorBrush BackdropBrush = ChartPalette.Brush("Surface1", "#07101A");
+    private static readonly SolidColorBrush ChartFillBrush = ChartPalette.Brush("SurfaceInner2", "#0A131E");
+    private static readonly SolidColorBrush PriceFillBrush = ChartPalette.Brush("Surface2", "#0A1422");
+    private static readonly SolidColorBrush TimeFillBrush = ChartPalette.Brush("Surface2", "#0A1422");
+    // Растущая свеча здесь — бренд-акцент, а не Positive: тем же цветом рисуются линия в
+    // режимах Line/Area, её заливка и заглушка загрузки.
+    private static readonly SolidColorBrush BullBrush = new(AccentColor);
+    private static readonly SolidColorBrush BearBrush = new(NegativeColor);
+    private static readonly SolidColorBrush AreaFillBrush = new(ChartPalette.Fade(AccentColor, 60));
     private static readonly SolidColorBrush AxisTextBrush = new(Color.Parse("#DCE8F5"));
     private static readonly SolidColorBrush LastPriceLabelBrush = new(Color.Parse("#19C9AF"));
     private static readonly SolidColorBrush MarkerBackgroundBrush = new(Color.Parse("#16212C"));
-    private static readonly SolidColorBrush HoverBoxBrush = new(Color.Parse("#121B25"));
-    private static readonly SolidColorBrush RsiPanelBrush = new(Color.Parse("#0A121B"));
+    private static readonly SolidColorBrush HoverBoxBrush = ChartPalette.Brush("Surface3", "#0D1828");
+    private static readonly SolidColorBrush RsiPanelBrush = ChartPalette.Brush("SurfaceInner2", "#0A131E");
     private static readonly SolidColorBrush RsiLabelBrush = new(Color.Parse("#6E8196"));
-    private static readonly SolidColorBrush RsiLowBrush = new(Color.Parse("#3DDC84"));
-    private static readonly SolidColorBrush RsiMidBrush = new(Color.Parse("#F4B860"));
+    private static readonly SolidColorBrush RsiLowBrush = new(PositiveColor);
+    private static readonly SolidColorBrush RsiMidBrush = new(WarningColor);
     private static readonly SolidColorBrush VwapLabelBrush = new(Color.Parse("#FBBF24"));
     private static readonly SolidColorBrush VpNormalBrush = new(Color.Parse("#1A3A5C"));
     private static readonly SolidColorBrush VpPocBrush = new(Color.Parse("#7C3AED"));
@@ -91,23 +99,23 @@ public class CexCandlestickChart : Control
     private static readonly SolidColorBrush PocLabelBrush = new(Color.Parse("#A855F7"));
     private static readonly SolidColorBrush VpAxisLabelBrush = new(Color.Parse("#60A5FA"));
     private static readonly Color WallBidColor = Color.Parse("#42F5B1");
-    private static readonly Color WallAskColor = Color.Parse("#FF6B6B");
+    private static readonly Color WallAskColor = NegativeColor;
     private static readonly SolidColorBrush WallBidLabelBrush = new(WallBidColor);
     private static readonly SolidColorBrush WallAskLabelBrush = new(WallAskColor);
 
     private static readonly Pen ChartBorderPen = new(new SolidColorBrush(Color.Parse("#223243")), 1);
     private static readonly Pen PriceBorderPen = new(new SolidColorBrush(Color.Parse("#2A4053")), 1);
-    private static readonly Pen GridPen = new(new SolidColorBrush(Color.Parse("#182533")), 1);
+    private static readonly Pen GridPen = new(ChartPalette.Brush("PanelStroke", "#152233"), 1);
     private static readonly Pen BullPen = new(BullBrush, 1);
     private static readonly Pen BearPen = new(BearBrush, 1);
     private static readonly Pen LinePen = new(BullBrush, 1.6);
-    private static readonly Pen Ma20Pen = new(new SolidColorBrush(Color.Parse("#F4B860")), 1.4);
+    private static readonly Pen Ma20Pen = new(new SolidColorBrush(WarningColor), 1.4);
     private static readonly Pen Ma50Pen = new(new SolidColorBrush(Color.Parse("#8FB9DE")), 1.4);
     private static readonly Pen BollingerBandPen = new(new SolidColorBrush(Color.Parse("#7C5CFF")), 1.0) { DashStyle = new DashStyle([4, 3], 0) };
     private static readonly Pen BollingerMidPen = new(new SolidColorBrush(Color.FromArgb(140, 124, 92, 255)), 0.9);
     private static readonly Pen RsiPanelPen = new(new SolidColorBrush(Color.Parse("#1A2B39")), 1);
-    private static readonly Pen RsiGuide70Pen = new(new SolidColorBrush(Color.FromArgb(80, 255, 107, 107)), 0.8) { DashStyle = new DashStyle([3, 3], 0) };
-    private static readonly Pen RsiGuide30Pen = new(new SolidColorBrush(Color.FromArgb(80, 61, 220, 132)), 0.8) { DashStyle = new DashStyle([3, 3], 0) };
+    private static readonly Pen RsiGuide70Pen = new(new SolidColorBrush(ChartPalette.Fade(NegativeColor, 80)), 0.8) { DashStyle = new DashStyle([3, 3], 0) };
+    private static readonly Pen RsiGuide30Pen = new(new SolidColorBrush(ChartPalette.Fade(PositiveColor, 80)), 0.8) { DashStyle = new DashStyle([3, 3], 0) };
     private static readonly Pen RsiHighPen = new(BearBrush, 1.3);
     private static readonly Pen RsiLowPen = new(RsiLowBrush, 1.3);
     private static readonly Pen RsiMidPen = new(RsiMidBrush, 1.3);
@@ -115,7 +123,7 @@ public class CexCandlestickChart : Control
     private static readonly Pen CrosshairPen = new(new SolidColorBrush(Color.Parse("#4E677E")), 1);
     private static readonly Pen HoverBoxPen = new(new SolidColorBrush(Color.Parse("#274055")), 1);
     private static readonly Pen TrendPreviewPen = new(new SolidColorBrush(Color.Parse("#E7C65C")), 2);
-    private static readonly Pen RectanglePreviewPen = new(new SolidColorBrush(Color.Parse("#3DDC84")), 2);
+    private static readonly Pen RectanglePreviewPen = new(new SolidColorBrush(PositiveColor), 2);
     private static readonly Pen ChannelPreviewPen = new(new SolidColorBrush(Color.Parse("#F59E0B")), 2);
     private static readonly Pen VwapPen = new(VwapLabelBrush, 1.6);
     private static readonly Pen VwapSigma1Pen = new(new SolidColorBrush(Color.Parse("#60A5FA")), 1.0) { DashStyle = new DashStyle([5, 3], 0) };
@@ -2134,7 +2142,7 @@ public class CexCandlestickChart : Control
             StartPrice = start.Price,
             EndIndex = end.Index,
             EndPrice = end.Price,
-            Color = Color.Parse("#3DDC84")
+            Color = PositiveColor
         };
 
         public static ChartDrawing CreateChannel(ChartAnchor start, ChartAnchor end, ChartAnchor offset) => new()

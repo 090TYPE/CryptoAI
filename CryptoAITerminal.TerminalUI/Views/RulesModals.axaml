@@ -7,7 +7,7 @@
 
   <Panel>
     <!-- eval side-panel -->
-    <Grid IsVisible="{Binding ModalPanel}" Background="#8C020610" ZIndex="92">
+    <Grid IsVisible="{Binding ModalPanel}" Background="{DynamicResource ModalScrim}" ZIndex="92">
       <Button Classes="FlatChrome" Command="{Binding CloseModalCommand}" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
       <Border Width="420" HorizontalAlignment="Right" VerticalAlignment="Stretch" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1,0,0,0" BoxShadow="-20 0 60 0 #99000000">
         <DockPanel LastChildFill="True">
@@ -37,8 +37,8 @@
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
-              <Border Margin="0,12,0,0" Padding="10" CornerRadius="8" Background="#061615" BorderBrush="#14302e" BorderThickness="1">
-                <TextBlock Text="{Binding PanelNote}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="#a9c2d8" TextWrapping="Wrap" />
+              <Border Margin="0,12,0,0" Padding="10" CornerRadius="8" Background="{DynamicResource AccentTint}" BorderBrush="{DynamicResource AccentTintStroke}" BorderThickness="1">
+                <TextBlock Text="{Binding PanelNote}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="{DynamicResource TextNote}" TextWrapping="Wrap" />
               </Border>
             </StackPanel>
           </ScrollViewer>
@@ -49,7 +49,7 @@
     <!-- delete confirm -->
     <Grid IsVisible="{Binding ModalConfirm}" Background="#BD020610" ZIndex="95">
       <Button Classes="FlatChrome" Command="{Binding CloseModalCommand}" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
-      <Border Width="460" HorizontalAlignment="Center" VerticalAlignment="Center" CornerRadius="12" Background="{DynamicResource Surface1}" BorderBrush="#3a1620" BorderThickness="1" ClipToBounds="True" BoxShadow="0 30 80 0 #BF000000">
+      <Border Width="460" HorizontalAlignment="Center" VerticalAlignment="Center" CornerRadius="12" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource NegativeTintStroke}" BorderThickness="1" ClipToBounds="True" BoxShadow="0 30 80 0 #BF000000">
         <StackPanel>
           <StackPanel Margin="16,14">
             <StackPanel Orientation="Horizontal" Spacing="9" Margin="0,0,0,10" VerticalAlignment="Center">
@@ -61,7 +61,7 @@
           <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Background="{DynamicResource Surface0}" Padding="16,12">
             <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
               <Button Classes="FlatChrome" Grid.Column="1" Command="{Binding CloseModalCommand}" Height="28" Padding="12,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="CANCEL" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
-              <Button Classes="FlatChrome" Grid.Column="2" Command="{Binding ConfirmRunCommand}" Height="28" Padding="14,0" CornerRadius="6" Background="#14060a" BorderBrush="{DynamicResource Negative}" BorderThickness="1" Content="{Binding ConfirmCta}" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+              <Button Classes="FlatChrome" Grid.Column="2" Command="{Binding ConfirmRunCommand}" Height="28" Padding="14,0" CornerRadius="6" Background="{DynamicResource NegativeTint}" BorderBrush="{DynamicResource Negative}" BorderThickness="1" Content="{Binding ConfirmCta}" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
             </Grid>
           </Border>
         </StackPanel>
