@@ -60,6 +60,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CryptoAITerminal.Core\CryptoAITerminal.Core.csproj" />
+    <!-- SymbolFilterMath: the rounding the bots apply to venue-published tick/step/notional. -->
+    <ProjectReference Include="..\CryptoAITerminal.Gateway.Base\CryptoAITerminal.Gateway.Base.csproj" />
     <ProjectReference Include="..\CryptoAITerminal.Gateway.Bybit\CryptoAITerminal.Gateway.Bybit.csproj" />
     <ProjectReference Include="..\CryptoAITerminal.Gateway.OKX\CryptoAITerminal.Gateway.OKX.csproj" />
     <ProjectReference Include="..\CryptoAITerminal.Gateway.KuCoin\CryptoAITerminal.Gateway.KuCoin.csproj" />

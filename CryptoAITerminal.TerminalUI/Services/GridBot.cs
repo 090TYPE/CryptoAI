@@ -2,6 +2,7 @@ using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
 using CryptoAITerminal.Core.Trading;
+using CryptoAITerminal.Gateway.Base;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -65,7 +66,15 @@ public sealed class GridBot : IDisposable
     private const decimal MinNotionalUsd = 5m;
 
     private int _priceDecimals;
-    private readonly decimal _quantity;
+    private decimal _quantity;
+
+    /// <summary>
+    /// The venue's real rules for this symbol, fetched once in <see cref="StartAsync"/>. Null when
+    /// the exchange would not answer — everything below then falls back to the guesses this class
+    /// used to make on its own (precision inferred from the typed bounds, a flat 1e-8 lot step and
+    /// a hardcoded 5 USDT floor).
+    /// </summary>
+    private SymbolFilters? _filters;
 
     public int CyclesCompleted { get; private set; }
     public decimal GridPnL { get; private set; }
@@ -91,21 +100,51 @@ public sealed class GridBot : IDisposable
         CyclesCompleted = 0;
         GridPnL = 0m;
 
+        // Ask the venue for the real rules before laying anything out. A REST call, no socket
+        // needed, so it happens before ConnectAsync and before the validation below — the whole
+        // point is to validate against the exchange's numbers rather than our guesses.
+        try
+        {
+            _filters = await _gateway.GetSymbolFiltersAsync(_cfg.Symbol);
+            if (_filters is { } f)
+                OnLog?.Invoke($"{_cfg.Symbol} filters: tick {f.TickSize}, step {f.StepSize}, min qty {f.MinQuantity}, min notional {f.MinNotional}");
+        }
+        catch (Exception ex)
+        {
+            // Never block a start on this: falling back to the old guesses is worse than exact,
+            // but far better than refusing to trade because a metadata endpoint hiccuped.
+            OnLog?.Invoke($"Could not read {_cfg.Symbol} filters ({ex.Message}) — using inferred precision.");
+        }
+
         _spacing = (_cfg.UpperPrice - _cfg.LowerPrice) / _cfg.GridLevels;
         _priceDecimals = ResolvePriceDecimals();
         _gridPrices = new decimal[_cfg.GridLevels + 1];
         for (int i = 0; i <= _cfg.GridLevels; i++)
             _gridPrices[i] = NormalizePrice(_cfg.LowerPrice + _spacing * i);
 
+        // Re-floor the quantity now that the real lot step is known — the constructor could only
+        // use the 1e-8 placeholder.
+        _quantity = NormalizeQuantity(_cfg.QuantityPerGrid);
+
         // Отказываем до подключения и до первого ордера: иначе каждая лимитка уходит
         // на биржу и отбивается по minNotional, а бот остаётся в состоянии "running".
         if (_quantity <= 0m)
             throw new InvalidOperationException("Quantity per grid must be greater than zero.");
 
-        decimal levelNotional = _quantity * _cfg.LowerPrice;
-        if (IsUsdQuoted(_cfg.Symbol) && levelNotional < MinNotionalUsd)
+        if (_filters is { MinQuantity: > 0m } minQ && _quantity < minQ.MinQuantity)
             throw new InvalidOperationException(
-                $"Order notional {levelNotional:N2} USDT at the lowest grid level is below the exchange minimum of {MinNotionalUsd:N0} USDT — increase quantity per grid or raise the lower price.");
+                $"Quantity per grid {_quantity} is below the exchange minimum of {minQ.MinQuantity} {BaseAssetOf(_cfg.Symbol)}.");
+
+        // The venue's own floor when it publishes one; the old hardcoded 5 USDT only otherwise,
+        // and only for dollar-quoted pairs where that guess was ever meaningful.
+        decimal levelNotional = _quantity * _cfg.LowerPrice;
+        decimal minNotional = _filters is { MinNotional: > 0m } mn
+            ? mn.MinNotional
+            : IsUsdQuoted(_cfg.Symbol) ? MinNotionalUsd : 0m;
+
+        if (minNotional > 0m && levelNotional < minNotional)
+            throw new InvalidOperationException(
+                $"Order notional {levelNotional:N2} at the lowest grid level is below the exchange minimum of {minNotional} — increase quantity per grid or raise the lower price.");
 
         await _gateway.ConnectAsync();
 
@@ -443,8 +482,29 @@ public sealed class GridBot : IDisposable
     private static decimal FloorToStep(decimal value, decimal step)
         => step <= 0m ? value : Math.Floor(value / step) * step;
 
+    /// <summary>
+    /// Snaps a level price to the venue's tick size when it published one, and only falls back to
+    /// rounding at the precision inferred from the typed bounds when it did not.
+    /// </summary>
     private decimal NormalizePrice(decimal price)
-        => Math.Round(price, _priceDecimals, MidpointRounding.AwayFromZero);
+        => _filters is { TickSize: > 0m }
+            ? SymbolFilterMath.NormalizePrice(price, _filters, up: false)
+            : Math.Round(price, _priceDecimals, MidpointRounding.AwayFromZero);
+
+    /// <summary>Floors a quantity to the venue's lot step, or to the 1e-8 placeholder without one.</summary>
+    private decimal NormalizeQuantity(decimal quantity)
+        => _filters is { StepSize: > 0m }
+            ? SymbolFilterMath.NormalizeQuantity(quantity, _filters)
+            : FloorToStep(quantity, QuantityStep);
+
+    /// <summary>Base asset of a pair, for messages — BTCUSDT → BTC.</summary>
+    private static string BaseAssetOf(string symbol)
+    {
+        foreach (var quote in new[] { "USDT", "USDC", "BUSD", "FDUSD", "USD" })
+            if (symbol.EndsWith(quote, StringComparison.OrdinalIgnoreCase))
+                return symbol[..^quote.Length];
+        return symbol;
+    }
 
     /// <summary>Число знаков после запятой, с которым значение задано (scale decimal-числа).</summary>
     private static int DecimalPlaces(decimal value) => (decimal.GetBits(value)[3] >> 16) & 0xFF;

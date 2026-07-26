@@ -1,6 +1,7 @@
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
+using CryptoAITerminal.Gateway.Base;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -215,17 +216,37 @@ public sealed class CopyTradingFollowerService : IDisposable
             return;
         }
 
-        var scaledQty = FloorToStep(trade.Quantity * ScaleRatio, QuantityStep);
+        // The venue's real lot step and notional floor when it publishes them. Cached per session
+        // by the gateway, so this costs one REST call per symbol for the whole run; null means the
+        // exchange would not answer and the old guesses (1e-8 step, flat 5 USDT) still apply.
+        SymbolFilters? filters = null;
+        try { filters = await Gateway.GetSymbolFiltersAsync(trade.Symbol); }
+        catch { /* metadata is best-effort — never drop a mirrored trade over it */ }
+
+        var scaledQty = filters is { StepSize: > 0m }
+            ? SymbolFilterMath.NormalizeQuantity(trade.Quantity * ScaleRatio, filters)
+            : FloorToStep(trade.Quantity * ScaleRatio, QuantityStep);
+
         if (scaledQty <= 0)
         {
             Log($"Skip {trade.Symbol} — scaled qty too small");
             return;
         }
 
-        var notionalUsd = scaledQty * trade.Price;
-        if (trade.Price > 0m && IsUsdQuoted(trade.Symbol) && notionalUsd < MinNotionalUsd)
+        if (filters is { MinQuantity: > 0m } && scaledQty < filters.MinQuantity)
         {
-            Log($"Skip {trade.Symbol} — {notionalUsd:N2} USDT is below the {MinNotionalUsd:N0} USDT exchange minimum");
+            Log($"Skip {trade.Symbol} — scaled qty {scaledQty} is below the exchange minimum of {filters.MinQuantity}");
+            return;
+        }
+
+        var notionalUsd = scaledQty * trade.Price;
+        var minNotional = filters is { MinNotional: > 0m }
+            ? filters.MinNotional
+            : IsUsdQuoted(trade.Symbol) ? MinNotionalUsd : 0m;
+
+        if (trade.Price > 0m && minNotional > 0m && notionalUsd < minNotional)
+        {
+            Log($"Skip {trade.Symbol} — {notionalUsd:N2} is below the {minNotional} exchange minimum");
             return;
         }
 
