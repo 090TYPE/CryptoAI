@@ -988,7 +988,12 @@
           <!-- ═══════════════════════════════════════════════════════════════
                Gas / Network Fees Monitor (Feature 14)
           ════════════════════════════════════════════════════════════════ -->
-          <views:GasView />
+          <!-- The wrapper keeps MainWindowViewModel as its DataContext so the section toggle still
+               resolves, while the view itself sees only its own view model. Setting both on the
+               view would make IsVisible resolve against GasMonitorViewModel and never match. -->
+          <Panel IsVisible="{Binding IsGasSectionVisible}">
+            <views:GasView DataContext="{Binding GasMonitorVM}" />
+          </Panel>
 
           <!-- ═══════════════════════════════════════════════════════════════
                All Positions — unified futures view (Feature 15)
