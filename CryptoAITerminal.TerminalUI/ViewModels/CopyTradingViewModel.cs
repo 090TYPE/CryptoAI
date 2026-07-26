@@ -157,6 +157,12 @@ public sealed class CopyTradingViewModel : ReactiveObject, IDisposable
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// The follower's own risk manager, so the Risk desk can push its limits into it. Without a
+    /// way in it kept the constructor defaults regardless of what the user configured.
+    /// </summary>
+    public RiskManager.RiskManager FollowerRisk => _follower.Risk;
+
     public CopyTradingViewModel(
         CopyTradingLeaderService leader,
         CopyTradingFollowerService follower)

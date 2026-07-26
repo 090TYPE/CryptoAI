@@ -6,6 +6,11 @@
              x:CompileBindings="False">
   <StackPanel Spacing="8">
 
+    <!-- Explains the "–" placeholders in the cards below while the first snapshot is in flight -->
+    <TextBlock Classes="WidgetEmpty" Margin="0"
+               IsVisible="{Binding GasMonitorVM.IsLoading}"
+               Text="Fetching gas prices…" />
+
     <!-- Three-column gas cards -->
     <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
 

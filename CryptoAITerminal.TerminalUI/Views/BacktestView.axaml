@@ -122,7 +122,7 @@
               </StackPanel>
             </Border>
 
-            <!-- Метрики главной стратегии -->
+            <!-- Primary strategy metrics -->
             <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="12">
               <Border Classes="SurfaceCard">
                 <StackPanel Spacing="5">
@@ -166,7 +166,7 @@
               </Border>
             </Grid>
 
-            <!-- ГРАФИК ЭКВИТИ -->
+            <!-- EQUITY CURVE -->
             <Border Classes="Panel" IsVisible="{Binding BacktestVM.EquityGeometry, Converter={x:Static ObjectConverters.IsNotNull}}">
               <StackPanel Spacing="8">
                 <Grid ColumnDefinitions="*,Auto">
@@ -184,9 +184,9 @@
                   </StackPanel>
                 </Grid>
 
-                <!-- SVG-график через Viewbox + Path -->
+                <!-- SVG-style chart drawn with Viewbox + Path -->
                 <Grid>
-                  <!-- Ось Y: мин/макс -->
+                  <!-- Y axis: min / max -->
                   <StackPanel HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="36">
                     <TextBlock Text="{Binding BacktestVM.EquityMaxLabel}" FontSize="10" Foreground="{DynamicResource TextSoft}" />
                     <TextBlock Text="{Binding BacktestVM.EquityMinLabel}" FontSize="10" Foreground="{DynamicResource TextSoft}"
@@ -195,14 +195,14 @@
                   <Border Background="#07131C" CornerRadius="6" Height="130" Margin="40,0,0,0" ClipToBounds="True">
                     <Viewbox Stretch="Fill">
                       <Canvas Width="700" Height="130">
-                        <!-- Нулевая линия (equity = 100) -->
+                        <!-- Baseline (equity = 100) -->
                         <Line StartPoint="0,65" EndPoint="700,65"
                               Stroke="#1A2E3A" StrokeThickness="1" StrokeDashArray="4,4" />
                         <!-- Buy & Hold -->
                         <Path Data="{Binding BacktestVM.BuyHoldGeometry}"
                               Stroke="#F4B860" StrokeThickness="1.2"
                               Opacity="0.55" Fill="Transparent" />
-                        <!-- Стратегия -->
+                        <!-- Strategy -->
                         <Path Data="{Binding BacktestVM.EquityGeometry}"
                               Stroke="#1FE0B3" StrokeThickness="1.8"
                               Fill="Transparent" />

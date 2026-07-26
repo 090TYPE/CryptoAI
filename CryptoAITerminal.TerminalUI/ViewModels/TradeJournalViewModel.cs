@@ -36,7 +36,7 @@ public sealed class JournalEntryRowVM : ReactiveObject
         {
             this.RaiseAndSetIfChanged(ref _notes, value);
             Model.Notes = value;
-            _svc.Save();
+            ScheduleSave();
         }
     }
 
@@ -49,7 +49,7 @@ public sealed class JournalEntryRowVM : ReactiveObject
             Model.Tag = value;
             this.RaisePropertyChanged(nameof(TagLabel));
             this.RaisePropertyChanged(nameof(TagBrush));
-            _svc.Save();
+            SaveNow();
         }
     }
 
@@ -84,7 +84,39 @@ public sealed class JournalEntryRowVM : ReactiveObject
         _tag   = model.Tag;
 
         EditCommand = ReactiveCommand.Create(() => { IsEditing = true; });
-        DoneCommand = ReactiveCommand.Create(() => { IsEditing = false; });
+        DoneCommand = ReactiveCommand.Create(() => { IsEditing = false; SaveNow(); });
+    }
+
+    // The notes TextBox is bound with Avalonia's default PropertyChanged trigger, so a 50-character
+    // note used to serialise and rewrite the whole journal 50 times, synchronously on the UI thread.
+    // The record itself is updated on every keystroke; only the file write waits for a pause.
+    private static readonly DispatcherTimer SaveTimer = new() { Interval = TimeSpan.FromMilliseconds(700) };
+    private static PnlDashboardService? _pendingSave;
+
+    static JournalEntryRowVM()
+    {
+        SaveTimer.Tick += (_, _) =>
+        {
+            var svc = _pendingSave;
+            _pendingSave = null;
+            SaveTimer.Stop();
+            svc?.Save();
+        };
+    }
+
+    private void ScheduleSave()
+    {
+        _pendingSave = _svc;
+        SaveTimer.Stop();
+        SaveTimer.Start();
+    }
+
+    /// <summary>Writes immediately and cancels any pending debounce — the same file, one write.</summary>
+    private void SaveNow()
+    {
+        _pendingSave = null;
+        SaveTimer.Stop();
+        _svc.Save();
     }
 }
 

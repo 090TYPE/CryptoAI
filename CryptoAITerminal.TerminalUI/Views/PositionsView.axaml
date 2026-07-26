@@ -34,7 +34,7 @@
                         IsEnabled="{Binding AllPositionsVM.HasPositions}"
                         Padding="14,6" FontSize="12" FontWeight="Bold"
                         ToolTip.Tip="Two-step confirmation: first click arms (StatusLabel changes), second click within 8 s closes all positions." />
-                <!-- Armed-indicator (видим только когда первый клик уже был): -->
+                <!-- Armed indicator: only shown after the first click -->
                 <Border IsVisible="{Binding AllPositionsVM.CloseAllConfirmRequested}"
                         Background="#FF6B6B" CornerRadius="3" Padding="6,3"
                         VerticalAlignment="Center">

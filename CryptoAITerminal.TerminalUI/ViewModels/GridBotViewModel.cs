@@ -1,3 +1,4 @@
+using Avalonia.Threading;
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
@@ -267,25 +268,44 @@ public class GridBotViewModel : ReactiveObject
 
         _bot = new GridBot(gateway, config);
         _bot.OnLog += AppendLog;
-        _bot.OnStatsChanged += () =>
+        _bot.OnStatsChanged += () => Dispatcher.UIThread.Post(() =>
         {
             if (_bot is null) return;
             CyclesCompleted = _bot.CyclesCompleted;
             GridPnL = _bot.GridPnL;
-        };
+        });
         _bot.OnCycleCompleted += (sym, buy, sell, qty, profit) =>
             OnCycleClosed?.Invoke(sym, buy, sell, qty, profit);
 
         BotLog = string.Empty;
         CyclesCompleted = 0;
         GridPnL = 0m;
-        IsRunning = true;
         IsPaused = false;
 
-        await _bot.StartAsync();
+        try
+        {
+            await _bot.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            // Ключи, бан, обрыв, отказ по minNotional — StartAsync бросает. Без catch
+            // исключение уходило в RxApp.DefaultExceptionHandler (которого нет), а бот
+            // оставался помеченным как running. Ордера здесь снимать нечем и незачем:
+            // всё, что бросает, происходит до размещения сетки (PlaceBuyAtLevelAsync
+            // свои ошибки не выпускает), а StopAsync ещё и рвёт общий гейтвей.
+            _bot?.Dispose();
+            _bot = null;
+            IsRunning = false;
+            AppendLog($"Start failed: {ex.Message}");
+            return;
+        }
+
+        // Флаг поднимаем только после успешного старта.
+        IsRunning = true;
     }
 
-    private async Task StopAsync()
+    /// <summary>Public so shutdown can wait for the grid to be pulled off the exchange.</summary>
+    public async Task StopAsync()
     {
         if (_bot is null) return;
         var bot = _bot;
@@ -310,8 +330,8 @@ public class GridBotViewModel : ReactiveObject
         IsPaused = false;
     }
 
-    private void AppendLog(string msg) =>
-        BotLog += $"\n{DateTime.Now:HH:mm:ss}  {msg}";
-
-    public void StopSync() => StopAsync().ConfigureAwait(false);
+    // События бота приходят из колбэка таймера, а `BotLog +=` — неатомарный
+    // read-modify-write: без маршалинга строки лога теряются при гонке с записями из UI.
+    private void AppendLog(string msg) => Dispatcher.UIThread.Post(() =>
+        BotLog += $"\n{DateTime.Now:HH:mm:ss}  {msg}");
 }

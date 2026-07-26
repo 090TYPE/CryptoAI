@@ -58,10 +58,9 @@
     </Style>
   </UserControl.Styles>
 
-  <!-- Gate on the section, full-viewport height so the desk reads like the mock -->
-  <Border IsVisible="{Binding IsBotsSectionVisible}"
-          MinHeight="760"
-          Height="{Binding $parent[ScrollViewer].Bounds.Height}">
+  <!-- Gate on the section. No fixed 760px floor: on a 1280x720 screen it forced an outer scroll
+       on top of the desk's own scrollers and pushed the footer past the bottom edge. -->
+  <Border IsVisible="{Binding IsBotsSectionVisible}" MinHeight="460">
     <Grid DataContext="{Binding BotsDesk}" Background="{StaticResource DeskBg}" ClipToBounds="True">
 
       <!-- ═══════════════ MAIN LAYER (header · body · footer) ═══════════════ -->
@@ -416,7 +415,7 @@
                                             </DataTemplate>
                                           </ItemsControl.ItemTemplate>
                                         </ItemsControl>
-                                        <Button Command="{Binding MenuCommand}" ToolTip.Tip="More" Width="24" Height="24" Padding="0" CornerRadius="5"
+                                        <Button Command="{Binding MenuCommand}" ToolTip.Tip="More" AutomationProperties.Name="More bot actions" Width="24" Height="24" Padding="0" CornerRadius="5"
                                                 Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="⋯" Foreground="{DynamicResource TextSoft}" FontSize="12" />
                                       </StackPanel>
                                     </StackPanel>
@@ -593,7 +592,7 @@
                                                                       Background="{Binding MaBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding MaBorder, Converter={StaticResource StringToBrush}}"
                                                                       Content="{Binding MaLabel}" Foreground="{Binding MaColor, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
                                                               <TextBlock Grid.Column="3" Text="{Binding Stats}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="#4a6a82" VerticalAlignment="Center" />
-                                                              <Button Grid.Column="4" Command="{Binding RemoveCommand}" Width="20" Height="20" Padding="0" CornerRadius="4" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="✕" Foreground="#4a6a82" FontSize="9" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                                              <Button Grid.Column="4" Command="{Binding RemoveCommand}" ToolTip.Tip="Remove" AutomationProperties.Name="Remove entry" Width="20" Height="20" Padding="0" CornerRadius="4" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="✕" Foreground="#4a6a82" FontSize="9" HorizontalAlignment="Right" VerticalAlignment="Center" />
                                                             </Grid>
                                                           </DataTemplate>
                                                         </ItemsControl.ItemTemplate>

@@ -32,14 +32,15 @@
               <Button Grid.Column="4" Classes="SellButton" Command="{Binding WhaleTrackerVM.StopCommand}" Width="110" IsVisible="{Binding WhaleTrackerVM.IsTracking}">Stop Tracking</Button>
             </Grid>
 
-            <!-- Status bar -->
+            <!-- Status bar. Grid, not a horizontal StackPanel: HorizontalAlignment="Right" is a
+                 no-op inside one, so Clear used to sit glued to the API-key hint mid-panel. -->
             <Border Classes="Panel" Padding="12,8">
-              <StackPanel Orientation="Horizontal" Spacing="16">
-                <Ellipse Width="8" Height="8" Fill="{Binding WhaleTrackerVM.IsTracking, Converter={StaticResource BoolToColorConverter}}" VerticalAlignment="Center" />
-                <TextBlock Text="{Binding WhaleTrackerVM.KnownWalletCount, StringFormat='{}Polling ETH · BSC · Solana  ·  {0} known wallets tracked'}" Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
-                <TextBlock Text="·  ETHERSCAN_API_KEY / BSCSCAN_API_KEY env vars for higher rate limits" Foreground="#4D5F70" FontSize="11" VerticalAlignment="Center" />
-                <Button Classes="LinkButton" Command="{Binding WhaleTrackerVM.ClearCommand}" HorizontalAlignment="Right">Clear</Button>
-              </StackPanel>
+              <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="16">
+                <Ellipse Grid.Column="0" Width="8" Height="8" Fill="{Binding WhaleTrackerVM.IsTracking, Converter={StaticResource BoolToColorConverter}}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding WhaleTrackerVM.KnownWalletCount, StringFormat='{}Polling ETH · BSC · Solana  ·  {0} known wallets tracked'}" Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="·  ETHERSCAN_API_KEY / BSCSCAN_API_KEY env vars for higher rate limits" Foreground="#4D5F70" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                <Button Grid.Column="3" Classes="LinkButton" Command="{Binding WhaleTrackerVM.ClearCommand}" HorizontalAlignment="Right">Clear</Button>
+              </Grid>
             </Border>
 
             <!-- ── AI Flow Insight (#6) ── -->
@@ -127,6 +128,10 @@
                       </ItemsControl.ItemTemplate>
                     </ItemsControl>
                   </ScrollViewer>
+                  <TextBlock Text="No whale alerts yet. Press Start Tracking — transfers above the minimum land here."
+                             IsVisible="{Binding !WhaleTrackerVM.RecentAlerts.Count}"
+                             Foreground="{DynamicResource TextDim}" FontSize="12"
+                             HorizontalAlignment="Center" TextWrapping="Wrap" Margin="16,26" />
                 </StackPanel>
               </Border>
 

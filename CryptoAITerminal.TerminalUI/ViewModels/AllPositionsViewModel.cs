@@ -130,6 +130,22 @@ public sealed class AllPositionsViewModel : ReactiveObject
     public bool HasNoPositions => Rows.Count == 0;
     public int  PositionCount  => Rows.Count;
 
+    // ── Неполные данные ───────────────────────────────────────────────────────
+    // Биржа, ответившая ошибкой, раньше просто пропускалась: пользователь с открытым
+    // шортом видел «No open positions found», а CLOSE ALL закрывал лишь то, что попало
+    // в таблицу. Держим список упавших гейтвеев и показываем его явно.
+
+    private readonly List<string> _failedGateways = [];
+
+    public bool   HasGatewayFailures  => _failedGateways.Count > 0;
+    public string GatewayFailureLabel => _failedGateways.Count == 0
+        ? string.Empty
+        : $"⚠ {string.Join(", ", _failedGateways)} unavailable — the list is incomplete.";
+    /// <summary>Жёлтый, пока данные неполные: цифры в шапке нельзя считать итогом.</summary>
+    public string StatusBrush => HasGatewayFailures ? "#F4B860" : "#8FA3B8";
+    /// <summary>CLOSE ALL заблокирован, пока хотя бы одна биржа не ответила.</summary>
+    public bool   CanCloseAll => Rows.Count > 0 && !HasGatewayFailures;
+
     /// <summary>Column to sort by: "PnlPct" | "Size" | "Exchange".</summary>
     public string SortBy
     {
@@ -220,6 +236,7 @@ public sealed class AllPositionsViewModel : ReactiveObject
         StatusLabel  = "Refreshing positions…";
 
         var newRows = new List<UnifiedPositionRowVM>();
+        var failed  = new List<string>();
 
         foreach (var (name, gw) in _gateways)
         {
@@ -232,24 +249,38 @@ public sealed class AllPositionsViewModel : ReactiveObject
                     newRows.Add(new UnifiedPositionRowVM(name, pos, gw));
                 }
             }
-            catch { /* gateway not connected / not implemented → skip silently */ }
+            catch (Exception ex)
+            {
+                failed.Add(name);
+                OnLog?.Invoke($"[{name}] Positions unavailable: {ex.Message}");
+            }
         }
 
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
+            _failedGateways.Clear();
+            _failedGateways.AddRange(failed);
+
             Rows.Clear();
             foreach (var row in newRows) Rows.Add(row);
             ApplySortInternal();
             UpdateTotals();
 
-            StatusLabel = Rows.Count > 0
+            int okCount = _gateways.Count - failed.Count;
+            var baseLabel = Rows.Count > 0
                 ? $"{Rows.Count} open position{(Rows.Count == 1 ? "" : "s")} · " +
-                  $"{_gateways.Count} exchange{(_gateways.Count == 1 ? "" : "s")} checked"
-                : "No open positions found";
+                  $"{okCount} of {_gateways.Count} exchange{(_gateways.Count == 1 ? "" : "s")} answered"
+                : failed.Count > 0 ? "No positions from the exchanges that answered" : "No open positions found";
+
+            StatusLabel = failed.Count > 0 ? $"{baseLabel} · {GatewayFailureLabel}" : baseLabel;
 
             this.RaisePropertyChanged(nameof(HasPositions));
             this.RaisePropertyChanged(nameof(HasNoPositions));
             this.RaisePropertyChanged(nameof(PositionCount));
+            this.RaisePropertyChanged(nameof(HasGatewayFailures));
+            this.RaisePropertyChanged(nameof(GatewayFailureLabel));
+            this.RaisePropertyChanged(nameof(StatusBrush));
+            this.RaisePropertyChanged(nameof(CanCloseAll));
         });
 
         IsRefreshing = false;
@@ -260,6 +291,15 @@ public sealed class AllPositionsViewModel : ReactiveObject
     private async Task CloseAllAsync()
     {
         if (IsClosingAll || Rows.Count == 0) return;
+
+        // Пока хотя бы одна биржа не ответила, «закрыть всё» закроет не всё: часть позиций
+        // просто не попала в таблицу. Отказываем и просим обновить.
+        if (HasGatewayFailures)
+        {
+            CloseAllConfirmRequested = false;
+            StatusLabel = $"CLOSE ALL disabled — {string.Join(", ", _failedGateways)} did not answer. Press Refresh first.";
+            return;
+        }
 
         // Two-step confirmation: первый клик «armит» команду, второй — реально закрывает.
         if (!CloseAllConfirmRequested)

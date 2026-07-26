@@ -110,13 +110,14 @@
         <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
           <StackPanel Margin="12" Spacing="10">
 
-            <!-- BUY / SELL (seamless segmented) -->
+            <!-- BUY / SELL (seamless segmented).
+                 TabIndex 1-10 across the ticket walks side → type → price → size → TP → SL → PLACE ORDER. -->
             <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="9" ClipToBounds="True">
               <Grid ColumnDefinitions="*,*">
-                <Button Grid.Column="0" Content="BUY / LONG" Classes="TdSide buy"
+                <Button Grid.Column="0" Content="BUY / LONG" Classes="TdSide buy" TabIndex="1"
                         Classes.active="{Binding SelectedOrderSide, Converter={StaticResource StrEq}, ConverterParameter=BUY}"
                         Command="{Binding SelectOrderSideCommand}" CommandParameter="BUY" />
-                <Button Grid.Column="1" Content="SELL / SHORT" Classes="TdSide sell"
+                <Button Grid.Column="1" Content="SELL / SHORT" Classes="TdSide sell" TabIndex="2"
                         Classes.active="{Binding SelectedOrderSide, Converter={StaticResource StrEq}, ConverterParameter=SELL}"
                         Command="{Binding SelectOrderSideCommand}" CommandParameter="SELL" />
               </Grid>
@@ -148,11 +149,11 @@
               <StackPanel Grid.Column="0" Spacing="5">
                 <TextBlock Classes="TdLabel" Text="ORDER TYPE" />
                 <StackPanel Spacing="3">
-                  <Button Content="MARKET" Classes="TdSeg left" Command="{Binding SelectOrderTypeCommand}" CommandParameter="Market"
+                  <Button Content="MARKET" Classes="TdSeg left" TabIndex="3" Command="{Binding SelectOrderTypeCommand}" CommandParameter="Market"
                           Classes.active="{Binding SelectedOrderType, Converter={StaticResource StrEq}, ConverterParameter=Market}" />
-                  <Button Content="LIMIT" Classes="TdSeg left" Command="{Binding SelectOrderTypeCommand}" CommandParameter="Limit"
+                  <Button Content="LIMIT" Classes="TdSeg left" TabIndex="4" Command="{Binding SelectOrderTypeCommand}" CommandParameter="Limit"
                           Classes.active="{Binding SelectedOrderType, Converter={StaticResource StrEq}, ConverterParameter=Limit}" />
-                  <Button Content="STOP" Classes="TdSeg left" Command="{Binding SelectOrderTypeCommand}" CommandParameter="Stop"
+                  <Button Content="STOP" Classes="TdSeg left" TabIndex="5" Command="{Binding SelectOrderTypeCommand}" CommandParameter="Stop"
                           Classes.active="{Binding SelectedOrderType, Converter={StaticResource StrEq}, ConverterParameter=Stop}" />
                 </StackPanel>
               </StackPanel>
@@ -195,6 +196,7 @@
               <TextBlock Classes="TdLabel" Text="LIMIT PRICE (USDT)" />
               <Border Background="#07111a" BorderBrush="#1e3248" BorderThickness="1" CornerRadius="8" Padding="10,10">
                 <TextBox Classes="TdInput" Text="{Binding LimitPrice, Converter={StaticResource DecField}}" Foreground="#5bc0ff" FontSize="20" FontWeight="ExtraBold"
+                         TabIndex="6" AutomationProperties.Name="Limit price"
                          TextAlignment="Center" HorizontalAlignment="Stretch" VerticalContentAlignment="Center" />
               </Border>
             </StackPanel>
@@ -209,7 +211,8 @@
                   <TextBlock Classes="TdNum" Text="{Binding TradeNotionalLabel}" Foreground="#e8f4ff" FontWeight="Bold" FontSize="11" />
                 </StackPanel>
               </Grid>
-              <Slider Minimum="5" Maximum="100" Value="{Binding WalletVM.GlobalPositionSizingPercent}" Classes="TradeSlider" />
+              <Slider Minimum="5" Maximum="100" Value="{Binding WalletVM.GlobalPositionSizingPercent}" Classes="TradeSlider"
+                      TabIndex="7" AutomationProperties.Name="Position size percent" />
               <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="4">
                 <Button Grid.Column="0" Content="25%" Classes="TdSeg fill" Command="{Binding SelectTradeAllocationCommand}" CommandParameter="25" />
                 <Button Grid.Column="1" Content="50%" Classes="TdSeg fill" Command="{Binding SelectTradeAllocationCommand}" CommandParameter="50" />
@@ -223,13 +226,15 @@
               <StackPanel Grid.Column="0" Spacing="5">
                 <TextBlock Classes="TdLabel" Text="TAKE PROFIT" />
                 <Border Background="#07111a" BorderBrush="#152535" BorderThickness="1" CornerRadius="8" Padding="10,7">
-                  <TextBox Classes="TdInput" Text="{Binding TakeProfitPrice, Converter={StaticResource DecField}}" Foreground="#3ddc84" FontSize="12" FontWeight="Bold" PlaceholderText="—" VerticalContentAlignment="Center" />
+                  <TextBox Classes="TdInput" Text="{Binding TakeProfitPrice, Converter={StaticResource DecField}}" Foreground="#3ddc84" FontSize="12" FontWeight="Bold" PlaceholderText="—" VerticalContentAlignment="Center"
+                           TabIndex="8" AutomationProperties.Name="Take profit price" />
                 </Border>
               </StackPanel>
               <StackPanel Grid.Column="1" Spacing="5">
                 <TextBlock Classes="TdLabel" Text="STOP LOSS" />
                 <Border Background="#07111a" BorderBrush="#152535" BorderThickness="1" CornerRadius="8" Padding="10,7">
-                  <TextBox Classes="TdInput" Text="{Binding StopLossPrice, Converter={StaticResource DecField}}" Foreground="#ff8080" FontSize="12" FontWeight="Bold" PlaceholderText="—" VerticalContentAlignment="Center" />
+                  <TextBox Classes="TdInput" Text="{Binding StopLossPrice, Converter={StaticResource DecField}}" Foreground="#ff8080" FontSize="12" FontWeight="Bold" PlaceholderText="—" VerticalContentAlignment="Center"
+                           TabIndex="9" AutomationProperties.Name="Stop loss price" />
                 </Border>
               </StackPanel>
             </Grid>
@@ -305,41 +310,42 @@
                     <TextBlock Text="{Binding GuardPassLabel}" Foreground="{Binding TradingGuardStatusBrush}" FontSize="9" FontWeight="ExtraBold" />
                   </Border>
                 </Grid>
+                <!-- the chips used to be four hardcoded green dots that stayed "ok" even next to a
+                     BLOCK badge; now they carry the numbers the guard actually decides on -->
                 <WrapPanel>
                   <Border Background="#07131a" BorderBrush="#0e2218" BorderThickness="1" CornerRadius="5" Padding="8,3" Margin="0,0,5,5">
-                    <StackPanel Orientation="Horizontal" Spacing="4">
-                      <Ellipse Width="5" Height="5" Fill="#3ddc84" VerticalAlignment="Center" />
-                      <TextBlock Text="Liquidity" Foreground="#4a7060" FontSize="9" FontWeight="Bold" />
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                      <TextBlock Text="Spread" Foreground="#4a7060" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                      <TextBlock Classes="TdNum" Text="{Binding SpreadPercentLabel}" Foreground="#c8dcef" FontSize="9" VerticalAlignment="Center" />
                     </StackPanel>
                   </Border>
                   <Border Background="#07131a" BorderBrush="#0e2218" BorderThickness="1" CornerRadius="5" Padding="8,3" Margin="0,0,5,5">
-                    <StackPanel Orientation="Horizontal" Spacing="4">
-                      <Ellipse Width="5" Height="5" Fill="#3ddc84" VerticalAlignment="Center" />
-                      <TextBlock Text="Slippage" Foreground="#4a7060" FontSize="9" FontWeight="Bold" />
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                      <TextBlock Text="Slippage" Foreground="#4a7060" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                      <TextBlock Classes="TdNum" Text="{Binding SlippageTolerancePercent, StringFormat={}{0:0.##}%}" Foreground="#c8dcef" FontSize="9" VerticalAlignment="Center" />
                     </StackPanel>
                   </Border>
                   <Border Background="#07131a" BorderBrush="#0e2218" BorderThickness="1" CornerRadius="5" Padding="8,3" Margin="0,0,5,5">
-                    <StackPanel Orientation="Horizontal" Spacing="4">
-                      <Ellipse Width="5" Height="5" Fill="#3ddc84" VerticalAlignment="Center" />
-                      <TextBlock Text="Exposure" Foreground="#4a7060" FontSize="9" FontWeight="Bold" />
-                    </StackPanel>
-                  </Border>
-                  <Border Background="#07131a" BorderBrush="#0e2218" BorderThickness="1" CornerRadius="5" Padding="8,3" Margin="0,0,5,5">
-                    <StackPanel Orientation="Horizontal" Spacing="4">
-                      <Ellipse Width="5" Height="5" Fill="#3ddc84" VerticalAlignment="Center" />
-                      <TextBlock Text="Risk Limits" Foreground="#4a7060" FontSize="9" FontWeight="Bold" />
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                      <TextBlock Text="Exposure" Foreground="#4a7060" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                      <TextBlock Classes="TdNum" Text="{Binding CurrentOpenExposureLabel}" Foreground="#c8dcef" FontSize="9" VerticalAlignment="Center" />
                     </StackPanel>
                   </Border>
                 </WrapPanel>
+                <TextBlock Text="{Binding PrimaryOrderBlockedReason}" IsVisible="{Binding !CanPlacePrimaryOrder}"
+                           Foreground="#f4b860" FontSize="9" TextWrapping="Wrap" />
               </StackPanel>
             </Border>
 
             <!-- Place order -->
-            <Button Command="{Binding PlacePrimaryOrderCommand}" Classes="TdPrimary" Height="52"
+            <Button Command="{Binding PlacePrimaryOrderCommand}" Classes="TdPrimary" Height="52" TabIndex="10"
+                    AutomationProperties.Name="Place order"
                     IsEnabled="{Binding CanPlacePrimaryOrder}" ToolTip.Tip="{Binding PrimaryOrderBlockedReason}">
+              <!-- no local Foreground: the captions inherit it from the button so the
+                   disabled setter can lighten them, otherwise they vanish on the dark fill -->
               <StackPanel Spacing="2">
-                <TextBlock Text="{Binding PrimaryOrderButtonText}" Foreground="#051018" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" />
-                <TextBlock Text="{Binding PrimaryOrderButtonHint}" Foreground="#0b3e37" FontSize="10" HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding PrimaryOrderButtonText}" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding PrimaryOrderButtonHint}" FontSize="10" Opacity="0.7" HorizontalAlignment="Center" />
               </StackPanel>
             </Button>
           </StackPanel>
@@ -396,9 +402,11 @@
                   <Button Content="Area" Classes="TdSeg mini" Command="{Binding SelectChartTypeCommand}" CommandParameter="Area" Classes.active="{Binding SelectedChartType, Converter={StaticResource StrEq}, ConverterParameter=Area}" />
                 </StackPanel>
                 <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                  <Button Content="−" Classes="TdSeg mini" Command="{Binding ZoomChartOutCommand}" />
+                  <Button Content="−" Classes="TdSeg mini" Command="{Binding ZoomChartOutCommand}"
+                          ToolTip.Tip="Zoom out" AutomationProperties.Name="Zoom chart out" />
                   <TextBlock Classes="TdNum" Text="{Binding ChartZoomLabel}" Foreground="#8fa3b8" FontSize="10" VerticalAlignment="Center" Width="34" TextAlignment="Center" />
-                  <Button Content="+" Classes="TdSeg mini" Command="{Binding ZoomChartInCommand}" />
+                  <Button Content="+" Classes="TdSeg mini" Command="{Binding ZoomChartInCommand}"
+                          ToolTip.Tip="Zoom in" AutomationProperties.Name="Zoom chart in" />
                 </StackPanel>
                 <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="4" Margin="8,0,0,0">
                   <TextBox Text="{Binding ChartAlertPriceInput}" PlaceholderText="Price alert…" Width="96" FontSize="11"
@@ -406,6 +414,7 @@
                   <Button Content="⚑ ALERT" Classes="TdSeg mini" Command="{Binding ChartAlertCommand}" Classes.active="{Binding ShowChartAlertInput}" />
                 </StackPanel>
                 <Button Grid.Column="6" Content="{Binding ChartFullscreenGlyph}" Classes="TdSeg mini" Margin="6,0,0,0"
+                        ToolTip.Tip="Toggle fullscreen chart" AutomationProperties.Name="Toggle fullscreen chart"
                         Command="{Binding ToggleChartFullscreenCommand}" Classes.active="{Binding IsChartExpanded}" />
               </Grid>
 
@@ -1164,7 +1173,7 @@
                               <TextBlock Text="{Binding TypeLabel}" Foreground="{Binding SideBrush}" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding TriggerLabel}" Foreground="#c8dcef" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding AmountLabel}" Foreground="#8fa3b8" FontSize="9" VerticalAlignment="Center" Margin="6,0" />
-                              <Button Grid.Column="3" Content="✕" Classes="TdSeg mini" Command="{Binding $parent[ItemsControl].DataContext.DexTradingVM.CancelKeeperOrderCommand}" CommandParameter="{Binding Id}" />
+                              <Button Grid.Column="3" Content="✕" Classes="TdSeg mini" ToolTip.Tip="Cancel order" AutomationProperties.Name="Cancel keeper order" Command="{Binding $parent[ItemsControl].DataContext.DexTradingVM.CancelKeeperOrderCommand}" CommandParameter="{Binding Id}" />
                             </Grid>
                           </Border>
                         </DataTemplate>
@@ -1629,7 +1638,7 @@
                                   <TextBlock Grid.Column="3" Classes="TdNum" Text="{Binding TriggerLabel}" HorizontalAlignment="Right" />
                                   <TextBlock Grid.Column="4" Classes="TdNum" Text="{Binding SizeLabel}" HorizontalAlignment="Right" />
                                   <TextBlock Grid.Column="5" Text="{Binding StatusLabel}" Foreground="#f4b860" HorizontalAlignment="Center" FontSize="11" />
-                                  <Button Grid.Column="6" Content="✕" Classes="TdSeg mini" Command="{Binding $parent[ItemsControl].DataContext.DexDeskVM.Perp.CancelOrderCommand}" CommandParameter="{Binding Id}" />
+                                  <Button Grid.Column="6" Content="✕" Classes="TdSeg mini" ToolTip.Tip="Cancel order" AutomationProperties.Name="Cancel order" Command="{Binding $parent[ItemsControl].DataContext.DexDeskVM.Perp.CancelOrderCommand}" CommandParameter="{Binding Id}" />
                                 </Grid>
                               </Border>
                             </DataTemplate>
@@ -2011,7 +2020,7 @@
                                     Command="{Binding $parent[ItemsControl].DataContext.DexTradingVM.OpenWatchlistCommand}" CommandParameter="{Binding TokenAddress}" />
                             <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding PriceLabel}" Foreground="#c8dcef" FontSize="10" VerticalAlignment="Center" />
                             <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding ChangeLabel}" Foreground="{Binding ChangeBrush}" FontSize="9" VerticalAlignment="Center" Margin="4,0" />
-                            <Button Grid.Column="3" Content="✕" Classes="TdSeg mini" Command="{Binding $parent[ItemsControl].DataContext.DexTradingVM.RemoveWatchlistCommand}" CommandParameter="{Binding TokenAddress}" />
+                            <Button Grid.Column="3" Content="✕" Classes="TdSeg mini" ToolTip.Tip="Remove from watchlist" AutomationProperties.Name="Remove from watchlist" Command="{Binding $parent[ItemsControl].DataContext.DexTradingVM.RemoveWatchlistCommand}" CommandParameter="{Binding TokenAddress}" />
                           </Grid>
                         </Border>
                       </DataTemplate>

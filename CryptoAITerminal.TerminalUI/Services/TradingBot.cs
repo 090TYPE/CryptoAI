@@ -62,12 +62,18 @@ public class TradingBot
         FuturesMarginMode marginMode = FuturesMarginMode.Cross,
         FuturesTradeBias futuresBias = FuturesTradeBias.LongShort,
         IStrategy? strategy = null,
-        TpSlConfig? tpSlConfig = null)
+        TpSlConfig? tpSlConfig = null,
+        decimal? maxPositionSizeUsd = null,
+        decimal? maxDailyLossUsd = null)
     {
         _gateway = gateway;
+        // Потолок позиции — в деньгах. Прежняя формула Math.Max(..., tradeQuantity * 50000)
+        // сравнивалась RiskManager'ом с Quantity * currentPrice, то есть срабатывала только
+        // на инструментах дороже 50 000 за единицу. Когда UI не передал свои значения,
+        // берём консервативный дефолт от риска на сделку, а не от количества.
         _riskManager = new RiskManager.RiskManager(
-            maxPositionSizeUsd: Math.Max(maxRiskPerTrade * 5, tradeQuantity * 50000),
-            maxDailyLossUsd: maxRiskPerTrade);
+            maxPositionSizeUsd: maxPositionSizeUsd is > 0m ? maxPositionSizeUsd.Value : maxRiskPerTrade * 5,
+            maxDailyLossUsd: maxDailyLossUsd is > 0m ? maxDailyLossUsd.Value : maxRiskPerTrade);
         _strategy = strategy ?? new SimpleMaStrategy();
         _tpSlConfig = tpSlConfig ?? new TpSlConfig();
         _symbol = symbol;

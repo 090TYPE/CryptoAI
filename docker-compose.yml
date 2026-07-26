@@ -55,10 +55,22 @@ services:
     environment:
       DB_CONN: "Host=db;Database=cryptoai;Username=postgres;Password=${DB_PASSWORD:-postgres}"
       ASPNETCORE_URLS: "http://+:8080"
+      # This container sits behind caddy, so it is the edge node: it does NOT get
+      # CRYPTOAI_KEK_B64. That key unwraps every user's exchange key and wallet key, and
+      # TradingService decrypts them into the memory of whichever process registers the cipher —
+      # which must never be the internet-facing one. On edge the cipher is not registered,
+      # /api/secrets and /api/2fa answer 503 and /api/trade/* is not mapped. See SETUP.md §7.
+      CRYPTOAI_ROLE: edge
+      # Optional, and NOT the custodial KEK: protects the server's own operational secrets
+      # (telegram bot tokens, provider API keys) at rest. Must match on every service that reads
+      # them — api, worker, and the executor node if one is running.
+      CRYPTOAI_DATA_KEY_B64: ${CRYPTOAI_DATA_KEY_B64:-}
       # Secrets come from .env (gitignored). See .env.example.
-      CRYPTOAI_KEK_B64: "${CRYPTOAI_KEK_B64:?set CRYPTOAI_KEK_B64 in .env — generate with openssl rand -base64 32}"
       ADMIN_TOKEN: ${ADMIN_TOKEN:?set ADMIN_TOKEN in .env}
       WITHDRAWAL_DELAY_MINUTES: ${WITHDRAWAL_DELAY_MINUTES:-30}
+      # Honour X-Forwarded-For only from caddy on the compose bridge; without this every audit
+      # row records the proxy's address and all anonymous traffic shares one rate-limit window.
+      TRUSTED_PROXY_CIDRS: "${TRUSTED_PROXY_CIDRS:-127.0.0.1/32,::1/128,172.16.0.0/12}"
     ports:
       # Loopback only. The internet reaches the API through caddy, which terminates TLS; this
       # binding is kept so curl and the admin console still work on the host itself.
@@ -95,6 +107,9 @@ services:
       dockerfile: CryptoAITerminal.CandleWorker/Dockerfile
     environment:
       DB_CONN: "Host=db;Database=cryptoai;Username=postgres;Password=${DB_PASSWORD:-postgres}"
+      # Reads the same protected columns as api (telegram tokens for pushes, provider keys for
+      # the collectors), so it needs the same key or those rows read as "not configured".
+      CRYPTOAI_DATA_KEY_B64: ${CRYPTOAI_DATA_KEY_B64:-}
     depends_on:
       db:
         condition: service_healthy
@@ -133,8 +148,12 @@ services:
   # the master key those secrets are wrapped with. Starting it alongside the public API would put
   # that key on an internet-facing host to do work nobody asked it to do.
   #
-  # If server-side execution is ever reinstated it belongs on a separate node with no public IP,
-  # exactly as db/004_custodial.sql describes.
+  # This used to be aspirational: the api service above required CRYPTOAI_KEK_B64 and registered
+  # the cipher, so the master key WAS on the internet-facing node. It is now pinned shut by
+  # CRYPTOAI_ROLE=edge on that service rather than by this comment.
+  #
+  # If server-side execution is ever reinstated it belongs on a separate node with no public IP
+  # and CRYPTOAI_ROLE=core, exactly as db/004_custodial.sql describes.
 
 networks:
   edge: {}

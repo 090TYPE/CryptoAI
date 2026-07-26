@@ -67,5 +67,9 @@
         </ListBox.ItemTemplate>
       </ListBox>
     </ScrollViewer>
+
+    <TextBlock Grid.Row="2" Classes="WidgetEmpty"
+               IsVisible="{Binding !Markets.Count}"
+               Text="No markets tracked yet. Add pairs on the Markets desk to watch them here." />
   </Grid>
 </UserControl>

@@ -413,6 +413,10 @@ public class AIBotViewModel : ReactiveObject
     public Func<string, string?> LiveExecutionGuard { get; set; } =
         _ => "Live execution guard is not wired up — refusing to place real orders.";
 
+    /// <summary>Position and daily-loss caps, pushed in from the Risk desk. Null keeps the bot's own default.</summary>
+    public decimal? RiskLimitPositionUsd { get; set; }
+    public decimal? RiskLimitDailyLossUsd { get; set; }
+
     public AIBotViewModel(
         BinanceGateway binanceSpot,
         BinanceFuturesGateway binanceFutures,
@@ -490,7 +494,12 @@ public class AIBotViewModel : ReactiveObject
             PartialTpClosePercent = _partialTpClosePercent,
             PartialTp2Percent = _partialTp2Percent
         };
-        _bot = new TradingBot(gateway, Symbol, Quantity, marketType, FuturesLeverage, MaxRiskPerTrade, marginMode, futuresBias, strategy, tpSl);
+        // Position and daily-loss caps come from the Risk desk. They used to be derived from the
+        // trade quantity (quantity × 50000), which on a cheap instrument put the ceiling far above
+        // anything the bot would ever trade, so the cap never fired.
+        _bot = new TradingBot(gateway, Symbol, Quantity, marketType, FuturesLeverage, MaxRiskPerTrade, marginMode, futuresBias, strategy, tpSl,
+            maxPositionSizeUsd: RiskLimitPositionUsd,
+            maxDailyLossUsd: RiskLimitDailyLossUsd);
         _bot.OnError += msg =>
         {
             BotLog += $"\n[ERROR] {msg}";

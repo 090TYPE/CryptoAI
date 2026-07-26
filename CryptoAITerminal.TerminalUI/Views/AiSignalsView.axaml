@@ -871,6 +871,7 @@
                   <Button Grid.Column="1" Width="28" Height="28" CornerRadius="6" Padding="0"
                           Background="{Binding ChatSendBg}" Foreground="{Binding ChatSendFg}" BorderThickness="0"
                           Content="↑" FontSize="14" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                          ToolTip.Tip="Send" AutomationProperties.Name="Send chat message"
                           Command="{Binding SendChatCommand}" />
                 </Grid>
               </Border>

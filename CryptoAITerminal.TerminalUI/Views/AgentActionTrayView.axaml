@@ -11,8 +11,10 @@
             <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,2">
               <TextBlock Text="{Binding Preview}" Foreground="#c8dcef" TextWrapping="Wrap" VerticalAlignment="Center" />
               <Button Grid.Column="1" Content="✓" Foreground="#3ddc84" Margin="4,0"
+                      ToolTip.Tip="Approve action" AutomationProperties.Name="Approve agent action"
                       Command="{Binding $parent[ItemsControl].DataContext.ApproveCommand}" CommandParameter="{Binding}" />
               <Button Grid.Column="2" Content="✕" Foreground="#ff6b6b"
+                      ToolTip.Tip="Reject action" AutomationProperties.Name="Reject agent action"
                       Command="{Binding $parent[ItemsControl].DataContext.RejectCommand}" CommandParameter="{Binding}" />
             </Grid>
           </DataTemplate>

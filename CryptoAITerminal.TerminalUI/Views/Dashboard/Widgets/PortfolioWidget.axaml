@@ -65,6 +65,9 @@
             </ItemsControl.ItemTemplate>
           </ItemsControl>
         </ScrollViewer>
+        <TextBlock Grid.Row="1" Classes="WidgetEmpty"
+                   IsVisible="{Binding !WalletVM.Assets.Count}"
+                   Text="No wallet assets yet. Connect or select a wallet on the Portfolio desk to fill the lens." />
       </Grid>
     </Border>
 

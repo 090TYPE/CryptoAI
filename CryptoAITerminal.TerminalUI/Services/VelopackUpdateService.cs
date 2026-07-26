@@ -24,11 +24,12 @@ public sealed class VelopackUpdateService : IAppUpdateService
             var source = new GithubSource(AppInfo.RepoUrl, null, false, null);
             _manager = new UpdateManager(source);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             // Velopack locator not initialised (debug / unpacked run, or test host).
             // Keep _manager null — IsSupported will return false, all operations are no-ops.
             _manager = null;
+            CrashLog.Write("WARN", "update manager unavailable: " + ex.Message);
         }
     }
 
@@ -45,16 +46,21 @@ public sealed class VelopackUpdateService : IAppUpdateService
         {
             _pending = await _manager!.CheckForUpdatesAsync().ConfigureAwait(false);
             if (_pending is null)
+            {
+                CrashLog.Write("INFO", $"update check: up to date ({current})");
                 return new AppUpdateInfo(false, current, current);
+            }
 
             var latest = _pending.TargetFullRelease.Version.ToString();
+            CrashLog.Write("INFO", $"update check: {latest} available (current {current})");
             return new AppUpdateInfo(true, current, latest);
         }
         catch (OperationCanceledException) { throw; }
-        catch
+        catch (Exception ex)
         {
-            // Non-fatal: stay on the current version, surface nothing to the UI.
-            return new AppUpdateInfo(false, current, current);
+            // Non-fatal, but it must not read as "you are on the latest version".
+            CrashLog.Write("WARN", "update check failed: " + ex.Message);
+            return AppUpdateInfo.Failed(current, ex.Message);
         }
     }
 
@@ -69,8 +75,9 @@ public sealed class VelopackUpdateService : IAppUpdateService
             return true;
         }
         catch (OperationCanceledException) { throw; }
-        catch
+        catch (Exception ex)
         {
+            CrashLog.Write("WARN", "update download failed: " + ex.Message);
             return false;
         }
     }
@@ -84,9 +91,10 @@ public sealed class VelopackUpdateService : IAppUpdateService
             // Does not return on success (process is replaced); caller handles the no-return-on-failure case.
             _manager!.ApplyUpdatesAndRestart(_pending.TargetFullRelease);
         }
-        catch
+        catch (Exception ex)
         {
             // Non-fatal: stay on the current version. The caller resets the UI.
+            CrashLog.Write("WARN", "update apply failed: " + ex.Message);
         }
     }
 }

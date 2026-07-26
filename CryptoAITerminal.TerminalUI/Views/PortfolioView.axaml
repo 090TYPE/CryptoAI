@@ -429,8 +429,10 @@
           <!-- Blotter body -->
           <Grid Grid.Row="3">
 
-            <!-- ASSETS -->
-            <Grid IsVisible="{Binding ShowAllAssets}" RowDefinitions="Auto,*">
+            <!-- ASSETS. The fixed columns need ~610px but the centre column is ~446px at 1366:
+                 scroll sideways instead of letting the right-hand columns fall off the panel. -->
+            <ScrollViewer IsVisible="{Binding ShowAllAssets}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+            <Grid RowDefinitions="Auto,*" MinWidth="620">
               <Border Grid.Row="0" Background="#050c14" BorderBrush="#09151e" BorderThickness="0,0,0,1" Padding="12,6">
                 <Grid ColumnDefinitions="40,*,90,110,100,100,90,80">
                   <TextBlock Grid.Column="1" Text="ASSET" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
@@ -479,6 +481,7 @@
                 </StackPanel>
               </ScrollViewer>
             </Grid>
+            </ScrollViewer>
 
             <!-- REBALANCE (reuses the real PortfolioRebalanceVM) -->
             <ContentControl IsVisible="{Binding ShowRebalance}">
@@ -534,16 +537,17 @@
                   </StackPanel>
                 </Border>
               </StackPanel>
-              <!-- Rows -->
-              <ScrollViewer Grid.Row="2">
-                <StackPanel>
+              <!-- Rows. 692px of fixed columns against a ~446px centre column: scroll sideways
+                   so REBALANCE ORDER keeps its width instead of collapsing to zero. -->
+              <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Auto">
+                <StackPanel MinWidth="780">
                   <!-- header -->
                   <Border Background="#050c14" BorderBrush="#09151e" BorderThickness="0,0,0,1" Padding="12,6">
                     <Grid ColumnDefinitions="32,90,100,80,110,110,90,*,80">
                       <TextBlock Grid.Column="1" Text="ASSET" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
-                      <TextBlock Grid.Column="2" Text="BALANCE" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
-                      <TextBlock Grid.Column="3" Text="PRICE" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
-                      <TextBlock Grid.Column="4" Text="VALUE" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
+                      <TextBlock Grid.Column="2" Text="BALANCE" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextDim}" TextAlignment="Right" />
+                      <TextBlock Grid.Column="3" Text="PRICE" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextDim}" TextAlignment="Right" />
+                      <TextBlock Grid.Column="4" Text="VALUE" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextDim}" TextAlignment="Right" />
                       <TextBlock Grid.Column="5" Text="TARGET %" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
                       <TextBlock Grid.Column="6" Text="ACTUAL" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
                       <TextBlock Grid.Column="7" Text="REBALANCE ORDER" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
@@ -559,9 +563,9 @@
                               <TextBlock Text="{Binding Symbol}" FontSize="12" FontWeight="ExtraBold" Foreground="#c8dcef" />
                               <TextBlock Text="{Binding SourcesLabel}" FontSize="9" Foreground="{DynamicResource TextDim}" TextTrimming="CharacterEllipsis" />
                             </StackPanel>
-                            <TextBlock Grid.Column="2" Text="{Binding BalanceLabel}" FontSize="10" Foreground="{DynamicResource TextSoft}" FontFamily="{StaticResource FontMono}" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="3" Text="{Binding PriceLabel}" FontSize="10" Foreground="#8fa3b8" FontFamily="{StaticResource FontMono}" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="4" Text="{Binding ValueLabel}" FontSize="12" FontWeight="ExtraBold" Foreground="#e8f4ff" FontFamily="{StaticResource FontMono}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2" Text="{Binding BalanceLabel}" FontSize="10" Foreground="{DynamicResource TextSoft}" FontFamily="{StaticResource FontMono}" VerticalAlignment="Center" TextAlignment="Right" />
+                            <TextBlock Grid.Column="3" Text="{Binding PriceLabel}" FontSize="10" Foreground="#8fa3b8" FontFamily="{StaticResource FontMono}" VerticalAlignment="Center" TextAlignment="Right" />
+                            <TextBlock Grid.Column="4" Text="{Binding ValueLabel}" FontSize="12" FontWeight="ExtraBold" Foreground="#e8f4ff" FontFamily="{StaticResource FontMono}" VerticalAlignment="Center" TextAlignment="Right" />
                             <NumericUpDown Grid.Column="5" Value="{Binding TargetPct}" Minimum="0" Maximum="100" Increment="1" FormatString="F1" FontSize="11" Width="104" VerticalAlignment="Center" />
                             <StackPanel Grid.Column="6" VerticalAlignment="Center">
                               <TextBlock Text="{Binding ActualPctLabel}" FontSize="11" FontWeight="ExtraBold" Foreground="#e8f4ff" FontFamily="{StaticResource FontMono}" />
@@ -569,6 +573,7 @@
                             </StackPanel>
                             <TextBlock Grid.Column="7" Text="{Binding RebalanceOrderLabel}" Foreground="{Binding RebalanceOrderBrush}" FontSize="11" FontFamily="{StaticResource FontMono}" VerticalAlignment="Center" />
                             <Button Grid.Column="8" Content="×" HorizontalAlignment="Right" Width="22" Height="22" Padding="0" FontSize="12"
+                                    ToolTip.Tip="Remove asset" AutomationProperties.Name="Remove asset from rebalance"
                                     Background="#0FFF6B6B" BorderBrush="#3d0d0d" BorderThickness="1" Foreground="#ff6b6b" CornerRadius="4"
                                     Command="{Binding $parent[ItemsControl].DataContext.RemoveAssetCommand}" CommandParameter="{Binding}" />
                           </Grid>
@@ -1011,6 +1016,7 @@
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
               <Button Grid.Column="3" Content="×" Command="{Binding CloseModalCommand}" Width="28" Height="28" Padding="0" FontSize="18"
+                      ToolTip.Tip="Close" AutomationProperties.Name="Close panel"
                       CornerRadius="7" BorderBrush="#152535" BorderThickness="1" Background="#07111a" Foreground="{DynamicResource TextDim}" />
             </Grid>
           </Border>
@@ -1282,6 +1288,7 @@
                 <TextBlock Text="Self-tests &amp; Tron TRC20 payments for the active session" FontSize="10" Foreground="{DynamicResource TextDim}" />
               </StackPanel>
               <Button Grid.Column="2" Content="×" Command="{Binding CloseStudioCommand}" Width="28" Height="28" Padding="0" FontSize="18"
+                      ToolTip.Tip="Close" AutomationProperties.Name="Close diagnostics"
                       CornerRadius="7" BorderBrush="#152535" BorderThickness="1" Background="#07111a" Foreground="{DynamicResource TextDim}" />
             </Grid>
           </Border>

@@ -103,6 +103,11 @@ public partial class BotsDeskViewModel
     private void Tick()
     {
         if (_host is null) return;
+        // Nothing on this desk is observable from another section, yet every second the hidden
+        // desk still re-read the trade store, re-projected six rows and raised the header.
+        // The timer keeps running so the first tick after navigating back (≤1 s) refills
+        // everything — ReloadPnl's own staleness window has long expired by then.
+        if (_host.IsBotsSectionVisible == false) return;
 
         RefreshPositionsIfStale();
         ReloadPnl(force: false);
@@ -156,25 +161,73 @@ public partial class BotsDeskViewModel
            + "|" + _records.Count
            + "|" + (_host?.BriefingVM?.GeneratedAt ?? "");
 
-    /// <summary>Re-reads the realized-trade store (same file the P&amp;L dashboard uses).</summary>
+    /// <summary>
+    /// Re-reads the realized-trade store (same file the P&amp;L dashboard uses). The timer path
+    /// does the file read and the two groupings on a worker thread and publishes the finished
+    /// snapshot back on the UI thread; only the callers that need the data immediately
+    /// (<see cref="Attach"/>, the desk REFRESH button) pass <paramref name="force"/> and pay
+    /// the synchronous read.
+    /// </summary>
     private void ReloadPnl(bool force)
     {
         if (!force && DateTime.UtcNow - _pnlLoadedAt < TimeSpan.FromSeconds(15)) return;
-        try
-        {
-            _pnlStore.Load();                      // de-duplicating append, safe to repeat
-            _records = _pnlStore.GetAll();
-            var cutoff = DateTime.UtcNow.AddHours(-24);
-            _byBotTotal = _pnlStore.ComputeByBot(_records).ToDictionary(r => r.Label, StringComparer.OrdinalIgnoreCase);
-            _byBot24 = _pnlStore.ComputeByBot(_records.Where(r => r.ClosedAtUtc >= cutoff).ToList())
-                                .ToDictionary(r => r.Label, StringComparer.OrdinalIgnoreCase);
-            _recordsVersion++;   // invalidates the cached equity series / drawdown
-        }
-        catch
-        {
-            // store missing or being rewritten — keep the previous snapshot
-        }
+        if (!force && _pnlReloading) return;
         _pnlLoadedAt = DateTime.UtcNow;
+
+        if (force)
+        {
+            try { ApplyPnlSnapshot(ReadPnlSnapshot()); }
+            catch { /* store missing or being rewritten — keep the previous snapshot */ }
+            return;
+        }
+
+        _pnlReloading = true;
+        _ = Task.Run(() =>
+        {
+            PnlSnapshot snapshot;
+            try
+            {
+                snapshot = ReadPnlSnapshot();
+            }
+            catch
+            {
+                _pnlReloading = false;   // store missing or being rewritten — keep the previous snapshot
+                return;
+            }
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                ApplyPnlSnapshot(snapshot);
+                _pnlReloading = false;
+            });
+        });
+    }
+
+    private bool _pnlReloading;
+
+    private readonly record struct PnlSnapshot(
+        IReadOnlyList<TradeRecord> Records,
+        Dictionary<string, SourceRow> ByBotTotal,
+        Dictionary<string, SourceRow> ByBot24);
+
+    private PnlSnapshot ReadPnlSnapshot()
+    {
+        _pnlStore.Load();                      // de-duplicating append, safe to repeat
+        var records = _pnlStore.GetAll();
+        var cutoff = DateTime.UtcNow.AddHours(-24);
+        return new PnlSnapshot(
+            records,
+            _pnlStore.ComputeByBot(records).ToDictionary(r => r.Label, StringComparer.OrdinalIgnoreCase),
+            _pnlStore.ComputeByBot(records.Where(r => r.ClosedAtUtc >= cutoff).ToList())
+                     .ToDictionary(r => r.Label, StringComparer.OrdinalIgnoreCase));
+    }
+
+    private void ApplyPnlSnapshot(PnlSnapshot snapshot)
+    {
+        _records = snapshot.Records;
+        _byBotTotal = snapshot.ByBotTotal;
+        _byBot24 = snapshot.ByBot24;
+        _recordsVersion++;   // invalidates the cached equity series / drawdown
     }
 
     /// <summary>Manual resync (desk REFRESH button) — also nudges the P&amp;L dashboard.</summary>

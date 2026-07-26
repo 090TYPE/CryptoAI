@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Threading.RateLimiting;
@@ -6,6 +7,7 @@ using CryptoAITerminal.Executor;
 using CryptoAITerminal.Server.Api;
 using CryptoAITerminal.Server.Common;
 using CryptoAITerminal.Server.Data;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,22 +48,39 @@ var aiPolicy = AiPolicyOptions.FromConfig(k => builder.Configuration[k]);
 builder.Services.AddSingleton(aiPolicy);
 builder.Services.AddSingleton(new AiBudget(aiPolicy.DailyTokenCapPerLicense));
 
+// Deployment role. "edge" is the internet-facing node behind Caddy; "core" is the isolated node
+// with no public IP. Only core may hold CRYPTOAI_KEK_B64: TradingService decrypts every user's
+// exchange keys in the memory of whatever process registers the cipher, so an edge node that
+// registers it puts the whole custodial key set one RCE away from the internet. On edge the
+// cipher is not registered at all — /api/secrets and /api/2fa answer 503 (they already check),
+// and /api/trade/* is not mapped.
+var isEdgeRole = string.Equals(builder.Configuration["CRYPTOAI_ROLE"], "edge", StringComparison.OrdinalIgnoreCase);
+
 // Custodial envelope encryption. Registered only when a master key is provided
 // (base64 32-byte) — secrets endpoints return 503 otherwise. In production this is a
 // Vault-backed cipher on the isolated executor; here it's the local AES implementation.
 var kekB64 = builder.Configuration["CRYPTOAI_KEK_B64"];
-if (!string.IsNullOrWhiteSpace(kekB64))
+if (!isEdgeRole && !string.IsNullOrWhiteSpace(kekB64))
     builder.Services.AddSingleton<IEnvelopeCipher>(LocalAesEnvelopeCipher.FromBase64(kekB64));
+
+// At-rest protection for the server's OWN operational secrets (Telegram bot tokens, provider API
+// keys). Deliberately a different key from the custodial KEK: the edge node must be able to store
+// and read these, and must never be able to decrypt a customer's exchange key. Unset = today's
+// behaviour, values stored verbatim.
+builder.Services.AddSingleton(ColumnCipher.FromBase64Key(builder.Configuration[ColumnCipher.KeyEnvVar]));
 
 // ── Manual trading (server-side execution) ───────────────────────────────────
 // Collaborators live in the executor project; the API owns only the HTTP surface.
-builder.Services.AddSingleton<IGatewayFactory, GatewayFactory>();
-builder.Services.AddSingleton<ICexKeyProvider, SecretsCexKeyProvider>();
-builder.Services.AddSingleton<IPriceSource>(new HttpPriceSource(new HttpClient { Timeout = TimeSpan.FromSeconds(15) }));
-builder.Services.AddSingleton<IManualRiskGate>(_ => new PerOrderCapManualRiskGate(
-    decimal.TryParse(Environment.GetEnvironmentVariable("MANUAL_MAX_NOTIONAL_USD"), out var cap) ? cap : 5000m));
-builder.Services.AddSingleton<IOrderJournal, OrderJournalRepository>();
-builder.Services.AddSingleton<ITradingService, TradingService>();
+if (!isEdgeRole)
+{
+    builder.Services.AddSingleton<IGatewayFactory, GatewayFactory>();
+    builder.Services.AddSingleton<ICexKeyProvider, SecretsCexKeyProvider>();
+    builder.Services.AddSingleton<IPriceSource>(new HttpPriceSource(new HttpClient { Timeout = TimeSpan.FromSeconds(15) }));
+    builder.Services.AddSingleton<IManualRiskGate>(_ => new PerOrderCapManualRiskGate(
+        decimal.TryParse(Environment.GetEnvironmentVariable("MANUAL_MAX_NOTIONAL_USD"), out var cap) ? cap : 5000m));
+    builder.Services.AddSingleton<IOrderJournal, OrderJournalRepository>();
+    builder.Services.AddSingleton<ITradingService, TradingService>();
+}
 
 // Live order-status / notification stream to the desktop terminal.
 builder.Services.AddSignalR();
@@ -74,7 +93,29 @@ builder.Services.AddSingleton(new LicenseTokenValidator(licensePubKey));
 
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
-// Rate limiting: a fixed window per license token (or per client IP when unauthenticated),
+// Behind Caddy every request otherwise arrives from the proxy's container address: audit_log.ip
+// recorded that one address for every withdrawal and secret write, and the whole anonymous
+// internet shared a single rate-limit partition. Forwarded headers are honoured ONLY from the
+// proxies listed here — trusting them from anywhere lets a caller pick its own IP.
+// TRUSTED_PROXY_CIDRS overrides; the default is loopback plus the Docker bridge range.
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    o.ForwardLimit = 1;
+    o.KnownProxies.Clear();
+    o.KnownNetworks.Clear();
+    var cidrs = builder.Configuration["TRUSTED_PROXY_CIDRS"] ?? "127.0.0.1/32,::1/128,172.16.0.0/12";
+    foreach (var entry in cidrs.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+    {
+        // Fully qualified: System.Net also has an IPNetwork, and KnownNetworks wants this one.
+        if (Microsoft.AspNetCore.HttpOverrides.IPNetwork.TryParse(entry, out var network))
+            o.KnownNetworks.Add(network);
+        else if (IPAddress.TryParse(entry, out var single))
+            o.KnownProxies.Add(single);
+    }
+});
+
+// Rate limiting: a fixed window per licence SUBJECT (or per client IP when unauthenticated),
 // so a leaked token or a brute-force sweep against the public domain can't hammer the API.
 var ratePerMin = int.TryParse(builder.Configuration["RATE_LIMIT_PER_MIN"], out var rpm) ? rpm : 120;
 builder.Services.AddRateLimiter(options =>
@@ -82,10 +123,13 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =>
     {
-        var license = ctx.Request.Headers["X-License"].ToString();
-        var key = string.IsNullOrEmpty(license)
-            ? (ctx.Connection.RemoteIpAddress?.ToString() ?? "anon")
-            : license;
+        // The subject comes from the VERIFIED payload, put in Items by the licence middleware that
+        // deliberately runs before this limiter. Partitioning on the raw header instead meant one
+        // valid token had unlimited spellings — padding, base64url vs base64, leading whitespace —
+        // and therefore an unlimited supply of fresh windows.
+        var key = ctx.Items.TryGetValue(LicenseCtx.Subject, out var subject) && subject is string s && s.Length > 0
+            ? s
+            : (ctx.Connection.RemoteIpAddress?.ToString() ?? "anon");
         return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = ratePerMin,
@@ -96,14 +140,50 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+// Minimal-API handlers throw; without this a handler fault answered an empty 500 with nothing the
+// client could act on and nothing but a stack trace in the container log.
+app.UseExceptionHandler(errApp => errApp.Run(async ctx =>
+{
+    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
+    await ctx.Response.WriteAsJsonAsync(new { error = "internal_error" });
+}));
+
+app.UseForwardedHeaders();
 app.UseCors();
+
+// ── Auth, part 1: licence verification ───────────────────────────────────────
+// Runs BEFORE the limiter so the limiter can partition on a canonical subject instead of on the
+// raw header. It only records the verdict and never answers: a rejected request must still pass
+// through the limiter, or an invalid token would be an unlimited supply of free 401s.
+// /health, /api/keys and /api/admin carry no licence — they are gated in part 2.
+app.Use(async (ctx, next) =>
+{
+    var path = ctx.Request.Path.Value ?? string.Empty;
+    var licensed =
+        !path.StartsWith("/health", StringComparison.OrdinalIgnoreCase) &&
+        !path.StartsWith("/api/keys", StringComparison.OrdinalIgnoreCase) &&
+        !path.StartsWith("/api/admin", StringComparison.OrdinalIgnoreCase);
+
+    if (licensed)
+    {
+        var validator = ctx.RequestServices.GetRequiredService<LicenseTokenValidator>();
+        var check = validator.Validate(ctx.Request.Headers["X-License"].ToString());
+        ctx.Items[LicenseCtx.Check] = check;
+        if (check.IsValid && check.Payload is not null)
+            ctx.Items[LicenseCtx.Subject] = LicenseIdentity.Subject(check.Payload);
+    }
+
+    await next();
+});
+
 app.UseRateLimiter();
 
-// ── Auth ─────────────────────────────────────────────────────────────────────
-// /health is open. /api/keys is admin-gated: requires X-Admin == ADMIN_TOKEN, and is
-// denied outright when ADMIN_TOKEN is unset (fail closed).
-// Everything else needs a valid X-License: the token's RSA signature is verified (shared
-// LicenseTokenValidator), then the license Name resolves to a user id in ctx.Items["uid"].
+// ── Auth, part 2: enforcement ────────────────────────────────────────────────
+// /api/keys is admin-gated: requires X-Admin == ADMIN_TOKEN, and is denied outright when
+// ADMIN_TOKEN is unset (fail closed). Everything else turns the verdict from part 1 into a
+// response, and resolves the licence to a user id in ctx.Items["uid"]. That database round trip
+// sits after the limiter on purpose.
 app.Use(async (ctx, next) =>
 {
     var path = ctx.Request.Path.Value ?? string.Empty;
@@ -130,22 +210,25 @@ app.Use(async (ctx, next) =>
         return;
     }
 
-    var token = ctx.Request.Headers["X-License"].ToString();
-    var validator = ctx.RequestServices.GetRequiredService<LicenseTokenValidator>();
-    var check = validator.Validate(token);
-    if (!check.IsValid)
+    var check = ctx.Items[LicenseCtx.Check] as LicenseCheckResult;
+    if (check is null || !check.IsValid || check.Payload is null)
     {
         // 402 tells the app "renew"; 401 is a bad/forged/missing token.
-        ctx.Response.StatusCode = check.Result == LicenseCheck.Expired
+        var expired = check?.Result == LicenseCheck.Expired;
+        ctx.Response.StatusCode = expired
             ? StatusCodes.Status402PaymentRequired
             : StatusCodes.Status401Unauthorized;
-        await ctx.Response.WriteAsJsonAsync(new { error = check.Result == LicenseCheck.Expired ? "license_expired" : "license_invalid" });
+        await ctx.Response.WriteAsJsonAsync(new { error = expired ? "license_expired" : "license_invalid" });
         return;
     }
 
-    // Identity is the verified license Name (stable across token renewals).
+    // Identity is the licence SUBJECT, not the display Name: Name comes from the buyer's Telegram
+    // profile, is not unique and is editable in seconds, so two customers could land on one user
+    // row and a rename could take over another customer's secrets, withdrawals and bots.
+    var payload = check.Payload;
     var users = ctx.RequestServices.GetRequiredService<UsersRepository>();
-    ctx.Items["uid"] = await users.GetOrCreateByLicenseAsync(check.Payload!.Name, ctx.RequestAborted);
+    ctx.Items["uid"] = await users.GetOrCreateByLicenseAsync(
+        LicenseIdentity.Subject(payload), payload.Name, ctx.RequestAborted);
     await next();
 });
 
@@ -157,6 +240,11 @@ static async Task Deny(HttpContext ctx, string msg)
 
 static Guid Uid(HttpContext ctx) => (Guid)ctx.Items["uid"]!;
 static string? ClientIp(HttpContext ctx) => ctx.Connection.RemoteIpAddress?.ToString();
+
+// Canonical per-customer key for everything metered: the rate-limit partition and the AI budget.
+// Derived from the verified payload, so re-encoding the header mints no new bucket.
+static string LicenseKey(HttpContext ctx) =>
+    ctx.Items.TryGetValue(LicenseCtx.Subject, out var v) && v is string s ? s : string.Empty;
 
 // Always checks the code against the stored secret (used for enable + verify).
 static async Task<bool> VerifyCodeAsync(HttpContext ctx, string? code)
@@ -262,7 +350,7 @@ static async Task<string?> ReadBoundedBodyAsync(HttpContext ctx, int maxChars)
 static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiProxy ai,
     AiPolicyOptions policy, AiBudget budget)
 {
-    var license = ctx.Request.Headers["X-License"].ToString();
+    var license = LicenseKey(ctx);
     if (!budget.HasHeadroom(license))
         return Results.Json(new { error = "ai_daily_budget_exhausted", cap = budget.DailyCap }, statusCode: 429);
 
@@ -293,7 +381,7 @@ app.MapPost("/api/ai/openai", (HttpContext ctx, AiProxy ai, AiPolicyOptions poli
 // So the terminal can show remaining allowance instead of discovering the cap via a 429.
 app.MapGet("/api/ai/budget", (HttpContext ctx, AiBudget budget) =>
 {
-    var license = ctx.Request.Headers["X-License"].ToString();
+    var license = LicenseKey(ctx);
     return Results.Ok(new
     {
         used = budget.Used(license),
@@ -311,7 +399,7 @@ app.MapPost("/api/ai/ask", async (HttpContext ctx, AskInput body, AiProxy ai,
 
     // The server composes this request itself, so the model and length are already ours — but it
     // still spends the server key, so it draws on the same per-licence daily budget.
-    var askLicense = ctx.Request.Headers["X-License"].ToString();
+    var askLicense = LicenseKey(ctx);
     if (!budget.HasHeadroom(askLicense))
         return Results.Json(new { error = "ai_daily_budget_exhausted", cap = budget.DailyCap }, statusCode: 429);
 
@@ -583,10 +671,19 @@ app.MapPut("/api/keys/{provider}", async (string provider, KeyUpdate body, Provi
 });
 
 // ── Manual trading (place / cancel / positions) ───────────────────────────────
-app.MapTradeEndpoints();
+// Not mapped on an edge node: server-side execution needs the custodial master key, which an
+// internet-facing process must not hold. See CRYPTOAI_ROLE above.
+if (!isEdgeRole) app.MapTradeEndpoints();
 app.MapHub<TradeHub>("/hubs/trade");
 
 app.Run();
+
+/// <summary>ctx.Items keys for the licence verdict, written once by the licence middleware.</summary>
+static class LicenseCtx
+{
+    public const string Check = "license.check";
+    public const string Subject = "license.subject";
+}
 
 record KeyUpdate(string ApiKey, bool Enabled, string? Note);
 record SecretInput(string? Kind, string? Label, string ExchangeOrChain, string Secret, string? Permissions);

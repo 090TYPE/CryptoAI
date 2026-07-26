@@ -28,7 +28,9 @@
     <Style Selector="ComboBox"><Setter Property="MinHeight" Value="0" /><Setter Property="Foreground" Value="#8fa3b8" /><Setter Property="FontSize" Value="10" /></Style>
   </UserControl.Styles>
 
-  <Border IsVisible="{Binding IsAnalyticsSectionVisible}" MinHeight="760" Height="{Binding $parent[ScrollViewer].Bounds.Height}">
+  <!-- No fixed 760px floor: on a 1280x720 screen it forced an outer scroll over the desk's own
+       scrollers and pushed the bottom of the page past the edge. -->
+  <Border IsVisible="{Binding IsAnalyticsSectionVisible}" MinHeight="460">
     <Grid DataContext="{Binding AnalyticsDesk}" Background="{StaticResource DeskBg}" ClipToBounds="True">
       <DockPanel LastChildFill="True">
 

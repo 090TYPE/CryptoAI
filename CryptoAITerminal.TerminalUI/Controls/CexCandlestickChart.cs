@@ -66,9 +66,67 @@ public class CexCandlestickChart : Control
     private const int DefaultRecentVisibleCandles = 180;
     private static readonly Dictionary<string, List<ChartDrawing>> PersistedDrawings = new(StringComparer.OrdinalIgnoreCase);
 
+    // Every colour on this chart is a compile-time constant, so the brushes and pens are built
+    // once here instead of inside the render loop — the candle loop alone ran a Color.Parse and
+    // two allocations per candle, on every repaint.
+    private static readonly SolidColorBrush BackdropBrush = new(Color.Parse("#091018"));
+    private static readonly SolidColorBrush ChartFillBrush = new(Color.Parse("#0B131C"));
+    private static readonly SolidColorBrush PriceFillBrush = new(Color.Parse("#0E1721"));
+    private static readonly SolidColorBrush TimeFillBrush = new(Color.Parse("#0C141D"));
+    private static readonly SolidColorBrush BullBrush = new(Color.Parse("#21E6C1"));
+    private static readonly SolidColorBrush BearBrush = new(Color.Parse("#FF6B6B"));
+    private static readonly SolidColorBrush AreaFillBrush = new(Color.FromArgb(60, 0x21, 0xE6, 0xC1));
+    private static readonly SolidColorBrush AxisTextBrush = new(Color.Parse("#DCE8F5"));
+    private static readonly SolidColorBrush LastPriceLabelBrush = new(Color.Parse("#19C9AF"));
+    private static readonly SolidColorBrush MarkerBackgroundBrush = new(Color.Parse("#16212C"));
+    private static readonly SolidColorBrush HoverBoxBrush = new(Color.Parse("#121B25"));
+    private static readonly SolidColorBrush RsiPanelBrush = new(Color.Parse("#0A121B"));
+    private static readonly SolidColorBrush RsiLabelBrush = new(Color.Parse("#6E8196"));
+    private static readonly SolidColorBrush RsiLowBrush = new(Color.Parse("#3DDC84"));
+    private static readonly SolidColorBrush RsiMidBrush = new(Color.Parse("#F4B860"));
+    private static readonly SolidColorBrush VwapLabelBrush = new(Color.Parse("#FBBF24"));
+    private static readonly SolidColorBrush VpNormalBrush = new(Color.Parse("#1A3A5C"));
+    private static readonly SolidColorBrush VpPocBrush = new(Color.Parse("#7C3AED"));
+    private static readonly SolidColorBrush VpValueBrush = new(Color.Parse("#1A4A6C"));
+    private static readonly SolidColorBrush PocLabelBrush = new(Color.Parse("#A855F7"));
+    private static readonly SolidColorBrush VpAxisLabelBrush = new(Color.Parse("#60A5FA"));
+    private static readonly Color WallBidColor = Color.Parse("#42F5B1");
+    private static readonly Color WallAskColor = Color.Parse("#FF6B6B");
+    private static readonly SolidColorBrush WallBidLabelBrush = new(WallBidColor);
+    private static readonly SolidColorBrush WallAskLabelBrush = new(WallAskColor);
+
+    private static readonly Pen ChartBorderPen = new(new SolidColorBrush(Color.Parse("#223243")), 1);
+    private static readonly Pen PriceBorderPen = new(new SolidColorBrush(Color.Parse("#2A4053")), 1);
+    private static readonly Pen GridPen = new(new SolidColorBrush(Color.Parse("#182533")), 1);
+    private static readonly Pen BullPen = new(BullBrush, 1);
+    private static readonly Pen BearPen = new(BearBrush, 1);
+    private static readonly Pen LinePen = new(BullBrush, 1.6);
+    private static readonly Pen Ma20Pen = new(new SolidColorBrush(Color.Parse("#F4B860")), 1.4);
+    private static readonly Pen Ma50Pen = new(new SolidColorBrush(Color.Parse("#8FB9DE")), 1.4);
+    private static readonly Pen BollingerBandPen = new(new SolidColorBrush(Color.Parse("#7C5CFF")), 1.0) { DashStyle = new DashStyle([4, 3], 0) };
+    private static readonly Pen BollingerMidPen = new(new SolidColorBrush(Color.FromArgb(140, 124, 92, 255)), 0.9);
+    private static readonly Pen RsiPanelPen = new(new SolidColorBrush(Color.Parse("#1A2B39")), 1);
+    private static readonly Pen RsiGuide70Pen = new(new SolidColorBrush(Color.FromArgb(80, 255, 107, 107)), 0.8) { DashStyle = new DashStyle([3, 3], 0) };
+    private static readonly Pen RsiGuide30Pen = new(new SolidColorBrush(Color.FromArgb(80, 61, 220, 132)), 0.8) { DashStyle = new DashStyle([3, 3], 0) };
+    private static readonly Pen RsiHighPen = new(BearBrush, 1.3);
+    private static readonly Pen RsiLowPen = new(RsiLowBrush, 1.3);
+    private static readonly Pen RsiMidPen = new(RsiMidBrush, 1.3);
+    private static readonly Pen LastPriceLinePen = new(new SolidColorBrush(Color.Parse("#365A66")), 1);
+    private static readonly Pen CrosshairPen = new(new SolidColorBrush(Color.Parse("#4E677E")), 1);
+    private static readonly Pen HoverBoxPen = new(new SolidColorBrush(Color.Parse("#274055")), 1);
+    private static readonly Pen TrendPreviewPen = new(new SolidColorBrush(Color.Parse("#E7C65C")), 2);
+    private static readonly Pen RectanglePreviewPen = new(new SolidColorBrush(Color.Parse("#3DDC84")), 2);
+    private static readonly Pen ChannelPreviewPen = new(new SolidColorBrush(Color.Parse("#F59E0B")), 2);
+    private static readonly Pen VwapPen = new(VwapLabelBrush, 1.6);
+    private static readonly Pen VwapSigma1Pen = new(new SolidColorBrush(Color.Parse("#60A5FA")), 1.0) { DashStyle = new DashStyle([5, 3], 0) };
+    private static readonly Pen VwapSigma2Pen = new(new SolidColorBrush(Color.Parse("#3B82F6")), 0.8) { DashStyle = new DashStyle([3, 4], 0) };
+    private static readonly Pen PocPen = new(PocLabelBrush, 1.0) { DashStyle = new DashStyle([6, 3], 0) };
+    private static readonly Pen VahLinePen = new(new SolidColorBrush(Color.Parse("#3060A0")), 0.7) { DashStyle = new DashStyle([4, 4], 0) };
+
     private readonly List<ChartDrawing> _drawings = [];
     private INotifyCollectionChanged? _subscribedCollection;
     private INotifyCollectionChanged? _subscribedWalls;
+    private bool _attached;
     private IReadOnlyList<DexOhlcvPoint> _allCandles = Array.Empty<DexOhlcvPoint>();
     private IReadOnlyList<DexOhlcvPoint> _visibleCandles = Array.Empty<DexOhlcvPoint>();
     // Cache keys so Render can skip the per-frame filter+sort+copy of the full candle
@@ -77,6 +135,12 @@ public class CexCandlestickChart : Control
     // only a collection swap or a Count change needs a rebuild.
     private object? _lastCandlesRef;
     private int _lastCandlesCount = -1;
+    // Full-history MA / Bollinger / RSI / Heikin-Ashi arrays, kept across frames (see EnsureFullSeries).
+    private FullSeries? _fullSeries;
+    private SeriesKey _fullSeriesKey;
+    // Pointer position the last repaint was issued for — a move that changes nothing on screen
+    // must not schedule another full chart render.
+    private Point _lastRenderedPointer;
     private Rect _chartBounds;
     private Rect _priceBounds;
     private Rect _timeBounds;
@@ -430,6 +494,7 @@ public class CexCandlestickChart : Control
         }
 
         var position = e.GetPosition(this);
+        var wasInsideChart = _pointerInsideChart;
         _pointerPosition = position;
         // Show the crosshair whenever the pointer is anywhere over the drawn chart
         // (plot + price/time axes), not just the narrow plot rectangle. DrawCrosshair
@@ -439,6 +504,7 @@ public class CexCandlestickChart : Control
             && position.Y >= _chartBounds.Top
             && position.Y <= _timeBounds.Bottom;
 
+        var panned = false;
         if (_isPanning && _allCandles.Count > _visibleCount)
         {
             var slotWidth = _chartBounds.Width / Math.Max(1, _visibleCount);
@@ -450,10 +516,22 @@ public class CexCandlestickChart : Control
                 {
                     _visibleStartIndex = ClampVisibleStart(_visibleStartIndex - deltaCandles, _visibleCount);
                     _lastPanPoint = position;
+                    panned = true;
                 }
             }
         }
 
+        // Outside the chart nothing follows the pointer, and a sub-pixel move redraws the
+        // crosshair in the same place — either way a full repaint would be wasted.
+        var crosshairMoved = _pointerInsideChart
+            && (Math.Abs(position.X - _lastRenderedPointer.X) >= 0.5d
+                || Math.Abs(position.Y - _lastRenderedPointer.Y) >= 0.5d);
+        if (!panned && !crosshairMoved && wasInsideChart == _pointerInsideChart)
+        {
+            return;
+        }
+
+        _lastRenderedPointer = position;
         InvalidateVisual();
     }
 
@@ -551,6 +629,27 @@ public class CexCandlestickChart : Control
         return false;
     }
 
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _attached = true;
+        SubscribeToCandles();
+        SubscribeToWalls();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        _attached = false;
+        SubscribeToCandles();
+        SubscribeToWalls();
+    }
+
+    /// <summary>
+    /// Subscribes only while the control is in the tree: the candle and wall collections belong
+    /// to a long-lived view model, so a handler left behind by a removed chart keeps the control
+    /// alive and burns a repaint on every tick.
+    /// </summary>
     private void SubscribeToCandles()
     {
         if (_subscribedCollection is not null)
@@ -559,7 +658,7 @@ public class CexCandlestickChart : Control
             _subscribedCollection = null;
         }
 
-        if (Candles is INotifyCollectionChanged notifyCollectionChanged)
+        if (_attached && Candles is INotifyCollectionChanged notifyCollectionChanged)
         {
             _subscribedCollection = notifyCollectionChanged;
             _subscribedCollection.CollectionChanged += OnCandlesCollectionChanged;
@@ -574,7 +673,7 @@ public class CexCandlestickChart : Control
             _subscribedWalls = null;
         }
 
-        if (Walls is INotifyCollectionChanged notify)
+        if (_attached && Walls is INotifyCollectionChanged notify)
         {
             _subscribedWalls = notify;
             _subscribedWalls.CollectionChanged += OnWallsCollectionChanged;
@@ -685,25 +784,24 @@ public class CexCandlestickChart : Control
 
     private void DrawBackdrop(DrawingContext context, Rect bounds, Rect chartBounds, Rect priceBounds, Rect timeBounds)
     {
-        context.DrawRectangle(new SolidColorBrush(Color.Parse("#091018")), null, bounds);
-        context.DrawRectangle(new SolidColorBrush(Color.Parse("#0B131C")), new Pen(new SolidColorBrush(Color.Parse("#223243")), 1), chartBounds);
-        context.DrawRectangle(new SolidColorBrush(Color.Parse("#0E1721")), new Pen(new SolidColorBrush(Color.Parse("#2A4053")), 1), priceBounds);
-        context.DrawRectangle(new SolidColorBrush(Color.Parse("#0C141D")), new Pen(new SolidColorBrush(Color.Parse("#223243")), 1), timeBounds);
+        context.DrawRectangle(BackdropBrush, null, bounds);
+        context.DrawRectangle(ChartFillBrush, ChartBorderPen, chartBounds);
+        context.DrawRectangle(PriceFillBrush, PriceBorderPen, priceBounds);
+        context.DrawRectangle(TimeFillBrush, ChartBorderPen, timeBounds);
     }
 
     private void DrawGrid(DrawingContext context, Rect chartBounds)
     {
-        var gridPen = new Pen(new SolidColorBrush(Color.Parse("#182533")), 1);
         for (var row = 1; row < 10; row++)
         {
             var y = chartBounds.Top + (chartBounds.Height / 10d * row);
-            context.DrawLine(gridPen, new Point(chartBounds.Left, y), new Point(chartBounds.Right, y));
+            context.DrawLine(GridPen, new Point(chartBounds.Left, y), new Point(chartBounds.Right, y));
         }
 
         for (var column = 1; column < 10; column++)
         {
             var x = chartBounds.Left + (chartBounds.Width / 10d * column);
-            context.DrawLine(gridPen, new Point(x, chartBounds.Top), new Point(x, chartBounds.Bottom));
+            context.DrawLine(GridPen, new Point(x, chartBounds.Top), new Point(x, chartBounds.Bottom));
         }
     }
 
@@ -756,9 +854,8 @@ public class CexCandlestickChart : Control
             var highY = MapY(high);
             var lowY = MapY(low);
             var bullish = close >= open;
-            var color = bullish ? Color.Parse("#21E6C1") : Color.Parse("#FF6B6B");
-            var brush = new SolidColorBrush(color);
-            var pen = new Pen(brush, 1);
+            var brush = bullish ? BullBrush : BearBrush;
+            var pen = bullish ? BullPen : BearPen;
 
             context.DrawLine(pen, new Point(centerX, highY), new Point(centerX, lowY));
 
@@ -777,7 +874,6 @@ public class CexCandlestickChart : Control
             return;
         }
 
-        var lineColor = Color.Parse("#21E6C1");
         var geo = new StreamGeometry();
         using (var gc = geo.Open())
         {
@@ -807,31 +903,29 @@ public class CexCandlestickChart : Control
                 gc.EndFigure(true);
             }
 
-            context.DrawGeometry(new SolidColorBrush(Color.FromArgb(60, lineColor.R, lineColor.G, lineColor.B)), null, fillGeo);
+            context.DrawGeometry(AreaFillBrush, null, fillGeo);
         }
 
-        context.DrawGeometry(null, new Pen(new SolidColorBrush(lineColor), 1.6), geo);
+        context.DrawGeometry(null, LinePen, geo);
     }
 
     private void DrawIndicatorOverlays(DrawingContext context, SeriesData series)
     {
         if (ShowMa20 && series.HasMa20)
         {
-            DrawSeriesLine(context, series.Ma20, new Pen(new SolidColorBrush(Color.Parse("#F4B860")), 1.4));
+            DrawSeriesLine(context, series.Ma20, Ma20Pen);
         }
 
         if (ShowMa50 && series.HasMa50)
         {
-            DrawSeriesLine(context, series.Ma50, new Pen(new SolidColorBrush(Color.Parse("#8FB9DE")), 1.4));
+            DrawSeriesLine(context, series.Ma50, Ma50Pen);
         }
 
         if (ShowBollinger && series.HasBb)
         {
-            var bandPen = new Pen(new SolidColorBrush(Color.Parse("#7C5CFF")), 1.0) { DashStyle = new DashStyle([4, 3], 0) };
-            var midPen = new Pen(new SolidColorBrush(Color.FromArgb(140, 124, 92, 255)), 0.9);
-            DrawSeriesLine(context, series.BbUpper, bandPen);
-            DrawSeriesLine(context, series.BbLower, bandPen);
-            DrawSeriesLine(context, series.BbMid, midPen);
+            DrawSeriesLine(context, series.BbUpper, BollingerBandPen);
+            DrawSeriesLine(context, series.BbLower, BollingerBandPen);
+            DrawSeriesLine(context, series.BbMid, BollingerMidPen);
         }
     }
 
@@ -867,17 +961,15 @@ public class CexCandlestickChart : Control
             return;
         }
 
-        context.DrawRectangle(new SolidColorBrush(Color.Parse("#0A121B")), new Pen(new SolidColorBrush(Color.Parse("#1A2B39")), 1), _rsiBounds);
+        context.DrawRectangle(RsiPanelBrush, RsiPanelPen, _rsiBounds);
 
         double RsiY(double value) => _rsiBounds.Bottom - (Math.Clamp(value, 0d, 100d) / 100d * _rsiBounds.Height);
 
-        var guidePen70 = new Pen(new SolidColorBrush(Color.FromArgb(80, 255, 107, 107)), 0.8) { DashStyle = new DashStyle([3, 3], 0) };
-        var guidePen30 = new Pen(new SolidColorBrush(Color.FromArgb(80, 61, 220, 132)), 0.8) { DashStyle = new DashStyle([3, 3], 0) };
-        context.DrawLine(guidePen70, new Point(_rsiBounds.Left, RsiY(70)), new Point(_rsiBounds.Right, RsiY(70)));
-        context.DrawLine(guidePen30, new Point(_rsiBounds.Left, RsiY(30)), new Point(_rsiBounds.Right, RsiY(30)));
+        context.DrawLine(RsiGuide70Pen, new Point(_rsiBounds.Left, RsiY(70)), new Point(_rsiBounds.Right, RsiY(70)));
+        context.DrawLine(RsiGuide30Pen, new Point(_rsiBounds.Left, RsiY(30)), new Point(_rsiBounds.Right, RsiY(30)));
 
         var label = new FormattedText("RSI 14", CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-            new Typeface("Segoe UI"), 10, new SolidColorBrush(Color.Parse("#6E8196")));
+            new Typeface("Segoe UI"), 10, RsiLabelBrush);
         context.DrawText(label, new Point(_rsiBounds.Left + 6, _rsiBounds.Top + 4));
 
         if (!series.HasRsi)
@@ -907,141 +999,283 @@ public class CexCandlestickChart : Control
             gc.EndFigure(false);
         }
 
-        var rsiColor = lastRsi >= 70 ? Color.Parse("#FF6B6B") : lastRsi <= 30 ? Color.Parse("#3DDC84") : Color.Parse("#F4B860");
-        context.DrawGeometry(null, new Pen(new SolidColorBrush(rsiColor), 1.3), geo);
+        var rsiBrush = lastRsi >= 70 ? BearBrush : lastRsi <= 30 ? RsiLowBrush : RsiMidBrush;
+        var rsiPen = lastRsi >= 70 ? RsiHighPen : lastRsi <= 30 ? RsiLowPen : RsiMidPen;
+        context.DrawGeometry(null, rsiPen, geo);
 
         var valueLabel = new FormattedText(lastRsi.ToString("0.0", CultureInfo.InvariantCulture),
             CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-            new Typeface("Segoe UI", FontStyle.Normal, FontWeight.SemiBold), 11, new SolidColorBrush(rsiColor));
+            new Typeface("Segoe UI", FontStyle.Normal, FontWeight.SemiBold), 11, rsiBrush);
         context.DrawText(valueLabel, new Point(_rsiBounds.Right - valueLabel.Width - 6, _rsiBounds.Top + 4));
     }
 
     /// <summary>Compute overlay series over all candles, sliced to the visible window.</summary>
     private SeriesData BuildSeries()
     {
+        var full = EnsureFullSeries();
         var start = _visibleStartIndex;
         var count = _visibleCandles.Count;
-        var allCloses = _allCandles.Select(c => (double)c.Close).ToArray();
-        var total = allCloses.Length;
 
-        double[] Slice(double[] full)
+        // A series that was not computed stays empty; the matching Has* flag is false, so no
+        // draw path ever reads it.
+        double[] Slice(double[] values)
         {
+            if (values.Length == 0)
+            {
+                return Array.Empty<double>();
+            }
+
             var slice = new double[count];
             for (var i = 0; i < count; i++)
             {
                 var gi = start + i;
-                slice[i] = gi >= 0 && gi < full.Length ? full[gi] : double.NaN;
+                slice[i] = gi >= 0 && gi < values.Length ? values[gi] : double.NaN;
             }
 
             return slice;
         }
 
-        double[] Sma(int period)
+        return new SeriesData
         {
-            var result = new double[total];
-            double sum = 0;
-            for (var i = 0; i < total; i++)
-            {
-                sum += allCloses[i];
-                if (i >= period) sum -= allCloses[i - period];
-                result[i] = i >= period - 1 ? sum / period : double.NaN;
-            }
+            Close = Slice(full.Close),
+            Ma20 = Slice(full.Ma20),
+            Ma50 = Slice(full.Ma50),
+            BbUpper = Slice(full.BbUpper),
+            BbLower = Slice(full.BbLower),
+            BbMid = Slice(full.BbMid),
+            HaOpen = Slice(full.HaOpen),
+            HaHigh = Slice(full.HaHigh),
+            HaLow = Slice(full.HaLow),
+            HaClose = Slice(full.HaClose),
+            Rsi = Slice(full.Rsi),
+            HasMa20 = full.HasMa20,
+            HasMa50 = full.HasMa50,
+            HasBb = full.HasBb,
+            HasHa = full.HasHa,
+            HasRsi = full.HasRsi,
+        };
+    }
 
-            return result;
+    /// <summary>
+    /// Full-history indicator arrays, rebuilt only when the candle list, the forming candle's
+    /// close or the set of enabled overlays changed. Panning, zooming and every crosshair move
+    /// reuse the cached arrays and only re-slice the visible window; only the overlays actually
+    /// switched on are computed at all.
+    /// </summary>
+    private FullSeries EnsureFullSeries()
+    {
+        var total = _allCandles.Count;
+        var wantHa = string.Equals((ChartType ?? "Candles").Trim(), "HA", StringComparison.OrdinalIgnoreCase);
+        var key = new SeriesKey(
+            Candles,
+            total,
+            total > 0 ? _allCandles[total - 1].Close : 0m,
+            ShowMa20,
+            ShowMa50,
+            ShowBollinger,
+            ShowRsi,
+            wantHa);
+
+        if (_fullSeries is { } cached && _fullSeriesKey == key)
+        {
+            return cached;
         }
 
-        var ma20Full = Sma(20);
-        var ma50Full = Sma(50);
-
-        // Bollinger(20, 2)
-        var bbUpperFull = new double[total];
-        var bbLowerFull = new double[total];
-        var bbMidFull = new double[total];
+        var closes = new double[total];
         for (var i = 0; i < total; i++)
         {
-            if (i < 19)
+            closes[i] = (double)_allCandles[i].Close;
+        }
+
+        var hasMa20 = ShowMa20 && total >= 20;
+        var hasMa50 = ShowMa50 && total >= 50;
+        var hasBb = ShowBollinger && total >= 20;
+        var hasRsi = ShowRsi && total > 14;
+        var hasHa = wantHa && total >= 1;
+
+        double[] bbUpper, bbLower, bbMid;
+        if (hasBb)
+        {
+            (bbUpper, bbLower, bbMid) = Bollinger(closes);
+        }
+        else
+        {
+            bbUpper = bbLower = bbMid = Array.Empty<double>();
+        }
+
+        double[] haOpen, haHigh, haLow, haClose;
+        if (hasHa)
+        {
+            (haOpen, haHigh, haLow, haClose) = HeikinAshi(_allCandles);
+        }
+        else
+        {
+            haOpen = haHigh = haLow = haClose = Array.Empty<double>();
+        }
+
+        var series = new FullSeries
+        {
+            Close = closes,
+            Ma20 = hasMa20 ? Sma(closes, 20) : Array.Empty<double>(),
+            Ma50 = hasMa50 ? Sma(closes, 50) : Array.Empty<double>(),
+            BbUpper = bbUpper,
+            BbLower = bbLower,
+            BbMid = bbMid,
+            HaOpen = haOpen,
+            HaHigh = haHigh,
+            HaLow = haLow,
+            HaClose = haClose,
+            Rsi = hasRsi ? Rsi14(closes) : Array.Empty<double>(),
+            HasMa20 = hasMa20,
+            HasMa50 = hasMa50,
+            HasBb = hasBb,
+            HasHa = hasHa,
+            HasRsi = hasRsi,
+        };
+
+        _fullSeries = series;
+        _fullSeriesKey = key;
+        return series;
+    }
+
+    private static double[] Sma(double[] closes, int period)
+    {
+        var result = new double[closes.Length];
+        double sum = 0;
+        for (var i = 0; i < closes.Length; i++)
+        {
+            sum += closes[i];
+            if (i >= period) sum -= closes[i - period];
+            result[i] = i >= period - 1 ? sum / period : double.NaN;
+        }
+
+        return result;
+    }
+
+    /// <summary>Bollinger(20, 2). Rolling sum and sum of squares — the previous form re-read
+    /// the whole 20-candle window for every candle.</summary>
+    private static (double[] Upper, double[] Lower, double[] Mid) Bollinger(double[] closes)
+    {
+        const int period = 20;
+        var total = closes.Length;
+        var upper = new double[total];
+        var lower = new double[total];
+        var mid = new double[total];
+        double sum = 0, sumSquares = 0;
+        for (var i = 0; i < total; i++)
+        {
+            sum += closes[i];
+            sumSquares += closes[i] * closes[i];
+            if (i >= period)
             {
-                bbUpperFull[i] = bbLowerFull[i] = bbMidFull[i] = double.NaN;
+                sum -= closes[i - period];
+                sumSquares -= closes[i - period] * closes[i - period];
+            }
+
+            if (i < period - 1)
+            {
+                upper[i] = lower[i] = mid[i] = double.NaN;
                 continue;
             }
 
-            double mean = ma20Full[i];
-            double variance = 0;
-            for (var k = i - 19; k <= i; k++)
-            {
-                var d = allCloses[k] - mean;
-                variance += d * d;
-            }
-
-            var std = Math.Sqrt(variance / 20d);
-            bbMidFull[i] = mean;
-            bbUpperFull[i] = mean + 2d * std;
-            bbLowerFull[i] = mean - 2d * std;
+            var mean = sum / period;
+            // Clamped: rounding on the rolling sums can push a flat window fractionally negative.
+            var std = Math.Sqrt(Math.Max(0d, (sumSquares / period) - (mean * mean)));
+            mid[i] = mean;
+            upper[i] = mean + (2d * std);
+            lower[i] = mean - (2d * std);
         }
 
-        // RSI(14) Wilder
-        var rsiFull = new double[total];
-        for (var i = 0; i < total; i++) rsiFull[i] = double.NaN;
-        if (total > 14)
+        return (upper, lower, mid);
+    }
+
+    /// <summary>RSI(14), Wilder smoothing.</summary>
+    private static double[] Rsi14(double[] closes)
+    {
+        var total = closes.Length;
+        var rsi = new double[total];
+        for (var i = 0; i < total; i++) rsi[i] = double.NaN;
+        if (total <= 14)
         {
-            double avgGain = 0, avgLoss = 0;
-            for (var i = 1; i <= 14; i++)
-            {
-                var change = allCloses[i] - allCloses[i - 1];
-                if (change >= 0) avgGain += change; else avgLoss -= change;
-            }
-
-            avgGain /= 14d;
-            avgLoss /= 14d;
-            rsiFull[14] = avgLoss < 1e-12 ? 100d : 100d - 100d / (1d + avgGain / avgLoss);
-            for (var i = 15; i < total; i++)
-            {
-                var change = allCloses[i] - allCloses[i - 1];
-                var gain = change >= 0 ? change : 0d;
-                var loss = change < 0 ? -change : 0d;
-                avgGain = (avgGain * 13d + gain) / 14d;
-                avgLoss = (avgLoss * 13d + loss) / 14d;
-                rsiFull[i] = avgLoss < 1e-12 ? 100d : 100d - 100d / (1d + avgGain / avgLoss);
-            }
+            return rsi;
         }
 
-        // Heikin-Ashi over all candles
-        var haOpenFull = new double[total];
-        var haHighFull = new double[total];
-        var haLowFull = new double[total];
-        var haCloseFull = new double[total];
+        double avgGain = 0, avgLoss = 0;
+        for (var i = 1; i <= 14; i++)
+        {
+            var change = closes[i] - closes[i - 1];
+            if (change >= 0) avgGain += change; else avgLoss -= change;
+        }
+
+        avgGain /= 14d;
+        avgLoss /= 14d;
+        rsi[14] = avgLoss < 1e-12 ? 100d : 100d - 100d / (1d + avgGain / avgLoss);
+        for (var i = 15; i < total; i++)
+        {
+            var change = closes[i] - closes[i - 1];
+            var gain = change >= 0 ? change : 0d;
+            var loss = change < 0 ? -change : 0d;
+            avgGain = (avgGain * 13d + gain) / 14d;
+            avgLoss = (avgLoss * 13d + loss) / 14d;
+            rsi[i] = avgLoss < 1e-12 ? 100d : 100d - 100d / (1d + avgGain / avgLoss);
+        }
+
+        return rsi;
+    }
+
+    private static (double[] Open, double[] High, double[] Low, double[] Close) HeikinAshi(IReadOnlyList<DexOhlcvPoint> candles)
+    {
+        var total = candles.Count;
+        var haOpen = new double[total];
+        var haHigh = new double[total];
+        var haLow = new double[total];
+        var haClose = new double[total];
         for (var i = 0; i < total; i++)
         {
-            var c = _allCandles[i];
-            var haClose = (double)(c.Open + c.High + c.Low + c.Close) / 4d;
-            var haOpen = i == 0
+            var c = candles[i];
+            var close = (double)(c.Open + c.High + c.Low + c.Close) / 4d;
+            var open = i == 0
                 ? (double)(c.Open + c.Close) / 2d
-                : (haOpenFull[i - 1] + haCloseFull[i - 1]) / 2d;
-            haCloseFull[i] = haClose;
-            haOpenFull[i] = haOpen;
-            haHighFull[i] = Math.Max((double)c.High, Math.Max(haOpen, haClose));
-            haLowFull[i] = Math.Min((double)c.Low, Math.Min(haOpen, haClose));
+                : (haOpen[i - 1] + haClose[i - 1]) / 2d;
+            haClose[i] = close;
+            haOpen[i] = open;
+            haHigh[i] = Math.Max((double)c.High, Math.Max(open, close));
+            haLow[i] = Math.Min((double)c.Low, Math.Min(open, close));
         }
 
-        return new SeriesData
-        {
-            Close = Slice(allCloses),
-            Ma20 = Slice(ma20Full),
-            Ma50 = Slice(ma50Full),
-            BbUpper = Slice(bbUpperFull),
-            BbLower = Slice(bbLowerFull),
-            BbMid = Slice(bbMidFull),
-            HaOpen = Slice(haOpenFull),
-            HaHigh = Slice(haHighFull),
-            HaLow = Slice(haLowFull),
-            HaClose = Slice(haCloseFull),
-            Rsi = Slice(rsiFull),
-            HasMa20 = total >= 20,
-            HasMa50 = total >= 50,
-            HasBb = total >= 20,
-            HasHa = total >= 1,
-            HasRsi = total > 14,
-        };
+        return (haOpen, haHigh, haLow, haClose);
+    }
+
+    /// <summary>Everything that makes the cached full-history series stale. The last close is
+    /// part of it because the newest candle keeps mutating in place while it forms.</summary>
+    private readonly record struct SeriesKey(
+        object? Source,
+        int Count,
+        decimal LastClose,
+        bool Ma20,
+        bool Ma50,
+        bool Bb,
+        bool Rsi,
+        bool Ha);
+
+    private sealed class FullSeries
+    {
+        public required double[] Close { get; init; }
+        public required double[] Ma20 { get; init; }
+        public required double[] Ma50 { get; init; }
+        public required double[] BbUpper { get; init; }
+        public required double[] BbLower { get; init; }
+        public required double[] BbMid { get; init; }
+        public required double[] HaOpen { get; init; }
+        public required double[] HaHigh { get; init; }
+        public required double[] HaLow { get; init; }
+        public required double[] HaClose { get; init; }
+        public required double[] Rsi { get; init; }
+        public required bool HasMa20 { get; init; }
+        public required bool HasMa50 { get; init; }
+        public required bool HasBb { get; init; }
+        public required bool HasHa { get; init; }
+        public required bool HasRsi { get; init; }
     }
 
     private sealed class SeriesData
@@ -1110,7 +1344,7 @@ public class CexCandlestickChart : Control
                 FlowDirection.LeftToRight,
                 new Typeface("Segoe UI"),
                 12,
-                new SolidColorBrush(Color.Parse("#DCE8F5")));
+                AxisTextBrush);
 
             context.DrawText(text, new Point(_priceBounds.Left + 10, y));
         }
@@ -1133,7 +1367,7 @@ public class CexCandlestickChart : Control
                 FlowDirection.LeftToRight,
                 new Typeface("Segoe UI"),
                 11,
-                new SolidColorBrush(Color.Parse("#DCE8F5")));
+                AxisTextBrush);
 
             var drawX = Math.Clamp(x - (text.Width / 2d), _timeBounds.Left + 4, _timeBounds.Right - text.Width - 4);
             context.DrawText(text, new Point(drawX, _timeBounds.Top + 8));
@@ -1142,11 +1376,10 @@ public class CexCandlestickChart : Control
 
     private void DrawLastPriceMarker(DrawingContext context, decimal lastPrice, double lastPriceY)
     {
-        var linePen = new Pen(new SolidColorBrush(Color.Parse("#365A66")), 1);
-        context.DrawLine(linePen, new Point(_chartBounds.Left, lastPriceY), new Point(_chartBounds.Right, lastPriceY));
+        context.DrawLine(LastPriceLinePen, new Point(_chartBounds.Left, lastPriceY), new Point(_chartBounds.Right, lastPriceY));
 
         var labelRect = new Rect(_priceBounds.Left, Math.Clamp(lastPriceY - 10, _priceBounds.Top + 2, _priceBounds.Bottom - 22), _priceBounds.Width, 20);
-        context.DrawRectangle(new SolidColorBrush(Color.Parse("#19C9AF")), null, labelRect);
+        context.DrawRectangle(LastPriceLabelBrush, null, labelRect);
 
         var label = new FormattedText(
             lastPrice.ToString(GetPriceFormat(lastPrice), CultureInfo.GetCultureInfo("ru-RU")),
@@ -1177,11 +1410,10 @@ public class CexCandlestickChart : Control
         var hoveredCandle = _allCandles[hoveredIndex];
         var x = MapX(hoveredIndex);
         var priceAtPointer = MapPrice(clampedY);
-        var crosshairPen = new Pen(new SolidColorBrush(Color.Parse("#4E677E")), 1);
-        context.DrawLine(crosshairPen, new Point(x, _chartBounds.Top), new Point(x, _chartBounds.Bottom));
-        context.DrawLine(crosshairPen, new Point(_chartBounds.Left, clampedY), new Point(_chartBounds.Right, clampedY));
+        context.DrawLine(CrosshairPen, new Point(x, _chartBounds.Top), new Point(x, _chartBounds.Bottom));
+        context.DrawLine(CrosshairPen, new Point(_chartBounds.Left, clampedY), new Point(_chartBounds.Right, clampedY));
 
-        DrawPriceMarker(context, priceAtPointer, clampedY, Color.Parse("#16212C"), Brushes.White);
+        DrawPriceMarker(context, priceAtPointer, clampedY, MarkerBackgroundBrush, Brushes.White);
         DrawTimeMarker(context, hoveredCandle.Timestamp.ToLocalTime(), x);
         DrawHoveredCandleBox(context, hoveredCandle);
         DrawPendingPreview(context, clampedX, clampedY);
@@ -1191,33 +1423,31 @@ public class CexCandlestickChart : Control
     {
         if (_pendingTrendAnchor is not null && string.Equals(ToolMode, "Trend", StringComparison.OrdinalIgnoreCase))
         {
-            var previewPen = new Pen(new SolidColorBrush(Color.Parse("#E7C65C")), 2);
-            context.DrawLine(previewPen, new Point(MapX(_pendingTrendAnchor.Value.Index), MapY(_pendingTrendAnchor.Value.Price)), new Point(clampedX, clampedY));
+            context.DrawLine(TrendPreviewPen, new Point(MapX(_pendingTrendAnchor.Value.Index), MapY(_pendingTrendAnchor.Value.Price)), new Point(clampedX, clampedY));
         }
 
         if (_pendingRectangle is not null && string.Equals(ToolMode, "Rectangle", StringComparison.OrdinalIgnoreCase))
         {
-            DrawRectangleShape(context, _pendingRectangle.Value.Start, new ChartAnchor(GetNearestGlobalIndex(clampedX), MapPrice(clampedY)), new Pen(new SolidColorBrush(Color.Parse("#3DDC84")), 2));
+            DrawRectangleShape(context, _pendingRectangle.Value.Start, new ChartAnchor(GetNearestGlobalIndex(clampedX), MapPrice(clampedY)), RectanglePreviewPen);
         }
 
         if (_pendingChannel is not null && string.Equals(ToolMode, "Channel", StringComparison.OrdinalIgnoreCase))
         {
             if (_pendingChannel.Value.SecondAnchor is null)
             {
-                var previewPen = new Pen(new SolidColorBrush(Color.Parse("#F59E0B")), 2);
-                context.DrawLine(previewPen, new Point(MapX(_pendingChannel.Value.Start.Index), MapY(_pendingChannel.Value.Start.Price)), new Point(clampedX, clampedY));
+                context.DrawLine(ChannelPreviewPen, new Point(MapX(_pendingChannel.Value.Start.Index), MapY(_pendingChannel.Value.Start.Price)), new Point(clampedX, clampedY));
             }
             else
             {
-                DrawChannelShape(context, _pendingChannel.Value.Start, _pendingChannel.Value.SecondAnchor.Value, new ChartAnchor(GetNearestGlobalIndex(clampedX), MapPrice(clampedY)), new Pen(new SolidColorBrush(Color.Parse("#F59E0B")), 2));
+                DrawChannelShape(context, _pendingChannel.Value.Start, _pendingChannel.Value.SecondAnchor.Value, new ChartAnchor(GetNearestGlobalIndex(clampedX), MapPrice(clampedY)), ChannelPreviewPen);
             }
         }
     }
 
-    private void DrawPriceMarker(DrawingContext context, decimal price, double y, Color backgroundColor, IBrush foreground)
+    private void DrawPriceMarker(DrawingContext context, decimal price, double y, IBrush background, IBrush foreground)
     {
         var labelRect = new Rect(_priceBounds.Left, Math.Clamp(y - 10, _priceBounds.Top + 2, _priceBounds.Bottom - 22), _priceBounds.Width, 20);
-        context.DrawRectangle(new SolidColorBrush(backgroundColor), null, labelRect);
+        context.DrawRectangle(background, null, labelRect);
 
         var label = new FormattedText(
             price.ToString(GetPriceFormat(price), CultureInfo.GetCultureInfo("ru-RU")),
@@ -1244,7 +1474,7 @@ public class CexCandlestickChart : Control
         var width = formatted.Width + 12;
         var drawX = Math.Clamp(x - (width / 2d), _timeBounds.Left + 2, _timeBounds.Right - width - 2);
         var rect = new Rect(drawX, _timeBounds.Top + 5, width, 20);
-        context.DrawRectangle(new SolidColorBrush(Color.Parse("#16212C")), null, rect);
+        context.DrawRectangle(MarkerBackgroundBrush, null, rect);
         context.DrawText(formatted, new Point(rect.Left + 6, rect.Top + 2));
     }
 
@@ -1260,7 +1490,7 @@ public class CexCandlestickChart : Control
             Brushes.White);
 
         var rect = new Rect(_chartBounds.Left + 10, _chartBounds.Top + 10, text.Width + 16, 22);
-        context.DrawRectangle(new SolidColorBrush(Color.Parse("#121B25")), new Pen(new SolidColorBrush(Color.Parse("#274055")), 1), rect);
+        context.DrawRectangle(HoverBoxBrush, HoverBoxPen, rect);
         context.DrawText(text, new Point(rect.Left + 8, rect.Top + 3));
     }
 
@@ -1314,7 +1544,7 @@ public class CexCandlestickChart : Control
             }
 
             var y = MapY(wall.Price);
-            var rgb = wall.IsBid ? Color.Parse("#42F5B1") : Color.Parse("#FF6B6B");
+            var rgb = wall.IsBid ? WallBidColor : WallAskColor;
             var alpha = (byte)Math.Clamp(90d + (wall.Intensity * 130d), 0d, 255d);
             var lineColor = new Color(alpha, rgb.R, rgb.G, rgb.B);
             var pen = new Pen(new SolidColorBrush(lineColor), 1.5d + (wall.Intensity * 2.5d));
@@ -1326,7 +1556,7 @@ public class CexCandlestickChart : Control
                 FlowDirection.LeftToRight,
                 new Typeface("Segoe UI", FontStyle.Normal, FontWeight.SemiBold),
                 10,
-                new SolidColorBrush(rgb));
+                wall.IsBid ? WallBidLabelBrush : WallAskLabelBrush);
             context.DrawText(label, new Point(_chartBounds.Left + 6, y - 12));
         }
     }
@@ -1419,9 +1649,6 @@ public class CexCandlestickChart : Control
             sigma2[i] = s * 2d;
         }
 
-        var vwapPen   = new Pen(new SolidColorBrush(Color.Parse("#FBBF24")), 1.6);
-        var s1Pen     = new Pen(new SolidColorBrush(Color.Parse("#60A5FA")), 1.0) { DashStyle = new DashStyle([5, 3], 0) };
-        var s2Pen     = new Pen(new SolidColorBrush(Color.Parse("#3B82F6")), 0.8) { DashStyle = new DashStyle([3, 4], 0) };
 
         // Build StreamGeometries for each series
         void DrawSeries(double[] values, Pen pen)
@@ -1451,11 +1678,11 @@ public class CexCandlestickChart : Control
             Lower2[i] = vwaps[i] - sigma2[i];
         }
 
-        DrawSeries(Upper2, s2Pen);
-        DrawSeries(Lower2, s2Pen);
-        DrawSeries(Upper1, s1Pen);
-        DrawSeries(Lower1, s1Pen);
-        DrawSeries(vwaps,  vwapPen);
+        DrawSeries(Upper2, VwapSigma2Pen);
+        DrawSeries(Lower2, VwapSigma2Pen);
+        DrawSeries(Upper1, VwapSigma1Pen);
+        DrawSeries(Lower1, VwapSigma1Pen);
+        DrawSeries(vwaps,  VwapPen);
 
         // Label on right edge
         var lastVwap = (decimal)vwaps[n - 1];
@@ -1466,7 +1693,7 @@ public class CexCandlestickChart : Control
             FlowDirection.LeftToRight,
             new Typeface("Segoe UI", FontStyle.Normal, FontWeight.SemiBold),
             11,
-            new SolidColorBrush(Color.Parse("#FBBF24")));
+            VwapLabelBrush);
         context.DrawText(vwapLabel, new Point(_priceBounds.Left + 4, labelY));
     }
 
@@ -1513,10 +1740,6 @@ public class CexCandlestickChart : Control
         // Find POC bucket
         int pocIdx = Array.IndexOf(volumes, maxVol);
 
-        var normalBrush = new SolidColorBrush(Color.Parse("#1A3A5C"));
-        var pocBrush    = new SolidColorBrush(Color.Parse("#7C3AED"));
-        var valueBrush  = new SolidColorBrush(Color.Parse("#1A4A6C"));
-
         // Value area (68% of total volume around POC)
         var totalVol   = volumes.Sum();
         var valueVol   = totalVol * 0.68d;
@@ -1542,9 +1765,9 @@ public class CexCandlestickChart : Control
             var yBottom  = MapY(_minVisiblePrice + bucketSize * b);
             var barH     = Math.Max(1d, yBottom - yTop);
 
-            IBrush brush = b == pocIdx       ? pocBrush
-                         : b >= vaLow && b <= vaHigh ? valueBrush
-                         : normalBrush;
+            IBrush brush = b == pocIdx       ? VpPocBrush
+                         : b >= vaLow && b <= vaHigh ? VpValueBrush
+                         : VpNormalBrush;
 
             context.DrawRectangle(brush, null, new Rect(barX + profileWidth - barWidth, yTop, barWidth, barH));
         }
@@ -1552,8 +1775,7 @@ public class CexCandlestickChart : Control
         // POC horizontal line (full width)
         var pocPrice    = _minVisiblePrice + bucketSize * pocIdx + bucketSize / 2m;
         var pocY        = MapY(pocPrice);
-        var pocPen      = new Pen(new SolidColorBrush(Color.Parse("#A855F7")), 1.0) { DashStyle = new DashStyle([6, 3], 0) };
-        context.DrawLine(pocPen, new Point(_chartBounds.Left, pocY), new Point(_chartBounds.Right, pocY));
+        context.DrawLine(PocPen, new Point(_chartBounds.Left, pocY), new Point(_chartBounds.Right, pocY));
 
         // POC label on price axis
         var pocLabel = new FormattedText(
@@ -1562,7 +1784,7 @@ public class CexCandlestickChart : Control
             FlowDirection.LeftToRight,
             new Typeface("Segoe UI"),
             10,
-            new SolidColorBrush(Color.Parse("#A855F7")));
+            PocLabelBrush);
         var pocLabelY = Math.Clamp(pocY - 9, _priceBounds.Top + 2, _priceBounds.Bottom - 18);
         context.DrawText(pocLabel, new Point(_priceBounds.Left + 4, pocLabelY));
 
@@ -1571,16 +1793,13 @@ public class CexCandlestickChart : Control
         var valPrice = _minVisiblePrice + bucketSize * vaLow;
         var vahY     = Math.Clamp(MapY(vahPrice) - 9, _priceBounds.Top + 2, _priceBounds.Bottom - 18);
         var valY     = Math.Clamp(MapY(valPrice)  - 9, _priceBounds.Top + 2, _priceBounds.Bottom - 18);
-        var vpLabelBrush = new SolidColorBrush(Color.Parse("#60A5FA"));
-
         var vahText = new FormattedText($"VAH", CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-            new Typeface("Segoe UI"), 10, vpLabelBrush);
+            new Typeface("Segoe UI"), 10, VpAxisLabelBrush);
         var valText = new FormattedText($"VAL", CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-            new Typeface("Segoe UI"), 10, vpLabelBrush);
+            new Typeface("Segoe UI"), 10, VpAxisLabelBrush);
 
-        var vahLinePen = new Pen(new SolidColorBrush(Color.Parse("#3060A0")), 0.7) { DashStyle = new DashStyle([4, 4], 0) };
-        context.DrawLine(vahLinePen, new Point(_chartBounds.Left, MapY(vahPrice)), new Point(_chartBounds.Right, MapY(vahPrice)));
-        context.DrawLine(vahLinePen, new Point(_chartBounds.Left, MapY(valPrice)), new Point(_chartBounds.Right, MapY(valPrice)));
+        context.DrawLine(VahLinePen, new Point(_chartBounds.Left, MapY(vahPrice)), new Point(_chartBounds.Right, MapY(vahPrice)));
+        context.DrawLine(VahLinePen, new Point(_chartBounds.Left, MapY(valPrice)), new Point(_chartBounds.Right, MapY(valPrice)));
         context.DrawText(vahText, new Point(_priceBounds.Left + 4, vahY));
         context.DrawText(valText, new Point(_priceBounds.Left + 4, valY));
     }
@@ -1593,7 +1812,7 @@ public class CexCandlestickChart : Control
             FlowDirection.LeftToRight,
             new Typeface("Segoe UI"),
             16,
-            new SolidColorBrush(Color.Parse("#21E6C1")));
+            BullBrush);
 
         context.DrawText(title, new Point(chartBounds.Left + 20, chartBounds.Top + 20));
     }

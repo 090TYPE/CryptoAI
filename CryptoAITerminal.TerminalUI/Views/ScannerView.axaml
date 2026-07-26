@@ -641,7 +641,7 @@
                                    IsVisible="{Binding HasSelectedToken}" />
                         <Button Grid.Column="2" Content="↻" Classes="GhostButton" Width="34"
                                 Command="{Binding RefreshTokenBalanceCommand}"
-                                ToolTip.Tip="Refresh token balance" />
+                                ToolTip.Tip="Refresh token balance" AutomationProperties.Name="Refresh token balance" />
                         <NumericUpDown Grid.Column="3"
                                        Value="{Binding SellAmountTokens}"
                                        Increment="1" FormatString="0.########" Minimum="0" Width="130"

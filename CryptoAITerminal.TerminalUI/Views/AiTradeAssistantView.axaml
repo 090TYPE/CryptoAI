@@ -23,7 +23,7 @@
       <!-- Intent -->
       <StackPanel Spacing="4">
         <TextBlock Classes="TdLabel" Text="WHAT DO YOU WANT?" />
-        <TextBox Text="{Binding Intent}" PlaceholderText="e.g. safe swing long / быстрый скальп / шорт по тренду" FontSize="11" />
+        <TextBox Text="{Binding Intent}" PlaceholderText="e.g. safe swing long / quick scalp / short the trend" FontSize="11" />
       </StackPanel>
 
       <!-- Risk -->
@@ -136,6 +136,7 @@
           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
             <Button Grid.Column="0" Content="APPLY TO TICKET" Classes="TdPrimary dex" Height="34" Command="{Binding ApplyCommand}" />
             <Button Grid.Column="1" Content="⚑" Classes="TdSeg dex" Width="42" Height="34" Command="{Binding ArmAlertsCommand}"
+                    AutomationProperties.Name="Arm price alerts"
                     IsVisible="{Binding CanArmAlerts}" ToolTip.Tip="Arm price alerts at entry / target / stop" />
           </Grid>
         </StackPanel>

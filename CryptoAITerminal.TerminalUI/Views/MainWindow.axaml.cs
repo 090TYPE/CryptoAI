@@ -97,11 +97,13 @@ public partial class MainWindow : Window
                     subscription.Dispose();
             _localizationSubscriptions.Clear();
 
-            if (ViewModel?.AIBotVM is { } botVm)
-            {
-                try { botVm.StopBotAsync().Wait(TimeSpan.FromSeconds(5)); }
-                catch { /* swallow during shutdown */ }
-            }
+            // Every bot that can have live orders resting on an exchange, not just the Rule bot.
+            // A running grid leaves a full ladder of limit orders behind; closing the terminal used
+            // to walk away from them, and they stayed live with nothing watching them.
+            StopBotOnShutdown("Rule bot", () => ViewModel?.AIBotVM?.StopBotAsync());
+            StopBotOnShutdown("Grid bot", () => ViewModel?.GridBotVM?.StopAsync());
+            StopBotOnShutdown("DCA bot", () => ViewModel?.DcaBotVM?.StopAsync());
+
             ViewModel?.Dispose();
         };
     }
@@ -329,6 +331,24 @@ public partial class MainWindow : Window
         }
 
         BeginMoveDrag(e);
+    }
+
+    /// <summary>
+    /// Waits a bounded time for one bot to wind down while the window is closing. Bounded because
+    /// a hung exchange call must not stop the app from exiting; anything that fails is written to
+    /// the crash log, which is the only durable record at this point.
+    /// </summary>
+    private static void StopBotOnShutdown(string label, Func<Task?> stop)
+    {
+        try
+        {
+            if (stop() is { } task && !task.Wait(TimeSpan.FromSeconds(5)))
+                Services.CrashLog.Write("WARN", $"{label} did not stop within 5s on shutdown — orders may still be resting.");
+        }
+        catch (Exception ex)
+        {
+            Services.CrashLog.Write("WARN", $"{label} failed to stop on shutdown: {ex.Message}");
+        }
     }
 
     private void OnMinimizeClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e) =>

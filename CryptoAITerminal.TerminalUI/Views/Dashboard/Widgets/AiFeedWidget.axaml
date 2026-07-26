@@ -16,6 +16,7 @@
                    Foreground="White" FontSize="9" FontWeight="Bold" />
       </Border>
       <Button Grid.Column="2" Content="↻" FontSize="10" Padding="6,1"
+              ToolTip.Tip="Refresh feed" AutomationProperties.Name="Refresh AI feed"
               Command="{Binding AiFeedVM.RefreshCommand}" />
     </Grid>
 

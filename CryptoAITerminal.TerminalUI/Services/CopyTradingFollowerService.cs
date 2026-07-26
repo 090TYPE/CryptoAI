@@ -2,6 +2,7 @@ using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
@@ -22,8 +23,23 @@ public sealed class CopyTradingFollowerService : IDisposable
         PooledConnectionLifetime = TimeSpan.FromMinutes(5)
     }) { Timeout = TimeSpan.FromSeconds(10) };
 
-    private readonly HashSet<string> _executedIds = [];
+    // Contains+Add из обычного HashSet неатомарны, а опрос идёт из фонового цикла:
+    // TryAdd даёт «первый выигравший исполняет» одной операцией.
+    private readonly ConcurrentDictionary<string, byte> _executedIds = new();
+
+    private readonly object _lifecycleLock = new();
     private CancellationTokenSource? _cts;
+    private Task? _loopTask;
+    // Водяной знак старта: всё, что лидер исполнил раньше, зеркалить нельзя.
+    private DateTime _startedUtc = DateTime.UtcNow;
+
+    /// <summary>Сделка старше этого возраста уже не отражает цену входа лидера — пропускаем.</summary>
+    private static readonly TimeSpan MaxTradeAge = TimeSpan.FromSeconds(60);
+
+    // Шага лота биржа через IExchangeGateway пока не отдаёт: отсекаем хвост количества вниз
+    // (округление вверх дало бы объём больше, чем у лидера) и не шлём заведомо мелкие ордера.
+    private const decimal QuantityStep   = 0.000001m;
+    private const decimal MinNotionalUsd = 5m;
 
     // ── Configuration ─────────────────────────────────────────────────────────
 
@@ -36,6 +52,20 @@ public sealed class CopyTradingFollowerService : IDisposable
 
     /// <summary>Gateway used to execute copied orders.</summary>
     public IExchangeGateway? Gateway { get; set; }
+
+    /// <summary>
+    /// Риск-гейт для каждой зеркалируемой сделки: размер выбирает лидер, а платит follower,
+    /// поэтому лимиты по номиналу и дневному убытку считаются здесь, а не на стороне лидера.
+    /// </summary>
+    public RiskManager.RiskManager Risk { get; } = new();
+
+    /// <summary>
+    /// Спрашивает у воркспейса разрешение на живое исполнение; возвращает причину отказа
+    /// или null, если можно. По умолчанию блокирует: сервис шлёт настоящие рыночные ордера
+    /// и не имеет бумажного режима, поэтому непривязанный экземпляр торговать не должен.
+    /// </summary>
+    public Func<string, string?> LiveExecutionGuard { get; set; } =
+        _ => "Live execution guard is not wired up — refusing to mirror real orders.";
 
     // ── Events ────────────────────────────────────────────────────────────────
 
@@ -51,15 +81,56 @@ public sealed class CopyTradingFollowerService : IDisposable
 
     public void Start()
     {
-        if (_cts is not null) return;
-        _cts = new CancellationTokenSource();
-        _ = PollLoopAsync(_cts.Token);
+        lock (_lifecycleLock)
+        {
+            if (_cts is not null) return;
+            var cts = new CancellationTokenSource();
+            _cts = cts;
+            _startedUtc = DateTime.UtcNow;
+            _executedIds.Clear();
+            // Новый цикл стартует только после выхода предыдущего: Stop() возвращается,
+            // не дожидаясь PollLoopAsync, и пара Stop→Start (смена режима в UI)
+            // поднимала второй поллер поверх ещё живого первого.
+            _loopTask = RunLoopAsync(_loopTask, cts);
+        }
+    }
+
+    private async Task RunLoopAsync(Task? previous, CancellationTokenSource cts)
+    {
+        if (previous is not null)
+        {
+            try { await previous.ConfigureAwait(false); } catch { /* предыдущий цикл уже отлогировал */ }
+        }
+
+        try { await PollLoopAsync(cts.Token).ConfigureAwait(false); }
+        finally { cts.Dispose(); }
     }
 
     public void Stop()
     {
-        _cts?.Cancel();
-        _cts = null;
+        lock (_lifecycleLock)
+        {
+            // Cancel может прийти после того, как цикл уже освободил свой CTS.
+            try { _cts?.Cancel(); } catch (ObjectDisposedException) { }
+            _cts = null;
+        }
+    }
+
+    /// <summary>Останавливает опрос и дожидается фактического выхода из цикла.</summary>
+    public async Task StopAsync()
+    {
+        Task? loop;
+        lock (_lifecycleLock)
+        {
+            try { _cts?.Cancel(); } catch (ObjectDisposedException) { }
+            _cts = null;
+            loop = _loopTask;
+        }
+
+        if (loop is not null)
+        {
+            try { await loop.ConfigureAwait(false); } catch { /* цикл уже отлогировал */ }
+        }
     }
 
     private async Task PollLoopAsync(CancellationToken ct)
@@ -94,8 +165,16 @@ public sealed class CopyTradingFollowerService : IDisposable
         foreach (var trade in trades)
         {
             if (ct.IsCancellationRequested) break;
-            if (_executedIds.Contains(trade.Id)) continue;
-            _executedIds.Add(trade.Id);
+
+            // Лидер отдаёт всю свою историю (до 100 сделок), поэтому первый опрос без
+            // отсечки уходил в биржу сотней рыночных ордеров по текущей цене.
+            if (trade.ExecutedUtc < _startedUtc || DateTime.UtcNow - trade.ExecutedUtc > MaxTradeAge)
+            {
+                _executedIds.TryAdd(trade.Id, 0);
+                continue;
+            }
+
+            if (!_executedIds.TryAdd(trade.Id, 0)) continue;
 
             await MirrorTradeAsync(trade, ct);
         }
@@ -109,10 +188,47 @@ public sealed class CopyTradingFollowerService : IDisposable
             return;
         }
 
-        var scaledQty = Math.Round(trade.Quantity * ScaleRatio, 6);
+        if (LiveExecutionGuard($"Copy trading · {trade.Symbol}") is { } blocked)
+        {
+            Log($"Skip {trade.Symbol} {trade.Side} — {blocked}");
+            return;
+        }
+
+        var scaledQty = FloorToStep(trade.Quantity * ScaleRatio, QuantityStep);
         if (scaledQty <= 0)
         {
             Log($"Skip {trade.Symbol} — scaled qty too small");
+            return;
+        }
+
+        var notionalUsd = scaledQty * trade.Price;
+        if (trade.Price > 0m && IsUsdQuoted(trade.Symbol) && notionalUsd < MinNotionalUsd)
+        {
+            Log($"Skip {trade.Symbol} — {notionalUsd:N2} USDT is below the {MinNotionalUsd:N0} USDT exchange minimum");
+            return;
+        }
+
+        var side = trade.Side.Equals("BUY", StringComparison.OrdinalIgnoreCase)
+            ? OrderSide.Buy : OrderSide.Sell;
+
+        var order = new Order
+        {
+            Symbol   = trade.Symbol,
+            Side     = side,
+            Type     = OrderType.Market,
+            Quantity = scaledQty,
+        };
+
+        // Риск-гейт: без него follower повторял любой размер лидера, включая тот,
+        // на который у него нет баланса.
+        decimal balanceUsd = 0m;
+        try { balanceUsd = await Gateway.GetBalanceAsync("USDT"); }
+        catch (Exception ex) { Log($"Balance check failed: {ex.Message}"); }
+
+        var risk = Risk.Evaluate(order, trade.Price, balanceUsd);
+        if (!risk.Allowed)
+        {
+            Log($"Skip {trade.Symbol} — risk gate: {risk.Reason}");
             return;
         }
 
@@ -121,16 +237,7 @@ public sealed class CopyTradingFollowerService : IDisposable
 
         try
         {
-            var side = trade.Side.Equals("BUY", StringComparison.OrdinalIgnoreCase)
-                ? OrderSide.Buy : OrderSide.Sell;
-
-            await Gateway.PlaceOrderAsync(new Order
-            {
-                Symbol   = trade.Symbol,
-                Side     = side,
-                Type     = OrderType.Market,
-                Quantity = scaledQty,
-            });
+            await Gateway.PlaceOrderAsync(order);
 
             success = true;
             TotalCopied++;
@@ -157,6 +264,16 @@ public sealed class CopyTradingFollowerService : IDisposable
             Error         = error,
         });
     }
+
+    private static decimal FloorToStep(decimal value, decimal step)
+        => step <= 0m ? value : Math.Floor(value / step) * step;
+
+    /// <summary>Порог minNotional в долларах применим только к парам с долларовым котируемым активом.</summary>
+    private static bool IsUsdQuoted(string symbol) =>
+        symbol.EndsWith("USDT", StringComparison.OrdinalIgnoreCase)
+        || symbol.EndsWith("USDC", StringComparison.OrdinalIgnoreCase)
+        || symbol.EndsWith("BUSD", StringComparison.OrdinalIgnoreCase)
+        || symbol.EndsWith("FDUSD", StringComparison.OrdinalIgnoreCase);
 
     private void Log(string msg) => LogMessage?.Invoke($"[{DateTime.Now:HH:mm:ss}] {msg}");
 

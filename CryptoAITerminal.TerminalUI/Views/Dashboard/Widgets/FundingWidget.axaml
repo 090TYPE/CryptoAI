@@ -34,8 +34,16 @@
       </StackPanel>
     </Grid>
 
-    <!-- Table header -->
-    <Grid ColumnDefinitions="*,80,80,70,80" ColumnSpacing="6" Margin="0,2,0,0">
+    <!-- Table header. Proportional, not fixed: 310px of fixed columns plus spacing did not fit
+         the widget's own width at 1366 and collapsed SYMBOL to nothing. -->
+    <Grid ColumnSpacing="6" Margin="0,2,0,0">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="1.4*" MinWidth="70" />
+        <ColumnDefinition Width="0.9*" MinWidth="52" />
+        <ColumnDefinition Width="0.9*" MinWidth="52" />
+        <ColumnDefinition Width="0.8*" MinWidth="48" />
+        <ColumnDefinition Width="0.9*" MinWidth="52" />
+      </Grid.ColumnDefinitions>
       <TextBlock Grid.Column="0" Text="SYMBOL"  Foreground="#5A7A90" FontSize="9" FontWeight="Bold" />
       <TextBlock Grid.Column="1" Text="RATE"    Foreground="#5A7A90" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
       <TextBlock Grid.Column="2" Text="ANNL."   Foreground="#5A7A90" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
@@ -51,20 +59,27 @@
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:FundingRateRowViewModel">
             <Border Padding="0,4" BorderBrush="#12283A" BorderThickness="0,0,0,1">
-              <Grid ColumnDefinitions="*,80,80,70,80" ColumnSpacing="6">
-                <TextBlock Grid.Column="0" Text="{Binding Symbol}"
+              <Grid ColumnSpacing="6">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="1.4*" MinWidth="70" />
+                  <ColumnDefinition Width="0.9*" MinWidth="52" />
+                  <ColumnDefinition Width="0.9*" MinWidth="52" />
+                  <ColumnDefinition Width="0.8*" MinWidth="48" />
+                  <ColumnDefinition Width="0.9*" MinWidth="52" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding Symbol}" TextTrimming="CharacterEllipsis"
                            Foreground="#C8D8E8" FontWeight="SemiBold" FontSize="11"
                            VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1" Text="{Binding FundingRatePct}"
+                <TextBlock Grid.Column="1" Text="{Binding FundingRatePct}" TextTrimming="CharacterEllipsis"
                            Foreground="{Binding RateColor}" FontWeight="Bold"
                            HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="11" />
-                <TextBlock Grid.Column="2" Text="{Binding AnnualizedLabel}"
+                <TextBlock Grid.Column="2" Text="{Binding AnnualizedLabel}" TextTrimming="CharacterEllipsis"
                            Foreground="{Binding RateColor}"
                            HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="10" />
-                <TextBlock Grid.Column="3" Text="{Binding MarkPriceLabel}"
+                <TextBlock Grid.Column="3" Text="{Binding MarkPriceLabel}" TextTrimming="CharacterEllipsis"
                            Foreground="#8B949E"
                            HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="10" />
-                <TextBlock Grid.Column="4" Text="{Binding NextFundingLabel}"
+                <TextBlock Grid.Column="4" Text="{Binding NextFundingLabel}" TextTrimming="CharacterEllipsis"
                            Foreground="#5A7080"
                            HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="10" />
               </Grid>
@@ -73,6 +88,10 @@
         </ItemsControl.ItemTemplate>
       </ItemsControl>
     </ScrollViewer>
+
+    <TextBlock Grid.Row="1" Classes="WidgetEmpty"
+               IsVisible="{Binding !FundingRateVM.DisplayRates.Count}"
+               Text="No funding rates loaded yet. Refresh the Funding desk to pull perpetual rates." />
 
   </Grid>
 </UserControl>

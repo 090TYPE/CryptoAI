@@ -34,7 +34,9 @@
     <Style Selector="ComboBox"><Setter Property="MinHeight" Value="0" /><Setter Property="Foreground" Value="#d0e4f4" /><Setter Property="FontSize" Value="11" /></Style>
   </UserControl.Styles>
 
-  <Border IsVisible="{Binding IsRulesSectionVisible}" MinHeight="760" Height="{Binding $parent[ScrollViewer].Bounds.Height}">
+  <!-- No fixed 760px floor: on a 1280x720 screen it forced an outer scroll over the desk's own
+       scrollers and pushed the bottom of the page past the edge. -->
+  <Border IsVisible="{Binding IsRulesSectionVisible}" MinHeight="460">
     <Grid DataContext="{Binding RulesDesk}" Background="{StaticResource DeskBg}" ClipToBounds="True">
       <DockPanel LastChildFill="True">
 
@@ -301,7 +303,7 @@
                       <TextBlock Text="{Binding EdMode}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#26405a" VerticalAlignment="Center" />
                       <Border Width="1" />
                       <Button Command="{Binding TestDraftCommand}" Height="22" Padding="9,0" CornerRadius="5" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="▷ DRY-RUN" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
-                      <Button Command="{Binding CancelCommand}" Background="Transparent" BorderThickness="0" Content="✕" Foreground="{DynamicResource TextDim}" FontSize="14" />
+                      <Button Command="{Binding CancelCommand}" ToolTip.Tip="Cancel" AutomationProperties.Name="Cancel rule editing" Background="Transparent" BorderThickness="0" Content="✕" Foreground="{DynamicResource TextDim}" FontSize="14" />
                     </StackPanel>
                   </Border>
                   <Border DockPanel.Dock="Bottom" Background="#07101a" BorderBrush="#0a1520" BorderThickness="0,1,0,0" Padding="12,11">
@@ -346,7 +348,7 @@
                                 <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
                                   <TextBlock Text="{Binding Tag}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#21e6c1" Width="26" VerticalAlignment="Center" />
                                   <ComboBox ItemsSource="{Binding Types}" SelectedItem="{Binding Type, Mode=TwoWay}" Height="27" Padding="7,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontSize="11" HorizontalAlignment="Stretch" Width="300" />
-                                  <Button Command="{Binding RemoveCommand}" Width="24" Height="24" Padding="0" CornerRadius="5" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="✕" Foreground="#4a6a82" FontSize="10" HorizontalAlignment="Right" />
+                                  <Button Command="{Binding RemoveCommand}" ToolTip.Tip="Remove" AutomationProperties.Name="Remove condition" Width="24" Height="24" Padding="0" CornerRadius="5" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="✕" Foreground="#4a6a82" FontSize="10" HorizontalAlignment="Right" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="7">
                                   <StackPanel Width="108" Spacing="3">
@@ -392,7 +394,7 @@
                                 <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
                                   <TextBlock Text="{Binding Tag}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#f4b860" Width="26" VerticalAlignment="Center" />
                                   <ComboBox ItemsSource="{Binding Types}" SelectedItem="{Binding Type, Mode=TwoWay}" Height="27" Padding="7,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontSize="11" HorizontalAlignment="Stretch" Width="300" />
-                                  <Button Command="{Binding RemoveCommand}" Width="24" Height="24" Padding="0" CornerRadius="5" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="✕" Foreground="#4a6a82" FontSize="10" HorizontalAlignment="Right" />
+                                  <Button Command="{Binding RemoveCommand}" ToolTip.Tip="Remove" AutomationProperties.Name="Remove action" Width="24" Height="24" Padding="0" CornerRadius="5" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="✕" Foreground="#4a6a82" FontSize="10" HorizontalAlignment="Right" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="7">
                                   <StackPanel Width="108" Spacing="3" IsVisible="{Binding HasSymbol}">

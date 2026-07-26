@@ -701,7 +701,14 @@ public sealed class AiTraderAgentService
             };
             await _gateway.PlaceOrderAsync(closeOrder).ConfigureAwait(false);
             OnFill?.Invoke(symbol, "close", Math.Abs(pos.Quantity), mid, Math.Abs(pos.Quantity) * mid, "live");
-            return Json(new { ok = true, mode = "live", market = IsFutures ? "futures" : "spot", symbol });
+
+            // Реализованный PnL считаем и в живой ветке: без RecordLoss здесь _dailyLoss
+            // остаётся нулём навсегда, и дневной лимит потерь не срабатывает ни разу.
+            // Знак Quantity уже несёт направление: у шорта он отрицательный.
+            decimal realized = mid > 0m ? (mid - pos.EntryPrice) * pos.Quantity : pos.UnrealizedPnl;
+            if (realized < 0m) _risk.RecordLoss(Math.Abs(realized));
+            OnEvent?.Invoke(new AgentEvent(AgentEventKind.ToolResult, "CLOSE (live)", $"{symbol} pnl {realized:+0.00;-0.00} USD"));
+            return Json(new { ok = true, mode = "live", market = IsFutures ? "futures" : "spot", symbol, realized_pnl = Round(realized) });
         }
         catch (Exception ex) { return Err(ex.Message); }
     }

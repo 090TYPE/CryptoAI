@@ -129,6 +129,9 @@
   </Style>
   <Style Selector="Button.TdPrimary.dex:disabled /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="#2a1540" />
+    <!-- inherited down to the label TextBlocks: without it the near-black enabled
+         foreground stays on the dark disabled fill and the caption disappears -->
+    <Setter Property="Foreground" Value="#B79AD8" />
   </Style>
   <!-- compact toolbar variant -->
   <Style Selector="Button.TdSeg.mini">
@@ -218,8 +221,10 @@
   <Style Selector="Button.TdPrimary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="#2ff2cd" />
   </Style>
-  <Style Selector="Button.TdPrimary:disabled /template/ ContentPresenter#PART_ContentPresenter">
+  <!-- :not(.dex) so the purple disabled pair above is not overridden by declaration order -->
+  <Style Selector="Button.TdPrimary:not(.dex):disabled /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="#123a33" />
+    <Setter Property="Foreground" Value="#6FBFAE" />
   </Style>
 
   <Style Selector="Button.TdDanger">

@@ -688,6 +688,11 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         // Copy Trading (Leader + Follower)
         var copyLeaderSvc   = new Services.CopyTradingLeaderService();
         var copyFollowerSvc = new Services.CopyTradingFollowerService();
+        // The follower mirrors a leader's trades with real orders, so it goes through the same
+        // guard as everything else. Its default is to block, so this line is what makes copy
+        // trading work at all — without it every mirrored trade is refused.
+        copyFollowerSvc.LiveExecutionGuard =
+            route => WalletVM.TryApproveLiveExecution(route, out var reason) ? null : reason;
         CopyTradingVM = new CopyTradingViewModel(copyLeaderSvc, copyFollowerSvc);
         CopyTradingVM.SetFollowerGateway(_gateway);
         CopyTradingVM.ToastRequested += ShowToast;
@@ -6410,9 +6415,10 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        WorkingOrders.Remove(order);
-        this.RaisePropertyChanged(nameof(WorkingOrdersCountLabel));
-        PersistSoftwareWorkingOrders();
+        // The order is removed by the outcome, not up front. It used to be pulled from the list
+        // before anything was sent, so a guard rejection or a failed market order silently threw
+        // away the user's software stop-loss — at the moment its trigger had just fired.
+        var consumed = false;
 
         // Only the active spot symbol drives the single-symbol desk position/PnL state.
         var isActiveSpot = string.Equals(order.Symbol, SelectedTradingSymbol, StringComparison.OrdinalIgnoreCase) && !IsManualFuturesMode;
@@ -6423,7 +6429,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             {
                 if (!WalletVM.TryApproveLiveExecution("CEX working buy order", out var buyReason))
                 {
-                    AddLog(buyReason);
+                    AddLog($"{buyReason} Order stays armed.");
                     return;
                 }
 
@@ -6433,6 +6439,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                     await SyncManualExecutionStateAsync(CryptoAITerminal.Core.Enums.OrderSide.Buy, order.TriggerPrice > 0 ? order.TriggerPrice : CurrentTradePrice, result.Quantity);
                 InvalidateSoftwarePositionCache(order);
                 AddLog($"BUY LIMIT filled at {order.TriggerPrice:N2} for {order.Symbol} on {order.ExecutionExchange}.");
+                consumed = true;
                 return;
             }
 
@@ -6445,7 +6452,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             };
             if (!WalletVM.TryApproveLiveExecution(approvalLabel, out var sellReason))
             {
-                AddLog(sellReason);
+                AddLog($"{sellReason} Order stays armed.");
                 return;
             }
 
@@ -6455,6 +6462,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             if (available <= 0)
             {
                 AddLog($"{order.KindLabel} removed for {order.Symbol}: no {BaseAssetOf(order.Symbol)} balance to sell.");
+                consumed = true;
                 return;
             }
 
@@ -6462,6 +6470,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             if (quantity <= 0)
             {
                 AddLog($"{order.KindLabel} removed for {order.Symbol}: resolved quantity is zero.");
+                consumed = true;
                 return;
             }
 
@@ -6471,10 +6480,21 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                 await SyncManualExecutionStateAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, order.TriggerPrice > 0 ? order.TriggerPrice : CurrentTradePrice, sellResult.Quantity);
             InvalidateSoftwarePositionCache(order);
             AddLog($"{order.KindLabel} triggered at {order.TriggerPrice:N2} for {order.Symbol} on {order.ExecutionExchange}.");
+            consumed = true;
         }
         catch (Exception ex)
         {
-            AddLog($"{order.KindLabel} execution failed for {order.Symbol}: {ex.Message}");
+            // Stays armed: the trigger condition is still true, so the next evaluation pass
+            // retries rather than leaving the position unprotected.
+            AddLog($"{order.KindLabel} execution failed for {order.Symbol}: {ex.Message} — order stays armed.");
+        }
+        finally
+        {
+            if (consumed && WorkingOrders.Remove(order))
+            {
+                this.RaisePropertyChanged(nameof(WorkingOrdersCountLabel));
+                PersistSoftwareWorkingOrders();
+            }
         }
     }
 
@@ -7406,6 +7426,14 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     private void ApplyRiskLimits()
     {
         _riskManager.UpdateLimits(_riskLimitPositionInput, _riskLimitDailyLossInput);
+        // The copy-trading follower owns a RiskManager of its own; without this it kept the
+        // constructor defaults (1000 / 500 USD) no matter what the Risk desk was set to.
+        CopyTradingVM?.FollowerRisk?.UpdateLimits(_riskLimitPositionInput, _riskLimitDailyLossInput);
+        if (AIBotVM is { } ruleBot)
+        {
+            ruleBot.RiskLimitPositionUsd = _riskLimitPositionInput;
+            ruleBot.RiskLimitDailyLossUsd = _riskLimitDailyLossInput;
+        }
         // UpdateLimits ignores non-positive values; mirror the effective limits back so
         // the inputs never show a value that wasn't actually applied.
         RiskLimitPositionInput = _riskManager.MaxPositionSizeUsd;

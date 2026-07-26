@@ -71,5 +71,9 @@
 
       </StackPanel>
     </ScrollViewer>
+
+    <TextBlock Grid.Row="1" Classes="WidgetEmpty"
+               IsVisible="{Binding !SelectedMarket.TopBids.Count}"
+               Text="No depth for this market yet. Pick a pair on the Markets desk and wait for the book to stream in." />
   </Grid>
 </UserControl>

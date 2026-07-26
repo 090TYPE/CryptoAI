@@ -113,23 +113,21 @@ public sealed class DashboardViewModel : ReactiveObject, IDisposable
 
     private void RefreshBotCards()
     {
-        BotCards.Clear();
-
-        BotCards.Add(new BotStatusCard(
+        SetCard(0, new BotStatusCard(
             "AI Bot",
             _aiBot.IsRunning ? "RUNNING" : "IDLE",
             _aiBot.IsRunning ? "#21E6C1" : "#8FA3B8",
             _aiBot.IsRunning ? $"{_aiBot.Symbol} · {_aiBot.SelectedStrategy}" : "Not started",
             "🤖"));
 
-        BotCards.Add(new BotStatusCard(
+        SetCard(1, new BotStatusCard(
             "Grid Bot",
             _gridBot.IsRunning ? "RUNNING" : "IDLE",
             _gridBot.IsRunning ? "#21E6C1" : "#8FA3B8",
             _gridBot.IsRunning ? _gridBot.GridSummary : "Not started",
             "⚡"));
 
-        BotCards.Add(new BotStatusCard(
+        SetCard(2, new BotStatusCard(
             "DCA Bot",
             _dcaBot.IsRunning ? "RUNNING" : "IDLE",
             _dcaBot.IsRunning ? "#21E6C1" : "#8FA3B8",
@@ -140,6 +138,22 @@ public sealed class DashboardViewModel : ReactiveObject, IDisposable
         ActiveBotsSummary = runningCount == 0
             ? "No bots running"
             : $"{runningCount} bot{(runningCount > 1 ? "s" : "")} running";
+    }
+
+    /// <summary>
+    /// Writes a card only when its content actually changed. The 5-second timer used to
+    /// Clear() the collection and re-Add all three, which reset the list and rebuilt every
+    /// row container even on a tick where nothing moved (records are compared by value).
+    /// </summary>
+    private void SetCard(int index, BotStatusCard card)
+    {
+        if (index >= BotCards.Count)
+        {
+            BotCards.Add(card);
+            return;
+        }
+
+        if (BotCards[index] != card) BotCards[index] = card;
     }
 
     private void RefreshPnlSummary()
@@ -153,17 +167,12 @@ public sealed class DashboardViewModel : ReactiveObject, IDisposable
         var posCount = _positions?.Rows.Count ?? 0;
         OpenPositionsLabel = posCount.ToString();
 
-        // P&L equity (last value)
-        var equityPoints = _pnl.ComputeEquityCurve(records);
-        if (equityPoints.Count >= 2)
-        {
-            var latest = equityPoints[^1].Equity;
-            TotalEquityLabel = $"$ {latest:N2}";
-        }
-        else
-        {
-            TotalEquityLabel = "$ 0.00";
-        }
+        // P&L equity (last value). The last point of the equity curve is the cumulative
+        // realized P&L, which ComputeMetrics already summed — building (and sorting) the
+        // whole N+1 point curve every 5 seconds for that single number was wasted work.
+        TotalEquityLabel = records.Count > 0
+            ? $"$ {metrics.TotalPnlUsd:N2}"
+            : "$ 0.00";
     }
 
     public void AddActivity(string icon, string message)

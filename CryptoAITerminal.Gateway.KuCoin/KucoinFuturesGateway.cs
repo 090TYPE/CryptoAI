@@ -22,6 +22,7 @@ public class KucoinFuturesGateway : IExchangeGateway, IDisposable
     private readonly ConcurrentDictionary<string, string> _orderSymbols = new();
     private readonly ConcurrentDictionary<string, decimal> _contractMultipliers = new();
     private Timer? _tickerTimer;
+    private int _polling;
     private int _defaultLeverage = 1;
 
     /// <summary>
@@ -90,26 +91,49 @@ public class KucoinFuturesGateway : IExchangeGateway, IDisposable
 
     private async Task PollTickersAsync()
     {
-        foreach (var sym in _symbols)
-        {
-            try
-            {
-                var kucoinSymbol = KucoinSymbolHelper.ToFuturesSymbol(sym);
-                var result = await _restClient.FuturesApi.ExchangeData.GetTickerAsync(kucoinSymbol);
-                if (!result.Success || result.Data is null) continue;
+        // Период таймера 3 с, а последовательный обход символов при 150-400 мс на round-trip
+        // занимает больше: без гарда тики накладываются и копятся — 429 и устаревшие котировки.
+        if (Interlocked.Exchange(ref _polling, 1) == 1) return;
 
-                _marketDataSubject.OnNext(new MarketData
-                {
-                    Symbol    = sym,
-                    BestBid   = result.Data.BestBidPrice,
-                    BestAsk   = result.Data.BestAskPrice,
-                    LastPrice = result.Data.Price,
-                    Timestamp = DateTime.UtcNow,
-                });
-            }
-            catch
+        try
+        {
+            var ticks = await Task.WhenAll(_symbols.Select(FetchTickerAsync));
+
+            // Публикуем последовательно: подписчики MarketDataStream не рассчитаны
+            // на параллельные OnNext.
+            foreach (var tick in ticks)
             {
+                if (tick is null) continue;
+                try { _marketDataSubject.OnNext(tick); }
+                catch { /* исключение подписчика не должно ронять опрос */ }
             }
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _polling, 0);
+        }
+    }
+
+    private async Task<MarketData?> FetchTickerAsync(string sym)
+    {
+        try
+        {
+            var kucoinSymbol = KucoinSymbolHelper.ToFuturesSymbol(sym);
+            var result = await _restClient.FuturesApi.ExchangeData.GetTickerAsync(kucoinSymbol);
+            if (!result.Success || result.Data is null) return null;
+
+            return new MarketData
+            {
+                Symbol    = sym,
+                BestBid   = result.Data.BestBidPrice,
+                BestAsk   = result.Data.BestAskPrice,
+                LastPrice = result.Data.Price,
+                Timestamp = DateTime.UtcNow,
+            };
+        }
+        catch
+        {
+            return null;
         }
     }
 

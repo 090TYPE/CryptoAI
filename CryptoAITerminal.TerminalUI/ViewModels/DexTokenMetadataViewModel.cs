@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Reactive;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using CryptoAITerminal.Core.Models;
 using ReactiveUI;
 
@@ -173,10 +174,42 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
         _ => "#f4b860",
     };
 
-    public Bitmap? Logo { get => _logo; private set { this.RaiseAndSetIfChanged(ref _logo, value); this.RaisePropertyChanged(nameof(HasLogo)); } }
+    public Bitmap? Logo
+    {
+        get => _logo;
+        private set
+        {
+            var old = _logo;
+            this.RaiseAndSetIfChanged(ref _logo, value);
+            if (!ReferenceEquals(old, value)) ReleaseLater(old);
+            this.RaisePropertyChanged(nameof(HasLogo));
+        }
+    }
     public bool HasLogo => _logo is not null;
-    public Bitmap? Banner { get => _banner; private set { this.RaiseAndSetIfChanged(ref _banner, value); this.RaisePropertyChanged(nameof(HasBanner)); } }
+    public Bitmap? Banner
+    {
+        get => _banner;
+        private set
+        {
+            var old = _banner;
+            this.RaiseAndSetIfChanged(ref _banner, value);
+            if (!ReferenceEquals(old, value)) ReleaseLater(old);
+            this.RaisePropertyChanged(nameof(HasBanner));
+        }
+    }
     public bool HasBanner => _banner is not null;
+
+    /// <summary>
+    /// A <see cref="Bitmap"/> owns a native Skia surface that the GC never reclaims, and the token
+    /// changes on every selection — so every replaced image has to be released explicitly. The
+    /// release is deferred by one dispatcher pass because the frame being composed may still
+    /// reference the outgoing bitmap.
+    /// </summary>
+    private static void ReleaseLater(Bitmap? bitmap)
+    {
+        if (bitmap is null) return;
+        Dispatcher.UIThread.Post(bitmap.Dispose, DispatcherPriority.Background);
+    }
 
     public string ExplorerUrl => _contractAddress.Length == 0 ? string.Empty : _chainId.ToLowerInvariant() switch
     {
@@ -256,10 +289,11 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
         try
         {
             var logo = await DownloadAsync(meta.ImageUrl);
-            if (seq == _seq) Logo = logo;
+            // Lost the race with a newer token: this bitmap is never shown, drop it here or it leaks.
+            if (seq == _seq) Logo = logo; else ReleaseLater(logo);
 
             var banner = await DownloadAsync(meta.BannerImageUrl);
-            if (seq == _seq) Banner = banner;
+            if (seq == _seq) Banner = banner; else ReleaseLater(banner);
         }
         finally
         {

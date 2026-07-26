@@ -74,5 +74,9 @@
       </ItemsControl>
     </ScrollViewer>
 
+    <TextBlock Grid.Row="1" Classes="WidgetEmpty"
+               IsVisible="{Binding !WhaleTrackerVM.RecentAlerts.Count}"
+               Text="No whale transfers yet. Start tracking on the Whale Tracker desk — transfers above the minimum show up here." />
+
   </Grid>
 </UserControl>

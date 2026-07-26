@@ -133,6 +133,10 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
 
     private void ScheduleRebuild()
     {
+        // Off screen the desk still received every tape print (one CollectionChanged each) and
+        // reprojected itself five times a second. Navigating back raises IsNewsSectionVisible,
+        // and OnHostChanged schedules the rebuild that was skipped here.
+        if (_host is not null && !_host.IsNewsSectionVisible) return;
         if (_coalesce.IsEnabled) return;
         _coalesce.Start();
     }
@@ -469,9 +473,12 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
         RebuildPulse();
         RebuildTicker(news, tape);
         RebuildDigest(news);
-        RebuildNews(news);
-        RebuildTape(tape);
-        RebuildLiq();
+        // Only the view on screen owns rows worth rebuilding; SetView recomputes on every
+        // switch, so the other two lists keep their last content instead of being rebuilt
+        // (Clear + re-Add) on every coalesced burst.
+        if (IsNews) RebuildNews(news);
+        else if (IsTape) RebuildTape(tape);
+        else RebuildLiq();
         RebuildRail(news, tape);
         RebuildFooter(news, tape);
 
@@ -481,11 +488,20 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
 
     private void ComputeTapeStats(List<TapeRowVM> tape)
     {
+        // One pass over the buffered prints: large count, both notionals and both clip counts
+        // used to be six separate LINQ walks over the same list on every rebuild.
         _tapeCount = tape.Count;
-        _largeCount = tape.Count(r => r.IsLarge);
+        _largeCount = 0;
+        double buy = 0, sell = 0;
+        int buyPrints = 0, sellPrints = 0;
+        foreach (var r in tape)
+        {
+            if (r.IsLarge) _largeCount++;
+            var notional = (double)r.Trade.QuoteQty;
+            if (r.Side == "SELL") { sell += notional; sellPrints++; }
+            else { buy += notional; buyPrints++; }
+        }
 
-        var buy = tape.Where(r => r.Side != "SELL").Sum(r => (double)r.Trade.QuoteQty);
-        var sell = tape.Where(r => r.Side == "SELL").Sum(r => (double)r.Trade.QuoteQty);
         var total = buy + sell;
         _pressurePct = total > 0 ? (int)Math.Round(buy / total * 100) : 0;
 
@@ -501,8 +517,8 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        var avgBuy = tape.Where(r => r.Side != "SELL").Select(r => (double)r.Trade.QuoteQty).DefaultIfEmpty(0).Average();
-        var avgSell = tape.Where(r => r.Side == "SELL").Select(r => (double)r.Trade.QuoteQty).DefaultIfEmpty(0).Average();
+        var avgBuy = buyPrints > 0 ? buy / buyPrints : 0d;
+        var avgSell = sellPrints > 0 ? sell / sellPrints : 0d;
         var clip = avgSell > 0 ? avgBuy / avgSell : 0;
         var c = clip.ToString("0.0", Inv);
 

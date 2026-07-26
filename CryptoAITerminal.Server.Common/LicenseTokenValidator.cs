@@ -6,16 +6,50 @@ namespace CryptoAITerminal.Server.Common;
 
 public enum LicenseCheck { Valid, BadFormat, BadSignature, Expired }
 
+/// <summary>
+/// The signed licence body. <paramref name="Sub"/> is the immutable subject — the order id or a
+/// salted hash of the buyer's telegram id — and is what identifies the customer. It is optional
+/// only because tokens issued before the field existed are still in circulation; see
+/// <see cref="LicenseIdentity"/> for the fallback.
+/// </summary>
 public sealed record LicensePayload(
     string Name,
     string Edition,
     DateTime? Expires,
     string? Machine,
-    DateTime Issued);
+    DateTime Issued,
+    string? Sub = null);
 
 public sealed record LicenseCheckResult(LicenseCheck Result, LicensePayload? Payload)
 {
     public bool IsValid => Result == LicenseCheck.Valid;
+}
+
+/// <summary>
+/// Turns a verified payload into the one string the server may use as a customer identity —
+/// for the user row, the rate-limit partition and the AI budget.
+///
+/// It must NOT be the display Name: that comes from the buyer's Telegram profile, is not unique,
+/// and is editable in seconds, so keying on it puts two customers with the same name on one user
+/// row and lets a rename walk into another customer's secrets. It must also not be the raw
+/// X-License header: one valid token has many spellings (padding, base64url vs base64,
+/// surrounding whitespace) and each spelling would be a separate quota bucket.
+///
+/// Tokens issued before <c>sub</c> existed still fall back to the trimmed Name, and deliberately
+/// to the BARE name — that is exactly the key those customers' user rows already carry, so the
+/// fallback keeps them attached to their favourites and secrets instead of silently minting a new
+/// account. A subject-bearing token gets a new, prefixed key; those rows are migrated by hand.
+/// </summary>
+public static class LicenseIdentity
+{
+    public static string Subject(LicensePayload payload)
+    {
+        var sub = payload.Sub;
+        if (!string.IsNullOrWhiteSpace(sub)) return "sub:" + sub.Trim();
+
+        var name = payload.Name;
+        return string.IsNullOrWhiteSpace(name) ? string.Empty : name.Trim();
+    }
 }
 
 /// <summary>

@@ -92,6 +92,7 @@
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="Stronger &quot;copy this&quot; alert on a buy (no auto-execution)" />
                           <Button Grid.Column="2" Classes="GhostButton" Content="✕"
+                                  ToolTip.Tip="Remove wallet" AutomationProperties.Name="Remove watched wallet"
                                   Command="{Binding $parent[ItemsControl].DataContext.CopyTradingVM.RemoveWatchedWalletCommand}"
                                   CommandParameter="{Binding}" VerticalAlignment="Center" />
                         </Grid>

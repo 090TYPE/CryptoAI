@@ -18,6 +18,11 @@
 	# panel reporting a timeout the upstream never actually hit.
 	reverse_proxy api:8080 {
 		header_up X-Real-IP {remote_host}
+
+		# Replace, not append: Caddy preserves a client-supplied X-Forwarded-For by default, and
+		# the API reads that header for audit_log.ip and for the per-IP rate-limit partition.
+		# Overwriting it with the address Caddy actually saw is what makes both trustworthy.
+		header_up X-Forwarded-For {remote_host}
 	}
 
 	header {

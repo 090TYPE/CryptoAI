@@ -37,7 +37,7 @@
         <StackPanel>
           <Grid ColumnDefinitions="*,Auto" Margin="15,13">
             <TextBlock Text="Columns &amp; row actions" FontSize="13" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
-            <Button Grid.Column="1" Command="{Binding CloseModalCommand}" Background="Transparent" BorderThickness="0" Content="✕" Foreground="{DynamicResource TextDim}" FontSize="15" />
+            <Button Grid.Column="1" Command="{Binding CloseModalCommand}" Background="Transparent" BorderThickness="0" Content="✕" Foreground="{DynamicResource TextDim}" FontSize="15" ToolTip.Tip="Close" AutomationProperties.Name="Close panel" />
           </Grid>
           <Border BorderBrush="#0d1b27" BorderThickness="0,1,0,0" Padding="15,14">
             <StackPanel>
@@ -108,7 +108,7 @@
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
-              <Button Grid.Column="3" Command="{Binding CloseModalCommand}" Background="Transparent" BorderThickness="0" Content="✕" Foreground="{DynamicResource TextDim}" FontSize="15" />
+              <Button Grid.Column="3" Command="{Binding CloseModalCommand}" Background="Transparent" BorderThickness="0" Content="✕" Foreground="{DynamicResource TextDim}" FontSize="15" ToolTip.Tip="Close" AutomationProperties.Name="Close panel" />
             </Grid>
           </Border>
           <!-- footer -->
@@ -351,7 +351,7 @@
                 <TextBlock Text="{Binding PanelTitle}" FontSize="13" FontWeight="SemiBold" Foreground="#e8f4ff" />
                 <TextBlock Text="{Binding PanelSub}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="{DynamicResource TextDim}" />
               </StackPanel>
-              <Button Grid.Column="1" Command="{Binding CloseModalCommand}" Background="Transparent" BorderThickness="0" Content="✕" Foreground="{DynamicResource TextDim}" FontSize="15" />
+              <Button Grid.Column="1" Command="{Binding CloseModalCommand}" Background="Transparent" BorderThickness="0" Content="✕" Foreground="{DynamicResource TextDim}" FontSize="15" ToolTip.Tip="Close" AutomationProperties.Name="Close panel" />
             </Grid>
           </Border>
           <Border DockPanel.Dock="Bottom" BorderBrush="#0d1b27" BorderThickness="0,1,0,0" Background="#060d14" Padding="15,12">

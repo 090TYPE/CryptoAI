@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading;
@@ -23,6 +24,7 @@ public sealed class BalanceRefresher : IDisposable
     private readonly string[] _assets;
     private readonly Timer _timer;
     private readonly object _cacheLock = new();
+    private readonly ConcurrentDictionary<string, string> _lastError = new(StringComparer.OrdinalIgnoreCase);
     private List<BalanceSnapshot> _cache = new();
     private int _refreshing;
 
@@ -61,19 +63,22 @@ public sealed class BalanceRefresher : IDisposable
         if (Interlocked.Exchange(ref _refreshing, 1) == 1) return;
         try
         {
-            var next = new List<BalanceSnapshot>(_targets.Length * _assets.Length);
-            foreach (var (exchange, market, gw) in _targets)
+            // Assets stay sequential per exchange (one rate-limit bucket), but the exchanges run
+            // side by side: a pass costs the time of the slowest venue instead of the sum of all.
+            // Gateways without keys are skipped outright — they used to throw once per asset and
+            // have every one of those exceptions swallowed.
+            var perTarget = new List<Task<List<BalanceSnapshot>>>(_targets.Length);
+            foreach (var target in _targets)
             {
-                foreach (var asset in _assets)
-                {
-                    decimal amount;
-                    try { amount = await gw.GetBalanceAsync(asset); }
-                    catch { continue; }
-
-                    if (amount <= 0m) continue;
-                    next.Add(new BalanceSnapshot(exchange, market, asset, amount));
-                }
+                if (!target.Gateway.HasPrivateApiCredentials) continue;
+                perTarget.Add(LoadTargetAsync(target));
             }
+
+            var results = await Task.WhenAll(perTarget);
+
+            var next = new List<BalanceSnapshot>(_targets.Length * _assets.Length);
+            foreach (var result in results)
+                next.AddRange(result);
 
             lock (_cacheLock)
                 _cache = next;
@@ -82,6 +87,42 @@ public sealed class BalanceRefresher : IDisposable
         {
             Interlocked.Exchange(ref _refreshing, 0);
         }
+    }
+
+    private async Task<List<BalanceSnapshot>> LoadTargetAsync(
+        (string Exchange, string Market, IExchangeGateway Gateway) target)
+    {
+        var found = new List<BalanceSnapshot>(_assets.Length);
+        string? firstError = null;
+
+        foreach (var asset in _assets)
+        {
+            decimal amount;
+            try { amount = await target.Gateway.GetBalanceAsync(asset); }
+            catch (Exception ex)
+            {
+                firstError ??= ex.Message;
+                continue;
+            }
+
+            if (amount <= 0m) continue;
+            found.Add(new BalanceSnapshot(target.Exchange, target.Market, asset, amount));
+        }
+
+        // One line per venue at most, and only when the reason changes — enough to tell
+        // "no balance" from "the venue rejected us" after the fact, without a log every minute.
+        _lastError.TryGetValue(target.Exchange, out var previous);
+        if (firstError is null)
+        {
+            _lastError.TryRemove(target.Exchange, out _);
+        }
+        else if (firstError != previous)
+        {
+            _lastError[target.Exchange] = firstError;
+            CrashLog.Write("WARN", $"BalanceRefresher: {target.Exchange} {target.Market} — {firstError}");
+        }
+
+        return found;
     }
 
     public void Dispose() => _timer.Dispose();

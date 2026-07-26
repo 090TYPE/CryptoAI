@@ -3,6 +3,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Win32;
 
 namespace CryptoAITerminal.TerminalUI.Services;
 
@@ -62,14 +63,23 @@ public sealed class LicenseService
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
+    // Entropy binds the trial stamp to this app: a blob copied from elsewhere will not unprotect.
+    private static readonly byte[] TrialEntropy = Encoding.UTF8.GetBytes("CryptoAITerminal.trial.v1");
+    private const string TrialRegistryKey   = @"Software\CryptoAITerminal";
+    private const string TrialRegistryValue = "tf";
+
     private readonly string _publicKeyPem;
     private readonly string _machineId;
     private readonly string _storageDir;
+    // The registry copy is the real install's second anchor. A caller that supplies its own
+    // storage dir (tests, portable runs) stays fully contained in that directory.
+    private readonly bool _mirrorToRegistry;
 
     public LicenseService(string? publicKeyPem = null, string? machineId = null, string? storageDir = null)
     {
         _publicKeyPem = publicKeyPem ?? DefaultPublicKeyPem;
         _machineId    = machineId ?? GetMachineId();
+        _mirrorToRegistry = storageDir is null;
         _storageDir   = storageDir ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CryptoAITerminal");
     }
@@ -182,30 +192,128 @@ public sealed class LicenseService
     public int TrialDaysRemaining()
     {
         var start = ReadOrStartTrial();
-        var elapsed = (DateTime.UtcNow - start).TotalDays;
-        var left = TrialDays - (int)Math.Floor(elapsed);
-        return Math.Max(0, left);
+        // A stamp we cannot read is a stamp someone edited — the honest first run has none at all.
+        if (start is null) return 0;
+
+        var elapsed = (DateTime.UtcNow - start.Value).TotalDays;
+        return Math.Clamp(TrialDays - (int)Math.Floor(elapsed), 0, TrialDays);
     }
 
-    private DateTime ReadOrStartTrial()
+    /// <summary>
+    /// Reads the trial start from both stores and takes the oldest one, so deleting either the
+    /// file or the registry value does not hand out another 14 days. Returns null when a stamp
+    /// exists but is unreadable or forged.
+    /// </summary>
+    private DateTime? ReadOrStartTrial()
+    {
+        var (fileSeen, fileStart) = ReadFileStamp();
+        var (regSeen,  regStart)  = ReadRegistryStamp();
+
+        var start = fileStart;
+        if (regStart is { } reg && (start is null || reg < start)) start = reg;
+
+        if (start is not null)
+        {
+            // One of the two anchors was wiped — restore it from the surviving one.
+            if (!fileSeen || (!regSeen && _mirrorToRegistry)) WriteTrialStamp(start.Value);
+            return start;
+        }
+
+        if (fileSeen || regSeen) return null;
+
+        var now = DateTime.UtcNow;
+        WriteTrialStamp(now);
+        return now;
+    }
+
+    private (bool Seen, DateTime? Start) ReadFileStamp()
     {
         try
         {
-            if (File.Exists(TrialPath))
-            {
-                var raw = File.ReadAllText(TrialPath).Trim();
-                if (DateTime.TryParse(raw, null, System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
-                    return dt.ToUniversalTime();
-            }
-            Directory.CreateDirectory(_storageDir);
-            var now = DateTime.UtcNow;
-            File.WriteAllText(TrialPath, now.ToString("o"));
-            return now;
+            if (!File.Exists(TrialPath)) return (false, null);
+            var raw = File.ReadAllText(TrialPath).Trim();
+            // Unprotect fails on the pre-DPAPI plaintext marker; those installs are still honoured.
+            return (true, ParseStamp(Unprotect(raw) ?? raw));
         }
         catch
         {
-            // If we can't track the trial, treat as just-started rather than locking out.
-            return DateTime.UtcNow;
+            return (true, null);
+        }
+    }
+
+    private (bool Seen, DateTime? Start) ReadRegistryStamp()
+    {
+        if (!_mirrorToRegistry) return (false, null);
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(TrialRegistryKey);
+            if (key?.GetValue(TrialRegistryValue) is not string stored || stored.Length == 0)
+                return (false, null);
+            return (true, Unprotect(stored) is { } plain ? ParseStamp(plain) : null);
+        }
+        catch
+        {
+            // Registry unavailable — fall back to the file rather than locking the user out.
+            return (false, null);
+        }
+    }
+
+    private void WriteTrialStamp(DateTime utc)
+    {
+        string protectedStamp;
+        try { protectedStamp = Protect(utc); }
+        catch (Exception ex)
+        {
+            CrashLog.Write("WARN", "trial stamp could not be protected: " + ex.Message);
+            return;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(_storageDir);
+            File.WriteAllText(TrialPath, protectedStamp);
+        }
+        catch (Exception ex)
+        {
+            CrashLog.Write("WARN", "trial stamp file write failed: " + ex.Message);
+        }
+
+        if (!_mirrorToRegistry) return;
+        try
+        {
+            using var key = Registry.CurrentUser.CreateSubKey(TrialRegistryKey);
+            key?.SetValue(TrialRegistryValue, protectedStamp, RegistryValueKind.String);
+        }
+        catch (Exception ex)
+        {
+            CrashLog.Write("WARN", "trial stamp registry write failed: " + ex.Message);
+        }
+    }
+
+    private static DateTime? ParseStamp(string raw)
+    {
+        if (!DateTime.TryParse(raw, null, System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
+            return null;
+
+        var utc = dt.ToUniversalTime();
+        // A start date in the future is not a clock quirk at this magnitude — it buys extra days.
+        return utc > DateTime.UtcNow.AddHours(24) ? null : utc;
+    }
+
+    private static string Protect(DateTime utc) =>
+        Convert.ToBase64String(ProtectedData.Protect(
+            Encoding.UTF8.GetBytes(utc.ToString("o")), TrialEntropy, DataProtectionScope.CurrentUser));
+
+    private static string? Unprotect(string stored)
+    {
+        try
+        {
+            return Encoding.UTF8.GetString(ProtectedData.Unprotect(
+                Convert.FromBase64String(stored), TrialEntropy, DataProtectionScope.CurrentUser));
+        }
+        catch
+        {
+            return null;
         }
     }
 

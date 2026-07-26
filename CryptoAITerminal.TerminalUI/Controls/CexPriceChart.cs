@@ -17,6 +17,7 @@ public class CexPriceChart : Control
         AvaloniaProperty.Register<CexPriceChart, bool>(nameof(IsPositiveTrend), true);
 
     private INotifyCollectionChanged? _subscribedCollection;
+    private bool _attached;
 
     static CexPriceChart()
     {
@@ -41,19 +42,42 @@ public class CexPriceChart : Control
 
         if (change.Property == PointsProperty)
         {
-            if (_subscribedCollection is not null)
-            {
-                _subscribedCollection.CollectionChanged -= OnPointsCollectionChanged;
-                _subscribedCollection = null;
-            }
-
-            if (Points is INotifyCollectionChanged notifyCollectionChanged)
-            {
-                _subscribedCollection = notifyCollectionChanged;
-                _subscribedCollection.CollectionChanged += OnPointsCollectionChanged;
-            }
-
+            SubscribeToPoints();
             InvalidateVisual();
+        }
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _attached = true;
+        SubscribeToPoints();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        _attached = false;
+        SubscribeToPoints();
+    }
+
+    /// <summary>
+    /// Attaches the handler only while the control lives in the tree: the points collection
+    /// belongs to a long-lived view model, so a delegate left behind by a removed widget keeps
+    /// the control alive and repaints it on every tick for nothing.
+    /// </summary>
+    private void SubscribeToPoints()
+    {
+        if (_subscribedCollection is not null)
+        {
+            _subscribedCollection.CollectionChanged -= OnPointsCollectionChanged;
+            _subscribedCollection = null;
+        }
+
+        if (_attached && Points is INotifyCollectionChanged notifyCollectionChanged)
+        {
+            _subscribedCollection = notifyCollectionChanged;
+            _subscribedCollection.CollectionChanged += OnPointsCollectionChanged;
         }
     }
 

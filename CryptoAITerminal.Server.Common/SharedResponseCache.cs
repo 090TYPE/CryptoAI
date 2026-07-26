@@ -120,6 +120,11 @@ public sealed class SharedResponseCache
     /// </summary>
     public bool TryGetFresh(string key, out CachedPayload payload)
     {
+        // Counts towards the eviction cadence like GetOrCreateAsync does: the composite endpoints
+        // reach the cache only through TryGetFresh/Seed, so without this a per-token key seeded
+        // there would never be swept.
+        MaybeEvict();
+
         if (_entries.TryGetValue(key, out var entry))
         {
             lock (entry.Gate)
@@ -149,6 +154,7 @@ public sealed class SharedResponseCache
         var payload = new CachedPayload(json, MakeETag(json), _clock() + ttl);
         var entry = _entries.GetOrAdd(key, _ => new Entry());
         lock (entry.Gate) entry.Payload = payload;
+        MaybeEvict();
         return payload;
     }
 

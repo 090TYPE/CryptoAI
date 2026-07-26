@@ -9,6 +9,9 @@
     <StackPanel>
       <TextBlock Text="LIQ MAP" Foreground="#4A6070" FontSize="9" FontWeight="Bold"
                  Margin="4,4,0,2" />
+      <TextBlock Classes="WidgetEmpty"
+                 IsVisible="{Binding !LiquidationHeatmapVM.HeatBands.Count}"
+                 Text="No liquidation clusters yet. Open 🔥 Liq Map and load a symbol to build the heatmap." />
       <Viewbox Stretch="Fill">
         <Canvas Width="1200" Height="460">
           <!-- Heat bands — full-width, colour = side, opacity = magnitude -->

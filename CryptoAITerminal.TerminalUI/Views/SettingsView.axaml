@@ -33,7 +33,9 @@
     </Style>
   </UserControl.Styles>
 
-  <Border IsVisible="{Binding IsSettingsSectionVisible}" MinHeight="760" Height="{Binding $parent[ScrollViewer].Bounds.Height}">
+  <!-- No fixed 760px floor: on a 1280x720 screen it forced an outer scroll over the desk's own
+       scrollers and pushed the pinned footer past the bottom edge. -->
+  <Border IsVisible="{Binding IsSettingsSectionVisible}" MinHeight="460">
     <Grid DataContext="{Binding SettingsDesk}" Background="{StaticResource DeskBg}" ClipToBounds="True">
       <DockPanel LastChildFill="True">
 
@@ -325,7 +327,7 @@
                               <TextBlock Grid.Column="1" Text="{Binding Meta}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                               <Button Grid.Column="3" Command="{Binding LoadCommand}" Height="22" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Background="#060d14" Padding="9,0" Content="LOAD" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
                               <Button Grid.Column="5" Command="{Binding ExportCommand}" Height="22" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Background="#060d14" Padding="9,0" Content="EXPORT" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
-                              <Button Grid.Column="7" Command="{Binding DeleteCommand}" Width="22" Height="22" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Background="#060d14" Padding="0" Content="✕" Foreground="#4a6a82" FontSize="9" />
+                              <Button Grid.Column="7" Command="{Binding DeleteCommand}" ToolTip.Tip="Delete" AutomationProperties.Name="Delete preset" Width="22" Height="22" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Background="#060d14" Padding="0" Content="✕" Foreground="#4a6a82" FontSize="9" />
                             </Grid>
                           </Border>
                         </DataTemplate>
@@ -341,7 +343,7 @@
                   <StackPanel>
                     <Grid ColumnDefinitions="Auto,*,Auto">
                       <TextBlock Grid.Column="0" Text="Exchange API keys" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
-                      <Button Grid.Column="2" Command="{Binding ExToggleHelpCommand}" Width="26" Height="26" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="0" Content="?" Foreground="#8fa3b8" FontSize="12" FontWeight="Bold" />
+                      <Button Grid.Column="2" Command="{Binding ExToggleHelpCommand}" ToolTip.Tip="Show help" AutomationProperties.Name="Toggle API key help" Width="26" Height="26" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="0" Content="?" Foreground="#8fa3b8" FontSize="12" FontWeight="Bold" />
                     </Grid>
                     <Border IsVisible="{Binding HasTestnetBanner}" Margin="0,11,0,0" BorderBrush="#3a2a12" BorderThickness="1" CornerRadius="8" Background="#150f04" Padding="11">
                       <TextBlock Text="{Binding TestnetBanner}" TextWrapping="Wrap" FontSize="11" LineHeight="16" Foreground="#f0b90b" />
@@ -922,7 +924,7 @@
                               </ItemsControl>
                               <TextBlock Grid.Column="8" Text="{Binding Repeat}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" VerticalAlignment="Center" />
                               <Button Grid.Column="10" Command="{Binding ToggleCommand}" Height="22" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Background="#060d14" Padding="9,0" Content="{Binding ToggleLabel}" Foreground="{Binding ToggleColor, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" />
-                              <Button Grid.Column="12" Command="{Binding DeleteCommand}" Width="22" Height="22" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Background="#060d14" Padding="0" Content="✕" Foreground="#4a6a82" FontSize="9" />
+                              <Button Grid.Column="12" Command="{Binding DeleteCommand}" ToolTip.Tip="Delete" AutomationProperties.Name="Delete schedule" Width="22" Height="22" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Background="#060d14" Padding="0" Content="✕" Foreground="#4a6a82" FontSize="9" />
                             </Grid>
                           </Border>
                         </DataTemplate>

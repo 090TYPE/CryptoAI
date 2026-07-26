@@ -361,7 +361,8 @@ public class DcaBotViewModel : ReactiveObject
         await _bot.StartAsync(_executeImmediately);
     }
 
-    private async Task StopAsync()
+    /// <summary>Public so shutdown can wait for the schedule to stop.</summary>
+    public async Task StopAsync()
     {
         _countdownSub?.Dispose();
         _countdownSub = null;

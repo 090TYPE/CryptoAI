@@ -18,6 +18,7 @@ public class DexPriceChart : Control
         AvaloniaProperty.Register<DexPriceChart, bool>(nameof(ShowVwap), defaultValue: true);
 
     private INotifyCollectionChanged? _subscribedCollection;
+    private bool _attached;
 
     static DexPriceChart()
     {
@@ -42,19 +43,41 @@ public class DexPriceChart : Control
 
         if (change.Property == CandlesProperty)
         {
-            if (_subscribedCollection is not null)
-            {
-                _subscribedCollection.CollectionChanged -= OnCandlesCollectionChanged;
-                _subscribedCollection = null;
-            }
-
-            if (Candles is INotifyCollectionChanged notifyCollectionChanged)
-            {
-                _subscribedCollection = notifyCollectionChanged;
-                _subscribedCollection.CollectionChanged += OnCandlesCollectionChanged;
-            }
-
+            SubscribeToCandles();
             InvalidateVisual();
+        }
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _attached = true;
+        SubscribeToCandles();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        _attached = false;
+        SubscribeToCandles();
+    }
+
+    /// <summary>
+    /// Subscribes only while the control is in the tree — the candle collection outlives the
+    /// control, and a handler left behind keeps a detached chart repainting on every tick.
+    /// </summary>
+    private void SubscribeToCandles()
+    {
+        if (_subscribedCollection is not null)
+        {
+            _subscribedCollection.CollectionChanged -= OnCandlesCollectionChanged;
+            _subscribedCollection = null;
+        }
+
+        if (_attached && Candles is INotifyCollectionChanged notifyCollectionChanged)
+        {
+            _subscribedCollection = notifyCollectionChanged;
+            _subscribedCollection.CollectionChanged += OnCandlesCollectionChanged;
         }
     }
 

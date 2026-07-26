@@ -48,8 +48,26 @@ public sealed class GridBot : IDisposable
     private volatile bool _isStopped;
     private readonly SemaphoreSlim _pollLock = new(1, 1);
 
+    // Ордер, пропавший из open-orders, ещё не обязательно исполнен: ручная отмена, экспирация
+    // или пустой ответ биржи при сбое дают тот же снимок. Держим id, пропавший первый раз,
+    // и считаем филлом только пропажу, подтверждённую следующим опросом.
+    // Читается и пишется только под _pollLock.
+    private readonly HashSet<string> _missingOnce = [];
+
     // Стандартная taker-комиссия Binance (0.1% на сторону).
     private const decimal FeeRatePerSide = 0.001m;
+
+    // Биржевые фильтры (tickSize/stepSize/minNotional) гейтвеи пока не отдают, поэтому шаг цены
+    // выводим из точности границ диапазона, которые ввёл пользователь: сырой спейсинг
+    // (Upper-Lower)/GridLevels даёт цену вида 1428.571428571428571428571429, биржа отвечает
+    // -1013, ошибка уходит в лог, а бот продолжает считать себя работающим.
+    private const int MaxPriceDecimals = 8;
+    private const decimal QuantityStep = 0.00000001m;
+    // Стандартный MIN_NOTIONAL Binance для пар с долларовым котируемым активом.
+    private const decimal MinNotionalUsd = 5m;
+
+    private int _priceDecimals;
+    private readonly decimal _quantity;
 
     public int CyclesCompleted { get; private set; }
     public decimal GridPnL { get; private set; }
@@ -65,6 +83,7 @@ public sealed class GridBot : IDisposable
     {
         _gateway = gateway;
         _cfg = cfg;
+        _quantity = FloorToStep(cfg.QuantityPerGrid, QuantityStep);
     }
 
     public async Task StartAsync()
@@ -75,9 +94,20 @@ public sealed class GridBot : IDisposable
         GridPnL = 0m;
 
         _spacing = (_cfg.UpperPrice - _cfg.LowerPrice) / _cfg.GridLevels;
+        _priceDecimals = ResolvePriceDecimals();
         _gridPrices = new decimal[_cfg.GridLevels + 1];
         for (int i = 0; i <= _cfg.GridLevels; i++)
-            _gridPrices[i] = _cfg.LowerPrice + _spacing * i;
+            _gridPrices[i] = NormalizePrice(_cfg.LowerPrice + _spacing * i);
+
+        // Отказываем до подключения и до первого ордера: иначе каждая лимитка уходит
+        // на биржу и отбивается по minNotional, а бот остаётся в состоянии "running".
+        if (_quantity <= 0m)
+            throw new InvalidOperationException("Quantity per grid must be greater than zero.");
+
+        decimal levelNotional = _quantity * _cfg.LowerPrice;
+        if (IsUsdQuoted(_cfg.Symbol) && levelNotional < MinNotionalUsd)
+            throw new InvalidOperationException(
+                $"Order notional {levelNotional:N2} USDT at the lowest grid level is below the exchange minimum of {MinNotionalUsd:N0} USDT — increase quantity per grid or raise the lower price.");
 
         await _gateway.ConnectAsync();
 
@@ -140,7 +170,7 @@ public sealed class GridBot : IDisposable
                 Side = OrderSide.Buy,
                 Type = OrderType.Limit,
                 Price = price,
-                Quantity = _cfg.QuantityPerGrid,
+                Quantity = _quantity,
                 MarketType = _cfg.MarketType,
                 Leverage = _cfg.MarketType == TradingMarketType.FuturesUsdM ? _cfg.Leverage : null,
                 MarginMode = _cfg.MarginMode,
@@ -181,7 +211,7 @@ public sealed class GridBot : IDisposable
                 Side = OrderSide.Sell,
                 Type = OrderType.Limit,
                 Price = price,
-                Quantity = _cfg.QuantityPerGrid,
+                Quantity = _quantity,
                 MarketType = _cfg.MarketType,
                 Leverage = _cfg.MarketType == TradingMarketType.FuturesUsdM ? _cfg.Leverage : null,
                 MarginMode = _cfg.MarginMode,
@@ -222,8 +252,22 @@ public sealed class GridBot : IDisposable
             var openOrders = await _gateway.GetOpenOrdersAsync(_cfg.Symbol);
             var openIds = openOrders.Select(o => o.Id).ToHashSet();
 
+            // Пустой снимок при нескольких живых лимитках — это почти всегда сбой запроса
+            // (гейтвеи возвращают [] вместо исключения), а не одновременный филл всей сетки.
+            int tracked = _activeBuyOrders.Count + _activeSellOrders.Count;
+            if (openIds.Count == 0 && tracked > 1)
+            {
+                _missingOnce.Clear();
+                OnLog?.Invoke($"Poll skipped: exchange reported no open orders while the grid tracks {tracked} — snapshot treated as unreliable.");
+                return;
+            }
+
+            // Оба списка считаем до размещения новых ордеров: иначе лимитка, выставленная
+            // в этом же тике, окажется «отсутствующей» в уже снятом снимке open-orders.
+            var filledBuys = ConfirmDisappeared(_activeBuyOrders.Keys, openIds);
+            var filledSells = ConfirmDisappeared(_activeSellOrders.Keys, openIds);
+
             // Detect filled buys
-            var filledBuys = _activeBuyOrders.Keys.Where(id => !openIds.Contains(id)).ToList();
             foreach (var id in filledBuys)
             {
                 if (!_activeBuyOrders.TryRemove(id, out int lvl)) continue;
@@ -232,7 +276,6 @@ public sealed class GridBot : IDisposable
             }
 
             // Detect filled sells
-            var filledSells = _activeSellOrders.Keys.Where(id => !openIds.Contains(id)).ToList();
             foreach (var id in filledSells)
             {
                 if (!_activeSellOrders.TryRemove(id, out int lvl)) continue;
@@ -241,14 +284,14 @@ public sealed class GridBot : IDisposable
                 decimal buyPrice = _gridPrices[lvl - 1];
                 // Реальная прибыль с учётом комиссии: на спот/перпах Binance берёт ~0.1% taker
                 // с каждой ноги (0.2% round-trip). Без вычета комиссии бот завышает PnL.
-                decimal commission = (buyPrice + sellPrice) * _cfg.QuantityPerGrid * FeeRatePerSide;
-                decimal profit = (sellPrice - buyPrice) * _cfg.QuantityPerGrid - commission;
+                decimal commission = (buyPrice + sellPrice) * _quantity * FeeRatePerSide;
+                decimal profit = (sellPrice - buyPrice) * _quantity - commission;
 
                 CyclesCompleted++;
                 GridPnL += profit;
                 OnLog?.Invoke($"Sell filled L{lvl} @ {sellPrice:N4} · cycle #{CyclesCompleted} · profit {profit:+0.0####;-0.0####} USDT");
                 OnStatsChanged?.Invoke();
-                OnCycleCompleted?.Invoke(_cfg.Symbol, buyPrice, sellPrice, _cfg.QuantityPerGrid, profit);
+                OnCycleCompleted?.Invoke(_cfg.Symbol, buyPrice, sellPrice, _quantity, profit);
 
                 await PlaceBuyAtLevelAsync(lvl - 1);
             }
@@ -263,25 +306,57 @@ public sealed class GridBot : IDisposable
         }
     }
 
+    /// <summary>
+    /// Возвращает id, отсутствующие в снимке open-orders уже второй опрос подряд.
+    /// Вызывается только под _pollLock.
+    /// </summary>
+    private List<string> ConfirmDisappeared(ICollection<string> trackedIds, HashSet<string> openIds)
+    {
+        var confirmed = new List<string>();
+        foreach (var id in trackedIds)
+        {
+            if (openIds.Contains(id)) { _missingOnce.Remove(id); continue; }
+            if (_missingOnce.Add(id)) continue; // пропал впервые — ждём подтверждения
+            _missingOnce.Remove(id);
+            confirmed.Add(id);
+        }
+        return confirmed;
+    }
+
     public async Task PauseAsync()
     {
         _isPaused = true;
+        // Таймер глушим до отмены ордеров: иначе уже запущенный тик увидит снятые
+        // лимитки отсутствующими в open-orders и посчитает их исполненными.
+        _pollTimer?.Change(Timeout.Infinite, Timeout.Infinite);
         OnLog?.Invoke("Pausing — cancelling open grid orders (positions stay open)...");
-        await CancelAllOrdersAsync();
+        await _pollLock.WaitAsync();
+        try { await CancelAllOrdersAsync(); }
+        finally { _pollLock.Release(); }
         OnLog?.Invoke("Grid paused.");
     }
 
     public async Task ResumeAsync()
     {
         if (!_isPaused) return;
-        _isPaused = false;
-        // Защита от устаревших записей: PauseAsync уже очистил словари,
-        // но если возникла гонка с PollFillsAsync — гарантируем чистый старт.
-        _activeBuyOrders.Clear();
-        _activeSellOrders.Clear();
         OnLog?.Invoke("Resuming grid...");
-        decimal currentPrice = await GetCurrentPriceAsync();
-        await PlaceInitialOrdersAsync(currentPrice);
+
+        // Всё восстановление — под _pollLock и при снятом флаге паузы только в самом конце:
+        // тик, попавший между размещением лимиток и снятием флага, работал бы со снимком
+        // open-orders, снятым до размещения, и объявил бы новые ордера исполненными.
+        await _pollLock.WaitAsync();
+        try
+        {
+            _activeBuyOrders.Clear();
+            _activeSellOrders.Clear();
+            _missingOnce.Clear();
+            decimal currentPrice = await GetCurrentPriceAsync();
+            await PlaceInitialOrdersAsync(currentPrice);
+            _isPaused = false;
+        }
+        finally { _pollLock.Release(); }
+
+        _pollTimer?.Change(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
         OnLog?.Invoke($"Grid resumed · {_activeBuyOrders.Count} buys, {_activeSellOrders.Count} sells");
     }
 
@@ -291,7 +366,11 @@ public sealed class GridBot : IDisposable
         _pollTimer?.Change(Timeout.Infinite, Timeout.Infinite);
 
         OnLog?.Invoke("Stopping — cancelling all orders...");
-        await CancelAllOrdersAsync();
+        // Под тем же локом, что и опрос: иначе отмена идёт параллельно тику,
+        // который в этот момент читает те же словари и размещает новые лимитки.
+        await _pollLock.WaitAsync();
+        try { await CancelAllOrdersAsync(); }
+        finally { _pollLock.Release(); }
         await _gateway.DisconnectAsync();
         OnLog?.Invoke($"Stopped · cycles {CyclesCompleted} · total P&L {GridPnL:+0.00;-0.00} USDT");
     }
@@ -302,7 +381,7 @@ public sealed class GridBot : IDisposable
         // Иначе PollFillsAsync между Clear() и CancelOrderAsync решит, что эти ордера
         // исполнены, и разместит новые на тех же уровнях — параллельно с теми,
         // которые мы ещё не успели отменить.
-        var ids = _activeBuyOrders.Keys.Concat(_activeSellOrders.Keys).ToList();
+        var ids = _activeBuyOrders.Keys.Concat(_activeSellOrders.Keys).ToHashSet();
 
         foreach (var id in ids)
         {
@@ -312,7 +391,62 @@ public sealed class GridBot : IDisposable
 
         _activeBuyOrders.Clear();
         _activeSellOrders.Clear();
+        _missingOnce.Clear();
+
+        // Сверяемся с биржей: отмена могла не дойти (сеть, 429), и тогда на бирже остаётся
+        // живая лимитка, о которой бот уже забыл. Чужие ордера по символу не трогаем —
+        // здесь только проверка своих.
+        try
+        {
+            var stillOpen = await _gateway.GetOpenOrdersAsync(_cfg.Symbol);
+            var leftovers = stillOpen.Where(o => ids.Contains(o.Id)).Select(o => o.Id).ToList();
+            if (leftovers.Count > 0)
+                OnLog?.Invoke($"⚠ {leftovers.Count} grid order(s) still open after cancel ({string.Join(", ", leftovers)}) — cancel them on the exchange.");
+        }
+        catch (Exception ex)
+        {
+            OnLog?.Invoke($"Could not verify cancellations: {ex.Message}");
+        }
     }
+
+    // ── Нормализация под фильтры биржи ────────────────────────────────────────
+    // Минимальный вариант: полноценная загрузка exchangeInfo (PRICE_FILTER/LOT_SIZE/MIN_NOTIONAL)
+    // требует нового метода в IExchangeGateway с кэшем на сессию.
+
+    private static decimal FloorToStep(decimal value, decimal step)
+        => step <= 0m ? value : Math.Floor(value / step) * step;
+
+    private decimal NormalizePrice(decimal price)
+        => Math.Round(price, _priceDecimals, MidpointRounding.AwayFromZero);
+
+    /// <summary>Число знаков после запятой, с которым значение задано (scale decimal-числа).</summary>
+    private static int DecimalPlaces(decimal value) => (decimal.GetBits(value)[3] >> 16) & 0xFF;
+
+    /// <summary>
+    /// Точность цены — как у введённых границ диапазона, но не грубее шага сетки:
+    /// иначе после округления соседние уровни схлопнутся в одну цену.
+    /// </summary>
+    private int ResolvePriceDecimals()
+    {
+        int d = Math.Clamp(Math.Max(DecimalPlaces(_cfg.LowerPrice), DecimalPlaces(_cfg.UpperPrice)),
+            0, MaxPriceDecimals);
+        while (d < MaxPriceDecimals && _spacing < UnitOf(d)) d++;
+        return d;
+    }
+
+    private static decimal UnitOf(int decimals)
+    {
+        decimal unit = 1m;
+        for (int i = 0; i < decimals; i++) unit /= 10m;
+        return unit;
+    }
+
+    /// <summary>Порог minNotional в долларах применим только к парам с долларовым котируемым активом.</summary>
+    private static bool IsUsdQuoted(string symbol) =>
+        symbol.EndsWith("USDT", StringComparison.OrdinalIgnoreCase)
+        || symbol.EndsWith("USDC", StringComparison.OrdinalIgnoreCase)
+        || symbol.EndsWith("BUSD", StringComparison.OrdinalIgnoreCase)
+        || symbol.EndsWith("FDUSD", StringComparison.OrdinalIgnoreCase);
 
     private async Task<decimal> GetCurrentPriceAsync()
     {

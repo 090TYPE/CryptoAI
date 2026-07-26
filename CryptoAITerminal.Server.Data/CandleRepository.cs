@@ -17,28 +17,40 @@ public sealed class CandleRepository
     public async Task<int> UpsertCandlesAsync(
         string chain, string token, IEnumerable<CandleRow> candles, CancellationToken ct = default)
     {
+        // One statement for the whole batch instead of one round trip per candle: the poller
+        // upserts 60 candles for each of 50 tokens every tick, which was 3000 round trips.
         const string sql = @"
             INSERT INTO dex_candles (chain, token_address, ts, o, h, l, c, v)
-            VALUES (@chain, @token, @Ts, @O, @H, @L, @C, @V)
+            SELECT @chain, @token, u.ts, u.o, u.h, u.l, u.c, u.v
+            FROM unnest(@ts::timestamptz[], @o::numeric[], @h::numeric[],
+                        @l::numeric[], @c::numeric[], @v::numeric[]) AS u(ts, o, h, l, c, v)
             ON CONFLICT (chain, token_address, ts) DO UPDATE
               SET h = GREATEST(dex_candles.h, EXCLUDED.h),
                   l = LEAST   (dex_candles.l, EXCLUDED.l),
                   c = EXCLUDED.c,
                   v = EXCLUDED.v;";
 
-        var rows = candles.ToList();
+        // At most one row per timestamp: batched ON CONFLICT DO UPDATE fails outright with
+        // "cannot affect row a second time" where the row-at-a-time loop simply overwrote.
+        var rows = candles
+            .GroupBy(r => r.Ts)
+            .Select(g => g.Last())
+            .OrderBy(r => r.Ts)
+            .ToList();
         if (rows.Count == 0) return 0;
 
         await using var conn = await _db.OpenConnectionAsync(ct);
-        await using var tx = await conn.BeginTransactionAsync(ct);
-        var affected = 0;
-        foreach (var r in rows)
+        return await conn.ExecuteAsync(new CommandDefinition(sql, new
         {
-            affected += await conn.ExecuteAsync(new CommandDefinition(sql,
-                new { chain, token, r.Ts, r.O, r.H, r.L, r.C, r.V }, tx, cancellationToken: ct));
-        }
-        await tx.CommitAsync(ct);
-        return affected;
+            chain,
+            token,
+            ts = rows.Select(r => r.Ts).ToArray(),
+            o = rows.Select(r => r.O).ToArray(),
+            h = rows.Select(r => r.H).ToArray(),
+            l = rows.Select(r => r.L).ToArray(),
+            c = rows.Select(r => r.C).ToArray(),
+            v = rows.Select(r => r.V).ToArray(),
+        }, cancellationToken: ct));
     }
 
     // Whitelist of timeframe -> table/view. Prevents SQL injection on the tf query param.

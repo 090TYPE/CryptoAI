@@ -82,7 +82,28 @@ public sealed record AiPolicyResult(bool Ok, string? Body, string? Error, string
 /// </summary>
 public static class AiRequestPolicy
 {
+    /// <summary>
+    /// A body that is JSON but has a field of the wrong type is a client mistake, not a server
+    /// fault: it must leave here as a 400 from <see cref="AiPolicyResult"/>, never as an exception
+    /// escaping into the request pipeline.
+    /// </summary>
     public static AiPolicyResult Apply(string requestJson, AiPolicyOptions options, AiVendor vendor)
+    {
+        try
+        {
+            return ApplyCore(requestJson, options, vendor);
+        }
+        catch (JsonException)
+        {
+            return new AiPolicyResult(false, null, "request is not valid JSON", null);
+        }
+        catch (InvalidOperationException)
+        {
+            return new AiPolicyResult(false, null, "request has a field of the wrong type", null);
+        }
+    }
+
+    private static AiPolicyResult ApplyCore(string requestJson, AiPolicyOptions options, AiVendor vendor)
     {
         JsonNode? root;
         try
@@ -97,7 +118,11 @@ public static class AiRequestPolicy
         if (root is not JsonObject obj)
             return new AiPolicyResult(false, null, "request must be a JSON object", null);
 
-        var model = obj["model"]?.GetValue<string>();
+        // TryGetValue rather than GetValue<T>: the latter throws InvalidOperationException on
+        // {"model": 1}, which turned a malformed request into a 500 from the input gate itself.
+        string? model = null;
+        if (obj["model"] is JsonValue modelNode && modelNode.TryGetValue<string>(out var parsedModel))
+            model = parsedModel;
         if (string.IsNullOrWhiteSpace(model))
             return new AiPolicyResult(false, null, "model is required", null);
 
@@ -115,7 +140,9 @@ public static class AiRequestPolicy
         var tokenField = vendor == AiVendor.OpenAi && obj.ContainsKey("max_completion_tokens")
             ? "max_completion_tokens"
             : "max_tokens";
-        var requested = obj[tokenField]?.GetValue<int?>() ?? options.MaxTokensCap;
+        var requested = options.MaxTokensCap;
+        if (obj[tokenField] is JsonValue tokenNode && !tokenNode.TryGetValue<int>(out requested))
+            return new AiPolicyResult(false, null, $"{tokenField} must be a whole number", model);
         obj[tokenField] = Math.Clamp(requested, 1, options.MaxTokensCap);
 
         // The proxy buffers the upstream body into a string, so a streaming response would be
