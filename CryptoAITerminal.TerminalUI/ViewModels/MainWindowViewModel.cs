@@ -1352,6 +1352,17 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         SetAddModeCommand = ReactiveCommand.Create<string>(key => SelectedAddMode = key, outputScheduler: App.UiScheduler);
         SelectMarketTimeframeCommand = ReactiveCommand.Create<string>(SelectMarketTimeframe, outputScheduler: App.UiScheduler);
         SafeLogoutCommand = ReactiveCommand.CreateFromTask(ExecuteSafeLogoutAsync, outputScheduler: App.UiScheduler);
+
+        // Needs SelectMainTabCommand and SafeLogoutCommand to exist, hence the position.
+        // LogoutStatusLabel is passed as a delegate rather than a value: it reads WalletVM /
+        // AIBotVM / SniperVM, which are still null this early in the constructor.
+        ShellScreensVM = new ShellScreensViewModel(
+            HelpQuickStartSummary,
+            HelpSafetySummary,
+            () => LogoutStatusLabel,
+            this,
+            SafeLogoutCommand,
+            SelectMainTabCommand);
         SendAiAssistantPromptCommand = ReactiveCommand.Create(SendAiAssistantPrompt, outputScheduler: App.UiScheduler);
         UseAiAssistantQuickPromptCommand = ReactiveCommand.Create<AiAssistantQuickPromptViewModel>(UseAiAssistantQuickPrompt, outputScheduler: App.UiScheduler);
         SelectAiVisualCommand = ReactiveCommand.Create<AiVisualCardViewModel>(SelectAiVisual, outputScheduler: App.UiScheduler);

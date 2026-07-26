@@ -2,13 +2,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.GasWidget"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vm:GasMonitorViewModel"
+             x:CompileBindings="True">
   <StackPanel Spacing="8">
 
     <!-- Explains the "–" placeholders in the cards below while the first snapshot is in flight -->
     <TextBlock Classes="WidgetEmpty" Margin="0"
-               IsVisible="{Binding GasMonitorVM.IsLoading}"
+               IsVisible="{Binding IsLoading}"
                Text="Fetching gas prices…" />
 
     <!-- Three-column gas cards -->
@@ -25,17 +25,17 @@
             <TextBlock Grid.Column="0" Grid.Row="0" Text="Slow"     Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
             <TextBlock Grid.Column="1" Grid.Row="0" Text="Std"      Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
             <TextBlock Grid.Column="2" Grid.Row="0" Text="Fast"     Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-            <TextBlock Grid.Column="0" Grid.Row="1" Text="{Binding GasMonitorVM.EthSlowLabel}"
-                       Foreground="{Binding GasMonitorVM.EthSlowColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
-            <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding GasMonitorVM.EthStdLabel}"
-                       Foreground="{Binding GasMonitorVM.EthStdColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
-            <TextBlock Grid.Column="2" Grid.Row="1" Text="{Binding GasMonitorVM.EthFastLabel}"
-                       Foreground="{Binding GasMonitorVM.EthFastColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
-            <TextBlock Grid.Column="0" Grid.Row="2" Text="{Binding GasMonitorVM.EthSlowTimeLabel}"
+            <TextBlock Grid.Column="0" Grid.Row="1" Text="{Binding EthSlowLabel}"
+                       Foreground="{Binding EthSlowColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
+            <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding EthStdLabel}"
+                       Foreground="{Binding EthStdColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
+            <TextBlock Grid.Column="2" Grid.Row="1" Text="{Binding EthFastLabel}"
+                       Foreground="{Binding EthFastColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
+            <TextBlock Grid.Column="0" Grid.Row="2" Text="{Binding EthSlowTimeLabel}"
                        Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" />
-            <TextBlock Grid.Column="1" Grid.Row="2" Text="{Binding GasMonitorVM.EthStdTimeLabel}"
+            <TextBlock Grid.Column="1" Grid.Row="2" Text="{Binding EthStdTimeLabel}"
                        Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" />
-            <TextBlock Grid.Column="2" Grid.Row="2" Text="{Binding GasMonitorVM.EthFastTimeLabel}"
+            <TextBlock Grid.Column="2" Grid.Row="2" Text="{Binding EthFastTimeLabel}"
                        Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" />
           </Grid>
         </StackPanel>
@@ -52,12 +52,12 @@
             <TextBlock Grid.Column="0" Grid.Row="0" Text="Slow"     Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
             <TextBlock Grid.Column="1" Grid.Row="0" Text="Std"      Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
             <TextBlock Grid.Column="2" Grid.Row="0" Text="Fast"     Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-            <TextBlock Grid.Column="0" Grid.Row="1" Text="{Binding GasMonitorVM.BscSlowLabel}"
-                       Foreground="{Binding GasMonitorVM.BscSlowColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
-            <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding GasMonitorVM.BscStdLabel}"
-                       Foreground="{Binding GasMonitorVM.BscStdColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
-            <TextBlock Grid.Column="2" Grid.Row="1" Text="{Binding GasMonitorVM.BscFastLabel}"
-                       Foreground="{Binding GasMonitorVM.BscFastColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
+            <TextBlock Grid.Column="0" Grid.Row="1" Text="{Binding BscSlowLabel}"
+                       Foreground="{Binding BscSlowColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
+            <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding BscStdLabel}"
+                       Foreground="{Binding BscStdColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
+            <TextBlock Grid.Column="2" Grid.Row="1" Text="{Binding BscFastLabel}"
+                       Foreground="{Binding BscFastColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
           </Grid>
         </StackPanel>
       </Border>
@@ -71,8 +71,8 @@
           </StackPanel>
           <StackPanel Spacing="2">
             <TextBlock Text="TPS" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-            <TextBlock Text="{Binding GasMonitorVM.SolanaTpsLabel}"
-                       Foreground="{Binding GasMonitorVM.SolanaColor, Converter={StaticResource StringToBrush}}"
+            <TextBlock Text="{Binding SolanaTpsLabel}"
+                       Foreground="{Binding SolanaColor, Converter={StaticResource StringToBrush}}"
                        FontSize="{DynamicResource FsTitle}" FontWeight="Bold" />
           </StackPanel>
         </StackPanel>
@@ -81,7 +81,7 @@
     </Grid>
 
     <!-- Last updated -->
-    <TextBlock Text="{Binding GasMonitorVM.LastUpdatedLabel}"
+    <TextBlock Text="{Binding LastUpdatedLabel}"
                Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" />
 
   </StackPanel>

@@ -2,8 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.TapeWidget"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vm:MarketTapeViewModel"
+             x:CompileBindings="True">
   <!-- Grid, not StackPanel: a StackPanel measures its children with infinite height, so the
        ScrollViewer below got a viewport as tall as its content, never showed a scrollbar and
        spilled out of the widget cell. The star row gives it a real height to scroll inside. -->
@@ -12,9 +12,9 @@
 
     <!-- Pressure + status summary -->
     <StackPanel Spacing="3">
-      <TextBlock Text="{Binding MarketTapeVM.PressureLabel}" FontWeight="SemiBold"
-                 Foreground="{Binding MarketTapeVM.PressureBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsSmall}" />
-      <TextBlock Text="{Binding MarketTapeVM.StatusLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" />
+      <TextBlock Text="{Binding PressureLabel}" FontWeight="SemiBold"
+                 Foreground="{Binding PressureBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsSmall}" />
+      <TextBlock Text="{Binding StatusLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" />
     </StackPanel>
 
     <!-- Column headers. Proportional, not fixed: the old 328px of fixed columns exceeded the
@@ -42,9 +42,9 @@
     <!-- Trade tape -->
 
     <ScrollViewer Grid.Row="1" Margin="0,8,0,0" VerticalScrollBarVisibility="Auto">
-      <ItemsControl ItemsSource="{Binding MarketTapeVM.Rows}">
+      <ItemsControl ItemsSource="{Binding Rows}">
         <ItemsControl.ItemTemplate>
-          <DataTemplate>
+          <DataTemplate x:DataType="vm:TapeRowVM">
             <Border Background="{Binding RowBrush, Converter={StaticResource StringToBrush}}" CornerRadius="2" Padding="2,1">
               <Grid>
                 <Grid.ColumnDefinitions>
@@ -79,7 +79,7 @@
     </ScrollViewer>
 
     <TextBlock Grid.Row="1" Classes="WidgetEmpty"
-               IsVisible="{Binding !MarketTapeVM.Rows.Count}"
+               IsVisible="{Binding !Rows.Count}"
                Text="No prints on the tape yet. Open the Tape desk and start the feed for the selected market." />
 
   </Grid>

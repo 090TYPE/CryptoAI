@@ -2,8 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.ScannerWidget"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vm:MarketScannerViewModel"
+             x:CompileBindings="True">
   <!-- Grid, not StackPanel: a StackPanel measures its children with infinite height, so the
        ScrollViewer below got a viewport as tall as its content, never showed a scrollbar and
        spilled out of the widget cell. The star row gives it a real height to scroll inside. -->
@@ -15,28 +15,28 @@
       <Border Background="{DynamicResource Surface3}" CornerRadius="6" Padding="10,4">
         <StackPanel Spacing="1" HorizontalAlignment="Center">
           <TextBlock Text="Total" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
-          <TextBlock Text="{Binding ScannerVM.TotalSymbols}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"
+          <TextBlock Text="{Binding TotalSymbols}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"
                      Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
         </StackPanel>
       </Border>
       <Border Background="{DynamicResource PositiveTint}" CornerRadius="6" Padding="10,4">
         <StackPanel Spacing="1" HorizontalAlignment="Center">
           <TextBlock Text="Hot" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
-          <TextBlock Text="{Binding ScannerVM.HotCount}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"
+          <TextBlock Text="{Binding HotCount}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"
                      Foreground="#FF6B00" HorizontalAlignment="Center" />
         </StackPanel>
       </Border>
       <Border Background="#0A1F0A" CornerRadius="6" Padding="10,4">
         <StackPanel Spacing="1" HorizontalAlignment="Center">
           <TextBlock Text="Gainers" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
-          <TextBlock Text="{Binding ScannerVM.GainersCount}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"
+          <TextBlock Text="{Binding GainersCount}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"
                      Foreground="{DynamicResource Accent}" HorizontalAlignment="Center" />
         </StackPanel>
       </Border>
       <Border Background="{DynamicResource NegativeFill}" CornerRadius="6" Padding="10,4">
         <StackPanel Spacing="1" HorizontalAlignment="Center">
           <TextBlock Text="Losers" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
-          <TextBlock Text="{Binding ScannerVM.LosersCount}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"
+          <TextBlock Text="{Binding LosersCount}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"
                      Foreground="#FF5555" HorizontalAlignment="Center" />
         </StackPanel>
       </Border>
@@ -57,9 +57,9 @@
     <!-- Scanner rows -->
 
     <ScrollViewer Grid.Row="1" Margin="0,8,0,0" VerticalScrollBarVisibility="Auto">
-      <ItemsControl ItemsSource="{Binding ScannerVM.Rows}">
+      <ItemsControl ItemsSource="{Binding Rows}">
         <ItemsControl.ItemTemplate>
-          <DataTemplate>
+          <DataTemplate x:DataType="vm:ScanRowVM">
             <Border Background="{Binding RowBackground}" Margin="0,1" Padding="0">
               <Grid ColumnDefinitions="20,*,80,70,80,60" Margin="2,4">
                 <TextBlock Grid.Column="0" Text="{Binding HotBadgeText}"
@@ -97,7 +97,7 @@
     </ScrollViewer>
 
     <TextBlock Grid.Row="1" Classes="WidgetEmpty"
-               IsVisible="{Binding !ScannerVM.Rows.Count}"
+               IsVisible="{Binding !Rows.Count}"
                Text="Scanner has no results yet. Run a scan on the Scanner desk or relax its filters." />
 
   </Grid>

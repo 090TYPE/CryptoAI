@@ -3,9 +3,9 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.LogoutView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <StackPanel Spacing="16" IsVisible="{Binding IsLogoutSectionVisible}">
+             x:DataType="vm:ShellScreensViewModel"
+             x:CompileBindings="True">
+          <StackPanel Spacing="16">
             <Border Classes="ExecutionGuardCard">
               <StackPanel Spacing="10">
                 <TextBlock Classes="H2" Text="Current Session State" />

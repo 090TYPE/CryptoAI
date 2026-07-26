@@ -723,6 +723,8 @@ public partial class MainWindowViewModel
     /// <summary>Server feed: the shared AI digest streams + this user's events. Idle without a server.</summary>
     public AiFeedViewModel               AiFeedVM           { get; } = new();
     public OnChainMetricsViewModel       OnChainVM          { get; private set; } = null!;
+    /// <summary>Help and Logout — the two shell screens with no domain of their own.</summary>
+    public ShellScreensViewModel         ShellScreensVM     { get; private set; } = null!;
     public OnboardingViewModel           OnboardingVM       { get; } = new();
     public LicenseViewModel              LicenseVM          { get; } = new();
 

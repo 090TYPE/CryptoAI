@@ -7,6 +7,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using CryptoAITerminal.TerminalUI.ViewModels;
 
 namespace CryptoAITerminal.TerminalUI.Services;
 
@@ -232,7 +233,9 @@ public sealed record AssetOptionsData(
     public string IvLabel        => IsValid ? $"{AtmIv:F1}%" : "--";
     public string PcRatioLabel   => IsValid ? $"{PutCallRatio:0.00}" : "--";
     public string SkewLabel      => IsValid ? $"{Skew25Delta:+0.0;-0.0;0}%" : "--";
-    public string SkewBrush      => Skew25Delta > 2m ? "#FF6B6B" : Skew25Delta < -2m ? "#3DDC84" : "#F4B860";
+    public string SkewBrush      => Skew25Delta > 2m ? SemanticColor.Negative
+                                  : Skew25Delta < -2m ? SemanticColor.Positive
+                                  : SemanticColor.Warning;
     public string SentimentLabel => Skew25Delta > 5m ? "Extreme Fear" :
                                     Skew25Delta > 2m ? "Fear" :
                                     Skew25Delta < -5m ? "Extreme Greed" :
@@ -265,6 +268,6 @@ public sealed record DeribitOptionsSnapshot(
     }
 
     public string MarketSentimentBrush =>
-        MarketSentiment.Contains("Fear")  ? "#FF6B6B" :
-        MarketSentiment.Contains("Greed") ? "#3DDC84" : "#F4B860";
+        MarketSentiment.Contains("Fear")  ? SemanticColor.Negative :
+        MarketSentiment.Contains("Greed") ? SemanticColor.Positive : SemanticColor.Warning;
 }

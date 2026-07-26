@@ -3,8 +3,8 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:wt="clr-namespace:CryptoAITerminal.WhaleTracker.Models;assembly=CryptoAITerminal.WhaleTracker"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.WhalesWidget"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vm:WhaleTrackerViewModel"
+             x:CompileBindings="True">
   <!-- Grid, not StackPanel: a StackPanel measures its children with infinite height, so the
        ScrollViewer below got a viewport as tall as its content, never showed a scrollbar and
        spilled out of the widget cell. The star row gives it a real height to scroll inside. -->
@@ -16,26 +16,26 @@
       <Border Grid.Column="0" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="Min Transfer" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-          <TextBlock Text="{Binding WhaleTrackerVM.MinUsdValue, StringFormat='${0:N0}'}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsSubhead}" FontWeight="SemiBold" />
+          <TextBlock Text="{Binding MinUsdValue, StringFormat='${0:N0}'}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsSubhead}" FontWeight="SemiBold" />
         </StackPanel>
       </Border>
       <Border Grid.Column="1" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="Alerts" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-          <TextBlock Text="{Binding WhaleTrackerVM.TotalAlertsCount}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsSubhead}" FontWeight="SemiBold" />
+          <TextBlock Text="{Binding TotalAlertsCount}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsSubhead}" FontWeight="SemiBold" />
         </StackPanel>
       </Border>
       <Border Grid.Column="2" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="Labeled" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-          <TextBlock Text="{Binding WhaleTrackerVM.LabeledAlertsCount}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsSubhead}" FontWeight="SemiBold" />
+          <TextBlock Text="{Binding LabeledAlertsCount}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsSubhead}" FontWeight="SemiBold" />
         </StackPanel>
       </Border>
     </Grid>
 
     <!-- Status bar -->
     <StackPanel Orientation="Horizontal" Spacing="8">
-      <TextBlock Text="{Binding WhaleTrackerVM.KnownWalletCount, StringFormat='{}{0} wallets tracked'}"
+      <TextBlock Text="{Binding KnownWalletCount, StringFormat='{}{0} wallets tracked'}"
                  Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
     </StackPanel>
     </StackPanel>
@@ -43,7 +43,7 @@
     <!-- Live whale alerts list -->
 
     <ScrollViewer Grid.Row="1" Margin="0,8,0,0" VerticalScrollBarVisibility="Auto">
-      <ItemsControl ItemsSource="{Binding WhaleTrackerVM.RecentAlerts}">
+      <ItemsControl ItemsSource="{Binding RecentAlerts}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:WhaleAlertViewModel">
             <Border Padding="8,6" Margin="0,1" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="0,0,0,1">
@@ -75,7 +75,7 @@
     </ScrollViewer>
 
     <TextBlock Grid.Row="1" Classes="WidgetEmpty"
-               IsVisible="{Binding !WhaleTrackerVM.RecentAlerts.Count}"
+               IsVisible="{Binding !RecentAlerts.Count}"
                Text="No whale transfers yet. Start tracking on the Whale Tracker desk — transfers above the minimum show up here." />
 
   </Grid>

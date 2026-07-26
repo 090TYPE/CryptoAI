@@ -115,7 +115,7 @@ public sealed class CopyTradingFollowerService : IDisposable
         lock (_lifecycleLock)
         {
             // Cancel может прийти после того, как цикл уже освободил свой CTS.
-            try { _cts?.Cancel(); } catch (ObjectDisposedException) { }
+            try { _cts?.Cancel(); } catch (ObjectDisposedException) { /* цикл уже вышел — отменять нечего */ }
             _cts = null;
         }
     }
@@ -127,7 +127,7 @@ public sealed class CopyTradingFollowerService : IDisposable
         lock (_lifecycleLock)
         {
             // Как и в Stop(): цикл мог уже освободить свой CTS в finally — отменять нечего.
-            try { _cts?.Cancel(); } catch (ObjectDisposedException) { }
+            try { _cts?.Cancel(); } catch (ObjectDisposedException) { /* цикл уже вышел — отменять нечего */ }
             _cts = null;
             loop = _loopTask;
         }

@@ -2,8 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.AnalyticsWidget"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vm:PnlDashboardViewModel"
+             x:CompileBindings="True">
   <StackPanel Spacing="8">
 
     <!-- KPI cards. WrapPanel + MinWidth: six equal grid columns squeezed each tile below the
@@ -13,62 +13,62 @@
       <Border MinWidth="92" Margin="0,0,6,6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="P&amp;L" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
-          <TextBlock Text="{Binding PnlDashboardVM.TotalPnlLabel}"
-                     Foreground="{Binding PnlDashboardVM.TotalPnlBrush, Converter={StaticResource StringToBrush}}"
+          <TextBlock Text="{Binding TotalPnlLabel}"
+                     Foreground="{Binding TotalPnlBrush, Converter={StaticResource StringToBrush}}"
                      FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
       <Border MinWidth="92" Margin="0,0,6,6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="WIN RATE" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
-          <TextBlock Text="{Binding PnlDashboardVM.WinRateLabel}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" TextWrapping="Wrap" />
-          <TextBlock Text="{Binding PnlDashboardVM.TradeCountLabel}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding WinRateLabel}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding TradeCountLabel}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
       <Border MinWidth="92" Margin="0,0,6,6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="AVG WIN" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
-          <TextBlock Text="{Binding PnlDashboardVM.AvgWinLabel}" Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding AvgWinLabel}" Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
       <Border MinWidth="92" Margin="0,0,6,6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="AVG LOSS" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
-          <TextBlock Text="{Binding PnlDashboardVM.AvgLossLabel}" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding AvgLossLabel}" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
       <Border MinWidth="92" Margin="0,0,6,6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="DRAWDOWN" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
-          <TextBlock Text="{Binding PnlDashboardVM.MaxDrawdownLabel}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding MaxDrawdownLabel}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
       <Border MinWidth="92" Margin="0,0,6,6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
           <TextBlock Text="PROFIT FACTOR" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
-          <TextBlock Text="{Binding PnlDashboardVM.ProfitFactorLabel}" Foreground="{DynamicResource AccentPurple}" FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding ProfitFactorLabel}" Foreground="{DynamicResource AccentPurple}" FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
     </WrapPanel>
 
     <!-- Equity curve mini canvas -->
     <Border Background="{DynamicResource Surface0}" CornerRadius="4" Height="80"
-            IsVisible="{Binding PnlDashboardVM.EquityCurveHasData}">
+            IsVisible="{Binding EquityCurveHasData}">
       <Canvas Width="560" Height="70" VerticalAlignment="Center" HorizontalAlignment="Left">
         <Path Fill="#33FF5D73" Stroke="Transparent"
-              Data="{Binding PnlDashboardVM.DrawdownPathData}" />
+              Data="{Binding DrawdownPathData}" />
         <Line StartPoint="0,0" EndPoint="560,0"
               Stroke="{DynamicResource PanelStroke}" StrokeThickness="1" StrokeDashArray="4,4">
           <Line.RenderTransform>
-            <TranslateTransform Y="{Binding PnlDashboardVM.ZeroLineY}" />
+            <TranslateTransform Y="{Binding ZeroLineY}" />
           </Line.RenderTransform>
         </Line>
         <Path Stroke="{DynamicResource Accent}" StrokeThickness="1.5" Fill="Transparent"
-              Data="{Binding PnlDashboardVM.EquityCurvePathData}" />
+              Data="{Binding EquityCurvePathData}" />
       </Canvas>
     </Border>
     <Border Background="{DynamicResource Surface0}" CornerRadius="4" Height="40"
-            IsVisible="{Binding PnlDashboardVM.EquityCurveIsEmpty}">
+            IsVisible="{Binding EquityCurveIsEmpty}">
       <TextBlock Text="No trade data yet."
                  Foreground="#2A3D4F" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{DynamicResource FsCaption}" />
     </Border>
@@ -83,7 +83,7 @@
       <TextBlock Grid.Column="5" Text="EXIT"   Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
     </Grid>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-      <ItemsControl ItemsSource="{Binding PnlDashboardVM.TradeRows}">
+      <ItemsControl ItemsSource="{Binding TradeRows}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:TradeRowViewModel">
             <Border Padding="2,4" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="0,0,0,1">

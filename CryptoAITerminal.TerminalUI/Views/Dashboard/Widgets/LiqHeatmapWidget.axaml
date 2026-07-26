@@ -2,27 +2,33 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.LiqHeatmapWidget"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vm:LiquidationHeatmapViewModel"
+             x:CompileBindings="True">
   <Border Background="{DynamicResource Surface1}" CornerRadius="6" ClipToBounds="True"
           ToolTip.Tip="Liquidation Heatmap — click 🔥 Liq Map for fullscreen">
     <StackPanel>
       <TextBlock Text="LIQ MAP" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold"
                  Margin="4,4,0,2" />
-      <TextBlock Classes="WidgetEmpty"
-                 IsVisible="{Binding !LiquidationHeatmapVM.HeatBands.Count}"
+      <!-- Reflection binding: Count is declared on IReadOnlyCollection<T>, one interface up from
+           HeatBands' IReadOnlyList<T>, and the compiled path resolver walks base classes rather
+           than inherited interfaces. The path still resolves against this widget's own VM. -->
+      <TextBlock Classes="WidgetEmpty" x:CompileBindings="False"
+                 IsVisible="{Binding !HeatBands.Count}"
                  Text="No liquidation clusters yet. Open 🔥 Liq Map and load a symbol to build the heatmap." />
       <Viewbox Stretch="Fill">
         <Canvas Width="1200" Height="460">
           <!-- Heat bands — full-width, colour = side, opacity = magnitude -->
-          <ItemsControl ItemsSource="{Binding LiquidationHeatmapVM.HeatBands}">
+          <ItemsControl ItemsSource="{Binding HeatBands}">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
                 <Canvas Width="1200" Height="460" />
               </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.Styles>
-              <Style Selector="ContentPresenter">
+              <!-- The setter binds the ContentPresenter's item (HeatBand), not this view's
+                   DataContext, and a Style carries no x:DataType — a compiled binding would
+                   resolve Y against LiquidationHeatmapViewModel and fail. -->
+              <Style Selector="ContentPresenter" x:CompileBindings="False">
                 <Setter Property="Canvas.Top" Value="{Binding Y}" />
                 <Setter Property="Canvas.Left" Value="0" />
               </Style>
@@ -34,7 +40,7 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
-          <Path Data="{Binding LiquidationHeatmapVM.CurrentPriceGeometry}"
+          <Path Data="{Binding CurrentPriceGeometry}"
                 Stroke="{DynamicResource Warning}" StrokeThickness="2" StrokeDashArray="8,4" />
         </Canvas>
       </Viewbox>

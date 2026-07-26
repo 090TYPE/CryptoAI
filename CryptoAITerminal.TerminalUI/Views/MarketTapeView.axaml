@@ -2,9 +2,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              x:Class="CryptoAITerminal.TerminalUI.Views.MarketTapeView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-  <StackPanel Spacing="16" IsVisible="{Binding IsTapeSectionVisible}">
+             x:DataType="vm:MarketTapeViewModel"
+             x:CompileBindings="True">
+  <StackPanel Spacing="16">
 
     <Border Classes="Panel">
       <StackPanel Spacing="10">
@@ -15,47 +15,47 @@
         <!-- venue toggle -->
         <StackPanel Orientation="Horizontal" Spacing="8">
           <Button Content="CEX" Width="80"
-                  Background="{Binding MarketTapeVM.CexTabBrush, Converter={StaticResource StringToBrush}}" Foreground="{Binding MarketTapeVM.CexTabFg, Converter={StaticResource StringToBrush}}"
-                  Command="{Binding MarketTapeVM.SelectCexCommand}" />
+                  Background="{Binding CexTabBrush, Converter={StaticResource StringToBrush}}" Foreground="{Binding CexTabFg, Converter={StaticResource StringToBrush}}"
+                  Command="{Binding SelectCexCommand}" />
           <Button Content="DEX" Width="80"
-                  Background="{Binding MarketTapeVM.DexTabBrush, Converter={StaticResource StringToBrush}}" Foreground="{Binding MarketTapeVM.DexTabFg, Converter={StaticResource StringToBrush}}"
-                  Command="{Binding MarketTapeVM.SelectDexCommand}" />
+                  Background="{Binding DexTabBrush, Converter={StaticResource StringToBrush}}" Foreground="{Binding DexTabFg, Converter={StaticResource StringToBrush}}"
+                  Command="{Binding SelectDexCommand}" />
         </StackPanel>
 
         <!-- CEX input -->
         <Grid ColumnDefinitions="Auto,160,Auto,160,Auto" ColumnSpacing="12"
-              IsVisible="{Binding MarketTapeVM.IsCex}">
+              IsVisible="{Binding IsCex}">
           <TextBlock Grid.Column="0" Text="Symbol" VerticalAlignment="Center" />
-          <TextBox Grid.Column="1" Text="{Binding MarketTapeVM.Symbol}" PlaceholderText="BTCUSDT" />
+          <TextBox Grid.Column="1" Text="{Binding Symbol}" PlaceholderText="BTCUSDT" />
           <TextBlock Grid.Column="2" Text="Large print ≥ (USDT)" VerticalAlignment="Center" />
           <NumericUpDown Grid.Column="3" Minimum="0" Increment="10000"
-                         Value="{Binding MarketTapeVM.LargePrintThreshold}" />
+                         Value="{Binding LargePrintThreshold}" />
           <Button Grid.Column="4" Classes="GhostButton" Content="Apply"
-                  VerticalAlignment="Center" Command="{Binding MarketTapeVM.RefreshCommand}" />
+                  VerticalAlignment="Center" Command="{Binding RefreshCommand}" />
         </Grid>
 
         <!-- DEX input -->
-        <StackPanel Spacing="8" IsVisible="{Binding MarketTapeVM.IsDex}">
+        <StackPanel Spacing="8" IsVisible="{Binding IsDex}">
           <Grid ColumnDefinitions="Auto,120,Auto,*" ColumnSpacing="12">
             <TextBlock Grid.Column="0" Text="Network" VerticalAlignment="Center" />
-            <TextBox Grid.Column="1" Text="{Binding MarketTapeVM.Network}" PlaceholderText="eth" />
+            <TextBox Grid.Column="1" Text="{Binding Network}" PlaceholderText="eth" />
             <TextBlock Grid.Column="2" Text="Pool address" VerticalAlignment="Center" />
-            <TextBox Grid.Column="3" Text="{Binding MarketTapeVM.PoolAddress}" PlaceholderText="0x…" />
+            <TextBox Grid.Column="3" Text="{Binding PoolAddress}" PlaceholderText="0x…" />
           </Grid>
           <Grid ColumnDefinitions="Auto,160,Auto" ColumnSpacing="12">
             <TextBlock Grid.Column="0" Text="Large print ≥ (USD)" VerticalAlignment="Center" />
             <NumericUpDown Grid.Column="1" Minimum="0" Increment="10000"
-                           Value="{Binding MarketTapeVM.LargePrintThreshold}" />
+                           Value="{Binding LargePrintThreshold}" />
             <Button Grid.Column="2" Classes="GhostButton" Content="Apply"
-                    VerticalAlignment="Center" Command="{Binding MarketTapeVM.RefreshCommand}" />
+                    VerticalAlignment="Center" Command="{Binding RefreshCommand}" />
           </Grid>
           <TextBlock Text="Network ids: eth, bsc, solana, base, arbitrum, polygon_pos. Pool = the pair/pool address on that chain."
                      Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" />
         </StackPanel>
 
-        <TextBlock Text="{Binding MarketTapeVM.PressureLabel}" FontWeight="SemiBold"
-                   Foreground="{Binding MarketTapeVM.PressureBrush, Converter={StaticResource StringToBrush}}" />
-        <TextBlock Text="{Binding MarketTapeVM.StatusLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
+        <TextBlock Text="{Binding PressureLabel}" FontWeight="SemiBold"
+                   Foreground="{Binding PressureBrush, Converter={StaticResource StringToBrush}}" />
+        <TextBlock Text="{Binding StatusLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
       </StackPanel>
     </Border>
 
@@ -70,9 +70,9 @@
           <TextBlock Grid.Column="5" Text="USD"    Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" HorizontalAlignment="Right" />
           <TextBlock Grid.Column="6" Text="Wallet" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
         </Grid>
-        <ItemsControl ItemsSource="{Binding MarketTapeVM.Rows}">
+        <ItemsControl ItemsSource="{Binding Rows}">
           <ItemsControl.ItemTemplate>
-            <DataTemplate>
+            <DataTemplate x:DataType="vm:TapeRowVM">
               <Border Background="{Binding RowBrush, Converter={StaticResource StringToBrush}}" CornerRadius="3" Padding="2,1">
                 <Grid ColumnDefinitions="44,90,60,*,*,80,110">
                   <TextBlock Grid.Column="0" Text="{Binding VenueLabel}"

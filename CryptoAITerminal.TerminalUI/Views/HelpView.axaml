@@ -3,11 +3,13 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.HelpView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <StackPanel Spacing="16" IsVisible="{Binding IsHelpSectionVisible}">
+             x:DataType="vm:ShellScreensViewModel"
+             x:CompileBindings="True">
+          <StackPanel Spacing="16">
             <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
-              <Border Classes="SectionPanel">
+              <!-- Both cards used to omit Grid.Column, so both landed in column 0 and Safety
+                   painted straight over Quick Start — the guide showed one card, not two. -->
+              <Border Grid.Column="0" Classes="SectionPanel">
                 <StackPanel Spacing="10">
                   <TextBlock Classes="H2" Text="Quick Start" />
                   <TextBlock Text="{Binding HelpQuickStartSummary}" TextWrapping="Wrap" />
@@ -16,7 +18,7 @@
                   <TextBlock Text="3. Trade manually or arm the sniper after reviewing risk." Classes="SecondaryCopy" />
                 </StackPanel>
               </Border>
-              <Border Classes="SectionPanel">
+              <Border Grid.Column="1" Classes="SectionPanel">
                 <StackPanel Spacing="10">
                   <TextBlock Classes="H2" Text="Safety" />
                   <TextBlock Text="{Binding HelpSafetySummary}" TextWrapping="Wrap" />

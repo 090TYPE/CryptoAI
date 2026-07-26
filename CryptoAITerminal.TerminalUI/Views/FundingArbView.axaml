@@ -3,20 +3,20 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.FundingArbView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <StackPanel Spacing="16" IsVisible="{Binding IsFundingRateSectionVisible}">
+             x:DataType="vm:FundingArbitrageViewModel"
+             x:CompileBindings="True">
+          <StackPanel Spacing="16">
 
             <!-- Section header -->
             <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
               <StackPanel Grid.Column="0" Spacing="2">
                 <TextBlock Classes="H1" Text="Funding Rate Arbitrage Bot" />
-                <TextBlock Text="{Binding FundingArbitrageVM.StatusLabel}"
+                <TextBlock Text="{Binding StatusLabel}"
                            FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />
               </StackPanel>
               <Button Grid.Column="1" Classes="GhostButton" Content="↺ Refresh"
-                      IsEnabled="{Binding !FundingArbitrageVM.IsLoading}"
-                      Command="{Binding FundingArbitrageVM.RefreshCommand}" />
+                      IsEnabled="{Binding !IsLoading}"
+                      Command="{Binding RefreshCommand}" />
             </Grid>
 
             <!-- Config row -->
@@ -25,21 +25,21 @@
                 <TextBlock Grid.Column="0" Text="Min rate (per 8h)%" Classes="Overline"
                            VerticalAlignment="Center" />
                 <NumericUpDown Grid.Column="1"
-                               Value="{Binding FundingArbitrageVM.ThresholdPct}"
+                               Value="{Binding ThresholdPct}"
                                Minimum="0.01" Maximum="5" Increment="0.01"
                                FormatString="N2" />
 
                 <TextBlock Grid.Column="2" Text="Notional USD" Classes="Overline"
                            VerticalAlignment="Center" Margin="8,0,0,0" />
                 <NumericUpDown Grid.Column="3"
-                               Value="{Binding FundingArbitrageVM.NotionalUsd}"
+                               Value="{Binding NotionalUsd}"
                                Minimum="10" Maximum="1000000" Increment="100"
                                FormatString="N0" />
 
                 <TextBlock Grid.Column="4" Text="Leverage" Classes="Overline"
                            VerticalAlignment="Center" Margin="8,0,0,0" />
                 <NumericUpDown Grid.Column="5"
-                               Value="{Binding FundingArbitrageVM.Leverage}"
+                               Value="{Binding Leverage}"
                                Minimum="1" Maximum="10" Increment="1"
                                FormatString="N0" />
 
@@ -53,7 +53,7 @@
             <!-- Auto-reinvest row -->
             <Border Classes="Panel" Padding="16,10">
               <Grid ColumnDefinitions="Auto,*,Auto,120,*" ColumnSpacing="16" VerticalAlignment="Center">
-                <ToggleSwitch Grid.Column="0" IsChecked="{Binding FundingArbitrageVM.AutoReinvest}"
+                <ToggleSwitch Grid.Column="0" IsChecked="{Binding AutoReinvest}"
                               Content="Auto-Reinvest" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}"
                            TextWrapping="Wrap" VerticalAlignment="Center"
@@ -61,10 +61,10 @@
                 <TextBlock Grid.Column="2" Text="Threshold $" Classes="Overline"
                            VerticalAlignment="Center" />
                 <NumericUpDown Grid.Column="3"
-                               Value="{Binding FundingArbitrageVM.ReinvestThreshold}"
+                               Value="{Binding ReinvestThreshold}"
                                Minimum="1" Maximum="10000" Increment="5"
                                FormatString="N0"
-                               IsEnabled="{Binding FundingArbitrageVM.AutoReinvest}" />
+                               IsEnabled="{Binding AutoReinvest}" />
                 <TextBlock Grid.Column="4" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}"
                            TextWrapping="Wrap" VerticalAlignment="Center" Margin="8,0,0,0"
                            Text="Reinvest fires when funding collected ≥ Threshold USD." />
@@ -76,35 +76,35 @@
               <Border Grid.Column="0" Classes="SurfaceCard">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="OPEN POSITIONS" />
-                  <TextBlock Text="{Binding FundingArbitrageVM.OpenPositionCount}"
+                  <TextBlock Text="{Binding OpenPositionCount}"
                              Classes="Metric" Foreground="{DynamicResource Warning}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="1" Classes="SurfaceCard">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="FUNDING EARNED" />
-                  <TextBlock Text="{Binding FundingArbitrageVM.TotalFundingLabel}"
+                  <TextBlock Text="{Binding TotalFundingLabel}"
                              Classes="Metric" Foreground="{DynamicResource Accent}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="2" Classes="SurfaceCard">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="TOTAL PnL" />
-                  <TextBlock Text="{Binding FundingArbitrageVM.TotalPnlLabel}"
-                             Classes="Metric" Foreground="{Binding FundingArbitrageVM.TotalPnlBrush}" />
+                  <TextBlock Text="{Binding TotalPnlLabel}"
+                             Classes="Metric" Foreground="{Binding TotalPnlBrush}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="3" Classes="SurfaceCard">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="BEST APR" />
-                  <TextBlock Text="{Binding FundingArbitrageVM.BestAprLabel}"
+                  <TextBlock Text="{Binding BestAprLabel}"
                              Classes="Metric" Foreground="{DynamicResource Accent}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="4" Classes="SurfaceCard">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="REINVESTS" />
-                  <TextBlock Text="{Binding FundingArbitrageVM.ReinvestCountLabel}"
+                  <TextBlock Text="{Binding ReinvestCountLabel}"
                              Classes="Metric" Foreground="{DynamicResource TextMuted}" />
                 </StackPanel>
               </Border>
@@ -131,14 +131,18 @@
                   </Grid>
 
                   <ScrollViewer Classes="PageScroll" MaxHeight="400">
-                    <ItemsControl ItemsSource="{Binding FundingArbitrageVM.Opportunities}">
+                    <ItemsControl ItemsSource="{Binding Opportunities}">
                       <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:FundingArbOpportunityRowVM">
                           <Border Padding="0,6" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1">
                             <Grid ColumnDefinitions="60,*,80,80,70,60,Auto" ColumnSpacing="8">
-                              <!-- Exchange badge -->
+                              <!-- Exchange badge. An inline SolidColorBrush is not a StyledElement and so
+                                   carries no DataContext of its own; a compiled binding on it has nothing to
+                                   resolve against, hence the local opt-out. The tinted fill needs the brush's
+                                   own Opacity — putting Opacity on the Border would fade the label too. -->
                               <Border Grid.Column="0" CornerRadius="4" Padding="4,2"
-                                      HorizontalAlignment="Left" VerticalAlignment="Center">
+                                      HorizontalAlignment="Left" VerticalAlignment="Center"
+                                      x:CompileBindings="False">
                                 <Border.Background>
                                   <SolidColorBrush Color="{Binding ExchangeBadgeColor}" Opacity="0.18" />
                                 </Border.Background>
@@ -175,7 +179,7 @@
                                       FontSize="{DynamicResource FsCaption}"
                                       Width="78"
                                       VerticalAlignment="Center"
-                                      Command="{Binding $parent[Window].DataContext.FundingArbitrageVM.OpenCommand}"
+                                      Command="{Binding $parent[ItemsControl].((vm:FundingArbitrageViewModel)DataContext).OpenCommand}"
                                       CommandParameter="{Binding}" />
                             </Grid>
                           </Border>
@@ -185,7 +189,7 @@
                   </ScrollViewer>
 
                   <!-- Empty state -->
-                  <TextBlock IsVisible="{Binding !FundingArbitrageVM.HasOpportunities}"
+                  <TextBlock IsVisible="{Binding !HasOpportunities}"
                              Text="No opportunities above threshold. Try lowering Min rate or press Refresh."
                              Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" Margin="0,8" />
                 </StackPanel>
@@ -211,7 +215,7 @@
                   </Grid>
 
                   <ScrollViewer Classes="PageScroll" MaxHeight="400">
-                    <ItemsControl ItemsSource="{Binding FundingArbitrageVM.Positions}">
+                    <ItemsControl ItemsSource="{Binding Positions}">
                       <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:FundingArbPositionRowVM">
                           <Border Padding="0,6" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1">
@@ -255,7 +259,7 @@
                                       Padding="8,4" FontSize="{DynamicResource FsCaption}"
                                       Width="66"
                                       VerticalAlignment="Center"
-                                      Command="{Binding $parent[Window].DataContext.FundingArbitrageVM.CloseCommand}"
+                                      Command="{Binding $parent[ItemsControl].((vm:FundingArbitrageViewModel)DataContext).CloseCommand}"
                                       CommandParameter="{Binding}" />
                             </Grid>
                           </Border>
@@ -265,7 +269,7 @@
                   </ScrollViewer>
 
                   <!-- Empty state -->
-                  <StackPanel IsVisible="{Binding !FundingArbitrageVM.Positions.Count}"
+                  <StackPanel IsVisible="{Binding !Positions.Count}"
                               Spacing="6" Margin="0,16">
                     <TextBlock Text="No open positions"
                                Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsBody}"

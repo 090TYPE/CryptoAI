@@ -2,38 +2,38 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.AiFeedWidget"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vm:AiFeedViewModel"
+             x:CompileBindings="True">
   <StackPanel Spacing="8">
 
     <!-- Status + unread badge + actions -->
     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
-      <TextBlock Grid.Column="0" Text="{Binding AiFeedVM.StatusLabel}"
+      <TextBlock Grid.Column="0" Text="{Binding StatusLabel}"
                  Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-      <Border Grid.Column="1" IsVisible="{Binding AiFeedVM.HasUnread}"
+      <Border Grid.Column="1" IsVisible="{Binding HasUnread}"
               Background="{DynamicResource Negative}" CornerRadius="8" Padding="4,1" VerticalAlignment="Center">
-        <TextBlock Text="{Binding AiFeedVM.UnreadBadge, StringFormat='{}{0} new'}"
+        <TextBlock Text="{Binding UnreadBadge, StringFormat='{}{0} new'}"
                    Foreground="White" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
       </Border>
       <Button Grid.Column="2" Content="↻" FontSize="{DynamicResource FsMicro}" Padding="6,1"
               ToolTip.Tip="Refresh feed" AutomationProperties.Name="Refresh AI feed"
-              Command="{Binding AiFeedVM.RefreshCommand}" />
+              Command="{Binding RefreshCommand}" />
     </Grid>
 
-    <TextBlock IsVisible="{Binding AiFeedVM.IsLoading}" Text="Loading server feed…"
+    <TextBlock IsVisible="{Binding IsLoading}" Text="Loading server feed…"
                Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" />
 
     <!-- Your events (alerts, AI anomalies, bots) -->
-    <StackPanel Spacing="3" IsVisible="{Binding AiFeedVM.HasInbox}">
+    <StackPanel Spacing="3" IsVisible="{Binding HasInbox}">
       <Grid ColumnDefinitions="*,Auto">
         <TextBlock Grid.Column="0" Text="YOUR EVENTS" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
         <Button Grid.Column="1" Content="mark all read" FontSize="{DynamicResource FsMicro}" Padding="4,0"
                 Background="Transparent" Foreground="{DynamicResource TextSoft}"
-                Command="{Binding AiFeedVM.MarkAllReadCommand}" />
+                Command="{Binding MarkAllReadCommand}" />
       </Grid>
-      <ItemsControl ItemsSource="{Binding AiFeedVM.Inbox}">
+      <ItemsControl ItemsSource="{Binding Inbox}">
         <ItemsControl.ItemTemplate>
-          <DataTemplate DataType="{x:Type vm:InboxRowVM}">
+          <DataTemplate x:DataType="vm:InboxRowVM">
             <Border Background="{DynamicResource Surface0}" CornerRadius="3" Padding="8,4" Margin="0,1"
                     BorderBrush="{DynamicResource PanelStroke}" BorderThickness="0,0,0,1">
               <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
@@ -60,9 +60,9 @@
     <!-- Latest AI output (server computes once, everyone reads) -->
     <TextBlock Text="LATEST AI OUTPUT" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Margin="0,4,0,0" />
     <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="260">
-      <ItemsControl ItemsSource="{Binding AiFeedVM.Digests}">
+      <ItemsControl ItemsSource="{Binding Digests}">
         <ItemsControl.ItemTemplate>
-          <DataTemplate DataType="{x:Type vm:AiDigestRowVM}">
+          <DataTemplate x:DataType="vm:AiDigestRowVM">
             <Border Background="{DynamicResource Surface0}" CornerRadius="3" Padding="8,6" Margin="0,1"
                     BorderBrush="{DynamicResource PanelStroke}" BorderThickness="0,0,0,1">
               <StackPanel Spacing="3">
@@ -94,9 +94,9 @@
     <!-- Every AI function the server runs, with its cadence and last publish -->
     <TextBlock Text="ALL AI FUNCTIONS" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Margin="0,4,0,0" />
     <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="220">
-      <ItemsControl ItemsSource="{Binding AiFeedVM.Streams}">
+      <ItemsControl ItemsSource="{Binding Streams}">
         <ItemsControl.ItemTemplate>
-          <DataTemplate DataType="{x:Type vm:AiStreamRowVM}">
+          <DataTemplate x:DataType="vm:AiStreamRowVM">
             <Border Background="{DynamicResource Surface0}" CornerRadius="3" Padding="8,4" Margin="0,1"
                     BorderBrush="{DynamicResource PanelStroke}" BorderThickness="0,0,0,1">
               <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">

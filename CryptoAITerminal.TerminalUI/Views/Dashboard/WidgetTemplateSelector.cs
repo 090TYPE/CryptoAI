@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
+using CryptoAITerminal.TerminalUI.ViewModels;
 using CryptoAITerminal.TerminalUI.ViewModels.Dashboard;
 using CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets;
 
@@ -31,5 +32,28 @@ public sealed class WidgetTemplateSelector : IDataTemplate
         // Server feed — shared AI digests + this user's events
         "ai-feed"       => new AiFeedWidget(),
         _               => new TextBlock { Text = "Unknown widget" },
+    };
+
+    /// <summary>
+    /// The DataContext a widget body runs on. Widgets whose bindings stay inside a single
+    /// sub-view-model get that sub-view-model, so their XAML can be compiled against it instead
+    /// of against the whole MainWindowViewModel; the composite ones (Sentiment) and the ones that
+    /// read MainWindowViewModel state directly (price/chart/order book) still get the god object.
+    /// Kept next to <see cref="Build"/> so a new widget cannot get a control without a context.
+    /// </summary>
+    public static object ResolveDataContext(string key, MainWindowViewModel main) => key switch
+    {
+        "liq-heatmap" => main.LiquidationHeatmapVM,
+        "news"        => main.NewsFeedVM,
+        "positions"   => main.AllPositionsVM,
+        "portfolio"   => main.WalletVM,
+        "whales"      => main.WhaleTrackerVM,
+        "funding"     => main.FundingRateVM,
+        "analytics"   => main.PnlDashboardVM,
+        "scanner"     => main.ScannerVM,
+        "gas"         => main.GasMonitorVM,
+        "tape"        => main.MarketTapeVM,
+        "ai-feed"     => main.AiFeedVM,
+        _             => main,
     };
 }

@@ -56,9 +56,9 @@ public partial class WidgetHost : UserControl
 
     private DashboardLayoutViewModel? Layout => MainVm?.DashboardLayoutVM;
 
-    // The widget body controls bind the MainWindowViewModel (SelectedMarket, SentimentVM, …),
-    // but each grid item's DataContext is its DashboardWidget. So build the body here and give
-    // it the MainWindowViewModel as DataContext explicitly. Done once attached, when ancestors exist.
+    // Each grid item's DataContext is its DashboardWidget, but the widget bodies bind view models
+    // that hang off the MainWindowViewModel. So build the body here and hand it the context the
+    // selector picks for that key. Done once attached, when the ancestors it walks up to exist.
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
@@ -70,11 +70,12 @@ public partial class WidgetHost : UserControl
     {
         if (_bodyBuilt) return;
         if (this.FindControl<ContentControl>("Body") is not { } body) return;
-        if (Widget is null || MainVm is null) return;
+        // MainVm walks the visual tree on every read — resolve both once.
+        if (Widget is not { } widget || MainVm is not { } main) return;
 
-        var content = new WidgetTemplateSelector().Build(Widget);
+        var content = new WidgetTemplateSelector().Build(widget);
         if (content is null) return;
-        content.DataContext = MainVm;
+        content.DataContext = WidgetTemplateSelector.ResolveDataContext(widget.Key, main);
         body.Content = content;
         _bodyBuilt = true;
     }

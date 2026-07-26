@@ -3,11 +3,9 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.RouterView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <Border IsVisible="{Binding IsRouterSectionVisible}">
-          <StackPanel Spacing="16"
-                      DataContext="{Binding BestExecutionVM}">
+             x:DataType="vm:BestExecutionViewModel"
+             x:CompileBindings="True">
+          <StackPanel Spacing="16">
 
             <!-- Header ─────────────────────────────────────────────────── -->
             <Grid ColumnDefinitions="*,Auto">
@@ -143,7 +141,7 @@
                 <!-- Quote rows -->
                 <ItemsControl ItemsSource="{Binding Quotes}">
                   <ItemsControl.ItemTemplate>
-                    <DataTemplate>
+                    <DataTemplate x:DataType="vm:ExchangeQuoteRowVM">
                       <Border CornerRadius="6" Padding="8,6" Margin="0,1"
                               Background="{Binding RowBrush}">
                         <Grid ColumnDefinitions="120,*,*,*,100">
@@ -235,7 +233,7 @@
                 <!-- Leg rows -->
                 <ItemsControl ItemsSource="{Binding Legs}">
                   <ItemsControl.ItemTemplate>
-                    <DataTemplate>
+                    <DataTemplate x:DataType="vm:RoutingLegRowVM">
                       <Border Padding="8,6" Margin="0,1">
                         <Grid ColumnDefinitions="120,*,*,*,*,80">
                           <!-- Exchange with rank color -->
@@ -277,5 +275,4 @@
             </Border>
 
           </StackPanel>
-          </Border>
 </UserControl>

@@ -2,8 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.PortfolioWidget"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vm:WalletWorkspaceViewModel"
+             x:CompileBindings="True">
   <!-- Grid, not StackPanel: StackPanel measures with infinite height, so the asset ScrollViewer
        two levels down never got a bounded viewport — no scrollbar, and the list spilled out of the
        widget cell. The Portfolio Lens row is the star one so the list scrolls inside it. -->
@@ -15,10 +15,10 @@
               CornerRadius="6" Padding="10,8">
         <StackPanel Spacing="4">
           <TextBlock Text="Active Session" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" />
-          <TextBlock Text="{Binding WalletVM.ActiveWalletBanner}"
+          <TextBlock Text="{Binding ActiveWalletBanner}"
                      Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" TextWrapping="Wrap" />
-          <TextBlock Text="{Binding WalletVM.WalletReadinessLabel}"
-                     Foreground="{Binding WalletVM.WalletReadinessBrush, Converter={StaticResource StringToBrush}}"
+          <TextBlock Text="{Binding WalletReadinessLabel}"
+                     Foreground="{Binding WalletReadinessBrush, Converter={StaticResource StringToBrush}}"
                      FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" />
         </StackPanel>
       </Border>
@@ -26,10 +26,10 @@
               CornerRadius="6" Padding="10,8">
         <StackPanel Spacing="4">
           <TextBlock Text="Native Balance" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" />
-          <TextBlock Text="{Binding WalletVM.NativeBalanceLabel}"
+          <TextBlock Text="{Binding NativeBalanceLabel}"
                      Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
-          <TextBlock Text="{Binding WalletVM.RouteReadinessLabel}"
-                     Foreground="{Binding WalletVM.RouteReadinessBrush, Converter={StaticResource StringToBrush}}"
+          <TextBlock Text="{Binding RouteReadinessLabel}"
+                     Foreground="{Binding RouteReadinessBrush, Converter={StaticResource StringToBrush}}"
                      FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" />
         </StackPanel>
       </Border>
@@ -40,7 +40,7 @@
       <Grid RowDefinitions="Auto,*" RowSpacing="6">
         <TextBlock Grid.Row="0" Text="Portfolio Lens" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-          <ItemsControl ItemsSource="{Binding WalletVM.Assets}">
+          <ItemsControl ItemsSource="{Binding Assets}">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
                 <WrapPanel Orientation="Horizontal" />
@@ -66,13 +66,13 @@
           </ItemsControl>
         </ScrollViewer>
         <TextBlock Grid.Row="1" Classes="WidgetEmpty"
-                   IsVisible="{Binding !WalletVM.Assets.Count}"
+                   IsVisible="{Binding !Assets.Count}"
                    Text="No wallet assets yet. Connect or select a wallet on the Portfolio desk to fill the lens." />
       </Grid>
     </Border>
 
     <!-- Status -->
-    <TextBlock Grid.Row="2" Margin="0,10,0,0" Text="{Binding WalletVM.StatusMessage}"
+    <TextBlock Grid.Row="2" Margin="0,10,0,0" Text="{Binding StatusMessage}"
                Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
 
   </Grid>

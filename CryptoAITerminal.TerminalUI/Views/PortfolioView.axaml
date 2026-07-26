@@ -3,8 +3,8 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:pd="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels.PortfolioDesk"
              x:Class="CryptoAITerminal.TerminalUI.Views.PortfolioView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vm:PortfolioScreenViewModel"
+             x:CompileBindings="True">
 
   <UserControl.Styles>
     <!-- Плоский шаблон кнопки переехал в AppStyles (Button.FlatChrome). Здесь остаётся только
@@ -75,9 +75,12 @@
     </Style>
   </UserControl.Styles>
 
-  <!-- Root: everything on a Panel so the modal can overlay -->
-  <Panel Background="{DynamicResource Surface0}" DataContext="{Binding PortfolioDeskVM}">
-    <Grid RowDefinitions="54,*">
+  <!-- Root: everything on a Panel so the modal can overlay.
+       The desk is the context for nearly the whole screen, but x:DataType cannot sit on the node
+       that switches DataContext: it would also retype that node's own {Binding Desk}, which has to
+       resolve against the screen. Hence the type is declared on this Panel's three children. -->
+  <Panel Background="{DynamicResource Surface0}" DataContext="{Binding Desk}">
+    <Grid RowDefinitions="54,*" x:DataType="pd:PortfolioDeskViewModel">
 
       <!-- ══════════ HEADER ══════════ -->
       <Border Grid.Row="0" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1">
@@ -225,7 +228,9 @@
                             </Grid>
                             <Grid ColumnDefinitions="*,Auto,Auto">
                               <Border Grid.Column="0" Height="3" Background="{DynamicResource Surface2}" CornerRadius="2" VerticalAlignment="Center" Margin="0,0,4,0" ClipToBounds="True">
-                                <Grid>
+                                <!-- ColumnDefinition is not a StyledElement and so carries no DataContext of
+                                     its own; a compiled binding on it has nothing to resolve against. -->
+                                <Grid x:CompileBindings="False">
                                   <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="{Binding HealthPct, Converter={StaticResource PercentToStar}}" />
                                     <ColumnDefinition Width="{Binding HealthPct, Converter={StaticResource PercentToStar}, ConverterParameter=rest}" />
@@ -315,7 +320,9 @@
                             </StackPanel>
                           </Grid>
                           <Border Height="4" Background="{DynamicResource Surface2}" CornerRadius="2" ClipToBounds="True">
-                            <Grid>
+                            <!-- ColumnDefinition is not a StyledElement and so carries no DataContext of
+                                 its own; a compiled binding on it has nothing to resolve against. -->
+                            <Grid x:CompileBindings="False">
                               <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="{Binding Width, Converter={StaticResource PercentToStar}}" />
                                 <ColumnDefinition Width="{Binding Width, Converter={StaticResource PercentToStar}, ConverterParameter=rest}" />
@@ -457,10 +464,11 @@
             </Grid>
             </ScrollViewer>
 
-            <!-- REBALANCE (reuses the real PortfolioRebalanceVM) -->
+            <!-- REBALANCE (reuses the real PortfolioRebalanceVM). The Panel only exists to carry
+                 DataContext one level above the node that declares x:DataType. -->
             <ContentControl IsVisible="{Binding ShowRebalance}">
-            <Grid RowDefinitions="Auto,Auto,*,Auto"
-                  DataContext="{Binding Rebalance}" x:DataType="vm:PortfolioRebalanceViewModel">
+            <Panel DataContext="{Binding Rebalance}">
+            <Grid RowDefinitions="Auto,Auto,*,Auto" x:DataType="vm:PortfolioRebalanceViewModel">
               <!-- Top bar -->
               <Border Grid.Row="0" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Padding="12,8">
                 <StackPanel Orientation="Horizontal" Spacing="10">
@@ -549,7 +557,7 @@
                             <Button Classes="FlatChrome" Grid.Column="8" Content="×" HorizontalAlignment="Right" Width="22" Height="22" Padding="0" FontSize="{DynamicResource FsSmall}"
                                     ToolTip.Tip="Remove asset" AutomationProperties.Name="Remove asset from rebalance"
                                     Background="#0FFF6B6B" BorderBrush="{DynamicResource NegativeFillStroke}" BorderThickness="1" Foreground="{DynamicResource Negative}" CornerRadius="4"
-                                    Command="{Binding $parent[ItemsControl].DataContext.RemoveAssetCommand}" CommandParameter="{Binding}" />
+                                    Command="{Binding $parent[ItemsControl].((vm:PortfolioRebalanceViewModel)DataContext).RemoveAssetCommand}" CommandParameter="{Binding}" />
                           </Grid>
                         </Border>
                       </DataTemplate>
@@ -572,6 +580,7 @@
                 </StackPanel>
               </Border>
             </Grid>
+            </Panel>
             </ContentControl>
 
             <!-- ACTIVITY / MEME / STAKING placeholders (1:1 structure, live source pending) -->
@@ -580,7 +589,8 @@
                          Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsSmall}" Margin="16,24" TextWrapping="Wrap" />
             </Grid>
             <ContentControl IsVisible="{Binding ShowMeme}">
-              <Grid RowDefinitions="Auto,Auto,*" DataContext="{Binding $parent[Window].DataContext.DexTrendingVM}" x:DataType="vm:DexTrendingViewModel">
+              <Panel DataContext="{Binding $parent[UserControl].((vm:PortfolioScreenViewModel)DataContext).MemeRadar}">
+              <Grid RowDefinitions="Auto,Auto,*" x:DataType="vm:DexTrendingViewModel">
                 <!-- Live-scan strip -->
                 <Border Grid.Row="0" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Padding="12,8">
                   <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
@@ -625,7 +635,7 @@
                               <TextBlock Grid.Column="5" Text="{Binding LiquidityLabel}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}" FontFamily="{StaticResource FontMono}" TextAlignment="Right" />
                               <TextBlock Grid.Column="6" Text="{Binding SecurityScore}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" Foreground="{DynamicResource Accent}" FontFamily="{StaticResource FontMono}" TextAlignment="Center" />
                               <TextBlock Grid.Column="7" Text="{Binding SecurityBadge}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource Warning}" TextAlignment="Right" VerticalAlignment="Center" />
-                              <Button Classes="FlatChrome" Grid.Column="8" Content="OPEN" Command="{Binding $parent[ItemsControl].DataContext.OpenInSniperCommand}" CommandParameter="{Binding}"
+                              <Button Classes="FlatChrome" Grid.Column="8" Content="OPEN" Command="{Binding $parent[ItemsControl].((vm:DexTrendingViewModel)DataContext).OpenInSniperCommand}" CommandParameter="{Binding}"
                                       Padding="8,2" CornerRadius="5" Background="{DynamicResource PositiveTint}" BorderBrush="{DynamicResource PositiveTintStroke}" BorderThickness="1" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                             </Grid>
                           </Border>
@@ -635,6 +645,7 @@
                   </StackPanel>
                 </ScrollViewer>
               </Grid>
+              </Panel>
             </ContentControl>
             <Grid IsVisible="{Binding ShowStaking}">
               <TextBlock Text="No staking positions detected for the connected wallets yet."
@@ -695,8 +706,8 @@
 
               <!-- Arm the selected wallet as the active trading session (WalletVM) -->
               <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Padding="14,10"
-                      DataContext="{Binding $parent[Window].DataContext.WalletVM}">
-                <StackPanel Spacing="7">
+                      DataContext="{Binding $parent[UserControl].((vm:PortfolioScreenViewModel)DataContext).Wallet}">
+                <StackPanel Spacing="7" x:DataType="vm:WalletWorkspaceViewModel">
                   <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Grid.Column="0" Text="ACTIVE TRADING SESSION" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                     <Border Grid.Column="1" Background="{DynamicResource Surface3}" CornerRadius="4" Padding="8,2">
@@ -850,7 +861,9 @@
                                          Foreground="{Binding ChgColor, Converter={StaticResource StringToBrush}}" />
                             </Grid>
                             <Border Height="3" Background="{DynamicResource Surface2}" CornerRadius="2" Margin="0,4,0,0" ClipToBounds="True">
-                              <Grid>
+                              <!-- ColumnDefinition is not a StyledElement and so carries no DataContext of
+                                   its own; a compiled binding on it has nothing to resolve against. -->
+                              <Grid x:CompileBindings="False">
                                 <Grid.ColumnDefinitions>
                                   <ColumnDefinition Width="{Binding AllocPct, Converter={StaticResource PercentToStar}}" />
                                   <ColumnDefinition Width="{Binding AllocPct, Converter={StaticResource PercentToStar}, ConverterParameter=rest}" />
@@ -904,7 +917,8 @@
 
               <!-- ANALYTICS (real realized-PnL from PnlDashboardVM) -->
               <ContentControl IsVisible="{Binding ShowAnalytics}">
-                <StackPanel Margin="12" Spacing="8" DataContext="{Binding $parent[Window].DataContext.PnlDashboardVM}">
+                <Panel DataContext="{Binding $parent[UserControl].((vm:PortfolioScreenViewModel)DataContext).Pnl}">
+                <StackPanel Margin="12" Spacing="8" x:DataType="vm:PnlDashboardViewModel">
                   <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Grid.Column="0" Text="REALIZED PERFORMANCE" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                     <Button Classes="FlatChrome" Grid.Column="1" Content="↻ REFRESH" Command="{Binding RefreshCommand}" Padding="10,4" CornerRadius="6" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
@@ -957,6 +971,7 @@
                     </StackPanel>
                   </Border>
                 </StackPanel>
+                </Panel>
               </ContentControl>
 
             </StackPanel>
@@ -966,7 +981,7 @@
     </Grid>
 
     <!-- ══════════ ADD WALLET MODAL ══════════ -->
-    <Border IsVisible="{Binding ShowModal}" Background="#D9040b12" ZIndex="200">
+    <Border IsVisible="{Binding ShowModal}" Background="#D9040b12" ZIndex="200" x:DataType="pd:PortfolioDeskViewModel">
       <Border Width="580" MaxHeight="720" HorizontalAlignment="Center" VerticalAlignment="Center"
               Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PositiveTintStroke}" BorderThickness="1" CornerRadius="16" ClipToBounds="True">
         <Grid RowDefinitions="Auto,*,Auto">
@@ -1246,7 +1261,7 @@
     </Border>
 
     <!-- ══════════ CONNECTION STUDIO (advanced connect + diagnostics) ══════════ -->
-    <Border IsVisible="{Binding ConnectionStudioVisible}" Background="#D9040b12" ZIndex="210">
+    <Border IsVisible="{Binding ConnectionStudioVisible}" Background="#D9040b12" ZIndex="210" x:DataType="pd:PortfolioDeskViewModel">
       <Border Width="640" MaxHeight="760" HorizontalAlignment="Center" VerticalAlignment="Center"
               Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource InfoTintStroke}" BorderThickness="1" CornerRadius="16" ClipToBounds="True">
         <Grid RowDefinitions="Auto,*">
@@ -1268,8 +1283,8 @@
           </Border>
 
           <!-- Content bound to the real WalletVM -->
-          <ScrollViewer Grid.Row="1" DataContext="{Binding $parent[Window].DataContext.WalletVM}">
-            <StackPanel Margin="20" Spacing="14">
+          <ScrollViewer Grid.Row="1" DataContext="{Binding $parent[UserControl].((vm:PortfolioScreenViewModel)DataContext).Wallet}">
+            <StackPanel Margin="20" Spacing="14" x:DataType="vm:WalletWorkspaceViewModel">
 
               <!-- Target network for the diagnostics below -->
               <Border Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="10" Padding="14">
@@ -1293,7 +1308,8 @@
                   <ScrollViewer MaxHeight="150">
                     <ItemsControl ItemsSource="{Binding SolanaDiagnosticSteps}">
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <!-- Items are plain strings, so there is no view-model type to declare here. -->
+                        <DataTemplate x:CompileBindings="False">
                           <TextBlock Text="{Binding .}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontFamily="{StaticResource FontMono}" TextWrapping="Wrap" Margin="0,0,0,2" />
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
@@ -1313,7 +1329,8 @@
                   <ScrollViewer MaxHeight="150">
                     <ItemsControl ItemsSource="{Binding TronDiagnosticSteps}">
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <!-- Items are plain strings, so there is no view-model type to declare here. -->
+                        <DataTemplate x:CompileBindings="False">
                           <TextBlock Text="{Binding .}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontFamily="{StaticResource FontMono}" TextWrapping="Wrap" Margin="0,0,0,2" />
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>

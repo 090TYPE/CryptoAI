@@ -2,18 +2,18 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.PositionsWidget"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vm:AllPositionsViewModel"
+             x:CompileBindings="True">
   <StackPanel Spacing="8">
 
     <!-- Totals summary -->
     <StackPanel Orientation="Horizontal" Spacing="12">
-      <TextBlock Text="{Binding AllPositionsVM.TotalPnlLabel}"
-                 Foreground="{Binding AllPositionsVM.TotalPnlBrush, Converter={StaticResource StringToBrush}}"
+      <TextBlock Text="{Binding TotalPnlLabel}"
+                 Foreground="{Binding TotalPnlBrush, Converter={StaticResource StringToBrush}}"
                  FontSize="{DynamicResource FsTitle}" FontWeight="Bold" />
-      <TextBlock Text="{Binding AllPositionsVM.TotalSizeLabel}"
+      <TextBlock Text="{Binding TotalSizeLabel}"
                  Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Bottom" />
-      <TextBlock Text="{Binding AllPositionsVM.StatusLabel}"
+      <TextBlock Text="{Binding StatusLabel}"
                  Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Bottom" />
     </StackPanel>
 
@@ -30,18 +30,18 @@
     <Border Height="1" Background="#17263A" />
 
     <!-- Empty state -->
-    <Border IsVisible="{Binding AllPositionsVM.HasNoPositions}"
+    <Border IsVisible="{Binding HasNoPositions}"
             Background="{DynamicResource Surface0}" CornerRadius="4" Padding="12,10">
       <TextBlock Text="No open futures positions"
                  Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsSmall}" HorizontalAlignment="Center" />
     </Border>
 
     <!-- Positions list -->
-    <ScrollViewer IsVisible="{Binding AllPositionsVM.HasPositions}"
+    <ScrollViewer IsVisible="{Binding HasPositions}"
                   VerticalScrollBarVisibility="Auto">
-      <ItemsControl ItemsSource="{Binding AllPositionsVM.Rows}">
+      <ItemsControl ItemsSource="{Binding Rows}">
         <ItemsControl.ItemTemplate>
-          <DataTemplate DataType="{x:Type vm:UnifiedPositionRowVM}">
+          <DataTemplate x:DataType="vm:UnifiedPositionRowVM">
             <Border Background="{DynamicResource Surface0}" CornerRadius="3" Padding="6,4" Margin="0,1">
               <Grid ColumnDefinitions="90,70,50,70,70,70,*" ColumnSpacing="6">
                 <!-- Exchange badge -->

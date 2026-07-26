@@ -3,19 +3,19 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.PositionsView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <StackPanel Spacing="12" IsVisible="{Binding IsPositionsSectionVisible}">
+             x:DataType="vm:AllPositionsViewModel"
+             x:CompileBindings="True">
+          <StackPanel Spacing="12">
 
             <!-- Header row: totals + Close All -->
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
               <StackPanel Spacing="4">
                 <TextBlock Text="Unrealized PnL (all exchanges)" Classes="Overline" />
                 <StackPanel Orientation="Horizontal" Spacing="16">
-                  <TextBlock Text="{Binding AllPositionsVM.TotalPnlLabel}"
-                             Foreground="{Binding AllPositionsVM.TotalPnlBrush, Converter={StaticResource StringToBrush}}"
+                  <TextBlock Text="{Binding TotalPnlLabel}"
+                             Foreground="{Binding TotalPnlBrush, Converter={StaticResource StringToBrush}}"
                              FontSize="{DynamicResource FsH2}" FontWeight="Bold" />
-                  <TextBlock Text="{Binding AllPositionsVM.TotalSizeLabel}"
+                  <TextBlock Text="{Binding TotalSizeLabel}"
                              Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsBody}" VerticalAlignment="Bottom" />
                 </StackPanel>
               </StackPanel>
@@ -23,19 +23,19 @@
               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
                 <Button Content="↻  Refresh"
                         Classes="SecondaryAction"
-                        Command="{Binding AllPositionsVM.RefreshCommand}"
-                        IsEnabled="{Binding !AllPositionsVM.IsRefreshing}"
+                        Command="{Binding RefreshCommand}"
+                        IsEnabled="{Binding !IsRefreshing}"
                         Padding="12,6" FontSize="{DynamicResource FsSmall}" />
                 <Button Content="⚠ Close All"
                         Background="#402020" Foreground="{DynamicResource Negative}"
                         BorderBrush="{DynamicResource Negative}" BorderThickness="1"
                         CornerRadius="4"
-                        Command="{Binding AllPositionsVM.CloseAllCommand}"
-                        IsEnabled="{Binding AllPositionsVM.HasPositions}"
+                        Command="{Binding CloseAllCommand}"
+                        IsEnabled="{Binding HasPositions}"
                         Padding="14,6" FontSize="{DynamicResource FsSmall}" FontWeight="Bold"
                         ToolTip.Tip="Two-step confirmation: first click arms (StatusLabel changes), second click within 8 s closes all positions." />
                 <!-- Armed indicator: only shown after the first click -->
-                <Border IsVisible="{Binding AllPositionsVM.CloseAllConfirmRequested}"
+                <Border IsVisible="{Binding CloseAllConfirmRequested}"
                         Background="{DynamicResource Negative}" CornerRadius="3" Padding="6,2"
                         VerticalAlignment="Center">
                   <TextBlock Text="⚠ ARMED — click again" Foreground="{DynamicResource OnAccentText}"
@@ -45,29 +45,29 @@
             </Grid>
 
             <!-- Status bar -->
-            <TextBlock Text="{Binding AllPositionsVM.StatusLabel}"
+            <TextBlock Text="{Binding StatusLabel}"
                        Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" />
 
             <!-- Table header row with sort buttons -->
             <Grid ColumnDefinitions="100,80,60,80,80,80,80,*,100" ColumnSpacing="8"
                   Margin="0,4,0,0">
               <Button Grid.Column="0" Content="EXCHANGE" Classes="SortHeader"
-                      Command="{Binding AllPositionsVM.SortByExchangeCommand}" />
+                      Command="{Binding SortByExchangeCommand}" />
               <TextBlock Grid.Column="1" Text="SYMBOL" Classes="Overline" VerticalAlignment="Center" />
               <TextBlock Grid.Column="2" Text="SIDE" Classes="Overline" VerticalAlignment="Center" />
               <TextBlock Grid.Column="3" Text="ENTRY" Classes="Overline" VerticalAlignment="Center" />
               <TextBlock Grid.Column="4" Text="MARK" Classes="Overline" VerticalAlignment="Center" />
               <Button Grid.Column="5" Content="SIZE" Classes="SortHeader"
-                      Command="{Binding AllPositionsVM.SortBySizeCommand}" />
+                      Command="{Binding SortBySizeCommand}" />
               <TextBlock Grid.Column="6" Text="LEV. / LIQ." Classes="Overline" VerticalAlignment="Center" />
               <Button Grid.Column="7" Content="UNREAL. PNL" Classes="SortHeader"
-                      Command="{Binding AllPositionsVM.SortByPnlCommand}" />
+                      Command="{Binding SortByPnlCommand}" />
               <TextBlock Grid.Column="8" Text="" />
             </Grid>
             <Border Height="1" Background="#17263A" />
 
             <!-- Empty state -->
-            <Border IsVisible="{Binding AllPositionsVM.HasNoPositions}"
+            <Border IsVisible="{Binding HasNoPositions}"
                     Background="{DynamicResource Surface1}" CornerRadius="4" Padding="20" Margin="0,4,0,0">
               <StackPanel HorizontalAlignment="Center" Spacing="8">
                 <TextBlock Text="⊞" FontSize="{DynamicResource FsH1}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
@@ -79,11 +79,11 @@
             </Border>
 
             <!-- Positions list -->
-            <ScrollViewer IsVisible="{Binding AllPositionsVM.HasPositions}"
+            <ScrollViewer IsVisible="{Binding HasPositions}"
                           MaxHeight="520" VerticalScrollBarVisibility="Auto">
-              <ItemsControl ItemsSource="{Binding AllPositionsVM.Rows}">
+              <ItemsControl ItemsSource="{Binding Rows}">
                 <ItemsControl.ItemTemplate>
-                  <DataTemplate DataType="{x:Type vm:UnifiedPositionRowVM}">
+                  <DataTemplate x:DataType="vm:UnifiedPositionRowVM">
                     <Border Background="{DynamicResource Surface1}" CornerRadius="4" Padding="8,6" Margin="0,2">
                       <Grid ColumnDefinitions="100,80,60,80,80,80,80,*,100" ColumnSpacing="8">
 

@@ -3,10 +3,9 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.ScannerView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <Border IsVisible="{Binding IsScannerSectionVisible}">
-          <StackPanel Spacing="16" DataContext="{Binding ScannerVM}">
+             x:DataType="vm:MarketScannerViewModel"
+             x:CompileBindings="True">
+          <StackPanel Spacing="16">
 
             <!-- Header + KPI strip ──────────────────────────────────────── -->
             <Grid ColumnDefinitions="*,Auto">
@@ -178,9 +177,9 @@
                   <ScrollViewer MaxHeight="520" VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding Rows}">
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="vm:ScanRowVM">
                           <Button Background="{Binding RowBackground}"
-                                  Command="{Binding $parent[ItemsControl].DataContext.GoToTradingCommand}"
+                                  Command="{Binding $parent[ItemsControl].((vm:MarketScannerViewModel)DataContext).GoToTradingCommand}"
                                   CommandParameter="{Binding}"
                                   Padding="0" Margin="0,1"
                                   HorizontalContentAlignment="Stretch">
@@ -249,7 +248,7 @@
                     <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
                       <ItemsControl ItemsSource="{Binding Alerts}">
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="vm:AlertRowVM">
                             <Border Padding="6,4" Margin="0,1">
                               <Grid ColumnDefinitions="12,*,Auto">
                                 <TextBlock Grid.Column="0" Text="{Binding SeverityDot}"
@@ -309,7 +308,7 @@
                     <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
                       <ItemsControl ItemsSource="{Binding Levels}">
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="vm:PriceLevelRowVM">
                             <Grid ColumnDefinitions="*,60,50,24" Margin="0,2">
                               <StackPanel Grid.Column="0" Spacing="0">
                                 <TextBlock Text="{Binding Symbol}" FontSize="{DynamicResource FsCaption}"
@@ -329,7 +328,7 @@
                                            Foreground="{Binding KindBrush}" />
                               </Border>
                               <Button Grid.Column="3"
-                                      Command="{Binding $parent[ItemsControl].DataContext.RemoveLevelCommand}"
+                                      Command="{Binding $parent[ItemsControl].((vm:MarketScannerViewModel)DataContext).RemoveLevelCommand}"
                                       CommandParameter="{Binding}"
                                       Background="Transparent" Foreground="{DynamicResource TextDim}"
                                       FontSize="{DynamicResource FsSmall}" Padding="2,0"
@@ -348,12 +347,17 @@
             <!-- ══════════════════════════════════════════════════════════════
                  DEX TRADING STATION  (visible only when DEX mode active)
             ══════════════════════════════════════════════════════════════ -->
+            <!-- The DEX station is a second screen embedded in the scanner page: its venue toggle and
+                 its view model both still live on MainWindowViewModel, which this view no longer takes
+                 as its DataContext. Until that pair moves to a shared desk model, both are reached
+                 through the window with an explicit cast — compiled bindings type DataContext as object. -->
             <Border Background="{DynamicResource Surface0}" CornerRadius="10" Padding="0"
-                    IsVisible="{Binding $parent[Window].DataContext.IsDexTradingMode}">
+                    IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsDexTradingMode}">
 
               <!-- Inner panel re-binds to DexTradingVM so all children use short paths -->
               <StackPanel Spacing="16" Margin="16,14"
-                          DataContext="{Binding $parent[Window].DataContext.DexTradingVM}">
+                          x:DataType="vm:DexTradingViewModel"
+                          DataContext="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).DexTradingVM}">
 
                 <!-- ── Station header ──────────────────────────────────────── -->
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
@@ -694,5 +698,4 @@
             </Border>
 
           </StackPanel>
-          </Border>
 </UserControl>

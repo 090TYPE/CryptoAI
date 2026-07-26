@@ -2,8 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.FundingWidget"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vm:FundingRateViewModel"
+             x:CompileBindings="True">
   <!-- Grid, not StackPanel: a StackPanel measures its children with infinite height, so the
        ScrollViewer below got a viewport as tall as its content, never showed a scrollbar and
        spilled out of the widget cell. The star row gives it a real height to scroll inside. -->
@@ -14,22 +14,22 @@
     <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
       <StackPanel Grid.Column="0" Spacing="2">
         <TextBlock Text="AVG RATE" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-        <TextBlock Text="{Binding FundingRateVM.AvgRateLabel}"
+        <TextBlock Text="{Binding AvgRateLabel}"
                    FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" />
       </StackPanel>
       <StackPanel Grid.Column="1" Spacing="2">
         <TextBlock Text="EXTREMES" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-        <TextBlock Text="{Binding FundingRateVM.ExtremeCount}"
+        <TextBlock Text="{Binding ExtremeCount}"
                    FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" Foreground="{DynamicResource Warning}" />
       </StackPanel>
       <StackPanel Grid.Column="2" Spacing="2">
         <TextBlock Text="BEST SHORT" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-        <TextBlock Text="{Binding FundingRateVM.TopBearishLabel}"
+        <TextBlock Text="{Binding TopBearishLabel}"
                    FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" Foreground="{DynamicResource Negative}" />
       </StackPanel>
       <StackPanel Grid.Column="3" Spacing="2">
         <TextBlock Text="BEST LONG" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-        <TextBlock Text="{Binding FundingRateVM.TopBullishLabel}"
+        <TextBlock Text="{Binding TopBullishLabel}"
                    FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" Foreground="{DynamicResource Positive}" />
       </StackPanel>
     </Grid>
@@ -55,7 +55,7 @@
     <!-- Rates list -->
 
     <ScrollViewer Grid.Row="1" Margin="0,8,0,0" VerticalScrollBarVisibility="Auto">
-      <ItemsControl ItemsSource="{Binding FundingRateVM.DisplayRates}">
+      <ItemsControl ItemsSource="{Binding DisplayRates}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:FundingRateRowViewModel">
             <Border Padding="0,4" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="0,0,0,1">
@@ -90,7 +90,7 @@
     </ScrollViewer>
 
     <TextBlock Grid.Row="1" Classes="WidgetEmpty"
-               IsVisible="{Binding !FundingRateVM.DisplayRates.Count}"
+               IsVisible="{Binding !DisplayRates.Count}"
                Text="No funding rates loaded yet. Refresh the Funding desk to pull perpetual rates." />
 
   </Grid>

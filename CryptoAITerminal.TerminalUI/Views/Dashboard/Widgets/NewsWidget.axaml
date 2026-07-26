@@ -2,50 +2,50 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.NewsWidget"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vm:NewsFeedViewModel"
+             x:CompileBindings="True">
   <StackPanel Spacing="8">
 
     <!-- AI Market Pulse summary -->
     <Border Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1"
             CornerRadius="6" Padding="10,8">
       <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
-        <Border Grid.Column="0" Background="{Binding NewsFeedVM.PulseBrush, Converter={StaticResource StringToBrush}}" CornerRadius="3" Padding="6,2">
-          <TextBlock Text="{Binding NewsFeedVM.PulseLabel}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
+        <Border Grid.Column="0" Background="{Binding PulseBrush, Converter={StaticResource StringToBrush}}" CornerRadius="3" Padding="6,2">
+          <TextBlock Text="{Binding PulseLabel}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
         </Border>
-        <TextBlock Grid.Column="1" Text="{Binding NewsFeedVM.AiDigest}"
-                   Foreground="{Binding NewsFeedVM.AiDigestBrush, Converter={StaticResource StringToBrush}}"
+        <TextBlock Grid.Column="1" Text="{Binding AiDigest}"
+                   Foreground="{Binding AiDigestBrush, Converter={StaticResource StringToBrush}}"
                    FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" Margin="8,0,0,0" MaxLines="2" />
         <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="Refreshing AI digest…"
-                   IsVisible="{Binding NewsFeedVM.AiDigestRunning}"
+                   IsVisible="{Binding AiDigestRunning}"
                    Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" Margin="0,4,0,0" />
-        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding NewsFeedVM.AiDigestSource}"
-                   IsVisible="{Binding !NewsFeedVM.AiDigestRunning}"
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding AiDigestSource}"
+                   IsVisible="{Binding !AiDigestRunning}"
                    Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" Margin="0,4,0,0" />
       </Grid>
     </Border>
 
     <!-- Status + unread badge -->
     <StackPanel Orientation="Horizontal" Spacing="8">
-      <TextBlock Text="{Binding NewsFeedVM.StatusLabel}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
-      <Border IsVisible="{Binding NewsFeedVM.HasUnread}"
+      <TextBlock Text="{Binding StatusLabel}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
+      <Border IsVisible="{Binding HasUnread}"
               Background="{DynamicResource Negative}" CornerRadius="8" Padding="4,1">
-        <TextBlock Text="{Binding NewsFeedVM.UnreadBadge, StringFormat='{}{0} new'}"
+        <TextBlock Text="{Binding UnreadBadge, StringFormat='{}{0} new'}"
                    Foreground="White" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
       </Border>
     </StackPanel>
 
     <!-- Loading state -->
-    <TextBlock IsVisible="{Binding NewsFeedVM.IsLoading}"
+    <TextBlock IsVisible="{Binding IsLoading}"
                Text="Fetching news…"
                Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" />
 
     <!-- News rows -->
-    <ScrollViewer IsVisible="{Binding !NewsFeedVM.IsLoading}"
+    <ScrollViewer IsVisible="{Binding !IsLoading}"
                   VerticalScrollBarVisibility="Auto">
-      <ItemsControl ItemsSource="{Binding NewsFeedVM.Rows}">
+      <ItemsControl ItemsSource="{Binding Rows}">
         <ItemsControl.ItemTemplate>
-          <DataTemplate DataType="{x:Type vm:NewsItemRowVM}">
+          <DataTemplate x:DataType="vm:NewsItemRowVM">
             <Border Background="{Binding SentimentBackground, Converter={StaticResource StringToBrush}}"
                     CornerRadius="3" Padding="8,4" Margin="0,1"
                     BorderBrush="{DynamicResource PanelStroke}" BorderThickness="0,0,0,1">

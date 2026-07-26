@@ -520,7 +520,7 @@
 
       <TabItem Header="Portfolio">
         <ScrollViewer Classes="PageScroll">
-        <views:PortfolioView />
+        <views:PortfolioView DataContext="{Binding PortfolioScreenVM}" />
         </ScrollViewer>
       </TabItem>
       <TabItem Header="AI Signals">
@@ -931,7 +931,9 @@
           <!-- ═══════════════════════════════════════════════════════════════
                Live Tape — public market trades (time & sales)
           ════════════════════════════════════════════════════════════════ -->
-          <views:MarketTapeView />
+          <Panel IsVisible="{Binding IsTapeSectionVisible}">
+            <views:MarketTapeView DataContext="{Binding MarketTapeVM}" />
+          </Panel>
 
           <!-- ═══════════════════════════════════════════════════════════════
                Funding Rate Monitor
@@ -943,7 +945,10 @@
           <!-- ═══════════════════════════════════════════════════════════════
                FUNDING RATE ARBITRAGE BOT
           ════════════════════════════════════════════════════════════════ -->
-          <views:FundingArbView />
+          <!-- Shares the "funding" workspace section with FundingRateView above. -->
+          <Panel IsVisible="{Binding IsFundingRateSectionVisible}">
+            <views:FundingArbView DataContext="{Binding FundingArbitrageVM}" />
+          </Panel>
           <!-- ═══ End Funding Rate Arbitrage Bot ═══ -->
 
           <!-- ═══════════════════════════════════════════════════════════════
@@ -973,13 +978,20 @@
           <!-- ═══════════════════════════════════════════════════════════════
                BEST EXECUTION ROUTER
           ════════════════════════════════════════════════════════════════ -->
-          <views:RouterView />
+          <Panel IsVisible="{Binding IsRouterSectionVisible}">
+            <views:RouterView DataContext="{Binding BestExecutionVM}" />
+          </Panel>
           <!-- ═══ End Best Execution Router ═══ -->
 
           <!-- ═══════════════════════════════════════════════════════════════
                MULTI-MARKET SCANNER
           ════════════════════════════════════════════════════════════════ -->
-          <views:ScannerView />
+          <!-- The wrapper keeps MainWindowViewModel as its DataContext so the section toggle still
+               resolves, while the view itself sees only its own view model. Setting both on the
+               view would make IsVisible resolve against MarketScannerViewModel and never match. -->
+          <Panel IsVisible="{Binding IsScannerSectionVisible}">
+            <views:ScannerView DataContext="{Binding ScannerVM}" />
+          </Panel>
           <!-- ═══ End Multi-Market Scanner ═══ -->
 
           <!-- ═══════════════════════════════════════════════════════════════
@@ -1014,7 +1026,9 @@
           <!-- ═══════════════════════════════════════════════════════════════
                All Positions — unified futures view (Feature 15)
           ════════════════════════════════════════════════════════════════ -->
-          <views:PositionsView />
+          <Panel IsVisible="{Binding IsPositionsSectionVisible}">
+            <views:PositionsView DataContext="{Binding AllPositionsVM}" />
+          </Panel>
 
           <!-- ═══════════════════════════════════════════════════════════════
                News Feed with Sentiment (Feature 16)
@@ -1037,9 +1051,16 @@
 
           <views:SettingsView />
 
-          <views:HelpView />
+          <!-- ═══════════════════════════════════════════════════════════════
+               Help / Logout — shell chrome, both on ShellScreensViewModel
+          ════════════════════════════════════════════════════════════════ -->
+          <Panel IsVisible="{Binding IsHelpSectionVisible}">
+            <views:HelpView DataContext="{Binding ShellScreensVM}" />
+          </Panel>
 
-          <views:LogoutView />
+          <Panel IsVisible="{Binding IsLogoutSectionVisible}">
+            <views:LogoutView DataContext="{Binding ShellScreensVM}" />
+          </Panel>
         </StackPanel>
       </ScrollViewer>
     </Border>
