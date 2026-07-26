@@ -21,6 +21,7 @@ public class AiTraderAgentServiceTests
     // ── Stub gateway: public order book at a fixed mid; private endpoints unused in paper. ──
     private sealed class StubGateway : IExchangeGateway
     {
+        public bool HasPrivateApiCredentials => true;   // test double: behaves as a fully credentialed gateway
         private readonly decimal _bid, _ask;
         public StubGateway(decimal bid, decimal ask) { _bid = bid; _ask = ask; }
 
@@ -59,6 +60,7 @@ public class AiTraderAgentServiceTests
     // ── Stub DEX gateway: quotes 1000 tokens per 1 native; honeypot probe passes. ──
     private sealed class StubDexGateway : IDexTradeGateway
     {
+        public bool HasPrivateApiCredentials => true;   // test double: behaves as a fully credentialed gateway
         public string NetworkName => "Solana";
         public string NativeSymbol => "SOL";
         public string SupportedDexesLabel => "Jupiter";

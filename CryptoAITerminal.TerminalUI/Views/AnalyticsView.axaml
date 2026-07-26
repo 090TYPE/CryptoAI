@@ -264,7 +264,7 @@
                       <Border Height="24" Padding="8,0" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" HorizontalAlignment="Right">
                         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                           <TextBlock Text="⌕" Foreground="#2d4a5e" FontSize="10" VerticalAlignment="Center" />
-                          <TextBox Text="{Binding Search, Mode=TwoWay}" Watermark="symbol, source, exit…" Width="140" Background="Transparent" BorderThickness="0" Padding="0" FontSize="10.5" VerticalAlignment="Center" />
+                          <TextBox Text="{Binding Search, Mode=TwoWay}" PlaceholderText="symbol, source, exit…" Width="140" Background="Transparent" BorderThickness="0" Padding="0" FontSize="10.5" VerticalAlignment="Center" />
                         </StackPanel>
                       </Border>
                       <Border Padding="2" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14">

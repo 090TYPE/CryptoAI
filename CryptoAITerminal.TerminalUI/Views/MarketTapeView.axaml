@@ -26,7 +26,7 @@
         <Grid ColumnDefinitions="Auto,160,Auto,160,Auto" ColumnSpacing="12"
               IsVisible="{Binding MarketTapeVM.IsCex}">
           <TextBlock Grid.Column="0" Text="Symbol" VerticalAlignment="Center" />
-          <TextBox Grid.Column="1" Text="{Binding MarketTapeVM.Symbol}" Watermark="BTCUSDT" />
+          <TextBox Grid.Column="1" Text="{Binding MarketTapeVM.Symbol}" PlaceholderText="BTCUSDT" />
           <TextBlock Grid.Column="2" Text="Large print ≥ (USDT)" VerticalAlignment="Center" />
           <NumericUpDown Grid.Column="3" Minimum="0" Increment="10000"
                          Value="{Binding MarketTapeVM.LargePrintThreshold}" />
@@ -38,9 +38,9 @@
         <StackPanel Spacing="8" IsVisible="{Binding MarketTapeVM.IsDex}">
           <Grid ColumnDefinitions="Auto,120,Auto,*" ColumnSpacing="12">
             <TextBlock Grid.Column="0" Text="Network" VerticalAlignment="Center" />
-            <TextBox Grid.Column="1" Text="{Binding MarketTapeVM.Network}" Watermark="eth" />
+            <TextBox Grid.Column="1" Text="{Binding MarketTapeVM.Network}" PlaceholderText="eth" />
             <TextBlock Grid.Column="2" Text="Pool address" VerticalAlignment="Center" />
-            <TextBox Grid.Column="3" Text="{Binding MarketTapeVM.PoolAddress}" Watermark="0x…" />
+            <TextBox Grid.Column="3" Text="{Binding MarketTapeVM.PoolAddress}" PlaceholderText="0x…" />
           </Grid>
           <Grid ColumnDefinitions="Auto,160,Auto" ColumnSpacing="12">
             <TextBlock Grid.Column="0" Text="Large print ≥ (USD)" VerticalAlignment="Center" />

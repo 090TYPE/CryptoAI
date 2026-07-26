@@ -25,6 +25,9 @@ public sealed class AiTraderViewModel : ReactiveObject
     private readonly IReadOnlyDictionary<string, IExchangeGateway> _futuresGateways;
     private readonly Func<IDexTradeGateway?> _dexGatewayAccessor;
     private readonly Func<bool> _dexLiveAllowed;
+    // Same guard as DEX, for the CEX branch. Without it the agent placed live exchange orders
+    // while the workspace was in PAPER ONLY, because only the DEX branch consulted the wallet.
+    private readonly Func<bool> _cexLiveAllowed;
 
     private AiTraderAgentService? _service;
     private CancellationTokenSource? _loopCts;
@@ -57,12 +60,14 @@ public sealed class AiTraderViewModel : ReactiveObject
         IReadOnlyDictionary<string, IExchangeGateway> spotGateways,
         IReadOnlyDictionary<string, IExchangeGateway> futuresGateways,
         Func<IDexTradeGateway?> dexGatewayAccessor,
-        Func<bool> dexLiveAllowed)
+        Func<bool> dexLiveAllowed,
+        Func<bool> cexLiveAllowed)
     {
         _spotGateways = spotGateways ?? throw new ArgumentNullException(nameof(spotGateways));
         _futuresGateways = futuresGateways ?? throw new ArgumentNullException(nameof(futuresGateways));
         _dexGatewayAccessor = dexGatewayAccessor ?? throw new ArgumentNullException(nameof(dexGatewayAccessor));
         _dexLiveAllowed = dexLiveAllowed ?? (() => false);
+        _cexLiveAllowed = cexLiveAllowed ?? (() => false);
 
         RunOnceCommand = ReactiveCommand.CreateFromTask(RunOnceAsync, outputScheduler: App.UiScheduler);
         StartLoopCommand = ReactiveCommand.CreateFromTask(StartLoopAsync, outputScheduler: App.UiScheduler);
@@ -180,7 +185,9 @@ public sealed class AiTraderViewModel : ReactiveObject
         set
         {
             this.RaiseAndSetIfChanged(ref _liveEnabled, value);
-            if (_service is not null) _service.LiveEnabled = value;
+            // Re-apply the venue guard here too: flipping the toggle on a service that is already
+            // running used to push the raw value straight through, bypassing paper-only mode.
+            if (_service is not null) _service.LiveEnabled = value && CurrentVenueLiveAllowed();
             this.RaisePropertyChanged(nameof(ModeLabel));
             this.RaisePropertyChanged(nameof(ModeBrush));
         }
@@ -251,6 +258,9 @@ public sealed class AiTraderViewModel : ReactiveObject
 
     // ── Actions ────────────────────────────────────────────────────────────────
 
+    /// <summary>Whether live execution is permitted for the venue the agent is currently set to.</summary>
+    private bool CurrentVenueLiveAllowed() => IsDexVenue ? _dexLiveAllowed() : _cexLiveAllowed();
+
     private AiTraderAgentService BuildService()
     {
         var limits = new AiTraderAgentService.Limits(
@@ -291,11 +301,15 @@ public sealed class AiTraderViewModel : ReactiveObject
             var marginMode = string.Equals(SelectedMarginMode, "Isolated", StringComparison.OrdinalIgnoreCase)
                 ? FuturesMarginMode.Isolated : FuturesMarginMode.Cross;
 
+            var cexLive = LiveEnabled && _cexLiveAllowed();
+            if (LiveEnabled && !cexLive)
+                Append("[guard] CEX live blocked by workspace paper-only mode — running PAPER.");
+
             svc = new AiTraderAgentService(
                 gateway, limits,
                 marketType: marketType,
                 leverage: IsFuturesMode ? Leverage : 1,
-                marginMode: marginMode) { LiveEnabled = LiveEnabled };
+                marginMode: marginMode) { LiveEnabled = cexLive };
         }
 
         svc.OnEvent += AppendEvent;
@@ -323,13 +337,15 @@ public sealed class AiTraderViewModel : ReactiveObject
         catch (Exception ex) { Append($"[error] {ex.Message}"); }
     }
 
-    private async Task StartLoopAsync()
+    // Not async: the loop deliberately runs detached on a background task and this method only
+    // arms it, so there is nothing here to await.
+    private Task StartLoopAsync()
     {
-        if (IsRunning) return;
+        if (IsRunning) return Task.CompletedTask;
         if (string.IsNullOrWhiteSpace(ClaudeApiKey))
         {
             Append("[error] Claude API key is empty — set it on the AI Bot tab.");
-            return;
+            return Task.CompletedTask;
         }
 
         _service = BuildService();
@@ -346,6 +362,8 @@ public sealed class AiTraderViewModel : ReactiveObject
             catch (Exception ex) { Append($"[loop error] {ex.Message}"); }
             finally { Dispatcher.UIThread.Post(() => IsRunning = false); }
         });
+
+        return Task.CompletedTask;
     }
 
     private void Stop()

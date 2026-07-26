@@ -188,7 +188,7 @@
               <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="8" Padding="10,7">
                 <StackPanel Orientation="Horizontal" Spacing="7">
                   <TextBlock Text="⌕" FontSize="12" Foreground="#2d4a5e" VerticalAlignment="Center" />
-                  <TextBox Text="{Binding SearchText}" Watermark="Search wallets…" BorderThickness="0" Background="Transparent"
+                  <TextBox Text="{Binding SearchText}" PlaceholderText="Search wallets…" BorderThickness="0" Background="Transparent"
                            Padding="0" MinHeight="0" FontSize="11" Foreground="#c8dcef" VerticalAlignment="Center" Width="200" />
                 </StackPanel>
               </Border>
@@ -582,7 +582,7 @@
               <Border Grid.Row="3" Background="#050c14" BorderBrush="#0d1b27" BorderThickness="0,1,0,0" Padding="12,8">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBlock Text="ADD ASSET:" FontSize="10" FontWeight="Bold" Foreground="#2d4a5e" VerticalAlignment="Center" />
-                  <TextBox Text="{Binding NewAssetSymbol}" Watermark="BTC" Width="80" FontSize="11" FontFamily="{StaticResource FontMono}" />
+                  <TextBox Text="{Binding NewAssetSymbol}" PlaceholderText="BTC" Width="80" FontSize="11" FontFamily="{StaticResource FontMono}" />
                   <NumericUpDown Value="{Binding NewAssetTargetPct}" Minimum="0.1" Maximum="100" Increment="1" FormatString="F1" Width="110" FontSize="11" />
                   <TextBlock Text="%" FontSize="10" Foreground="#3d5a72" VerticalAlignment="Center" />
                   <Button Content="+ ADD" Command="{Binding AddAssetCommand}"
@@ -725,7 +725,7 @@
                     </Border>
                   </Grid>
                   <TextBlock Text="{Binding StatusMessage}" Foreground="#5a7a94" FontSize="10" TextWrapping="Wrap" />
-                  <TextBox Text="{Binding PrivateKeyInput}" PasswordChar="•" Watermark="Private key to arm trading (memory-only this session)" FontFamily="{StaticResource FontMono}" FontSize="10" />
+                  <TextBox Text="{Binding PrivateKeyInput}" PasswordChar="•" PlaceholderText="Private key to arm trading (memory-only this session)" FontFamily="{StaticResource FontMono}" FontSize="10" />
                   <StackPanel Orientation="Horizontal" Spacing="6">
                     <Button Content="ARM TRADING" Command="{Binding ImportPrivateKeyCommand}" Padding="12,6" CornerRadius="6" Background="#0a2d1e" BorderBrush="#0d3d28" BorderThickness="1" Foreground="#21e6c1" FontSize="10" FontWeight="ExtraBold" />
                     <Button Content="WATCH ONLY" Command="{Binding ConnectWatchCommand}" Padding="12,6" CornerRadius="6" Background="#0d1826" BorderBrush="#1e3248" BorderThickness="1" Foreground="#5bc0ff" FontSize="10" FontWeight="Bold" />
@@ -1074,7 +1074,7 @@
                 <!-- Nickname -->
                 <StackPanel Spacing="6">
                   <TextBlock Text="WALLET NICKNAME" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
-                  <TextBox Text="{Binding NewWalletName}" Watermark="e.g. My Main ETH" FontSize="13" />
+                  <TextBox Text="{Binding NewWalletName}" PlaceholderText="e.g. My Main ETH" FontSize="13" />
                 </StackPanel>
                 <!-- CEX -->
                 <StackPanel IsVisible="{Binding ModalIsCex}" Spacing="12">
@@ -1099,11 +1099,11 @@
                   </StackPanel>
                   <StackPanel Spacing="6">
                     <TextBlock Text="API KEY" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
-                    <TextBox Text="{Binding NewApiKey}" Watermark="Paste API key…" FontFamily="{StaticResource FontMono}" FontSize="12" />
+                    <TextBox Text="{Binding NewApiKey}" PlaceholderText="Paste API key…" FontFamily="{StaticResource FontMono}" FontSize="12" />
                   </StackPanel>
                   <StackPanel Spacing="6">
                     <TextBlock Text="API SECRET" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
-                    <TextBox Text="{Binding NewApiSecret}" PasswordChar="•" Watermark="Paste API secret…" FontFamily="{StaticResource FontMono}" FontSize="12" />
+                    <TextBox Text="{Binding NewApiSecret}" PasswordChar="•" PlaceholderText="Paste API secret…" FontFamily="{StaticResource FontMono}" FontSize="12" />
                   </StackPanel>
                   <Border Background="#07111a" BorderBrush="#111d29" BorderThickness="1" CornerRadius="8" Padding="12,10">
                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -1131,7 +1131,7 @@
                   </StackPanel>
                   <StackPanel Spacing="6">
                     <TextBlock Text="WALLET ADDRESS" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
-                    <TextBox Text="{Binding NewWalletAddress}" Watermark="{Binding AddrPlaceholder}" FontFamily="{StaticResource FontMono}" FontSize="11" />
+                    <TextBox Text="{Binding NewWalletAddress}" PlaceholderText="{Binding AddrPlaceholder}" FontFamily="{StaticResource FontMono}" FontSize="11" />
                   </StackPanel>
                   <Border IsVisible="{Binding ModalIsMeme}" Background="#1a0505" BorderBrush="#3d0d0d" BorderThickness="1" CornerRadius="8" Padding="12,10">
                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -1170,7 +1170,7 @@
                   </StackPanel>
                   <StackPanel Spacing="6">
                     <TextBlock Text="WALLET ADDRESS" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
-                    <TextBox Text="{Binding NewWalletAddress}" Watermark="0x… or validator address" FontFamily="{StaticResource FontMono}" FontSize="11" />
+                    <TextBox Text="{Binding NewWalletAddress}" PlaceholderText="0x… or validator address" FontFamily="{StaticResource FontMono}" FontSize="11" />
                   </StackPanel>
                 </StackPanel>
                 <!-- PERP -->
@@ -1196,7 +1196,7 @@
                   </StackPanel>
                   <StackPanel Spacing="6">
                     <TextBlock Text="API KEY" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
-                    <TextBox Text="{Binding NewApiKey}" Watermark="Paste API key…" FontFamily="{StaticResource FontMono}" FontSize="12" />
+                    <TextBox Text="{Binding NewApiKey}" PlaceholderText="Paste API key…" FontFamily="{StaticResource FontMono}" FontSize="12" />
                   </StackPanel>
                 </StackPanel>
               </StackPanel>
@@ -1357,11 +1357,11 @@
                   <TextBlock Text="{Binding TronTrc20BalanceLabel, StringFormat='Tracked token balance: {0}'}" Foreground="#21e6c1" FontSize="11" FontWeight="SemiBold" />
                   <Grid ColumnDefinitions="90,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Symbol" Foreground="#8fa3b8" FontSize="11" VerticalAlignment="Center" />
-                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding TronTrc20Symbol}" Watermark="USDT" FontSize="11" />
+                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding TronTrc20Symbol}" PlaceholderText="USDT" FontSize="11" />
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Contract" Foreground="#8fa3b8" FontSize="11" VerticalAlignment="Center" />
-                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TronTrc20ContractAddress}" Watermark="TRC20 contract address" FontFamily="{StaticResource FontMono}" FontSize="11" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TronTrc20ContractAddress}" PlaceholderText="TRC20 contract address" FontFamily="{StaticResource FontMono}" FontSize="11" />
                     <TextBlock Grid.Row="2" Grid.Column="0" Text="Recipient" Foreground="#8fa3b8" FontSize="11" VerticalAlignment="Center" />
-                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding TronPaymentRecipient}" Watermark="Recipient Tron address" FontFamily="{StaticResource FontMono}" FontSize="11" />
+                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding TronPaymentRecipient}" PlaceholderText="Recipient Tron address" FontFamily="{StaticResource FontMono}" FontSize="11" />
                     <TextBlock Grid.Row="3" Grid.Column="0" Text="Amount" Foreground="#8fa3b8" FontSize="11" VerticalAlignment="Center" />
                     <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding TronTrc20Amount}" Increment="0.1" Minimum="0" FormatString="0.######" />
                     <TextBlock Grid.Row="4" Grid.Column="0" Text="Fee (TRX)" Foreground="#8fa3b8" FontSize="11" VerticalAlignment="Center" />

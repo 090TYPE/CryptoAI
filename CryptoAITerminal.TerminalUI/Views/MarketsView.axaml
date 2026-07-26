@@ -244,7 +244,7 @@
                       Data="M5,5 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0 M8,8 L11,11" />
                 <TextBox Grid.Column="1" Classes="search"
                          Text="{Binding MarketsSearchText}"
-                         Watermark="Symbol or 0x address..." />
+                         PlaceholderText="Symbol or 0x address..." />
               </Grid>
             </Border>
 
@@ -314,7 +314,7 @@
                         SelectedItem="{Binding SelectedDexChain}"
                         IsVisible="{Binding IsDexSource}" />
               <TextBox Classes="addbox" Text="{Binding NewMarketSymbol}"
-                       Watermark="{Binding AddCoinPlaceholder}" />
+                       PlaceholderText="{Binding AddCoinPlaceholder}" />
               <Button Content="+ Add to Watchlist"
                       Command="{Binding AddCustomMarketCommand}"
                       HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"

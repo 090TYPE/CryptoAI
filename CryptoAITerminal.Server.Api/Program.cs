@@ -400,13 +400,27 @@ app.MapDelete("/api/secrets/{id:guid}", async (HttpContext ctx, Guid id, Secrets
 });
 
 // ── 2FA (TOTP) ────────────────────────────────────────────────────────────────
-app.MapPost("/api/2fa/setup", async (HttpContext ctx, TwoFactorRepository tfa) =>
+// Re-provisioning is authenticated with the CURRENT factor. UpsertSecretAsync overwrites the secret
+// AND resets enabled=false, and Verify2faAsync treats "not enabled" as "nothing to check" — so
+// without this gate anyone holding a licence token could POST here once and walk straight through
+// the 2FA check on /api/withdrawals. First-time setup (no row, or a row that was never enabled)
+// still needs no code.
+app.MapPost("/api/2fa/setup", async (HttpContext ctx, TwoFaCode? body, TwoFactorRepository tfa, AuditRepository audit) =>
 {
     var cipher = ctx.RequestServices.GetService<IEnvelopeCipher>();
     if (cipher is null) return Results.Json(new { error = "encryption_not_configured" }, statusCode: 503);
+
+    var existing = await tfa.GetAsync(Uid(ctx), ctx.RequestAborted);
+    if (existing is { Enabled: true } && !await VerifyCodeAsync(ctx, body?.Code))
+        return Results.Json(new { error = "current 2fa code required to re-provision" }, statusCode: 401);
+
     var secret = Totp.GenerateSecret();
     var (cipherB, wrapped) = await cipher.EncryptAsync(secret, ctx.RequestAborted);
     await tfa.UpsertSecretAsync(Uid(ctx), cipherB, wrapped, ctx.RequestAborted);
+
+    if (existing is { Enabled: true })
+        await audit.WriteAsync(Uid(ctx), "user", "2fa_reset", null, ClientIp(ctx), ctx.RequestAborted);
+
     // secret returned once so the user adds it to their authenticator app
     return Results.Ok(new { secret, otpauth = Totp.ProvisioningUri(secret, Uid(ctx).ToString()) });
 });

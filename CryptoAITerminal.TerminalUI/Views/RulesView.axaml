@@ -145,7 +145,7 @@
                 <TextBlock Text="{Binding NlStatus}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#2d6b64" />
               </StackPanel>
               <Grid ColumnDefinitions="*,Auto" ColumnSpacing="7">
-                <TextBox Grid.Column="0" Text="{Binding NlPrompt, Mode=TwoWay}" Watermark="When ETHUSDT RSI drops below 30, start DCA buy and notify me" Height="30" Padding="10,0" CornerRadius="6" Background="#050f14" BorderBrush="#152233" BorderThickness="1" FontSize="12" />
+                <TextBox Grid.Column="0" Text="{Binding NlPrompt, Mode=TwoWay}" PlaceholderText="When ETHUSDT RSI drops below 30, start DCA buy and notify me" Height="30" Padding="10,0" CornerRadius="6" Background="#050f14" BorderBrush="#152233" BorderThickness="1" FontSize="12" />
                 <Button Grid.Column="1" Command="{Binding GenerateCommand}" Height="30" Padding="13,0" CornerRadius="6" Background="#0e2a2a" BorderBrush="#21e6c1" BorderThickness="1" Content="{Binding NlBtnLabel}" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
               </Grid>
               <ItemsControl ItemsSource="{Binding Examples}">
@@ -174,7 +174,7 @@
                     <Border Height="24" Padding="8,0" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" HorizontalAlignment="Right">
                       <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                         <TextBlock Text="⌕" Foreground="#2d4a5e" FontSize="10" VerticalAlignment="Center" />
-                        <TextBox Text="{Binding Search, Mode=TwoWay}" Watermark="filter rules…" Width="128" Background="Transparent" BorderThickness="0" Padding="0" FontSize="10.5" VerticalAlignment="Center" />
+                        <TextBox Text="{Binding Search, Mode=TwoWay}" PlaceholderText="filter rules…" Width="128" Background="Transparent" BorderThickness="0" Padding="0" FontSize="10.5" VerticalAlignment="Center" />
                       </StackPanel>
                     </Border>
                     <Border Padding="2" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14">
@@ -405,7 +405,7 @@
                                   </StackPanel>
                                   <StackPanel Spacing="3" MinWidth="160" IsVisible="{Binding HasMessage}">
                                     <TextBlock Text="Message" FontSize="9" Foreground="#2d4a5e" />
-                                    <TextBox Text="{Binding Message, Mode=TwoWay}" Watermark="Notification message…" Height="26" Padding="7,0" CornerRadius="5" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontSize="11" />
+                                    <TextBox Text="{Binding Message, Mode=TwoWay}" PlaceholderText="Notification message…" Height="26" Padding="7,0" CornerRadius="5" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontSize="11" />
                                   </StackPanel>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" IsVisible="{Binding HasChannels}">

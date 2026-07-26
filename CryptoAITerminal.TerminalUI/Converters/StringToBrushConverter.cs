@@ -39,7 +39,6 @@ public sealed class StringToBrushConverter : IValueConverter
         if (TryParseColor(raw, out var color))
         {
             var b = new SolidColorBrush(color);
-            b.ToImmutable();
             return b.ToImmutable();
         }
         return Fallback;

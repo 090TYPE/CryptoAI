@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Threading;
@@ -184,7 +185,10 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         {
             return;
         }
-        _metaAddress = address ?? string.Empty;
+        // No `?? string.Empty` here: TokenAddress is non-nullable, and the coalesce made the
+        // flow analysis treat `address` as maybe-null further down (CS8601/CS8604 at the
+        // DexTokenMetadata initializer and the ApplyAsync call).
+        _metaAddress = address;
 
         var network = MapGeckoNetwork(chain);
         DexTokenMetadata? meta = null;
@@ -805,10 +809,36 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         SaveKeeper();
     }
 
+    // SaveKeeper fires from four call sites (arm / tick / background poll / cancel) as
+    // detached tasks. The store writes the file in one non-atomic pass, so two overlapping
+    // saves could interleave and leave a truncated list of armed stop/trailing/DCA orders
+    // on disk. Serialize the writes and only ever persist the newest snapshot.
+    private readonly SemaphoreSlim _keeperSaveGate = new(1, 1);
+    private List<DexKeeperOrder>? _pendingKeeperSnapshot;
+
     private void SaveKeeper()
     {
-        var snapshot = _keeper.WorkingOrders.ToList();
-        _ = Task.Run(() => _keeperStore.Save(snapshot));
+        Interlocked.Exchange(ref _pendingKeeperSnapshot, _keeper.WorkingOrders.ToList());
+        _ = Task.Run(FlushKeeperAsync);
+    }
+
+    private async Task FlushKeeperAsync()
+    {
+        await _keeperSaveGate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var snapshot = Interlocked.Exchange(ref _pendingKeeperSnapshot, null);
+            if (snapshot is null)
+            {
+                return; // an earlier flush already wrote this snapshot
+            }
+
+            _keeperStore.Save(snapshot);
+        }
+        finally
+        {
+            _keeperSaveGate.Release();
+        }
     }
 
     /// <summary>Background price poll so keeper orders on tokens you're not currently viewing
@@ -2110,9 +2140,21 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             history.Add(new DexPriceSample(sampleTimeUtc, token.PriceUsd));
         }
 
+        // The list is kept ascending (this path only appends `now`; the merge paths sort
+        // once after inserting), so no re-Sort is needed here — it ran per token on every
+        // 3 s refresh over up to 8 days of samples. Stale entries are a prefix, so a single
+        // RemoveRange replaces the full RemoveAll scan.
         var trimBefore = sampleTimeUtc.AddDays(-8);
-        history.RemoveAll(sample => sample.TimestampUtc < trimBefore);
-        history.Sort(static (left, right) => left.TimestampUtc.CompareTo(right.TimestampUtc));
+        var stale = 0;
+        while (stale < history.Count && history[stale].TimestampUtc < trimBefore)
+        {
+            stale++;
+        }
+
+        if (stale > 0)
+        {
+            history.RemoveRange(0, stale);
+        }
 
         // Persist to disk every 20 samples so history survives app restarts
         if (history.Count % 20 == 0)

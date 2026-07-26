@@ -992,7 +992,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         {
             var key = network;
             var f = new SetField { Label = network.ToUpperInvariant() + " RPC", Placeholder = defaultRpc, IsText = true };
-            f.Changed = v =>
+            f.ValueChanged = v =>
             {
                 if (string.IsNullOrWhiteSpace(v)) _dex.RpcOverrides.Remove(key);
                 else _dex.RpcOverrides[key] = v.Trim();
@@ -1008,7 +1008,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         {
             Label = "DEFAULT SLIPPAGE", Unit = "%", IsText = true, Clean = BotsDeskData.Decimalish,
         };
-        slip.Changed = v =>
+        slip.ValueChanged = v =>
         {
             if (decimal.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
             { _dex.DefaultSlippagePercent = Math.Max(0.1m, Math.Min(50m, d)); Touch(); }
@@ -1172,7 +1172,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
                     HasConsole = url.Length > 0,
                     ConsoleCommand = url.Length > 0 ? new RelayCommand(() => OpenUrl(url)) : null,
                 };
-                row.Changed = _ => Touch();
+                row.ValueChanged = _ => Touch();
                 _intRows.Add(row);
                 g.Items.Add(row);
             }
@@ -1759,7 +1759,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         {
             var key = k;
             var row = new HotkeyRowVM { Label = label, KeyColor = color, Placeholder = placeholder };
-            row.Changed = v =>
+            row.ValueChanged = v =>
             {
                 if (_host?.HotkeySettings is not { } hk) return;
                 SetHotkey(hk, key, v);
@@ -1797,7 +1797,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     private void AffField(string label, Func<string> read, Action<MainWindowViewModel, string> write)
     {
         var f = new SetField { Label = label, Placeholder = "https://…", IsText = true };
-        f.Changed = v => { if (_host is { } h) { write(h, v); Touch(); } };
+        f.ValueChanged = v => { if (_host is { } h) { write(h, v); Touch(); } };
         AffFields.Add(f);
         _boundFields.Add((f, read));
     }
@@ -1812,7 +1812,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         SetField Make(string label, string placeholder, Func<string> read, Action<MainWindowViewModel, string> write)
         {
             var f = new SetField { Label = label, Placeholder = placeholder, IsPassword = true, IsText = true };
-            f.Changed = v => { if (_host is { } h) { write(h, v); Touch(); } };
+            f.ValueChanged = v => { if (_host is { } h) { write(h, v); Touch(); } };
             _boundFields.Add((f, read));
             return f;
         }
@@ -1848,7 +1848,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         Func<string> read, Action<AlertsViewModel, string> write)
     {
         var f = new SetField { Label = label, IsPassword = pass, IsText = true, Clean = clean };
-        f.Changed = v => { if (Al is { } a) { write(a, v); RefreshNtChannel(ch.Id); Touch(); } };
+        f.ValueChanged = v => { if (Al is { } a) { write(a, v); RefreshNtChannel(ch.Id); Touch(); } };
         ch.Fields.Add(f);
         _boundFields.Add((f, read));
     }
@@ -1856,7 +1856,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     private void ExecSelect(string label, List<string> options, Func<string> read, Action<WalletWorkspaceViewModel, string> write)
     {
         var f = new SetField { Label = label, IsSelect = true, IsText = false, Options = options };
-        f.Changed = v => { if (Wal is { } w && v.Length > 0) { write(w, v); Touch(); } };
+        f.ValueChanged = v => { if (Wal is { } w && v.Length > 0) { write(w, v); Touch(); } };
         ExecFields.Add(f);
         _boundFields.Add((f, read));
     }
@@ -1864,7 +1864,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     private void ExecNumber(string label, string unit, Func<decimal?> read, Action<WalletWorkspaceViewModel, decimal> write)
     {
         var f = new SetField { Label = label, Unit = unit, IsText = true, Clean = BotsDeskData.Decimalish };
-        f.Changed = v =>
+        f.ValueChanged = v =>
         {
             if (Wal is { } w && decimal.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
             { write(w, d); Touch(); }

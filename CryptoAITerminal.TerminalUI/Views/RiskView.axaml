@@ -145,8 +145,11 @@
                             Margin="0,0,10,10"
                             Command="{Binding WalletVM.ApplyGlobalExecutionModeCommand}"
                             CommandParameter="PAPER" />
+                    <!-- Two-step: first click arms and turns the label red, second click applies. -->
                     <Button Classes="GhostButton"
-                            Content="Live Allowed"
+                            Content="{Binding WalletVM.GlobalLiveButtonLabel}"
+                            Foreground="{Binding WalletVM.GlobalLiveButtonForeground, Converter={StaticResource StringToBrush}}"
+                            ToolTip.Tip="Drops the global paper-only guard for Trading, DEX, Sniper and TRON. Click twice to confirm."
                             Margin="0,0,10,10"
                             Command="{Binding WalletVM.ApplyGlobalExecutionModeCommand}"
                             CommandParameter="LIVE" />

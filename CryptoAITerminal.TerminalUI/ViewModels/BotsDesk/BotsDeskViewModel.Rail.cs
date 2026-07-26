@@ -360,9 +360,9 @@ public partial class BotsDeskViewModel
     {
         AgentCaps.Clear();
         if (AgentVm is not { } a) return;
-        AgentCaps.Add(new AgentCap { Label = "INTERVAL s", Value = a.IntervalSeconds.ToString(Inv), Changed = v => a.IntervalSeconds = Int(v, a.IntervalSeconds) });
-        AgentCaps.Add(new AgentCap { Label = "BUDGET $", Value = a.SessionBudgetUsd.ToString("0", Inv), Changed = v => a.SessionBudgetUsd = Dec(v, a.SessionBudgetUsd) });
-        AgentCaps.Add(new AgentCap { Label = "MAX TRADES", Value = a.MaxTrades.ToString(Inv), Changed = v => a.MaxTrades = Int(v, a.MaxTrades) });
+        AgentCaps.Add(new AgentCap { Label = "INTERVAL s", Value = a.IntervalSeconds.ToString(Inv), ValueChanged = v => a.IntervalSeconds = Int(v, a.IntervalSeconds) });
+        AgentCaps.Add(new AgentCap { Label = "BUDGET $", Value = a.SessionBudgetUsd.ToString("0", Inv), ValueChanged = v => a.SessionBudgetUsd = Dec(v, a.SessionBudgetUsd) });
+        AgentCaps.Add(new AgentCap { Label = "MAX TRADES", Value = a.MaxTrades.ToString(Inv), ValueChanged = v => a.MaxTrades = Int(v, a.MaxTrades) });
     }
 
     public string AgentBadge => AgentVm?.ModeBadge ?? BotsDeskData.Dash;

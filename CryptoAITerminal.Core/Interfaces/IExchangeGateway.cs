@@ -31,6 +31,8 @@ public interface IExchangeGateway
     IObservable<MarketData> MarketDataStream { get; } // для реального времени
 
     // True when the gateway has API credentials for private endpoints (account, order placement).
-    // Default: true — non-Binance gateways always attempt private calls and fail with 401 if keys are missing.
-    bool HasPrivateApiCredentials => true;
+    // Deliberately has no default: the pre-trade guard and the "API ready" indicator both read it,
+    // so a gateway that forgot to answer used to report itself ready and fail open. Every
+    // implementation must say for itself.
+    bool HasPrivateApiCredentials { get; }
 }

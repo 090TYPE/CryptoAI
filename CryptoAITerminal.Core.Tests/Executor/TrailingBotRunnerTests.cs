@@ -20,6 +20,7 @@ public class TrailingBotRunnerTests
 
     private sealed class FakeGateway : IExchangeGateway
     {
+        public bool HasPrivateApiCredentials => true;   // test double: behaves as a fully credentialed gateway
         public readonly List<Order> Placed = new();
         private int _seq;
         public Task ConnectAsync() => Task.CompletedTask;

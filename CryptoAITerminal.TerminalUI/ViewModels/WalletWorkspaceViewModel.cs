@@ -1649,11 +1649,66 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
         };
     }
 
+    // Two-step arm for the LIVE switch. This one button drops the global guard for Trading, DEX,
+    // Sniper and TRON at once, and it used to sit unlabelled between "Refresh Wallet" and
+    // "Open Logs" — a single stray click took the workspace live. First click arms and relabels,
+    // second click within the window applies. Anything else disarms.
+    private static readonly TimeSpan LiveArmWindow = TimeSpan.FromSeconds(8);
+    private DateTime _liveArmedAtUtc = DateTime.MinValue;
+
+    private bool _liveArmPending;
+    public bool LiveArmPending
+    {
+        get => _liveArmPending;
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _liveArmPending, value);
+            this.RaisePropertyChanged(nameof(GlobalLiveButtonLabel));
+            this.RaisePropertyChanged(nameof(GlobalLiveButtonForeground));
+        }
+    }
+
+    public string GlobalLiveButtonLabel => LiveArmPending ? "Confirm LIVE" : "Live Allowed";
+
+    /// <summary>Red once armed, so the confirming click is never mistaken for a neutral button.</summary>
+    public string GlobalLiveButtonForeground => LiveArmPending ? "#FF6B6B" : "#8FA3B8";
+
     private void ApplyGlobalExecutionMode(string? mode)
     {
         var wantsLive = string.Equals(mode, "LIVE", StringComparison.OrdinalIgnoreCase);
+
+        if (!wantsLive)
+        {
+            LiveArmPending = false;
+            GlobalPaperOnlyMode = true;
+            return;
+        }
+
         // Without a valid license, live mode cannot be enabled — pin to paper.
-        GlobalPaperOnlyMode = !(wantsLive && LicenseAllowsLive);
+        if (!LicenseAllowsLive)
+        {
+            LiveArmPending = false;
+            GlobalPaperOnlyMode = true;
+            return;
+        }
+
+        // Already live: nothing to arm.
+        if (!GlobalPaperOnlyMode)
+        {
+            LiveArmPending = false;
+            return;
+        }
+
+        var armIsFresh = LiveArmPending && DateTime.UtcNow - _liveArmedAtUtc <= LiveArmWindow;
+        if (!armIsFresh)
+        {
+            _liveArmedAtUtc = DateTime.UtcNow;
+            LiveArmPending = true;
+            return;
+        }
+
+        LiveArmPending = false;
+        GlobalPaperOnlyMode = false;
     }
 
     private string NormalizeEffectiveSymbolToGlobalSelection(string? symbol)

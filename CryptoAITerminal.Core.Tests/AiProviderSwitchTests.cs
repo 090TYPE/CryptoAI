@@ -111,7 +111,7 @@ public class AiProviderSwitchTests
                 ChatClient.CompleteTextAsync("k", "gpt-4o", 50, null, "s", "u", failing)));
 
         Assert.IsAssignableFrom<HttpRequestException>(ex);
-        Assert.Equal(429, ex.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, ex.StatusCode);
 
         // The whole reason this type exists: the body may carry server internals, so it must reach
         // the diagnostic Message but never the string a panel shows a user.

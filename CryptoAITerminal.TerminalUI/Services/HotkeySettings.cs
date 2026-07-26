@@ -25,7 +25,9 @@ public sealed class HotkeySettings
     public string Allocation25  { get; set; } = "D1";
     public string Allocation50  { get; set; } = "D2";
     public string Allocation100 { get; set; } = "D3";
-    public string CancelOrders  { get; set; } = "Escape";
+    // Not Escape: that key closes dialogs and popups everywhere else in the app, so the reflex
+    // "press Esc to back out" used to pull every resting order instead. Deliberate key, remappable.
+    public string CancelOrders  { get; set; } = "X";
     public string FocusPair     { get; set; } = "F";
 
     // ── Parsed Key properties (not serialised) ────────────────────────────────
@@ -34,7 +36,7 @@ public sealed class HotkeySettings
     [JsonIgnore] public Key Allocation25Key  => Parse(Allocation25,  Key.D1);
     [JsonIgnore] public Key Allocation50Key  => Parse(Allocation50,  Key.D2);
     [JsonIgnore] public Key Allocation100Key => Parse(Allocation100, Key.D3);
-    [JsonIgnore] public Key CancelOrdersKey  => Parse(CancelOrders,  Key.Escape);
+    [JsonIgnore] public Key CancelOrdersKey  => Parse(CancelOrders,  Key.X);
     [JsonIgnore] public Key FocusPairKey     => Parse(FocusPair,     Key.F);
 
     // ── Display labels ────────────────────────────────────────────────────────

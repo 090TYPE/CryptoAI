@@ -162,8 +162,13 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Handles trading hotkeys (B=Buy, S=Sell, 1/2/3=Allocation, Esc=Cancel, F=FocusPair).
+    /// Handles trading hotkeys (B=Buy, S=Sell, 1/2/3=Allocation, Cancel-all, F=FocusPair).
     /// Skips when a TextBox, NumericUpDown or ComboBox is focused so typing is never intercepted.
+    ///
+    /// The handler is attached to the whole window in Tunnel mode, so it sees every key press
+    /// anywhere in the app. Anything that moves money is therefore gated on the trading desk being
+    /// the visible section: a single unmodified "B" pressed while reading News used to send a live
+    /// market order. Navigation-only keys stay global.
     /// </summary>
     private void OnTradingHotkeyDown(object? sender, KeyEventArgs e)
     {
@@ -179,13 +184,23 @@ public partial class MainWindow : Window
 
         var hs = vm.HotkeySettings;
 
+        // Focusing the pair switches to the trading desk, so it must stay reachable from anywhere.
+        if (e.Key == hs.FocusPairKey)
+        {
+            vm.FocusTradingPairCommand.Execute(Unit.Default).Subscribe();
+            e.Handled = true;
+            return;
+        }
+
+        var onTradingDesk = string.Equals(vm.SelectedShellSection, "trading", StringComparison.OrdinalIgnoreCase);
+        if (!onTradingDesk) return;
+
         if      (e.Key == hs.BuyMarketKey)     { vm.BuyMarketCommand.Execute(Unit.Default).Subscribe();    e.Handled = true; }
         else if (e.Key == hs.SellMarketKey)     { vm.SellMarketCommand.Execute(Unit.Default).Subscribe();   e.Handled = true; }
         else if (e.Key == hs.Allocation25Key)   { vm.HotkeyAlloc25Command.Execute(Unit.Default).Subscribe(); e.Handled = true; }
         else if (e.Key == hs.Allocation50Key)   { vm.HotkeyAlloc50Command.Execute(Unit.Default).Subscribe(); e.Handled = true; }
         else if (e.Key == hs.Allocation100Key)  { vm.HotkeyAlloc100Command.Execute(Unit.Default).Subscribe(); e.Handled = true; }
         else if (e.Key == hs.CancelOrdersKey)   { vm.CancelAllOrdersCommand.Execute(Unit.Default).Subscribe(); e.Handled = true; }
-        else if (e.Key == hs.FocusPairKey)      { vm.FocusTradingPairCommand.Execute(Unit.Default).Subscribe(); e.Handled = true; }
     }
 
     private void OnExitClick(object sender, Avalonia.Interactivity.RoutedEventArgs e)

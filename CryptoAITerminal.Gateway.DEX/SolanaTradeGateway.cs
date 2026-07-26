@@ -59,6 +59,10 @@ public sealed class SolanaTradeGateway : IDexTradeGateway, IDisposable
     public bool CanExecuteLiveSwaps => CanSignTransactions;
     public IObservable<MarketData> MarketDataStream => _marketDataSubject;
 
+    // Same thing the read-only/​signing split already tracks: without secret material this gateway
+    // can quote and read balances but cannot sign, so it is not "private API ready".
+    public bool HasPrivateApiCredentials => HasSigningMaterial;
+
     public Task ConnectAsync() => Task.CompletedTask;
     public Task DisconnectAsync() => Task.CompletedTask;
 

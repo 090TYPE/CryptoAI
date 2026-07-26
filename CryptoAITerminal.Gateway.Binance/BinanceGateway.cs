@@ -281,22 +281,96 @@ public class BinanceGateway : IExchangeGateway
 
     public Task DisconnectAsync() => _socketClient.UnsubscribeAllAsync();
 
-    public Task<Order> PlaceOrderAsync(Order order)
+    /// <summary>
+    /// Throws when private endpoints are used without keys. Previously these three methods were
+    /// stubs that printed "[SIMULATION]" and reported Filled without contacting Binance — and this
+    /// gateway is the spot default in both the desktop terminal and the server executor, so P&amp;L,
+    /// balances and the "placed" rows written to the database were all describing trades that had
+    /// never happened. Failing loudly beats a convincing fake.
+    /// </summary>
+    private void EnsurePrivateApiConfigured()
     {
-        order.Status = CryptoAITerminal.Core.Enums.OrderStatus.Filled;
-        order.Id = Guid.NewGuid().ToString();
-        Console.WriteLine($"[SIMULATION] {order.Side} {order.Quantity} of {order.Symbol} at market price");
-        return Task.FromResult(order);
+        if (!HasPrivateApiCredentials)
+            throw new InvalidOperationException(
+                "Binance spot API keys are not configured — set them in Settings → Exchange keys.");
     }
 
-    public Task CancelOrderAsync(string orderId)
+    // Binance cancels spot orders by symbol + id, but IExchangeGateway.CancelOrderAsync(orderId)
+    // only carries the id, so remember which symbol each order belongs to.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _orderSymbols = new();
+
+    public async Task<Order> PlaceOrderAsync(Order order)
     {
-        Console.WriteLine($"[SIMULATION] Cancel order {orderId}");
-        return Task.CompletedTask;
+        EnsurePrivateApiConfigured();
+
+        var side = order.Side == CryptoAITerminal.Core.Enums.OrderSide.Buy
+            ? global::Binance.Net.Enums.OrderSide.Buy
+            : global::Binance.Net.Enums.OrderSide.Sell;
+        var type = order.Type == CryptoAITerminal.Core.Enums.OrderType.Limit
+            ? SpotOrderType.Limit
+            : SpotOrderType.Market;
+
+        var result = await _restClient.SpotApi.Trading.PlaceOrderAsync(
+            order.Symbol,
+            side,
+            type,
+            quantity: order.Quantity,
+            price: type == SpotOrderType.Limit && order.Price > 0 ? order.Price : null,
+            timeInForce: type == SpotOrderType.Limit ? TimeInForce.GoodTillCanceled : null,
+            newClientOrderId: string.IsNullOrWhiteSpace(order.ClientOrderId) ? null : order.ClientOrderId);
+
+        if (!result.Success)
+            throw new Exception($"Failed to place spot order: {result.Error}");
+
+        order.MarketType = TradingMarketType.Spot;
+        order.Id = result.Data.Id.ToString();
+        _orderSymbols[order.Id] = order.Symbol;
+        order.ClientOrderId = result.Data.ClientOrderId ?? order.ClientOrderId;
+        order.FilledQuantity = result.Data.QuantityFilled;
+        order.Status = result.Data.Status switch
+        {
+            global::Binance.Net.Enums.OrderStatus.Filled => CryptoAITerminal.Core.Enums.OrderStatus.Filled,
+            global::Binance.Net.Enums.OrderStatus.PartiallyFilled => CryptoAITerminal.Core.Enums.OrderStatus.PartiallyFilled,
+            global::Binance.Net.Enums.OrderStatus.Canceled or
+            global::Binance.Net.Enums.OrderStatus.PendingCancel => CryptoAITerminal.Core.Enums.OrderStatus.Canceled,
+            global::Binance.Net.Enums.OrderStatus.Rejected or
+            global::Binance.Net.Enums.OrderStatus.Expired or
+            global::Binance.Net.Enums.OrderStatus.ExpiredInMatch => CryptoAITerminal.Core.Enums.OrderStatus.Rejected,
+            _ => CryptoAITerminal.Core.Enums.OrderStatus.New,
+        };
+        return order;
     }
 
-    public Task<decimal> GetBalanceAsync(string asset)
+    public Task CancelOrderAsync(string orderId) =>
+        CancelOrderAsync(_orderSymbols.TryGetValue(orderId, out var symbol) ? symbol : string.Empty, orderId);
+
+    public async Task CancelOrderAsync(string symbol, string orderId)
     {
-        return Task.FromResult(10000m);
+        EnsurePrivateApiConfigured();
+
+        if (string.IsNullOrWhiteSpace(symbol))
+            throw new InvalidOperationException($"Cannot cancel spot order {orderId}: symbol is unknown.");
+
+        if (!long.TryParse(orderId, out var id))
+            throw new InvalidOperationException($"Cannot cancel spot order '{orderId}': not a Binance order id.");
+
+        var result = await _restClient.SpotApi.Trading.CancelOrderAsync(symbol, id);
+        if (!result.Success)
+            throw new Exception($"Failed to cancel spot order {orderId}: {result.Error}");
+
+        _orderSymbols.TryRemove(orderId, out _);
+    }
+
+    public async Task<decimal> GetBalanceAsync(string asset)
+    {
+        EnsurePrivateApiConfigured();
+
+        var result = await _restClient.SpotApi.Account.GetAccountInfoAsync();
+        if (!result.Success)
+            throw new Exception($"Failed to get spot balances: {result.Error}");
+
+        var balance = result.Data.Balances
+            .FirstOrDefault(b => string.Equals(b.Asset, asset, StringComparison.OrdinalIgnoreCase));
+        return balance?.Available ?? 0m;
     }
 }

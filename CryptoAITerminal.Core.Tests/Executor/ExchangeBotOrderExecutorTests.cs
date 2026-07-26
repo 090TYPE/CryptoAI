@@ -34,6 +34,7 @@ public class ExchangeBotOrderExecutorTests
 
     private sealed class FakeGateway : IExchangeGateway
     {
+        public bool HasPrivateApiCredentials => true;   // test double: behaves as a fully credentialed gateway
         public Order? Placed;
         public bool Throw;
         public Task ConnectAsync() => Task.CompletedTask;

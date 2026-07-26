@@ -104,6 +104,8 @@ public sealed class WalletCopyTradeMonitor : IDisposable
 
         foreach (var log in logsJson)
         {
+            if (log is null) continue; // JsonArray elements are nullable — a `null` entry in `result` would throw
+
             var contractAddress = log["address"]?.GetValue<string>() ?? string.Empty;
             var txHash = log["transactionHash"]?.GetValue<string>() ?? string.Empty;
             var data = log["data"]?.GetValue<string>() ?? string.Empty;

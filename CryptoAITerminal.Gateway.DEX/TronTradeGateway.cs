@@ -33,6 +33,9 @@ public sealed class TronTradeGateway : IDexTradeGateway
     public string WalletAddress => _walletAddress;
     public IObservable<MarketData> MarketDataStream => _marketDataSubject;
 
+    // The signing key is the credential here — no key, no broadcast.
+    public bool HasPrivateApiCredentials => !string.IsNullOrWhiteSpace(_privateKey);
+
     public Task ConnectAsync() => Task.CompletedTask;
 
     public Task DisconnectAsync() => Task.CompletedTask;

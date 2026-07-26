@@ -1,7 +1,8 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:CryptoAITerminal.TerminalUI.Converters"
-             x:Class="CryptoAITerminal.TerminalUI.App">
+             x:Class="CryptoAITerminal.TerminalUI.App"
+             RequestedThemeVariant="Dark">
 	<Application.Resources>
 		<conv:BoolToColorConverter x:Key="BoolToColorConverter"/>
 		<conv:StarRatioConverter x:Key="StarRatioConverter"/>
@@ -29,6 +30,18 @@
 		<!-- Reference typefaces (bundled from Assets/Fonts) -->
 		<FontFamily x:Key="FontDisplay">avares://CryptoAITerminal.TerminalUI/Assets/Fonts/SpaceGrotesk.ttf#Space Grotesk</FontFamily>
 		<FontFamily x:Key="FontMono">avares://CryptoAITerminal.TerminalUI/Assets/Fonts/DMMono-Regular.ttf#DM Mono</FontFamily>
+
+		<!-- Fluent берёт акцент из системной темы Windows (по умолчанию синий).
+		     Тумблерами здесь включают живое исполнение — цвет не должен зависеть
+		     от настроек ОС. Application.Resources проверяются раньше Styles,
+		     поэтому эти значения перекрывают тему. -->
+		<Color x:Key="SystemAccentColor">#21E6C1</Color>
+		<Color x:Key="SystemAccentColorDark1">#1BC7A8</Color>
+		<Color x:Key="SystemAccentColorDark2">#149B85</Color>
+		<Color x:Key="SystemAccentColorDark3">#0E7263</Color>
+		<Color x:Key="SystemAccentColorLight1">#4CEDD0</Color>
+		<Color x:Key="SystemAccentColorLight2">#7FF3DE</Color>
+		<Color x:Key="SystemAccentColorLight3">#B2F8EB</Color>
 	</Application.Resources>
 	<Application.Styles>
 		<FluentTheme />

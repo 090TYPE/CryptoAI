@@ -23,6 +23,11 @@ public class BybitFuturesGateway : IExchangeGateway
 
     public IObservable<MarketData> MarketDataStream => _marketDataSubject;
 
+    // Set from the constructor: null creds means the client was built without an API key, so
+    // every private call would 401. The pre-trade guard reads this instead of assuming true.
+    private readonly bool _hasPrivateApiCredentials;
+    public bool HasPrivateApiCredentials => _hasPrivateApiCredentials;
+
     /// <param name="testnet">Route to the Bybit testnet, which issues its own API keys.</param>
     public BybitFuturesGateway(IEnumerable<string>? symbols = null, string? apiKey = null, string? apiSecret = null,
         bool testnet = false)
@@ -34,6 +39,8 @@ public class BybitFuturesGateway : IExchangeGateway
         var creds = !string.IsNullOrWhiteSpace(apiKey) && !string.IsNullOrWhiteSpace(apiSecret)
             ? new BybitCredentials(apiKey, apiSecret)
             : null;
+
+        _hasPrivateApiCredentials = creds is not null;
 
         _restClient = new BybitRestClient(opts =>
         {

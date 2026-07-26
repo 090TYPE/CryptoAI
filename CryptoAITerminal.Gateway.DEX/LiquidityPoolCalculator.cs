@@ -109,9 +109,7 @@ public sealed class LiquidityPoolCalculator
         if (denom <= 0) return 0m;
         var L = 1.0 / denom;
 
-        // Value of position at entry (normalized to $1)
-        var entryVal = 1.0;
-
+        // Entry value is normalized to $1, so currentVal and hodlVal below are both ratios of it.
         // Value at current price
         double currentVal;
         var sqrtC = Math.Clamp(sqrtCurrent, sqrtLower, sqrtUpper);

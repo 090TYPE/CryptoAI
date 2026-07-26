@@ -318,6 +318,11 @@ public class DEXGateway : IDexTradeGateway, ISupportsAggregatorSwap
     private readonly string _originalRpcUrl;
 
     public IObservable<MarketData> MarketDataStream => _marketDataSubject;
+
+    // On a DEX the signing wallet is the credential: without an imported key there is no address to
+    // sign with and every swap would fail at the point of broadcast.
+    public bool HasPrivateApiCredentials => !string.IsNullOrWhiteSpace(_account?.Address);
+
     public string NetworkName => _networkDefinition.NetworkName;
     public string NativeSymbol => _networkDefinition.NativeSymbol;
     public string SupportedDexesLabel => string.Join(", ", _networkDefinition.RoutersByDexId.Keys.OrderBy(static item => item));

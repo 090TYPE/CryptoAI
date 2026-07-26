@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
@@ -13,18 +14,18 @@ namespace CryptoAITerminal.AIEngine;
 /// </summary>
 public sealed class AiCallException : HttpRequestException
 {
-    public int StatusCode { get; }
-
     /// <summary>Machine-readable code when the response carried one (e.g. <c>ai_daily_budget_exhausted</c>).</summary>
     public string? ErrorCode { get; }
 
     /// <summary>Safe to show a user verbatim. Never contains the response body.</summary>
     public string UserMessage { get; }
 
+    // The status goes to the base HttpRequestException.StatusCode rather than a property of our
+    // own: an int StatusCode here shadowed the inherited HttpStatusCode? one, so a caller that
+    // caught HttpRequestException read null while the same object carried the real status.
     private AiCallException(string message, int status, string? errorCode, string userMessage)
-        : base(message)
+        : base(message, null, (HttpStatusCode)status)
     {
-        StatusCode = status;
         ErrorCode = errorCode;
         UserMessage = userMessage;
     }
@@ -109,7 +110,7 @@ public static class AiFailure
     /// <summary>True when retrying later is likely to help (timeouts, rate limits, server outages).</summary>
     public static bool IsTransient(Exception? ex) => ex switch
     {
-        AiCallException ai => ai.StatusCode is 429 or >= 500,
+        AiCallException ai => (int?)ai.StatusCode is 429 or >= 500,
         OperationCanceledException => true,
         HttpRequestException => true,
         _ => false,

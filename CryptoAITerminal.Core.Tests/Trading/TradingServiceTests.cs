@@ -52,6 +52,7 @@ public class TradingServiceTests
 
     private sealed class FakeGateway : IExchangeGateway
     {
+        public bool HasPrivateApiCredentials => true;   // test double: behaves as a fully credentialed gateway
         public Order? Placed;
         private int _placeCalls;
         public int PlaceCalls => Volatile.Read(ref _placeCalls);

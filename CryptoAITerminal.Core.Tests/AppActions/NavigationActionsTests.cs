@@ -20,7 +20,7 @@ public class NavigationActionsTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Goto_is_not_mutating()
+    public void Goto_is_not_mutating()
         => Assert.False(new NavGotoAction().IsMutating);
 
     [Fact]

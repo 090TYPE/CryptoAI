@@ -372,26 +372,26 @@
             <!-- Word lists -->
             <StackPanel Spacing="8">
               <TextBlock Classes="secLabel" Text="ENABLED CHAINS" />
-              <TextBox FontSize="11" Text="{Binding SniperVM.EnabledChainsText}" Watermark="bsc,ethereum,base,solana" />
+              <TextBox FontSize="11" Text="{Binding SniperVM.EnabledChainsText}" PlaceholderText="bsc,ethereum,base,solana" />
             </StackPanel>
             <StackPanel Spacing="8">
               <TextBlock Classes="secLabel" Text="WHITELIST FRAGMENTS" />
-              <TextBox FontSize="11" Text="{Binding SniperVM.WhitelistText}" Watermark="bnbx,pepe,ai" />
+              <TextBox FontSize="11" Text="{Binding SniperVM.WhitelistText}" PlaceholderText="bnbx,pepe,ai" />
             </StackPanel>
             <StackPanel Spacing="8">
               <TextBlock Classes="secLabel" Text="WATCHLIST PRIORITY" />
-              <TextBox FontSize="11" Text="{Binding SniperVM.WatchlistText}" Watermark="pepe,ai,cat — priority, not a hard block" />
+              <TextBox FontSize="11" Text="{Binding SniperVM.WatchlistText}" PlaceholderText="pepe,ai,cat — priority, not a hard block" />
             </StackPanel>
             <StackPanel Spacing="8">
               <TextBlock Classes="secLabel" Text="BLACKLIST FRAGMENTS" />
-              <TextBox FontSize="11" Text="{Binding SniperVM.BlacklistText}" Watermark="inu,elon,test,wrapped" />
+              <TextBox FontSize="11" Text="{Binding SniperVM.BlacklistText}" PlaceholderText="inu,elon,test,wrapped" />
             </StackPanel>
 
             <!-- Manual snipe -->
             <Border Classes="tcard" Padding="12" IsVisible="{Binding SniperVM.IsDexVenue}">
               <StackPanel Spacing="8">
                 <TextBlock Classes="secLabel" Text="MANUAL SNIPE — CONTRACT ADDRESS" />
-                <TextBox FontSize="11" Text="{Binding SniperVM.ManualSnipeAddress, Mode=TwoWay}" Watermark="0x… or Solana address" />
+                <TextBox FontSize="11" Text="{Binding SniperVM.ManualSnipeAddress, Mode=TwoWay}" PlaceholderText="0x… or Solana address" />
                 <TextBlock Text="{Binding SniperVM.ManualSnipeInfoLabel}" Foreground="{Binding SniperVM.ManualSnipeInfoBrush}" FontSize="11" TextWrapping="Wrap"
                            IsVisible="{Binding SniperVM.ManualSnipeInfoLabel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 <TextBlock Text="{Binding SniperVM.ManualSnipeQuoteLabel}" Foreground="{Binding SniperVM.ManualSnipeQuoteBrush}" FontSize="11" FontWeight="SemiBold"
@@ -514,7 +514,7 @@
                 <TextBlock Text="Score ≥" FontSize="10" Foreground="#3D5A72" VerticalAlignment="Center" />
                 <NumericUpDown Width="100" FontSize="11" Value="{Binding DexTrendingVM.MinSecurityScore}" Minimum="0" Maximum="100" Increment="10" />
               </StackPanel>
-              <TextBox Width="130" FontSize="11" Margin="0,0,14,6" Text="{Binding DexTrendingVM.SearchQuery}" Watermark="symbol / name…" />
+              <TextBox Width="130" FontSize="11" Margin="0,0,14,6" Text="{Binding DexTrendingVM.SearchQuery}" PlaceholderText="symbol / name…" />
               <Button Classes="tf" Content="⟳ Refresh" Margin="0,0,14,6" Command="{Binding DexTrendingVM.RefreshCommand}" />
               <TextBlock Text="{Binding DexTrendingVM.StatusLabel}" FontSize="10" Foreground="#3D5A72" VerticalAlignment="Center" Margin="0,0,0,6" />
             </WrapPanel>

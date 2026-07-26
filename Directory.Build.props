@@ -1,0 +1,18 @@
+<Project>
+
+  <!--
+    Shared build settings for every project in the repo.
+
+    TreatWarningsAsErrors is on because the solution reached zero warnings: before that it carried
+    68, and the four real nullable ones were invisible among 57 copies of the same obsolete-API
+    notice. Keeping the count at zero is only cheap while it is already zero.
+
+    If a warning ever needs to be allowed through, suppress that one code in the project that needs
+    it with a comment saying why — do not turn this off globally.
+  -->
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+</Project>

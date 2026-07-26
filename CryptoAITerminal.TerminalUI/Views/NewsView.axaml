@@ -178,13 +178,13 @@
                   <Border Height="28" Padding="9,0" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="7" Background="#07101a">
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                       <TextBlock Text="⌕" Foreground="#2d4a5e" FontSize="11" VerticalAlignment="Center" />
-                      <TextBox Text="{Binding NewsSearch, Mode=TwoWay}" Watermark="search headlines…" Width="190" Background="Transparent" BorderThickness="0" Padding="0" FontSize="11" VerticalAlignment="Center" />
+                      <TextBox Text="{Binding NewsSearch, Mode=TwoWay}" PlaceholderText="search headlines…" Width="190" Background="Transparent" BorderThickness="0" Padding="0" FontSize="11" VerticalAlignment="Center" />
                     </StackPanel>
                   </Border>
                   <Border Height="28" Padding="9,0" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="7" Background="#07101a">
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                       <TextBlock Text="COIN" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
-                      <TextBox Text="{Binding NewsSymbol, Mode=TwoWay}" Watermark="BTC, ETH…" Width="84" Background="Transparent" BorderThickness="0" Padding="0" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
+                      <TextBox Text="{Binding NewsSymbol, Mode=TwoWay}" PlaceholderText="BTC, ETH…" Width="84" Background="Transparent" BorderThickness="0" Padding="0" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
                     </StackPanel>
                   </Border>
                   <Border Padding="2" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="7" Background="#060d14">
@@ -294,7 +294,7 @@
                     <StackPanel Orientation="Horizontal" Spacing="9" IsVisible="{Binding IsCex}">
                       <StackPanel Width="130" Spacing="4">
                         <TextBlock Text="SYMBOL" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
-                        <TextBox Text="{Binding TapeSymbol, Mode=TwoWay}" Watermark="BTCUSDT" Height="28" Padding="9,0" CornerRadius="6" Background="#050f14" BorderBrush="#152233" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="11" />
+                        <TextBox Text="{Binding TapeSymbol, Mode=TwoWay}" PlaceholderText="BTCUSDT" Height="28" Padding="9,0" CornerRadius="6" Background="#050f14" BorderBrush="#152233" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="11" />
                       </StackPanel>
                       <StackPanel Width="150" Spacing="4">
                         <TextBlock Text="LARGE PRINT ≥ USDT" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
@@ -320,7 +320,7 @@
                       </StackPanel>
                       <StackPanel Width="280" Spacing="4">
                         <TextBlock Text="POOL ADDRESS" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
-                        <TextBox Text="{Binding TapePool, Mode=TwoWay}" Watermark="0x…" Height="28" Padding="9,0" CornerRadius="6" Background="#050f14" BorderBrush="#152233" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="11" />
+                        <TextBox Text="{Binding TapePool, Mode=TwoWay}" PlaceholderText="0x…" Height="28" Padding="9,0" CornerRadius="6" Background="#050f14" BorderBrush="#152233" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="11" />
                       </StackPanel>
                       <StackPanel Width="140" Spacing="4">
                         <TextBlock Text="LARGE PRINT ≥ USD" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
@@ -404,7 +404,7 @@
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
                   <Border Height="28" Padding="9,0" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="7" Background="#07101a">
-                    <TextBox Text="{Binding LiqCustom, Mode=TwoWay}" Watermark="XRPUSDT" Width="96" Background="Transparent" BorderThickness="0" Padding="0" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
+                    <TextBox Text="{Binding LiqCustom, Mode=TwoWay}" PlaceholderText="XRPUSDT" Width="96" Background="Transparent" BorderThickness="0" Padding="0" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
                   </Border>
                   <ItemsControl ItemsSource="{Binding LiqSides}">
                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="7" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>

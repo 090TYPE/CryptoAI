@@ -59,7 +59,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private readonly BinanceGateway _gateway;
     private readonly BinanceFuturesGateway _futuresGateway;
-    private readonly MarketOrderRouter _router;
     private readonly RiskManager.RiskManager _riskManager;
     private decimal _riskLimitPositionInput = 1000m;
     private decimal _riskLimitDailyLossInput = 500m;
@@ -150,7 +149,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     private readonly object _workingOrderEvaluationLock = new();
     private bool _isWorkingOrderEvaluationScheduled;
     private bool _isWorkingOrderEvaluationRunning;
-    private QuickBacktestSnapshot _quickBacktestSnapshot = QuickBacktestSnapshot.Empty;
     private readonly UiLocalizationService _localization = UiLocalizationService.Instance;
     private readonly Services.BookWallSettingsStore _wallSettingsStore = new();
     private string _aiAssistantDraftPrompt = string.Empty;
@@ -242,7 +240,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
         _gateway = new BinanceGateway(DefaultSymbols.Concat(_customMarketSymbols), testnet: testBinance);
         _futuresGateway = new BinanceFuturesGateway(DefaultSymbols, binanceApiKey, binanceApiSecret, testBinance);
-        _router = new MarketOrderRouter(_gateway);
         _riskManager = new RiskManager.RiskManager(maxPositionSizeUsd: 1000, maxDailyLossUsd: 500);
         ApplyRiskLimitsCommand = ReactiveCommand.Create(ApplyRiskLimits);
         ResetDailyRiskCommand = ReactiveCommand.Create(ResetDailyRisk);
@@ -318,7 +315,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                 ["KuCoin"]  = kucoinFutures,
             },
             dexGatewayAccessor: () => WalletVM.ActiveDexGateway,
-            dexLiveAllowed: () => WalletVM.GlobalLiveExecutionEnabled);
+            dexLiveAllowed: () => WalletVM.GlobalLiveExecutionEnabled,
+            cexLiveAllowed: () => WalletVM.GlobalLiveExecutionEnabled);
         GridBotVM = new GridBotViewModel(_gateway, _futuresGateway);
         DcaBotVM = new DcaBotViewModel(_gateway, _bybitSpotGateway, _okxSpotGateway, _kucoinSpotGateway);
         DexTradingVM = new DexTradingViewModel(WalletVM);
@@ -1433,8 +1431,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             {
                 ApplyGlobalCexSizingIfReady();
             }
-            RaiseTradingStateChanged();
-            RaisePositionStateChanged();
+            ScheduleTradingStateRefresh();
         }
     }
 
@@ -6792,6 +6789,60 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         AddLog($"Volume Profile {(ShowChartVolumeProfile ? "enabled" : "disabled")}.");
     }
 
+    private static readonly TimeSpan TradingStateRefreshWindow = TimeSpan.FromMilliseconds(400);
+    private Avalonia.Threading.DispatcherTimer? _tradingStateRefreshTimer;
+    private bool _tradingStateRefreshDirty;
+    private DateTime _lastTradingStateRefreshUtc = DateTime.MinValue;
+
+    /// <summary>
+    /// Throttled entry point for the price-tick path. One pass of
+    /// <see cref="RaiseTradingStateChanged"/> + <see cref="RaisePositionStateChanged"/> is ~100
+    /// notifications and four full collection rebuilds (positions, signals, AI studio context,
+    /// trade idea); running it on every tick of every subscribed symbol keeps the dispatcher busy
+    /// and makes the tables blink. Leading edge fires straight away so a symbol switch still feels
+    /// instant, the rest of the burst collapses into one flush per window.
+    /// </summary>
+    private void ScheduleTradingStateRefresh()
+    {
+        if (DateTime.UtcNow - _lastTradingStateRefreshUtc >= TradingStateRefreshWindow)
+        {
+            FlushTradingStateRefresh();
+            return;
+        }
+
+        _tradingStateRefreshDirty = true;
+        if (_tradingStateRefreshTimer is null)
+        {
+            _tradingStateRefreshTimer = new Avalonia.Threading.DispatcherTimer
+            {
+                Interval = TradingStateRefreshWindow
+            };
+            _tradingStateRefreshTimer.Tick += (_, _) =>
+            {
+                if (!_tradingStateRefreshDirty)
+                {
+                    _tradingStateRefreshTimer!.Stop();
+                    return;
+                }
+
+                FlushTradingStateRefresh();
+            };
+        }
+
+        if (!_tradingStateRefreshTimer.IsEnabled)
+        {
+            _tradingStateRefreshTimer.Start();
+        }
+    }
+
+    private void FlushTradingStateRefresh()
+    {
+        _tradingStateRefreshDirty = false;
+        _lastTradingStateRefreshUtc = DateTime.UtcNow;
+        RaiseTradingStateChanged();
+        RaisePositionStateChanged();
+    }
+
     private void RaiseTradingStateChanged()
     {
         RaiseCexActionStateChanged();
@@ -7372,9 +7423,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         _lastRiskBudgetLevel = level;
     }
 
+    // The backtest labels are proxies onto BacktestVM, so this only has to re-raise them.
     private void RefreshQuickBacktestSnapshot()
     {
-        _quickBacktestSnapshot = BuildQuickBacktestSnapshot();
         this.RaisePropertyChanged(nameof(BacktestStatusLabel));
         this.RaisePropertyChanged(nameof(BacktestStatusBrush));
         this.RaisePropertyChanged(nameof(BacktestWindowLabel));
@@ -7387,118 +7438,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(BacktestLastSignalLabel));
         this.RaisePropertyChanged(nameof(BacktestBiasLabel));
         this.RaisePropertyChanged(nameof(BacktestNarrative));
-    }
-
-    private QuickBacktestSnapshot BuildQuickBacktestSnapshot()
-    {
-        if (TradingCandles.Count < 30)
-        {
-            return QuickBacktestSnapshot.Empty with
-            {
-                WindowLabel = TradingCandles.Count == 0
-                    ? "Load a trading chart to simulate the rule set."
-                    : $"Only {TradingCandles.Count} candles loaded. Need at least 30."
-            };
-        }
-
-        const int fastPeriod = 9;
-        const int slowPeriod = 21;
-        var closes = TradingCandles
-            .Select(static candle => candle.Close)
-            .Where(static close => close > 0m)
-            .ToArray();
-
-        if (closes.Length < slowPeriod)
-        {
-            return QuickBacktestSnapshot.Empty with { WindowLabel = "Not enough valid closing prices for simulation." };
-        }
-
-        var tradeReturns = new List<decimal>();
-        var equity = 100m;
-        var peakEquity = equity;
-        var maxDrawdown = 0m;
-        decimal? entryPrice = null;
-        var lastSignal = "Hold";
-
-        for (var index = slowPeriod; index < closes.Length; index++)
-        {
-            var fastNow = closes[(index - fastPeriod + 1)..(index + 1)].Average();
-            var slowNow = closes[(index - slowPeriod + 1)..(index + 1)].Average();
-            var fastPrev = closes[(index - fastPeriod)..index].Average();
-            var slowPrev = closes[(index - slowPeriod)..index].Average();
-            var price = closes[index];
-            var crossedUp = fastPrev <= slowPrev && fastNow > slowNow;
-            var crossedDown = fastPrev >= slowPrev && fastNow < slowNow;
-
-            if (entryPrice is null && crossedUp)
-            {
-                entryPrice = price;
-                lastSignal = "Long";
-                continue;
-            }
-
-            if (entryPrice is not null && crossedDown)
-            {
-                var tradeReturn = entryPrice.Value <= 0m ? 0m : ((price - entryPrice.Value) / entryPrice.Value) * 100m;
-                tradeReturns.Add(tradeReturn);
-                equity *= 1m + (tradeReturn / 100m);
-                peakEquity = Math.Max(peakEquity, equity);
-                if (peakEquity > 0m)
-                {
-                    maxDrawdown = Math.Max(maxDrawdown, ((peakEquity - equity) / peakEquity) * 100m);
-                }
-
-                entryPrice = null;
-                lastSignal = "Flat";
-            }
-        }
-
-        if (entryPrice is not null)
-        {
-            var finalPrice = closes[^1];
-            var tradeReturn = entryPrice.Value <= 0m ? 0m : ((finalPrice - entryPrice.Value) / entryPrice.Value) * 100m;
-            tradeReturns.Add(tradeReturn);
-            equity *= 1m + (tradeReturn / 100m);
-            peakEquity = Math.Max(peakEquity, equity);
-            if (peakEquity > 0m)
-            {
-                maxDrawdown = Math.Max(maxDrawdown, ((peakEquity - equity) / peakEquity) * 100m);
-            }
-            lastSignal = "Long";
-        }
-
-        if (tradeReturns.Count == 0)
-        {
-            return QuickBacktestSnapshot.Empty with
-            {
-                IsReady = true,
-                WindowLabel = $"{TradingCandles.Count} candles | {SelectedTradeTimeframe}",
-                LastSignal = lastSignal,
-                BiasLabel = lastSignal == "Long" ? "Trend-following bias" : "No valid crossover exits yet",
-                Narrative = "The loaded chart has enough candles, but the rule set has not completed a full crossover trade yet."
-            };
-        }
-
-        var wins = tradeReturns.Count(static trade => trade > 0m);
-        var winRate = (decimal)wins / tradeReturns.Count * 100m;
-        var netReturn = equity - 100m;
-        var averageReturn = tradeReturns.Average();
-        var bestTrade = tradeReturns.Max();
-        var worstTrade = tradeReturns.Min();
-        var bias = averageReturn >= 0m ? "Momentum positive" : "Momentum defensive";
-
-        return new QuickBacktestSnapshot(
-            true,
-            $"{TradingCandles.Count} candles | {SelectedTradeTimeframe}",
-            tradeReturns.Count,
-            winRate,
-            netReturn,
-            maxDrawdown,
-            bestTrade,
-            worstTrade,
-            lastSignal,
-            bias,
-            $"Quick MA(9/21) simulation on {SelectedTradingSymbol} produced {tradeReturns.Count} closed trades with {winRate:0.#}% win rate and {netReturn:+0.##;-0.##;0}% net return.");
     }
 
     private bool IsWorkspaceSection(string sectionKey) =>
@@ -9653,6 +9592,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public void Dispose()
     {
         _orderBookTimer.Stop();
+        _tradingStateRefreshTimer?.Stop();
         StopTradingDeskTimers();
         _manualModeRefreshCts?.Cancel();
         _manualModeRefreshCts?.Dispose();
@@ -9678,6 +9618,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         DexTrendingVM?.Dispose();
         PortfolioRebalanceVM?.Dispose();
         _marketDataSubscription.Dispose();
+        _marketDataSubscription2?.Dispose();
         _futuresMarketDataSubscription.Dispose();
         _futuresAccountStateSubscription.Dispose();
         _futuresOrderUpdateSubscription.Dispose();
@@ -9856,34 +9797,6 @@ public readonly record struct ShellSectionDefinition(
     string Title,
     string Description,
     string Roadmap);
-
-public readonly record struct QuickBacktestSnapshot(
-    bool IsReady,
-    string WindowLabel,
-    int TradeCount,
-    decimal WinRatePercent,
-    decimal NetReturnPercent,
-    decimal MaxDrawdownPercent,
-    decimal BestTradePercent,
-    decimal WorstTradePercent,
-    string LastSignal,
-    string BiasLabel,
-    string Narrative)
-{
-    public static QuickBacktestSnapshot Empty =>
-        new(
-            false,
-            "Load a trading chart to simulate the rule set.",
-            0,
-            0m,
-            0m,
-            0m,
-            0m,
-            0m,
-            "Hold",
-            "Insufficient data",
-            "The quick backtest uses the currently loaded candle set, so it becomes available after the chart finishes loading.");
-}
 
 public sealed class TradeLadderLevelViewModel : ReactiveObject
 {

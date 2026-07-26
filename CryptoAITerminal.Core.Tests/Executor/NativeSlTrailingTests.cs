@@ -20,6 +20,7 @@ public class NativeSlTrailingTests
 
     private sealed class FuturesGateway : IExchangeGateway
     {
+        public bool HasPrivateApiCredentials => true;   // test double: behaves as a fully credentialed gateway
         public readonly List<Order> Market = new();
         public readonly List<(decimal Trigger, decimal Qty, string Id)> Sl = new();
         public readonly List<string> Cancelled = new();

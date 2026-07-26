@@ -4,35 +4,43 @@ using CryptoAITerminal.WebApi.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<SharedStateService>(_ => new SharedStateService());
-builder.Services.AddCors(opts =>
-{
-    opts.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-});
+
+// No CORS policy at all. This API places real market orders; a browser on any origin being able
+// to call it was never the intent, and the desktop terminal does not go through CORS.
 
 var app = builder.Build();
-app.UseCors();
 
 // ────────────────────────────────────────────────────────────────────────────
-//  Optional bearer-token auth. Включается через env var CRYPTOAI_WEBAPI_TOKEN.
-//  Если переменная не задана — API открыт (режим локального мониторинга).
-//  Это middleware пропускает /api/health без проверки, чтобы внешние ping-и
-//  работали без раскрытия токена.
+//  Bearer-token auth, fail-CLOSED. Задаётся через env var CRYPTOAI_WEBAPI_TOKEN.
+//  Раньше пустая переменная означала «API открыт» — а открыты, среди прочего,
+//  /api/orders/market и /api/orders/cancel, которые WebApiQueueProcessor исполняет
+//  настоящим гейтвеем. Теперь без токена наружу отдаётся только /api/health,
+//  всё остальное — 503, чтобы забытая переменная не превращалась в открытый
+//  приём ордеров.
 // ────────────────────────────────────────────────────────────────────────────
 
 var authToken = Environment.GetEnvironmentVariable("CRYPTOAI_WEBAPI_TOKEN");
 
+if (string.IsNullOrWhiteSpace(authToken))
+{
+    app.Logger.LogWarning(
+        "CRYPTOAI_WEBAPI_TOKEN is not set — every endpoint except /api/health will answer 503. " +
+        "Set the variable to enable the API.");
+}
+
 app.Use(async (ctx, next) =>
 {
-    if (string.IsNullOrWhiteSpace(authToken))
+    var path = ctx.Request.Path.Value ?? string.Empty;
+    if (path.StartsWith("/api/health", StringComparison.OrdinalIgnoreCase))
     {
         await next();
         return;
     }
 
-    var path = ctx.Request.Path.Value ?? string.Empty;
-    if (path.StartsWith("/api/health", StringComparison.OrdinalIgnoreCase))
+    if (string.IsNullOrWhiteSpace(authToken))
     {
-        await next();
+        ctx.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+        await ctx.Response.WriteAsJsonAsync(new { error = "api disabled: CRYPTOAI_WEBAPI_TOKEN is not configured" });
         return;
     }
 
@@ -166,9 +174,17 @@ var tvSecret = Environment.GetEnvironmentVariable("CRYPTOAI_TV_SECRET");
 
 app.MapPost("/api/webhook/tradingview", (TradingViewAlertDto alert, SharedStateService state) =>
 {
-    // Secret validation
-    if (!string.IsNullOrWhiteSpace(tvSecret) &&
-        !string.Equals(alert.Secret, tvSecret, StringComparison.Ordinal))
+    // No secret configured means the webhook is off, not that anyone may post to it. It used to
+    // skip validation entirely when CRYPTOAI_TV_SECRET was unset, which left an unauthenticated
+    // path straight into the order queue.
+    if (string.IsNullOrWhiteSpace(tvSecret))
+    {
+        return Results.Json(
+            new TradingViewWebhookResult { Accepted = false, Message = "Webhook disabled: CRYPTOAI_TV_SECRET is not configured." },
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    if (!string.Equals(alert.Secret, tvSecret, StringComparison.Ordinal))
     {
         return Results.Json(
             new TradingViewWebhookResult { Accepted = false, Message = "Invalid secret." },
@@ -185,8 +201,9 @@ app.MapPost("/api/webhook/tradingview", (TradingViewAlertDto alert, SharedStateS
             new TradingViewWebhookResult { Accepted = false, Message = "Qty must be > 0." },
             statusCode: StatusCodes.Status400BadRequest);
 
+    var action = (alert.Action ?? "").Trim().ToLowerInvariant();
     var validActions = new[] { "buy", "sell", "close", "long", "short" };
-    if (!validActions.Contains((alert.Action ?? "").Trim().ToLowerInvariant()))
+    if (!validActions.Contains(action))
         return Results.Json(
             new TradingViewWebhookResult
             {
@@ -201,7 +218,7 @@ app.MapPost("/api/webhook/tradingview", (TradingViewAlertDto alert, SharedStateS
     {
         Accepted    = true,
         OrderId     = queued.Id,
-        Message     = $"Alert accepted: {alert.Action.ToUpperInvariant()} {alert.Symbol} qty={alert.Qty} on {alert.Exchange} {alert.Market}",
+        Message     = $"Alert accepted: {action.ToUpperInvariant()} {alert.Symbol} qty={alert.Qty} on {alert.Exchange} {alert.Market}",
         ReceivedUtc = queued.EnqueuedUtc,
     });
 });

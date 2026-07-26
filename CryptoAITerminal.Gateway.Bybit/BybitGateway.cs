@@ -24,6 +24,11 @@ public class BybitGateway : IExchangeGateway
 
     public IObservable<MarketData> MarketDataStream => _marketDataSubject;
 
+    // Set from the constructor: null creds means the client was built without an API key, so
+    // every private call would 401. The pre-trade guard reads this instead of assuming true.
+    private readonly bool _hasPrivateApiCredentials;
+    public bool HasPrivateApiCredentials => _hasPrivateApiCredentials;
+
     /// <param name="testnet">Route to the Bybit testnet, which issues its own API keys.</param>
     public BybitGateway(IEnumerable<string>? symbols = null, string? apiKey = null, string? apiSecret = null,
         bool testnet = false)
@@ -35,6 +40,8 @@ public class BybitGateway : IExchangeGateway
         var creds = !string.IsNullOrWhiteSpace(apiKey) && !string.IsNullOrWhiteSpace(apiSecret)
             ? new BybitCredentials(apiKey, apiSecret)
             : null;
+
+        _hasPrivateApiCredentials = creds is not null;
 
         _restClient = new BybitRestClient(opts =>
         {
@@ -154,13 +161,16 @@ public class BybitGateway : IExchangeGateway
         var type = order.Type == CoreOrderType.Market ? NewOrderType.Market : NewOrderType.Limit;
         decimal? price = order.Type == CoreOrderType.Limit ? order.Price : null;
 
+        // marketUnit must be explicit: for a spot MARKET BUY Bybit reads qty in the QUOTE asset by
+        // default, so an order for 0.01 BTC was sent as 0.01 USDT. Order.Quantity is always base.
         var result = await _restClient.V5Api.Trading.PlaceOrderAsync(
             Category.Spot,
             order.Symbol,
             side,
             type,
             order.Quantity,
-            price);
+            price,
+            marketUnit: MarketUnit.BaseAsset);
 
         if (!result.Success)
             throw new Exception($"Bybit place order failed: {result.Error}");

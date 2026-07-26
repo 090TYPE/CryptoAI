@@ -27,7 +27,7 @@
 
     <StackPanel Spacing="3">
       <TextBlock Classes="TdLabel" Text="COVALENT (GOLDRUSH) API KEY — OPTIONAL" />
-      <TextBox Text="{Binding PortfolioApiKey}" Watermark="paste key for cross-chain holdings + USD value"
+      <TextBox Text="{Binding PortfolioApiKey}" PlaceholderText="paste key for cross-chain holdings + USD value"
                PasswordChar="•" FontSize="10" Background="#0a1420" BorderBrush="#1c2f42" Foreground="#c8dcef" />
       <TextBlock Text="{Binding PortfolioModeLabel}" Foreground="#5a7a94" FontSize="9" TextWrapping="Wrap" />
     </StackPanel>

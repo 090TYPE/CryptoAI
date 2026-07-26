@@ -17,7 +17,7 @@ public sealed class SetField : ReactiveObject
     public bool IsText { get; init; } = true;
     public List<string> Options { get; init; } = new();
     public Func<string, string>? Clean { get; init; }
-    public Action<string>? Changed { get; set; }
+    public Action<string>? ValueChanged { get; set; }
 
     private char _passChar => IsPassword ? '•' : '\0';
     public char PasswordChar => _passChar;
@@ -26,7 +26,7 @@ public sealed class SetField : ReactiveObject
     public string Value
     {
         get => _value;
-        set { var v = Clean != null ? Clean(value ?? "") : (value ?? ""); this.RaiseAndSetIfChanged(ref _value, v); Changed?.Invoke(v); }
+        set { var v = Clean != null ? Clean(value ?? "") : (value ?? ""); this.RaiseAndSetIfChanged(ref _value, v); ValueChanged?.Invoke(v); }
     }
 
     /// <summary>Push a value in from the live source without echoing it back.
@@ -107,13 +107,13 @@ public sealed class IntegrationRowVM : ReactiveObject
     public bool HasConsole { get; init; }
     public ICommand? ConsoleCommand { get; init; }
 
-    public Action<string>? Changed { get; set; }
+    public Action<string>? ValueChanged { get; set; }
 
     private string _value = "";
     public string Value
     {
         get => _value;
-        set { this.RaiseAndSetIfChanged(ref _value, value ?? ""); Changed?.Invoke(_value); }
+        set { this.RaiseAndSetIfChanged(ref _value, value ?? ""); ValueChanged?.Invoke(_value); }
     }
 
     /// <summary>Push a stored value in without echoing it back to the writer.</summary>
@@ -257,7 +257,7 @@ public sealed class HotkeyRowVM : ReactiveObject
     public string Label { get; init; } = "";
     public string KeyColor { get; init; } = "#8fa3b8";
     public string Placeholder { get; init; } = "";
-    public Action<string>? Changed { get; set; }
+    public Action<string>? ValueChanged { get; set; }
 
     /// <summary>Supplies the formatted key label from the live source (e.g. "Esc", "1").</summary>
     public Func<string>? DisplayText { get; set; }
@@ -269,7 +269,7 @@ public sealed class HotkeyRowVM : ReactiveObject
         set
         {
             this.RaiseAndSetIfChanged(ref _value, value ?? "");
-            Changed?.Invoke(value ?? "");
+            ValueChanged?.Invoke(value ?? "");
             this.RaisePropertyChanged(nameof(Display));
         }
     }

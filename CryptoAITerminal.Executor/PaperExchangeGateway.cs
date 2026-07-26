@@ -23,6 +23,10 @@ public sealed class PaperExchangeGateway : IExchangeGateway
         _orders = resting.ToList();
     }
 
+    // Nothing to authenticate against — the paper gateway never calls an exchange, so it is always
+    // ready and the pre-trade guard should not hold it back.
+    public bool HasPrivateApiCredentials => true;
+
     // A resting order is still open unless the price has crossed it.
     private bool Crossed(Order o) => o.Side == OrderSide.Buy ? _price <= o.Price : _price >= o.Price;
 

@@ -56,6 +56,11 @@ public class OKXFuturesGateway : IExchangeGateway
 
     public IObservable<MarketData> MarketDataStream => _marketDataSubject;
 
+    // Set from the constructor: null creds means the client was built without an API key, so
+    // every private call would 401. The pre-trade guard reads this instead of assuming true.
+    private readonly bool _hasPrivateApiCredentials;
+    public bool HasPrivateApiCredentials => _hasPrivateApiCredentials;
+
     /// <param name="demoTrading">Route to OKX demo trading, which issues its own API keys.</param>
     public OKXFuturesGateway(IEnumerable<string>? symbols = null,
                               string? apiKey = null, string? apiSecret = null, string? passphrase = null,
@@ -70,6 +75,8 @@ public class OKXFuturesGateway : IExchangeGateway
                  && !string.IsNullOrWhiteSpace(passphrase)
             ? new OKXCredentials(apiKey, apiSecret, passphrase)
             : null;
+
+        _hasPrivateApiCredentials = creds is not null;
 
         _restClient = new OKXRestClient(opts =>
         {

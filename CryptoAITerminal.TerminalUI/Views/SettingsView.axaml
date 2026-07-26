@@ -128,7 +128,7 @@
               <Border DockPanel.Dock="Top" Background="#060d14" BorderBrush="#0a1520" BorderThickness="0,0,0,1" Padding="11,9">
                 <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                   <TextBlock Text="⌕" Foreground="#2d4a5e" FontSize="9" VerticalAlignment="Center" />
-                  <TextBox Text="{Binding NavSearch, Mode=TwoWay}" Watermark="find a setting…" FontSize="10.5" VerticalAlignment="Center" Width="170" />
+                  <TextBox Text="{Binding NavSearch, Mode=TwoWay}" PlaceholderText="find a setting…" FontSize="10.5" VerticalAlignment="Center" Width="170" />
                 </StackPanel>
               </Border>
               <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
@@ -196,7 +196,7 @@
                         <TextBlock Text="{Binding AiKeyLabel}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
                         <StackPanel Orientation="Horizontal" Spacing="7">
                           <Border Width="330" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
-                            <TextBox Text="{Binding AiKey, Mode=TwoWay}" PasswordChar="{Binding AiKeyChar}" Watermark="{Binding AiKeyPlaceholder}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
+                            <TextBox Text="{Binding AiKey, Mode=TwoWay}" PasswordChar="{Binding AiKeyChar}" PlaceholderText="{Binding AiKeyPlaceholder}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
                           </Border>
                           <Button Command="{Binding RevealCommand}" Width="44" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Content="{Binding AiRevealIcon}" Foreground="#5a7a94" FontSize="8" FontWeight="Bold" />
                           <Button Command="{Binding AiConsoleCommand}" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="11,0" Content="GET KEY" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
@@ -205,7 +205,7 @@
                       <StackPanel Grid.Column="2" Spacing="5">
                         <TextBlock Text="MODEL" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
                         <Border Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
-                          <TextBox Text="{Binding AiModel, Mode=TwoWay}" Watermark="{Binding AiModelPlaceholder}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
+                          <TextBox Text="{Binding AiModel, Mode=TwoWay}" PlaceholderText="{Binding AiModelPlaceholder}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
                         </Border>
                       </StackPanel>
                     </Grid>
@@ -231,7 +231,7 @@
                         </Grid>
                         <StackPanel Orientation="Horizontal" Spacing="7">
                           <Border Width="330" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
-                            <TextBox Text="{Binding ServerUrl, Mode=TwoWay}" Watermark="{Binding ServerUrlPlaceholder}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
+                            <TextBox Text="{Binding ServerUrl, Mode=TwoWay}" PlaceholderText="{Binding ServerUrlPlaceholder}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
                           </Border>
                           <Button Command="{Binding ServerSaveCommand}" Height="30" BorderBrush="#21e6c1" BorderThickness="1" CornerRadius="6" Background="#0e2a2a" Padding="13,0" Content="CONNECT" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
                         </StackPanel>
@@ -289,7 +289,7 @@
                     <TextBlock Text="ACTIVATION KEY" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" Margin="0,11,0,5" />
                     <StackPanel Orientation="Horizontal" Spacing="7">
                       <Border Width="620" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
-                        <TextBox Text="{Binding LicKey, Mode=TwoWay}" Watermark="Paste your license key here" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
+                        <TextBox Text="{Binding LicKey, Mode=TwoWay}" PlaceholderText="Paste your license key here" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
                       </Border>
                       <Button Command="{Binding LicActivateCommand}" Height="30" BorderBrush="#21e6c1" BorderThickness="1" CornerRadius="6" Background="#0e2a2a" Padding="14,0" Content="ACTIVATE" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
                     </StackPanel>
@@ -311,7 +311,7 @@
                                Text="Saves every bot / sniper / grid / risk setting as a named profile. API keys are never included, so a profile is safe to share." />
                     <StackPanel Orientation="Horizontal" Spacing="7">
                       <Border Width="560" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
-                        <TextBox Text="{Binding ProfileName, Mode=TwoWay}" Watermark="Profile name" FontSize="12" VerticalAlignment="Center" />
+                        <TextBox Text="{Binding ProfileName, Mode=TwoWay}" PlaceholderText="Profile name" FontSize="12" VerticalAlignment="Center" />
                       </Border>
                       <Button Command="{Binding ProfSaveCommand}" Height="30" BorderBrush="#21e6c1" BorderThickness="1" CornerRadius="6" Background="#0e2a2a" Padding="12,0" Content="SAVE" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
                       <Button Command="{Binding ProfImportCommand}" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="11,0" Content="↓ IMPORT" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
@@ -403,7 +403,7 @@
                               <StackPanel Spacing="5" Margin="5">
                                 <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
                                 <Border Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="9,0">
-                                  <TextBox Text="{Binding Value, Mode=TwoWay}" PasswordChar="{Binding PasswordChar}" Watermark="{Binding Placeholder}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
+                                  <TextBox Text="{Binding Value, Mode=TwoWay}" PasswordChar="{Binding PasswordChar}" PlaceholderText="{Binding Placeholder}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
                                 </Border>
                               </StackPanel>
                             </DataTemplate>
@@ -445,7 +445,7 @@
                           <StackPanel Spacing="5" Margin="5">
                             <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
                             <Border Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
-                              <TextBox Text="{Binding Value, Mode=TwoWay}" Watermark="{Binding Placeholder}" FontSize="11.5" VerticalAlignment="Center" />
+                              <TextBox Text="{Binding Value, Mode=TwoWay}" PlaceholderText="{Binding Placeholder}" FontSize="11.5" VerticalAlignment="Center" />
                             </Border>
                           </StackPanel>
                         </DataTemplate>
@@ -505,7 +505,7 @@
                           <StackPanel Spacing="5" Margin="5">
                             <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
                             <Border Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
-                              <TextBox Text="{Binding Value, Mode=TwoWay}" Watermark="{Binding Placeholder}" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
+                              <TextBox Text="{Binding Value, Mode=TwoWay}" PlaceholderText="{Binding Placeholder}" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
                             </Border>
                           </StackPanel>
                         </DataTemplate>
@@ -653,7 +653,7 @@
                                         <Button Grid.Column="6" IsVisible="{Binding HasConsole}" Command="{Binding ConsoleCommand}" Height="24" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Background="#060d14" Padding="10,0" Content="GET KEY" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
                                       </Grid>
                                       <Border Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="9,0">
-                                        <TextBox Text="{Binding Value, Mode=TwoWay}" PasswordChar="{Binding Mask}" Watermark="{Binding Placeholder}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
+                                        <TextBox Text="{Binding Value, Mode=TwoWay}" PasswordChar="{Binding Mask}" PlaceholderText="{Binding Placeholder}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
                                       </Border>
                                       <TextBlock Text="{Binding Powers}" TextWrapping="Wrap" FontSize="10.5" LineHeight="16" Foreground="#4a6a82" Margin="0,7,0,0" />
                                       <TextBlock Text="{Binding Applies}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" Margin="0,3,0,0" />
@@ -712,7 +712,7 @@
                                       <StackPanel Spacing="5" Margin="5">
                                         <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
                                         <Border Height="29" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="9,0">
-                                          <TextBox Text="{Binding Value, Mode=TwoWay}" PasswordChar="{Binding PasswordChar}" Watermark="{Binding Placeholder}" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
+                                          <TextBox Text="{Binding Value, Mode=TwoWay}" PasswordChar="{Binding PasswordChar}" PlaceholderText="{Binding Placeholder}" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
                                         </Border>
                                       </StackPanel>
                                     </DataTemplate>
@@ -754,13 +754,13 @@
                       <StackPanel Grid.Column="0" Spacing="5" Width="170">
                         <TextBlock Text="PHONE" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
                         <Border Height="29" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
-                          <TextBox Text="{Binding TgPhone, Mode=TwoWay}" Watermark="+1 234 567 8900" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
+                          <TextBox Text="{Binding TgPhone, Mode=TwoWay}" PlaceholderText="+1 234 567 8900" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
                         </Border>
                       </StackPanel>
                       <StackPanel Grid.Column="2" Spacing="5" Width="120" IsVisible="{Binding TgNeedCode}">
                         <TextBlock Text="LOGIN CODE" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
                         <Border Height="29" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
-                          <TextBox Text="{Binding TgCode, Mode=TwoWay}" Watermark="12345" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
+                          <TextBox Text="{Binding TgCode, Mode=TwoWay}" PlaceholderText="12345" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
                         </Border>
                       </StackPanel>
                       <Button Grid.Column="3" Command="{Binding TgConnectCommand}" HorizontalAlignment="Left" Height="29" BorderBrush="{Binding TgBtnBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="6" Background="{Binding TgBtnBg, Converter={StaticResource StringToBrush}}" Padding="13,0" Content="{Binding TgBtnLabel}" Foreground="{Binding TgBtnColor, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" Margin="10,0,0,0" />
@@ -814,7 +814,7 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="7">
                       <Border Width="560" Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="10,0">
-                        <TextBox Text="{Binding NlPrompt, Mode=TwoWay}" Watermark="ping me when BTC breaks 75k" FontSize="12" VerticalAlignment="Center" />
+                        <TextBox Text="{Binding NlPrompt, Mode=TwoWay}" PlaceholderText="ping me when BTC breaks 75k" FontSize="12" VerticalAlignment="Center" />
                       </Border>
                       <Button Command="{Binding NlGenerateCommand}" Height="30" BorderBrush="#21e6c1" BorderThickness="1" CornerRadius="6" Background="#0e2a2a" Padding="13,0" Content="{Binding NlBtn}" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
                     </StackPanel>
@@ -836,7 +836,7 @@
                       <StackPanel Spacing="5" Width="120">
                         <TextBlock Text="SYMBOL" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
                         <Border Height="29" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
-                          <TextBox Text="{Binding NaSym, Mode=TwoWay}" Watermark="BTCUSDT" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
+                          <TextBox Text="{Binding NaSym, Mode=TwoWay}" PlaceholderText="BTCUSDT" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
                         </Border>
                       </StackPanel>
                       <StackPanel Spacing="5" Width="176">
@@ -1021,7 +1021,7 @@
                                 <TextBlock Text="{Binding Display}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="{Binding KeyColor, Converter={StaticResource StringToBrush}}" HorizontalAlignment="Center" />
                               </Border>
                               <Border Grid.Column="4" Height="26" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="8,0">
-                                <TextBox Text="{Binding Value, Mode=TwoWay}" Watermark="{Binding Placeholder}" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
+                                <TextBox Text="{Binding Value, Mode=TwoWay}" PlaceholderText="{Binding Placeholder}" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
                               </Border>
                               <Button Grid.Column="6" Command="{Binding CaptureCommand}" Height="26" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="9,0" Content="{Binding CaptureLabel}" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
                             </Grid>
@@ -1055,7 +1055,7 @@
                   <TextBlock Text="to confirm" FontSize="10" Foreground="#4a6a82" />
                 </StackPanel>
                 <Border Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="9,0">
-                  <TextBox Text="{Binding ConfirmTyped, Mode=TwoWay}" Watermark="{Binding ConfirmTypeWord}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
+                  <TextBox Text="{Binding ConfirmTyped, Mode=TwoWay}" PlaceholderText="{Binding ConfirmTypeWord}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
                 </Border>
               </StackPanel>
             </StackPanel>

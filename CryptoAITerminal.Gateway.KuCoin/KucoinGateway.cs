@@ -24,6 +24,11 @@ public class KucoinGateway : IExchangeGateway, IDisposable
 
     public IObservable<MarketData> MarketDataStream => _marketDataSubject;
 
+    // Set from the constructor: null creds means the client was built without an API key, so
+    // every private call would 401. The pre-trade guard reads this instead of assuming true.
+    private readonly bool _hasPrivateApiCredentials;
+    public bool HasPrivateApiCredentials => _hasPrivateApiCredentials;
+
     public KucoinGateway(
         IEnumerable<string>? symbols = null,
         string? apiKey = null, string? apiSecret = null, string? passphrase = null)
@@ -37,6 +42,8 @@ public class KucoinGateway : IExchangeGateway, IDisposable
                  && !string.IsNullOrWhiteSpace(passphrase)
             ? new KucoinCredentials(apiKey, apiSecret, passphrase)
             : null;
+
+        _hasPrivateApiCredentials = creds is not null;
 
         _restClient = new KucoinRestClient(opts =>
         {

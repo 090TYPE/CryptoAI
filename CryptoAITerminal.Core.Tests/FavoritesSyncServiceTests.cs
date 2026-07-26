@@ -71,10 +71,10 @@ public class FavoritesSyncServiceTests
         public HttpRequestMessage? Request;
         private readonly string _body;
         public RespondingHandler(string body) => _body = body;
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             Request = request;
-            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(_body) };
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(_body) });
         }
     }
 

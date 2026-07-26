@@ -26,6 +26,7 @@ public class GridBotRunnerTests
 
     private sealed class FakeGateway : IExchangeGateway
     {
+        public bool HasPrivateApiCredentials => true;   // test double: behaves as a fully credentialed gateway
         public readonly List<Order> Placed = new();
         public HashSet<string> OpenIds = new();
         private int _seq;

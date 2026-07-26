@@ -54,6 +54,15 @@ public sealed class FundingArbitrageService : IDisposable
     // ── Position state ────────────────────────────────────────────────────────
 
     private readonly List<FundingArbPosition> _positions = [];
+    // Guards _positions, the per-position mutable fields (Qty/Notional/FundingCollected)
+    // and the two side tables below: the 30 s UI timer and the reinvest tasks touch them
+    // from different threads.
+    private readonly object _posLock = new();
+    // Момент последнего начисления фандинга по позиции. Держим здесь, а не в модели,
+    // чтобы не менять контракт FundingArbPosition в Core.
+    private readonly Dictionary<Guid, DateTime> _lastAccrualUtc = [];
+    // Позиции, по которым реинвест уже в полёте (гард реентерабельности).
+    private readonly HashSet<Guid> _reinvesting = [];
     // Futures account mode. Default one-way (retail default); flips to hedge on the first
     // "position side mismatch" reject and retries, so the perp leg works on either mode.
     private bool _isHedgeMode;
@@ -85,9 +94,15 @@ public sealed class FundingArbitrageService : IDisposable
             await futGw.PlaceOrderAsync(order);
         }
     }
-    public IReadOnlyList<FundingArbPosition> AllPositions     => _positions;
-    public IReadOnlyList<FundingArbPosition> OpenPositions    =>
-        _positions.Where(p => p.State == FundingArbPositionState.Open).ToList();
+    // Снимки, а не живой список: читатели ходят с UI-потока, пока реинвест мутирует позиции.
+    public IReadOnlyList<FundingArbPosition> AllPositions
+    {
+        get { lock (_posLock) return _positions.ToList(); }
+    }
+    public IReadOnlyList<FundingArbPosition> OpenPositions
+    {
+        get { lock (_posLock) return _positions.Where(p => p.State == FundingArbPositionState.Open).ToList(); }
+    }
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -278,7 +293,7 @@ public sealed class FundingArbitrageService : IDisposable
 
             var entryPrice = opp.MarkPrice;   // approximation; exact fill via order.Price if available
 
-            _positions.Add(new FundingArbPosition
+            var pos = new FundingArbPosition
             {
                 Exchange            = opp.Exchange,
                 Symbol              = opp.Symbol,
@@ -292,7 +307,12 @@ public sealed class FundingArbitrageService : IDisposable
                 CurrentSpotPrice    = entryPrice,
                 CurrentPerpPrice    = entryPrice,
                 State               = FundingArbPositionState.Open,
-            });
+            };
+            lock (_posLock)
+            {
+                _positions.Add(pos);
+                _lastAccrualUtc[pos.Id] = pos.OpenedAt;
+            }
 
             return (true, "");
         }

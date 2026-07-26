@@ -262,7 +262,7 @@ public sealed class AgentCap : ReactiveObject
     public string Value
     {
         get => _value;
-        set { this.RaiseAndSetIfChanged(ref _value, value); Changed?.Invoke(value); }
+        set { this.RaiseAndSetIfChanged(ref _value, value); ValueChanged?.Invoke(value); }
     }
-    public System.Action<string>? Changed { get; init; }
+    public System.Action<string>? ValueChanged { get; init; }
 }

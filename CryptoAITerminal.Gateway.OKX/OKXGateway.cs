@@ -25,6 +25,11 @@ public class OKXGateway : IExchangeGateway
 
     public IObservable<MarketData> MarketDataStream => _marketDataSubject;
 
+    // Set from the constructor: null creds means the client was built without an API key, so
+    // every private call would 401. The pre-trade guard reads this instead of assuming true.
+    private readonly bool _hasPrivateApiCredentials;
+    public bool HasPrivateApiCredentials => _hasPrivateApiCredentials;
+
     /// <param name="demoTrading">Route to OKX demo trading — OKX's equivalent of a testnet.
     /// Demo keys are created separately in the OKX demo account.</param>
     public OKXGateway(IEnumerable<string>? symbols = null,
@@ -40,6 +45,8 @@ public class OKXGateway : IExchangeGateway
                  && !string.IsNullOrWhiteSpace(passphrase)
             ? new OKXCredentials(apiKey, apiSecret, passphrase)
             : null;
+
+        _hasPrivateApiCredentials = creds is not null;
 
         _restClient = new OKXRestClient(opts =>
         {
@@ -124,13 +131,16 @@ public class OKXGateway : IExchangeGateway
         var type = order.Type == CoreOrderType.Market ? OKXOrderType.Market : OKXOrderType.Limit;
         decimal? price = order.Type == CoreOrderType.Limit ? order.Price : null;
 
+        // quantityAsset must be explicit: in cash mode OKX defaults tgtCcy to the quote asset for a
+        // spot MARKET BUY, so an order for 0.01 BTC went out as 0.01 USDT. Order.Quantity is base.
         var result = await _restClient.UnifiedApi.Trading.PlaceOrderAsync(
             OKXSymbolHelper.ToSpotSymbol(order.Symbol),
             side,
             type,
             order.Quantity,
             price,
-            tradeMode: TradeMode.Cash);
+            tradeMode: TradeMode.Cash,
+            quantityAsset: QuantityAsset.BaseAsset);
 
         if (!result.Success)
             throw new Exception($"OKX place order failed: {result.Error}");

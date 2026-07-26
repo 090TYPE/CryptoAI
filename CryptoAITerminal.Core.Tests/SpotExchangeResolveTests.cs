@@ -10,6 +10,7 @@ public class SpotExchangeResolveTests
 {
     private sealed class StubGateway : IExchangeGateway
     {
+        public bool HasPrivateApiCredentials => true;   // test double: behaves as a fully credentialed gateway
         public string Name { get; init; } = "";
         public System.IObservable<MarketData> MarketDataStream => System.Reactive.Linq.Observable.Empty<MarketData>();
         public System.Threading.Tasks.Task ConnectAsync() => System.Threading.Tasks.Task.CompletedTask;

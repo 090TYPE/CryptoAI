@@ -135,7 +135,16 @@ public sealed class AiTraderAgentService
         OnEvent?.Invoke(new AgentEvent(AgentEventKind.Error, "kill-switch", "Trading halted by kill-switch."));
     }
 
-    public void Stop() => _loopCts?.Cancel();
+    /// <summary>
+    /// Stops the loop. Sets <c>_killed</c> as well as cancelling: cancellation alone only ends the
+    /// loop between turns, so a turn already inside the tool cycle kept placing orders after the UI
+    /// had shown "stopped". The flag is checked by the tool guard on every call.
+    /// </summary>
+    public void Stop()
+    {
+        _killed = true;
+        _loopCts?.Cancel();
+    }
 
     /// <summary>
     /// Runs the agent on a fixed cadence until stopped. Each tick is one full
