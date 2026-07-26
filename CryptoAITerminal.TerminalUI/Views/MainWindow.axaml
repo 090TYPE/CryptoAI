@@ -915,14 +915,18 @@
           <views:RiskView />
 
           <!-- ══════════ BACKTEST ENGINE ══════════ -->
-          <views:BacktestView />
+          <Panel IsVisible="{Binding IsBacktestSectionVisible}">
+            <views:BacktestView DataContext="{Binding BacktestVM}" />
+          </Panel>
 
           <views:BotsView />
 
           <!-- ═══════════════════════════════════════════════════════════════
                Whale Tracker Section
           ════════════════════════════════════════════════════════════════ -->
-          <views:WhaleTrackerView />
+          <Panel IsVisible="{Binding IsWhaleTrackerSectionVisible}">
+            <views:WhaleTrackerView DataContext="{Binding WhaleTrackerVM}" />
+          </Panel>
 
           <!-- ═══════════════════════════════════════════════════════════════
                Live Tape — public market trades (time & sales)
@@ -932,7 +936,9 @@
           <!-- ═══════════════════════════════════════════════════════════════
                Funding Rate Monitor
           ════════════════════════════════════════════════════════════════ -->
-          <views:FundingRateView />
+          <Panel IsVisible="{Binding IsFundingRateSectionVisible}">
+            <views:FundingRateView DataContext="{Binding FundingRateVM}" />
+          </Panel>
 
           <!-- ═══════════════════════════════════════════════════════════════
                FUNDING RATE ARBITRAGE BOT
@@ -943,19 +949,25 @@
           <!-- ═══════════════════════════════════════════════════════════════
                CEX-CEX SPOT ARBITRAGE SCANNER
           ════════════════════════════════════════════════════════════════ -->
-          <views:ArbView />
+          <Panel IsVisible="{Binding IsArbSectionVisible}">
+            <views:ArbView DataContext="{Binding CrossExchangeArbVM}" />
+          </Panel>
           <!-- ═══ End CEX-CEX Spot Arbitrage ═══ -->
 
           <!-- ═══════════════════════════════════════════════════════════════
                COPY TRADING
           ════════════════════════════════════════════════════════════════ -->
-          <views:CopyTradingView />
+          <Panel IsVisible="{Binding IsCopySectionVisible}">
+            <views:CopyTradingView DataContext="{Binding CopyTradingVM}" />
+          </Panel>
           <!-- ═══ End Copy Trading ═══ -->
 
           <!-- ═══════════════════════════════════════════════════════════════
                STATISTICAL ARBITRAGE (PAIRS TRADING)
           ════════════════════════════════════════════════════════════════ -->
-          <views:StatArbView />
+          <Panel IsVisible="{Binding IsStatArbSectionVisible}">
+            <views:StatArbView DataContext="{Binding StatArbVM}" />
+          </Panel>
           <!-- ═══ End Statistical Arbitrage ═══ -->
 
           <!-- ═══════════════════════════════════════════════════════════════
@@ -973,7 +985,9 @@
           <!-- ═══════════════════════════════════════════════════════════════
                LIQUIDATION HEATMAP
           ════════════════════════════════════════════════════════════════ -->
-          <views:LiquidationView />
+          <Panel IsVisible="{Binding IsLiquidationSectionVisible}">
+            <views:LiquidationView DataContext="{Binding LiquidationHeatmapVM}" />
+          </Panel>
 
           <!-- ═══════════════════════════════════════════════════════════════
                COMPOSITE BOT — Rule Editor
@@ -983,7 +997,9 @@
           <!-- ═══════════════════════════════════════════════════════════════
                Trade Journal
           ════════════════════════════════════════════════════════════════ -->
-          <views:JournalView />
+          <Panel IsVisible="{Binding IsJournalSectionVisible}">
+            <views:JournalView DataContext="{Binding TradeJournalVM}" />
+          </Panel>
 
           <!-- ═══════════════════════════════════════════════════════════════
                Gas / Network Fees Monitor (Feature 14)
@@ -1003,12 +1019,16 @@
           <!-- ═══════════════════════════════════════════════════════════════
                News Feed with Sentiment (Feature 16)
           ════════════════════════════════════════════════════════════════ -->
-          <views:NewsView />
+          <Panel IsVisible="{Binding IsNewsSectionVisible}">
+            <views:NewsView DataContext="{Binding MarketFeedDesk}" />
+          </Panel>
 
           <!-- ═══════════════════════════════════════════════════════════════
                On-Chain Metrics (Feature 17)
           ════════════════════════════════════════════════════════════════ -->
-          <views:OnChainView />
+          <Panel IsVisible="{Binding IsOnChainSectionVisible}">
+            <views:OnChainView DataContext="{Binding OnChainVM}" />
+          </Panel>
 
           <!-- ═══════════════════════════════════════════════════════════════
                P&L Dashboard (Analytics section)

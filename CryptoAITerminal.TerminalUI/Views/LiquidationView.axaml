@@ -3,16 +3,16 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.LiquidationView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <StackPanel Spacing="16" IsVisible="{Binding IsLiquidationSectionVisible}">
+             x:DataType="vm:LiquidationHeatmapViewModel"
+             x:CompileBindings="True">
+          <StackPanel Spacing="16">
 
             <!-- Proximity alert banner -->
-            <Border IsVisible="{Binding LiquidationHeatmapVM.IsProximityAlertActive}"
+            <Border IsVisible="{Binding IsProximityAlertActive}"
                     Background="#2A1A10" BorderBrush="#FF9500" BorderThickness="0,0,0,1" Padding="14,10">
               <StackPanel Orientation="Horizontal" Spacing="10">
                 <TextBlock Text="⚡" FontSize="{DynamicResource FsSubhead}" VerticalAlignment="Center" Foreground="#FF9500" />
-                <TextBlock Text="{Binding LiquidationHeatmapVM.ProximityAlertMessage}"
+                <TextBlock Text="{Binding ProximityAlertMessage}"
                            Foreground="#FF9500" FontSize="{DynamicResource FsBody}" FontWeight="SemiBold"
                            VerticalAlignment="Center" TextWrapping="Wrap" />
               </StackPanel>
@@ -22,20 +22,20 @@
             <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="10">
               <StackPanel Grid.Column="0">
                 <TextBlock Classes="H1" Text="Liquidation Heatmap" />
-                <TextBlock Text="{Binding LiquidationHeatmapVM.StatusLabel}"
+                <TextBlock Text="{Binding StatusLabel}"
                            Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
               </StackPanel>
-              <TextBlock Grid.Column="1" Text="{Binding LiquidationHeatmapVM.DataSourceLabel}"
+              <TextBlock Grid.Column="1" Text="{Binding DataSourceLabel}"
                          Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold"
                          VerticalAlignment="Center" />
-              <CheckBox Grid.Column="2" IsChecked="{Binding LiquidationHeatmapVM.ShowLongs}"
+              <CheckBox Grid.Column="2" IsChecked="{Binding ShowLongs}"
                         Content="Longs" Foreground="{DynamicResource Accent}" VerticalAlignment="Center" />
-              <CheckBox Grid.Column="3" IsChecked="{Binding LiquidationHeatmapVM.ShowShorts}"
+              <CheckBox Grid.Column="3" IsChecked="{Binding ShowShorts}"
                         Content="Shorts" Foreground="{DynamicResource Negative}" VerticalAlignment="Center" />
               <Button Grid.Column="4" Content="&#x21BA; Refresh"
                       Classes="GhostButton"
-                      Command="{Binding LiquidationHeatmapVM.RefreshCommand}"
-                      IsEnabled="{Binding !LiquidationHeatmapVM.IsLoading}" />
+                      Command="{Binding RefreshCommand}"
+                      IsEnabled="{Binding !IsLoading}" />
             </Grid>
 
             <!-- ── AI Liquidity Magnet (#13) ── -->
@@ -46,18 +46,18 @@
                     <TextBlock Text="🧠 AI Liquidity Magnet" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsBody}" />
                     <TextBlock Text="Which liquidation cluster is pulling price?" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsCaption}" />
                   </StackPanel>
-                  <TextBlock Grid.Column="1" Text="{Binding LiquidationHeatmapVM.InsightSource}"
+                  <TextBlock Grid.Column="1" Text="{Binding InsightSource}"
                              Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" Margin="0,0,10,0" />
                   <Button Grid.Column="2" Content="Analyze with AI"
-                          Command="{Binding LiquidationHeatmapVM.AnalyzeWithAiCommand}"
-                          IsEnabled="{Binding !LiquidationHeatmapVM.InsightRunning}" Foreground="{DynamicResource Accent}" />
+                          Command="{Binding AnalyzeWithAiCommand}"
+                          IsEnabled="{Binding !InsightRunning}" Foreground="{DynamicResource Accent}" />
                 </Grid>
-                <StackPanel Spacing="5" IsVisible="{Binding LiquidationHeatmapVM.HasInsight}">
-                  <TextBlock Text="{Binding LiquidationHeatmapVM.InsightSignal}"
-                             Foreground="{Binding LiquidationHeatmapVM.InsightSignalBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
-                  <TextBlock Text="{Binding LiquidationHeatmapVM.InsightSummary}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding LiquidationHeatmapVM.InsightBullets}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
-                             IsVisible="{Binding LiquidationHeatmapVM.InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <StackPanel Spacing="5" IsVisible="{Binding HasInsight}">
+                  <TextBlock Text="{Binding InsightSignal}"
+                             Foreground="{Binding InsightSignalBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
+                  <TextBlock Text="{Binding InsightSummary}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding InsightBullets}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
+                             IsVisible="{Binding InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 </StackPanel>
               </StackPanel>
             </Border>
@@ -65,21 +65,21 @@
             <!-- Symbol quick-select -->
             <WrapPanel Orientation="Horizontal">
               <Button Content="BTC" Classes="GhostButton" Margin="0,0,6,0"
-                      Command="{Binding LiquidationHeatmapVM.SetSymbolCommand}"
+                      Command="{Binding SetSymbolCommand}"
                       CommandParameter="BTCUSDT" />
               <Button Content="ETH" Classes="GhostButton" Margin="0,0,6,0"
-                      Command="{Binding LiquidationHeatmapVM.SetSymbolCommand}"
+                      Command="{Binding SetSymbolCommand}"
                       CommandParameter="ETHUSDT" />
               <Button Content="SOL" Classes="GhostButton" Margin="0,0,6,0"
-                      Command="{Binding LiquidationHeatmapVM.SetSymbolCommand}"
+                      Command="{Binding SetSymbolCommand}"
                       CommandParameter="SOLUSDT" />
               <Button Content="BNB" Classes="GhostButton" Margin="0,0,6,0"
-                      Command="{Binding LiquidationHeatmapVM.SetSymbolCommand}"
+                      Command="{Binding SetSymbolCommand}"
                       CommandParameter="BNBUSDT" />
               <Button Content="DOGE" Classes="GhostButton" Margin="0,0,6,0"
-                      Command="{Binding LiquidationHeatmapVM.SetSymbolCommand}"
+                      Command="{Binding SetSymbolCommand}"
                       CommandParameter="DOGEUSDT" />
-              <TextBox Text="{Binding LiquidationHeatmapVM.Symbol}"
+              <TextBox Text="{Binding Symbol}"
                        PlaceholderText="XRPUSDT" Width="130" Margin="6,0,0,0" />
             </WrapPanel>
 
@@ -89,21 +89,21 @@
                 <StackPanel Spacing="4">
                   <TextBlock Classes="Overline" Text="Current Price" />
                   <TextBlock Classes="Metric"
-                             Text="{Binding LiquidationHeatmapVM.CurrentPrice, StringFormat=$ {0:N2}}"
+                             Text="{Binding CurrentPrice, StringFormat=$ {0:N2}}"
                              Foreground="{DynamicResource Warning}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="1" Classes="SurfaceCard">
                 <StackPanel Spacing="4">
                   <TextBlock Classes="Overline" Text="Top Long Liq Level" />
-                  <TextBlock Text="{Binding LiquidationHeatmapVM.TopLongLabel}"
+                  <TextBlock Text="{Binding TopLongLabel}"
                              Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="2" Classes="SurfaceCard">
                 <StackPanel Spacing="4">
                   <TextBlock Classes="Overline" Text="Top Short Liq Level" />
-                  <TextBlock Text="{Binding LiquidationHeatmapVM.TopShortLabel}"
+                  <TextBlock Text="{Binding TopShortLabel}"
                              Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" />
                 </StackPanel>
               </Border>
@@ -123,14 +123,18 @@
                 <Canvas Width="1200" Height="460" VerticalAlignment="Top">
 
                   <!-- Heat bands — full-width, colour = side, opacity = magnitude -->
-                  <ItemsControl ItemsSource="{Binding LiquidationHeatmapVM.HeatBands}">
+                  <ItemsControl ItemsSource="{Binding HeatBands}">
                     <ItemsControl.ItemsPanel>
                       <ItemsPanelTemplate>
                         <Canvas Width="1200" Height="460" />
                       </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.Styles>
-                      <Style Selector="ContentPresenter">
+                      <!-- Setters bind against the ContentPresenter's item (HeatBand), not this
+                           view's DataContext, and a Style carries no x:DataType — so compiled
+                           bindings would resolve Y against LiquidationHeatmapViewModel and fail.
+                           Reflection binding here keeps the per-item positioning working. -->
+                      <Style Selector="ContentPresenter" x:CompileBindings="False">
                         <Setter Property="Canvas.Top" Value="{Binding Y}" />
                         <Setter Property="Canvas.Left" Value="0" />
                       </Style>
@@ -144,7 +148,7 @@
                   </ItemsControl>
 
                   <!-- Current price dashed horizontal line -->
-                  <Path Data="{Binding LiquidationHeatmapVM.CurrentPriceGeometry}"
+                  <Path Data="{Binding CurrentPriceGeometry}"
                         Stroke="{DynamicResource Warning}"
                         StrokeThickness="2.5"
                         StrokeDashArray="8,4" />
@@ -155,7 +159,7 @@
 
               <!-- Price axis labels — absolute-positioned on a Canvas -->
               <ItemsControl Grid.Column="1"
-                            ItemsSource="{Binding LiquidationHeatmapVM.PriceLabels}">
+                            ItemsSource="{Binding PriceLabels}">
                 <ItemsControl.ItemsPanel>
                   <ItemsPanelTemplate>
                     <Canvas Width="56" Height="460" />
@@ -187,7 +191,7 @@
             <!-- Note about data source -->
             <TextBlock Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap">
               <Run Text="Data: " />
-              <Run Text="{Binding LiquidationHeatmapVM.DataSourceLabel}" Foreground="{DynamicResource Accent}" />
+              <Run Text="{Binding DataSourceLabel}" Foreground="{DynamicResource Accent}" />
               <Run Text=" · Set COINGLASS_API_KEY env var for real liquidation data. Without key — estimated from Binance Futures order book + leverage model. Refreshes every 5 min." />
             </TextBlock>
 

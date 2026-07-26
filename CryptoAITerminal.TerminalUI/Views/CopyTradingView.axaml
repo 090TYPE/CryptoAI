@@ -3,24 +3,24 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.CopyTradingView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <StackPanel Spacing="16" IsVisible="{Binding IsCopySectionVisible}">
+             x:DataType="vm:CopyTradingViewModel"
+             x:CompileBindings="True">
+          <StackPanel Spacing="16">
 
             <!-- Header -->
             <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
               <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
                 <!-- No H1 here: the shell already renders the section title, so repeating
                      "Copy Trading" showed the heading twice. Keep only the mode subtitle. -->
-                <TextBlock Text="{Binding CopyTradingVM.ModeLabel}"
+                <TextBlock Text="{Binding ModeLabel}"
                            FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />
               </StackPanel>
               <Button Grid.Column="1" Classes="GhostButton" Content="Leader"
-                      Command="{Binding CopyTradingVM.SetLeaderCommand}" />
+                      Command="{Binding SetLeaderCommand}" />
               <Button Grid.Column="2" Classes="GhostButton" Content="Follower"
-                      Command="{Binding CopyTradingVM.SetFollowerCommand}" />
+                      Command="{Binding SetFollowerCommand}" />
               <Button Grid.Column="3" Classes="GhostButton" Content="Off"
-                      Command="{Binding CopyTradingVM.SetOffCommand}" />
+                      Command="{Binding SetOffCommand}" />
             </Grid>
 
             <!-- KPI strip -->
@@ -28,21 +28,21 @@
               <Border Grid.Column="0" Classes="SurfaceCard">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="PUBLISHED" />
-                  <TextBlock Text="{Binding CopyTradingVM.TotalPublished}"
+                  <TextBlock Text="{Binding TotalPublished}"
                              Classes="Metric" Foreground="{DynamicResource Accent}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="1" Classes="SurfaceCard">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="COPIED" />
-                  <TextBlock Text="{Binding CopyTradingVM.TotalCopied}"
+                  <TextBlock Text="{Binding TotalCopied}"
                              Classes="Metric" Foreground="{DynamicResource Warning}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="2" Classes="SurfaceCard">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="EST. PERF FEE" />
-                  <TextBlock Text="{Binding CopyTradingVM.FeeLabel}"
+                  <TextBlock Text="{Binding FeeLabel}"
                              Classes="Metric" Foreground="{DynamicResource Accent}" />
                 </StackPanel>
               </Border>
@@ -54,30 +54,30 @@
                 <Grid ColumnDefinitions="*,Auto,Auto">
                   <StackPanel Grid.Column="0" Spacing="2">
                     <TextBlock Classes="H2" Text="Wallet Watch" />
-                    <TextBlock Text="{Binding CopyTradingVM.WatchStatus}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />
+                    <TextBlock Text="{Binding WatchStatus}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />
                   </StackPanel>
                   <Button Grid.Column="1" Classes="GhostButton" Content="Start"
-                          Command="{Binding CopyTradingVM.StartWatchCommand}" Margin="0,0,8,0"
-                          IsVisible="{Binding !CopyTradingVM.IsWatching}" />
+                          Command="{Binding StartWatchCommand}" Margin="0,0,8,0"
+                          IsVisible="{Binding !IsWatching}" />
                   <Button Grid.Column="2" Classes="GhostButton" Content="Stop"
-                          Command="{Binding CopyTradingVM.StopWatchCommand}"
-                          IsVisible="{Binding CopyTradingVM.IsWatching}" />
+                          Command="{Binding StopWatchCommand}"
+                          IsVisible="{Binding IsWatching}" />
                 </Grid>
 
                 <!-- Add wallet row -->
                 <Grid ColumnDefinitions="*,160,120,Auto" ColumnSpacing="8">
-                  <TextBox Grid.Column="0" Text="{Binding CopyTradingVM.NewWalletAddress}"
+                  <TextBox Grid.Column="0" Text="{Binding NewWalletAddress}"
                            PlaceholderText="Wallet address (0x...)" FontFamily="Consolas" FontSize="{DynamicResource FsSmall}" />
-                  <TextBox Grid.Column="1" Text="{Binding CopyTradingVM.NewWalletLabel}"
+                  <TextBox Grid.Column="1" Text="{Binding NewWalletLabel}"
                            PlaceholderText="Label (name)" FontSize="{DynamicResource FsSmall}" />
-                  <ComboBox Grid.Column="2" ItemsSource="{Binding CopyTradingVM.ChainOptions}"
-                            SelectedItem="{Binding CopyTradingVM.SelectedWatchChain}" />
+                  <ComboBox Grid.Column="2" ItemsSource="{Binding ChainOptions}"
+                            SelectedItem="{Binding SelectedWatchChain}" />
                   <Button Grid.Column="3" Classes="GhostButton" Content="+ Add"
-                          Command="{Binding CopyTradingVM.AddWatchedWalletCommand}" />
+                          Command="{Binding AddWatchedWalletCommand}" />
                 </Grid>
 
                 <!-- Watched wallets list -->
-                <ItemsControl ItemsSource="{Binding CopyTradingVM.WatchedWallets}">
+                <ItemsControl ItemsSource="{Binding WatchedWallets}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:WatchedWalletItemViewModel">
                       <Border Background="{DynamicResource Surface2}" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1"
@@ -93,7 +93,7 @@
                                     ToolTip.Tip="Stronger &quot;copy this&quot; alert on a buy (no auto-execution)" />
                           <Button Grid.Column="2" Classes="GhostButton" Content="✕"
                                   ToolTip.Tip="Remove wallet" AutomationProperties.Name="Remove watched wallet"
-                                  Command="{Binding $parent[ItemsControl].DataContext.CopyTradingVM.RemoveWatchedWalletCommand}"
+                                  Command="{Binding $parent[ItemsControl].((vm:CopyTradingViewModel)DataContext).RemoveWatchedWalletCommand}"
                                   CommandParameter="{Binding}" VerticalAlignment="Center" />
                         </Grid>
                       </Border>
@@ -108,22 +108,22 @@
 
             <!-- Follower config (shown when Follower mode active) -->
             <Border Classes="Panel" Padding="16,12"
-                    IsVisible="{Binding CopyTradingVM.IsFollower}">
+                    IsVisible="{Binding IsFollower}">
               <Grid ColumnDefinitions="Auto,*,Auto,120,Auto,100" ColumnSpacing="12" VerticalAlignment="Center">
                 <TextBlock Grid.Column="0" Text="Leader URL" Classes="Overline" VerticalAlignment="Center" />
-                <TextBox Grid.Column="1" Text="{Binding CopyTradingVM.LeaderUrl}"
+                <TextBox Grid.Column="1" Text="{Binding LeaderUrl}"
                          PlaceholderText="http://leader-ip:5180"
                          FontFamily="Consolas" FontSize="{DynamicResource FsSmall}" />
                 <TextBlock Grid.Column="2" Text="Scale" Classes="Overline"
                            VerticalAlignment="Center" Margin="8,0,0,0" />
                 <NumericUpDown Grid.Column="3"
-                               Value="{Binding CopyTradingVM.ScaleRatio}"
+                               Value="{Binding ScaleRatio}"
                                Minimum="0.01" Maximum="10" Increment="0.1"
                                FormatString="N2" />
                 <TextBlock Grid.Column="4" Text="Perf fee %" Classes="Overline"
                            VerticalAlignment="Center" Margin="8,0,0,0" />
                 <NumericUpDown Grid.Column="5"
-                               Value="{Binding CopyTradingVM.PerformanceFeePct}"
+                               Value="{Binding PerformanceFeePct}"
                                Minimum="0" Maximum="50" Increment="1"
                                FormatString="N0" />
               </Grid>
@@ -134,7 +134,7 @@
               <StackPanel Spacing="8">
                 <TextBlock Classes="H2" Text="Activity Log" />
                 <ScrollViewer Classes="PageScroll" MaxHeight="300">
-                  <ItemsControl ItemsSource="{Binding CopyTradingVM.Log}">
+                  <ItemsControl ItemsSource="{Binding Log}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="vm:CopyTradeLogEntry">
                         <Grid ColumnDefinitions="70,*" ColumnSpacing="8" Margin="0,2">
@@ -151,7 +151,7 @@
                 </ScrollViewer>
                 <TextBlock Text="No activity yet. Switch to Leader or Follower mode to start."
                            Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsCaption}"
-                           IsVisible="{Binding !CopyTradingVM.Log.Count}" />
+                           IsVisible="{Binding !Log.Count}" />
               </StackPanel>
             </Border>
 

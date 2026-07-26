@@ -18,8 +18,8 @@
 
   <!-- No fixed 760px floor: on a 1280x720 screen it forced an outer scroll over the desk's own
        scrollers and pushed the bottom of the page past the edge. -->
-  <Border IsVisible="{Binding IsNewsSectionVisible}" MinHeight="460">
-    <Grid DataContext="{Binding MarketFeedDesk}" Background="{DynamicResource AppBg}" ClipToBounds="True">
+  <Border MinHeight="460">
+    <Grid Background="{DynamicResource AppBg}" ClipToBounds="True">
       <DockPanel LastChildFill="True">
 
         <!-- ───────── header ───────── -->

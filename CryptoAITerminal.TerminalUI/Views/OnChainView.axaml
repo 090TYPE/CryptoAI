@@ -3,18 +3,18 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.OnChainView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <StackPanel Spacing="16" IsVisible="{Binding IsOnChainSectionVisible}">
+             x:DataType="vm:OnChainMetricsViewModel"
+             x:CompileBindings="True">
+          <StackPanel Spacing="16">
 
             <!-- API key status -->
             <Border Background="{DynamicResource Surface2}" CornerRadius="4" Padding="12,8">
               <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock IsVisible="{Binding OnChainVM.HasApiKey}"
-                           Text="{Binding OnChainVM.ApiKeyStatus}"
+                <TextBlock IsVisible="{Binding HasApiKey}"
+                           Text="{Binding ApiKeyStatus}"
                            Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsCaption}" />
-                <TextBlock IsVisible="{Binding !OnChainVM.HasApiKey}"
-                           Text="{Binding OnChainVM.ApiKeyStatus}"
+                <TextBlock IsVisible="{Binding !HasApiKey}"
+                           Text="{Binding ApiKeyStatus}"
                            Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsCaption}" />
               </StackPanel>
             </Border>
@@ -26,18 +26,18 @@
                   <StackPanel Grid.Column="0">
                     <TextBlock Text="🧠 AI On-Chain Read" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsBody}" />
                   </StackPanel>
-                  <TextBlock Grid.Column="1" Text="{Binding OnChainVM.InsightSource}"
+                  <TextBlock Grid.Column="1" Text="{Binding InsightSource}"
                              Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" Margin="0,0,10,0" />
                   <Button Grid.Column="2" Content="Analyze with AI"
-                          Command="{Binding OnChainVM.AnalyzeWithAiCommand}"
-                          IsEnabled="{Binding !OnChainVM.InsightRunning}" Foreground="{DynamicResource Accent}" />
+                          Command="{Binding AnalyzeWithAiCommand}"
+                          IsEnabled="{Binding !InsightRunning}" Foreground="{DynamicResource Accent}" />
                 </Grid>
-                <StackPanel Spacing="5" IsVisible="{Binding OnChainVM.HasInsight}">
-                  <TextBlock Text="{Binding OnChainVM.InsightSignal}"
-                             Foreground="{Binding OnChainVM.InsightSignalBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
-                  <TextBlock Text="{Binding OnChainVM.InsightSummary}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding OnChainVM.InsightBullets}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
-                             IsVisible="{Binding OnChainVM.InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <StackPanel Spacing="5" IsVisible="{Binding HasInsight}">
+                  <TextBlock Text="{Binding InsightSignal}"
+                             Foreground="{Binding InsightSignalBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
+                  <TextBlock Text="{Binding InsightSummary}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding InsightBullets}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
+                             IsVisible="{Binding InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 </StackPanel>
               </StackPanel>
             </Border>
@@ -60,12 +60,12 @@
                       <TextBlock Text="(Market / Realised Value)" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="10">
-                      <TextBlock Text="{Binding OnChainVM.BtcMvrvLabel}"
-                                 Foreground="{Binding OnChainVM.BtcMvrvColor, Converter={StaticResource StringToBrush}}"
+                      <TextBlock Text="{Binding BtcMvrvLabel}"
+                                 Foreground="{Binding BtcMvrvColor, Converter={StaticResource StringToBrush}}"
                                  FontSize="{DynamicResource FsH2}" FontWeight="Bold" />
                       <Border Background="{DynamicResource Surface1}" CornerRadius="3" Padding="6,2" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding OnChainVM.BtcMvrvPhase}"
-                                   Foreground="{Binding OnChainVM.BtcMvrvColor, Converter={StaticResource StringToBrush}}"
+                        <TextBlock Text="{Binding BtcMvrvPhase}"
+                                   Foreground="{Binding BtcMvrvColor, Converter={StaticResource StringToBrush}}"
                                    FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
                       </Border>
                     </StackPanel>
@@ -88,12 +88,12 @@
                       <TextBlock Text="(Net Unrealised P/L)" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="10">
-                      <TextBlock Text="{Binding OnChainVM.BtcNuplLabel}"
-                                 Foreground="{Binding OnChainVM.BtcNuplColor, Converter={StaticResource StringToBrush}}"
+                      <TextBlock Text="{Binding BtcNuplLabel}"
+                                 Foreground="{Binding BtcNuplColor, Converter={StaticResource StringToBrush}}"
                                  FontSize="{DynamicResource FsH2}" FontWeight="Bold" />
                       <Border Background="{DynamicResource Surface1}" CornerRadius="3" Padding="6,2" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding OnChainVM.BtcNuplPhase}"
-                                   Foreground="{Binding OnChainVM.BtcNuplColor, Converter={StaticResource StringToBrush}}"
+                        <TextBlock Text="{Binding BtcNuplPhase}"
+                                   Foreground="{Binding BtcNuplColor, Converter={StaticResource StringToBrush}}"
                                    FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
                       </Border>
                     </StackPanel>
@@ -112,8 +112,8 @@
                   <!-- Exchange Net Flow -->
                   <StackPanel Spacing="4">
                     <TextBlock Text="Exchange Net Flow" Classes="Overline" />
-                    <TextBlock Text="{Binding OnChainVM.BtcNetFlowLabel}"
-                               Foreground="{Binding OnChainVM.BtcNetFlowColor, Converter={StaticResource StringToBrush}}"
+                    <TextBlock Text="{Binding BtcNetFlowLabel}"
+                               Foreground="{Binding BtcNetFlowColor, Converter={StaticResource StringToBrush}}"
                                FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" />
                     <TextBlock Text="positive = coins flowing IN (sell pressure) · negative = flowing OUT (accumulation)"
                                Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
@@ -122,7 +122,7 @@
                   <!-- Realised Price -->
                   <StackPanel Spacing="4">
                     <TextBlock Text="Realised Price" Classes="Overline" />
-                    <TextBlock Text="{Binding OnChainVM.BtcRealisedLabel}"
+                    <TextBlock Text="{Binding BtcRealisedLabel}"
                                Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" />
                     <TextBlock Text="Average cost basis of all coins on-chain"
                                Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
@@ -142,21 +142,21 @@
                   <!-- ETH MVRV -->
                   <StackPanel Spacing="4">
                     <TextBlock Text="MVRV Ratio" Classes="Overline" />
-                    <TextBlock Text="{Binding OnChainVM.EthMvrvLabel}"
-                               Foreground="{Binding OnChainVM.EthMvrvColor, Converter={StaticResource StringToBrush}}"
+                    <TextBlock Text="{Binding EthMvrvLabel}"
+                               Foreground="{Binding EthMvrvColor, Converter={StaticResource StringToBrush}}"
                                FontSize="{DynamicResource FsH2}" FontWeight="Bold" />
                   </StackPanel>
 
                   <!-- ETH Net Flow -->
                   <StackPanel Spacing="4">
                     <TextBlock Text="Exchange Net Flow" Classes="Overline" />
-                    <TextBlock Text="{Binding OnChainVM.EthNetFlowLabel}"
-                               Foreground="{Binding OnChainVM.EthNetFlowColor, Converter={StaticResource StringToBrush}}"
+                    <TextBlock Text="{Binding EthNetFlowLabel}"
+                               Foreground="{Binding EthNetFlowColor, Converter={StaticResource StringToBrush}}"
                                FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" />
                   </StackPanel>
 
                   <!-- No API key note -->
-                  <Border IsVisible="{Binding !OnChainVM.HasApiKey}"
+                  <Border IsVisible="{Binding !HasApiKey}"
                           Background="{DynamicResource Surface1}" CornerRadius="4" Padding="10,8">
                     <TextBlock Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap">
                       <Run Text="Set " />
@@ -172,11 +172,11 @@
 
             <!-- Last updated + Refresh -->
             <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
-              <TextBlock Text="{Binding OnChainVM.LastUpdatedLabel}"
+              <TextBlock Text="{Binding LastUpdatedLabel}"
                          Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
               <Button Content="↻  Refresh" Classes="SecondaryAction"
-                      Command="{Binding OnChainVM.RefreshCommand}"
-                      IsEnabled="{Binding !OnChainVM.IsLoading}"
+                      Command="{Binding RefreshCommand}"
+                      IsEnabled="{Binding !IsLoading}"
                       Padding="12,4" FontSize="{DynamicResource FsSmall}" />
             </StackPanel>
 

@@ -3,9 +3,9 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.BacktestView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <StackPanel Spacing="16" IsVisible="{Binding IsBacktestSectionVisible}">
+             x:DataType="vm:BacktestViewModel"
+             x:CompileBindings="True">
+          <StackPanel Spacing="16">
 
             <!-- ── Configuration ── -->
             <Border Classes="Panel">
@@ -16,65 +16,65 @@
                 <Grid ColumnDefinitions="*,110,110,*,Auto,Auto" ColumnSpacing="12">
                   <StackPanel Grid.Column="0" Spacing="5">
                     <TextBlock Classes="Overline" Text="Symbol" />
-                    <TextBox Text="{Binding BacktestVM.Symbol}" />
+                    <TextBox Text="{Binding Symbol}" />
                   </StackPanel>
                   <StackPanel Grid.Column="1" Spacing="5">
                     <TextBlock Classes="Overline" Text="Timeframe" />
-                    <ComboBox ItemsSource="{Binding BacktestVM.AvailableTimeframes}"
-                              SelectedItem="{Binding BacktestVM.SelectedTimeframe}" />
+                    <ComboBox ItemsSource="{Binding AvailableTimeframes}"
+                              SelectedItem="{Binding SelectedTimeframe}" />
                   </StackPanel>
                   <StackPanel Grid.Column="2" Spacing="5">
                     <TextBlock Classes="Overline" Text="Commission %" />
-                    <NumericUpDown Value="{Binding BacktestVM.Commission}"
+                    <NumericUpDown Value="{Binding Commission}"
                                    Increment="0.05" Minimum="0" Maximum="5" FormatString="0.00" />
                   </StackPanel>
                   <StackPanel Grid.Column="3" Spacing="5">
                     <TextBlock Classes="Overline" Text="Strategy" />
-                    <ComboBox ItemsSource="{Binding BacktestVM.AvailableStrategies}"
-                              SelectedItem="{Binding BacktestVM.SelectedStrategy}" />
+                    <ComboBox ItemsSource="{Binding AvailableStrategies}"
+                              SelectedItem="{Binding SelectedStrategy}" />
                   </StackPanel>
                   <StackPanel Grid.Column="4" Spacing="5" VerticalAlignment="Bottom">
-                    <CheckBox Content="By Date Range" IsChecked="{Binding BacktestVM.UseCustomDateRange}" />
+                    <CheckBox Content="By Date Range" IsChecked="{Binding UseCustomDateRange}" />
                   </StackPanel>
                   <StackPanel Grid.Column="5" Spacing="5" VerticalAlignment="Bottom">
-                    <Button Command="{Binding BacktestVM.RunCommand}"
-                            IsEnabled="{Binding BacktestVM.CanRun}"
+                    <Button Command="{Binding RunCommand}"
+                            IsEnabled="{Binding CanRun}"
                             Content="▶  Run" Classes="AccentButton" />
                   </StackPanel>
                 </Grid>
 
                 <!-- Row 2a: last N candles (no date range) -->
-                <StackPanel IsVisible="{Binding BacktestVM.UseCustomDateRange, Converter={x:Static BoolConverters.Not}}">
+                <StackPanel IsVisible="{Binding UseCustomDateRange, Converter={x:Static BoolConverters.Not}}">
                   <StackPanel Spacing="5" MaxWidth="200" HorizontalAlignment="Left">
                     <TextBlock Classes="Overline" Text="Candles (max 3000)" />
-                    <NumericUpDown Value="{Binding BacktestVM.CandleLimit}"
+                    <NumericUpDown Value="{Binding CandleLimit}"
                                    Increment="100" Minimum="50" Maximum="3000" />
                   </StackPanel>
                 </StackPanel>
 
                 <!-- Row 2b: date range -->
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="12"
-                      IsVisible="{Binding BacktestVM.UseCustomDateRange}">
+                      IsVisible="{Binding UseCustomDateRange}">
                   <StackPanel Grid.Column="0" Spacing="5">
                     <TextBlock Classes="Overline" Text="Start Date" />
-                    <CalendarDatePicker SelectedDate="{Binding BacktestVM.StartDate}" />
+                    <CalendarDatePicker SelectedDate="{Binding StartDate}" />
                   </StackPanel>
                   <StackPanel Grid.Column="1" Spacing="5">
                     <TextBlock Classes="Overline" Text="End Date" />
-                    <CalendarDatePicker SelectedDate="{Binding BacktestVM.EndDate}" />
+                    <CalendarDatePicker SelectedDate="{Binding EndDate}" />
                   </StackPanel>
                 </Grid>
 
                 <!-- Row 3a: MA Crossover params -->
                 <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12"
-                      IsVisible="{Binding BacktestVM.IsMAStrategy}">
+                      IsVisible="{Binding IsMAStrategy}">
                   <Border Grid.Column="0" Grid.ColumnSpan="3" Background="{DynamicResource Surface2}" CornerRadius="4" Padding="12,8">
                     <Grid ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="12">
                       <TextBlock Grid.Column="0" Text="Fast Period" Classes="Overline" VerticalAlignment="Center" />
-                      <NumericUpDown Grid.Column="1" Value="{Binding BacktestVM.MaFastPeriod}"
+                      <NumericUpDown Grid.Column="1" Value="{Binding MaFastPeriod}"
                                      Increment="1" Minimum="2" Maximum="200" />
                       <TextBlock Grid.Column="2" Text="Slow Period" Classes="Overline" VerticalAlignment="Center" Margin="8,0,0,0" />
-                      <NumericUpDown Grid.Column="3" Value="{Binding BacktestVM.MaSlowPeriod}"
+                      <NumericUpDown Grid.Column="3" Value="{Binding MaSlowPeriod}"
                                      Increment="1" Minimum="3" Maximum="500" />
                     </Grid>
                   </Border>
@@ -82,39 +82,39 @@
 
                 <!-- Row 3b: RSI params -->
                 <Border Background="{DynamicResource Surface2}" CornerRadius="4" Padding="12,8"
-                        IsVisible="{Binding BacktestVM.IsRsiStrategy}">
+                        IsVisible="{Binding IsRsiStrategy}">
                   <Grid ColumnDefinitions="Auto,100,Auto,120,Auto,120" ColumnSpacing="12">
                     <TextBlock Grid.Column="0" Text="Period" Classes="Overline" VerticalAlignment="Center" />
-                    <NumericUpDown Grid.Column="1" Value="{Binding BacktestVM.RsiPeriod}"
+                    <NumericUpDown Grid.Column="1" Value="{Binding RsiPeriod}"
                                    Increment="1" Minimum="2" Maximum="100" />
                     <TextBlock Grid.Column="2" Text="Overbought" Classes="Overline" VerticalAlignment="Center" Margin="8,0,0,0" />
-                    <NumericUpDown Grid.Column="3" Value="{Binding BacktestVM.RsiOverbought}"
+                    <NumericUpDown Grid.Column="3" Value="{Binding RsiOverbought}"
                                    Increment="1" Minimum="51" Maximum="99" FormatString="0" />
                     <TextBlock Grid.Column="4" Text="Oversold" Classes="Overline" VerticalAlignment="Center" Margin="8,0,0,0" />
-                    <NumericUpDown Grid.Column="5" Value="{Binding BacktestVM.RsiOversold}"
+                    <NumericUpDown Grid.Column="5" Value="{Binding RsiOversold}"
                                    Increment="1" Minimum="1" Maximum="49" FormatString="0" />
                   </Grid>
                 </Border>
 
                 <!-- Row 3c: Bollinger Bands params -->
                 <Border Background="{DynamicResource Surface2}" CornerRadius="4" Padding="12,8"
-                        IsVisible="{Binding BacktestVM.IsBBStrategy}">
+                        IsVisible="{Binding IsBBStrategy}">
                   <Grid ColumnDefinitions="Auto,100,Auto,120" ColumnSpacing="12">
                     <TextBlock Grid.Column="0" Text="Period" Classes="Overline" VerticalAlignment="Center" />
-                    <NumericUpDown Grid.Column="1" Value="{Binding BacktestVM.BbPeriod}"
+                    <NumericUpDown Grid.Column="1" Value="{Binding BbPeriod}"
                                    Increment="1" Minimum="2" Maximum="200" />
                     <TextBlock Grid.Column="2" Text="Multiplier (σ)" Classes="Overline" VerticalAlignment="Center" Margin="8,0,0,0" />
-                    <NumericUpDown Grid.Column="3" Value="{Binding BacktestVM.BbMultiplier}"
+                    <NumericUpDown Grid.Column="3" Value="{Binding BbMultiplier}"
                                    Increment="0.1" Minimum="0.5" Maximum="5" FormatString="0.0" />
                   </Grid>
                 </Border>
 
                 <!-- Row 3d: Breakout params -->
                 <Border Background="{DynamicResource Surface2}" CornerRadius="4" Padding="12,8"
-                        IsVisible="{Binding BacktestVM.IsBreakoutStrategy}">
+                        IsVisible="{Binding IsBreakoutStrategy}">
                   <Grid ColumnDefinitions="Auto,100" ColumnSpacing="12">
                     <TextBlock Grid.Column="0" Text="Lookback Period" Classes="Overline" VerticalAlignment="Center" />
-                    <NumericUpDown Grid.Column="1" Value="{Binding BacktestVM.BreakoutPeriod}"
+                    <NumericUpDown Grid.Column="1" Value="{Binding BreakoutPeriod}"
                                    Increment="1" Minimum="2" Maximum="300" />
                   </Grid>
                 </Border>
@@ -127,47 +127,47 @@
               <Border Classes="SurfaceCard">
                 <StackPanel Spacing="5">
                   <TextBlock Classes="Overline" Text="Status" />
-                  <TextBlock Classes="Metric" Text="{Binding BacktestVM.StatusLabel}" />
-                  <TextBlock Text="{Binding BacktestVM.WindowLabel}"
-                             Foreground="{Binding BacktestVM.StatusBrush, Converter={StaticResource StringToBrush}}"
+                  <TextBlock Classes="Metric" Text="{Binding StatusLabel}" />
+                  <TextBlock Text="{Binding WindowLabel}"
+                             Foreground="{Binding StatusBrush, Converter={StaticResource StringToBrush}}"
                              TextWrapping="Wrap" FontSize="{DynamicResource FsCaption}" />
                 </StackPanel>
               </Border>
               <Border Classes="SurfaceCard">
                 <StackPanel Spacing="5">
                   <TextBlock Classes="Overline" Text="Trades / Win Rate" />
-                  <TextBlock Classes="Metric" Text="{Binding BacktestVM.TradeCountLabel}" />
-                  <TextBlock Text="{Binding BacktestVM.WinRateLabel}" Foreground="{DynamicResource TextMuted}" />
+                  <TextBlock Classes="Metric" Text="{Binding TradeCountLabel}" />
+                  <TextBlock Text="{Binding WinRateLabel}" Foreground="{DynamicResource TextMuted}" />
                 </StackPanel>
               </Border>
               <Border Classes="SurfaceCard">
                 <StackPanel Spacing="5">
                   <TextBlock Classes="Overline" Text="Net Return" />
                   <TextBlock Classes="Metric"
-                             Text="{Binding BacktestVM.NetReturnLabel}"
-                             Foreground="{Binding BacktestVM.NetReturnColor, Converter={StaticResource StringToBrush}}" />
-                  <TextBlock Text="{Binding BacktestVM.DrawdownLabel, StringFormat='Max DD {0}'}"
+                             Text="{Binding NetReturnLabel}"
+                             Foreground="{Binding NetReturnColor, Converter={StaticResource StringToBrush}}" />
+                  <TextBlock Text="{Binding DrawdownLabel, StringFormat='Max DD {0}'}"
                              Foreground="{DynamicResource TextMuted}" />
                 </StackPanel>
               </Border>
               <Border Classes="SurfaceCard">
                 <StackPanel Spacing="5">
                   <TextBlock Classes="Overline" Text="Sharpe / Bias" />
-                  <TextBlock Classes="Metric" Text="{Binding BacktestVM.SharpeLabel}" />
-                  <TextBlock Text="{Binding BacktestVM.BiasLabel}" Foreground="{DynamicResource TextMuted}" />
+                  <TextBlock Classes="Metric" Text="{Binding SharpeLabel}" />
+                  <TextBlock Text="{Binding BiasLabel}" Foreground="{DynamicResource TextMuted}" />
                 </StackPanel>
               </Border>
               <Border Classes="SurfaceCard">
                 <StackPanel Spacing="5">
                   <TextBlock Classes="Overline" Text="Best / Worst Trade" />
-                  <TextBlock Classes="Metric" Text="{Binding BacktestVM.BestTradeLabel}" Foreground="{DynamicResource Positive}" />
-                  <TextBlock Text="{Binding BacktestVM.WorstTradeLabel}" Foreground="{DynamicResource Negative}" />
+                  <TextBlock Classes="Metric" Text="{Binding BestTradeLabel}" Foreground="{DynamicResource Positive}" />
+                  <TextBlock Text="{Binding WorstTradeLabel}" Foreground="{DynamicResource Negative}" />
                 </StackPanel>
               </Border>
             </Grid>
 
             <!-- EQUITY CURVE -->
-            <Border Classes="Panel" IsVisible="{Binding BacktestVM.EquityGeometry, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <Border Classes="Panel" IsVisible="{Binding EquityGeometry, Converter={x:Static ObjectConverters.IsNotNull}}">
               <StackPanel Spacing="8">
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock Classes="H2" Text="Equity Curve" VerticalAlignment="Center" />
@@ -180,7 +180,7 @@
                       <Border Width="18" Height="2" Background="{DynamicResource Warning}" VerticalAlignment="Center" />
                       <TextBlock Text="Buy &amp; Hold" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                     </StackPanel>
-                    <TextBlock Text="{Binding BacktestVM.EquityDateRange}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding EquityDateRange}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                   </StackPanel>
                 </Grid>
 
@@ -188,8 +188,8 @@
                 <Grid>
                   <!-- Y axis: min / max -->
                   <StackPanel HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="36">
-                    <TextBlock Text="{Binding BacktestVM.EquityMaxLabel}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}" />
-                    <TextBlock Text="{Binding BacktestVM.EquityMinLabel}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}"
+                    <TextBlock Text="{Binding EquityMaxLabel}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}" />
+                    <TextBlock Text="{Binding EquityMinLabel}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}"
                                VerticalAlignment="Bottom" Margin="0,112,0,0" />
                   </StackPanel>
                   <Border Background="{DynamicResource SurfaceInner2}" CornerRadius="6" Height="130" Margin="40,0,0,0" ClipToBounds="True">
@@ -199,18 +199,18 @@
                         <Line StartPoint="0,65" EndPoint="700,65"
                               Stroke="{DynamicResource PanelStroke}" StrokeThickness="1" StrokeDashArray="4,4" />
                         <!-- Buy & Hold -->
-                        <Path Data="{Binding BacktestVM.BuyHoldGeometry}"
+                        <Path Data="{Binding BuyHoldGeometry}"
                               Stroke="{DynamicResource Warning}" StrokeThickness="1.2"
                               Opacity="0.55" Fill="Transparent" />
                         <!-- Strategy -->
-                        <Path Data="{Binding BacktestVM.EquityGeometry}"
+                        <Path Data="{Binding EquityGeometry}"
                               Stroke="#1FE0B3" StrokeThickness="1.8"
                               Fill="Transparent" />
                       </Canvas>
                     </Viewbox>
                   </Border>
                 </Grid>
-                <TextBlock Text="{Binding BacktestVM.Narrative}"
+                <TextBlock Text="{Binding Narrative}"
                            Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" />
               </StackPanel>
             </Border>
@@ -227,17 +227,17 @@
                   </StackPanel>
                   <StackPanel Grid.Column="1" Spacing="4">
                     <TextBlock Classes="Overline" Text="Folds" />
-                    <NumericUpDown Value="{Binding BacktestVM.WfFolds}"
+                    <NumericUpDown Value="{Binding WfFolds}"
                                    Increment="1" Minimum="2" Maximum="10" Width="70" />
                   </StackPanel>
                   <StackPanel Grid.Column="2" Spacing="4">
                     <TextBlock Classes="Overline" Text="In-Sample %" />
-                    <NumericUpDown Value="{Binding BacktestVM.WfInSamplePct}"
+                    <NumericUpDown Value="{Binding WfInSamplePct}"
                                    Increment="5" Minimum="40" Maximum="90" Width="80" />
                   </StackPanel>
                   <StackPanel Grid.Column="3" Spacing="4" VerticalAlignment="Bottom">
-                    <Button Command="{Binding BacktestVM.OptimizeCommand}"
-                            IsEnabled="{Binding BacktestVM.CanOptimize}"
+                    <Button Command="{Binding OptimizeCommand}"
+                            IsEnabled="{Binding CanOptimize}"
                             Classes="AccentButton">
                       <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="⚙" />
@@ -249,13 +249,13 @@
 
                 <!-- Best params label -->
                 <Border Background="{DynamicResource Surface2}" CornerRadius="4" Padding="10,6"
-                        IsVisible="{Binding BacktestVM.BestParamsLabel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                  <TextBlock Text="{Binding BacktestVM.BestParamsLabel}"
+                        IsVisible="{Binding BestParamsLabel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                  <TextBlock Text="{Binding BestParamsLabel}"
                              Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsSmall}" FontWeight="SemiBold" TextWrapping="Wrap" />
                 </Border>
 
                 <!-- Results table -->
-                <StackPanel IsVisible="{Binding BacktestVM.OptimizerRows.Count, Converter={x:Static ObjectConverters.IsNotNull}}"
+                <StackPanel IsVisible="{Binding OptimizerRows.Count, Converter={x:Static ObjectConverters.IsNotNull}}"
                             Spacing="6">
 
                   <!-- Column headers -->
@@ -274,7 +274,7 @@
                   <Border Height="1" Background="{DynamicResource Surface3}" />
 
                   <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding BacktestVM.OptimizerRows}">
+                    <ItemsControl ItemsSource="{Binding OptimizerRows}">
                       <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:WfResultRowVM">
                           <Border Padding="0,2" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="0,0,0,1">
@@ -326,17 +326,17 @@
                   </StackPanel>
                   <StackPanel Grid.Column="1" Spacing="4">
                     <TextBlock Classes="Overline" Text="Runs" />
-                    <NumericUpDown Value="{Binding BacktestVM.MonteCarloRuns}"
+                    <NumericUpDown Value="{Binding MonteCarloRuns}"
                                    Increment="10" Minimum="10" Maximum="5000" Width="90" />
                   </StackPanel>
                   <StackPanel Grid.Column="2" Spacing="4">
                     <TextBlock Classes="Overline" Text="Subsample %" />
-                    <NumericUpDown Value="{Binding BacktestVM.MonteCarloSubsamplePercent}"
+                    <NumericUpDown Value="{Binding MonteCarloSubsamplePercent}"
                                    Increment="5" Minimum="10" Maximum="100" Width="90" />
                   </StackPanel>
                   <StackPanel Grid.Column="3" Spacing="4" VerticalAlignment="Bottom">
-                    <Button Command="{Binding BacktestVM.MonteCarloCommand}"
-                            IsEnabled="{Binding BacktestVM.CanMonteCarlo}"
+                    <Button Command="{Binding MonteCarloCommand}"
+                            IsEnabled="{Binding CanMonteCarlo}"
                             Classes="AccentButton">
                       <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="🎲" />
@@ -347,7 +347,7 @@
                 </Grid>
 
                 <Border Background="{DynamicResource Surface2}" CornerRadius="4" Padding="10,8">
-                  <TextBlock Text="{Binding BacktestVM.MonteCarloSummary}"
+                  <TextBlock Text="{Binding MonteCarloSummary}"
                              Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap"
                              FontFamily="Consolas,Menlo,monospace" />
                 </Border>
@@ -355,7 +355,7 @@
                 <!-- ── Export ── -->
                 <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10">
                   <Button Grid.Column="0"
-                          Command="{Binding BacktestVM.ExportCsvCommand}"
+                          Command="{Binding ExportCsvCommand}"
                           Classes="SecondaryButton">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <TextBlock Text="💾" />
@@ -363,7 +363,7 @@
                     </StackPanel>
                   </Button>
                   <Button Grid.Column="1"
-                          Command="{Binding BacktestVM.ExportReportCommand}"
+                          Command="{Binding ExportReportCommand}"
                           Classes="SecondaryButton">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <TextBlock Text="📄" />
@@ -371,7 +371,7 @@
                     </StackPanel>
                   </Button>
                   <TextBlock Grid.Column="2"
-                             Text="{Binding BacktestVM.ExportStatus}"
+                             Text="{Binding ExportStatus}"
                              Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}"
                              VerticalAlignment="Center" TextWrapping="Wrap" />
                 </Grid>
@@ -387,23 +387,23 @@
                     <TextBlock Text="Robust or overfit? An AI read of this backtest."
                                Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" />
                   </StackPanel>
-                  <TextBlock Grid.Column="1" Text="{Binding BacktestVM.AiReviewSource}"
+                  <TextBlock Grid.Column="1" Text="{Binding AiReviewSource}"
                              Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" Margin="0,0,10,0" />
                   <Button Grid.Column="2" Content="Review with AI"
-                          Command="{Binding BacktestVM.ReviewWithAiCommand}"
-                          IsEnabled="{Binding !BacktestVM.AiReviewRunning}" />
+                          Command="{Binding ReviewWithAiCommand}"
+                          IsEnabled="{Binding !AiReviewRunning}" />
                 </Grid>
-                <StackPanel Spacing="8" IsVisible="{Binding BacktestVM.HasAiReview}">
+                <StackPanel Spacing="8" IsVisible="{Binding HasAiReview}">
                   <Border CornerRadius="6" Padding="10,6" Background="{DynamicResource Surface1}">
                     <StackPanel Spacing="4">
-                      <TextBlock Text="{Binding BacktestVM.AiReviewVerdict}"
-                                 Foreground="{Binding BacktestVM.AiVerdictBrush, Converter={StaticResource StringToBrush}}"
+                      <TextBlock Text="{Binding AiReviewVerdict}"
+                                 Foreground="{Binding AiVerdictBrush, Converter={StaticResource StringToBrush}}"
                                  FontWeight="Bold" FontSize="{DynamicResource FsSubhead}" />
-                      <TextBlock Text="{Binding BacktestVM.AiReviewSummary}"
+                      <TextBlock Text="{Binding AiReviewSummary}"
                                  Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
                     </StackPanel>
                   </Border>
-                  <TextBlock Text="{Binding BacktestVM.AiReviewRisks}"
+                  <TextBlock Text="{Binding AiReviewRisks}"
                              Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" />
                 </StackPanel>
               </StackPanel>
@@ -411,7 +411,7 @@
 
             <!-- ── Strategy Comparison (all types, same candles) ── -->
             <Border Classes="Panel"
-                    IsVisible="{Binding BacktestVM.ComparisonRows.Count, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    IsVisible="{Binding ComparisonRows.Count, Converter={x:Static ObjectConverters.IsNotNull}}">
               <StackPanel Spacing="10">
                 <Grid ColumnDefinitions="*,Auto">
                   <StackPanel Grid.Column="0">
@@ -433,7 +433,7 @@
                 <Border Height="1" Background="{DynamicResource Surface3}" />
 
                 <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
-                  <ListBox ItemsSource="{Binding BacktestVM.ComparisonRows}"
+                  <ListBox ItemsSource="{Binding ComparisonRows}"
                            Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <ListBox.ItemTemplate>
                       <DataTemplate x:DataType="vm:StrategyComparisonRow">
@@ -468,7 +468,7 @@
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock Classes="H2" Text="Trades" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="1"
-                             Text="{Binding BacktestVM.TradeCountLabel, StringFormat='Total: {0}'}"
+                             Text="{Binding TradeCountLabel, StringFormat='Total: {0}'}"
                              Foreground="{DynamicResource TextSoft}" VerticalAlignment="Center" />
                 </Grid>
                 <Grid ColumnDefinitions="110,80,80,110,60,50" ColumnSpacing="8">
@@ -480,7 +480,7 @@
                   <TextBlock Grid.Column="5" Classes="Overline" Text="P&amp;L" />
                 </Grid>
                 <Border Height="1" Background="{DynamicResource Surface3}" />
-                <ListBox ItemsSource="{Binding BacktestVM.TradeRows}"
+                <ListBox ItemsSource="{Binding TradeRows}"
                          MaxHeight="280" Background="Transparent">
                   <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="vm:BacktestTradeRow">

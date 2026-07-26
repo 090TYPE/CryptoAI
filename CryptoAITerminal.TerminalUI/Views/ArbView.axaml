@@ -3,23 +3,23 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.ArbView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <StackPanel Spacing="16" IsVisible="{Binding IsArbSectionVisible}">
+             x:DataType="vm:CrossExchangeArbitrageViewModel"
+             x:CompileBindings="True">
+          <StackPanel Spacing="16">
 
             <!-- Header + status -->
             <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
               <StackPanel Grid.Column="0" Spacing="2">
                 <TextBlock Classes="H1" Text="CEX-CEX Spot Arbitrage" />
-                <TextBlock Text="{Binding CrossExchangeArbVM.StatusLabel}"
+                <TextBlock Text="{Binding StatusLabel}"
                            FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />
               </StackPanel>
               <!-- Auto-execute toggle -->
               <Border Grid.Column="1" CornerRadius="6" Padding="10,4" VerticalAlignment="Center"
-                      Background="{Binding CrossExchangeArbVM.AutoExecute,
+                      Background="{Binding AutoExecute,
                         FallbackValue=#0D1E2D}">
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                  <ToggleSwitch IsChecked="{Binding CrossExchangeArbVM.AutoExecute}"
+                  <ToggleSwitch IsChecked="{Binding AutoExecute}"
                                 OffContent="" OnContent="" Margin="0,-2,0,0"
                                 ToolTip.Tip="Places two real orders per opportunity, unattended, as often as once a second. Subject to the global paper-only guard." />
                   <TextBlock Text="Auto-Execute" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold"
@@ -40,19 +40,19 @@
               <Grid ColumnDefinitions="Auto,*,Auto,*,Auto,*,2*" ColumnSpacing="10" VerticalAlignment="Center">
                 <TextBlock Grid.Column="0" Text="Min net spread %" Classes="Overline" VerticalAlignment="Center" />
                 <NumericUpDown Grid.Column="1"
-                               Value="{Binding CrossExchangeArbVM.MinNetSpreadPct}"
+                               Value="{Binding MinNetSpreadPct}"
                                Minimum="0.01" Maximum="5" Increment="0.01" FormatString="N2" />
 
                 <TextBlock Grid.Column="2" Text="Notional $" Classes="Overline"
                            VerticalAlignment="Center" Margin="8,0,0,0" />
                 <NumericUpDown Grid.Column="3"
-                               Value="{Binding CrossExchangeArbVM.NotionalUsd}"
+                               Value="{Binding NotionalUsd}"
                                Minimum="10" Maximum="1000000" Increment="100" FormatString="N0" />
 
                 <TextBlock Grid.Column="4" Text="Taker fee %" Classes="Overline"
                            VerticalAlignment="Center" Margin="8,0,0,0" />
                 <NumericUpDown Grid.Column="5"
-                               Value="{Binding CrossExchangeArbVM.TakerFeePct}"
+                               Value="{Binding TakerFeePct}"
                                Minimum="0.01" Maximum="1" Increment="0.01" FormatString="N2" />
 
                 <TextBlock Grid.Column="6" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}"
@@ -66,21 +66,21 @@
               <Border Grid.Column="0" Classes="SurfaceCard">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="TRACKED SYMBOLS" />
-                  <TextBlock Text="{Binding CrossExchangeArbVM.TotalSymbols}"
+                  <TextBlock Text="{Binding TotalSymbols}"
                              Classes="Metric" Foreground="{DynamicResource TextMuted}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="1" Classes="SurfaceCard">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="PROFITABLE NOW" />
-                  <TextBlock Text="{Binding CrossExchangeArbVM.ProfitableCount}"
+                  <TextBlock Text="{Binding ProfitableCount}"
                              Classes="Metric" Foreground="{DynamicResource Accent}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="2" Classes="SurfaceCard">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="BEST SPREAD" />
-                  <TextBlock Text="{Binding CrossExchangeArbVM.BestSpreadLabel}"
+                  <TextBlock Text="{Binding BestSpreadLabel}"
                              FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" Foreground="{DynamicResource Warning}"
                              VerticalAlignment="Center" />
                 </StackPanel>
@@ -88,7 +88,7 @@
               <Border Grid.Column="3" Classes="SurfaceCard">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="SESSION PROFIT" />
-                  <TextBlock Text="{Binding CrossExchangeArbVM.TotalProfitLabel}"
+                  <TextBlock Text="{Binding TotalProfitLabel}"
                              Classes="Metric" Foreground="{DynamicResource Accent}" />
                 </StackPanel>
               </Border>
@@ -119,7 +119,7 @@
                 </Grid>
 
                 <ScrollViewer Classes="PageScroll" MaxHeight="500">
-                  <ItemsControl ItemsSource="{Binding CrossExchangeArbVM.SpreadRows}">
+                  <ItemsControl ItemsSource="{Binding SpreadRows}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="vm:CrossExchangeSpreadRowVM">
                         <Border Padding="0,4" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1">
@@ -188,7 +188,7 @@
                                     Width="80"
                                     IsEnabled="{Binding IsProfitable}"
                                     VerticalAlignment="Center"
-                                    Command="{Binding $parent[Window].DataContext.CrossExchangeArbVM.ExecuteCommand}"
+                                    Command="{Binding $parent[ItemsControl].((vm:CrossExchangeArbitrageViewModel)DataContext).ExecuteCommand}"
                                     CommandParameter="{Binding}" />
                           </Grid>
                         </Border>
@@ -217,7 +217,7 @@
                 </Grid>
 
                 <ScrollViewer Classes="PageScroll" MaxHeight="250">
-                  <ItemsControl ItemsSource="{Binding CrossExchangeArbVM.History}">
+                  <ItemsControl ItemsSource="{Binding History}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="vm:ArbExecutionRowVM">
                         <Border Padding="0,4" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1">
@@ -253,7 +253,7 @@
                 </ScrollViewer>
 
                 <!-- Empty history -->
-                <TextBlock IsVisible="{Binding !CrossExchangeArbVM.History.Count}"
+                <TextBlock IsVisible="{Binding !History.Count}"
                            Text="No executions yet. Click ⚡ Execute on a profitable row, or enable Auto-Execute."
                            Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" Margin="0,8" />
               </StackPanel>

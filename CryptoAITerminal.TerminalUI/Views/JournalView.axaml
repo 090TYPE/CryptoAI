@@ -3,24 +3,24 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.JournalView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <StackPanel Spacing="16" IsVisible="{Binding IsJournalSectionVisible}">
+             x:DataType="vm:TradeJournalViewModel"
+             x:CompileBindings="True">
+          <StackPanel Spacing="16">
 
             <!-- ── Header ── -->
             <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
               <!-- No H1 here: the shell already renders the section title (CurrentSectionTitle),
                    so repeating "Trade Journal" showed the heading twice in a row. -->
               <Button Grid.Column="1" Content="⟳ Refresh"
-                      Command="{Binding TradeJournalVM.RefreshCommand}"
+                      Command="{Binding RefreshCommand}"
                       Classes="GhostButton" FontSize="{DynamicResource FsCaption}" />
               <Button Grid.Column="2" Content="⬇ Export CSV"
-                      Command="{Binding TradeJournalVM.ExportCsvCommand}"
+                      Command="{Binding ExportCsvCommand}"
                       Classes="GhostButton" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource Accent}" />
             </Grid>
-            <TextBlock Text="{Binding TradeJournalVM.ExportStatus}"
+            <TextBlock Text="{Binding ExportStatus}"
                        Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsCaption}"
-                       IsVisible="{Binding TradeJournalVM.ExportStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                       IsVisible="{Binding ExportStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
             <!-- ── AI Coach (#4) ── -->
             <Border Classes="SurfaceCard" Padding="14,12">
@@ -29,20 +29,20 @@
                   <StackPanel Grid.Column="0">
                     <TextBlock Text="🧠 AI Coach" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsBody}" />
                   </StackPanel>
-                  <TextBlock Grid.Column="1" Text="{Binding TradeJournalVM.CoachSource}"
+                  <TextBlock Grid.Column="1" Text="{Binding CoachSource}"
                              Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" Margin="0,0,10,0" />
                   <Button Grid.Column="2" Content="Coach with AI"
-                          Command="{Binding TradeJournalVM.ReviewWithAiCommand}"
-                          IsEnabled="{Binding !TradeJournalVM.CoachRunning}" Foreground="{DynamicResource Accent}" />
+                          Command="{Binding ReviewWithAiCommand}"
+                          IsEnabled="{Binding !CoachRunning}" Foreground="{DynamicResource Accent}" />
                 </Grid>
-                <StackPanel Spacing="6" IsVisible="{Binding TradeJournalVM.HasCoachReview}">
-                  <TextBlock Text="{Binding TradeJournalVM.CoachSummary}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding TradeJournalVM.CoachStrengths}" Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
-                             IsVisible="{Binding TradeJournalVM.CoachStrengths, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                  <TextBlock Text="{Binding TradeJournalVM.CoachLeaks}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
-                             IsVisible="{Binding TradeJournalVM.CoachLeaks, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                  <TextBlock Text="{Binding TradeJournalVM.CoachSuggestions}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
-                             IsVisible="{Binding TradeJournalVM.CoachSuggestions, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <StackPanel Spacing="6" IsVisible="{Binding HasCoachReview}">
+                  <TextBlock Text="{Binding CoachSummary}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding CoachStrengths}" Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
+                             IsVisible="{Binding CoachStrengths, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <TextBlock Text="{Binding CoachLeaks}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
+                             IsVisible="{Binding CoachLeaks, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <TextBlock Text="{Binding CoachSuggestions}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
+                             IsVisible="{Binding CoachSuggestions, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 </StackPanel>
               </StackPanel>
             </Border>
@@ -52,30 +52,30 @@
               <Grid ColumnDefinitions="Auto,160,Auto,160,*" ColumnSpacing="12">
                 <TextBlock Grid.Column="0" Text="Tag" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                 <ComboBox Grid.Column="1"
-                          ItemsSource="{Binding TradeJournalVM.TagOptions}"
-                          SelectedItem="{Binding TradeJournalVM.FilterTag}"
+                          ItemsSource="{Binding TagOptions}"
+                          SelectedItem="{Binding FilterTag}"
                           FontSize="{DynamicResource FsCaption}" />
                 <TextBlock Grid.Column="2" Text="Period" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                 <ComboBox Grid.Column="3"
-                          ItemsSource="{Binding TradeJournalVM.PeriodOptions}"
-                          SelectedItem="{Binding TradeJournalVM.FilterPeriod}"
+                          ItemsSource="{Binding PeriodOptions}"
+                          SelectedItem="{Binding FilterPeriod}"
                           FontSize="{DynamicResource FsCaption}" />
                 <TextBox Grid.Column="4"
-                         Text="{Binding TradeJournalVM.SearchText}"
+                         Text="{Binding SearchText}"
                          PlaceholderText="Search symbol / notes…"
                          FontSize="{DynamicResource FsCaption}" />
               </Grid>
             </Border>
 
             <!-- ── Summary ── -->
-            <TextBlock Text="{Binding TradeJournalVM.SummaryLabel}"
+            <TextBlock Text="{Binding SummaryLabel}"
                        Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
 
             <!-- ── Tag statistics ── -->
             <Border Classes="SurfaceCard">
               <StackPanel Spacing="6">
                 <TextBlock Text="BY TAG" Classes="Overline" />
-                <ItemsControl ItemsSource="{Binding TradeJournalVM.TagStats}">
+                <ItemsControl ItemsSource="{Binding TagStats}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:TagStatRow">
                       <Grid ColumnDefinitions="110,50,50,80,80" ColumnSpacing="10" Margin="0,2">
@@ -115,10 +115,10 @@
 
                 <TextBlock Text="No trades match the current filter."
                            Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsSmall}" Margin="0,16"
-                           IsVisible="{Binding TradeJournalVM.HasNoRows}" />
+                           IsVisible="{Binding HasNoRows}" />
 
                 <ScrollViewer MaxHeight="480">
-                  <ItemsControl ItemsSource="{Binding TradeJournalVM.Rows}">
+                  <ItemsControl ItemsSource="{Binding Rows}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="vm:JournalEntryRowVM">
                         <Border Padding="0,4" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1">

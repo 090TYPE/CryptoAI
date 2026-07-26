@@ -3,32 +3,32 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.FundingRateView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <StackPanel Spacing="16" IsVisible="{Binding IsFundingRateSectionVisible}">
+             x:DataType="vm:FundingRateViewModel"
+             x:CompileBindings="True">
+          <StackPanel Spacing="16">
 
             <!-- ── Control bar ── -->
             <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="10">
               <TextBox Grid.Column="0"
                        Width="180"
-                       Text="{Binding FundingRateVM.FilterText}"
+                       Text="{Binding FilterText}"
                        PlaceholderText="Filter symbol…"
                        Classes="DarkInput" />
               <CheckBox Grid.Column="1"
                         Content="Extremes only"
-                        IsChecked="{Binding FundingRateVM.ShowOnlyExtremes}" />
+                        IsChecked="{Binding ShowOnlyExtremes}" />
               <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                <TextBlock Text="{Binding FundingRateVM.StatusMessage}"
+                <TextBlock Text="{Binding StatusMessage}"
                            Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
               </StackPanel>
               <Button Grid.Column="3" Classes="GhostButton"
-                      Command="{Binding FundingRateVM.RefreshCommand}">Refresh</Button>
+                      Command="{Binding RefreshCommand}">Refresh</Button>
               <Button Grid.Column="4" Classes="BuyButton" Width="110"
-                      Command="{Binding FundingRateVM.StartTrackingCommand}"
-                      IsVisible="{Binding !FundingRateVM.IsTracking}">Start</Button>
+                      Command="{Binding StartTrackingCommand}"
+                      IsVisible="{Binding !IsTracking}">Start</Button>
               <Button Grid.Column="5" Classes="SellButton" Width="110"
-                      Command="{Binding FundingRateVM.StopTrackingCommand}"
-                      IsVisible="{Binding FundingRateVM.IsTracking}">Stop</Button>
+                      Command="{Binding StopTrackingCommand}"
+                      IsVisible="{Binding IsTracking}">Stop</Button>
             </Grid>
 
             <!-- ── Summary KPI strip ── -->
@@ -36,22 +36,22 @@
               <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="16">
                 <StackPanel Grid.Column="0" Spacing="2">
                   <TextBlock Classes="Overline" Text="AVG FUNDING" />
-                  <TextBlock Text="{Binding FundingRateVM.AvgRateLabel}"
+                  <TextBlock Text="{Binding AvgRateLabel}"
                              FontSize="{DynamicResource FsTitle}" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Spacing="2">
                   <TextBlock Classes="Overline" Text="EXTREME INSTRUMENTS" />
-                  <TextBlock Text="{Binding FundingRateVM.ExtremeCount}"
+                  <TextBlock Text="{Binding ExtremeCount}"
                              FontSize="{DynamicResource FsTitle}" FontWeight="Bold" Foreground="{DynamicResource Warning}" />
                 </StackPanel>
                 <StackPanel Grid.Column="2" Spacing="2">
                   <TextBlock Classes="Overline" Text="TOP LONG FUNDING (best short)" />
-                  <TextBlock Text="{Binding FundingRateVM.TopBearishLabel}"
+                  <TextBlock Text="{Binding TopBearishLabel}"
                              FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" Foreground="{DynamicResource Negative}" />
                 </StackPanel>
                 <StackPanel Grid.Column="3" Spacing="2">
                   <TextBlock Classes="Overline" Text="TOP SHORT FUNDING (best long)" />
-                  <TextBlock Text="{Binding FundingRateVM.TopBullishLabel}"
+                  <TextBlock Text="{Binding TopBullishLabel}"
                              FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" Foreground="{DynamicResource Positive}" />
                 </StackPanel>
               </Grid>
@@ -76,7 +76,7 @@
                   </Grid>
 
                   <ScrollViewer Classes="PageScroll" MaxHeight="460">
-                    <ItemsControl ItemsSource="{Binding FundingRateVM.DisplayRates}">
+                    <ItemsControl ItemsSource="{Binding DisplayRates}">
                       <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:FundingRateRowViewModel">
                           <Border Padding="0,4"
@@ -87,7 +87,7 @@
                               <Button Grid.Column="0"
                                       Classes="LinkButton"
                                       HorizontalAlignment="Left"
-                                      Command="{Binding $parent[Window].DataContext.FundingRateVM.SelectSymbolCommand}"
+                                      Command="{Binding $parent[ItemsControl].((vm:FundingRateViewModel)DataContext).SelectSymbolCommand}"
                                       CommandParameter="{Binding Symbol}">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                   <TextBlock Text="{Binding Symbol}"
@@ -143,7 +143,7 @@
                   <StackPanel Spacing="8">
                     <Grid ColumnDefinitions="*,Auto">
                       <TextBlock Grid.Column="0" Classes="H2"
-                                 Text="{Binding FundingRateVM.HistorySymbolLabel,
+                                 Text="{Binding HistorySymbolLabel,
                                         StringFormat='Funding History — {0}'}" />
                       <TextBlock Grid.Column="1"
                                  Text="(click row to switch)"
@@ -152,34 +152,34 @@
                     </Grid>
 
                     <!-- SVG chart canvas -->
-                    <Grid IsVisible="{Binding FundingRateVM.HistoryHasData}">
+                    <Grid IsVisible="{Binding HistoryHasData}">
                       <Canvas Width="300" Height="130" ClipToBounds="True">
                         <!-- Zero line -->
                         <Line StartPoint="0,0" EndPoint="300,0"
                               Stroke="{DynamicResource PanelStrokeBright}" StrokeThickness="1">
                           <Line.RenderTransform>
-                            <TranslateTransform Y="{Binding FundingRateVM.HistoryZeroLineY}" />
+                            <TranslateTransform Y="{Binding HistoryZeroLineY}" />
                           </Line.RenderTransform>
                         </Line>
                         <!-- Rate path -->
                         <Path Stroke="{DynamicResource Accent}"
                               StrokeThickness="1.5"
                               Fill="Transparent"
-                              Data="{Binding FundingRateVM.HistoryPathData}" />
+                              Data="{Binding HistoryPathData}" />
                       </Canvas>
                       <!-- Y-axis labels -->
                       <Grid VerticalAlignment="Stretch">
-                        <TextBlock Text="{Binding FundingRateVM.HistoryMaxLabel}"
+                        <TextBlock Text="{Binding HistoryMaxLabel}"
                                    Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}"
                                    VerticalAlignment="Top" HorizontalAlignment="Right" />
-                        <TextBlock Text="{Binding FundingRateVM.HistoryMinLabel}"
+                        <TextBlock Text="{Binding HistoryMinLabel}"
                                    Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}"
                                    VerticalAlignment="Bottom" HorizontalAlignment="Right" />
                       </Grid>
                     </Grid>
                     <TextBlock Text="No history data — select a symbol or refresh"
                                Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsCaption}"
-                               IsVisible="{Binding FundingRateVM.HistoryIsEmpty}" />
+                               IsVisible="{Binding HistoryIsEmpty}" />
                   </StackPanel>
                 </Border>
 
@@ -189,13 +189,13 @@
                     <Grid ColumnDefinitions="*,Auto">
                       <TextBlock Grid.Column="0" Classes="H2" Text="Extreme Rate Alerts" />
                       <Button Grid.Column="1" Classes="LinkButton"
-                              Command="{Binding FundingRateVM.ClearAlertsCommand}">Clear</Button>
+                              Command="{Binding ClearAlertsCommand}">Clear</Button>
                     </Grid>
                     <TextBlock Text="No extreme rates detected yet."
                                Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsCaption}"
-                               IsVisible="{Binding !FundingRateVM.Alerts.Count}" />
+                               IsVisible="{Binding !Alerts.Count}" />
                     <ScrollViewer Classes="PageScroll" MaxHeight="280">
-                      <ItemsControl ItemsSource="{Binding FundingRateVM.Alerts}">
+                      <ItemsControl ItemsSource="{Binding Alerts}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate x:DataType="vm:FundingAlertViewModel">
                             <Border Padding="0,4"

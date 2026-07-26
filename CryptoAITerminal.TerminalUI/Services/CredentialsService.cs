@@ -17,9 +17,17 @@ namespace CryptoAITerminal.TerminalUI.Services;
 /// </summary>
 public static class CredentialsService
 {
-    private static readonly string FilePath = Path.Combine(
+    /// <summary>
+    /// Directory the credentials file lives in. Settable only so tests can point the service at a
+    /// temp folder: while this was a hard-wired path, every test would have read — and rewritten —
+    /// the user's real file, and a failed-read test would have dropped .unreadable copies of their
+    /// actual DEX signing key next to it.
+    /// </summary>
+    internal static string RootDirectory { get; set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "CryptoAITerminal", "api-credentials.json");
+        "CryptoAITerminal");
+
+    private static string FilePath => Path.Combine(RootDirectory, "api-credentials.json");
 
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
@@ -549,7 +557,11 @@ public static class CredentialsService
     /// Last storage problem worth telling the user about: an unreadable credentials file, or
     /// secrets that had to be written without DPAPI. Null when everything is normal.
     /// </summary>
-    public static string? LastStorageWarning { get; private set; }
+    /// <remarks>
+    /// The setter is internal rather than private for one reason: it is process-wide sticky state,
+    /// so a test that provokes a failure would otherwise leak its warning into every later test.
+    /// </remarks>
+    public static string? LastStorageWarning { get; internal set; }
 
     private static AllCredentials ReadFromDisk()
     {

@@ -4,42 +4,42 @@
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              xmlns:wt="clr-namespace:CryptoAITerminal.WhaleTracker.Models;assembly=CryptoAITerminal.WhaleTracker"
              x:Class="CryptoAITerminal.TerminalUI.Views.WhaleTrackerView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <StackPanel Spacing="16" IsVisible="{Binding IsWhaleTrackerSectionVisible}">
+             x:DataType="vm:WhaleTrackerViewModel"
+             x:CompileBindings="True">
+          <StackPanel Spacing="16">
 
             <!-- Header stats + controls -->
             <Grid ColumnDefinitions="*,*,*,Auto,Auto" ColumnSpacing="12">
               <Border Grid.Column="0" Classes="SurfaceCard">
                 <StackPanel Spacing="4">
                   <TextBlock Classes="Overline" Text="Min Transfer" />
-                  <TextBlock Text="{Binding WhaleTrackerVM.MinUsdValue, StringFormat='${0:N0}'}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsTitle}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding MinUsdValue, StringFormat='${0:N0}'}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsTitle}" FontWeight="SemiBold" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="1" Classes="SurfaceCard">
                 <StackPanel Spacing="4">
                   <TextBlock Classes="Overline" Text="Alerts Captured" />
-                  <TextBlock Text="{Binding WhaleTrackerVM.TotalAlertsCount}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsTitle}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding TotalAlertsCount}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsTitle}" FontWeight="SemiBold" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="2" Classes="SurfaceCard">
                 <StackPanel Spacing="4">
                   <TextBlock Classes="Overline" Text="Labeled Wallet Alerts" />
-                  <TextBlock Text="{Binding WhaleTrackerVM.LabeledAlertsCount}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsTitle}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding LabeledAlertsCount}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsTitle}" FontWeight="SemiBold" />
                 </StackPanel>
               </Border>
-              <Button Grid.Column="3" Classes="BuyButton" Command="{Binding WhaleTrackerVM.StartCommand}" Width="110" IsVisible="{Binding !WhaleTrackerVM.IsTracking}">Start Tracking</Button>
-              <Button Grid.Column="4" Classes="SellButton" Command="{Binding WhaleTrackerVM.StopCommand}" Width="110" IsVisible="{Binding WhaleTrackerVM.IsTracking}">Stop Tracking</Button>
+              <Button Grid.Column="3" Classes="BuyButton" Command="{Binding StartCommand}" Width="110" IsVisible="{Binding !IsTracking}">Start Tracking</Button>
+              <Button Grid.Column="4" Classes="SellButton" Command="{Binding StopCommand}" Width="110" IsVisible="{Binding IsTracking}">Stop Tracking</Button>
             </Grid>
 
             <!-- Status bar. Grid, not a horizontal StackPanel: HorizontalAlignment="Right" is a
                  no-op inside one, so Clear used to sit glued to the API-key hint mid-panel. -->
             <Border Classes="Panel" Padding="12,8">
               <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="16">
-                <Ellipse Grid.Column="0" Width="8" Height="8" Fill="{Binding WhaleTrackerVM.IsTracking, Converter={StaticResource BoolToColorConverter}}" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1" Text="{Binding WhaleTrackerVM.KnownWalletCount, StringFormat='{}Polling ETH · BSC · Solana  ·  {0} known wallets tracked'}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
+                <Ellipse Grid.Column="0" Width="8" Height="8" Fill="{Binding IsTracking, Converter={StaticResource BoolToColorConverter}}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding KnownWalletCount, StringFormat='{}Polling ETH · BSC · Solana  ·  {0} known wallets tracked'}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="2" Text="·  ETHERSCAN_API_KEY / BSCSCAN_API_KEY env vars for higher rate limits" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                <Button Grid.Column="3" Classes="LinkButton" Command="{Binding WhaleTrackerVM.ClearCommand}" HorizontalAlignment="Right">Clear</Button>
+                <Button Grid.Column="3" Classes="LinkButton" Command="{Binding ClearCommand}" HorizontalAlignment="Right">Clear</Button>
               </Grid>
             </Border>
 
@@ -52,18 +52,18 @@
                     <TextBlock Text="Accumulation or distribution? AI reads recent whale flows."
                                Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsCaption}" />
                   </StackPanel>
-                  <TextBlock Grid.Column="1" Text="{Binding WhaleTrackerVM.InsightSource}"
+                  <TextBlock Grid.Column="1" Text="{Binding InsightSource}"
                              Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" Margin="0,0,10,0" />
                   <Button Grid.Column="2" Content="Analyze with AI"
-                          Command="{Binding WhaleTrackerVM.AnalyzeWithAiCommand}"
-                          IsEnabled="{Binding !WhaleTrackerVM.InsightRunning}" Foreground="{DynamicResource Accent}" />
+                          Command="{Binding AnalyzeWithAiCommand}"
+                          IsEnabled="{Binding !InsightRunning}" Foreground="{DynamicResource Accent}" />
                 </Grid>
-                <StackPanel Spacing="5" IsVisible="{Binding WhaleTrackerVM.HasInsight}">
-                  <TextBlock Text="{Binding WhaleTrackerVM.InsightSignal}"
-                             Foreground="{Binding WhaleTrackerVM.InsightSignalBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
-                  <TextBlock Text="{Binding WhaleTrackerVM.InsightSummary}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding WhaleTrackerVM.InsightBullets}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
-                             IsVisible="{Binding WhaleTrackerVM.InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <StackPanel Spacing="5" IsVisible="{Binding HasInsight}">
+                  <TextBlock Text="{Binding InsightSignal}"
+                             Foreground="{Binding InsightSignalBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
+                  <TextBlock Text="{Binding InsightSummary}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding InsightBullets}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
+                             IsVisible="{Binding InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 </StackPanel>
               </StackPanel>
             </Border>
@@ -78,7 +78,7 @@
                     <TextBlock Classes="H2" Text="Live Whale Alerts" />
                   </Border>
                   <ScrollViewer MaxHeight="520" VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding WhaleTrackerVM.RecentAlerts}">
+                    <ItemsControl ItemsSource="{Binding RecentAlerts}">
                       <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:WhaleAlertViewModel">
                           <Border Padding="16,10" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="0,0,0,1">
@@ -129,7 +129,7 @@
                     </ItemsControl>
                   </ScrollViewer>
                   <TextBlock Text="No whale alerts yet. Press Start Tracking — transfers above the minimum land here."
-                             IsVisible="{Binding !WhaleTrackerVM.RecentAlerts.Count}"
+                             IsVisible="{Binding !RecentAlerts.Count}"
                              Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsSmall}"
                              HorizontalAlignment="Center" TextWrapping="Wrap" Margin="16,24" />
                 </StackPanel>
@@ -142,11 +142,11 @@
                     <Border Padding="14,10" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="0,0,0,1">
                       <StackPanel Orientation="Horizontal" Spacing="8">
                         <TextBlock Classes="H2" Text="Tracked Wallets" VerticalAlignment="Center" />
-                        <TextBlock Text="{Binding WhaleTrackerVM.KnownWalletCount}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding KnownWalletCount}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
                       </StackPanel>
                     </Border>
                     <ScrollViewer MaxHeight="480" VerticalScrollBarVisibility="Auto">
-                      <ItemsControl ItemsSource="{Binding WhaleTrackerVM.KnownWallets}">
+                      <ItemsControl ItemsSource="{Binding KnownWallets}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate x:DataType="wt:LabeledWallet">
                             <Border Padding="14,8" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="0,0,0,1">

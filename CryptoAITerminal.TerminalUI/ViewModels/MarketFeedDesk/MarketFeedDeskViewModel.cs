@@ -65,6 +65,10 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
         CloseModalCommand = new RelayCommand(CloseModal);
         AlertCreateCommand = new RelayCommand(() => Toast("Alerts are configured in Settings → Alerts", "info"));
 
+        _side2NewsAction = new RelayCommand(() => { Fire(_newsVm?.RefreshDigestCommand); Toast("Digest refresh requested", "ai"); });
+        _side2TapeAction = new RelayCommand(() => { Fire(_tapeVm?.RefreshCommand); Toast("Tape re-subscribed", "ok"); });
+        _side2LiqAction = new RelayCommand(() => { Fire(_liqVm?.RefreshCommand); Toast("Heatmap reload requested", "info"); });
+
         Recompute();
     }
 
@@ -271,6 +275,13 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
     public ICommand TradeCommand { get; }
     public ICommand CloseModalCommand { get; }
     public ICommand AlertCreateCommand { get; }
+
+    // The rail's action button has one behaviour per view, so the three commands are built once.
+    // Re-allocating them inside RebuildSide2 made Side2ActionCommand a new instance on every
+    // coalesced tick, which re-hooked the button's CanExecuteChanged five times a second.
+    private readonly ICommand _side2NewsAction;
+    private readonly ICommand _side2TapeAction;
+    private readonly ICommand _side2LiqAction;
 
     // ── cached derived ───────────────────────────────────────────────────────
     private int _pressurePct, _largeCount, _tapeCount;
@@ -496,8 +507,8 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
     /// a tick that only moves the clock now raises one property instead of the whole view model.
     ///
     /// Deliberately absent: the collections (they notify through ObservableCollection), the constants
-    /// (<see cref="Networks"/>, <see cref="SourcesNote"/>), the panel and toast scalars (raised where
-    /// they are written) and <see cref="Side2ActionCommand"/> (raised by RebuildRail, which assigns it).
+    /// (<see cref="Networks"/>, <see cref="SourcesNote"/>), the fixed commands, and the panel and
+    /// toast scalars (raised where they are written, off the rebuild path).
     /// A property added to the rebuilds above belongs here too, or its binding goes stale.
     /// </summary>
     private void RaiseProjected()
@@ -587,6 +598,7 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
         Raise(nameof(Side1Meta), Side1Meta);
         Raise(nameof(Side2Title), Side2Title);
         Raise(nameof(Side2ActionLabel), Side2ActionLabel);
+        Raise(nameof(Side2ActionCommand), Side2ActionCommand);
 
         // footer
         Raise(nameof(FooterState), FooterState);
@@ -1376,7 +1388,6 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
 
         RebuildSide1(news, tape);
         RebuildSide2(news, tape);
-        this.RaisePropertyChanged(nameof(Side2ActionCommand));
     }
 
     private static IEnumerable<string> SplitBullets(string? raw)
@@ -1497,7 +1508,7 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
             Side2Rows.Add(new KvRow { Label = "Pulse", Value = _newsVm is null ? "—" : _newsVm.PulseLabel + " (" + _newsVm.PulseScore + ")", Color = _newsVm?.PulseBrush ?? MarketFeedData.Faint });
             Side2Rows.Add(new KvRow { Label = "Digest engine", Value = string.IsNullOrWhiteSpace(_newsVm?.AiDigestSource) ? "not run yet" : _newsVm!.AiDigestSource, Color = MarketFeedData.Text3 });
             Side2ActionLabel = "REFRESH DIGEST";
-            Side2ActionCommand = new RelayCommand(() => { Fire(_newsVm?.RefreshDigestCommand); Toast("Digest refresh requested", "ai"); });
+            Side2ActionCommand = _side2NewsAction;
         }
         else if (IsTape)
         {
@@ -1508,7 +1519,7 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
             Side2Rows.Add(new KvRow { Label = "Prints buffered", Value = tape.Count.ToString(), Color = tape.Count > 0 ? MarketFeedData.Text : MarketFeedData.Faint });
             Side2Rows.Add(new KvRow { Label = "Large threshold", Value = ThresholdLabel(), Color = MarketFeedData.Amber });
             Side2ActionLabel = "RECONNECT STREAM";
-            Side2ActionCommand = new RelayCommand(() => { Fire(_tapeVm?.RefreshCommand); Toast("Tape re-subscribed", "ok"); });
+            Side2ActionCommand = _side2TapeAction;
         }
         else
         {
@@ -1540,7 +1551,7 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
             if (!string.IsNullOrWhiteSpace(_liqVm?.LiquidationStreamError))
                 Side2Rows.Add(new KvRow { Label = "Stream error", Value = MarketFeedData.Trunc(_liqVm!.LiquidationStreamError, 26), Color = MarketFeedData.Red });
             Side2ActionLabel = "RELOAD HEATMAP";
-            Side2ActionCommand = new RelayCommand(() => { Fire(_liqVm?.RefreshCommand); Toast("Heatmap reload requested", "info"); });
+            Side2ActionCommand = _side2LiqAction;
         }
     }
 
