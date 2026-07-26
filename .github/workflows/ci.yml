@@ -5,13 +5,38 @@ on:
   pull_request:
   workflow_dispatch:
 jobs:
-  test:
-    name: Core — Build & Test
+  build:
+    name: Build & Test
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - name: Test (Core)
+
+      # Every project, not just what Core.Tests happens to reference. The old job built only that
+      # closure, which left Server.Api, CandleWorker, WebApi, AdminCli, LicenseBot and Gateway.Base
+      # unbuilt — including two images docker-compose builds. The solution file cannot stand in for
+      # this: CryptoAITerminal.slnx is the newer .slnx format and MSBuild from the pinned SDK
+      # 8.0.422 rejects it with MSB4068 (it needs 9.0.200+). Enumerate the projects instead.
+      - name: Build all projects
+        shell: pwsh
+        run: |
+          $failed = @()
+          Get-ChildItem -Recurse -Filter *.csproj |
+            Where-Object { $_.FullName -notmatch '\\(bin|obj|node_modules|\.dotnet-cli)\\' } |
+            ForEach-Object {
+              Write-Host "::group::$($_.Name)"
+              dotnet build $_.FullName --configuration Release --nologo
+              if ($LASTEXITCODE -ne 0) { $failed += $_.Name }
+              Write-Host "::endgroup::"
+            }
+          if ($failed.Count -gt 0) {
+            Write-Host "::error::Failed to build: $($failed -join ', ')"
+            exit 1
+          }
+
+      # Directory.Build.props sets TreatWarningsAsErrors, so the step above also holds the warning
+      # count at zero.
+      - name: Test
         run: dotnet test CryptoAITerminal.Core.Tests --configuration Release --verbosity normal

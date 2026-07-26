@@ -6570,6 +6570,11 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
     }
 
+    // Trim once the buffer passes the cap, back to the kept tail, so the trim is occasional rather
+    // than on every line.
+    private const int MaxLogCharacters = 200_000;
+    private const int KeptLogCharacters = 150_000;
+
     private void AddLog(string message)
     {
         if (!Dispatcher.UIThread.CheckAccess())
@@ -6579,7 +6584,19 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
 
         var timestamp = DateTime.Now.ToString("HH:mm:ss");
-        LogMessages += $"{timestamp} - {message}\n";
+
+        // Bounded. This is one ever-growing string rendered into a TextBox: a terminal left running
+        // for a day accumulates megabytes of it, and every append reallocates the whole thing.
+        // Keep the tail — the recent lines are the ones anyone reads. The durable record is
+        // CrashLog on disk.
+        var appended = LogMessages + $"{timestamp} - {message}\n";
+        if (appended.Length > MaxLogCharacters)
+        {
+            var cut = appended.IndexOf('\n', appended.Length - KeptLogCharacters);
+            appended = cut >= 0 ? appended[(cut + 1)..] : appended[^KeptLogCharacters..];
+        }
+        LogMessages = appended;
+
         RecentActivityFeed.Insert(0, CreateActivityRow(timestamp, message));
 
         while (RecentActivityFeed.Count > 8)
