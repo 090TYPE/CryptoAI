@@ -4,6 +4,7 @@ using Binance.Net.Enums;
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
+using CryptoAITerminal.Gateway.Base;
 using System.Reactive.Subjects;
 
 namespace CryptoAITerminal.Gateway.Binance;
@@ -135,18 +136,7 @@ public class BinanceGateway : IExchangeGateway
             return await GetAllCandlesAsync(symbol);
         }
 
-        var interval = (timeframe ?? string.Empty).Trim().ToUpperInvariant() switch
-        {
-            "1M" => KlineInterval.OneMinute,
-            "5M" => KlineInterval.FiveMinutes,
-            "15M" => KlineInterval.FifteenMinutes,
-            "1H" => KlineInterval.OneHour,
-            "4H" => KlineInterval.FourHour,
-            "1D" => KlineInterval.OneDay,
-            "1W" => KlineInterval.OneWeek,
-            "1MN" => KlineInterval.OneMonth,
-            _ => KlineInterval.OneMinute
-        };
+        var interval = BinanceTimeframeMap.Parse(timeframe);
 
         var result = await _restClient.SpotApi.ExchangeData.GetKlinesAsync(symbol, interval, limit: limit);
         if (!result.Success)
@@ -171,18 +161,7 @@ public class BinanceGateway : IExchangeGateway
     public async Task<IReadOnlyList<DexOhlcvPoint>> GetCandlesByDateRangeAsync(
         string symbol, string timeframe, DateTime startDate, DateTime endDate)
     {
-        var interval = (timeframe ?? string.Empty).Trim().ToUpperInvariant() switch
-        {
-            "1M"  => KlineInterval.OneMinute,
-            "5M"  => KlineInterval.FiveMinutes,
-            "15M" => KlineInterval.FifteenMinutes,
-            "1H"  => KlineInterval.OneHour,
-            "4H"  => KlineInterval.FourHour,
-            "1D"  => KlineInterval.OneDay,
-            "1W"  => KlineInterval.OneWeek,
-            "1MN" => KlineInterval.OneMonth,
-            _     => KlineInterval.OneHour
-        };
+        var interval = BinanceTimeframeMap.Parse(timeframe);
 
         var candles  = new List<DexOhlcvPoint>();
         var cursor   = DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
@@ -297,7 +276,42 @@ public class BinanceGateway : IExchangeGateway
 
     // Binance cancels spot orders by symbol + id, but IExchangeGateway.CancelOrderAsync(orderId)
     // only carries the id, so remember which symbol each order belongs to.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _orderSymbols = new();
+    private readonly OrderSymbolCache _orderSymbols = new();
+
+    // exchangeInfo is one round-trip per symbol and its answer changes once in months.
+    private readonly SymbolFiltersCache _filters = new();
+
+    /// <summary>
+    /// PRICE_FILTER / LOT_SIZE / NOTIONAL for one spot symbol. Returns null rather than throwing
+    /// when Binance will not answer: the caller then sends its own numbers, exactly as it did
+    /// before filters existed, instead of the bot dying on a metadata lookup.
+    /// </summary>
+    public async Task<SymbolFilters?> GetSymbolFiltersAsync(string symbol, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(symbol)) return null;
+        symbol = symbol.Trim().ToUpperInvariant();
+
+        var cached = _filters.Get(symbol);
+        if (cached is not null) return cached;
+
+        var result = await _restClient.SpotApi.ExchangeData.GetExchangeInfoAsync(symbol, null, ct);
+        if (!result.Success) return null;
+
+        var info = result.Data.Symbols
+            .FirstOrDefault(s => string.Equals(s.Name, symbol, StringComparison.OrdinalIgnoreCase));
+        if (info is null) return null;
+
+        // NOTIONAL superseded MIN_NOTIONAL in 2023; older symbols still carry only the latter.
+        var filters = SymbolFilters.Create(
+            symbol,
+            info.PriceFilter?.TickSize,
+            info.LotSizeFilter?.StepSize,
+            info.LotSizeFilter?.MinQuantity,
+            info.NotionalFilter?.MinNotional ?? info.MinNotionalFilter?.MinNotional);
+
+        _filters.Store(filters);
+        return filters;
+    }
 
     public async Task<Order> PlaceOrderAsync(Order order)
     {
@@ -324,7 +338,7 @@ public class BinanceGateway : IExchangeGateway
 
         order.MarketType = TradingMarketType.Spot;
         order.Id = result.Data.Id.ToString();
-        _orderSymbols[order.Id] = order.Symbol;
+        _orderSymbols.Remember(order.Id, order.Symbol);
         order.ClientOrderId = result.Data.ClientOrderId ?? order.ClientOrderId;
         order.FilledQuantity = result.Data.QuantityFilled;
         order.Status = result.Data.Status switch
@@ -338,11 +352,21 @@ public class BinanceGateway : IExchangeGateway
             global::Binance.Net.Enums.OrderStatus.ExpiredInMatch => CryptoAITerminal.Core.Enums.OrderStatus.Rejected,
             _ => CryptoAITerminal.Core.Enums.OrderStatus.New,
         };
+
+        // A market order comes back already terminal and can never be cancelled, so the symbol it
+        // was placed for is dead weight. Only cancels used to drop entries, which meant every
+        // filled order stayed remembered for the whole session.
+        if (IsTerminal(order.Status)) _orderSymbols.Forget(order.Id);
         return order;
     }
 
+    private static bool IsTerminal(CryptoAITerminal.Core.Enums.OrderStatus status) =>
+        status is CryptoAITerminal.Core.Enums.OrderStatus.Filled
+               or CryptoAITerminal.Core.Enums.OrderStatus.Canceled
+               or CryptoAITerminal.Core.Enums.OrderStatus.Rejected;
+
     public Task CancelOrderAsync(string orderId) =>
-        CancelOrderAsync(_orderSymbols.TryGetValue(orderId, out var symbol) ? symbol : string.Empty, orderId);
+        CancelOrderAsync(_orderSymbols.TryGet(orderId, out var symbol) ? symbol : string.Empty, orderId);
 
     public async Task CancelOrderAsync(string symbol, string orderId)
     {
@@ -358,7 +382,7 @@ public class BinanceGateway : IExchangeGateway
         if (!result.Success)
             throw new Exception($"Failed to cancel spot order {orderId}: {result.Error}");
 
-        _orderSymbols.TryRemove(orderId, out _);
+        _orderSymbols.Forget(orderId);
     }
 
     public async Task<decimal> GetBalanceAsync(string asset)

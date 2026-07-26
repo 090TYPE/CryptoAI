@@ -13,22 +13,22 @@
 
     <!-- Stats row -->
     <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
-      <Border Grid.Column="0" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border Grid.Column="0" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
-          <TextBlock Text="Min Transfer" Foreground="#5A7A90" FontSize="9" />
-          <TextBlock Text="{Binding WhaleTrackerVM.MinUsdValue, StringFormat='${0:N0}'}" Foreground="#21E6C1" FontSize="14" FontWeight="SemiBold" />
+          <TextBlock Text="Min Transfer" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
+          <TextBlock Text="{Binding WhaleTrackerVM.MinUsdValue, StringFormat='${0:N0}'}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsSubhead}" FontWeight="SemiBold" />
         </StackPanel>
       </Border>
-      <Border Grid.Column="1" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border Grid.Column="1" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
-          <TextBlock Text="Alerts" Foreground="#5A7A90" FontSize="9" />
-          <TextBlock Text="{Binding WhaleTrackerVM.TotalAlertsCount}" Foreground="#21E6C1" FontSize="14" FontWeight="SemiBold" />
+          <TextBlock Text="Alerts" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
+          <TextBlock Text="{Binding WhaleTrackerVM.TotalAlertsCount}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsSubhead}" FontWeight="SemiBold" />
         </StackPanel>
       </Border>
-      <Border Grid.Column="2" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="8,6">
+      <Border Grid.Column="2" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="5" Padding="8,6">
         <StackPanel Spacing="2">
-          <TextBlock Text="Labeled" Foreground="#5A7A90" FontSize="9" />
-          <TextBlock Text="{Binding WhaleTrackerVM.LabeledAlertsCount}" Foreground="#F4B860" FontSize="14" FontWeight="SemiBold" />
+          <TextBlock Text="Labeled" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
+          <TextBlock Text="{Binding WhaleTrackerVM.LabeledAlertsCount}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsSubhead}" FontWeight="SemiBold" />
         </StackPanel>
       </Border>
     </Grid>
@@ -36,7 +36,7 @@
     <!-- Status bar -->
     <StackPanel Orientation="Horizontal" Spacing="8">
       <TextBlock Text="{Binding WhaleTrackerVM.KnownWalletCount, StringFormat='{}{0} wallets tracked'}"
-                 Foreground="#8FA3B8" FontSize="10" VerticalAlignment="Center" />
+                 Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
     </StackPanel>
     </StackPanel>
 
@@ -46,27 +46,27 @@
       <ItemsControl ItemsSource="{Binding WhaleTrackerVM.RecentAlerts}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:WhaleAlertViewModel">
-            <Border Padding="8,6" Margin="0,1" BorderBrush="#1A2E3A" BorderThickness="0,0,0,1">
+            <Border Padding="8,6" Margin="0,1" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="0,0,0,1">
               <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
                 <!-- Chain badge -->
-                <Border Grid.Column="0" CornerRadius="3" Padding="4,1" Background="#0D1E2A" VerticalAlignment="Center">
-                  <TextBlock Text="{Binding ChainBadge}" Foreground="{Binding ChainBrush}" FontSize="9" FontWeight="Bold" />
+                <Border Grid.Column="0" CornerRadius="3" Padding="4,1" Background="{DynamicResource Surface3}" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding ChainBadge}" Foreground="{Binding ChainBrush}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                 </Border>
                 <!-- Alert type -->
-                <Border Grid.Column="1" CornerRadius="3" Padding="4,1" Background="#0D1E2A" VerticalAlignment="Center">
-                  <TextBlock Text="{Binding AlertBadge}" Foreground="{Binding AlertBrush}" FontSize="9" FontWeight="Bold" />
+                <Border Grid.Column="1" CornerRadius="3" Padding="4,1" Background="{DynamicResource Surface3}" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding AlertBadge}" Foreground="{Binding AlertBrush}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                 </Border>
                 <!-- Amount + description -->
                 <StackPanel Grid.Column="2" Spacing="1" VerticalAlignment="Center">
                   <StackPanel Orientation="Horizontal" Spacing="4">
-                    <TextBlock Text="{Binding AmountLabel}" Foreground="#E8F4FF" FontWeight="SemiBold" FontSize="12" />
-                    <TextBlock Text="{Binding TokenSymbol}" Foreground="#8FA3B8" FontSize="10" />
+                    <TextBlock Text="{Binding AmountLabel}" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold" FontSize="{DynamicResource FsSmall}" />
+                    <TextBlock Text="{Binding TokenSymbol}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" />
                   </StackPanel>
-                  <TextBlock Text="{Binding Description}" Foreground="#8FA3B8" FontSize="10" />
-                  <TextBlock Text="{Binding ActiveWalletLabel}" Foreground="#F4B860" FontSize="10" IsVisible="{Binding HasLabel}" />
+                  <TextBlock Text="{Binding Description}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" />
+                  <TextBlock Text="{Binding ActiveWalletLabel}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsMicro}" IsVisible="{Binding HasLabel}" />
                 </StackPanel>
                 <!-- Time -->
-                <TextBlock Grid.Column="3" Text="{Binding TimeLabel}" Foreground="#4D5F70" FontSize="10" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="3" Text="{Binding TimeLabel}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
               </Grid>
             </Border>
           </DataTemplate>

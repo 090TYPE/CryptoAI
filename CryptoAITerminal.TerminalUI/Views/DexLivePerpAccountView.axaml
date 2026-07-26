@@ -13,57 +13,57 @@
     <Grid ColumnDefinitions="*,Auto">
       <StackPanel Spacing="2">
         <TextBlock Classes="TdLabel" Text="LIVE ON-CHAIN PERPS · HYPERLIQUID" />
-        <TextBlock Text="{Binding LivePerpSummary}" Foreground="#c8dcef" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap" />
+        <TextBlock Text="{Binding LivePerpSummary}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" TextWrapping="Wrap" />
       </StackPanel>
-      <Button Grid.Column="1" Content="↻ Refresh" Classes="TdSeg dex" Padding="10,5" VerticalAlignment="Center" Command="{Binding RefreshLivePerpCommand}" />
+      <Button Grid.Column="1" Content="↻ Refresh" Classes="TdSeg dex" Padding="10,4" VerticalAlignment="Center" Command="{Binding RefreshLivePerpCommand}" />
     </Grid>
 
-    <Border Background="#150a20" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="6" Padding="8,5">
-      <TextBlock Foreground="#a855f7" FontSize="9" TextWrapping="Wrap"
+    <Border Background="#150a20" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="6" Padding="8,4">
+      <TextBlock Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap"
                  Text="Positions below are your real Hyperliquid account (read-only). The LIVE ORDER panel is gated — off until you validate signing on testnet." />
     </Border>
 
     <!-- LIVE ORDER (gated, OFF by default) -->
-    <Border Background="#0a1420" BorderBrush="#1c2f42" BorderThickness="1" CornerRadius="8" Padding="10">
+    <Border Background="{DynamicResource Surface2}" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1" CornerRadius="8" Padding="10">
       <StackPanel Spacing="7">
         <TextBlock Classes="TdLabel" Text="LIVE ORDER · HYPERLIQUID" />
         <StackPanel Orientation="Horizontal" Spacing="14">
           <CheckBox IsChecked="{Binding HlEnableLiveOrders}">
-            <TextBlock Text="Enable live orders" Foreground="#c8dcef" FontSize="10" VerticalAlignment="Center" />
+            <TextBlock Text="Enable live orders" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
           </CheckBox>
           <CheckBox IsChecked="{Binding HlTestnet}">
-            <TextBlock Text="Testnet" Foreground="#c8dcef" FontSize="10" VerticalAlignment="Center" />
+            <TextBlock Text="Testnet" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
           </CheckBox>
         </StackPanel>
-        <TextBlock Text="{Binding HlOrderModeLabel}" Foreground="#ff9f45" FontSize="9" TextWrapping="Wrap" />
+        <TextBlock Text="{Binding HlOrderModeLabel}" Foreground="#ff9f45" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
 
         <Grid ColumnDefinitions="*,*" ColumnSpacing="8" IsEnabled="{Binding HlEnableLiveOrders}">
           <StackPanel Spacing="2">
             <TextBlock Classes="TdLabel" Text="COIN" />
-            <TextBox Text="{Binding HlCoin}" FontSize="11" Background="#07111a" BorderBrush="#1c2f42" Foreground="#e8f4ff" />
+            <TextBox Text="{Binding HlCoin}" FontSize="{DynamicResource FsCaption}" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStrokeBright}" Foreground="{DynamicResource TextPrimary}" />
           </StackPanel>
           <StackPanel Grid.Column="1" Spacing="2">
             <TextBlock Classes="TdLabel" Text="SIDE" />
             <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-              <RadioButton GroupName="hlside" IsChecked="{Binding HlIsBuy}" Content="Buy" Foreground="#21e6c1" FontSize="10" />
-              <RadioButton GroupName="hlside" IsChecked="{Binding !HlIsBuy}" Content="Sell" Foreground="#ff5c7c" FontSize="10" />
+              <RadioButton GroupName="hlside" IsChecked="{Binding HlIsBuy}" Content="Buy" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" />
+              <RadioButton GroupName="hlside" IsChecked="{Binding !HlIsBuy}" Content="Sell" Foreground="#ff5c7c" FontSize="{DynamicResource FsMicro}" />
             </StackPanel>
           </StackPanel>
         </Grid>
         <Grid ColumnDefinitions="*,*" ColumnSpacing="8" IsEnabled="{Binding HlEnableLiveOrders}">
           <StackPanel Spacing="2">
             <TextBlock Classes="TdLabel" Text="SIZE" />
-            <TextBox Text="{Binding HlSize}" FontSize="11" Background="#07111a" BorderBrush="#1c2f42" Foreground="#e8f4ff" />
+            <TextBox Text="{Binding HlSize}" FontSize="{DynamicResource FsCaption}" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStrokeBright}" Foreground="{DynamicResource TextPrimary}" />
           </StackPanel>
           <StackPanel Grid.Column="1" Spacing="2">
             <TextBlock Classes="TdLabel" Text="LIMIT PRICE" />
-            <TextBox Text="{Binding HlLimitPrice}" FontSize="11" Background="#07111a" BorderBrush="#1c2f42" Foreground="#e8f4ff" />
+            <TextBox Text="{Binding HlLimitPrice}" FontSize="{DynamicResource FsCaption}" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStrokeBright}" Foreground="{DynamicResource TextPrimary}" />
           </StackPanel>
         </Grid>
         <Button Content="PLACE LIVE ORDER" Classes="TdPrimary dex" Height="38"
                 IsEnabled="{Binding HlEnableLiveOrders}"
                 Command="{Binding PlaceHyperliquidOrderCommand}" />
-        <TextBlock Text="{Binding HlOrderStatus}" Foreground="#8fa3b8" FontSize="9" TextWrapping="Wrap" />
+        <TextBlock Text="{Binding HlOrderStatus}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
       </StackPanel>
     </Border>
 
@@ -78,19 +78,19 @@
     <ItemsControl ItemsSource="{Binding LivePerpPositions}">
       <ItemsControl.ItemTemplate>
         <DataTemplate x:DataType="vm:HyperliquidPositionViewModel">
-          <Border Classes="TdCardTight" Margin="0,0,0,5">
+          <Border Classes="TdCardTight" Margin="0,0,0,4">
             <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
               <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Coin}" Foreground="#e8f4ff" FontWeight="Bold" FontSize="11" />
+                <TextBlock Text="{Binding Coin}" Foreground="{DynamicResource TextPrimary}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
                 <Border Background="#0d1b12" CornerRadius="3" Padding="4,0">
-                  <TextBlock Text="{Binding Side}" Foreground="{Binding SideBrush}" FontSize="9" FontWeight="Bold" />
+                  <TextBlock Text="{Binding Side}" Foreground="{Binding SideBrush}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                 </Border>
-                <TextBlock Text="{Binding LeverageLabel}" Foreground="{DynamicResource TextSoft}" FontSize="9" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding LeverageLabel}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
               </StackPanel>
-              <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding SizeLabel}" Foreground="#c8dcef" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
-              <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding EntryLabel}" Foreground="#8fa3b8" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
-              <TextBlock Grid.Column="3" Classes="TdNum" Text="{Binding LiqLabel}" Foreground="#ff9f45" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
-              <TextBlock Grid.Column="4" Classes="TdNum" Text="{Binding PnlLabel}" Foreground="{Binding PnlBrush}" FontWeight="Bold" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding SizeLabel}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding EntryLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="3" Classes="TdNum" Text="{Binding LiqLabel}" Foreground="#ff9f45" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="4" Classes="TdNum" Text="{Binding PnlLabel}" Foreground="{Binding PnlBrush}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" VerticalAlignment="Center" />
             </Grid>
           </Border>
         </DataTemplate>

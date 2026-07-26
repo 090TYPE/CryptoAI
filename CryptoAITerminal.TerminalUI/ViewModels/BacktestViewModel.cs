@@ -27,10 +27,10 @@ public class StrategyComparisonRow
     public string MaxDD       { get; init; } = "--";
     public string Sharpe      { get; init; } = "--";
     public string BestTrade   { get; init; } = "--";
-    public string ReturnColor { get; init; } = "#8FA3B8";
+    public string ReturnColor { get; init; } = SemanticColor.Muted;
     public bool   IsSelected  { get; init; }
     /// <summary>Highlights the user-customised row in a distinct colour.</summary>
-    public string NameColor   => IsSelected ? "#21E6C1" : "#D7E3EE";
+    public string NameColor   => IsSelected ? SemanticColor.Accent : "#D7E3EE";
 }
 
 // ── Walk-Forward results row ──────────────────────────────────────────────────
@@ -87,11 +87,11 @@ public class WfResultRowVM
         WfScore    = $"{r.WfScore:0.000}";
         TimesLabel = r.TimesSelected > 0 ? $"✓{r.TimesSelected}" : "—";
 
-        ReturnColor = r.OosReturn >= 0 ? "#3DDC84" : "#FF5D73";
-        EffColor    = r.Efficiency >= 0.70m ? "#3DDC84"
-                    : r.Efficiency >= 0.40m ? "#F4B860" : "#FF5D73";
-        ScoreColor  = r.WfScore > 0 ? "#21E6C1" : "#8FA3B8";
-        NameColor   = isTop ? "#21E6C1" : "#D7E3EE";
+        ReturnColor = r.OosReturn >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
+        EffColor    = r.Efficiency >= 0.70m ? SemanticColor.Positive
+                    : r.Efficiency >= 0.40m ? SemanticColor.Warning : SemanticColor.Negative;
+        ScoreColor  = r.WfScore > 0 ? SemanticColor.Accent : SemanticColor.Muted;
+        NameColor   = isTop ? SemanticColor.Accent : "#D7E3EE";
     }
 }
 
@@ -399,7 +399,7 @@ public class BacktestViewModel : ReactiveObject
     // ── KPI labels ────────────────────────────────────────────────────────────
 
     public string StatusLabel    => _isRunning ? "Loading…" : (_mainResult.IsReady ? "Ready" : _statusText);
-    public string StatusBrush    => _mainResult.IsReady ? "#3DDC84" : (_isRunning ? "#F4B860" : "#8FA3B8");
+    public string StatusBrush    => _mainResult.IsReady ? SemanticColor.Positive : (_isRunning ? SemanticColor.Warning : SemanticColor.Muted);
     public string WindowLabel    => _mainResult.IsReady
         ? $"{_mainResult.Message} | {CurrentStrategyName}"
         : _statusText;
@@ -416,8 +416,8 @@ public class BacktestViewModel : ReactiveObject
         ? (_mainResult.WinRatePercent >= 50 ? "Momentum positive" : "Momentum defensive")
         : "--";
     public string NetReturnColor   => _mainResult.IsReady
-        ? (_mainResult.NetReturnPercent >= 0 ? "#3DDC84" : "#FF5D73")
-        : "#8FA3B8";
+        ? (_mainResult.NetReturnPercent >= 0 ? SemanticColor.Positive : SemanticColor.Negative)
+        : SemanticColor.Muted;
 
     public string Narrative => _mainResult.IsReady
         ? $"{CurrentStrategyName} on {Symbol} ({SelectedTimeframe}): " +
@@ -471,7 +471,7 @@ public class BacktestViewModel : ReactiveObject
     public string AiReviewSource { get => _aiReviewSource; private set => this.RaiseAndSetIfChanged(ref _aiReviewSource, value); }
     public string AiVerdictBrush => _aiReviewVerdict switch
     {
-        "ROBUST" => "#3DDC84", "PROMISING" => "#21E6C1", "OVERFIT" => "#FF6B6B", "WEAK" => "#F4B860", _ => "#8FA3B8"
+        "ROBUST" => SemanticColor.Positive, "PROMISING" => SemanticColor.Accent, "OVERFIT" => SemanticColor.Negative, "WEAK" => SemanticColor.Warning, _ => SemanticColor.Muted
     };
 
     public void ConfigureAi(string apiKey, string model)
@@ -1063,8 +1063,8 @@ public class BacktestViewModel : ReactiveObject
                 Sharpe      = res.IsReady ? $"{res.SharpeRatio:0.##}"                        : "--",
                 BestTrade   = res.IsReady ? $"{res.BestTradePercent:+0.##;-0.##;0}%"         : "--",
                 ReturnColor = res.IsReady
-                    ? (res.NetReturnPercent >= 0 ? "#3DDC84" : "#FF5D73")
-                    : "#8FA3B8",
+                    ? (res.NetReturnPercent >= 0 ? SemanticColor.Positive : SemanticColor.Negative)
+                    : SemanticColor.Muted,
                 IsSelected  = isUser
             });
         }
@@ -1213,7 +1213,7 @@ public class BacktestTradeRow
         EntryPrice  = trade.EntryPrice.ToString("N4");
         ExitPrice   = trade.ExitPrice.ToString("N4");
         ReturnLabel = $"{trade.ReturnPercent:+0.##;-0.##;0}%";
-        ReturnColor = trade.ReturnPercent >= 0 ? "#3DDC84" : "#FF5D73";
+        ReturnColor = trade.ReturnPercent >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
         var span    = trade.CloseTime - trade.OpenTime;
         Duration    = span.TotalDays  >= 1 ? $"{span.TotalDays:0}d"
                     : span.TotalHours >= 1 ? $"{span.TotalHours:0}h"

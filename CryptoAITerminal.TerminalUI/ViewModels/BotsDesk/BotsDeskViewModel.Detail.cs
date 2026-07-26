@@ -96,7 +96,7 @@ public partial class BotsDeskViewModel
             => GuardsRisk.Add(new GuardToggle
             {
                 Label = label, Hint = hint,
-                TrackBg = on ? "#14302e" : "#152233",
+                TrackBg = on ? "#14302e" : SemanticColor.Stroke,
                 Knob = on ? BotsDeskData.Accent : "#3d5a72",
                 KnobLeft = on ? 15 : 2,
                 Command = new RelayCommand(toggle)
@@ -388,7 +388,7 @@ public partial class BotsDeskViewModel
             var active = _detailTab == id; var key = id;
             DetailTabs.Add(new DetailTab
             {
-                Label = label, Border = active ? "#152233" : "transparent",
+                Label = label, Border = active ? SemanticColor.Stroke : "transparent",
                 Bg = active ? "#08131d" : "transparent", Fg = active ? BotsDeskData.Accent : BotsDeskData.Faint,
                 Command = new RelayCommand(() => SetDetailTab(key))
             });
@@ -668,7 +668,7 @@ public partial class BotsDeskViewModel
             DetailLogFilters.Add(new LogFilter
             {
                 Label = lv == "all" ? "ALL" : lv,
-                Border = active ? "#152233" : "#0d1b27", Bg = active ? "#08131d" : "transparent",
+                Border = active ? SemanticColor.Stroke : "#0d1b27", Bg = active ? "#08131d" : "transparent",
                 Fg = active ? BotsDeskData.Accent : BotsDeskData.Faint,
                 Command = new RelayCommand(() => { _logLevel = key; RebuildDetail(); })
             });

@@ -4,6 +4,7 @@ using OKX.Net.Enums;
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
+using CryptoAITerminal.Gateway.Base;
 using System.Collections.Concurrent;
 using System.Reactive.Subjects;
 using OKXOrderSide = OKX.Net.Enums.OrderSide;
@@ -22,7 +23,9 @@ public class OKXFuturesGateway : IExchangeGateway
     private readonly OKXSocketClient _socketClient;
     private readonly Subject<MarketData> _marketDataSubject = new();
     private readonly IReadOnlyList<string> _symbols;
-    private readonly ConcurrentDictionary<string, string> _orderSymbols = new();
+    private readonly OrderSymbolCache _orderSymbols = new();
+    // /public/instruments answers change once in months; one lookup per symbol per session is enough.
+    private readonly SymbolFiltersCache _filters = new();
     // OKX SetLeverage writes leverage for the (instrument, marginMode) pair, so
     // setting margin mode and setting leverage go through the SAME endpoint.
     // We remember the last requested leverage+mode per symbol and always re-apply
@@ -189,27 +192,31 @@ public class OKXFuturesGateway : IExchangeGateway
         if (!string.IsNullOrEmpty(idStr))
         {
             order.Id = idStr;
-            _orderSymbols[idStr] = OKXSymbolHelper.ToSwapSymbol(order.Symbol);
+            // OKX's place-order response carries no status, but a market order is already filled by
+            // the time the id comes back and can never be cancelled — remembering it would leave an
+            // entry that only a cancel ever cleared.
+            if (order.Type != CoreOrderType.Market)
+                _orderSymbols.Remember(idStr, OKXSymbolHelper.ToSwapSymbol(order.Symbol));
         }
         return order;
     }
 
     public async Task CancelOrderAsync(string orderId)
     {
-        if (!_orderSymbols.TryGetValue(orderId, out var okxSymbol)) return;
+        if (!_orderSymbols.TryGet(orderId, out var okxSymbol)) return;
         if (long.TryParse(orderId, out var longId))
             await _restClient.UnifiedApi.Trading.CancelOrderAsync(okxSymbol, longId);
-        _orderSymbols.TryRemove(orderId, out _);
+        _orderSymbols.Forget(orderId);
     }
 
     public async Task CancelOrderAsync(string symbol, string orderId)
     {
-        var okxSymbol = _orderSymbols.TryGetValue(orderId, out var cached)
+        var okxSymbol = _orderSymbols.TryGet(orderId, out var cached)
             ? cached
             : OKXSymbolHelper.ToSwapSymbol(symbol);
         if (long.TryParse(orderId, out var longId))
             await _restClient.UnifiedApi.Trading.CancelOrderAsync(okxSymbol, longId);
-        _orderSymbols.TryRemove(orderId, out _);
+        _orderSymbols.Forget(orderId);
     }
 
     public async Task<IReadOnlyList<Order>> GetOpenOrdersAsync(string? symbol = null)
@@ -301,5 +308,43 @@ public class OKXFuturesGateway : IExchangeGateway
                 Volume    = k.Volume
             })
             .ToList();
+    }
+
+    /// <summary>
+    /// OKX /public/instruments for one swap. lotSz and minSz are quoted in CONTRACTS, while every
+    /// quantity crossing <see cref="IExchangeGateway"/> is in the base asset, so both are multiplied
+    /// by the same ctVal that <see cref="PlaceOrderAsync"/> divides by — a step in contracts would
+    /// round a BTC amount to whole 0.01 BTC lots off by a factor of a hundred. OKX publishes no
+    /// notional floor, so <see cref="SymbolFilters.MinNotional"/> stays 0 = "no rule".
+    /// </summary>
+    public async Task<SymbolFilters?> GetSymbolFiltersAsync(string symbol, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(symbol)) return null;
+        symbol = symbol.Trim().ToUpperInvariant();
+
+        var cached = _filters.Get(symbol);
+        if (cached is not null) return cached;
+
+        var swap = OKXSymbolHelper.ToSwapSymbol(symbol);
+        var result = await _restClient.UnifiedApi.ExchangeData.GetSymbolsAsync(
+            InstrumentType.Swap, symbol: swap, ct: ct);
+        if (!result.Success || result.Data is null) return null;
+
+        var info = result.Data
+            .FirstOrDefault(i => string.Equals(i.Symbol, swap, StringComparison.OrdinalIgnoreCase));
+        if (info is null) return null;
+
+        var ctVal = info.ContractValue ?? 0m;
+        if (ctVal <= 0m) return null;
+
+        var filters = SymbolFilters.Create(
+            symbol,
+            info.TickSize,
+            info.LotSize * ctVal,
+            info.MinimumOrderSize * ctVal,
+            null);
+
+        _filters.Store(filters);
+        return filters;
     }
 }

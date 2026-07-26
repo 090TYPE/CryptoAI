@@ -247,9 +247,9 @@ public sealed class AiTraderViewModel : ReactiveObject
     }
 
     public string ModeLabel => LiveEnabled ? "LIVE · real orders" : "PAPER · simulated";
-    public string ModeBrush => LiveEnabled ? "#FF6B6B" : "#1FE6C2";
+    public string ModeBrush => LiveEnabled ? SemanticColor.Negative : "#1FE6C2";
     public string StatusLabel => IsRunning ? "Agent is running" : "Agent is idle";
-    public string StatusBrush => IsRunning ? "#3DDC84" : "#8FA3B8";
+    public string StatusBrush => IsRunning ? SemanticColor.Positive : SemanticColor.Muted;
 
     public ReactiveCommand<Unit, Unit> RunOnceCommand { get; }
     public ReactiveCommand<Unit, Unit> StartLoopCommand { get; }

@@ -68,7 +68,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     private decimal _slippagePercent =
         Math.Max(0.1m, Math.Min(50m, DexSettingsStore.Current.DefaultSlippagePercent));
     private string _buyQuoteLabel = string.Empty;
-    private string _buyQuoteBrush = "#8FA3B8";
+    private string _buyQuoteBrush = SemanticColor.Muted;
     private decimal _tokenBalance;
     private string _tokenBalanceLabel = string.Empty;
     private bool _isTokenBalanceLoading;
@@ -235,8 +235,8 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
                 : "ROUTE BLOCKED";
     public string DexGuardStatusBrush => DexGuardStatusLabel switch
     {
-        "ROUTE READY" => "#21E6C1",
-        "PAPER LOCK" => "#F4B860",
+        "ROUTE READY" => SemanticColor.Accent,
+        "PAPER LOCK" => SemanticColor.Warning,
         "WATCH MODE" => "#5BC0EB",
         _ => "#FF8A65"
     };
@@ -445,10 +445,10 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             ? "USDT ACTIVE"
             : $"{SelectedQuoteAssetSymbol} ACTIVE";
     public string QuoteAssetModeBrush => IsNativeQuoteMode(SelectedQuoteAssetSymbol)
-        ? "#8FA3B8"
+        ? SemanticColor.Muted
         : string.Equals(SelectedQuoteAssetSymbol, "USDT", StringComparison.OrdinalIgnoreCase)
-            ? "#14E0C1"
-            : "#F4B860";
+            ? SemanticColor.Positive
+            : SemanticColor.Warning;
     public decimal SelectedQuoteAssetBalance
     {
         get => _selectedQuoteAssetBalance;
@@ -488,7 +488,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         ? 0m
         : Math.Max(0m, SelectedQuoteAssetBalance);
     public bool HasEnoughQuoteBalanceForBuy => BuyAmountBnb <= 0m || IsNativeQuoteMode(SelectedQuoteAssetSymbol) || BuyAmountBnb <= AvailableSpendableQuoteBalance;
-    public string BuyAvailabilityBrush => HasEnoughQuoteBalanceForBuy ? "#14E0C1" : "#FF6B6B";
+    public string BuyAvailabilityBrush => HasEnoughQuoteBalanceForBuy ? SemanticColor.Positive : SemanticColor.Negative;
     public string BuyAvailabilityMessage => IsNativeQuoteMode(SelectedQuoteAssetSymbol)
         ? "Native buy mode uses the connected wallet native balance."
         : HasEnoughQuoteBalanceForBuy
@@ -537,7 +537,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     private readonly DexAggregatorService _aggregator = new();
     private string _aggOutputLabel = string.Empty;
     private string _aggImpactLabel = "—";
-    private string _aggImpactBrush = "#8fa3b8";
+    private string _aggImpactBrush = SemanticColor.Muted;
     private string _aggRouteLabel = "—";
     public string AggOutputLabel { get => _aggOutputLabel; private set { this.RaiseAndSetIfChanged(ref _aggOutputLabel, value); this.RaisePropertyChanged(nameof(HasAggQuote)); } }
     public string AggImpactLabel { get => _aggImpactLabel; private set => this.RaiseAndSetIfChanged(ref _aggImpactLabel, value); }
@@ -605,8 +605,8 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
         AggOutputLabel = $"≈ {quote.OutTokens:0.######} {token.TokenInfo.Symbol}";
         AggImpactLabel = quote.PriceImpact;
-        AggImpactBrush = quote.PriceImpact.TrimStart().StartsWith("-") ? "#3ddc84"
-            : quote.PriceImpact.Contains('%') && double.TryParse(quote.PriceImpact.TrimEnd('%'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var p) && p >= 2 ? "#ff6b6b" : "#f4b860";
+        AggImpactBrush = quote.PriceImpact.TrimStart().StartsWith("-") ? SemanticColor.Positive
+            : quote.PriceImpact.Contains('%') && double.TryParse(quote.PriceImpact.TrimEnd('%'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var p) && p >= 2 ? SemanticColor.Negative : SemanticColor.Warning;
         AggRouteLabel = quote.Route;
     }
 
@@ -1337,7 +1337,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     public string ChartHighLabel => ChartHigh > 0 ? FormatPrice(ChartHigh) : "--";
     public string ChartLowLabel  => ChartLow  > 0 ? FormatPrice(ChartLow)  : "--";
     public string ChartChangePctLabel => ChartChangePercent == 0 ? "--" : $"{ChartChangePercent:+0.00;-0.00}%";
-    public string ChartChangePctBrush => ChartChangePercent >= 0 ? "#21E6C1" : "#FF6B6B";
+    public string ChartChangePctBrush => ChartChangePercent >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
     public string DexVolume24hLabel => SelectedToken is null
         ? "--"
         : SelectedToken.TokenInfo.Volume24h > 0
@@ -1359,11 +1359,11 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         ? $"{Math.Min(999m, tk.TokenInfo.Volume24h / tk.TokenInfo.LiquidityUsd * 100m):N0}%"
         : "--";
     public string DexChange24hLabel => SelectedToken is null ? "--" : $"{SelectedToken.TokenInfo.PriceChange24h:+0.00;-0.00;0.00}%";
-    public string DexChange24hBrush => (SelectedToken?.TokenInfo.PriceChange24h ?? 0m) >= 0m ? "#3ddc84" : "#ff6b6b";
+    public string DexChange24hBrush => (SelectedToken?.TokenInfo.PriceChange24h ?? 0m) >= 0m ? SemanticColor.Positive : SemanticColor.Negative;
     public string DexChange5mLabel => SelectedToken is null ? "--" : $"{SelectedToken.TokenInfo.PriceChange5m:+0.00;-0.00;0.00}%";
-    public string DexChange5mBrush => (SelectedToken?.TokenInfo.PriceChange5m ?? 0m) >= 0m ? "#3ddc84" : "#ff6b6b";
+    public string DexChange5mBrush => (SelectedToken?.TokenInfo.PriceChange5m ?? 0m) >= 0m ? SemanticColor.Positive : SemanticColor.Negative;
     public string DexChange1hLabel => SelectedToken is null ? "--" : $"{SelectedToken.TokenInfo.PriceChange1h:+0.00;-0.00;0.00}%";
-    public string DexChange1hBrush => (SelectedToken?.TokenInfo.PriceChange1h ?? 0m) >= 0m ? "#3ddc84" : "#ff6b6b";
+    public string DexChange1hBrush => (SelectedToken?.TokenInfo.PriceChange1h ?? 0m) >= 0m ? SemanticColor.Positive : SemanticColor.Negative;
     public string DexPriceUsdLabel => SelectedToken is { TokenInfo.PriceUsd: > 0 } t ? $"$ {t.TokenInfo.PriceUsd:N6}" : "--";
     public string DexPairLabel => SelectedToken is null ? "--" : $"{SelectedToken.TokenInfo.Symbol}/{SelectedToken.TokenInfo.QuoteSymbol}";
 
@@ -1390,7 +1390,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     private string GetDexTimeframeBackground(string tf) =>
         string.Equals(SelectedChartRange, tf, StringComparison.OrdinalIgnoreCase) ? "#17373B" : "#0F1721";
     private string GetDexTimeframeForeground(string tf) =>
-        string.Equals(SelectedChartRange, tf, StringComparison.OrdinalIgnoreCase) ? "#F4F7FB" : "#8FA3B8";
+        string.Equals(SelectedChartRange, tf, StringComparison.OrdinalIgnoreCase) ? "#F4F7FB" : SemanticColor.Muted;
 
     // ── Recent DEX trade history (blotter) ────────────────────────────────────
     public ObservableCollection<DexTradeRecordViewModel> RecentDexTrades { get; } = new();
@@ -1430,11 +1430,11 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
         if (_prevLiquidity > 0m && liq > 0m && liq < _prevLiquidity * 0.7m)
         {
-            AddAlert("⚠", $"Liquidity dropped {(1m - liq / _prevLiquidity) * 100m:0}% (${_prevLiquidity:N0} → ${liq:N0})", "#ff6b6b");
+            AddAlert("⚠", $"Liquidity dropped {(1m - liq / _prevLiquidity) * 100m:0}% (${_prevLiquidity:N0} → ${liq:N0})", SemanticColor.Negative);
         }
         if (_prevVolume > 0m && vol > _prevVolume * 1.5m)
         {
-            AddAlert("📈", $"Volume spike +{(vol / _prevVolume - 1m) * 100m:0}% (${vol:N0} 24h)", "#f4b860");
+            AddAlert("📈", $"Volume spike +{(vol / _prevVolume - 1m) * 100m:0}% (${vol:N0} 24h)", SemanticColor.Warning);
         }
         if (liq > 0m) _prevLiquidity = liq;
         if (vol > 0m) _prevVolume = vol;
@@ -1445,7 +1445,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         {
             if (string.Equals(t.Side, "sell", StringComparison.OrdinalIgnoreCase) && t.AmountUsd >= whaleUsd)
             {
-                AddAlert("🐳", $"Whale SELL ${t.AmountUsd:N0}", "#ff6b6b");
+                AddAlert("🐳", $"Whale SELL ${t.AmountUsd:N0}", SemanticColor.Negative);
             }
             if (t.TimeUtc > newest) newest = t.TimeUtc;
         }
@@ -1531,7 +1531,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     private decimal _lpPriceLower;
     private decimal _lpPriceUpper;
     private string  _lpIlResult    = string.Empty;
-    private string  _lpIlBrush     = "#8FA3B8";
+    private string  _lpIlBrush     = SemanticColor.Muted;
     private string  _lpV3IlResult  = string.Empty;
 
     public decimal LpEntryPrice
@@ -1561,7 +1561,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
         // V2 IL
         var v2Il = LiquidityPoolCalculator.CalculateV2ImpermanentLoss(current / _lpEntryPrice);
         LpIlResult = $"{v2Il:+0.00;-0.00;0}%";
-        LpIlBrush  = v2Il >= 0 ? "#21E6C1" : "#FF6B6B";
+        LpIlBrush  = v2Il >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
 
         // V3 IL (only when range is set)
         if (_lpPriceLower > 0m && _lpPriceUpper > _lpPriceLower)
@@ -3067,7 +3067,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
             await RunOnUiAsync(() =>
             {
                 BuyQuoteLabel = string.Empty;
-                BuyQuoteBrush = "#8FA3B8";
+                BuyQuoteBrush = SemanticColor.Muted;
             });
             return;
         }
@@ -3084,7 +3084,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
                     await RunOnUiAsync(() =>
                     {
                         BuyQuoteLabel = $"≈ {tokensOut:0.########} {selectedToken.TokenInfo.Symbol}";
-                        BuyQuoteBrush = "#21E6C1";
+                        BuyQuoteBrush = SemanticColor.Accent;
                     });
                 }
                 else
@@ -3092,7 +3092,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
                     await RunOnUiAsync(() =>
                     {
                         BuyQuoteLabel = "Router quote unavailable for this pair.";
-                        BuyQuoteBrush = "#8FA3B8";
+                        BuyQuoteBrush = SemanticColor.Muted;
                     });
                 }
             }
@@ -3105,7 +3105,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
                     await RunOnUiAsync(() =>
                     {
                         BuyQuoteLabel = $"≈ {tokensEst:0.########} {selectedToken.TokenInfo.Symbol} (price est.)";
-                        BuyQuoteBrush = "#F4B860";
+                        BuyQuoteBrush = SemanticColor.Warning;
                     });
                 }
                 else
@@ -3113,7 +3113,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
                     await RunOnUiAsync(() =>
                     {
                         BuyQuoteLabel = "Price estimate unavailable.";
-                        BuyQuoteBrush = "#8FA3B8";
+                        BuyQuoteBrush = SemanticColor.Muted;
                     });
                 }
             }
@@ -3220,13 +3220,13 @@ public sealed class HyperliquidPositionViewModel
     {
         Coin = p.Coin;
         Side = p.Side;
-        SideBrush = p.IsLong ? "#21e6c1" : "#ff5c7c";
+        SideBrush = p.IsLong ? SemanticColor.Positive : SemanticColor.Negative;
         SizeLabel = Math.Abs(p.Size).ToString("0.######");
         EntryLabel = p.EntryPrice > 0m ? $"$ {p.EntryPrice:0.####}" : "—";
         LiqLabel = p.LiquidationPrice > 0m ? $"$ {p.LiquidationPrice:0.####}" : "—";
         LeverageLabel = $"{p.Leverage}x {p.LeverageType}";
         PnlLabel = (p.UnrealizedPnl >= 0m ? "+$ " : "-$ ") + Math.Abs(p.UnrealizedPnl).ToString("N2");
-        PnlBrush = p.UnrealizedPnl >= 0m ? "#21e6c1" : "#ff5c7c";
+        PnlBrush = p.UnrealizedPnl >= 0m ? SemanticColor.Positive : SemanticColor.Negative;
         ValueLabel = $"$ {p.PositionValueUsd:N2}";
     }
 
@@ -3263,7 +3263,7 @@ public sealed class DexWatchItemViewModel : ReactiveObject
     public decimal PriceValue => _price;
     public string PriceLabel => _price > 0m ? $"$ {DexPerpFormat.Price(_price)}" : "—";
     public string ChangeLabel => _price > 0m ? $"{_change24h:+0.0;-0.0;0}%" : "";
-    public string ChangeBrush => _change24h >= 0m ? "#3ddc84" : "#ff6b6b";
+    public string ChangeBrush => _change24h >= 0m ? SemanticColor.Positive : SemanticColor.Negative;
 
     public void Update(decimal price, decimal change24h)
     {
@@ -3285,7 +3285,7 @@ public sealed class DexKeeperOrderViewModel
         TypeLabel = o.PlanId is not null && o.PlanId.StartsWith("DCA", StringComparison.OrdinalIgnoreCase)
             ? $"DCA {side}"
             : $"{o.Kind.ToString().ToUpperInvariant()} {side}";
-        SideBrush = o.Side == KeeperSide.Buy ? "#3ddc84" : "#ff6b6b";
+        SideBrush = o.Side == KeeperSide.Buy ? SemanticColor.Positive : SemanticColor.Negative;
         Symbol = o.Symbol;
         TriggerLabel = o.Kind == KeeperOrderKind.Trailing
             ? $"−{o.TrailingDistancePct:0.##}%"
@@ -3325,7 +3325,7 @@ public sealed class DexMarketTradeViewModel
     {
         IsBuy = string.Equals(t.Side, "buy", StringComparison.OrdinalIgnoreCase);
         SideLabel = IsBuy ? "BUY" : "SELL";
-        SideBrush = IsBuy ? "#3ddc84" : "#ff6b6b";
+        SideBrush = IsBuy ? SemanticColor.Positive : SemanticColor.Negative;
         AmountLabel = t.AmountUsd >= 1000m ? $"${t.AmountUsd / 1000m:0.#}K" : $"${t.AmountUsd:0}";
         TimeLabel = t.TimeUtc.ToLocalTime().ToString("HH:mm:ss");
     }
@@ -3348,13 +3348,13 @@ public sealed class DexTradeRecordViewModel : ReactiveObject
     public DateTime TimeUtc { get; }
 
     public string SideLabel    => Side;
-    public string SideBrush    => Side == "BUY" ? "#3DDC84" : "#FF6B6B";
+    public string SideBrush    => Side == "BUY" ? SemanticColor.Positive : SemanticColor.Negative;
     public string AmountLabel  => $"{Amount:0.########}";
     public string PriceLabel   => Price > 0 ? $"$ {Price:N6}" : "--";
     public string TxHashShort  => TxHash.Length > 10 ? TxHash[..10] + "..." : (TxHash.Length > 0 ? TxHash : "FAILED");
     public string TimeLabel    => TimeUtc.ToLocalTime().ToString("HH:mm:ss");
     public string StatusLabel  => Success ? "FILLED" : "FAILED";
-    public string StatusBrush  => Success ? "#21E6C1" : "#FF6B6B";
+    public string StatusBrush  => Success ? SemanticColor.Positive : SemanticColor.Negative;
 
     public DexTradeRecordViewModel(string side, string symbol, decimal amount, decimal price, string txHash, bool success, DateTime timeUtc)
     {

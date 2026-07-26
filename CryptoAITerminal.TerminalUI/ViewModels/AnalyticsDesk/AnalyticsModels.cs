@@ -16,14 +16,14 @@ public sealed class AnKpi
     public string Label { get; init; } = "";
     public string Value { get; init; } = "";
     public string Sub { get; init; } = "";
-    public string Color { get; init; } = "#e8f4ff";
+    public string Color { get; init; } = SemanticColor.Primary;
     public ICommand? Command { get; init; }
 }
 
 public sealed class EqToggle
 {
     public string Label { get; init; } = "";
-    public string Swatch { get; init; } = "#152233";
+    public string Swatch { get; init; } = SemanticColor.Stroke;
     public string Fg { get; init; } = "#2d4a5e";
     public string Border { get; init; } = "#0d1b27";
     public string Bg { get; init; } = "transparent";
@@ -34,7 +34,7 @@ public sealed class EqMark
 {
     public string Label { get; init; } = "";
     public string Value { get; init; } = "";
-    public string Color { get; init; } = "#8fa3b8";
+    public string Color { get; init; } = SemanticColor.Muted;
     public ICommand? Command { get; init; }
 }
 
@@ -43,9 +43,9 @@ public sealed class BreakdownRow
     public string Label { get; init; } = "";
     public string Wt { get; init; } = "";
     public string Pnl { get; init; } = "";
-    public string PnlColor { get; init; } = "#8fa3b8";
+    public string PnlColor { get; init; } = SemanticColor.Muted;
     public double BarRatio { get; init; }
-    public string BarColor { get; init; } = "#21e6c1";
+    public string BarColor { get; init; } = SemanticColor.Accent;
     public string Bg { get; init; } = "transparent";
     public ICommand? Command { get; init; }
 }
@@ -76,10 +76,10 @@ public sealed class AnTradeRow
     public string Source { get; init; } = "";
     public string SrcColor { get; init; } = "#58a6ff";
     public string Side { get; init; } = "";
-    public string SideColor { get; init; } = "#8fa3b8";
+    public string SideColor { get; init; } = SemanticColor.Muted;
     public string Pnl { get; init; } = "";
     public string PnlPct { get; init; } = "";
-    public string PnlColor { get; init; } = "#8fa3b8";
+    public string PnlColor { get; init; } = SemanticColor.Muted;
     public string Duration { get; init; } = "";
     public string Exit { get; init; } = "";
     public string Bg { get; init; } = "transparent";
@@ -97,7 +97,7 @@ public sealed class FilterChip
 public sealed class Bullet
 {
     public string Text { get; init; } = "";
-    public string Dot { get; init; } = "#21e6c1";
+    public string Dot { get; init; } = SemanticColor.Accent;
 }
 
 public sealed class Ratio
@@ -105,13 +105,13 @@ public sealed class Ratio
     public string Label { get; init; } = "";
     public string Value { get; init; } = "";
     public string Hint { get; init; } = "";
-    public string Color { get; init; } = "#e8f4ff";
+    public string Color { get; init; } = SemanticColor.Primary;
 }
 
 public sealed class DistBar
 {
     public double HeightRatio { get; init; }
-    public string Color { get; init; } = "#21e6c1";
+    public string Color { get; init; } = SemanticColor.Accent;
     public string Title { get; init; } = "";
     public ICommand? Command { get; init; }
 }

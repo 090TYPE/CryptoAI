@@ -17,7 +17,7 @@ public sealed class TickerItem
     public string Tag { get; init; } = "";
     public string Text { get; init; } = "";
     public string Val { get; init; } = "";
-    public string Color { get; init; } = "#8fa3b8";
+    public string Color { get; init; } = SemanticColor.Muted;
 }
 
 /// <summary>A type filter chip (ALL / GRID / DCA / …) above the table.</summary>
@@ -35,7 +35,7 @@ public sealed class TypeChip
 public sealed class BulkAction
 {
     public string Label { get; init; } = "";
-    public string Color { get; init; } = "#8fa3b8";
+    public string Color { get; init; } = SemanticColor.Muted;
     public ICommand? Command { get; init; }
 }
 
@@ -44,7 +44,7 @@ public sealed class RowAction
 {
     public string Icon { get; init; } = "";
     public string Title { get; init; } = "";
-    public string Color { get; init; } = "#8fa3b8";
+    public string Color { get; init; } = SemanticColor.Muted;
     public ICommand? Command { get; init; }
 }
 
@@ -53,7 +53,7 @@ public sealed class RowMenuItem
 {
     public string Label { get; init; } = "";
     public string Hint { get; init; } = "";
-    public string Color { get; init; } = "#e8f4ff";
+    public string Color { get; init; } = SemanticColor.Primary;
     public ICommand? Command { get; init; }
 }
 
@@ -62,7 +62,7 @@ public sealed class StatCell
 {
     public string Label { get; init; } = "";
     public string Value { get; init; } = "";
-    public string Color { get; init; } = "#e8f4ff";
+    public string Color { get; init; } = SemanticColor.Primary;
 }
 
 /// <summary>A grid level / ladder bar in the Overview tab.</summary>
@@ -71,7 +71,7 @@ public sealed class GridLevel
     public string Price { get; init; } = "";
     public string Width { get; init; } = "0%";        // used as a 0..1 ratio too
     public double Ratio { get; init; }                 // 0..1 fill fraction
-    public string Color { get; init; } = "#152233";
+    public string Color { get; init; } = SemanticColor.Stroke;
     public double Opacity { get; init; } = 1;
     public string Tag { get; init; } = "";
     public string TagColor { get; init; } = "#2d4a5e";
@@ -82,7 +82,7 @@ public sealed class KvRow
 {
     public string Label { get; init; } = "";
     public string Value { get; init; } = "";
-    public string Color { get; init; } = "#e8f4ff";
+    public string Color { get; init; } = SemanticColor.Primary;
 }
 
 /// <summary>A fill in the expanded Fills tab.</summary>
@@ -91,12 +91,12 @@ public sealed class TradeRow
     public string Time { get; init; } = "";
     public string Symbol { get; init; } = "";
     public string Side { get; init; } = "";
-    public string SideColor { get; init; } = "#8fa3b8";
+    public string SideColor { get; init; } = SemanticColor.Muted;
     public string Price { get; init; } = "";
     public string Qty { get; init; } = "";
     public string Total { get; init; } = "";
     public string Pnl { get; init; } = "";
-    public string PnlColor { get; init; } = "#8fa3b8";
+    public string PnlColor { get; init; } = SemanticColor.Muted;
     public string Route { get; init; } = "";
 }
 
@@ -124,7 +124,7 @@ public sealed class GuardToggle
 {
     public string Label { get; init; } = "";
     public string Hint { get; init; } = "";
-    public string TrackBg { get; init; } = "#152233";
+    public string TrackBg { get; init; } = SemanticColor.Stroke;
     public string Knob { get; init; } = "#3d5a72";
     public double KnobLeft { get; init; } = 2;
     public ICommand? Command { get; init; }
@@ -135,7 +135,7 @@ public sealed class RiskLimit
 {
     public string Label { get; init; } = "";
     public string Display { get; init; } = "";
-    public string Color { get; init; } = "#21e6c1";
+    public string Color { get; init; } = SemanticColor.Accent;
     public double Min { get; init; }
     public double Max { get; init; }
     public double Step { get; init; } = 1;
@@ -152,9 +152,9 @@ public sealed class TemplateCard
     public string Risk { get; init; } = "";
     public string Backtest { get; init; } = "";
     public string Apr { get; init; } = "";
-    public string Accent { get; init; } = "#21e6c1";
+    public string Accent { get; init; } = SemanticColor.Accent;
     public string BadgeBg { get; init; } = "transparent";
-    public string BadgeBorder { get; init; } = "#152233";
+    public string BadgeBorder { get; init; } = SemanticColor.Stroke;
     public string PickBorder { get; init; } = "#0d1b27";
     public string PickBg { get; init; } = "#060d14";
     public ICommand? QuickCreate { get; init; }
@@ -166,7 +166,7 @@ public sealed class ColumnToggle
 {
     public string Label { get; init; } = "";
     public string Mark { get; init; } = "";
-    public string BoxBorder { get; init; } = "#152233";
+    public string BoxBorder { get; init; } = SemanticColor.Stroke;
     public string BoxBg { get; init; } = "transparent";
     public string Border { get; init; } = "#0d1b27";
     public string Bg { get; init; } = "transparent";
@@ -212,7 +212,7 @@ public sealed class WizardMode
 {
     public string Label { get; init; } = "";
     public string Hint { get; init; } = "";
-    public string Border { get; init; } = "#152233";
+    public string Border { get; init; } = SemanticColor.Stroke;
     public string Bg { get; init; } = "transparent";
     public string Fg { get; init; } = "#2d4a5e";
     public ICommand? Command { get; init; }
@@ -225,8 +225,8 @@ public sealed class ConfirmCheck : ReactiveObject
     public bool On { get => _on; set => this.RaiseAndSetIfChanged(ref _on, value); }
     public string Label { get; init; } = "";
     public string Mark => _on ? "✓" : "";
-    public string BoxBorder => _on ? "#21e6c1" : "#152233";
-    public string BoxBg => _on ? "#21e6c1" : "transparent";
+    public string BoxBorder => _on ? SemanticColor.Accent : SemanticColor.Stroke;
+    public string BoxBg => _on ? SemanticColor.Accent : "transparent";
     public ICommand? Command { get; set; }
 
     public void Refresh()
@@ -243,7 +243,7 @@ public sealed class CopilotMsg
     public string Role { get; init; } = "";
     public string Text { get; init; } = "";
     public string Align { get; init; } = "Left";     // HorizontalAlignment name
-    public string RoleColor { get; init; } = "#21e6c1";
+    public string RoleColor { get; init; } = SemanticColor.Accent;
     public string Bg { get; init; } = "#08161f";
 }
 

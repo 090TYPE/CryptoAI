@@ -4,7 +4,7 @@ using OKX.Net.Enums;
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
-using System.Collections.Concurrent;
+using CryptoAITerminal.Gateway.Base;
 using System.Reactive.Subjects;
 using OKXOrderSide = OKX.Net.Enums.OrderSide;
 using OKXOrderType = OKX.Net.Enums.OrderType;
@@ -21,7 +21,9 @@ public class OKXGateway : IExchangeGateway
     private readonly Subject<MarketData> _marketDataSubject = new();
     private readonly IReadOnlyList<string> _symbols;
     // orderId (long as string) → OKX spot symbol ("BTC-USDT")
-    private readonly ConcurrentDictionary<string, string> _orderSymbols = new();
+    private readonly OrderSymbolCache _orderSymbols = new();
+    // /public/instruments answers change once in months; one lookup per symbol per session is enough.
+    private readonly SymbolFiltersCache _filters = new();
 
     public IObservable<MarketData> MarketDataStream => _marketDataSubject;
 
@@ -149,17 +151,21 @@ public class OKXGateway : IExchangeGateway
         if (!string.IsNullOrEmpty(idStr))
         {
             order.Id = idStr;
-            _orderSymbols[idStr] = OKXSymbolHelper.ToSpotSymbol(order.Symbol);
+            // OKX's place-order response carries no status, but a market order is already filled by
+            // the time the id comes back and can never be cancelled — remembering it would leave an
+            // entry that only a cancel ever cleared.
+            if (order.Type != CoreOrderType.Market)
+                _orderSymbols.Remember(idStr, OKXSymbolHelper.ToSpotSymbol(order.Symbol));
         }
         return order;
     }
 
     public async Task CancelOrderAsync(string orderId)
     {
-        if (!_orderSymbols.TryGetValue(orderId, out var okxSymbol)) return;
+        if (!_orderSymbols.TryGet(orderId, out var okxSymbol)) return;
         if (long.TryParse(orderId, out var longId))
             await _restClient.UnifiedApi.Trading.CancelOrderAsync(okxSymbol, longId);
-        _orderSymbols.TryRemove(orderId, out _);
+        _orderSymbols.Forget(orderId);
     }
 
     public async Task<IReadOnlyList<Order>> GetOpenOrdersAsync(string? symbol = null)
@@ -204,25 +210,31 @@ public class OKXGateway : IExchangeGateway
             })
             .ToList();
     }
-}
 
-internal static class OKXTimeframeMap
-{
-    public static KlineInterval Parse(string timeframe) => (timeframe ?? string.Empty).Trim().ToUpperInvariant() switch
+    /// <summary>
+    /// OKX /public/instruments for one spot instrument: tickSz, lotSz and minSz. OKX publishes no
+    /// notional floor for spot, so <see cref="SymbolFilters.MinNotional"/> stays 0 = "no rule".
+    /// Null when OKX will not answer — the caller then sends its own numbers.
+    /// </summary>
+    public async Task<SymbolFilters?> GetSymbolFiltersAsync(string symbol, CancellationToken ct = default)
     {
-        "1M"   => KlineInterval.OneMinute,
-        "3M"   => KlineInterval.ThreeMinutes,
-        "5M"   => KlineInterval.FiveMinutes,
-        "15M"  => KlineInterval.FifteenMinutes,
-        "30M"  => KlineInterval.ThirtyMinutes,
-        "1H"   => KlineInterval.OneHour,
-        "2H"   => KlineInterval.TwoHours,
-        "4H"   => KlineInterval.FourHours,
-        "6H"   => KlineInterval.SixHours,
-        "12H"  => KlineInterval.TwelveHours,
-        "1D"   => KlineInterval.OneDay,
-        "1W"   => KlineInterval.OneWeek,
-        "1MN"  => KlineInterval.OneMonth,
-        _      => KlineInterval.OneHour
-    };
+        if (string.IsNullOrWhiteSpace(symbol)) return null;
+        symbol = symbol.Trim().ToUpperInvariant();
+
+        var cached = _filters.Get(symbol);
+        if (cached is not null) return cached;
+
+        var okxSymbol = OKXSymbolHelper.ToSpotSymbol(symbol);
+        var result = await _restClient.UnifiedApi.ExchangeData.GetSymbolsAsync(
+            InstrumentType.Spot, symbol: okxSymbol, ct: ct);
+        if (!result.Success || result.Data is null) return null;
+
+        var info = result.Data
+            .FirstOrDefault(i => string.Equals(i.Symbol, okxSymbol, StringComparison.OrdinalIgnoreCase));
+        if (info is null) return null;
+
+        var filters = SymbolFilters.Create(symbol, info.TickSize, info.LotSize, info.MinimumOrderSize, null);
+        _filters.Store(filters);
+        return filters;
+    }
 }

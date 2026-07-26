@@ -176,16 +176,16 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
     public string SelWalletIcon { get; private set; } = "◈";
     public string SelWalletIconBg { get; private set; } = "#07111a";
     public string SelWalletIconBorder { get; private set; } = "#111d29";
-    public string SelWalletIconColor { get; private set; } = "#8fa3b8";
-    public string SelWalletDot { get; private set; } = "#3ddc84";
-    public string SelWalletTypeBadgeColor { get; private set; } = "#8fa3b8";
+    public string SelWalletIconColor { get; private set; } = SemanticColor.Muted;
+    public string SelWalletDot { get; private set; } = SemanticColor.Positive;
+    public string SelWalletTypeBadgeColor { get; private set; } = SemanticColor.Muted;
     public string SelWalletTypeBadgeBg { get; private set; } = "rgba(143,163,184,.1)";
 
     // Checks overall
     public string OverallScore { get; private set; } = "—";
     public string OverallLabel { get; private set; } = "";
     public string OverallDesc  { get; private set; } = "";
-    public string OverallColor { get; private set; } = "#3ddc84";
+    public string OverallColor { get; private set; } = SemanticColor.Positive;
     public string OverallBg     { get; private set; } = "#061e14";
     public string OverallBorder { get; private set; } = "#0d2a1e";
     public string ApprovalCount { get; private set; } = "0";
@@ -241,12 +241,12 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
     public string AddrPlaceholder => _selChain == "SOL" ? "e.g. 8Xmv…K3qP" : "e.g. 0x3f4a…8d91";
     public string ModalResultBg     => ModalIsMeme ? "#1a0d05" : "#061e14";
     public string ModalResultBorder => ModalIsMeme ? "#3d2d00" : "#0d2a1e";
-    public string ModalResultColor  => ModalIsMeme ? "#f4b860" : "#3ddc84";
+    public string ModalResultColor  => ModalIsMeme ? SemanticColor.Warning : SemanticColor.Positive;
     public string ModalResultIcon   => ModalIsMeme ? "⚠️" : "✓";
     public string ModalResultLabel  => ModalIsMeme ? "HIGH RISK — proceed with caution" : "All checks passed";
     public string ModalResultDesc   => ModalIsMeme ? "Meme wallet added with extra monitoring enabled" : "Wallet is safe to add to your portfolio";
     public string ConfirmBtnBg      => ModalIsMeme ? "#1a0d05" : "#0a2d1e";
-    public string ConfirmBtnColor   => ModalIsMeme ? "#f97316" : "#21e6c1";
+    public string ConfirmBtnColor   => ModalIsMeme ? "#f97316" : SemanticColor.Accent;
 
     // ── State setters that also re-render chrome ─────────────────────────────
     private void SetWalletFilter(string t) { _walletTypeFilter = t; _selectedWalletIndex = 0; RecomputeAll(); }
@@ -327,7 +327,7 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
         var amtStr = t.Amount == 0
             ? "—"
             : (t.Direction == "out" ? "-" : t.Direction == "in" ? "+" : "") + t.Amount.ToString("0.####", CultureInfo.InvariantCulture) + " " + t.AssetSymbol;
-        var amtColor = t.Direction == "out" ? "#ff8080" : t.Direction == "in" ? "#3ddc84" : "#e8f4ff";
+        var amtColor = t.Direction == "out" ? SemanticColor.Negative : t.Direction == "in" ? SemanticColor.Positive : SemanticColor.Primary;
         var hashShort = t.Hash.Length > 12 ? t.Hash[..8] + "…" : t.Hash;
         var fee = t.FeeNative > 0 ? t.FeeNative.ToString("0.######", CultureInfo.InvariantCulture) + " " + t.AssetSymbol : "";
         return new PfTxRow
@@ -335,7 +335,7 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
             Emoji = emoji, IconBg = iconBg, Action = t.Action, Amount = amtStr, AmountColor = amtColor,
             Hash = hashShort, Fee = fee,
             Status = t.Failed ? "FAILED" : "CONFIRMED",
-            StatusColor = t.Failed ? "#ff6b6b" : "#3ddc84",
+            StatusColor = t.Failed ? SemanticColor.Negative : SemanticColor.Positive,
             StatusBg = t.Failed ? "rgba(255,107,107,.1)" : "rgba(61,220,132,.1)",
             Time = TimeAgo(t.TimeUtc),
         };
@@ -386,9 +386,9 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
     {
         var (dot, color, border, bg) = a.RiskLevel switch
         {
-            "high"   => ("#ff6b6b", "#ff8080", "#3d0d0d", "rgba(255,107,107,.1)"),
-            "medium" => ("#f4b860", "#f4b860", "#3d2d00", "rgba(244,184,96,.1)"),
-            _         => ("#3ddc84", "#3ddc84", "#0d2a1e", "rgba(61,220,132,.08)"),
+            "high"   => (SemanticColor.Negative, SemanticColor.Negative, "#3d0d0d", "rgba(255,107,107,.1)"),
+            "medium" => (SemanticColor.Warning, SemanticColor.Warning, "#3d2d00", "rgba(244,184,96,.1)"),
+            _         => (SemanticColor.Positive, SemanticColor.Positive, "#0d2a1e", "rgba(61,220,132,.08)"),
         };
         return new PfApproval
         {
@@ -572,9 +572,9 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
             TypeFilters.Add(new PfTypeFilter
             {
                 Label = t, Key = t,
-                Border = active ? "#21e6c1" : "#152535",
+                Border = active ? SemanticColor.Accent : "#152535",
                 Bg = active ? "rgba(33,230,193,.12)" : "#07111a",
-                Color = active ? "#21e6c1" : "#3d5a72",
+                Color = active ? SemanticColor.Accent : "#3d5a72",
                 Command = ReactiveCommand.Create(() => SetWalletFilter(t1), outputScheduler: App.UiScheduler),
             });
         }
@@ -588,15 +588,15 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
             BlotterTabs.Add(new PfBlotterTab
             {
                 Label = t, Key = t,
-                Border = active ? "#21e6c1" : "transparent",
-                Color = active ? "#21e6c1" : "#3d5a72",
+                Border = active ? SemanticColor.Accent : "transparent",
+                Color = active ? SemanticColor.Accent : "#3d5a72",
                 Command = ReactiveCommand.Create(() => SetBlotterTab(t1), outputScheduler: App.UiScheduler),
             });
         }
 
         BlotterTotals.Clear();
-        BlotterTotals.Add(new PfBlotterTotal { Label = "ASSETS", Value = _rebalance.Allocations.Count.ToString(CultureInfo.InvariantCulture), Color = "#e8f4ff" });
-        BlotterTotals.Add(new PfBlotterTotal { Label = "TOTAL",  Value = FormatMoneyShort(total), Color = "#21e6c1" });
+        BlotterTotals.Add(new PfBlotterTotal { Label = "ASSETS", Value = _rebalance.Allocations.Count.ToString(CultureInfo.InvariantCulture), Color = SemanticColor.Primary });
+        BlotterTotals.Add(new PfBlotterTotal { Label = "TOTAL",  Value = FormatMoneyShort(total), Color = SemanticColor.Accent });
 
         // Right tabs (1:1 labels: CHECKS/TOKENS/HISTORY/ANALYTICS).
         RightTabs.Clear();
@@ -608,8 +608,8 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
             {
                 Label = t, Key = t,
                 Bg = active ? "rgba(33,230,193,.05)" : "transparent",
-                Border = active ? "#21e6c1" : "transparent",
-                Color = active ? "#21e6c1" : "#3d5a72",
+                Border = active ? SemanticColor.Accent : "transparent",
+                Color = active ? SemanticColor.Accent : "#3d5a72",
                 Command = ReactiveCommand.Create(() => SetRightTab(t1), outputScheduler: App.UiScheduler),
             });
         }
@@ -617,15 +617,15 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
         // Summary cards — real total; rest honest placeholders / heuristic risk.
         var memeWallets = _savedWallets.Count(w => InferType(w) == "MEME");
         SummaryCards.Clear();
-        SummaryCards.Add(new PfSummaryCard { Label = "TOTAL PORTFOLIO", Value = FormatMoneyShort(total), Color = "#e8f4ff", Sub = "live", SubColor = "#3ddc84", SubLabel = "aggregated", Icon = "◈" });
+        SummaryCards.Add(new PfSummaryCard { Label = "TOTAL PORTFOLIO", Value = FormatMoneyShort(total), Color = SemanticColor.Primary, Sub = "live", SubColor = SemanticColor.Positive, SubLabel = "aggregated", Icon = "◈" });
         SummaryCards.Add(new PfSummaryCard { Label = "BEST WALLET 24H", Value = "—", Color = "#5a7a94", Sub = "", SubColor = "#3d5a72", SubLabel = "no 24h feed", Icon = "↑" });
         SummaryCards.Add(new PfSummaryCard { Label = "FEES PAID TODAY", Value = "—", Color = "#5a7a94", Sub = "", SubColor = "#3d5a72", SubLabel = "no feed", Icon = "⛽" });
         SummaryCards.Add(new PfSummaryCard
         {
             Label = "RUG RISK INDEX",
             Value = memeWallets == 0 ? "LOW" : memeWallets < 2 ? "MED" : "HIGH",
-            Color = memeWallets == 0 ? "#3ddc84" : memeWallets < 2 ? "#f4b860" : "#ff8080",
-            Sub = $"{memeWallets} meme", SubColor = "#f4b860", SubLabel = memeWallets == 0 ? "clear" : "review", Icon = "🛡",
+            Color = memeWallets == 0 ? SemanticColor.Positive : memeWallets < 2 ? SemanticColor.Warning : SemanticColor.Negative,
+            Sub = $"{memeWallets} meme", SubColor = SemanticColor.Warning, SubLabel = memeWallets == 0 ? "clear" : "review", Icon = "🛡",
         });
     }
 
@@ -653,8 +653,8 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
                 Icon = st.icon, IconBg = st.iconBg, IconBorder = st.iconBorder, IconColor = st.iconColor,
                 Accent = st.accent,
                 HealthPct = WalletHealth(w),
-                HealthColor = "#3ddc84",
-                StatusDot = w.IsReadOnly ? "#5bc0ff" : "#3ddc84",
+                HealthColor = SemanticColor.Positive,
+                StatusDot = w.IsReadOnly ? "#5bc0ff" : SemanticColor.Positive,
                 TypeBadgeColor = st.badgeColor, TypeBadgeBg = st.badgeBg,
                 RowBg = selected ? "rgba(33,230,193,.04)" : "transparent",
                 SelectCommand = SelectWalletCommand,
@@ -682,7 +682,7 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
                 Qty = a.BalanceLabel, Value = a.ValueLabel, Price = a.PriceLabel,
                 Pnl = "—", PnlColor = "#3d5a72", Chg = "—", ChgColor = "#3d5a72",
                 Tag = tag, TagColor = st.color, TagBg = st.bg,
-                IconBg = "#07111a", IconBorder = "#111d29", IconColor = "#8fa3b8",
+                IconBg = "#07111a", IconBorder = "#111d29", IconColor = SemanticColor.Muted,
             });
         }
 
@@ -695,7 +695,7 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
                 Sym = a.Symbol, Name = a.Symbol,
                 Qty = a.BalanceLabel, Price = a.PriceLabel, Value = a.ValueLabel,
                 Chg = "—", ChgColor = "#3d5a72",
-                IconBg = "#07111a", IconBorder = "#111d29", IconColor = "#8fa3b8",
+                IconBg = "#07111a", IconBorder = "#111d29", IconColor = SemanticColor.Muted,
             });
         }
 
@@ -714,7 +714,7 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
             var pct = sumSrc > 0 ? (double)amt / sumSrc * 100 : 0;
             AllocationBars.Add(new PfAllocBar { Label = label, Amount = FormatMoney((double)amt), Pct = pct.ToString("F1", CultureInfo.InvariantCulture) + "%", Width = pct, Color = color });
         }
-        AddBar("CEX Spot", cex, "#21e6c1");
+        AddBar("CEX Spot", cex, SemanticColor.Accent);
         AddBar("DEX/DeFi", dex, "#a855f7");
 
         // TOKENS panel mirrors real holdings (portfolio-wide) with allocation share.
@@ -725,8 +725,8 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
             WalletTokens.Add(new PfToken
             {
                 Sym = a.Symbol, Name = a.Symbol, Qty = a.BalanceLabel, Price = a.PriceLabel, Value = a.ValueLabel,
-                Chg = "—", ChgColor = "#3d5a72", AllocPct = pct, AllocColor = "#21e6c1",
-                IconBg = "#07111a", IconBorder = "#111d29", IconColor = "#8fa3b8",
+                Chg = "—", ChgColor = "#3d5a72", AllocPct = pct, AllocColor = SemanticColor.Accent,
+                IconBg = "#07111a", IconBorder = "#111d29", IconColor = SemanticColor.Muted,
             });
         }
 
@@ -753,9 +753,9 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
         SelWalletIcon = w is null ? "◈" : st.icon;
         SelWalletIconBg = w is null ? "#07111a" : st.iconBg;
         SelWalletIconBorder = w is null ? "#111d29" : st.iconBorder;
-        SelWalletIconColor = w is null ? "#8fa3b8" : st.iconColor;
-        SelWalletDot = w is null ? "#3d5a72" : (w.IsReadOnly ? "#5bc0ff" : "#3ddc84");
-        SelWalletTypeBadgeColor = w is null ? "#8fa3b8" : st.badgeColor;
+        SelWalletIconColor = w is null ? SemanticColor.Muted : st.iconColor;
+        SelWalletDot = w is null ? "#3d5a72" : (w.IsReadOnly ? "#5bc0ff" : SemanticColor.Positive);
+        SelWalletTypeBadgeColor = w is null ? SemanticColor.Muted : st.badgeColor;
         SelWalletTypeBadgeBg = w is null ? "rgba(143,163,184,.1)" : st.badgeBg;
         foreach (var n in new[] { nameof(SelWalletName), nameof(SelWalletType), nameof(SelWalletAddr),
                  nameof(SelWalletIcon), nameof(SelWalletIconBg), nameof(SelWalletIconBorder), nameof(SelWalletIconColor),
@@ -766,7 +766,7 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
         WalletStats.Clear();
         WalletStats.Add(new PfWalletStat { Label = "BALANCE", Value = "—", Color = "#5a7a94" });
         WalletStats.Add(new PfWalletStat { Label = "24H PNL", Value = "—", Color = "#5a7a94" });
-        WalletStats.Add(new PfWalletStat { Label = "HEALTH",  Value = w is null ? "—" : $"{WalletHealth(w):F0}%", Color = "#3ddc84" });
+        WalletStats.Add(new PfWalletStat { Label = "HEALTH",  Value = w is null ? "—" : $"{WalletHealth(w):F0}%", Color = SemanticColor.Positive });
 
         // Deterministic security-checks engine (rule-based, not fabricated data).
         BuildChecks(type);
@@ -796,7 +796,7 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
         OverallScore = highRisk ? "42" : perp ? "71" : "96";
         OverallLabel = highRisk ? "HIGH RISK" : perp ? "MODERATE" : "SECURE";
         OverallDesc  = highRisk ? "Multiple risk signals detected" : perp ? "Monitor leverage exposure" : "All checks passed";
-        OverallColor = highRisk ? "#ff8080" : perp ? "#f4b860" : "#3ddc84";
+        OverallColor = highRisk ? SemanticColor.Negative : perp ? SemanticColor.Warning : SemanticColor.Positive;
         OverallBg    = highRisk ? "#1a0505" : perp ? "#1a1205" : "#061e14";
         OverallBorder= highRisk ? "#3d0d0d" : perp ? "#3d2d00" : "#0d2a1e";
         RaiseOverall();
@@ -804,8 +804,8 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
         PfCheckItem Item(string label, string value, bool ok, bool warn = false) => new()
         {
             Label = label, Value = value,
-            ValueColor = ok ? "#3ddc84" : warn ? "#f4b860" : "#ff8080",
-            Dot = ok ? "#3ddc84" : warn ? "#f4b860" : "#ff6b6b",
+            ValueColor = ok ? SemanticColor.Positive : warn ? SemanticColor.Warning : SemanticColor.Negative,
+            Dot = ok ? SemanticColor.Positive : warn ? SemanticColor.Warning : SemanticColor.Negative,
             DotBg = ok ? "rgba(61,220,132,.1)" : warn ? "rgba(244,184,96,.1)" : "rgba(255,107,107,.1)",
             DotBorder = ok ? "#0d2a1e" : warn ? "#3d2d00" : "#3d0d0d",
         };
@@ -813,7 +813,7 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
         CheckGroups.Add(new PfCheckGroup
         {
             Icon = "🛡", Name = "CONTRACT SECURITY", Status = highRisk ? "RISK" : "PASS",
-            StatusColor = highRisk ? "#ff8080" : "#3ddc84", StatusBg = highRisk ? "rgba(255,128,128,.1)" : "rgba(61,220,132,.1)",
+            StatusColor = highRisk ? SemanticColor.Negative : SemanticColor.Positive, StatusBg = highRisk ? "rgba(255,128,128,.1)" : "rgba(61,220,132,.1)",
             Items = [ Item("Contract Verified", highRisk ? "UNVERIFIED" : "✓ VERIFIED", !highRisk),
                       Item("Proxy Risk", highRisk ? "DETECTED" : "NONE", !highRisk, highRisk),
                       Item("Honeypot Check", highRisk ? "WARNING" : "CLEAN", !highRisk, highRisk) ],
@@ -821,21 +821,21 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
         CheckGroups.Add(new PfCheckGroup
         {
             Icon = "🐋", Name = "WHALE WATCH", Status = "INFO", StatusColor = "#5bc0ff", StatusBg = "rgba(91,192,255,.1)",
-            Items = [ new PfCheckItem { Label = "Top 10 Holders", Value = highRisk ? "72.4%" : "34.1%", ValueColor = highRisk ? "#ff8080" : "#8fa3b8", Dot = "#5bc0ff", DotBg = "rgba(91,192,255,.1)", DotBorder = "#0d2240" },
-                      new PfCheckItem { Label = "Large Txs (24h)", Value = highRisk ? "14 found" : "3 found", ValueColor = "#8fa3b8", Dot = "#5bc0ff", DotBg = "rgba(91,192,255,.1)", DotBorder = "#0d2240" },
+            Items = [ new PfCheckItem { Label = "Top 10 Holders", Value = highRisk ? "72.4%" : "34.1%", ValueColor = highRisk ? SemanticColor.Negative : SemanticColor.Muted, Dot = "#5bc0ff", DotBg = "rgba(91,192,255,.1)", DotBorder = "#0d2240" },
+                      new PfCheckItem { Label = "Large Txs (24h)", Value = highRisk ? "14 found" : "3 found", ValueColor = SemanticColor.Muted, Dot = "#5bc0ff", DotBg = "rgba(91,192,255,.1)", DotBorder = "#0d2240" },
                       Item("Dev Wallet", highRisk ? "ACTIVE" : "INACTIVE", !highRisk, highRisk) ],
         });
         CheckGroups.Add(new PfCheckGroup
         {
             Icon = "💧", Name = "LIQUIDITY HEALTH", Status = highRisk ? "WARN" : "GOOD",
-            StatusColor = highRisk ? "#f4b860" : "#3ddc84", StatusBg = highRisk ? "rgba(244,184,96,.1)" : "rgba(61,220,132,.1)",
+            StatusColor = highRisk ? SemanticColor.Warning : SemanticColor.Positive, StatusBg = highRisk ? "rgba(244,184,96,.1)" : "rgba(61,220,132,.1)",
             Items = [ Item("Pool Depth", highRisk ? "$2.1M" : "$420M+", !highRisk, highRisk),
                       Item("LP Lock Status", highRisk ? "30 days" : "LOCKED 2y", !highRisk, highRisk),
                       Item("Slippage Risk", highRisk ? "8–15%" : "<0.5%", !highRisk) ],
         });
         CheckGroups.Add(new PfCheckGroup
         {
-            Icon = "🔐", Name = "WALLET SECURITY", Status = "PASS", StatusColor = "#3ddc84", StatusBg = "rgba(61,220,132,.1)",
+            Icon = "🔐", Name = "WALLET SECURITY", Status = "PASS", StatusColor = SemanticColor.Positive, StatusBg = "rgba(61,220,132,.1)",
             Items = [ Item("Seed Phrase Exposure", "NOT DETECTED", true),
                       Item("Phishing Domains", "NONE", true),
                       Item("2FA Status", type == "CEX" ? "ENABLED" : "N/A", true) ],
@@ -885,17 +885,17 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
                 Command = ReactiveCommand.Create(() => { ModalType = k; ModalStep = 2; }, outputScheduler: App.UiScheduler),
             });
         }
-        Add("CEX", "🏦", "CEX Spot", "Centralized exchange. Connect via API key.", "#f0b90b", "#1a1a05", "#3d3a00", "#21e6c1",
-            [new PfModalTag { Label = "Binance", Color = "#8fa3b8", Bg = "rgba(143,163,184,.1)" }, new PfModalTag { Label = "OKX", Color = "#8fa3b8", Bg = "rgba(143,163,184,.1)" }]);
-        Add("DEX", "🦊", "DEX Wallet", "Self-custody wallet. Track by address.", "#f6851b", "#1a0b05", "#3d1a00", "#21e6c1",
+        Add("CEX", "🏦", "CEX Spot", "Centralized exchange. Connect via API key.", "#f0b90b", "#1a1a05", "#3d3a00", SemanticColor.Accent,
+            [new PfModalTag { Label = "Binance", Color = SemanticColor.Muted, Bg = "rgba(143,163,184,.1)" }, new PfModalTag { Label = "OKX", Color = SemanticColor.Muted, Bg = "rgba(143,163,184,.1)" }]);
+        Add("DEX", "🦊", "DEX Wallet", "Self-custody wallet. Track by address.", "#f6851b", "#1a0b05", "#3d1a00", SemanticColor.Accent,
             [new PfModalTag { Label = "MetaMask", Color = "#a855f7", Bg = "rgba(168,85,247,.1)" }, new PfModalTag { Label = "Phantom", Color = "#9945FF", Bg = "rgba(153,69,255,.1)" }]);
         Add("MEME", "🔥", "Meme Wallet", "High-risk meme token degen wallet.", "#f97316", "#1a0505", "#3d0d0d", "#f97316",
-            [new PfModalTag { Label = "SOL chain", Color = "#f97316", Bg = "rgba(249,115,22,.1)" }, new PfModalTag { Label = "Rug checks", Color = "#ff8080", Bg = "rgba(255,128,128,.1)" }]);
-        Add("STAKE", "🔒", "Staking", "Staking / liquid staking protocols.", "#21e6c1", "#05101a", "#0d2240", "#21e6c1",
-            [new PfModalTag { Label = "Lido", Color = "#21e6c1", Bg = "rgba(33,230,193,.1)" }, new PfModalTag { Label = "Marinade", Color = "#3ddc84", Bg = "rgba(61,220,132,.1)" }]);
+            [new PfModalTag { Label = "SOL chain", Color = "#f97316", Bg = "rgba(249,115,22,.1)" }, new PfModalTag { Label = "Rug checks", Color = SemanticColor.Negative, Bg = "rgba(255,128,128,.1)" }]);
+        Add("STAKE", "🔒", "Staking", "Staking / liquid staking protocols.", SemanticColor.Accent, "#05101a", "#0d2240", SemanticColor.Accent,
+            [new PfModalTag { Label = "Lido", Color = SemanticColor.Accent, Bg = "rgba(33,230,193,.1)" }, new PfModalTag { Label = "Marinade", Color = SemanticColor.Positive, Bg = "rgba(61,220,132,.1)" }]);
         Add("PERP", "⚡", "Futures / Perp", "Leveraged perpetual contracts.", "#5bc0ff", "#05101a", "#0d2240", "#5bc0ff",
             [new PfModalTag { Label = "Bybit", Color = "#5bc0ff", Bg = "rgba(91,192,255,.1)" }, new PfModalTag { Label = "dYdX", Color = "#a855f7", Bg = "rgba(168,85,247,.1)" }]);
-        Add("NFT", "🖼", "NFT Wallet", "Track NFT portfolio & floor prices.", "#e8f4ff", "#0d0a1a", "#1a1440", "#a855f7",
+        Add("NFT", "🖼", "NFT Wallet", "Track NFT portfolio & floor prices.", SemanticColor.Primary, "#0d0a1a", "#1a1440", "#a855f7",
             [new PfModalTag { Label = "OpenSea", Color = "#5bc0ff", Bg = "rgba(91,192,255,.1)" }, new PfModalTag { Label = "Blur", Color = "#f97316", Bg = "rgba(249,115,22,.1)" }]);
     }
 
@@ -903,7 +903,7 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
     {
         ModalStepDots.Clear();
         for (int n = 1; n <= 3; n++)
-            ModalStepDots.Add(new PfStepDot { Width = n == _modalStep ? 24 : 8, Color = n <= _modalStep ? "#21e6c1" : "#152535" });
+            ModalStepDots.Add(new PfStepDot { Width = n == _modalStep ? 24 : 8, Color = n <= _modalStep ? SemanticColor.Accent : "#152535" });
     }
 
     private void BuildCexOptions()
@@ -916,8 +916,8 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
             CexOptions.Add(new PfCexOption
             {
                 Label = name, Logo = logos.GetValueOrDefault(name, "🏦"),
-                Border = active ? "#21e6c1" : "#152535", Bg = active ? "rgba(33,230,193,.08)" : "#07111a",
-                LabelColor = active ? "#21e6c1" : "#5a7a94",
+                Border = active ? SemanticColor.Accent : "#152535", Bg = active ? "rgba(33,230,193,.08)" : "#07111a",
+                LabelColor = active ? SemanticColor.Accent : "#5a7a94",
                 Command = ReactiveCommand.Create(() => { _selCex = n; RecomputeModal(); }, outputScheduler: App.UiScheduler),
             });
         }
@@ -931,8 +931,8 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
             var active = _selChain == c; var cc = c;
             ChainOptions.Add(new PfChainOption
             {
-                Label = c, Border = active ? "#21e6c1" : "#152535", Bg = active ? "rgba(33,230,193,.1)" : "#07111a",
-                Color = active ? "#21e6c1" : "#3d5a72",
+                Label = c, Border = active ? SemanticColor.Accent : "#152535", Bg = active ? "rgba(33,230,193,.1)" : "#07111a",
+                Color = active ? SemanticColor.Accent : "#3d5a72",
                 Command = ReactiveCommand.Create(() => { _selChain = cc; RecomputeModal(); }, outputScheduler: App.UiScheduler),
             });
         }
@@ -947,8 +947,8 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
             StakeProtocols.Add(new PfStakeProtocol
             {
                 Logo = logo, Label = label, Apy = apy,
-                Border = active ? "#21e6c1" : "#152535", Bg = active ? "rgba(33,230,193,.08)" : "#07111a",
-                LabelColor = active ? "#21e6c1" : "#c8dcef",
+                Border = active ? SemanticColor.Accent : "#152535", Bg = active ? "rgba(33,230,193,.08)" : "#07111a",
+                LabelColor = active ? SemanticColor.Accent : "#c8dcef",
                 Command = ReactiveCommand.Create(() => { _selStake = k; RecomputeModal(); }, outputScheduler: App.UiScheduler),
             });
         }
@@ -981,11 +981,11 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
     {
         ModalChecks.Clear();
         var meme = ModalIsMeme;
-        ModalChecks.Add(new PfModalCheck { Icon = "🔑", Label = "API Permissions", Desc = "Checking key scope — read-only required", Border = "#0d2a1e", IconBg = "rgba(61,220,132,.1)", Status = "PASS", StatusColor = "#3ddc84", StatusBg = "rgba(61,220,132,.1)" });
-        ModalChecks.Add(new PfModalCheck { Icon = "🛡", Label = "Contract Verification", Desc = meme ? "Scanning contract for rug vectors" : "Verifying contract source on-chain", Border = meme ? "#3d0d0d" : "#0d2a1e", IconBg = meme ? "rgba(255,107,107,.1)" : "rgba(33,230,193,.1)", Status = meme ? "WARNING" : "PASS", StatusColor = meme ? "#f4b860" : "#3ddc84", StatusBg = meme ? "rgba(244,184,96,.1)" : "rgba(61,220,132,.1)" });
-        ModalChecks.Add(new PfModalCheck { Icon = "🐋", Label = "Whale Concentration", Desc = "Top-10 holder share analysis", Border = "#0d2240", IconBg = "rgba(91,192,255,.1)", Status = meme ? "HIGH" : "LOW", StatusColor = meme ? "#ff8080" : "#3ddc84", StatusBg = meme ? "rgba(255,128,128,.1)" : "rgba(61,220,132,.1)" });
-        ModalChecks.Add(new PfModalCheck { Icon = "💧", Label = "Liquidity Depth", Desc = "Pool depth & LP lock status", Border = meme ? "#3d2d00" : "#0d2a1e", IconBg = meme ? "rgba(244,184,96,.1)" : "rgba(33,230,193,.1)", Status = meme ? "LOW" : "DEEP", StatusColor = meme ? "#f4b860" : "#3ddc84", StatusBg = meme ? "rgba(244,184,96,.1)" : "rgba(61,220,132,.1)" });
-        ModalChecks.Add(new PfModalCheck { Icon = "🔐", Label = "Phishing Scan", Desc = "Domain & approval risk check", Border = "#0d2a1e", IconBg = "rgba(61,220,132,.1)", Status = "CLEAN", StatusColor = "#3ddc84", StatusBg = "rgba(61,220,132,.1)" });
+        ModalChecks.Add(new PfModalCheck { Icon = "🔑", Label = "API Permissions", Desc = "Checking key scope — read-only required", Border = "#0d2a1e", IconBg = "rgba(61,220,132,.1)", Status = "PASS", StatusColor = SemanticColor.Positive, StatusBg = "rgba(61,220,132,.1)" });
+        ModalChecks.Add(new PfModalCheck { Icon = "🛡", Label = "Contract Verification", Desc = meme ? "Scanning contract for rug vectors" : "Verifying contract source on-chain", Border = meme ? "#3d0d0d" : "#0d2a1e", IconBg = meme ? "rgba(255,107,107,.1)" : "rgba(33,230,193,.1)", Status = meme ? "WARNING" : "PASS", StatusColor = meme ? SemanticColor.Warning : SemanticColor.Positive, StatusBg = meme ? "rgba(244,184,96,.1)" : "rgba(61,220,132,.1)" });
+        ModalChecks.Add(new PfModalCheck { Icon = "🐋", Label = "Whale Concentration", Desc = "Top-10 holder share analysis", Border = "#0d2240", IconBg = "rgba(91,192,255,.1)", Status = meme ? "HIGH" : "LOW", StatusColor = meme ? SemanticColor.Negative : SemanticColor.Positive, StatusBg = meme ? "rgba(255,128,128,.1)" : "rgba(61,220,132,.1)" });
+        ModalChecks.Add(new PfModalCheck { Icon = "💧", Label = "Liquidity Depth", Desc = "Pool depth & LP lock status", Border = meme ? "#3d2d00" : "#0d2a1e", IconBg = meme ? "rgba(244,184,96,.1)" : "rgba(33,230,193,.1)", Status = meme ? "LOW" : "DEEP", StatusColor = meme ? SemanticColor.Warning : SemanticColor.Positive, StatusBg = meme ? "rgba(244,184,96,.1)" : "rgba(61,220,132,.1)" });
+        ModalChecks.Add(new PfModalCheck { Icon = "🔐", Label = "Phishing Scan", Desc = "Domain & approval risk check", Border = "#0d2a1e", IconBg = "rgba(61,220,132,.1)", Status = "CLEAN", StatusColor = SemanticColor.Positive, StatusBg = "rgba(61,220,132,.1)" });
     }
 
     // ── Static helpers ───────────────────────────────────────────────────────
@@ -1008,20 +1008,20 @@ public sealed class PortfolioDeskViewModel : ReactiveObject
 
     private static Style TypeStyle(string type) => type switch
     {
-        "CEX"   => new("CEX", "#111111", "#2a2a2a", "#e8f4ff", "#3d5a72", "#8fa3b8", "rgba(143,163,184,.1)"),
+        "CEX"   => new("CEX", "#111111", "#2a2a2a", SemanticColor.Primary, "#3d5a72", SemanticColor.Muted, "rgba(143,163,184,.1)"),
         "DEX"   => new("DEX", "#1a0b05", "#3d1a00", "#f6851b", "#f6851b", "#a855f7", "rgba(168,85,247,.12)"),
-        "MEME"  => new("🔥", "#1a0505", "#3d0d0d", "#ff6b6b", "#f97316", "#f97316", "rgba(249,115,22,.12)"),
-        "STAKE" => new("STK", "#05101a", "#0d2240", "#21e6c1", "#21e6c1", "#21e6c1", "rgba(33,230,193,.1)"),
-        "PERP"  => new("PRP", "#0d1a2a", "#0d2240", "#e8f4ff", "#5bc0ff", "#5bc0ff", "rgba(91,192,255,.1)"),
+        "MEME"  => new("🔥", "#1a0505", "#3d0d0d", SemanticColor.Negative, "#f97316", "#f97316", "rgba(249,115,22,.12)"),
+        "STAKE" => new("STK", "#05101a", "#0d2240", SemanticColor.Accent, SemanticColor.Accent, SemanticColor.Accent, "rgba(33,230,193,.1)"),
+        "PERP"  => new("PRP", "#0d1a2a", "#0d2240", SemanticColor.Primary, "#5bc0ff", "#5bc0ff", "rgba(91,192,255,.1)"),
         "NFT"   => new("NFT", "#0d0a1a", "#1a1440", "#a855f7", "#a855f7", "#a855f7", "rgba(168,85,247,.12)"),
-        _        => new("◈", "#07111a", "#111d29", "#8fa3b8", "#21e6c1", "#8fa3b8", "rgba(143,163,184,.1)"),
+        _        => new("◈", "#07111a", "#111d29", SemanticColor.Muted, SemanticColor.Accent, SemanticColor.Muted, "rgba(143,163,184,.1)"),
     };
 
     private readonly record struct TagStyleT(string color, string bg);
     private static TagStyleT TagStyle(string tag) => tag switch
     {
         "DEX" => new("#a855f7", "rgba(168,85,247,.1)"),
-        _      => new("#8fa3b8", "rgba(143,163,184,.1)"),
+        _      => new(SemanticColor.Muted, "rgba(143,163,184,.1)"),
     };
 
     private static double WalletHealth(SavedWalletViewModel w)

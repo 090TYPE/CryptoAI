@@ -10,7 +10,7 @@
          hosted in the Body presenter picks it up without repeating the setters -->
     <Style Selector="TextBlock.WidgetEmpty">
       <Setter Property="Foreground" Value="{DynamicResource TextSoft}" />
-      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontSize" Value="{DynamicResource FsCaption}" />
       <Setter Property="TextWrapping" Value="Wrap" />
       <Setter Property="TextAlignment" Value="Center" />
       <Setter Property="HorizontalAlignment" Value="Center" />
@@ -22,27 +22,27 @@
     <Grid RowDefinitions="Auto,*">
       <Grid Grid.Row="0" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,0,0,10">
         <TextBlock Grid.Column="0" x:Name="DragHandle" Text="☰" Margin="0,0,8,0"
-                   Foreground="#8FA3B8" Cursor="SizeAll"
+                   Foreground="{DynamicResource TextMuted}" Cursor="SizeAll"
                    AutomationProperties.Name="Drag widget"
                    IsVisible="{Binding $parent[dash:WidgetHost].IsEditMode}" />
-        <Border Grid.Column="1" Width="3" Height="13" CornerRadius="2" Background="#21E6C1"
-                Margin="0,0,9,0" VerticalAlignment="Center" />
+        <Border Grid.Column="1" Width="3" Height="13" CornerRadius="2" Background="{DynamicResource Accent}"
+                Margin="0,0,8,0" VerticalAlignment="Center" />
         <TextBlock Grid.Column="2" Text="{Binding Title}" Classes="WidgetTitle" VerticalAlignment="Center" />
         <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="3" Margin="0,0,6,0"
                     IsVisible="{Binding $parent[dash:WidgetHost].IsEditMode}">
-          <Button Content="W−" FontSize="11" Padding="6,2" ToolTip.Tip="Narrower"
+          <Button Content="W−" FontSize="{DynamicResource FsCaption}" Padding="6,2" ToolTip.Tip="Narrower"
                   AutomationProperties.Name="Make widget narrower"
                   Command="{Binding $parent[ItemsControl].DataContext.DashboardLayoutVM.NarrowCommand}"
                   CommandParameter="{Binding}" />
-          <Button Content="W+" FontSize="11" Padding="6,2" ToolTip.Tip="Wider"
+          <Button Content="W+" FontSize="{DynamicResource FsCaption}" Padding="6,2" ToolTip.Tip="Wider"
                   AutomationProperties.Name="Make widget wider"
                   Command="{Binding $parent[ItemsControl].DataContext.DashboardLayoutVM.WidenCommand}"
                   CommandParameter="{Binding}" />
-          <Button Content="H−" FontSize="11" Padding="6,2" ToolTip.Tip="Shorter"
+          <Button Content="H−" FontSize="{DynamicResource FsCaption}" Padding="6,2" ToolTip.Tip="Shorter"
                   AutomationProperties.Name="Make widget shorter"
                   Command="{Binding $parent[ItemsControl].DataContext.DashboardLayoutVM.ShorterCommand}"
                   CommandParameter="{Binding}" />
-          <Button Content="H+" FontSize="11" Padding="6,2" ToolTip.Tip="Taller"
+          <Button Content="H+" FontSize="{DynamicResource FsCaption}" Padding="6,2" ToolTip.Tip="Taller"
                   AutomationProperties.Name="Make widget taller"
                   Command="{Binding $parent[ItemsControl].DataContext.DashboardLayoutVM.TallerCommand}"
                   CommandParameter="{Binding}" />

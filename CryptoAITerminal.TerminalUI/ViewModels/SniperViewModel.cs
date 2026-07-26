@@ -167,14 +167,14 @@ public partial class SniperViewModel : ReactiveObject, IDisposable
     private string _latestRiskVerdictTitle = "No pair evaluated yet";
     private string _latestRiskNarrative = "Arm the sniper and let the feed inspect fresh pairs.";
     private string _latestRiskFlags = "No heuristic flags yet";
-    private string _latestRiskAccentHex = "#8FA3B8";
+    private string _latestRiskAccentHex = SemanticColor.Muted;
     private string _latestRiskScoreLabel = "Risk --/100";
     private string _latestStructureVerdict = "Structure guard idle";
     private string _latestStructureNarrative = "No pair evaluated for structural integrity yet.";
-    private string _latestStructureAccentHex = "#8FA3B8";
+    private string _latestStructureAccentHex = SemanticColor.Muted;
     private string _latestExecutionVerdict = "Execution guard idle";
     private string _latestExecutionReason = "No pair evaluated for execution yet.";
-    private string _latestExecutionAccentHex = "#8FA3B8";
+    private string _latestExecutionAccentHex = SemanticColor.Muted;
     private DateTime _lastScanLocal = DateTime.MinValue;
     private string _lastSignalMessageKind = "Idle";
     private string _lastSignalNarrative = "No signal message has been processed yet.";
@@ -209,9 +209,9 @@ public partial class SniperViewModel : ReactiveObject, IDisposable
     // ── Manual Snipe ──────────────────────────────────────────────────────────
     private string _manualSnipeAddress = string.Empty;
     private string _manualSnipeInfoLabel = string.Empty;
-    private string _manualSnipeInfoBrush = "#8FA3B8";
+    private string _manualSnipeInfoBrush = SemanticColor.Muted;
     private string _manualSnipeQuoteLabel = string.Empty;
-    private string _manualSnipeQuoteBrush = "#8FA3B8";
+    private string _manualSnipeQuoteBrush = SemanticColor.Muted;
     private decimal _manualSnipeTokenBalance;
     private string _manualSnipeTokenBalanceLabel = string.Empty;
     private decimal _manualSnipeSellAmount;
@@ -1351,7 +1351,7 @@ public partial class SniperViewModel : ReactiveObject, IDisposable
     public string BuyAmountLabel => PreferStableQuote ? $"Buy ({PreferredStableQuoteSymbol}-first shared quote)" : "Buy (native asset)";
     public string PreferredStableQuoteSymbol => _walletWorkspace.EffectiveGlobalQuoteAssetSymbol;
     public string StableQuoteModeLabel => PreferStableQuote ? $"{PreferredStableQuoteSymbol} ACTIVE" : "NATIVE MODE";
-    public string StableQuoteModeBrush => PreferStableQuote ? "#14E0C1" : "#8FA3B8";
+    public string StableQuoteModeBrush => PreferStableQuote ? SemanticColor.Positive : SemanticColor.Muted;
     public decimal StableQuoteBalance
     {
         get => _stableQuoteBalance;
@@ -1391,7 +1391,7 @@ public partial class SniperViewModel : ReactiveObject, IDisposable
         : HasEnoughStableQuoteBalanceForConfiguredBuy
             ? $"Configured buy amount fits the available {PreferredStableQuoteSymbol} balance."
             : $"Not enough {PreferredStableQuoteSymbol}. Need {BuyAmountBnb:0.######}, available {StableQuoteBalance:0.######}.";
-    public string StableQuoteAvailabilityBrush => HasEnoughStableQuoteBalanceForConfiguredBuy ? "#14E0C1" : "#FF6B6B";
+    public string StableQuoteAvailabilityBrush => HasEnoughStableQuoteBalanceForConfiguredBuy ? SemanticColor.Positive : SemanticColor.Negative;
     public string TakeProfitSummary =>
         AutoTakeProfitEnabled
             ? $"Auto-sell armed at +{TakeProfitPercent:0.##}%"
@@ -1530,8 +1530,8 @@ public partial class SniperViewModel : ReactiveObject, IDisposable
                 : "AUTO BLOCKED";
     public string SniperGuardStatusBrush => SniperGuardStatusLabel switch
     {
-        "AUTO PATH READY" => "#21E6C1",
-        "PAPER LOCK" => "#F4B860",
+        "AUTO PATH READY" => SemanticColor.Accent,
+        "PAPER LOCK" => SemanticColor.Warning,
         "WATCH MODE" => "#5BC0EB",
         _ => "#FF8A65"
     };

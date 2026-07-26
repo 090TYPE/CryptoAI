@@ -38,8 +38,8 @@ public sealed class ExchangeQuoteRowVM : ReactiveObject
         ? new SolidColorBrush(Color.Parse("#1A2E28"))
         : Brushes.Transparent;
     public IBrush  PriceBrush   => IsBest
-        ? new SolidColorBrush(Color.Parse("#21E6C1"))
-        : new SolidColorBrush(Color.Parse("#8FA3B8"));
+        ? new SolidColorBrush(Color.Parse(SemanticColor.Accent))
+        : new SolidColorBrush(Color.Parse(SemanticColor.Muted));
     public string  BestBadge    => IsBest ? "★ BEST" : "";
 
     public void RefreshFrom(ExchangeQuote q, bool isBest)
@@ -83,10 +83,10 @@ public sealed class RoutingLegRowVM
     internal string _shareLabel = "";
 
     public IBrush ExchangeBrush => _rank == 1
-        ? new SolidColorBrush(Color.Parse("#21E6C1"))
+        ? new SolidColorBrush(Color.Parse(SemanticColor.Accent))
         : _rank == 2
-            ? new SolidColorBrush(Color.Parse("#F4B860"))
-            : new SolidColorBrush(Color.Parse("#8FA3B8"));
+            ? new SolidColorBrush(Color.Parse(SemanticColor.Warning))
+            : new SolidColorBrush(Color.Parse(SemanticColor.Muted));
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -349,8 +349,8 @@ public sealed class BestExecutionViewModel : ReactiveObject, IDisposable
 
     // ── Brush constants ───────────────────────────────────────────────────────
 
-    private static readonly IBrush Teal  = new SolidColorBrush(Color.Parse("#21E6C1"));
-    private static readonly IBrush Amber = new SolidColorBrush(Color.Parse("#F4B860"));
+    private static readonly IBrush Teal  = new SolidColorBrush(Color.Parse(SemanticColor.Accent));
+    private static readonly IBrush Amber = new SolidColorBrush(Color.Parse(SemanticColor.Warning));
     private static readonly IBrush Gray  = new SolidColorBrush(Color.Parse("#3A4F63"));
 
     // ── IDisposable ───────────────────────────────────────────────────────────

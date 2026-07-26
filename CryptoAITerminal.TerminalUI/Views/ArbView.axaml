@@ -1,4 +1,4 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
@@ -12,25 +12,25 @@
               <StackPanel Grid.Column="0" Spacing="2">
                 <TextBlock Classes="H1" Text="CEX-CEX Spot Arbitrage" />
                 <TextBlock Text="{Binding CrossExchangeArbVM.StatusLabel}"
-                           FontSize="11" Foreground="#8FA3B8" />
+                           FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />
               </StackPanel>
               <!-- Auto-execute toggle -->
-              <Border Grid.Column="1" CornerRadius="6" Padding="10,5" VerticalAlignment="Center"
+              <Border Grid.Column="1" CornerRadius="6" Padding="10,4" VerticalAlignment="Center"
                       Background="{Binding CrossExchangeArbVM.AutoExecute,
                         FallbackValue=#0D1E2D}">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <ToggleSwitch IsChecked="{Binding CrossExchangeArbVM.AutoExecute}"
                                 OffContent="" OnContent="" Margin="0,-2,0,0"
                                 ToolTip.Tip="Places two real orders per opportunity, unattended, as often as once a second. Subject to the global paper-only guard." />
-                  <TextBlock Text="Auto-Execute" FontSize="11" FontWeight="SemiBold"
-                             Foreground="#F4B860" VerticalAlignment="Center" />
+                  <TextBlock Text="Auto-Execute" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold"
+                             Foreground="{DynamicResource Warning}" VerticalAlignment="Center" />
                 </StackPanel>
               </Border>
               <!-- Always visible: this warned only once auto-execute was already on, which is a
                    second too late to be a warning. -->
-              <Border Grid.Column="2" CornerRadius="6" Padding="8,5"
+              <Border Grid.Column="2" CornerRadius="6" Padding="8,4"
                       Background="#2A1500" VerticalAlignment="Center">
-                <TextBlock Text="⚠ PLACES LIVE ORDERS" FontSize="10" FontWeight="Bold"
+                <TextBlock Text="⚠ PLACES LIVE ORDERS" FontSize="{DynamicResource FsMicro}" FontWeight="Bold"
                            Foreground="#FFAA33" />
               </Border>
             </Grid>
@@ -55,7 +55,7 @@
                                Value="{Binding CrossExchangeArbVM.TakerFeePct}"
                                Minimum="0.01" Maximum="1" Increment="0.01" FormatString="N2" />
 
-                <TextBlock Grid.Column="6" FontSize="10" Foreground="{DynamicResource TextDim}"
+                <TextBlock Grid.Column="6" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}"
                            VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap"
                            Text="Round-trip fee = Taker × 2. Net spread = Gross − Round-trip. Opportunities refresh every second." />
               </Grid>
@@ -67,21 +67,21 @@
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="TRACKED SYMBOLS" />
                   <TextBlock Text="{Binding CrossExchangeArbVM.TotalSymbols}"
-                             Classes="Metric" Foreground="#8FA3B8" />
+                             Classes="Metric" Foreground="{DynamicResource TextMuted}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="1" Classes="SurfaceCard">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="PROFITABLE NOW" />
                   <TextBlock Text="{Binding CrossExchangeArbVM.ProfitableCount}"
-                             Classes="Metric" Foreground="#21E6C1" />
+                             Classes="Metric" Foreground="{DynamicResource Accent}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="2" Classes="SurfaceCard">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="BEST SPREAD" />
                   <TextBlock Text="{Binding CrossExchangeArbVM.BestSpreadLabel}"
-                             FontSize="11" FontWeight="SemiBold" Foreground="#F4B860"
+                             FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" Foreground="{DynamicResource Warning}"
                              VerticalAlignment="Center" />
                 </StackPanel>
               </Border>
@@ -89,7 +89,7 @@
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="SESSION PROFIT" />
                   <TextBlock Text="{Binding CrossExchangeArbVM.TotalProfitLabel}"
-                             Classes="Metric" Foreground="#21E6C1" />
+                             Classes="Metric" Foreground="{DynamicResource Accent}" />
                 </StackPanel>
               </Border>
             </Grid>
@@ -98,7 +98,7 @@
             <Border Classes="Panel">
               <StackPanel Spacing="10">
                 <TextBlock Classes="H2" Text="Live Price Comparison — All Symbols" />
-                <TextBlock FontSize="11" Foreground="#5C6E82"
+                <TextBlock FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}"
                            Text="Best buy price highlighted in teal. Best sell price highlighted in amber. Net spread = gross − round-trip fees." />
 
                 <!-- Table header -->
@@ -122,7 +122,7 @@
                   <ItemsControl ItemsSource="{Binding CrossExchangeArbVM.SpreadRows}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="vm:CrossExchangeSpreadRowVM">
-                        <Border Padding="0,5" BorderBrush="#0D1E2D" BorderThickness="0,0,0,1">
+                        <Border Padding="0,4" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1">
                           <Grid ColumnDefinitions="*,70,70,70,70,70,70,110,110,70,70,Auto"
                                 ColumnSpacing="6">
                             <!-- Symbol -->
@@ -132,59 +132,59 @@
                             <!-- Binance Bid / Ask — amber if best sell, teal if best buy -->
                             <TextBlock Grid.Column="1" Text="{Binding BinanceBidLabel}"
                                        HorizontalAlignment="Right" VerticalAlignment="Center"
-                                       FontSize="11" FontFamily="Consolas"
+                                       FontSize="{DynamicResource FsCaption}" FontFamily="Consolas"
                                        Foreground="{Binding BinanceBidBrush}" />
                             <TextBlock Grid.Column="2" Text="{Binding BinanceAskLabel}"
                                        HorizontalAlignment="Right" VerticalAlignment="Center"
-                                       FontSize="11" FontFamily="Consolas"
+                                       FontSize="{DynamicResource FsCaption}" FontFamily="Consolas"
                                        Foreground="{Binding BinanceAskBrush}" />
 
                             <!-- Bybit Bid / Ask -->
                             <TextBlock Grid.Column="3" Text="{Binding BybitBidLabel}"
                                        HorizontalAlignment="Right" VerticalAlignment="Center"
-                                       FontSize="11" FontFamily="Consolas"
+                                       FontSize="{DynamicResource FsCaption}" FontFamily="Consolas"
                                        Foreground="{Binding BybitBidBrush}" />
                             <TextBlock Grid.Column="4" Text="{Binding BybitAskLabel}"
                                        HorizontalAlignment="Right" VerticalAlignment="Center"
-                                       FontSize="11" FontFamily="Consolas"
+                                       FontSize="{DynamicResource FsCaption}" FontFamily="Consolas"
                                        Foreground="{Binding BybitAskBrush}" />
 
                             <!-- OKX Bid / Ask -->
                             <TextBlock Grid.Column="5" Text="{Binding OkxBidLabel}"
                                        HorizontalAlignment="Right" VerticalAlignment="Center"
-                                       FontSize="11" FontFamily="Consolas"
+                                       FontSize="{DynamicResource FsCaption}" FontFamily="Consolas"
                                        Foreground="{Binding OkxBidBrush}" />
                             <TextBlock Grid.Column="6" Text="{Binding OkxAskLabel}"
                                        HorizontalAlignment="Right" VerticalAlignment="Center"
-                                       FontSize="11" FontFamily="Consolas"
+                                       FontSize="{DynamicResource FsCaption}" FontFamily="Consolas"
                                        Foreground="{Binding OkxAskBrush}" />
 
                             <!-- Best buy direction -->
                             <TextBlock Grid.Column="7" Text="{Binding BestBuyLabel}"
                                        HorizontalAlignment="Right" VerticalAlignment="Center"
-                                       FontSize="11" Foreground="#21E6C1" />
+                                       FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource Accent}" />
 
                             <!-- Best sell direction -->
                             <TextBlock Grid.Column="8" Text="{Binding BestSellLabel}"
                                        HorizontalAlignment="Right" VerticalAlignment="Center"
-                                       FontSize="11" Foreground="#F4B860" />
+                                       FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource Warning}" />
 
                             <!-- Gross spread -->
                             <TextBlock Grid.Column="9" Text="{Binding GrossSpreadLabel}"
                                        HorizontalAlignment="Right" VerticalAlignment="Center"
-                                       FontSize="11" Foreground="#5C6E82" />
+                                       FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}" />
 
                             <!-- Net spread (colored by profitability) -->
                             <TextBlock Grid.Column="10" Text="{Binding NetSpreadLabel}"
                                        HorizontalAlignment="Right" VerticalAlignment="Center"
-                                       FontSize="11" FontWeight="Bold"
+                                       FontSize="{DynamicResource FsCaption}" FontWeight="Bold"
                                        Foreground="{Binding NetSpreadBrush}" />
 
                             <!-- Execute button -->
                             <Button Grid.Column="11"
                                     Classes="BuyButton"
                                     Content="⚡ Execute"
-                                    Padding="8,3" FontSize="11"
+                                    Padding="8,2" FontSize="{DynamicResource FsCaption}"
                                     Width="80"
                                     IsEnabled="{Binding IsProfitable}"
                                     VerticalAlignment="Center"
@@ -220,30 +220,30 @@
                   <ItemsControl ItemsSource="{Binding CrossExchangeArbVM.History}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="vm:ArbExecutionRowVM">
-                        <Border Padding="0,5" BorderBrush="#0D1E2D" BorderThickness="0,0,0,1">
+                        <Border Padding="0,4" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1">
                           <Grid ColumnDefinitions="70,*,120,70,70,70,70,*" ColumnSpacing="8">
                             <TextBlock Grid.Column="0" Text="{Binding TimeLabel}"
-                                       FontFamily="Consolas" FontSize="11" Foreground="#5C6E82"
+                                       FontFamily="Consolas" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}"
                                        VerticalAlignment="Center" />
                             <TextBlock Grid.Column="1" Text="{Binding Symbol}"
                                        FontWeight="SemiBold" VerticalAlignment="Center" />
                             <TextBlock Grid.Column="2" Text="{Binding RouteLabel}"
-                                       FontSize="11" Foreground="#8FA3B8" VerticalAlignment="Center" />
+                                       FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" />
                             <TextBlock Grid.Column="3" Text="{Binding BuyLabel}"
-                                       FontFamily="Consolas" FontSize="11"
+                                       FontFamily="Consolas" FontSize="{DynamicResource FsCaption}"
                                        HorizontalAlignment="Right" VerticalAlignment="Center" />
                             <TextBlock Grid.Column="4" Text="{Binding SellLabel}"
-                                       FontFamily="Consolas" FontSize="11"
+                                       FontFamily="Consolas" FontSize="{DynamicResource FsCaption}"
                                        HorizontalAlignment="Right" VerticalAlignment="Center" />
                             <TextBlock Grid.Column="5" Text="{Binding SpreadLabel}"
-                                       FontSize="11" Foreground="#5C6E82"
+                                       FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}"
                                        HorizontalAlignment="Right" VerticalAlignment="Center" />
                             <TextBlock Grid.Column="6" Text="{Binding ProfitLabel}"
-                                       FontSize="11" FontWeight="Bold"
+                                       FontSize="{DynamicResource FsCaption}" FontWeight="Bold"
                                        Foreground="{Binding ProfitBrush}"
                                        HorizontalAlignment="Right" VerticalAlignment="Center" />
                             <TextBlock Grid.Column="7" Text="{Binding StatusLabel}"
-                                       FontSize="11" Foreground="{Binding StatusBrush}"
+                                       FontSize="{DynamicResource FsCaption}" Foreground="{Binding StatusBrush}"
                                        VerticalAlignment="Center" />
                           </Grid>
                         </Border>
@@ -255,7 +255,7 @@
                 <!-- Empty history -->
                 <TextBlock IsVisible="{Binding !CrossExchangeArbVM.History.Count}"
                            Text="No executions yet. Click ⚡ Execute on a profitable row, or enable Auto-Execute."
-                           Foreground="{DynamicResource TextDim}" FontSize="12" TextWrapping="Wrap" Margin="0,8" />
+                           Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" Margin="0,8" />
               </StackPanel>
             </Border>
 

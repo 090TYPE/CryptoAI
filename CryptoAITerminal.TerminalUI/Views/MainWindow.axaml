@@ -1,4 +1,4 @@
-﻿<Window xmlns="https://github.com/avaloniaui"
+<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
         xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
@@ -43,18 +43,18 @@
         </Transitions>
       </Grid.Transitions>
     <!-- Acts as the title bar: with WindowDecorations="None" there is no OS one to drag by. -->
-    <Border Grid.Row="0" Grid.Column="1" Classes="TopBarShell" Padding="18,0"
+    <Border Grid.Row="0" Grid.Column="1" Classes="TopBarShell" Padding="16,0"
             PointerPressed="OnTitleBarPressed">
       <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16" Height="54">
         <!-- Page title breadcrumb: "/ Section" -->
         <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
-          <TextBlock Text="/" Foreground="#2A3F52" FontSize="17" FontWeight="Light" VerticalAlignment="Center" />
+          <TextBlock Text="/" Foreground="#2A3F52" FontSize="{DynamicResource FsTitle}" FontWeight="Light" VerticalAlignment="Center" />
           <TextBlock Text="{Binding CurrentSectionTitle}" Foreground="#4DEBB5"
-                     FontWeight="Bold" FontSize="15" VerticalAlignment="Center" />
+                     FontWeight="Bold" FontSize="{DynamicResource FsSubhead}" VerticalAlignment="Center" />
         </StackPanel>
 
         <!-- Live ticker strip (marquee) -->
-        <Border Grid.Column="1" Margin="18,0" ClipToBounds="True" VerticalAlignment="Center">
+        <Border Grid.Column="1" Margin="16,0" ClipToBounds="True" VerticalAlignment="Center">
           <StackPanel x:Name="TickerStrip" Orientation="Horizontal" Spacing="0" VerticalAlignment="Center">
             <StackPanel.RenderTransform>
               <TranslateTransform />
@@ -67,12 +67,12 @@
                 <DataTemplate x:DataType="vm:CexMarketItemViewModel">
                   <Border Classes="TickerItem" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding BaseAssetSymbol}" Foreground="#6A8FA8"
-                                 FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding BaseAssetSymbol}" Foreground="{DynamicResource TextDim}"
+                                 FontSize="{DynamicResource FsSmall}" FontWeight="SemiBold" VerticalAlignment="Center" />
                       <TextBlock Classes="Mono" Text="{Binding LastPrice, StringFormat='{}{0:N2}'}"
-                                 Foreground="#C8DCEF" FontSize="12" VerticalAlignment="Center" />
+                                 Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
                       <TextBlock Text="{Binding ChangePercentLabel}" Foreground="{Binding ChangeBrush}"
-                                 FontSize="11" VerticalAlignment="Center" />
+                                 FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                     </StackPanel>
                   </Border>
                 </DataTemplate>
@@ -87,12 +87,12 @@
                 <DataTemplate x:DataType="vm:CexMarketItemViewModel">
                   <Border Classes="TickerItem" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding BaseAssetSymbol}" Foreground="#6A8FA8"
-                                 FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding BaseAssetSymbol}" Foreground="{DynamicResource TextDim}"
+                                 FontSize="{DynamicResource FsSmall}" FontWeight="SemiBold" VerticalAlignment="Center" />
                       <TextBlock Classes="Mono" Text="{Binding LastPrice, StringFormat='{}{0:N2}'}"
-                                 Foreground="#C8DCEF" FontSize="12" VerticalAlignment="Center" />
+                                 Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
                       <TextBlock Text="{Binding ChangePercentLabel}" Foreground="{Binding ChangeBrush}"
-                                 FontSize="11" VerticalAlignment="Center" />
+                                 FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                     </StackPanel>
                   </Border>
                 </DataTemplate>
@@ -104,40 +104,40 @@
         <WrapPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
           <!-- Ask AI (Ctrl+K command palette) -->
           <Button Command="{Binding OpenCommandPaletteCommand}" Margin="0,0,10,0"
-                  Background="#07111A" BorderBrush="#152535" BorderThickness="1"
+                  Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1"
                   CornerRadius="8" Padding="10,6" MinHeight="0">
             <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
               <Viewbox Width="13" Height="13" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="#5A7A94" Data="M11 3a8 8 0 100 16A8 8 0 0011 3zM21 21l-4.35-4.35" /></Canvas></Viewbox>
-              <TextBlock Text="Ask AI…" Foreground="{DynamicResource TextSoft}" FontSize="12" VerticalAlignment="Center" />
-              <Border Background="#0D1B27" CornerRadius="4" Padding="5,1">
-                <TextBlock Text="Ctrl K" Foreground="#4E7A96" FontSize="9" FontWeight="SemiBold" />
+              <TextBlock Text="Ask AI…" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
+              <Border Background="{DynamicResource Surface3}" CornerRadius="4" Padding="4,1">
+                <TextBlock Text="Ctrl K" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="SemiBold" />
               </Border>
             </StackPanel>
           </Button>
-          <Border Background="#07111A" BorderBrush="#152535" BorderThickness="1" CornerRadius="7"
-                  Padding="3" Margin="0,0,10,0" VerticalAlignment="Center">
+          <Border Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="7"
+                  Padding="2" Margin="0,0,10,0" VerticalAlignment="Center">
             <StackPanel Orientation="Horizontal" Spacing="2">
               <Button x:Name="EnglishLanguageButton" Content="EN" Click="OnSetEnglishLanguageClick"
-                      MinHeight="0" Padding="9,3" CornerRadius="5" BorderThickness="0"
-                      FontSize="10" FontWeight="Bold" />
+                      MinHeight="0" Padding="8,2" CornerRadius="5" BorderThickness="0"
+                      FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
               <Button x:Name="RussianLanguageButton" Content="RU" Click="OnSetRussianLanguageClick"
-                      MinHeight="0" Padding="9,3" CornerRadius="5" BorderThickness="0"
-                      FontSize="10" FontWeight="Bold" />
+                      MinHeight="0" Padding="8,2" CornerRadius="5" BorderThickness="0"
+                      FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
             </StackPanel>
           </Border>
-          <Border Background="#07111A" BorderBrush="#152535" BorderThickness="1" CornerRadius="999"
+          <Border Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="999"
                   Padding="10,6" Margin="0,0,8,0">
             <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
-              <Ellipse Classes="PulseDot" Width="7" Height="7" Fill="#3DDC84" VerticalAlignment="Center" />
+              <Ellipse Classes="PulseDot" Width="7" Height="7" Fill="{DynamicResource Positive}" VerticalAlignment="Center" />
               <TextBlock Text="{Binding ConnectionStateLabel}" Foreground="{DynamicResource TextSoft}"
-                         FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                         FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" VerticalAlignment="Center" />
             </StackPanel>
           </Border>
           <Border Background="#06181A" BorderBrush="#0E2A2C" BorderThickness="1" CornerRadius="999"
                   Padding="10,6" Margin="0,0,10,0">
             <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
-              <Ellipse Classes="PulseDot" Width="7" Height="7" Fill="#21E6C1" VerticalAlignment="Center" />
-              <TextBlock Text="AI ON" Foreground="#21E6C1" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
+              <Ellipse Classes="PulseDot" Width="7" Height="7" Fill="{DynamicResource Accent}" VerticalAlignment="Center" />
+              <TextBlock Text="AI ON" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" VerticalAlignment="Center" />
             </StackPanel>
           </Border>
           <Button Classes="GhostButton"
@@ -151,10 +151,10 @@
             <Panel>
               <Viewbox Width="16" Height="16"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="#8FA3B8" Data="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></Canvas></Viewbox>
               <Border IsVisible="{Binding HasNotifications}"
-                      Background="#FF6B6B" CornerRadius="7" MinWidth="14" Height="14"
-                      Padding="3,0" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0">
+                      Background="{DynamicResource Negative}" CornerRadius="7" MinWidth="14" Height="14"
+                      Padding="2,0" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0">
                 <TextBlock Text="{Binding NotificationCountLabel}" Foreground="White"
-                           FontSize="9" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                           FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
               </Border>
             </Panel>
           </Button>
@@ -182,15 +182,15 @@
           </Button>
 
           <!-- Equity -->
-          <Border Background="#07111A" BorderBrush="#152535" BorderThickness="1" CornerRadius="8"
-                  Padding="12,5" Margin="4,0,0,0">
+          <Border Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="8"
+                  Padding="12,4" Margin="4,0,0,0">
             <StackPanel Spacing="1">
-              <TextBlock Text="EQUITY" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" LetterSpacing="0.8" />
+              <TextBlock Text="EQUITY" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" LetterSpacing="0.8" />
               <StackPanel Orientation="Horizontal" Spacing="6">
-                <TextBlock Classes="Mono" Text="{Binding AccountEquityLabel}" Foreground="#E8F4FF"
-                           FontSize="13" FontWeight="Bold" VerticalAlignment="Center" />
+                <TextBlock Classes="Mono" Text="{Binding AccountEquityLabel}" Foreground="{DynamicResource TextPrimary}"
+                           FontSize="{DynamicResource FsBody}" FontWeight="Bold" VerticalAlignment="Center" />
                 <TextBlock Text="{Binding SessionPnlPercent, StringFormat='{}{0:+0.00;-0.00;0.00}%'}"
-                           Foreground="#3DDC84" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                           Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" VerticalAlignment="Center" />
               </StackPanel>
             </StackPanel>
           </Border>
@@ -203,17 +203,17 @@
             <Button Classes="GhostButton" Width="34" Height="28" Padding="0"
                     Click="OnMinimizeClick"
                     AutomationProperties.Name="Minimise window" ToolTip.Tip="Minimise">
-              <TextBlock Text="—" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              <TextBlock Text="—" FontSize="{DynamicResource FsSmall}" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Button>
             <Button Classes="GhostButton" Width="34" Height="28" Padding="0"
                     Click="OnMaximizeClick"
                     AutomationProperties.Name="Maximise or restore window" ToolTip.Tip="Maximise / restore">
-              <TextBlock Text="▢" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              <TextBlock Text="▢" FontSize="{DynamicResource FsSmall}" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Button>
             <Button Classes="GhostButton" Width="34" Height="28" Padding="0"
                     Click="OnExitClick"
                     AutomationProperties.Name="Close window" ToolTip.Tip="Close (keeps running in the tray)">
-              <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              <TextBlock Text="✕" FontSize="{DynamicResource FsSmall}" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Button>
           </StackPanel>
         </WrapPanel>
@@ -230,25 +230,25 @@
       <Grid RowDefinitions="Auto,*,Auto">
 
         <!-- Logo + collapse toggle -->
-        <Border Grid.Row="0" BorderBrush="#0D1B27" BorderThickness="0,0,0,1" Padding="12,13" Height="57">
+        <Border Grid.Row="0" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Padding="12,12" Height="57">
           <Grid ColumnDefinitions="Auto,*,Auto">
             <Border Grid.Column="0" Width="30" Height="30" Background="#081416" CornerRadius="8"
                     BorderBrush="#12312E" BorderThickness="1" VerticalAlignment="Center"
                     IsVisible="{Binding IsSidebarLabelsVisible}">
               <Grid Margin="6">
-                <Path Data="M 14 2 L 26 26 L 2 26 Z" Fill="#1FE6C2" Stretch="Uniform" />
-                <Path Data="M 14 9 L 21 22 L 7 22 Z" Fill="#050C14" Stretch="Uniform" />
+                <Path Data="M 14 2 L 26 26 L 2 26 Z" Fill="{DynamicResource Accent}" Stretch="Uniform" />
+                <Path Data="M 14 9 L 21 22 L 7 22 Z" Fill="{DynamicResource Surface0}" Stretch="Uniform" />
               </Grid>
             </Border>
-            <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center" Margin="11,0,0,0"
+            <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center" Margin="10,0,0,0"
                         IsVisible="{Binding IsSidebarLabelsVisible}">
-              <TextBlock Text="CRYPTO AI" Foreground="#E8F4FF" FontWeight="Bold" FontSize="13" LetterSpacing="0.8" />
-              <TextBlock Text="TERMINAL" Foreground="#4E7A96" FontWeight="SemiBold" FontSize="9" LetterSpacing="3" />
+              <TextBlock Text="CRYPTO AI" Foreground="{DynamicResource TextPrimary}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" LetterSpacing="0.8" />
+              <TextBlock Text="TERMINAL" Foreground="{DynamicResource TextDim}" FontWeight="SemiBold" FontSize="{DynamicResource FsMicro}" LetterSpacing="3" />
             </StackPanel>
             <Button Grid.Column="2" Click="OnToggleSidebarClick"
-                    Background="Transparent" BorderThickness="0" Padding="7" MinHeight="0"
+                    Background="Transparent" BorderThickness="0" Padding="6" MinHeight="0"
                     HorizontalAlignment="Center" VerticalAlignment="Center" ToolTip.Tip="Свернуть / развернуть">
-              <TextBlock Text="{Binding SidebarToggleGlyph}" Foreground="#7FA9C2" FontSize="15" FontWeight="Bold" />
+              <TextBlock Text="{Binding SidebarToggleGlyph}" Foreground="#7FA9C2" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" />
             </Button>
           </Grid>
         </Border>
@@ -374,10 +374,10 @@
               <Panel Width="18" Height="18" VerticalAlignment="Center">
                 <Viewbox Width="17" Height="17"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{Binding $parent[Button].Foreground}" Data="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9h4M18 14h-8M15 18h-5M10 6h8v4h-8z" /></Canvas></Viewbox>
                 <Border IsVisible="{Binding NewsFeedVM.HasUnread}"
-                        Background="#FF6B6B" CornerRadius="6" Width="12" Height="12"
-                        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-5,0">
+                        Background="{DynamicResource Negative}" CornerRadius="6" Width="12" Height="12"
+                        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0">
                   <TextBlock Text="{Binding NewsFeedVM.UnreadBadge}" Foreground="White"
-                             FontSize="9" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                             FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
               </Panel>
               <TextBlock Grid.Column="1" Text="News" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
@@ -443,7 +443,7 @@
         </StackPanel>
         </ScrollViewer>
 
-        <Border Grid.Row="2" BorderBrush="#0D1B27" BorderThickness="0,1,0,0" Padding="8,10">
+        <Border Grid.Row="2" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Padding="8,10">
           <StackPanel Spacing="8">
             <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="help" Background="{Binding HelpNavBackground}" Foreground="{Binding HelpNavForeground}">
               <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
@@ -453,25 +453,25 @@
             </Button>
             <Button Classes="SideNavButton" Command="{Binding SelectMainTabCommand}" CommandParameter="logout" Background="{Binding LogoutNavBackground}" Foreground="{Binding LogoutNavForeground}">
               <Grid ColumnDefinitions="18,*" ColumnSpacing="12">
-                <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="#FF6B6B" Data="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" /></Canvas></Viewbox>
-                <TextBlock Grid.Column="1" Text="Logout" VerticalAlignment="Center" Foreground="#FF6B6B" IsVisible="{Binding IsSidebarLabelsVisible}" />
+                <Viewbox Width="17" Height="17" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="{DynamicResource Negative}" Data="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" /></Canvas></Viewbox>
+                <TextBlock Grid.Column="1" Text="Logout" VerticalAlignment="Center" Foreground="{DynamicResource Negative}" IsVisible="{Binding IsSidebarLabelsVisible}" />
               </Grid>
             </Button>
 
             <!-- Profile card -->
-            <Border Background="#07121A" BorderBrush="#122234" BorderThickness="1" CornerRadius="10" Padding="9,8" Margin="0,2,0,0">
+            <Border Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="10" Padding="8,8" Margin="0,2,0,0">
               <Grid ColumnDefinitions="Auto,*" ColumnSpacing="9">
                 <Border Grid.Column="0" Width="30" Height="30" CornerRadius="8" Background="#0E2840"
                         VerticalAlignment="Center">
-                  <TextBlock Text="P" Foreground="#21E6C1" FontWeight="Bold" FontSize="13"
+                  <TextBlock Text="P" Foreground="{DynamicResource Accent}" FontWeight="Bold" FontSize="{DynamicResource FsBody}"
                              HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
                 <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center"
                             IsVisible="{Binding IsSidebarLabelsVisible}">
-                  <TextBlock Text="Pro Trader" Foreground="#E8F4FF" FontWeight="SemiBold" FontSize="12" />
+                  <TextBlock Text="Pro Trader" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold" FontSize="{DynamicResource FsSmall}" />
                   <StackPanel Orientation="Horizontal" Spacing="5">
-                    <Ellipse Classes="PulseDot" Width="6" Height="6" Fill="#3DDC84" VerticalAlignment="Center" />
-                    <TextBlock Text="Active session" Foreground="#4E7A96" FontSize="10" VerticalAlignment="Center" />
+                    <Ellipse Classes="PulseDot" Width="6" Height="6" Fill="{DynamicResource Positive}" VerticalAlignment="Center" />
+                    <TextBlock Text="Active session" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                   </StackPanel>
                 </StackPanel>
               </Grid>
@@ -517,7 +517,7 @@
           <StackPanel Orientation="Horizontal" Spacing="8">
             <TextBlock Text="Sniper" VerticalAlignment="Center" />
             <Border Background="{Binding WalletVM.GlobalQuoteAssetModeBrush}" CornerRadius="8" Padding="6,1">
-              <TextBlock Text="{Binding WalletVM.GlobalQuoteTabBadgeLabel}" Foreground="#081018" FontSize="11" FontWeight="Bold" />
+              <TextBlock Text="{Binding WalletVM.GlobalQuoteTabBadgeLabel}" Foreground="#081018" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
             </Border>
           </StackPanel>
         </TabItem.Header>
@@ -531,7 +531,7 @@
           <StackPanel Orientation="Horizontal" Spacing="8">
             <TextBlock Text="DEX" VerticalAlignment="Center" />
             <Border Background="{Binding WalletVM.GlobalQuoteAssetModeBrush}" CornerRadius="8" Padding="6,1">
-              <TextBlock Text="{Binding WalletVM.GlobalQuoteTabBadgeLabel}" Foreground="#081018" FontSize="11" FontWeight="Bold" />
+              <TextBlock Text="{Binding WalletVM.GlobalQuoteTabBadgeLabel}" Foreground="#081018" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
             </Border>
           </StackPanel>
         </TabItem.Header>
@@ -554,9 +554,9 @@
                 </StackPanel>
                 <TextBlock Text="{Binding DexTradingVM.StatusMessage}"
                            TextWrapping="Wrap"
-                           Foreground="#8B949E" />
+                           Foreground="{DynamicResource TextMuted}" />
                 <TextBlock Text="{Binding DexTradingVM.LastUpdatedLocal, StringFormat=Updated: {0:HH:mm:ss}}"
-                           Foreground="#8B949E" />
+                           Foreground="{DynamicResource TextMuted}" />
                 <ListBox ItemsSource="{Binding DexTradingVM.Tokens}"
                          SelectedItem="{Binding DexTradingVM.SelectedToken}"
                          Height="500">
@@ -565,7 +565,7 @@
                       <Border BorderBrush="#30363D" BorderThickness="0,0,0,1" Padding="0,10">
                         <StackPanel>
                           <TextBlock Text="{Binding DisplayName}" FontWeight="Bold" />
-                          <TextBlock Text="{Binding PairLabel}" Foreground="#8B949E" FontSize="12" />
+                          <TextBlock Text="{Binding PairLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" />
                           <Grid ColumnDefinitions="*,Auto" Margin="0,6,0,0">
                             <TextBlock Grid.Column="0"
                                        Text="{Binding PriceUsd, StringFormat=$ {0:N6}}" />
@@ -574,8 +574,8 @@
                                        Foreground="#00D4AA" />
                           </Grid>
                           <TextBlock Text="{Binding LiquidityUsd, StringFormat=Liquidity: $ {0:N0}}"
-                                     Foreground="#8B949E"
-                                     FontSize="12" />
+                                     Foreground="{DynamicResource TextMuted}"
+                                     FontSize="{DynamicResource FsSmall}" />
                         </StackPanel>
                       </Border>
                     </DataTemplate>
@@ -603,42 +603,42 @@
                   <StackPanel Spacing="14">
                   <TextBlock Classes="H1" Text="{Binding DexTradingVM.SelectedTokenTitle}" TextWrapping="Wrap" />
                   <TextBlock Text="{Binding DexTradingVM.SelectedTokenSubtitle}"
-                             Foreground="#8B949E"
+                             Foreground="{DynamicResource TextMuted}"
                              TextWrapping="Wrap" />
 
                   <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="16" RowSpacing="16">
                     <Border Classes="Panel" Grid.Row="0" Grid.Column="0">
                       <StackPanel>
-                        <TextBlock Text="Price USD" Foreground="#8B949E" />
+                        <TextBlock Text="Price USD" Foreground="{DynamicResource TextMuted}" />
                         <TextBlock Classes="Value"
-                                   FontSize="26"
+                                   FontSize="{DynamicResource FsH1}"
                                    Text="{Binding DexTradingVM.SelectedToken.PriceUsd, StringFormat=$ {0:N6}}" />
                       </StackPanel>
                     </Border>
 
                     <Border Classes="Panel" Grid.Row="0" Grid.Column="1">
                       <StackPanel>
-                        <TextBlock Text="Price Native" Foreground="#8B949E" />
+                        <TextBlock Text="Price Native" Foreground="{DynamicResource TextMuted}" />
                         <TextBlock Classes="Value"
-                                   FontSize="26"
+                                   FontSize="{DynamicResource FsH1}"
                                    Text="{Binding DexTradingVM.SelectedToken.PriceNative, StringFormat={}{0:N6}}" />
                       </StackPanel>
                     </Border>
 
                     <Border Classes="Panel" Grid.Row="1" Grid.Column="0">
                       <StackPanel>
-                        <TextBlock Text="24h Volume" Foreground="#8B949E" />
+                        <TextBlock Text="24h Volume" Foreground="{DynamicResource TextMuted}" />
                         <TextBlock Classes="Value"
-                                   FontSize="24"
+                                   FontSize="{DynamicResource FsH2}"
                                    Text="{Binding DexTradingVM.SelectedToken.Volume24h, StringFormat=$ {0:N0}}" />
                       </StackPanel>
                     </Border>
 
                     <Border Classes="Panel" Grid.Row="1" Grid.Column="1">
                       <StackPanel>
-                        <TextBlock Text="Liquidity" Foreground="#8B949E" />
+                        <TextBlock Text="Liquidity" Foreground="{DynamicResource TextMuted}" />
                         <TextBlock Classes="Value"
-                                   FontSize="24"
+                                   FontSize="{DynamicResource FsH2}"
                                    Text="{Binding DexTradingVM.SelectedToken.LiquidityUsd, StringFormat=$ {0:N0}}" />
                       </StackPanel>
                     </Border>
@@ -665,32 +665,32 @@
 
                         <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="16">
                           <StackPanel Grid.Column="0">
-                            <TextBlock Text="{Binding DexTradingVM.ChartStatusMessage}" Foreground="#8B949E" />
+                            <TextBlock Text="{Binding DexTradingVM.ChartStatusMessage}" Foreground="{DynamicResource TextMuted}" />
                             <TextBlock Text="{Binding DexTradingVM.ChartTelemetry}"
-                                       Foreground="#14E0C1"
+                                       Foreground="{DynamicResource Accent}"
                                        FontWeight="SemiBold" />
-                            <TextBlock Text="{Binding DexTradingVM.SelectedChartRange, StringFormat=Range: {0}}" Foreground="#8B949E" />
-                            <TextBlock Text="{Binding DexTradingVM.ChartSource, StringFormat=Source: {0}}" Foreground="#8B949E" />
+                            <TextBlock Text="{Binding DexTradingVM.SelectedChartRange, StringFormat=Range: {0}}" Foreground="{DynamicResource TextMuted}" />
+                            <TextBlock Text="{Binding DexTradingVM.ChartSource, StringFormat=Source: {0}}" Foreground="{DynamicResource TextMuted}" />
                             <TextBlock Text="{Binding DexTradingVM.ChartDiagnostics, StringFormat=Debug: {0}}"
-                                       Foreground="#8B949E"
+                                       Foreground="{DynamicResource TextMuted}"
                                        TextWrapping="Wrap"
                                        MaxWidth="520" />
                           </StackPanel>
                           <StackPanel Grid.Column="1">
-                            <TextBlock Text="High" Foreground="#8B949E" />
+                            <TextBlock Text="High" Foreground="{DynamicResource TextMuted}" />
                             <TextBlock Text="{Binding DexTradingVM.ChartHigh, StringFormat=$ {0:N6}}" />
                           </StackPanel>
                           <StackPanel Grid.Column="2">
-                            <TextBlock Text="Low" Foreground="#8B949E" />
+                            <TextBlock Text="Low" Foreground="{DynamicResource TextMuted}" />
                             <TextBlock Text="{Binding DexTradingVM.ChartLow, StringFormat=$ {0:N6}}" />
                           </StackPanel>
                           <StackPanel Grid.Column="3">
-                            <TextBlock Text="Change" Foreground="#8B949E" />
+                            <TextBlock Text="Change" Foreground="{DynamicResource TextMuted}" />
                             <TextBlock Text="{Binding DexTradingVM.ChartChangePercent, StringFormat={}{0:+0.##;-0.##;0}%}" />
                           </StackPanel>
                         </Grid>
 
-                        <Border Background="#0D1117" BorderBrush="#30363D" BorderThickness="1" CornerRadius="10" Padding="12" MinHeight="300">
+                        <Border Background="{DynamicResource Surface1}" BorderBrush="#30363D" BorderThickness="1" CornerRadius="10" Padding="12" MinHeight="300">
                           <Grid RowDefinitions="*,Auto">
                             <ctrl:DexPriceChart Grid.Row="0"
                                                 Height="300"
@@ -698,8 +698,8 @@
                                                 VerticalAlignment="Stretch"
                                                 Candles="{Binding DexTradingVM.ChartCandles}" />
                             <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,12,0,0">
-                              <TextBlock Grid.Column="0" Text="{Binding DexTradingVM.ChartStartLabel}" Foreground="#8B949E" />
-                              <TextBlock Grid.Column="2" Text="{Binding DexTradingVM.ChartEndLabel}" Foreground="#8B949E" />
+                              <TextBlock Grid.Column="0" Text="{Binding DexTradingVM.ChartStartLabel}" Foreground="{DynamicResource TextMuted}" />
+                              <TextBlock Grid.Column="2" Text="{Binding DexTradingVM.ChartEndLabel}" Foreground="{DynamicResource TextMuted}" />
                             </Grid>
                           </Grid>
                         </Border>
@@ -720,15 +720,15 @@
                             </Border>
                             <StackPanel Grid.Column="1" Spacing="4">
                               <TextBlock Text="{Binding DexTradingVM.DexGuardSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                              <TextBlock Text="{Binding DexTradingVM.DexGuardDetail}" Foreground="#8B949E" TextWrapping="Wrap" />
+                              <TextBlock Text="{Binding DexTradingVM.DexGuardDetail}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
                             </StackPanel>
                           </Grid>
                         </Border>
                         <TextBlock Text="{Binding DexTradingVM.WalletTradeStatus}"
-                                   Foreground="#8B949E"
+                                   Foreground="{DynamicResource TextMuted}"
                                    TextWrapping="Wrap" />
                         <TextBlock Text="{Binding DexTradingVM.WalletSessionSummary, StringFormat=Active wallet: {0}}"
-                                   Foreground="#14E0C1"
+                                   Foreground="{DynamicResource Accent}"
                                    FontWeight="SemiBold"
                                    TextWrapping="Wrap" />
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
@@ -737,27 +737,27 @@
                           </Border>
                           <TextBlock Grid.Column="1"
                                      Text="{Binding WalletVM.RouteReadinessSummary}"
-                                     Foreground="#8B949E"
+                                     Foreground="{DynamicResource TextMuted}"
                                      TextWrapping="Wrap"
                                      VerticalAlignment="Center" />
                         </Grid>
                         <TextBlock Text="{Binding DexTradingVM.WalletBalanceSummary, StringFormat=Native balance: {0}}"
-                                   Foreground="#8B949E"
+                                   Foreground="{DynamicResource TextMuted}"
                                    TextWrapping="Wrap" />
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
                           <Border Background="{Binding DexTradingVM.QuoteAssetModeBrush}" CornerRadius="10" Padding="10,4">
                             <TextBlock Text="{Binding DexTradingVM.QuoteAssetModeLabel}" Foreground="#081018" FontWeight="Bold" />
                           </Border>
                           <TextBlock Grid.Column="1" Text="{Binding DexTradingVM.QuoteAssetSummary}"
-                                     Foreground="#8B949E"
+                                     Foreground="{DynamicResource TextMuted}"
                                      TextWrapping="Wrap"
                                      VerticalAlignment="Center" />
                         </Grid>
                         <TextBlock Text="{Binding DexTradingVM.QuoteAssetBalanceLabel, StringFormat=Quote balance: {0}}"
-                                   Foreground="#F4B860"
+                                   Foreground="{DynamicResource Warning}"
                                    TextWrapping="Wrap" />
                         <TextBlock Text="{Binding DexTradingVM.SpendableQuoteBalanceLabel}"
-                                   Foreground="#14E0C1"
+                                   Foreground="{DynamicResource Accent}"
                                    TextWrapping="Wrap" />
                         <TextBlock Text="{Binding DexTradingVM.PairCompatibilityMessage}"
                                    Foreground="{Binding DexTradingVM.QuoteAssetModeBrush}"
@@ -808,9 +808,9 @@
 
                         <TextBlock Classes="Overline" Text="SELL" Margin="0,4,0,0" />
                         <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="12">
-                          <TextBlock Grid.Column="0" Text="Balance:" VerticalAlignment="Center" Foreground="#8FA3B8" />
+                          <TextBlock Grid.Column="0" Text="Balance:" VerticalAlignment="Center" Foreground="{DynamicResource TextMuted}" />
                           <TextBlock Grid.Column="1" Text="{Binding DexTradingVM.TokenBalanceLabel}"
-                                     VerticalAlignment="Center" Foreground="#F4B860"
+                                     VerticalAlignment="Center" Foreground="{DynamicResource Warning}"
                                      IsVisible="{Binding DexTradingVM.HasSelectedToken}" />
                           <Button Grid.Column="2" Content="↻" Classes="GhostButton" Width="34"
                                   Command="{Binding DexTradingVM.RefreshTokenBalanceCommand}"
@@ -839,15 +839,15 @@
                                   ToolTip.Tip="{Binding DexTradingVM.ManualSellBlockedReason}" />
                         </StackPanel>
                         <TextBlock Text="{Binding DexTradingVM.ManualBuyBlockedReason}"
-                                   Foreground="#F4B860"
+                                   Foreground="{DynamicResource Warning}"
                                    TextWrapping="Wrap"
                                    IsVisible="{Binding !DexTradingVM.CanBuySelectedTokenLive}" />
 
                         <TextBlock Text="{Binding DexTradingVM.SelectedToken.TokenAddress, StringFormat=Token: {0}}"
-                                   Foreground="#8B949E"
+                                   Foreground="{DynamicResource TextMuted}"
                                    TextWrapping="Wrap" />
                         <TextBlock Text="{Binding DexTradingVM.SelectedToken.Url, StringFormat=DEX: {0}}"
-                                   Foreground="#8B949E"
+                                   Foreground="{DynamicResource TextMuted}"
                                    TextWrapping="Wrap" />
                       </StackPanel>
                     </Border>
@@ -869,7 +869,7 @@
               <TextBlock Classes="Overline" Text="SYSTEM OUTPUT" />
               <TextBlock Classes="H1" Text="Activity &amp; Logs" />
               <TextBlock Text="All runtime messages in one scrollable surface."
-                         Foreground="#8FA3B8"
+                         Foreground="{DynamicResource TextMuted}"
                          TextWrapping="Wrap" />
             </StackPanel>
           </Border>
@@ -1029,8 +1029,8 @@
               <Ellipse Width="214" Height="214" Classes="SplashLogoHalo" />
               <Border Classes="SplashLogoCore">
                 <Grid Width="128" Height="128">
-                  <Path Data="M 64 12 L 106 108 L 22 108 Z" Fill="#1FE6C2" Stretch="Uniform" />
-                  <Path Data="M 64 38 L 86 90 L 42 90 Z" Fill="#071018" Stretch="Uniform" />
+                  <Path Data="M 64 12 L 106 108 L 22 108 Z" Fill="{DynamicResource Accent}" Stretch="Uniform" />
+                  <Path Data="M 64 38 L 86 90 L 42 90 Z" Fill="{DynamicResource Surface1}" Stretch="Uniform" />
                   <Path x:Name="SplashSpinner"
                         Data="M 64 6 A 58 58 0 1 1 63.9 6"
                         Stroke="#6FDFFF"
@@ -1092,7 +1092,7 @@
             Margin="0,0,24,96"
             Padding="16,12"
             Background="#0D2233"
-            BorderBrush="#1FE6C2"
+            BorderBrush="{DynamicResource Accent}"
             BorderThickness="1"
             CornerRadius="8"
             MaxWidth="380"
@@ -1106,14 +1106,14 @@
       </Border.Transitions>
       <StackPanel Spacing="4">
         <Grid ColumnDefinitions="*,Auto">
-          <TextBlock Grid.Column="0" Text="Уведомление" Foreground="#1FE6C2" FontSize="11"
+          <TextBlock Grid.Column="0" Text="Уведомление" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsCaption}"
                      FontWeight="SemiBold" VerticalAlignment="Center" />
           <Button Grid.Column="1" Content="✕" Click="OnToastCloseClick"
                   Background="Transparent" BorderThickness="0" Padding="6,0"
-                  Foreground="#8FA3B8" FontSize="13" ToolTip.Tip="Закрыть" />
+                  Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsBody}" ToolTip.Tip="Закрыть" />
         </Grid>
-        <TextBlock Text="{Binding ToastMessage}" Foreground="#E0E8F0" TextWrapping="Wrap" FontSize="13" />
-        <TextBlock Text="Нажмите, чтобы открыть токен в трейдинге" Foreground="#5A7A90" FontSize="10" />
+        <TextBlock Text="{Binding ToastMessage}" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" FontSize="{DynamicResource FsBody}" />
+        <TextBlock Text="Нажмите, чтобы открыть токен в трейдинге" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
       </StackPanel>
     </Border>
 
@@ -1124,14 +1124,14 @@
       <Border HorizontalAlignment="Right"
               VerticalAlignment="Stretch"
               Width="430"
-              Background="#0B1622"
-              BorderBrush="#1F3445"
+              Background="{DynamicResource Surface2}"
+              BorderBrush="{DynamicResource PanelStrokeBright}"
               BorderThickness="1,0,0,0"
-              Padding="18">
+              Padding="16">
         <Grid RowDefinitions="Auto,*,Auto" RowSpacing="12">
           <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
-            <TextBlock Grid.Column="0" Text="Уведомления" Foreground="#F4F7FB"
-                       FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="0" Text="Уведомления" Foreground="{DynamicResource TextPrimary}"
+                       FontSize="{DynamicResource FsTitle}" FontWeight="SemiBold" VerticalAlignment="Center" />
             <Button Grid.Column="1" Content="✕" Click="OnCloseNotificationsClick"
                     Classes="GhostButton" Padding="10,4" ToolTip.Tip="Закрыть" />
           </Grid>
@@ -1139,21 +1139,21 @@
           <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <Panel>
               <TextBlock Text="Пока нет уведомлений"
-                         Foreground="#5A7A90" FontSize="13"
+                         Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsBody}"
                          HorizontalAlignment="Center" Margin="0,40,0,0"
                          IsVisible="{Binding !HasNotifications}" />
               <ItemsControl ItemsSource="{Binding Notifications}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:NotificationEntry">
-                    <Border Background="#0F1B28" BorderBrush="#1F3445" BorderThickness="1"
+                    <Border Background="{DynamicResource Surface3}" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1"
                             CornerRadius="8" Padding="12,10" Margin="0,0,0,8"
                             Cursor="Hand" PointerPressed="OnNotificationEntryClick">
                       <StackPanel Spacing="4">
-                        <TextBlock Text="{Binding TimeLabel}" Foreground="#5A7A90" FontSize="11" />
-                        <TextBlock Text="{Binding Message}" Foreground="#E0E8F0"
-                                   FontSize="13" TextWrapping="Wrap" />
-                        <TextBlock Text="{Binding ActionLabel}" Foreground="#1FE6C2"
-                                   FontSize="11" FontWeight="SemiBold"
+                        <TextBlock Text="{Binding TimeLabel}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsCaption}" />
+                        <TextBlock Text="{Binding Message}" Foreground="{DynamicResource TextSecondary}"
+                                   FontSize="{DynamicResource FsBody}" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding ActionLabel}" Foreground="{DynamicResource Accent}"
+                                   FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold"
                                    IsVisible="{Binding HasAction}" />
                       </StackPanel>
                     </Border>
@@ -1164,7 +1164,7 @@
           </ScrollViewer>
 
           <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
-            <TextBlock Grid.Column="0" Foreground="#5A7A90" VerticalAlignment="Center"
+            <TextBlock Grid.Column="0" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center"
                        Text="{Binding NotificationCountLabel, StringFormat=Всего: {0}}" />
             <Button Grid.Column="1" Content="Очистить" Click="OnClearNotificationsClick"
                     Classes="GhostButton" Padding="12,6" />
@@ -1180,23 +1180,23 @@
             Margin="24,0,0,32"
             Padding="16,12"
             Background="#0D2233"
-            BorderBrush="#1FE6C2"
+            BorderBrush="{DynamicResource Accent}"
             BorderThickness="1"
             CornerRadius="8"
             MaxWidth="420"
             ZIndex="100">
       <StackPanel Spacing="8">
-        <TextBlock Text="⬆ Доступно обновление" Foreground="#1FE6C2" FontSize="11" FontWeight="SemiBold" />
-        <TextBlock Text="{Binding UpdateBannerText}" Foreground="#E0E8F0" TextWrapping="Wrap" FontSize="13" />
-        <TextBlock Text="{Binding UpdateProgressText}" Foreground="#9FB2C4" FontSize="12"
+        <TextBlock Text="⬆ Доступно обновление" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" />
+        <TextBlock Text="{Binding UpdateBannerText}" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" FontSize="{DynamicResource FsBody}" />
+        <TextBlock Text="{Binding UpdateProgressText}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}"
                    IsVisible="{Binding IsUpdateDownloading}" />
         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
           <Button Content="Позже" Command="{Binding DismissUpdateCommand}"
                   IsEnabled="{Binding !IsUpdateDownloading}"
-                  Padding="12,5" Background="Transparent" BorderBrush="#2C4257" BorderThickness="1" Foreground="#C5D2DE" />
+                  Padding="12,4" Background="Transparent" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1" Foreground="{DynamicResource TextSecondary}" />
           <Button Content="Обновить сейчас" Command="{Binding InstallUpdateCommand}"
                   IsEnabled="{Binding !IsUpdateDownloading}"
-                  Padding="14,5" Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
+                  Padding="14,4" Background="{DynamicResource Accent}" Foreground="#06121C" FontWeight="Bold" />
         </StackPanel>
       </StackPanel>
     </Border>
@@ -1204,14 +1204,14 @@
     <!-- License status chip (trial / expired) -->
     <Border IsVisible="{Binding LicenseVM.ShowTrialBanner}"
             HorizontalAlignment="Right" VerticalAlignment="Top"
-            Margin="0,16,24,0" Padding="12,7"
+            Margin="0,16,24,0" Padding="12,6"
             Background="#0D2233" BorderBrush="{Binding LicenseVM.StateBrush}"
             BorderThickness="1" CornerRadius="8" ZIndex="90">
       <StackPanel Orientation="Horizontal" Spacing="10">
         <TextBlock Text="{Binding LicenseVM.StateLabel}" Foreground="{Binding LicenseVM.StateBrush}"
-                   FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                   FontSize="{DynamicResource FsSmall}" FontWeight="SemiBold" VerticalAlignment="Center" />
         <Button Content="Activate" Command="{Binding SelectMainTabCommand}" CommandParameter="settings"
-                Padding="10,3" Background="#1FE6C2" Foreground="#06121C" FontSize="11" FontWeight="Bold" />
+                Padding="10,2" Background="{DynamicResource Accent}" Foreground="#06121C" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
       </StackPanel>
     </Border>
 
@@ -1222,46 +1222,46 @@
       <Border Width="560"
               HorizontalAlignment="Center"
               VerticalAlignment="Center"
-              Background="#0B1622"
-              BorderBrush="#1FE6C2"
+              Background="{DynamicResource Surface2}"
+              BorderBrush="{DynamicResource Accent}"
               BorderThickness="1"
               CornerRadius="14"
-              Padding="32,28">
+              Padding="32,24">
         <StackPanel Spacing="18">
           <StackPanel Spacing="6">
             <Border Background="#13312C"
                     CornerRadius="4"
-                    Padding="8,3"
+                    Padding="8,2"
                     HorizontalAlignment="Left">
               <TextBlock Text="DEMO · NO API KEYS NEEDED"
-                         Foreground="#1FE6C2"
-                         FontSize="11"
+                         Foreground="{DynamicResource Accent}"
+                         FontSize="{DynamicResource FsCaption}"
                          FontWeight="Bold" />
             </Border>
             <TextBlock Text="Welcome to Crypto AI Terminal"
-                       Foreground="#F0F6FC"
-                       FontSize="24"
+                       Foreground="{DynamicResource TextPrimary}"
+                       FontSize="{DynamicResource FsH2}"
                        FontWeight="Bold" />
-            <TextBlock Foreground="#9FB2C4"
-                       FontSize="14"
+            <TextBlock Foreground="{DynamicResource TextMuted}"
+                       FontSize="{DynamicResource FsSubhead}"
                        TextWrapping="Wrap"
                        Text="You're starting in Paper (Demo) mode. Every order — spot, futures, DEX, and the sniper — is simulated. No real funds can leave the terminal until you add API keys and switch to Live yourself." />
           </StackPanel>
 
           <StackPanel Spacing="8">
             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-              <TextBlock Grid.Column="0" Text="✓" Foreground="#3DDC84" FontWeight="Bold" />
-              <TextBlock Grid.Column="1" Foreground="#C5D2DE" FontSize="13" TextWrapping="Wrap"
+              <TextBlock Grid.Column="0" Text="✓" Foreground="{DynamicResource Positive}" FontWeight="Bold" />
+              <TextBlock Grid.Column="1" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsBody}" TextWrapping="Wrap"
                          Text="Explore live market data, charts, the DEX sniper and AI verdicts with zero setup." />
             </Grid>
             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-              <TextBlock Grid.Column="0" Text="✓" Foreground="#3DDC84" FontWeight="Bold" />
-              <TextBlock Grid.Column="1" Foreground="#C5D2DE" FontSize="13" TextWrapping="Wrap"
+              <TextBlock Grid.Column="0" Text="✓" Foreground="{DynamicResource Positive}" FontWeight="Bold" />
+              <TextBlock Grid.Column="1" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsBody}" TextWrapping="Wrap"
                          Text="Run bots, backtests and paper trades — results are tracked in the journal and P&amp;L dashboard." />
             </Grid>
             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-              <TextBlock Grid.Column="0" Text="✓" Foreground="#3DDC84" FontWeight="Bold" />
-              <TextBlock Grid.Column="1" Foreground="#C5D2DE" FontSize="13" TextWrapping="Wrap"
+              <TextBlock Grid.Column="0" Text="✓" Foreground="{DynamicResource Positive}" FontWeight="Bold" />
+              <TextBlock Grid.Column="1" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsBody}" TextWrapping="Wrap"
                          Text="Add exchange API keys any time from Settings when you're ready to trade live." />
             </Grid>
           </StackPanel>
@@ -1269,15 +1269,15 @@
           <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
             <Button Content="Add API keys"
                     Command="{Binding OpenApiKeysFromWelcomeCommand}"
-                    Padding="18,10"
+                    Padding="16,10"
                     Background="Transparent"
-                    BorderBrush="#2C4257"
+                    BorderBrush="{DynamicResource PanelStrokeBright}"
                     BorderThickness="1"
-                    Foreground="#C5D2DE" />
+                    Foreground="{DynamicResource TextSecondary}" />
             <Button Content="Start exploring in Demo"
                     Command="{Binding StartDemoCommand}"
                     Padding="20,10"
-                    Background="#1FE6C2"
+                    Background="{DynamicResource Accent}"
                     Foreground="#06121C"
                     FontWeight="Bold" />
           </StackPanel>
@@ -1291,17 +1291,17 @@
             ZIndex="210">
       <Border Width="600" MaxHeight="640"
               HorizontalAlignment="Center" VerticalAlignment="Center"
-              Background="#0B1622" BorderBrush="#1FE6C2" BorderThickness="1"
-              CornerRadius="14" Padding="32,28">
+              Background="{DynamicResource Surface2}" BorderBrush="{DynamicResource Accent}" BorderThickness="1"
+              CornerRadius="14" Padding="32,24">
         <DockPanel>
           <TextBlock DockPanel.Dock="Top"
                      Text="{Binding WhatsNewVersion, StringFormat='Что нового в v{0}'}"
-                     Foreground="#F0F6FC" FontSize="22" FontWeight="Bold"
+                     Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsH2}" FontWeight="Bold"
                      Margin="0,0,0,16" />
           <Button DockPanel.Dock="Bottom"
                   Content="Закрыть" Command="{Binding CloseWhatsNewCommand}"
                   HorizontalAlignment="Right" Margin="0,16,0,0"
-                  Padding="20,10" Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
+                  Padding="20,10" Background="{DynamicResource Accent}" Foreground="#06121C" FontWeight="Bold" />
           <md:MarkdownScrollViewer Markdown="{Binding WhatsNewMarkdown}" />
         </DockPanel>
       </Border>
@@ -1314,65 +1314,65 @@
       <Border Width="560"
               HorizontalAlignment="Center"
               VerticalAlignment="Center"
-              Background="#0B1622"
-              BorderBrush="#1FE6C2"
+              Background="{DynamicResource Surface2}"
+              BorderBrush="{DynamicResource Accent}"
               BorderThickness="1"
               CornerRadius="14"
-              Padding="32,28">
+              Padding="32,24">
         <StackPanel Spacing="18">
 
           <!-- Step 1: choose exchange -->
           <StackPanel Spacing="16" IsVisible="{Binding OnboardingVM.IsChooseStep}">
             <StackPanel Spacing="6">
-              <TextBlock Text="Connect an exchange" Foreground="#F0F6FC" FontSize="22" FontWeight="Bold" />
-              <TextBlock Foreground="#9FB2C4" FontSize="13" TextWrapping="Wrap"
+              <TextBlock Text="Connect an exchange" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsH2}" FontWeight="Bold" />
+              <TextBlock Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsBody}" TextWrapping="Wrap"
                          Text="Pick where you trade. Keys are stored encrypted on this PC only (Windows DPAPI) and never leave the machine." />
             </StackPanel>
             <UniformGrid Columns="2" Margin="0,4,0,0">
               <Button Content="Binance" Command="{Binding OnboardingVM.ChooseExchangeCommand}" CommandParameter="Binance"
-                      Margin="0,0,8,8" Height="46" Background="#10202E" Foreground="#E0E8F0" FontWeight="SemiBold" />
+                      Margin="0,0,8,8" Height="46" Background="#10202E" Foreground="{DynamicResource TextSecondary}" FontWeight="SemiBold" />
               <Button Content="Bybit" Command="{Binding OnboardingVM.ChooseExchangeCommand}" CommandParameter="Bybit"
-                      Margin="0,0,0,8" Height="46" Background="#10202E" Foreground="#E0E8F0" FontWeight="SemiBold" />
+                      Margin="0,0,0,8" Height="46" Background="#10202E" Foreground="{DynamicResource TextSecondary}" FontWeight="SemiBold" />
               <Button Content="OKX" Command="{Binding OnboardingVM.ChooseExchangeCommand}" CommandParameter="OKX"
-                      Margin="0,0,8,0" Height="46" Background="#10202E" Foreground="#E0E8F0" FontWeight="SemiBold" />
+                      Margin="0,0,8,0" Height="46" Background="#10202E" Foreground="{DynamicResource TextSecondary}" FontWeight="SemiBold" />
               <Button Content="KuCoin" Command="{Binding OnboardingVM.ChooseExchangeCommand}" CommandParameter="KuCoin"
-                      Height="46" Background="#10202E" Foreground="#E0E8F0" FontWeight="SemiBold" />
+                      Height="46" Background="#10202E" Foreground="{DynamicResource TextSecondary}" FontWeight="SemiBold" />
             </UniformGrid>
             <Button Content="Skip — I'll explore in Demo first"
                     Command="{Binding OnboardingVM.SkipCommand}"
-                    HorizontalAlignment="Center" Background="Transparent" Foreground="#7E93A6" FontSize="12" />
+                    HorizontalAlignment="Center" Background="Transparent" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsSmall}" />
           </StackPanel>
 
           <!-- Step 2: enter keys -->
           <StackPanel Spacing="12" IsVisible="{Binding OnboardingVM.IsKeysStep}">
-            <TextBlock Text="{Binding OnboardingVM.KeysStepTitle}" Foreground="#F0F6FC" FontSize="22" FontWeight="Bold" />
-            <TextBlock Foreground="#9FB2C4" FontSize="12" TextWrapping="Wrap"
+            <TextBlock Text="{Binding OnboardingVM.KeysStepTitle}" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsH2}" FontWeight="Bold" />
+            <TextBlock Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap"
                        Text="Create an API key with trade permission only (no withdrawals), ideally IP-restricted." />
             <TextBox Text="{Binding OnboardingVM.KeyInput}" PlaceholderText="API key"
-                     Background="#0A1018" Foreground="#C8D8E8" Height="34" />
+                     Background="{DynamicResource Surface1}" Foreground="{DynamicResource TextSecondary}" Height="34" />
             <TextBox Text="{Binding OnboardingVM.SecretInput}" PlaceholderText="API secret" PasswordChar="•"
-                     Background="#0A1018" Foreground="#C8D8E8" Height="34" />
+                     Background="{DynamicResource Surface1}" Foreground="{DynamicResource TextSecondary}" Height="34" />
             <TextBox Text="{Binding OnboardingVM.PassphraseInput}" PlaceholderText="Passphrase" PasswordChar="•"
                      IsVisible="{Binding OnboardingVM.NeedsPassphrase}"
-                     Background="#0A1018" Foreground="#C8D8E8" Height="34" />
-            <TextBlock Text="{Binding OnboardingVM.StatusMessage}" Foreground="#FF8A4C" FontSize="12" TextWrapping="Wrap" />
+                     Background="{DynamicResource Surface1}" Foreground="{DynamicResource TextSecondary}" Height="34" />
+            <TextBlock Text="{Binding OnboardingVM.StatusMessage}" Foreground="#FF8A4C" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
             <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
               <Button Content="Back" Command="{Binding OnboardingVM.BackCommand}"
-                      Padding="16,9" Background="Transparent" BorderBrush="#2C4257" BorderThickness="1" Foreground="#C5D2DE" />
+                      Padding="16,8" Background="Transparent" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1" Foreground="{DynamicResource TextSecondary}" />
               <Button Content="Save securely" Command="{Binding OnboardingVM.SaveKeysCommand}"
-                      Padding="18,9" Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
+                      Padding="16,8" Background="{DynamicResource Accent}" Foreground="#06121C" FontWeight="Bold" />
             </StackPanel>
           </StackPanel>
 
           <!-- Step 3: done -->
           <StackPanel Spacing="16" IsVisible="{Binding OnboardingVM.IsDoneStep}">
-            <TextBlock Text="✓ Keys saved" Foreground="#3DDC84" FontSize="22" FontWeight="Bold" />
-            <TextBlock Foreground="#9FB2C4" FontSize="13" TextWrapping="Wrap"
+            <TextBlock Text="✓ Keys saved" Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsH2}" FontWeight="Bold" />
+            <TextBlock Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsBody}" TextWrapping="Wrap"
                        Text="Your API keys are encrypted on this PC. Restart the terminal to connect them — until then you stay in Demo (paper) mode, so nothing trades live by accident." />
             <Button Content="Done"
                     Command="{Binding OnboardingVM.FinishCommand}"
-                    HorizontalAlignment="Right" Padding="22,10"
-                    Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" />
+                    HorizontalAlignment="Right" Padding="20,10"
+                    Background="{DynamicResource Accent}" Foreground="#06121C" FontWeight="Bold" />
           </StackPanel>
 
         </StackPanel>
@@ -1381,14 +1381,14 @@
 
     <!-- Floating "Ask AI" button — opens the global omnibox (same as Ctrl+K) -->
     <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"
-            Margin="0,0,24,28" ZIndex="95"
+            Margin="0,0,24,24" ZIndex="95"
             CornerRadius="26"
             BoxShadow="0 6 20 0 #80000000"
             IsVisible="{Binding !IsCommandPaletteOpen}">
       <Button Command="{Binding OpenCommandPaletteCommand}"
               Width="52" Height="52" CornerRadius="26" Padding="0"
-              Background="#21E6C1" Foreground="#06121C"
-              FontSize="22" Content="🧠"
+              Background="{DynamicResource Accent}" Foreground="#06121C"
+              FontSize="{DynamicResource FsH2}" Content="🧠"
               HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
               ToolTip.Tip="Ask AI · Ctrl+K">
         <Button.Styles>
@@ -1413,23 +1413,23 @@
 
         <Border VerticalAlignment="Top" HorizontalAlignment="Center"
                 Margin="0,120,0,0" Width="680" MaxWidth="680"
-                Background="#0E1B27" BorderBrush="#21E6C1" BorderThickness="1"
-                CornerRadius="12" Padding="18" BoxShadow="0 18 60 0 #99000000">
+                Background="{DynamicResource Surface3}" BorderBrush="{DynamicResource Accent}" BorderThickness="1"
+                CornerRadius="12" Padding="16" BoxShadow="0 18 60 0 #99000000">
           <StackPanel Spacing="12">
             <Grid ColumnDefinitions="*,Auto">
               <StackPanel Grid.Column="0" Spacing="2">
                 <TextBlock Text="⚡ AI Command" Classes="H2" />
                 <TextBlock Text="Ask, navigate, or command the terminal — Enter to run, Esc to close."
-                           Foreground="#8FA3B8" FontSize="12" />
+                           Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" />
               </StackPanel>
               <Button Grid.Column="1" Content="✕" Command="{Binding CloseCommandPaletteCommand}"
-                      Background="Transparent" Foreground="#8FA3B8" FontSize="16"
+                      Background="Transparent" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSubhead}"
                       VerticalAlignment="Top" Padding="8,2" />
             </Grid>
 
             <TextBox x:Name="CommandPaletteBox"
                      Text="{Binding CommandPaletteInput}"
-                     FontSize="16" Padding="12,10"
+                     FontSize="{DynamicResource FsSubhead}" Padding="12,10"
                      PlaceholderText="e.g. “go to markets”, “long BTC $500 5x, stop -2%”, “alert ETH above 4000”, “what's my risk?”">
               <TextBox.KeyBindings>
                 <KeyBinding Gesture="Enter"  Command="{Binding RunCommandPaletteCommand}" />
@@ -1439,18 +1439,18 @@
 
             <StackPanel Orientation="Horizontal" Spacing="10">
               <Button Content="Run" Command="{Binding RunCommandPaletteCommand}"
-                      Background="#1FE6C2" Foreground="#06121C" FontWeight="Bold" Padding="18,8" />
-              <TextBlock Text="Thinking…" Foreground="#21E6C1" VerticalAlignment="Center"
+                      Background="{DynamicResource Accent}" Foreground="#06121C" FontWeight="Bold" Padding="16,8" />
+              <TextBlock Text="Thinking…" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"
                          IsVisible="{Binding CommandPaletteBusy}" />
             </StackPanel>
 
             <!-- LIVE trace — you see exactly what the agent is doing as it happens -->
-            <Border Background="#0A1722" BorderBrush="#14324A" BorderThickness="1" CornerRadius="8" Padding="10"
+            <Border Background="{DynamicResource Surface2}" BorderBrush="#14324A" BorderThickness="1" CornerRadius="8" Padding="10"
                     IsVisible="{Binding HasAgentActivity}">
               <StackPanel Spacing="6">
                 <StackPanel Orientation="Horizontal" Spacing="6">
-                  <Ellipse Width="7" Height="7" Fill="#21E6C1" VerticalAlignment="Center" />
-                  <TextBlock Text="LIVE · what the agent is doing" Foreground="{DynamicResource TextSoft}" FontSize="10" FontWeight="SemiBold" />
+                  <Ellipse Width="7" Height="7" Fill="{DynamicResource Accent}" VerticalAlignment="Center" />
+                  <TextBlock Text="LIVE · what the agent is doing" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" FontWeight="SemiBold" />
                 </StackPanel>
                 <ScrollViewer MaxHeight="160" VerticalScrollBarVisibility="Auto">
                   <ItemsControl ItemsSource="{Binding AgentActivity}">
@@ -1458,9 +1458,9 @@
                       <DataTemplate>
                         <Grid ColumnDefinitions="Auto,*" Margin="0,1">
                           <TextBlock Grid.Column="0" Text="{Binding Glyph}" Foreground="{Binding GlyphBrush}"
-                                     FontSize="12" Margin="0,0,8,0" />
+                                     FontSize="{DynamicResource FsSmall}" Margin="0,0,8,0" />
                           <TextBlock Grid.Column="1" Text="{Binding Text}" Foreground="#B9C9D8"
-                                     FontSize="12" TextWrapping="Wrap" />
+                                     FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
                         </Grid>
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
@@ -1473,18 +1473,18 @@
             <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto"
                           IsVisible="{Binding CommandPaletteResult, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
               <StackPanel Spacing="10">
-                <Border Background="#0A1722" BorderBrush="#14324A" BorderThickness="1" CornerRadius="10" Padding="14">
+                <Border Background="{DynamicResource Surface2}" BorderBrush="#14324A" BorderThickness="1" CornerRadius="10" Padding="14">
                   <StackPanel Spacing="10">
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                      <Border Width="26" Height="26" CornerRadius="13" Background="#0E2A2E">
-                        <TextBlock Text="🧠" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                      <Border Width="26" Height="26" CornerRadius="13" Background="{DynamicResource AccentSoft}">
+                        <TextBlock Text="🧠" FontSize="{DynamicResource FsBody}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                       </Border>
-                      <TextBlock Text="AI Copilot" Foreground="#21E6C1" FontWeight="SemiBold" VerticalAlignment="Center" />
-                      <Border Background="#0E2A2E" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
-                        <TextBlock Text="terminal agent" Foreground="#21E6C1" FontSize="10" />
+                      <TextBlock Text="AI Copilot" Foreground="{DynamicResource Accent}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                      <Border Background="{DynamicResource AccentSoft}" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
+                        <TextBlock Text="terminal agent" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" />
                       </Border>
                     </StackPanel>
-                    <TextBlock Text="{Binding CommandPaletteResult}" Foreground="#D7E3EE"
+                    <TextBlock Text="{Binding CommandPaletteResult}" Foreground="{DynamicResource TextSecondary}"
                                TextWrapping="Wrap" LineHeight="20" />
                   </StackPanel>
                 </Border>
@@ -1498,20 +1498,20 @@
             <Border IsVisible="{Binding CopilotVM.ShowAutoConsent}" Background="#200A0A"
                     BorderBrush="#4A1A1E" BorderThickness="1" CornerRadius="8" Padding="10">
               <StackPanel Spacing="8">
-                <TextBlock TextWrapping="Wrap" Foreground="#FF9D9D" FontSize="11"
+                <TextBlock TextWrapping="Wrap" Foreground="#FF9D9D" FontSize="{DynamicResource FsCaption}"
                            Text="Enable AUTO? The agent will place real orders without asking. Risk / wallet / testnet gates still apply." />
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <Button Content="I understand — enable AUTO" Command="{Binding CopilotVM.ConfirmAutoModeCommand}"
-                          Background="#3A1216" Foreground="#FF9D9D" Padding="10,5" />
+                          Background="#3A1216" Foreground="#FF9D9D" Padding="10,4" />
                   <Button Content="Cancel" Command="{Binding CopilotVM.CancelAutoModeCommand}"
-                          Background="Transparent" Foreground="#8FA3B8" Padding="10,5" />
+                          Background="Transparent" Foreground="{DynamicResource TextMuted}" Padding="10,4" />
                 </StackPanel>
               </StackPanel>
             </Border>
 
             <!-- Footer: hint + AUTO toggle -->
             <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Foreground="{DynamicResource TextSoft}" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center"
+              <TextBlock Grid.Column="0" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" VerticalAlignment="Center"
                          Text="Ask, navigate, or command — the agent acts on the terminal. Order actions ask for approval above; turn on AUTO to let it act on its own." />
               <ToggleSwitch Grid.Column="1" IsChecked="{Binding CopilotVM.IsAutoMode}"
                             OffContent="AUTO off" OnContent="AUTO on" VerticalAlignment="Center" />

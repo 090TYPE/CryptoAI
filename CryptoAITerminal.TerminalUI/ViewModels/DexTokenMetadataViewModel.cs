@@ -76,12 +76,12 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
     public bool IsVerified => _meta?.GtVerified == true;
 
     public string HoneypotLabel => _meta?.IsHoneypot switch { true => "HONEYPOT", false => "NOT A HONEYPOT", _ => "UNKNOWN" };
-    public string HoneypotBrush => _meta?.IsHoneypot switch { true => "#ff6b6b", false => "#3ddc84", _ => "#8fa3b8" };
+    public string HoneypotBrush => _meta?.IsHoneypot switch { true => SemanticColor.Negative, false => SemanticColor.Positive, _ => SemanticColor.Muted };
 
     public bool HasDeveloperHolding => _meta is { DeveloperHoldingPercentage: > 0m };
     public string DeveloperHoldingLabel => _meta is { DeveloperHoldingPercentage: > 0m } m ? $"{m.DeveloperHoldingPercentage:0.##}%" : "—";
-    public string DeveloperHoldingBrush => (_meta?.DeveloperHoldingPercentage ?? 0m) >= 10m ? "#ff6b6b"
-        : (_meta?.DeveloperHoldingPercentage ?? 0m) >= 3m ? "#f4b860" : "#3ddc84";
+    public string DeveloperHoldingBrush => (_meta?.DeveloperHoldingPercentage ?? 0m) >= 10m ? SemanticColor.Negative
+        : (_meta?.DeveloperHoldingPercentage ?? 0m) >= 3m ? SemanticColor.Warning : SemanticColor.Positive;
 
     public bool HasSecurity => HasAuth(_meta?.MintAuthority) || HasAuth(_meta?.FreezeAuthority);
     public string MintAuthorityLabel => AuthLabel(_meta?.MintAuthority);
@@ -96,8 +96,8 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
     public bool HasDistribution => (_meta?.HoldersTop10Pct ?? 0m) > 0m;
     public double Top10Percent => (double)(_meta?.HoldersTop10Pct ?? 0m);
     public string Top10Label => HasDistribution ? $"{_meta!.HoldersTop10Pct:0.#}%" : "—";
-    public string Top10Brush => (_meta?.HoldersTop10Pct ?? 0m) >= 50m ? "#ff6b6b"
-        : (_meta?.HoldersTop10Pct ?? 0m) >= 30m ? "#f4b860" : "#3ddc84";
+    public string Top10Brush => (_meta?.HoldersTop10Pct ?? 0m) >= 50m ? SemanticColor.Negative
+        : (_meta?.HoldersTop10Pct ?? 0m) >= 30m ? SemanticColor.Warning : SemanticColor.Positive;
     public string Dist1130Label => HasDistribution ? $"{_meta!.Holders11To30Pct:0.#}%" : "—";
     public string Dist3150Label => HasDistribution ? $"{_meta!.Holders31To50Pct:0.#}%" : "—";
     public string DistRestLabel => HasDistribution ? $"{_meta!.HoldersRestPct:0.#}%" : "—";
@@ -169,9 +169,9 @@ public sealed class DexTokenMetadataViewModel : ReactiveObject
     };
     private static string AuthBrush(string? v) => (v ?? "").Trim().ToLowerInvariant() switch
     {
-        "no" or "false" or "" => "#3ddc84",
-        "yes" or "true" => "#ff6b6b",
-        _ => "#f4b860",
+        "no" or "false" or "" => SemanticColor.Positive,
+        "yes" or "true" => SemanticColor.Negative,
+        _ => SemanticColor.Warning,
     };
 
     public Bitmap? Logo

@@ -1,4 +1,4 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
@@ -13,13 +13,13 @@
                    so repeating "Trade Journal" showed the heading twice in a row. -->
               <Button Grid.Column="1" Content="⟳ Refresh"
                       Command="{Binding TradeJournalVM.RefreshCommand}"
-                      Classes="GhostButton" FontSize="11" />
+                      Classes="GhostButton" FontSize="{DynamicResource FsCaption}" />
               <Button Grid.Column="2" Content="⬇ Export CSV"
                       Command="{Binding TradeJournalVM.ExportCsvCommand}"
-                      Classes="GhostButton" FontSize="11" Foreground="#21E6C1" />
+                      Classes="GhostButton" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource Accent}" />
             </Grid>
             <TextBlock Text="{Binding TradeJournalVM.ExportStatus}"
-                       Foreground="#21E6C1" FontSize="11"
+                       Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsCaption}"
                        IsVisible="{Binding TradeJournalVM.ExportStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
             <!-- ── AI Coach (#4) ── -->
@@ -27,21 +27,21 @@
               <StackPanel Spacing="8">
                 <Grid ColumnDefinitions="*,Auto,Auto">
                   <StackPanel Grid.Column="0">
-                    <TextBlock Text="🧠 AI Coach" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
+                    <TextBlock Text="🧠 AI Coach" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsBody}" />
                   </StackPanel>
                   <TextBlock Grid.Column="1" Text="{Binding TradeJournalVM.CoachSource}"
-                             Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                             Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" Margin="0,0,10,0" />
                   <Button Grid.Column="2" Content="Coach with AI"
                           Command="{Binding TradeJournalVM.ReviewWithAiCommand}"
-                          IsEnabled="{Binding !TradeJournalVM.CoachRunning}" Foreground="#21E6C1" />
+                          IsEnabled="{Binding !TradeJournalVM.CoachRunning}" Foreground="{DynamicResource Accent}" />
                 </Grid>
                 <StackPanel Spacing="6" IsVisible="{Binding TradeJournalVM.HasCoachReview}">
-                  <TextBlock Text="{Binding TradeJournalVM.CoachSummary}" Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding TradeJournalVM.CoachStrengths}" Foreground="#3DDC84" FontSize="11" TextWrapping="Wrap"
+                  <TextBlock Text="{Binding TradeJournalVM.CoachSummary}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding TradeJournalVM.CoachStrengths}" Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
                              IsVisible="{Binding TradeJournalVM.CoachStrengths, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                  <TextBlock Text="{Binding TradeJournalVM.CoachLeaks}" Foreground="#F4B860" FontSize="11" TextWrapping="Wrap"
+                  <TextBlock Text="{Binding TradeJournalVM.CoachLeaks}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
                              IsVisible="{Binding TradeJournalVM.CoachLeaks, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                  <TextBlock Text="{Binding TradeJournalVM.CoachSuggestions}" Foreground="#21E6C1" FontSize="11" TextWrapping="Wrap"
+                  <TextBlock Text="{Binding TradeJournalVM.CoachSuggestions}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
                              IsVisible="{Binding TradeJournalVM.CoachSuggestions, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 </StackPanel>
               </StackPanel>
@@ -50,26 +50,26 @@
             <!-- ── Filters ── -->
             <Border Classes="SurfaceCard">
               <Grid ColumnDefinitions="Auto,160,Auto,160,*" ColumnSpacing="12">
-                <TextBlock Grid.Column="0" Text="Tag" Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="0" Text="Tag" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                 <ComboBox Grid.Column="1"
                           ItemsSource="{Binding TradeJournalVM.TagOptions}"
                           SelectedItem="{Binding TradeJournalVM.FilterTag}"
-                          FontSize="11" />
-                <TextBlock Grid.Column="2" Text="Period" Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                          FontSize="{DynamicResource FsCaption}" />
+                <TextBlock Grid.Column="2" Text="Period" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                 <ComboBox Grid.Column="3"
                           ItemsSource="{Binding TradeJournalVM.PeriodOptions}"
                           SelectedItem="{Binding TradeJournalVM.FilterPeriod}"
-                          FontSize="11" />
+                          FontSize="{DynamicResource FsCaption}" />
                 <TextBox Grid.Column="4"
                          Text="{Binding TradeJournalVM.SearchText}"
                          PlaceholderText="Search symbol / notes…"
-                         FontSize="11" />
+                         FontSize="{DynamicResource FsCaption}" />
               </Grid>
             </Border>
 
             <!-- ── Summary ── -->
             <TextBlock Text="{Binding TradeJournalVM.SummaryLabel}"
-                       Foreground="#8FA3B8" FontSize="11" />
+                       Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
 
             <!-- ── Tag statistics ── -->
             <Border Classes="SurfaceCard">
@@ -80,18 +80,18 @@
                     <DataTemplate x:DataType="vm:TagStatRow">
                       <Grid ColumnDefinitions="110,50,50,80,80" ColumnSpacing="10" Margin="0,2">
                         <Border Grid.Column="0" CornerRadius="3" Padding="6,2"
-                                Background="#0D1520">
+                                Background="{DynamicResource Surface2}">
                           <TextBlock Text="{Binding TagLabel}"
                                      Foreground="{Binding TagBrush}"
-                                     FontSize="11" FontWeight="SemiBold" />
+                                     FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" />
                         </Border>
                         <TextBlock Grid.Column="1" Text="{Binding Trades}"
-                                   Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                                   Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                         <TextBlock Grid.Column="2" Text="{Binding WinRateLabel}"
-                                   Foreground="#D7E3EE" FontSize="11" VerticalAlignment="Center" />
+                                   Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                         <TextBlock Grid.Column="3" Text="{Binding PnlLabel}"
                                    Foreground="{Binding PnlBrush}"
-                                   FontSize="12" FontWeight="Bold" VerticalAlignment="Center" />
+                                   FontSize="{DynamicResource FsSmall}" FontWeight="Bold" VerticalAlignment="Center" />
                       </Grid>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
@@ -114,60 +114,60 @@
                 </Grid>
 
                 <TextBlock Text="No trades match the current filter."
-                           Foreground="{DynamicResource TextSoft}" FontSize="12" Margin="0,16"
+                           Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsSmall}" Margin="0,16"
                            IsVisible="{Binding TradeJournalVM.HasNoRows}" />
 
                 <ScrollViewer MaxHeight="480">
                   <ItemsControl ItemsSource="{Binding TradeJournalVM.Rows}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="vm:JournalEntryRowVM">
-                        <Border Padding="0,4" BorderBrush="#0E1820" BorderThickness="0,0,0,1">
+                        <Border Padding="0,4" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1">
                           <StackPanel Spacing="4">
                             <!-- Main row -->
                             <Grid ColumnDefinitions="90,60,40,70,80,70,*,80" ColumnSpacing="8">
                               <TextBlock Grid.Column="0" Text="{Binding DateLabel}"
-                                         Foreground="#8FA3B8" FontSize="10" VerticalAlignment="Center" />
+                                         Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="1" Text="{Binding SymbolLabel}"
-                                         Foreground="#D7E3EE" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                         Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="2" Text="{Binding DirectionLabel}"
-                                         Foreground="{Binding DirectionBrush}" FontSize="11" VerticalAlignment="Center" />
+                                         Foreground="{Binding DirectionBrush}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="3" Text="{Binding PnlLabel}"
-                                         Foreground="{Binding PnlBrush}" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
+                                         Foreground="{Binding PnlBrush}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="4" Text="{Binding PnlPctLabel}"
-                                         Foreground="{Binding PnlBrush}" FontSize="10" VerticalAlignment="Center" />
+                                         Foreground="{Binding PnlBrush}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="5" Text="{Binding ExchangeLabel}"
-                                         Foreground="#4A7090" FontSize="10" VerticalAlignment="Center" />
+                                         Foreground="#4A7090" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                               <!-- Notes (editable on click) -->
                               <Panel Grid.Column="6">
                                 <TextBlock Text="{Binding Notes}"
-                                           Foreground="#8FA3B8" FontSize="10"
+                                           Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}"
                                            TextTrimming="CharacterEllipsis"
                                            VerticalAlignment="Center"
                                            IsVisible="{Binding !IsEditing}" />
                                 <TextBox Text="{Binding Notes}"
-                                         FontSize="10"
-                                         Background="#0B1118"
+                                         FontSize="{DynamicResource FsMicro}"
+                                         Background="{DynamicResource Surface1}"
                                          IsVisible="{Binding IsEditing}" />
                               </Panel>
                               <!-- Tag ComboBox -->
                               <ComboBox Grid.Column="7"
                                         ItemsSource="{Binding $parent[ItemsControl].((vm:TradeJournalViewModel)DataContext).AllTags}"
                                         SelectedItem="{Binding Tag}"
-                                        FontSize="10"
-                                        Background="#111821" />
+                                        FontSize="{DynamicResource FsMicro}"
+                                        Background="{DynamicResource Surface2}" />
                             </Grid>
                             <!-- Edit / Done button -->
                             <Grid ColumnDefinitions="*,Auto,Auto" IsVisible="{Binding IsEditing}">
                               <Button Grid.Column="1" Content="✓ Done"
                                       Command="{Binding DoneCommand}"
-                                      Classes="GhostButton" FontSize="10"
-                                      Foreground="#21E6C1" />
+                                      Classes="GhostButton" FontSize="{DynamicResource FsMicro}"
+                                      Foreground="{DynamicResource Accent}" />
                             </Grid>
                             <!-- Edit link (shown when not editing) -->
                             <Button Content="✎ Add note"
                                     Command="{Binding EditCommand}"
                                     Classes="GhostButton"
-                                    FontSize="9" Padding="0"
+                                    FontSize="{DynamicResource FsMicro}" Padding="0"
                                     Foreground="{DynamicResource TextSoft}"
                                     HorizontalAlignment="Left"
                                     IsVisible="{Binding !IsEditing}" />

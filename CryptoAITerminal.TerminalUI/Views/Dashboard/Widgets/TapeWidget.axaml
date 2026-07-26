@@ -13,8 +13,8 @@
     <!-- Pressure + status summary -->
     <StackPanel Spacing="3">
       <TextBlock Text="{Binding MarketTapeVM.PressureLabel}" FontWeight="SemiBold"
-                 Foreground="{Binding MarketTapeVM.PressureBrush}" FontSize="12" />
-      <TextBlock Text="{Binding MarketTapeVM.StatusLabel}" Foreground="#8FA3B8" FontSize="10" />
+                 Foreground="{Binding MarketTapeVM.PressureBrush}" FontSize="{DynamicResource FsSmall}" />
+      <TextBlock Text="{Binding MarketTapeVM.StatusLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" />
     </StackPanel>
 
     <!-- Column headers. Proportional, not fixed: the old 328px of fixed columns exceeded the
@@ -29,13 +29,13 @@
         <ColumnDefinition Width="0.9*"  MinWidth="40" />
         <ColumnDefinition Width="1.05*" MinWidth="40" />
       </Grid.ColumnDefinitions>
-      <TextBlock Grid.Column="0" Text="Src"    Foreground="#8FA3B8" FontSize="10" />
-      <TextBlock Grid.Column="1" Text="Time"   Foreground="#8FA3B8" FontSize="10" />
-      <TextBlock Grid.Column="2" Text="Side"   Foreground="#8FA3B8" FontSize="10" />
-      <TextBlock Grid.Column="3" Text="Price"  Foreground="#8FA3B8" FontSize="10" />
-      <TextBlock Grid.Column="4" Text="Qty"    Foreground="#8FA3B8" FontSize="10" />
-      <TextBlock Grid.Column="5" Text="USD"    Foreground="#8FA3B8" FontSize="10" HorizontalAlignment="Right" />
-      <TextBlock Grid.Column="6" Text="Wallet" Foreground="#8FA3B8" FontSize="10" />
+      <TextBlock Grid.Column="0" Text="Src"    Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" />
+      <TextBlock Grid.Column="1" Text="Time"   Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" />
+      <TextBlock Grid.Column="2" Text="Side"   Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" />
+      <TextBlock Grid.Column="3" Text="Price"  Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" />
+      <TextBlock Grid.Column="4" Text="Qty"    Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" />
+      <TextBlock Grid.Column="5" Text="USD"    Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="6" Text="Wallet" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" />
     </Grid>
     </StackPanel>
 
@@ -57,20 +57,20 @@
                   <ColumnDefinition Width="1.05*" MinWidth="40" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="{Binding VenueLabel}" TextTrimming="CharacterEllipsis"
-                           Foreground="{Binding VenueBrush}" FontSize="10" FontWeight="SemiBold" />
+                           Foreground="{Binding VenueBrush}" FontSize="{DynamicResource FsMicro}" FontWeight="SemiBold" />
                 <TextBlock Grid.Column="1" Text="{Binding TimeLabel}" TextTrimming="CharacterEllipsis"
-                           FontFamily="Cascadia Code,Consolas,monospace" FontSize="11" Foreground="#8FA3B8" />
+                           FontFamily="Cascadia Code,Consolas,monospace" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />
                 <TextBlock Grid.Column="2" Text="{Binding Side}" TextTrimming="CharacterEllipsis"
-                           Foreground="{Binding SideBrush}" FontWeight="{Binding Weight}" FontSize="11" />
+                           Foreground="{Binding SideBrush}" FontWeight="{Binding Weight}" FontSize="{DynamicResource FsCaption}" />
                 <TextBlock Grid.Column="3" Text="{Binding PriceLabel}" TextTrimming="CharacterEllipsis"
-                           FontFamily="Cascadia Code,Consolas,monospace" FontWeight="{Binding Weight}" FontSize="11" />
+                           FontFamily="Cascadia Code,Consolas,monospace" FontWeight="{Binding Weight}" FontSize="{DynamicResource FsCaption}" />
                 <TextBlock Grid.Column="4" Text="{Binding QtyLabel}" TextTrimming="CharacterEllipsis"
-                           FontFamily="Cascadia Code,Consolas,monospace" FontSize="11" Foreground="#C7D3DF" />
+                           FontFamily="Cascadia Code,Consolas,monospace" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextSecondary}" />
                 <TextBlock Grid.Column="5" Text="{Binding QuoteLabel}" TextTrimming="CharacterEllipsis"
-                           FontFamily="Cascadia Code,Consolas,monospace" FontWeight="{Binding Weight}" FontSize="11"
-                           HorizontalAlignment="Right" Foreground="#C7D3DF" />
+                           FontFamily="Cascadia Code,Consolas,monospace" FontWeight="{Binding Weight}" FontSize="{DynamicResource FsCaption}"
+                           HorizontalAlignment="Right" Foreground="{DynamicResource TextSecondary}" />
                 <TextBlock Grid.Column="6" Text="{Binding TraderLabel}" TextTrimming="CharacterEllipsis"
-                           FontFamily="Cascadia Code,Consolas,monospace" FontSize="10" Foreground="#8FA3B8" />
+                           FontFamily="Cascadia Code,Consolas,monospace" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextMuted}" />
               </Grid>
             </Border>
           </DataTemplate>

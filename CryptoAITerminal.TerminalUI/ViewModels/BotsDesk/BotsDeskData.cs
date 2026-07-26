@@ -12,13 +12,15 @@ namespace CryptoAITerminal.TerminalUI.ViewModels.BotsDesk;
 public static class BotsDeskData
 {
     // ── palette ─────────────────────────────────────────────────────────────
-    public const string Accent = "#21e6c1";
-    public const string Green = "#3ddc84";
-    public const string Red = "#ff6b6b";
-    public const string Amber = "#f4b860";
-    public const string Text = "#e8f4ff";
+    // Смысловые роли берутся из палитры приложения (Styles/AppStyles.axaml) через
+    // SemanticColor — здесь остаются только оттенки, для которых токена нет.
+    public static string Accent => SemanticColor.Accent;
+    public static string Green => SemanticColor.Positive;
+    public static string Red => SemanticColor.Negative;
+    public static string Amber => SemanticColor.Warning;
+    public static string Text => SemanticColor.Primary;
     public const string Text2 = "#c8dcef";
-    public const string Text3 = "#8fa3b8";
+    public static string Text3 => SemanticColor.Muted;
     public const string Dim = "#4a6a82";
     public const string Dimmer = "#3d5a72";
     public const string Faint = "#2d4a5e";
@@ -32,13 +34,13 @@ public static class BotsDeskData
     // ── engine types (one per real bot engine in the app) ───────────────────
     public static (string c, string name) TypeMeta(string t) => t switch
     {
-        "GRID" => ("#21e6c1", "Grid bot"),
+        "GRID" => (Accent, "Grid bot"),
         "DCA" => ("#58a6ff", "DCA bot"),
-        "RULE" => ("#f4b860", "Rule bot"),
+        "RULE" => (Amber, "Rule bot"),
         "AI" => ("#b48cff", "AI trader"),
         "AGENT" => ("#ff8fa3", "Autonomous agent"),
         "TRAIL" => ("#7dd3fc", "Trailing stop"),
-        _ => ("#21e6c1", "Bot")
+        _ => (Accent, "Bot")
     };
 
     public static readonly string[] Types = { "GRID", "DCA", "RULE", "AI", "AGENT", "TRAIL" };
@@ -88,11 +90,7 @@ public static class BotsDeskData
     public static string Sgn(double v) => v > 0 ? Green : v < 0 ? Red : Text3;
 
     /// <summary>"#RRGGBB" + two-hex alpha → Avalonia "#AARRGGBB" (alpha first).</summary>
-    public static string Alpha(string hex, string aa)
-    {
-        if (string.IsNullOrEmpty(hex) || hex[0] != '#' || hex.Length < 7) return hex;
-        return "#" + aa + hex.Substring(1, 6);
-    }
+    public static string Alpha(string hex, string aa) => SemanticColor.Alpha(hex, aa);
 
     public static string Digits(string? s) => new string((s ?? "").Where(char.IsDigit).ToArray());
 

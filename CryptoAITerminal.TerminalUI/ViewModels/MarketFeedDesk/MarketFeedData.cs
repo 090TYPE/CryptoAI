@@ -11,14 +11,14 @@ namespace CryptoAITerminal.TerminalUI.ViewModels.MarketFeedDesk;
 /// </summary>
 public static class MarketFeedData
 {
-    public const string Accent = BotsDeskData.Accent;
-    public const string Green = BotsDeskData.Green;
-    public const string Red = BotsDeskData.Red;
-    public const string Amber = BotsDeskData.Amber;
+    public static string Accent => BotsDeskData.Accent;
+    public static string Green => BotsDeskData.Green;
+    public static string Red => BotsDeskData.Red;
+    public static string Amber => BotsDeskData.Amber;
     public const string Blue = "#58a6ff";
     public const string Violet = "#b48cff";
-    public const string Text = BotsDeskData.Text;
-    public const string Text3 = BotsDeskData.Text3;
+    public static string Text => BotsDeskData.Text;
+    public static string Text3 => BotsDeskData.Text3;
     public const string Dim = BotsDeskData.Dim;
     public const string Dimmer = BotsDeskData.Dimmer;
     public const string Faint = BotsDeskData.Faint;
@@ -31,7 +31,7 @@ public static class MarketFeedData
     {
         "bullish" => ("BULLISH", Green, "#061615", "#14302e"),
         "bearish" => ("BEARISH", Red, "#14060a", "#3a1620"),
-        _ => ("NEUTRAL", Text3, "#050f14", "#152233"),
+        _ => ("NEUTRAL", Text3, "#050f14", SemanticColor.Stroke),
     };
 
     // ── formatters ───────────────────────────────────────────────────────────

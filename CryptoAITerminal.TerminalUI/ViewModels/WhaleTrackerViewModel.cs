@@ -68,7 +68,7 @@ public class WhaleTrackerViewModel : ReactiveObject, IDisposable
     public string InsightSource { get => _insightSource; private set => this.RaiseAndSetIfChanged(ref _insightSource, value); }
     public string InsightSignalBrush => _insightSignal switch
     {
-        "ACCUMULATION" => "#3DDC84", "DISTRIBUTION" => "#FF6B6B", _ => "#8FA3B8"
+        "ACCUMULATION" => SemanticColor.Positive, "DISTRIBUTION" => SemanticColor.Negative, _ => SemanticColor.Muted
     };
 
     public void ConfigureAi(string apiKey, string model)
@@ -232,7 +232,7 @@ public class WhaleAlertViewModel : ReactiveObject
 
     // ── Alchemy price-trend enrichment (populated asynchronously) ─────────────
     private string _priceTrendLabel = "";
-    private string _priceTrendBrush = "#8FA3B8";
+    private string _priceTrendBrush = SemanticColor.Muted;
     private bool   _hasPriceTrend;
 
     public string PriceTrendLabel
@@ -258,8 +258,8 @@ public class WhaleAlertViewModel : ReactiveObject
     {
         var sign = changePct >= 0 ? "+" : "";
         PriceTrendLabel = $"{sign}{changePct:N2}%  1h";
-        PriceTrendBrush = changePct >=  0.5m ? "#21E6C1"
-                        : changePct <= -0.5m ? "#FF6B6B"
+        PriceTrendBrush = changePct >=  0.5m ? SemanticColor.Accent
+                        : changePct <= -0.5m ? SemanticColor.Negative
                         : "#F4D03F";
         HasPriceTrend = true;
     }
@@ -277,11 +277,11 @@ public class WhaleAlertViewModel : ReactiveObject
         ChainType.Ethereum => "#8A92B2",
         ChainType.BSC      => "#F0B90B",
         ChainType.Solana   => "#9945FF",
-        _                  => "#8FA3B8"
+        _                  => SemanticColor.Muted
     };
 
     public string AlertBadge => _alert.AlertType == "WalletActivity" ? "WATCHED" : "LARGE";
-    public string AlertBrush => _alert.AlertType == "WalletActivity" ? "#F4B860" : "#21E6C1";
+    public string AlertBrush => _alert.AlertType == "WalletActivity" ? SemanticColor.Warning : SemanticColor.Accent;
     public bool   HasLabel   => _alert.IsLabeledWalletActivity;
 
     public string TokenSymbol => _alert.Transfer.TokenSymbol;
@@ -373,10 +373,10 @@ public class LabeledWalletRowViewModel
 
     public string CategoryBrush => _wallet.Category switch
     {
-        "Exchange"    => "#21E6C1",
-        "MarketMaker" => "#F4B860",
+        "Exchange"    => SemanticColor.Accent,
+        "MarketMaker" => SemanticColor.Warning,
         "Fund"        => "#A78BFA",
-        _             => "#8FA3B8"
+        _             => SemanticColor.Muted
     };
 
     public LabeledWalletRowViewModel(LabeledWallet wallet) => _wallet = wallet;

@@ -55,6 +55,23 @@
     <!-- Устаревшие алиасы (обратная совместимость) -->
     <SolidColorBrush x:Key="PanelBg" Color="#07101A" />
     <SolidColorBrush x:Key="PanelBgAlt" Color="#060D14" />
+
+    <!-- ============================================================
+         ТИПОГРАФИЧЕСКАЯ ШКАЛА
+         Восемь ступеней вместо двух десятков разрозненных значений (включая дробные
+         9.5/10.5/11.5/12.5, которые на 100% масштабе дают разную субпиксельную высоту строки
+         у соседних колонок одной таблицы). Нижние ступени намеренно плотные: это торговый
+         терминал, основная масса подписей живёт на 10–12px, и поднимать её до «читаемых» 13
+         значит потерять по строке в каждой панели.
+    ============================================================ -->
+    <x:Double x:Key="FsMicro">10</x:Double>
+    <x:Double x:Key="FsCaption">11</x:Double>
+    <x:Double x:Key="FsSmall">12</x:Double>
+    <x:Double x:Key="FsBody">13</x:Double>
+    <x:Double x:Key="FsSubhead">15</x:Double>
+    <x:Double x:Key="FsTitle">18</x:Double>
+    <x:Double x:Key="FsH2">22</x:Double>
+    <x:Double x:Key="FsH1">28</x:Double>
   </Styles.Resources>
 
   <!-- ============================================================
@@ -150,7 +167,7 @@
 
   <!-- Групповой заголовок в сайдбаре (TRADING, PORTFOLIO, …) -->
   <Style Selector="TextBlock.SideNavGroup">
-    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontSize" Value="{DynamicResource FsMicro}" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="LetterSpacing" Value="1.4" />
     <Setter Property="Foreground" Value="#4E7A96" />
@@ -177,36 +194,36 @@
        ТИПОГРАФИКА
   ============================================================ -->
   <Style Selector="TextBlock.H1">
-    <Setter Property="FontSize" Value="30" />
+    <Setter Property="FontSize" Value="{DynamicResource FsH1}" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
   </Style>
 
   <Style Selector="TextBlock.H2">
-    <Setter Property="FontSize" Value="18" />
+    <Setter Property="FontSize" Value="{DynamicResource FsTitle}" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
   </Style>
 
   <Style Selector="TextBlock.Overline">
-    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontSize" Value="{DynamicResource FsCaption}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="Foreground" Value="{DynamicResource TextSoft}" />
   </Style>
 
   <Style Selector="TextBlock.Metric">
-    <Setter Property="FontSize" Value="24" />
+    <Setter Property="FontSize" Value="{DynamicResource FsH2}" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
   </Style>
 
   <Style Selector="TextBlock.SecondaryCopy">
-    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontSize" Value="{DynamicResource FsSmall}" />
     <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
   </Style>
 
   <Style Selector="TextBlock.Value">
-    <Setter Property="FontSize" Value="32" />
+    <Setter Property="FontSize" Value="{DynamicResource FsH1}" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="Foreground" Value="{DynamicResource Accent}" />
   </Style>
@@ -233,7 +250,7 @@
     <Setter Property="Foreground" Value="#5A7A94" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="MinHeight" Value="34" />
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontSize" Value="{DynamicResource FsBody}" />
   </Style>
 
   <!-- Fluent applies the hover/pressed visual to PART_ContentPresenter, so a Background
@@ -256,7 +273,7 @@
     <Setter Property="Padding" Value="14,9" />
     <Setter Property="CornerRadius" Value="10" />
     <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontSize" Value="{DynamicResource FsBody}" />
     <Setter Property="Background" Value="#121A24" />
     <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
     <Setter Property="BorderBrush" Value="{DynamicResource PanelStrokeBright}" />
@@ -338,6 +355,43 @@
     <Setter Property="BorderThickness" Value="1" />
   </Style>
 
+  <!-- Плоская кнопка деск-страниц: шаблон рисует ровно то, что задано на самой кнопке
+       (Background/BorderBrush/BorderThickness/CornerRadius/Padding), без серого хрома Fluent
+       и без PART_ContentPresenter, на который вешаются ховер-сеттеры темы.
+       Десять View держали побайтово одинаковую копию этого ControlTemplate под
+       Selector="Button" — то есть переопределяли ВСЕ кнопки страницы разом. Класс делает
+       область действия явной; имя FlatChrome, а не Flat, потому что Button.Flat уже занят
+       локально в PortfolioView и AiSignalsView под другой смысл (кликабельная строка). -->
+  <Style Selector="Button.FlatChrome">
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.FlatChrome:pointerover">
+    <Setter Property="Opacity" Value="0.86" />
+  </Style>
+
+  <Style Selector="Button.FlatChrome:disabled">
+    <Setter Property="Opacity" Value="0.45" />
+  </Style>
+
   <!-- ============================================================
        ФОРМ-ЭЛЕМЕНТЫ
   ============================================================ -->
@@ -350,7 +404,7 @@
     <Setter Property="Padding" Value="12,10" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="MinHeight" Value="42" />
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontSize" Value="{DynamicResource FsBody}" />
     <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden" />
   </Style>
 
@@ -368,7 +422,7 @@
     <Setter Property="Background" Value="#0B1119" />
     <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
     <Setter Property="FontFamily" Value="Consolas, Cascadia Code, monospace" />
-    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontSize" Value="{DynamicResource FsSmall}" />
     <Setter Property="AcceptsReturn" Value="True" />
     <Setter Property="IsReadOnly" Value="True" />
     <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
@@ -387,7 +441,7 @@
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="MinHeight" Value="42" />
     <Setter Property="Padding" Value="6,6" />
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontSize" Value="{DynamicResource FsBody}" />
   </Style>
 
   <Style Selector="NumericUpDown:focus-within">
@@ -416,7 +470,7 @@
     <Setter Property="Padding" Value="10,10" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="MinHeight" Value="42" />
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontSize" Value="{DynamicResource FsBody}" />
   </Style>
 
   <Style Selector="ComboBox:pointerover">
@@ -468,7 +522,7 @@
   ============================================================ -->
   <Style Selector="CheckBox">
     <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontSize" Value="{DynamicResource FsBody}" />
     <Setter Property="MinHeight" Value="28" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
     <Setter Property="VerticalAlignment" Value="Center" />
@@ -840,14 +894,14 @@
   </Style>
 
   <Style Selector="TextBlock.SplashTitle">
-    <Setter Property="FontSize" Value="28" />
+    <Setter Property="FontSize" Value="{DynamicResource FsH1}" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="LetterSpacing" Value="2.2" />
     <Setter Property="Foreground" Value="#F6FBFF" />
   </Style>
 
   <Style Selector="TextBlock.SplashSubtitle">
-    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontSize" Value="{DynamicResource FsSubhead}" />
     <Setter Property="Foreground" Value="#9AB0C3" />
     <Setter Property="TextAlignment" Value="Center" />
   </Style>
@@ -875,7 +929,7 @@
 
   <Style Selector="TextBlock.SplashStatus">
     <Setter Property="Foreground" Value="#C2D6E6" />
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontSize" Value="{DynamicResource FsBody}" />
   </Style>
 
   <Style Selector="Border.SplashMetricChip">
@@ -893,7 +947,7 @@
 
   <!-- Заголовок виджета: мелкий, верхний регистр, приглушённый -->
   <Style Selector="TextBlock.WidgetTitle">
-    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontSize" Value="{DynamicResource FsSmall}" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="LetterSpacing" Value="1.2" />
     <Setter Property="Foreground" Value="#8FA3B8" />
@@ -901,7 +955,7 @@
 
   <!-- Микро-подпись (метка над числом) -->
   <Style Selector="TextBlock.StatLabel">
-    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontSize" Value="{DynamicResource FsMicro}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="LetterSpacing" Value="0.8" />
     <Setter Property="Foreground" Value="#5A7A94" />
@@ -947,7 +1001,7 @@
     <Setter Property="Height" Value="26" />
     <Setter Property="Padding" Value="10,0" />
     <Setter Property="CornerRadius" Value="7" />
-    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontSize" Value="{DynamicResource FsCaption}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="Background" Value="#0A1422" />
     <Setter Property="BorderBrush" Value="#152233" />
@@ -965,7 +1019,7 @@
     <Setter Property="MinHeight" Value="24" />
     <Setter Property="Padding" Value="10,3" />
     <Setter Property="CornerRadius" Value="7" />
-    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontSize" Value="{DynamicResource FsMicro}" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="Background" Value="#0A1422" />
     <Setter Property="BorderBrush" Value="#22384F" />

@@ -1,6 +1,7 @@
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
+using CryptoAITerminal.Core.Trading;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -70,13 +71,6 @@ public sealed class FundingArbitrageService : IDisposable
     private FuturesPositionSide PerpShortSide() =>
         _isHedgeMode ? FuturesPositionSide.Short : FuturesPositionSide.Both;
 
-    private static bool IsPositionSideMismatch(Exception ex)
-    {
-        var msg = ex.Message?.ToLowerInvariant() ?? string.Empty;
-        return msg.Contains("position side") || msg.Contains("position mode")
-            || msg.Contains("position idx") || msg.Contains("51124");
-    }
-
     /// <summary>Places a market perp order, retrying once with the flipped account mode on a
     /// position-side mismatch so it works on both one-way and hedge accounts.</summary>
     private async Task PlacePerpAsync(IExchangeGateway futGw, string symbol, OrderSide side, decimal qty, bool reduceOnly)
@@ -87,7 +81,7 @@ public sealed class FundingArbitrageService : IDisposable
             PositionSide = PerpShortSide(), Leverage = Leverage, ReduceOnly = reduceOnly,
         };
         try { await futGw.PlaceOrderAsync(order); }
-        catch (Exception ex) when (IsPositionSideMismatch(ex))
+        catch (Exception ex) when (ExchangeErrors.IsPositionSideMismatch(ex))
         {
             _isHedgeMode = !_isHedgeMode;
             order.PositionSide = PerpShortSide();
@@ -154,8 +148,9 @@ public sealed class FundingArbitrageService : IDisposable
     // GET https://fapi.binance.com/fapi/v1/premiumIndex  (no auth, returns all)
     private async Task<List<FundingArbitrageOpportunity>> FetchBinanceAsync(CancellationToken ct)
     {
-        var json = await _http.GetStringAsync(
-            "https://fapi.binance.com/fapi/v1/premiumIndex", ct);
+        // Чтение публичного эндпоинта — ретрай на 429 безопасен; ноги позиции ниже не ретраятся.
+        var json = await RestBackoff.GetStringAsync(
+            _http, "https://fapi.binance.com/fapi/v1/premiumIndex", ct);
 
         using var doc = JsonDocument.Parse(json, _jOpts);
         var results = new List<FundingArbitrageOpportunity>(Symbols.Length);
@@ -178,8 +173,8 @@ public sealed class FundingArbitrageService : IDisposable
     // GET https://api.bybit.com/v5/market/tickers?category=linear  (no auth, returns all)
     private async Task<List<FundingArbitrageOpportunity>> FetchBybitAsync(CancellationToken ct)
     {
-        var json = await _http.GetStringAsync(
-            "https://api.bybit.com/v5/market/tickers?category=linear", ct);
+        var json = await RestBackoff.GetStringAsync(
+            _http, "https://api.bybit.com/v5/market/tickers?category=linear", ct);
 
         using var doc = JsonDocument.Parse(json, _jOpts);
         var list    = doc.RootElement.GetProperty("result").GetProperty("list");
@@ -214,8 +209,8 @@ public sealed class FundingArbitrageService : IDisposable
             var okxSym = ToOkxSwap(sym);
             try
             {
-                var json = await _http.GetStringAsync(
-                    $"https://www.okx.com/api/v5/public/funding-rate?instId={okxSym}", ct);
+                var json = await RestBackoff.GetStringAsync(
+                    _http, $"https://www.okx.com/api/v5/public/funding-rate?instId={okxSym}", ct);
 
                 using var doc = JsonDocument.Parse(json, _jOpts);
                 var data = doc.RootElement.GetProperty("data");

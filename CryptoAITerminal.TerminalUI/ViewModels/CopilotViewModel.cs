@@ -19,7 +19,7 @@ public sealed class CopilotMessageVM
     public string Source { get; init; } = "";
 
     public string RoleLabel => IsUser ? "You" : "Copilot";
-    public string RoleBrush  => IsUser ? "#8FA3B8" : "#21E6C1";
+    public string RoleBrush  => IsUser ? SemanticColor.Muted : SemanticColor.Accent;
     public string Align      => IsUser ? "Right" : "Left";
     public bool   HasSource  => !string.IsNullOrWhiteSpace(Source);
 }
@@ -151,7 +151,7 @@ public sealed class CopilotViewModel : ReactiveObject
     }
 
     public string ModeLabel => _service.UsesLiveModel ? $"Claude · {_service.Model}" : "Offline assistant";
-    public string ModeBrush => _service.UsesLiveModel ? "#21E6C1" : "#8FA3B8";
+    public string ModeBrush => _service.UsesLiveModel ? SemanticColor.Accent : SemanticColor.Muted;
     public string StatusLabel => IsBusy ? "Thinking…" : "Ready";
 
     public ReactiveCommand<Unit, Unit> AskCommand { get; }

@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using CryptoAITerminal.Core.Interfaces;
@@ -68,7 +66,7 @@ public sealed class CustomMarketPoller
             foreach (var group in entries.Where(IsDex).GroupBy(e => e.DexChain, StringComparer.OrdinalIgnoreCase))
             {
                 try { await PollDexChainAsync(group.Key, group.ToList()); }
-                catch (Exception ex) { rateLimited |= IsRateLimit(ex); }
+                catch (Exception ex) { rateLimited |= RestBackoff.IsRateLimit(ex); }
             }
 
             foreach (var e in entries.Where(entry => !IsDex(entry)))
@@ -80,7 +78,7 @@ public sealed class CustomMarketPoller
                 }
                 catch (Exception ex)
                 {
-                    rateLimited |= IsRateLimit(ex);
+                    rateLimited |= RestBackoff.IsRateLimit(ex);
                 }
             }
         }
@@ -104,8 +102,7 @@ public sealed class CustomMarketPoller
     {
         if (rateLimited)
         {
-            var next = _timer.Interval + _timer.Interval;
-            if (next > MaxInterval) next = MaxInterval;
+            var next = RestBackoff.Grow(_timer.Interval, MaxInterval);
             if (next != _timer.Interval || !_throttled)
                 CrashLog.Write("WARN", $"CustomMarketPoller: rate limited, polling every {next.TotalSeconds:0}s");
             _timer.Interval = next;
@@ -117,25 +114,6 @@ public sealed class CustomMarketPoller
         _throttled = false;
         _timer.Interval = BaseInterval;
         CrashLog.Write("INFO", "CustomMarketPoller: rate limit cleared, back to 6s polling");
-    }
-
-    private static bool IsRateLimit(Exception ex)
-    {
-        for (Exception? e = ex; e is not null; e = e.InnerException)
-        {
-            if (e is HttpRequestException http &&
-                (http.StatusCode == HttpStatusCode.TooManyRequests || (int?)http.StatusCode == 418))
-                return true;
-
-            // Exchange SDKs report the ban as a plain message, not a typed status.
-            var message = e.Message;
-            if (message.Contains("429", StringComparison.Ordinal) ||
-                message.Contains("Too Many Requests", StringComparison.OrdinalIgnoreCase) ||
-                message.Contains("rate limit", StringComparison.OrdinalIgnoreCase))
-                return true;
-        }
-
-        return false;
     }
 
     private async Task<MarketData?> PollCexAsync(Entry e)

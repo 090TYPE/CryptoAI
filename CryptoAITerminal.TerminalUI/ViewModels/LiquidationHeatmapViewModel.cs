@@ -189,10 +189,10 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
 
     public string LiquidationStreamColor => StreamState switch
     {
-        LiquidationStreamState.Connected => "#21E6C1",
-        LiquidationStreamState.Connecting => "#F4B860",
-        LiquidationStreamState.Reconnecting => "#F4B860",
-        _ => "#8FA3B8",
+        LiquidationStreamState.Connected => SemanticColor.Accent,
+        LiquidationStreamState.Connecting => SemanticColor.Warning,
+        LiquidationStreamState.Reconnecting => SemanticColor.Warning,
+        _ => SemanticColor.Muted,
     };
 
     /// <summary>Events accepted since the stream started, including ones aged out of the buffer.</summary>
@@ -282,7 +282,7 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
     public string InsightSignal { get => _insightSignal; private set => this.RaiseAndSetIfChanged(ref _insightSignal, value); }
     public string InsightBullets { get => _insightBullets; private set => this.RaiseAndSetIfChanged(ref _insightBullets, value); }
     public string InsightSource { get => _insightSource; private set => this.RaiseAndSetIfChanged(ref _insightSource, value); }
-    public string InsightSignalBrush => _insightSignal switch { "MAGNET_ABOVE" => "#3DDC84", "MAGNET_BELOW" => "#FF6B6B", _ => "#8FA3B8" };
+    public string InsightSignalBrush => _insightSignal switch { "MAGNET_ABOVE" => SemanticColor.Positive, "MAGNET_BELOW" => SemanticColor.Negative, _ => SemanticColor.Muted };
 
     public void ConfigureAi(string apiKey, string model)
     {
@@ -684,7 +684,7 @@ public record LiqClusterOverlay(decimal Price, decimal NotionalUsd, string Side,
         : NotionalUsd >= 1_000_000m ? $"${NotionalUsd / 1_000_000m:N1}M"
         : $"${NotionalUsd / 1_000m:N0}K";
 
-    public string Color => Side == "long" ? "#21E6C1" : "#FF6B6B";
+    public string Color => Side == "long" ? SemanticColor.Accent : SemanticColor.Negative;
     public string PriceLabel => NotionalUsd >= 1_000_000m
         ? $"{Price:N0}  {NotionalLabel}"
         : $"{Price:N0}";

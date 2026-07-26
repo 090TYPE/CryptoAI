@@ -28,7 +28,7 @@ public sealed class TelegramSignalRowVM : ReactiveObject
     public TelegramPendingSignal Signal { get; }
 
     public string Label      => $"{Signal.Side}  {Signal.Symbol}  @ {Signal.Price:N2}  ×{Signal.Quantity:0.####}";
-    public string SideBrush  => Signal.Side == "SELL" ? "#FF6B6B" : "#21E6C1";
+    public string SideBrush  => Signal.Side == "SELL" ? SemanticColor.Negative : SemanticColor.Accent;
     public string AgeLabel   => $"{Math.Max(0, (int)(DateTime.UtcNow - Signal.CreatedAt).TotalSeconds)}s ago";
     public string Description => Signal.Description;
 

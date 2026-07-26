@@ -34,13 +34,13 @@ public sealed class GasMonitorViewModel : ReactiveObject, IDisposable
     private string _lastUpdatedLabel = "–";
     private bool   _isEthAlertActive;
     private bool   _isBscAlertActive;
-    private string _ethSlowColor  = "#8FA3B8";
-    private string _ethStdColor   = "#8FA3B8";
-    private string _ethFastColor  = "#8FA3B8";
-    private string _bscSlowColor  = "#8FA3B8";
-    private string _bscStdColor   = "#8FA3B8";
-    private string _bscFastColor  = "#8FA3B8";
-    private string _solanaColor   = "#8FA3B8";
+    private string _ethSlowColor  = SemanticColor.Muted;
+    private string _ethStdColor   = SemanticColor.Muted;
+    private string _ethFastColor  = SemanticColor.Muted;
+    private string _bscSlowColor  = SemanticColor.Muted;
+    private string _bscStdColor   = SemanticColor.Muted;
+    private string _bscFastColor  = SemanticColor.Muted;
+    private string _solanaColor   = SemanticColor.Muted;
     private string _alertMessage  = "";
     private bool   _isLoading     = true;
 
@@ -182,21 +182,21 @@ public sealed class GasMonitorViewModel : ReactiveObject, IDisposable
 
     /// <summary>Colour-codes a gwei value (green = cheap, red = expensive).</summary>
     private static string GweiColor(decimal gwei, bool isEth) =>
-        gwei <= 0 ? "#8FA3B8"
+        gwei <= 0 ? SemanticColor.Muted
         : isEth
-            ? gwei < 10 ? "#21E6C1"   // very cheap
+            ? gwei < 10 ? SemanticColor.Accent   // very cheap
             : gwei < 30 ? "#F4D03F"   // normal
             : gwei < 80 ? "#FF9500"   // expensive
-            : "#FF6B6B"               // very expensive
-        : gwei < 1  ? "#21E6C1"       // BSC cheap (sub-gwei or < 1 gwei)
+            : SemanticColor.Negative               // very expensive
+        : gwei < 1  ? SemanticColor.Accent       // BSC cheap (sub-gwei or < 1 gwei)
         : gwei < 5  ? "#F4D03F"       // BSC normal
-        : "#FF6B6B";                  // BSC expensive
+        : SemanticColor.Negative;                  // BSC expensive
 
     private static string SolanaTpsColor(double tps) =>
-        tps <= 0     ? "#8FA3B8"
-        : tps > 2000 ? "#21E6C1"   // healthy
+        tps <= 0     ? SemanticColor.Muted
+        : tps > 2000 ? SemanticColor.Accent   // healthy
         : tps > 500  ? "#F4D03F"   // moderate
-        : "#FF6B6B";               // congested
+        : SemanticColor.Negative;               // congested
 
     /// <summary>Rough confirmation-time estimate for an Ethereum gas price.</summary>
     public static string EthTimeEstimate(decimal gwei) => gwei switch

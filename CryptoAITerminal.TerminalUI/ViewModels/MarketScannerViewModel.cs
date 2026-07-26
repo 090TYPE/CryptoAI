@@ -79,11 +79,11 @@ public sealed class ScanRowVM : ReactiveObject
         v >= 1_000         ? $"${v / 1_000:F0}K"          :
         v > 0              ? $"${v:F0}" : "—";
 
-    private static readonly IBrush Teal      = new SolidColorBrush(Color.Parse("#21E6C1"));
+    private static readonly IBrush Teal      = new SolidColorBrush(Color.Parse(SemanticColor.Accent));
     private static readonly IBrush LightTeal = new SolidColorBrush(Color.Parse("#5FA89A"));
     private static readonly IBrush LightRed  = new SolidColorBrush(Color.Parse("#B05555"));
-    private static readonly IBrush Red       = new SolidColorBrush(Color.Parse("#FF5555"));
-    private static readonly IBrush Amber     = new SolidColorBrush(Color.Parse("#F4B860"));
+    private static readonly IBrush Red       = new SolidColorBrush(Color.Parse(SemanticColor.Negative));
+    private static readonly IBrush Amber     = new SolidColorBrush(Color.Parse(SemanticColor.Warning));
     private static readonly IBrush Gray      = new SolidColorBrush(Color.Parse("#5C6E82"));
     private static readonly IBrush HotBg     = new SolidColorBrush(Color.Parse("#0F1E14"));
     private static readonly IBrush HotBadge  = new SolidColorBrush(Color.Parse("#FF6B00"));
@@ -105,7 +105,7 @@ public sealed class AlertRowVM
 
     public IBrush SeverityBrush =>
         _alert.Severity == AlertSeverity.Hot     ? new SolidColorBrush(Color.Parse("#FF6B00")) :
-        _alert.Severity == AlertSeverity.Warning ? new SolidColorBrush(Color.Parse("#F4B860")) :
+        _alert.Severity == AlertSeverity.Warning ? new SolidColorBrush(Color.Parse(SemanticColor.Warning)) :
                                                     new SolidColorBrush(Color.Parse("#5C6E82"));
 
     public string SeverityDot =>
@@ -128,8 +128,8 @@ public sealed class PriceLevelRowVM : ReactiveObject
     public string Note         => Model.Note;
     public bool   IsTriggered  => Model.Triggered;
     public IBrush KindBrush    => Model.IsResistance
-        ? new SolidColorBrush(Color.Parse("#FF5555"))
-        : new SolidColorBrush(Color.Parse("#21E6C1"));
+        ? new SolidColorBrush(Color.Parse(SemanticColor.Negative))
+        : new SolidColorBrush(Color.Parse(SemanticColor.Accent));
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -144,7 +144,7 @@ public sealed class AiPickVM
     public string Bias   { get; init; } = "WATCH";
     public string Reason { get; init; } = "";
     public string ScoreLabel => $"{Score}";
-    public string BiasBrush => Bias switch { "LONG" => "#3DDC84", "SHORT" => "#FF6B6B", _ => "#8FA3B8" };
+    public string BiasBrush => Bias switch { "LONG" => SemanticColor.Positive, "SHORT" => SemanticColor.Negative, _ => SemanticColor.Muted };
 }
 
 public sealed class MarketScannerViewModel : ReactiveObject, IDisposable

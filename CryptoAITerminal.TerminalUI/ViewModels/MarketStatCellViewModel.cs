@@ -10,9 +10,9 @@ namespace CryptoAITerminal.TerminalUI.ViewModels;
 public sealed class MarketStatCellViewModel : ReactiveObject
 {
     private string _value = "--";
-    private string _valueBrush = "#E8F4FF";
+    private string _valueBrush = SemanticColor.Primary;
     private string? _delta;
-    private string _deltaBrush = "#3DDC84";
+    private string _deltaBrush = SemanticColor.Positive;
 
     public MarketStatCellViewModel(string label) => Label = label;
 

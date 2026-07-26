@@ -96,11 +96,11 @@ public class TradingVenueQuoteViewModel : ReactiveObject
     }
 
     public string DeltaBrush => IsBase
-        ? "#8FA3B8"
-        : Delta >= 0m ? "#3DDC84" : "#FF6B6B";
+        ? SemanticColor.Muted
+        : Delta >= 0m ? SemanticColor.Positive : SemanticColor.Negative;
 
     public string TabBackground => IsSelected ? "#0E2A2E" : "#07111A";
-    public string TabBorderBrush => IsSelected ? "#21E6C1" : "#152535";
+    public string TabBorderBrush => IsSelected ? SemanticColor.Accent : "#152535";
     public string NameBrush => IsSelected ? "#F4F7FB" : "#9BAFC5";
 
     /// <summary>Apply a fresh quote from the venue poller.</summary>
@@ -140,7 +140,7 @@ public class TapeTradeViewModel
     public DateTime TimeLocal { get; }
 
     public string SideLabel => IsBuy ? "BUY" : "SELL";
-    public string SideBrush => IsBuy ? "#3DDC84" : "#FF6B6B";
+    public string SideBrush => IsBuy ? SemanticColor.Positive : SemanticColor.Negative;
     public string PriceLabel => Price.ToString("N2", CultureInfo.InvariantCulture);
     public string QuantityLabel => Quantity.ToString("0.###", CultureInfo.InvariantCulture);
     public string TimeLabel => TimeLocal.ToString("HH:mm:ss");

@@ -13,17 +13,17 @@
 
       <!-- Header -->
       <Grid ColumnDefinitions="Auto,*,Auto">
-        <TextBlock Text="✦" Foreground="#a855f7" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" />
-        <TextBlock Grid.Column="1" Text="AI TRADE ASSISTANT" Foreground="#e8f4ff" FontSize="12" FontWeight="Bold" Margin="7,0,0,0" VerticalAlignment="Center" />
+        <TextBlock Text="✦" Foreground="#a855f7" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" Text="AI TRADE ASSISTANT" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsSmall}" FontWeight="Bold" Margin="6,0,0,0" VerticalAlignment="Center" />
         <Border Grid.Column="2" Classes="TdDexBadge" VerticalAlignment="Center">
-          <TextBlock Text="{Binding ConfidenceLabel}" Foreground="#a855f7" FontSize="9" FontWeight="Bold" />
+          <TextBlock Text="{Binding ConfidenceLabel}" Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
         </Border>
       </Grid>
 
       <!-- Intent -->
       <StackPanel Spacing="4">
         <TextBlock Classes="TdLabel" Text="WHAT DO YOU WANT?" />
-        <TextBox Text="{Binding Intent}" PlaceholderText="e.g. safe swing long / quick scalp / short the trend" FontSize="11" />
+        <TextBox Text="{Binding Intent}" PlaceholderText="e.g. safe swing long / quick scalp / short the trend" FontSize="{DynamicResource FsCaption}" />
       </StackPanel>
 
       <!-- Risk -->
@@ -72,50 +72,50 @@
 
       <!-- Backtest the current rules over history -->
       <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
-        <Button Grid.Column="0" Content="BACKTEST" Classes="TdSeg" Command="{Binding BacktestCommand}" Padding="10,5" />
+        <Button Grid.Column="0" Content="BACKTEST" Classes="TdSeg" Command="{Binding BacktestCommand}" Padding="10,4" />
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" IsVisible="{Binding HasBacktest}">
-          <TextBlock Text="{Binding BacktestWinRateLabel, StringFormat=win {0}}" Foreground="#3ddc84" FontSize="10" FontWeight="Bold" />
-          <TextBlock Text="{Binding BacktestExpectancyLabel}" Foreground="#a855f7" FontSize="10" FontWeight="Bold" />
+          <TextBlock Text="{Binding BacktestWinRateLabel, StringFormat=win {0}}" Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+          <TextBlock Text="{Binding BacktestExpectancyLabel}" Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
         </StackPanel>
       </Grid>
 
       <!-- Result -->
-      <Border Background="#07111a" BorderBrush="#1e2f45" BorderThickness="1" CornerRadius="8" Padding="10" IsVisible="{Binding HasSetup}">
+      <Border Background="{DynamicResource Surface1}" BorderBrush="#1e2f45" BorderThickness="1" CornerRadius="8" Padding="10" IsVisible="{Binding HasSetup}">
         <StackPanel Spacing="7">
           <Grid ColumnDefinitions="Auto,*,Auto">
-            <Border Background="#0a1622" CornerRadius="4" Padding="8,2">
-              <TextBlock Text="{Binding BiasLabel}" Foreground="{Binding BiasBrush}" FontWeight="Bold" FontSize="12" />
+            <Border Background="{DynamicResource Surface2}" CornerRadius="4" Padding="8,2">
+              <TextBlock Text="{Binding BiasLabel}" Foreground="{Binding BiasBrush}" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" />
             </Border>
-            <TextBlock Grid.Column="2" Text="{Binding RiskRewardLabel}" Foreground="#a855f7" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2" Text="{Binding RiskRewardLabel}" Foreground="#a855f7" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
           </Grid>
 
           <Grid ColumnDefinitions="*,*,*" ColumnSpacing="6">
             <StackPanel Spacing="1">
               <TextBlock Classes="TdLabel" Text="ENTRY" />
-              <TextBlock Classes="TdNum" Text="{Binding EntryLabel}" Foreground="#c8dcef" FontWeight="Bold" FontSize="11" />
+              <TextBlock Classes="TdNum" Text="{Binding EntryLabel}" Foreground="{DynamicResource TextSecondary}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
             </StackPanel>
             <StackPanel Grid.Column="1" Spacing="1">
               <TextBlock Classes="TdLabel" Text="TARGET" />
-              <TextBlock Classes="TdNum" Text="{Binding TakeProfitLabel}" Foreground="#3ddc84" FontWeight="Bold" FontSize="11" />
+              <TextBlock Classes="TdNum" Text="{Binding TakeProfitLabel}" Foreground="{DynamicResource Positive}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
             </StackPanel>
             <StackPanel Grid.Column="2" Spacing="1">
               <TextBlock Classes="TdLabel" Text="STOP" />
-              <TextBlock Classes="TdNum" Text="{Binding StopLossLabel}" Foreground="#ff6b6b" FontWeight="Bold" FontSize="11" />
+              <TextBlock Classes="TdNum" Text="{Binding StopLossLabel}" Foreground="{DynamicResource Negative}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
             </StackPanel>
           </Grid>
 
           <Grid ColumnDefinitions="*,*,*" ColumnSpacing="6">
             <StackPanel Spacing="1">
               <TextBlock Classes="TdLabel" Text="LEVERAGE" />
-              <TextBlock Classes="TdNum" Text="{Binding LeverageLabel}" Foreground="#f4b860" FontWeight="Bold" FontSize="11" />
+              <TextBlock Classes="TdNum" Text="{Binding LeverageLabel}" Foreground="{DynamicResource Warning}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
             </StackPanel>
             <StackPanel Grid.Column="1" Spacing="1">
               <TextBlock Classes="TdLabel" Text="SIZE" />
-              <TextBlock Classes="TdNum" Text="{Binding SizeLabel}" Foreground="#c8dcef" FontWeight="Bold" FontSize="11" />
+              <TextBlock Classes="TdNum" Text="{Binding SizeLabel}" Foreground="{DynamicResource TextSecondary}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
             </StackPanel>
             <StackPanel Grid.Column="2" Spacing="1">
               <TextBlock Classes="TdLabel" Text="CONFIDENCE" />
-              <TextBlock Classes="TdNum" Text="{Binding ConfidenceLabel}" Foreground="#a855f7" FontWeight="Bold" FontSize="11" />
+              <TextBlock Classes="TdNum" Text="{Binding ConfidenceLabel}" Foreground="#a855f7" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
             </StackPanel>
           </Grid>
 
@@ -123,15 +123,15 @@
 
           <!-- Risk gate + confluence -->
           <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding HasRisk}">
-            <Border Background="#0a1622" CornerRadius="4" Padding="7,2">
-              <TextBlock Text="{Binding RiskVerdictLabel}" Foreground="{Binding RiskVerdictBrush}" FontWeight="Bold" FontSize="10" />
+            <Border Background="{DynamicResource Surface2}" CornerRadius="4" Padding="6,2">
+              <TextBlock Text="{Binding RiskVerdictLabel}" Foreground="{Binding RiskVerdictBrush}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" />
             </Border>
-            <TextBlock Grid.Column="2" Text="{Binding ConfluenceLabel, StringFormat=confluence {0}}" Foreground="#8fa3b8" FontSize="10" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2" Text="{Binding ConfluenceLabel, StringFormat=confluence {0}}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
           </Grid>
-          <TextBlock Text="{Binding RiskReasonsText}" Foreground="#8a97a8" FontSize="9" TextWrapping="Wrap" IsVisible="{Binding HasRisk}" />
+          <TextBlock Text="{Binding RiskReasonsText}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" IsVisible="{Binding HasRisk}" />
 
-          <TextBlock Text="{Binding RationaleText}" Foreground="#8fa3b8" FontSize="10" TextWrapping="Wrap" LineHeight="15" />
-          <TextBlock Text="{Binding RationaleSourceLabel}" Foreground="{DynamicResource TextSoft}" FontSize="9" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding RationaleText}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" LineHeight="15" />
+          <TextBlock Text="{Binding RationaleSourceLabel}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
 
           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
             <Button Grid.Column="0" Content="APPLY TO TICKET" Classes="TdPrimary dex" Height="34" Command="{Binding ApplyCommand}" />
@@ -142,7 +142,7 @@
         </StackPanel>
       </Border>
 
-      <TextBlock Text="{Binding StatusMessage}" Foreground="#a855f7" FontSize="10" TextWrapping="Wrap" />
+      <TextBlock Text="{Binding StatusMessage}" Foreground="#a855f7" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
     </StackPanel>
   </Border>
 </UserControl>

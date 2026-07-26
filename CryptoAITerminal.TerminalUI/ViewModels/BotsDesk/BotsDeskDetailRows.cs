@@ -50,7 +50,7 @@ public sealed class CoinRowViewModel : ReactiveObject
 
     public string MaLabel => _ma ? "MA " + (Source?.MaPeriod ?? 200) + " ON" : "MA OFF";
     public string MaColor => _ma ? BotsDeskData.Accent : BotsDeskData.Faint;
-    public string MaBorder => _ma ? "#14302e" : "#152233";
+    public string MaBorder => _ma ? "#14302e" : SemanticColor.Stroke;
     public string MaBg => _ma ? "#061615" : "transparent";
 
     public ICommand ToggleMaCommand { get; }
@@ -126,7 +126,7 @@ public sealed class TpSlRowViewModel : ReactiveObject
     }
 
     public string Mark => _on ? "✓" : "";
-    public string BoxBorder => _on ? BotsDeskData.Accent : "#152233";
+    public string BoxBorder => _on ? BotsDeskData.Accent : SemanticColor.Stroke;
     public string BoxBg => _on ? BotsDeskData.Accent : "transparent";
     public string LabelColor => _on ? BotsDeskData.Text : BotsDeskData.Faint;
     public double InputOpacity => _on ? 1 : 0.45;

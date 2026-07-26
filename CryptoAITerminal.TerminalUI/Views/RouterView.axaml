@@ -1,4 +1,4 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
@@ -13,80 +13,80 @@
             <Grid ColumnDefinitions="*,Auto">
               <StackPanel Spacing="4">
                 <TextBlock Text="Smart Order Router"
-                           FontSize="20" FontWeight="Bold" Foreground="#E8F0FE" />
+                           FontSize="{DynamicResource FsTitle}" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
                 <TextBlock Text="Finds the best price across Binance / Bybit / OKX including fees. Large orders are automatically split across exchanges."
-                           FontSize="12" Foreground="#5C6E82" TextWrapping="Wrap" />
+                           FontSize="{DynamicResource FsSmall}" Foreground="{DynamicResource TextDim}" TextWrapping="Wrap" />
               </StackPanel>
               <!-- Status badge -->
               <Border Grid.Column="1" CornerRadius="6" Padding="10,4"
                       Background="#0E1E2E" VerticalAlignment="Center">
-                <TextBlock Text="{Binding StatusText}" FontSize="11"
-                           Foreground="#8FA3B8" TextWrapping="Wrap" MaxWidth="280" />
+                <TextBlock Text="{Binding StatusText}" FontSize="{DynamicResource FsCaption}"
+                           Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" MaxWidth="280" />
               </Border>
             </Grid>
 
             <!-- ── AI Slice Planner (#12) ── -->
-            <Border Background="#0D1B29" CornerRadius="10" Padding="14,12">
+            <Border Background="{DynamicResource Surface3}" CornerRadius="10" Padding="14,12">
               <StackPanel Spacing="8">
                 <Grid ColumnDefinitions="*,Auto,140,Auto">
                   <StackPanel Grid.Column="0">
-                    <TextBlock Text="🧠 AI Slice Planner" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
-                    <TextBlock Text="Break a large order into impact-aware slices." Foreground="#5C6E82" FontSize="11" />
+                    <TextBlock Text="🧠 AI Slice Planner" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsBody}" />
+                    <TextBlock Text="Break a large order into impact-aware slices." Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsCaption}" />
                   </StackPanel>
-                  <TextBlock Grid.Column="1" Text="Urgency" Foreground="#8FA3B8" FontSize="11"
+                  <TextBlock Grid.Column="1" Text="Urgency" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}"
                              VerticalAlignment="Center" Margin="0,0,8,0" />
                   <ComboBox Grid.Column="2" ItemsSource="{Binding UrgencyOptions}"
                             SelectedItem="{Binding SelectedUrgency}" HorizontalAlignment="Stretch" />
                   <Button Grid.Column="3" Content="Plan with AI" Margin="10,0,0,0"
                           Command="{Binding PlanSlicesCommand}"
-                          IsEnabled="{Binding !PlanRunning}" Foreground="#21E6C1" />
+                          IsEnabled="{Binding !PlanRunning}" Foreground="{DynamicResource Accent}" />
                 </Grid>
-                <TextBlock Text="{Binding PlanRationale}" Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap"
+                <TextBlock Text="{Binding PlanRationale}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap"
                            IsVisible="{Binding HasSlicePlan}" />
-                <TextBlock Text="{Binding PlanSource}" Foreground="#5C6E82" FontSize="10"
+                <TextBlock Text="{Binding PlanSource}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}"
                            IsVisible="{Binding HasSlicePlan}" />
               </StackPanel>
             </Border>
 
             <!-- Input bar ───────────────────────────────────────────────── -->
-            <Border Background="#0D1B29" CornerRadius="10" Padding="16,12">
+            <Border Background="{DynamicResource Surface3}" CornerRadius="10" Padding="16,12">
               <Grid ColumnDefinitions="Auto,12,160,12,Auto,8,130,12,Auto,12,Auto,*,Auto"
                     VerticalAlignment="Center">
 
                 <!-- Symbol label + input -->
-                <TextBlock Grid.Column="0" Text="Symbol" FontSize="11"
-                           Foreground="#5C6E82" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="0" Text="Symbol" FontSize="{DynamicResource FsCaption}"
+                           Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                 <TextBox Grid.Column="2"
                          Text="{Binding Symbol, Mode=TwoWay}"
                          PlaceholderText="BTCUSDT"
-                         FontFamily="Consolas" FontSize="13"
-                         Background="#0A1520" Foreground="#E8F0FE"
+                         FontFamily="Consolas" FontSize="{DynamicResource FsBody}"
+                         Background="{DynamicResource Surface2}" Foreground="{DynamicResource TextPrimary}"
                          BorderBrush="#1E3A5F" CornerRadius="6"
                          Padding="8,6" VerticalAlignment="Center" />
 
                 <!-- USD notional -->
-                <TextBlock Grid.Column="4" Text="Size ($)" FontSize="11"
-                           Foreground="#5C6E82" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="4" Text="Size ($)" FontSize="{DynamicResource FsCaption}"
+                           Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                 <NumericUpDown Grid.Column="6" Value="{Binding NotionalUsd, Mode=TwoWay}"
                                Minimum="10" Maximum="10000000" Increment="100"
                                FormatString="N0"
-                               Background="#0A1520" Foreground="#E8F0FE"
+                               Background="{DynamicResource Surface2}" Foreground="{DynamicResource TextPrimary}"
                                BorderBrush="#1E3A5F" CornerRadius="6"
                                Padding="8,6" VerticalAlignment="Center" />
 
                 <!-- Buy / Sell toggle -->
                 <StackPanel Grid.Column="8" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                  <Border CornerRadius="6" Padding="10,5"
+                  <Border CornerRadius="6" Padding="10,4"
                           Background="#1A3A28"
                           IsVisible="{Binding IsBuySide}">
-                    <TextBlock Text="▲ BUY" FontSize="12" FontWeight="Bold"
-                               Foreground="#21E6C1" />
+                    <TextBlock Text="▲ BUY" FontSize="{DynamicResource FsSmall}" FontWeight="Bold"
+                               Foreground="{DynamicResource Accent}" />
                   </Border>
-                  <Border CornerRadius="6" Padding="10,5"
+                  <Border CornerRadius="6" Padding="10,4"
                           Background="#3A1A1A"
                           IsVisible="{Binding !IsBuySide}">
-                    <TextBlock Text="▼ SELL" FontSize="12" FontWeight="Bold"
-                               Foreground="#FF6B6B" />
+                    <TextBlock Text="▼ SELL" FontSize="{DynamicResource FsSmall}" FontWeight="Bold"
+                               Foreground="{DynamicResource Negative}" />
                   </Border>
                   <ToggleSwitch IsChecked="{Binding IsBuySide, Mode=TwoWay}"
                                OnContent="" OffContent=""
@@ -97,12 +97,12 @@
                 <Button Grid.Column="10"
                         Command="{Binding ComputeCommand}"
                         IsEnabled="{Binding !IsBusy}"
-                        Background="#1A3A5C" Foreground="#21E6C1"
-                        CornerRadius="7" Padding="14,7"
-                        FontWeight="SemiBold" FontSize="12"
+                        Background="#1A3A5C" Foreground="{DynamicResource Accent}"
+                        CornerRadius="7" Padding="14,6"
+                        FontWeight="SemiBold" FontSize="{DynamicResource FsSmall}"
                         VerticalAlignment="Center">
                   <StackPanel Orientation="Horizontal" Spacing="6">
-                    <TextBlock Text="⟳" FontSize="13" VerticalAlignment="Center" />
+                    <TextBlock Text="⟳" FontSize="{DynamicResource FsBody}" VerticalAlignment="Center" />
                     <TextBlock Text="Compute route" VerticalAlignment="Center" />
                   </StackPanel>
                 </Button>
@@ -111,13 +111,13 @@
                 <Button Grid.Column="12"
                         Command="{Binding ExecuteCommand}"
                         IsEnabled="{Binding HasPlan}"
-                        Background="#0D2A1A" Foreground="#21E6C1"
-                        CornerRadius="7" Padding="14,7"
-                        FontWeight="Bold" FontSize="12"
+                        Background="#0D2A1A" Foreground="{DynamicResource Accent}"
+                        CornerRadius="7" Padding="14,6"
+                        FontWeight="Bold" FontSize="{DynamicResource FsSmall}"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center">
                   <StackPanel Orientation="Horizontal" Spacing="6">
-                    <TextBlock Text="⚡" FontSize="13" VerticalAlignment="Center" />
+                    <TextBlock Text="⚡" FontSize="{DynamicResource FsBody}" VerticalAlignment="Center" />
                     <TextBlock Text="Execute" VerticalAlignment="Center" />
                   </StackPanel>
                 </Button>
@@ -125,18 +125,18 @@
             </Border>
 
             <!-- Exchange quotes ─────────────────────────────────────────── -->
-            <Border Background="#0D1B29" CornerRadius="10" Padding="16,12">
+            <Border Background="{DynamicResource Surface3}" CornerRadius="10" Padding="16,12">
               <StackPanel Spacing="10">
-                <TextBlock Text="Exchange Quotes" FontSize="13" FontWeight="SemiBold"
-                           Foreground="#8FA3B8" />
+                <TextBlock Text="Exchange Quotes" FontSize="{DynamicResource FsBody}" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextMuted}" />
 
                 <!-- Column headers -->
                 <Grid ColumnDefinitions="120,*,*,*,100">
-                  <TextBlock Grid.Column="0" Text="Exchange" FontSize="10" Foreground="{DynamicResource TextDim}" />
-                  <TextBlock Grid.Column="1" Text="Price (raw)" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="2" Text="Fee" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="3" Text="Eff. price" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="4" Text="Liquidity" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="0" Text="Exchange" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
+                  <TextBlock Grid.Column="1" Text="Price (raw)" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="2" Text="Fee" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="3" Text="Eff. price" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="4" Text="Liquidity" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
                 </Grid>
                 <Rectangle Height="1" Fill="#1E3A5F" />
 
@@ -149,30 +149,30 @@
                         <Grid ColumnDefinitions="120,*,*,*,100">
                           <!-- Exchange name + best badge -->
                           <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
-                            <TextBlock Text="{Binding Exchange}" FontSize="12"
-                                       FontWeight="SemiBold" Foreground="#8FA3B8"
+                            <TextBlock Text="{Binding Exchange}" FontSize="{DynamicResource FsSmall}"
+                                       FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"
                                        VerticalAlignment="Center" />
                             <Border CornerRadius="4" Padding="4,2"
                                     Background="#0D2A1A"
                                     IsVisible="{Binding IsBest}">
-                              <TextBlock Text="{Binding BestBadge}" FontSize="9"
-                                         FontWeight="Bold" Foreground="#21E6C1" />
+                              <TextBlock Text="{Binding BestBadge}" FontSize="{DynamicResource FsMicro}"
+                                         FontWeight="Bold" Foreground="{DynamicResource Accent}" />
                             </Border>
                           </StackPanel>
                           <TextBlock Grid.Column="1" Text="{Binding RawLabel}"
-                                     FontFamily="Consolas" FontSize="12"
-                                     Foreground="#8FA3B8"
+                                     FontFamily="Consolas" FontSize="{DynamicResource FsSmall}"
+                                     Foreground="{DynamicResource TextMuted}"
                                      HorizontalAlignment="Right" VerticalAlignment="Center" />
                           <TextBlock Grid.Column="2" Text="{Binding FeeLabel}"
-                                     FontFamily="Consolas" FontSize="12"
-                                     Foreground="#5C6E82"
+                                     FontFamily="Consolas" FontSize="{DynamicResource FsSmall}"
+                                     Foreground="{DynamicResource TextDim}"
                                      HorizontalAlignment="Right" VerticalAlignment="Center" />
                           <TextBlock Grid.Column="3" Text="{Binding EffLabel}"
-                                     FontFamily="Consolas" FontSize="12"
+                                     FontFamily="Consolas" FontSize="{DynamicResource FsSmall}"
                                      Foreground="{Binding PriceBrush}"
                                      HorizontalAlignment="Right" VerticalAlignment="Center" />
                           <TextBlock Grid.Column="4" Text="{Binding LiqLabel}"
-                                     FontFamily="Consolas" FontSize="11"
+                                     FontFamily="Consolas" FontSize="{DynamicResource FsCaption}"
                                      Foreground="{DynamicResource TextDim}"
                                      HorizontalAlignment="Right" VerticalAlignment="Center" />
                         </Grid>
@@ -184,38 +184,38 @@
             </Border>
 
             <!-- Routing plan ─────────────────────────────────────────────── -->
-            <Border Background="#0D1B29" CornerRadius="10" Padding="16,12"
+            <Border Background="{DynamicResource Surface3}" CornerRadius="10" Padding="16,12"
                     IsVisible="{Binding HasPlan}">
               <StackPanel Spacing="10">
                 <!-- Plan header with split badge -->
                 <Grid ColumnDefinitions="*,Auto">
                   <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBlock Text="Execution Plan" FontSize="13" FontWeight="SemiBold"
-                               Foreground="#8FA3B8" VerticalAlignment="Center" />
-                    <Border CornerRadius="5" Padding="7,3"
+                    <TextBlock Text="Execution Plan" FontSize="{DynamicResource FsBody}" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" />
+                    <Border CornerRadius="5" Padding="6,2"
                             Background="#1A2A3A"
                             IsVisible="{Binding IsSplit}">
-                      <TextBlock Text="SPLIT ORDER" FontSize="10" FontWeight="Bold"
-                                 Foreground="#F4B860" />
+                      <TextBlock Text="SPLIT ORDER" FontSize="{DynamicResource FsMicro}" FontWeight="Bold"
+                                 Foreground="{DynamicResource Warning}" />
                     </Border>
                   </StackPanel>
                   <!-- Summary stats -->
                   <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20">
                     <StackPanel Spacing="1" HorizontalAlignment="Right">
-                      <TextBlock Text="Average price" FontSize="10" Foreground="{DynamicResource TextDim}" />
+                      <TextBlock Text="Average price" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                       <TextBlock Text="{Binding WavgLabel}" FontFamily="Consolas"
-                                 FontSize="13" FontWeight="SemiBold" Foreground="#E8F0FE" />
+                                 FontSize="{DynamicResource FsBody}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
                     </StackPanel>
                     <StackPanel Spacing="1" HorizontalAlignment="Right">
-                      <TextBlock Text="Savings vs worst" FontSize="10" Foreground="{DynamicResource TextDim}" />
+                      <TextBlock Text="Savings vs worst" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                       <TextBlock Text="{Binding SavingsLabel}" FontFamily="Consolas"
-                                 FontSize="13" FontWeight="Bold"
+                                 FontSize="{DynamicResource FsBody}" FontWeight="Bold"
                                  Foreground="{Binding SavingsBrush}" />
                     </StackPanel>
                     <StackPanel Spacing="1" HorizontalAlignment="Right">
-                      <TextBlock Text="Size" FontSize="10" Foreground="{DynamicResource TextDim}" />
+                      <TextBlock Text="Size" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                       <TextBlock Text="{Binding TotalLabel}" FontFamily="Consolas"
-                                 FontSize="13" Foreground="#8FA3B8" />
+                                 FontSize="{DynamicResource FsBody}" Foreground="{DynamicResource TextMuted}" />
                     </StackPanel>
                   </StackPanel>
                 </Grid>
@@ -224,12 +224,12 @@
 
                 <!-- Column headers -->
                 <Grid ColumnDefinitions="120,*,*,*,*,80">
-                  <TextBlock Grid.Column="0" Text="Exchange" FontSize="10" Foreground="{DynamicResource TextDim}" />
-                  <TextBlock Grid.Column="1" Text="Quantity" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="2" Text="Avg price" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="3" Text="Fee" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="4" Text="Cost" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="5" Text="Share" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="0" Text="Exchange" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
+                  <TextBlock Grid.Column="1" Text="Quantity" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="2" Text="Avg price" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="3" Text="Fee" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="4" Text="Cost" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="5" Text="Share" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
                 </Grid>
 
                 <!-- Leg rows -->
@@ -242,31 +242,31 @@
                           <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
                             <Border Width="4" CornerRadius="2"
                                     Background="{Binding ExchangeBrush}" />
-                            <TextBlock Text="{Binding Exchange}" FontSize="12"
+                            <TextBlock Text="{Binding Exchange}" FontSize="{DynamicResource FsSmall}"
                                        FontWeight="SemiBold"
                                        Foreground="{Binding ExchangeBrush}"
                                        VerticalAlignment="Center" />
                           </StackPanel>
                           <TextBlock Grid.Column="1" Text="{Binding QtyLabel}"
-                                     FontFamily="Consolas" FontSize="12"
-                                     Foreground="#8FA3B8"
+                                     FontFamily="Consolas" FontSize="{DynamicResource FsSmall}"
+                                     Foreground="{DynamicResource TextMuted}"
                                      HorizontalAlignment="Right" VerticalAlignment="Center" />
                           <TextBlock Grid.Column="2" Text="{Binding PriceLabel}"
-                                     FontFamily="Consolas" FontSize="12"
-                                     Foreground="#E8F0FE"
+                                     FontFamily="Consolas" FontSize="{DynamicResource FsSmall}"
+                                     Foreground="{DynamicResource TextPrimary}"
                                      HorizontalAlignment="Right" VerticalAlignment="Center" />
                           <TextBlock Grid.Column="3" Text="{Binding FeeLabel}"
-                                     FontFamily="Consolas" FontSize="12"
-                                     Foreground="#5C6E82"
+                                     FontFamily="Consolas" FontSize="{DynamicResource FsSmall}"
+                                     Foreground="{DynamicResource TextDim}"
                                      HorizontalAlignment="Right" VerticalAlignment="Center" />
                           <TextBlock Grid.Column="4" Text="{Binding ValueLabel}"
-                                     FontFamily="Consolas" FontSize="12"
-                                     Foreground="#E8F0FE"
+                                     FontFamily="Consolas" FontSize="{DynamicResource FsSmall}"
+                                     Foreground="{DynamicResource TextPrimary}"
                                      FontWeight="SemiBold"
                                      HorizontalAlignment="Right" VerticalAlignment="Center" />
                           <TextBlock Grid.Column="5" Text="{Binding ShareLabel}"
-                                     FontFamily="Consolas" FontSize="12"
-                                     Foreground="#5C6E82"
+                                     FontFamily="Consolas" FontSize="{DynamicResource FsSmall}"
+                                     Foreground="{DynamicResource TextDim}"
                                      HorizontalAlignment="Right" VerticalAlignment="Center" />
                         </Grid>
                       </Border>

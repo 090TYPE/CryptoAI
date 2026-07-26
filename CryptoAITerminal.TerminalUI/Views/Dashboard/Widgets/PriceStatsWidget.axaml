@@ -10,9 +10,9 @@
     <Border Classes="StatCell" Grid.Column="0">
       <StackPanel Spacing="3">
         <TextBlock Classes="StatLabel" Text="LAST PRICE" />
-        <TextBlock Classes="Mono" FontSize="17" FontWeight="Bold"
+        <TextBlock Classes="Mono" FontSize="{DynamicResource FsTitle}" FontWeight="Bold"
                    Text="{Binding SelectedMarket.LastPrice, StringFormat='{}{0:N2}'}" />
-        <TextBlock FontSize="10" FontWeight="SemiBold"
+        <TextBlock FontSize="{DynamicResource FsMicro}" FontWeight="SemiBold"
                    Text="{Binding SelectedMarket.ChangePercentLabel}"
                    Foreground="{Binding SelectedMarket.ChangeBrush}" />
       </StackPanel>
@@ -22,9 +22,9 @@
     <Border Classes="StatCell" Grid.Column="1">
       <StackPanel Spacing="3">
         <TextBlock Classes="StatLabel" Text="BEST BID" />
-        <TextBlock Classes="Mono" FontSize="17" FontWeight="Bold" Foreground="#3DDC84"
+        <TextBlock Classes="Mono" FontSize="{DynamicResource FsTitle}" FontWeight="Bold" Foreground="{DynamicResource Positive}"
                    Text="{Binding SelectedMarket.BestBid, StringFormat='{}{0:N2}'}" />
-        <TextBlock FontSize="10" Foreground="{DynamicResource TextSoft}"
+        <TextBlock FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}"
                    Text="{Binding SelectedMarket.SpreadPercentLabel, StringFormat='{}{0} spread'}" />
       </StackPanel>
     </Border>
@@ -33,9 +33,9 @@
     <Border Classes="StatCell" Grid.Column="2">
       <StackPanel Spacing="3">
         <TextBlock Classes="StatLabel" Text="BEST ASK" />
-        <TextBlock Classes="Mono" FontSize="17" FontWeight="Bold" Foreground="#FF6B6B"
+        <TextBlock Classes="Mono" FontSize="{DynamicResource FsTitle}" FontWeight="Bold" Foreground="{DynamicResource Negative}"
                    Text="{Binding SelectedMarket.BestAsk, StringFormat='{}{0:N2}'}" />
-        <TextBlock FontSize="10" Foreground="{DynamicResource TextSoft}"
+        <TextBlock FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}"
                    Text="{Binding SelectedMarket.SpreadPercentLabel, StringFormat='{}{0} spread'}" />
       </StackPanel>
     </Border>
@@ -44,10 +44,10 @@
     <Border Classes="StatCell" Grid.Column="3">
       <StackPanel Spacing="3">
         <TextBlock Classes="StatLabel" Text="24H CHANGE" />
-        <TextBlock Classes="Mono" FontSize="17" FontWeight="Bold"
+        <TextBlock Classes="Mono" FontSize="{DynamicResource FsTitle}" FontWeight="Bold"
                    Text="{Binding SelectedMarket.ChangePercentLabel}"
                    Foreground="{Binding SelectedMarket.ChangeBrush}" />
-        <TextBlock FontSize="10"
+        <TextBlock FontSize="{DynamicResource FsMicro}"
                    Text="{Binding SelectedMarket.TrendLabel}"
                    Foreground="{Binding SelectedMarket.TrendBrush}" />
       </StackPanel>
@@ -57,9 +57,9 @@
     <Border Classes="StatCell" Grid.Column="4">
       <StackPanel Spacing="3">
         <TextBlock Classes="StatLabel" Text="24H HIGH" />
-        <TextBlock Classes="Mono" FontSize="17" FontWeight="Bold"
+        <TextBlock Classes="Mono" FontSize="{DynamicResource FsTitle}" FontWeight="Bold"
                    Text="{Binding SelectedMarket.SessionHigh, StringFormat='{}{0:N2}'}" />
-        <TextBlock FontSize="10" Foreground="#3DDC84" Text="session peak" />
+        <TextBlock FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource Positive}" Text="session peak" />
       </StackPanel>
     </Border>
 
@@ -67,9 +67,9 @@
     <Border Classes="StatCell" Grid.Column="5">
       <StackPanel Spacing="3">
         <TextBlock Classes="StatLabel" Text="24H LOW" />
-        <TextBlock Classes="Mono" FontSize="17" FontWeight="Bold"
+        <TextBlock Classes="Mono" FontSize="{DynamicResource FsTitle}" FontWeight="Bold"
                    Text="{Binding SelectedMarket.SessionLow, StringFormat='{}{0:N2}'}" />
-        <TextBlock FontSize="10" Foreground="#FF6B6B" Text="session floor" />
+        <TextBlock FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource Negative}" Text="session floor" />
       </StackPanel>
     </Border>
 
@@ -79,10 +79,10 @@
         <TextBlock Classes="StatLabel" Text="SESSION RANGE" />
         <!-- Two numbers joined by a dash overflow this equal-width cell and were clipped;
              wrap onto a second line instead of hiding the end of the range. -->
-        <TextBlock Classes="Mono" FontSize="14" FontWeight="Bold" Foreground="#5BC0FF"
+        <TextBlock Classes="Mono" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" Foreground="{DynamicResource AccentBlue}"
                    TextWrapping="Wrap"
                    Text="{Binding SelectedMarket.RangeLabel}" />
-        <TextBlock FontSize="10" Foreground="{DynamicResource TextSoft}"
+        <TextBlock FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}"
                    Text="{Binding SelectedMarket.RangePercent, StringFormat='{}{0:N2}% band'}" />
       </StackPanel>
     </Border>
@@ -91,9 +91,9 @@
     <Border Classes="StatCell" Grid.Column="7">
       <StackPanel Spacing="3">
         <TextBlock Classes="StatLabel" Text="SPREAD" />
-        <TextBlock Classes="Mono" FontSize="17" FontWeight="Bold" Foreground="#A78BFA"
+        <TextBlock Classes="Mono" FontSize="{DynamicResource FsTitle}" FontWeight="Bold" Foreground="{DynamicResource AccentPurple}"
                    Text="{Binding SelectedMarket.Spread, StringFormat='{}{0:N2}'}" />
-        <TextBlock FontSize="10" Foreground="{DynamicResource TextSoft}"
+        <TextBlock FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}"
                    Text="{Binding SelectedMarket.UpdatedLabel, StringFormat='upd {0}'}" />
       </StackPanel>
     </Border>

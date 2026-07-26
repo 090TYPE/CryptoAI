@@ -1,4 +1,4 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
@@ -14,9 +14,9 @@
                 <StackPanel Orientation="Horizontal" Spacing="16">
                   <TextBlock Text="{Binding AllPositionsVM.TotalPnlLabel}"
                              Foreground="{Binding AllPositionsVM.TotalPnlBrush}"
-                             FontSize="22" FontWeight="Bold" />
+                             FontSize="{DynamicResource FsH2}" FontWeight="Bold" />
                   <TextBlock Text="{Binding AllPositionsVM.TotalSizeLabel}"
-                             Foreground="{DynamicResource TextSoft}" FontSize="13" VerticalAlignment="Bottom" />
+                             Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsBody}" VerticalAlignment="Bottom" />
                 </StackPanel>
               </StackPanel>
 
@@ -25,28 +25,28 @@
                         Classes="SecondaryAction"
                         Command="{Binding AllPositionsVM.RefreshCommand}"
                         IsEnabled="{Binding !AllPositionsVM.IsRefreshing}"
-                        Padding="12,6" FontSize="12" />
+                        Padding="12,6" FontSize="{DynamicResource FsSmall}" />
                 <Button Content="⚠ Close All"
-                        Background="#402020" Foreground="#FF6B6B"
-                        BorderBrush="#FF6B6B" BorderThickness="1"
+                        Background="#402020" Foreground="{DynamicResource Negative}"
+                        BorderBrush="{DynamicResource Negative}" BorderThickness="1"
                         CornerRadius="4"
                         Command="{Binding AllPositionsVM.CloseAllCommand}"
                         IsEnabled="{Binding AllPositionsVM.HasPositions}"
-                        Padding="14,6" FontSize="12" FontWeight="Bold"
+                        Padding="14,6" FontSize="{DynamicResource FsSmall}" FontWeight="Bold"
                         ToolTip.Tip="Two-step confirmation: first click arms (StatusLabel changes), second click within 8 s closes all positions." />
                 <!-- Armed indicator: only shown after the first click -->
                 <Border IsVisible="{Binding AllPositionsVM.CloseAllConfirmRequested}"
-                        Background="#FF6B6B" CornerRadius="3" Padding="6,3"
+                        Background="{DynamicResource Negative}" CornerRadius="3" Padding="6,2"
                         VerticalAlignment="Center">
                   <TextBlock Text="⚠ ARMED — click again" Foreground="#0A1018"
-                             FontSize="11" FontWeight="Bold" />
+                             FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
                 </Border>
               </StackPanel>
             </Grid>
 
             <!-- Status bar -->
             <TextBlock Text="{Binding AllPositionsVM.StatusLabel}"
-                       Foreground="{DynamicResource TextSoft}" FontSize="11" />
+                       Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" />
 
             <!-- Table header row with sort buttons -->
             <Grid ColumnDefinitions="100,80,60,80,80,80,80,*,100" ColumnSpacing="8"
@@ -68,13 +68,13 @@
 
             <!-- Empty state -->
             <Border IsVisible="{Binding AllPositionsVM.HasNoPositions}"
-                    Background="#0A1018" CornerRadius="4" Padding="20" Margin="0,4,0,0">
+                    Background="{DynamicResource Surface1}" CornerRadius="4" Padding="20" Margin="0,4,0,0">
               <StackPanel HorizontalAlignment="Center" Spacing="8">
-                <TextBlock Text="⊞" FontSize="32" Foreground="#2D4A5A" HorizontalAlignment="Center" />
+                <TextBlock Text="⊞" FontSize="{DynamicResource FsH1}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
                 <TextBlock Text="No open futures positions across Binance · Bybit · OKX"
-                           Foreground="{DynamicResource TextSoft}" FontSize="13" HorizontalAlignment="Center" />
+                           Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsBody}" HorizontalAlignment="Center" />
                 <TextBlock Text="Press Refresh to query all connected exchanges."
-                           Foreground="#2D4A5A" FontSize="11" HorizontalAlignment="Center" />
+                           Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsCaption}" HorizontalAlignment="Center" />
               </StackPanel>
             </Border>
 
@@ -84,81 +84,81 @@
               <ItemsControl ItemsSource="{Binding AllPositionsVM.Rows}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate DataType="{x:Type vm:UnifiedPositionRowVM}">
-                    <Border Background="#0A1018" CornerRadius="4" Padding="8,6" Margin="0,2">
+                    <Border Background="{DynamicResource Surface1}" CornerRadius="4" Padding="8,6" Margin="0,2">
                       <Grid ColumnDefinitions="100,80,60,80,80,80,80,*,100" ColumnSpacing="8">
 
                         <!-- Exchange badge -->
-                        <Border Grid.Column="0" Background="#0F1721" CornerRadius="3" Padding="6,2"
+                        <Border Grid.Column="0" Background="{DynamicResource Surface2}" CornerRadius="3" Padding="6,2"
                                 HorizontalAlignment="Left" VerticalAlignment="Center">
                           <TextBlock Text="{Binding Exchange}"
                                      Foreground="{Binding ExchangeBrush}"
-                                     FontSize="11" FontWeight="SemiBold" />
+                                     FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" />
                         </Border>
 
                         <!-- Symbol -->
                         <TextBlock Grid.Column="1" Text="{Binding Symbol}"
-                                   Foreground="#C8D8E8" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" FontWeight="SemiBold"
                                    VerticalAlignment="Center" />
 
                         <!-- Side -->
-                        <Border Grid.Column="2" Background="#0F1721" CornerRadius="3" Padding="5,2"
+                        <Border Grid.Column="2" Background="{DynamicResource Surface2}" CornerRadius="3" Padding="4,2"
                                 HorizontalAlignment="Left" VerticalAlignment="Center">
                           <TextBlock Text="{Binding Side}"
                                      Foreground="{Binding SideBrush}"
-                                     FontSize="11" FontWeight="Bold" />
+                                     FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
                         </Border>
 
                         <!-- Entry price -->
                         <TextBlock Grid.Column="3" Text="{Binding EntryPriceLabel}"
-                                   Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
+                                   Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
 
                         <!-- Mark price -->
                         <TextBlock Grid.Column="4" Text="{Binding MarkPriceLabel}"
-                                   Foreground="#C8D8E8" FontSize="12" VerticalAlignment="Center" />
+                                   Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
 
                         <!-- Size + notional -->
                         <StackPanel Grid.Column="5" VerticalAlignment="Center" Spacing="2">
-                          <TextBlock Text="{Binding SizeLabel}" Foreground="#C8D8E8" FontSize="12" />
-                          <TextBlock Text="{Binding NotionalLabel}" Foreground="{DynamicResource TextSoft}" FontSize="10" />
+                          <TextBlock Text="{Binding SizeLabel}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" />
+                          <TextBlock Text="{Binding NotionalLabel}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" />
                         </StackPanel>
 
                         <!-- Leverage / Liq -->
                         <StackPanel Grid.Column="6" VerticalAlignment="Center" Spacing="2">
-                          <TextBlock Text="{Binding LeverageLabel}" Foreground="#8FA3B8" FontSize="12" />
-                          <TextBlock Text="{Binding LiqLabel}" Foreground="#FF6B6B" FontSize="10" />
+                          <TextBlock Text="{Binding LeverageLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" />
+                          <TextBlock Text="{Binding LiqLabel}" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsMicro}" />
                         </StackPanel>
 
                         <!-- PnL -->
                         <TextBlock Grid.Column="7" Text="{Binding PnlLabel}"
                                    Foreground="{Binding PnlBrush}"
-                                   FontSize="13" FontWeight="Bold"
+                                   FontSize="{DynamicResource FsBody}" FontWeight="Bold"
                                    VerticalAlignment="Center" />
 
                         <!-- Partial-close + full-close buttons -->
                         <StackPanel Grid.Column="8" Orientation="Horizontal" Spacing="3"
                                     VerticalAlignment="Center" HorizontalAlignment="Right">
-                          <Button Content="25%" Background="#11171F" Foreground="#A0B4C8"
+                          <Button Content="25%" Background="{DynamicResource Surface2}" Foreground="{DynamicResource TextMuted}"
                                   BorderBrush="#2D4A5A" BorderThickness="1" CornerRadius="3"
-                                  Padding="5,3" FontSize="10"
+                                  Padding="4,2" FontSize="{DynamicResource FsMicro}"
                                   Command="{Binding $parent[ItemsControl].((vm:AllPositionsViewModel)DataContext).Close25Command}"
                                   CommandParameter="{Binding}"
                                   ToolTip.Tip="Reduce 25% of position size (reduce-only market order)." />
-                          <Button Content="50%" Background="#11171F" Foreground="#A0B4C8"
+                          <Button Content="50%" Background="{DynamicResource Surface2}" Foreground="{DynamicResource TextMuted}"
                                   BorderBrush="#2D4A5A" BorderThickness="1" CornerRadius="3"
-                                  Padding="5,3" FontSize="10"
+                                  Padding="4,2" FontSize="{DynamicResource FsMicro}"
                                   Command="{Binding $parent[ItemsControl].((vm:AllPositionsViewModel)DataContext).Close50Command}"
                                   CommandParameter="{Binding}"
                                   ToolTip.Tip="Reduce 50% of position size." />
-                          <Button Content="75%" Background="#11171F" Foreground="#A0B4C8"
+                          <Button Content="75%" Background="{DynamicResource Surface2}" Foreground="{DynamicResource TextMuted}"
                                   BorderBrush="#2D4A5A" BorderThickness="1" CornerRadius="3"
-                                  Padding="5,3" FontSize="10"
+                                  Padding="4,2" FontSize="{DynamicResource FsMicro}"
                                   Command="{Binding $parent[ItemsControl].((vm:AllPositionsViewModel)DataContext).Close75Command}"
                                   CommandParameter="{Binding}"
                                   ToolTip.Tip="Reduce 75% of position size." />
                           <Button Content="Close"
-                                  Background="#2A1010" Foreground="#FF6B6B"
-                                  BorderBrush="#FF6B6B" BorderThickness="1" CornerRadius="3"
-                                  Padding="6,3" FontSize="11"
+                                  Background="#2A1010" Foreground="{DynamicResource Negative}"
+                                  BorderBrush="{DynamicResource Negative}" BorderThickness="1" CornerRadius="3"
+                                  Padding="6,2" FontSize="{DynamicResource FsCaption}"
                                   Command="{Binding $parent[ItemsControl].((vm:AllPositionsViewModel)DataContext).ClosePositionCommand}"
                                   CommandParameter="{Binding}"
                                   ToolTip.Tip="Close 100% of position." />

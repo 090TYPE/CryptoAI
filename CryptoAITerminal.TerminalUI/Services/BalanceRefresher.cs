@@ -28,6 +28,12 @@ public sealed class BalanceRefresher : IDisposable
     private List<BalanceSnapshot> _cache = new();
     private int _refreshing;
 
+    // Верхняя граница периода на бэкоффе. Балансы — не котировки: десять минут устаревания
+    // лучше, чем IP-бан, из-за которого перестают работать и торговые запросы.
+    private static readonly TimeSpan MaxPeriod = TimeSpan.FromMinutes(10);
+    private readonly TimeSpan _basePeriod;
+    private TimeSpan _period;
+
     public BalanceRefresher(
         IEnumerable<(string Exchange, string Market, IExchangeGateway Gateway)> targets,
         IEnumerable<string>? assets = null,
@@ -45,8 +51,9 @@ public sealed class BalanceRefresher : IDisposable
         _assets = assetList.ToArray();
 
         var dueTime = TimeSpan.FromSeconds(5);
-        var period  = interval ?? TimeSpan.FromSeconds(60);
-        _timer = new Timer(_ => _ = RefreshAsync(), null, dueTime, period);
+        _basePeriod = interval ?? TimeSpan.FromSeconds(60);
+        _period     = _basePeriod;
+        _timer = new Timer(_ => _ = RefreshAsync(), null, dueTime, _period);
     }
 
     public IReadOnlyList<BalanceSnapshot> CurrentBalances
@@ -67,7 +74,7 @@ public sealed class BalanceRefresher : IDisposable
             // side by side: a pass costs the time of the slowest venue instead of the sum of all.
             // Gateways without keys are skipped outright — they used to throw once per asset and
             // have every one of those exceptions swallowed.
-            var perTarget = new List<Task<List<BalanceSnapshot>>>(_targets.Length);
+            var perTarget = new List<Task<(List<BalanceSnapshot> Found, bool RateLimited)>>(_targets.Length);
             foreach (var target in _targets)
             {
                 if (!target.Gateway.HasPrivateApiCredentials) continue;
@@ -77,11 +84,17 @@ public sealed class BalanceRefresher : IDisposable
             var results = await Task.WhenAll(perTarget);
 
             var next = new List<BalanceSnapshot>(_targets.Length * _assets.Length);
+            var rateLimited = false;
             foreach (var result in results)
-                next.AddRange(result);
+            {
+                next.AddRange(result.Found);
+                rateLimited |= result.RateLimited;
+            }
 
             lock (_cacheLock)
                 _cache = next;
+
+            ApplyBackoff(rateLimited);
         }
         finally
         {
@@ -89,11 +102,31 @@ public sealed class BalanceRefresher : IDisposable
         }
     }
 
-    private async Task<List<BalanceSnapshot>> LoadTargetAsync(
+    /// <summary>
+    /// 429 здесь значит «реже», а не «повтори»: балансы только читаются, и следующий проход
+    /// всё равно вернёт актуальную цифру. Период удваивается до десяти минут и возвращается
+    /// к базовому после чистого прохода.
+    /// </summary>
+    private void ApplyBackoff(bool rateLimited)
+    {
+        var next = rateLimited ? RestBackoff.Grow(_period, MaxPeriod) : _basePeriod;
+        if (next == _period) return;
+
+        // Проход мог завершиться уже после Dispose — тогда менять нечего.
+        try { _timer.Change(next, next); }
+        catch (ObjectDisposedException) { return; }
+
+        _period = next;
+        CrashLog.Write(rateLimited ? "WARN" : "INFO",
+            $"BalanceRefresher: {(rateLimited ? "rate limited" : "rate limit cleared")}, refreshing every {next.TotalSeconds:0}s");
+    }
+
+    private async Task<(List<BalanceSnapshot> Found, bool RateLimited)> LoadTargetAsync(
         (string Exchange, string Market, IExchangeGateway Gateway) target)
     {
         var found = new List<BalanceSnapshot>(_assets.Length);
         string? firstError = null;
+        var rateLimited = false;
 
         foreach (var asset in _assets)
         {
@@ -101,6 +134,7 @@ public sealed class BalanceRefresher : IDisposable
             try { amount = await target.Gateway.GetBalanceAsync(asset); }
             catch (Exception ex)
             {
+                rateLimited |= RestBackoff.IsRateLimit(ex);
                 firstError ??= ex.Message;
                 continue;
             }
@@ -122,7 +156,7 @@ public sealed class BalanceRefresher : IDisposable
             CrashLog.Write("WARN", $"BalanceRefresher: {target.Exchange} {target.Market} — {firstError}");
         }
 
-        return found;
+        return (found, rateLimited);
     }
 
     public void Dispose() => _timer.Dispose();

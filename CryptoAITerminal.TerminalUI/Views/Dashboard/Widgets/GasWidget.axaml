@@ -15,65 +15,65 @@
     <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
 
       <!-- Ethereum -->
-      <Border Grid.Column="0" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="10,8">
+      <Border Grid.Column="0" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="5" Padding="10,8">
         <StackPanel Spacing="6">
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <TextBlock Text="Ξ" FontSize="14" Foreground="#8FA3B8" FontWeight="Bold" VerticalAlignment="Center" />
-            <TextBlock Text="Ethereum" FontWeight="Bold" Foreground="#C8D8E8" FontSize="12" VerticalAlignment="Center" />
+            <TextBlock Text="Ξ" FontSize="{DynamicResource FsSubhead}" Foreground="{DynamicResource TextMuted}" FontWeight="Bold" VerticalAlignment="Center" />
+            <TextBlock Text="Ethereum" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
           </StackPanel>
           <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="4" RowSpacing="3">
-            <TextBlock Grid.Column="0" Grid.Row="0" Text="Slow"     Foreground="#5A7A90" FontSize="9" />
-            <TextBlock Grid.Column="1" Grid.Row="0" Text="Std"      Foreground="#5A7A90" FontSize="9" />
-            <TextBlock Grid.Column="2" Grid.Row="0" Text="Fast"     Foreground="#5A7A90" FontSize="9" />
+            <TextBlock Grid.Column="0" Grid.Row="0" Text="Slow"     Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
+            <TextBlock Grid.Column="1" Grid.Row="0" Text="Std"      Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
+            <TextBlock Grid.Column="2" Grid.Row="0" Text="Fast"     Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
             <TextBlock Grid.Column="0" Grid.Row="1" Text="{Binding GasMonitorVM.EthSlowLabel}"
-                       Foreground="{Binding GasMonitorVM.EthSlowColor}" FontSize="13" FontWeight="Bold" />
+                       Foreground="{Binding GasMonitorVM.EthSlowColor}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
             <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding GasMonitorVM.EthStdLabel}"
-                       Foreground="{Binding GasMonitorVM.EthStdColor}" FontSize="13" FontWeight="Bold" />
+                       Foreground="{Binding GasMonitorVM.EthStdColor}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
             <TextBlock Grid.Column="2" Grid.Row="1" Text="{Binding GasMonitorVM.EthFastLabel}"
-                       Foreground="{Binding GasMonitorVM.EthFastColor}" FontSize="13" FontWeight="Bold" />
+                       Foreground="{Binding GasMonitorVM.EthFastColor}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
             <TextBlock Grid.Column="0" Grid.Row="2" Text="{Binding GasMonitorVM.EthSlowTimeLabel}"
-                       Foreground="{DynamicResource TextSoft}" FontSize="9" />
+                       Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" />
             <TextBlock Grid.Column="1" Grid.Row="2" Text="{Binding GasMonitorVM.EthStdTimeLabel}"
-                       Foreground="{DynamicResource TextSoft}" FontSize="9" />
+                       Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" />
             <TextBlock Grid.Column="2" Grid.Row="2" Text="{Binding GasMonitorVM.EthFastTimeLabel}"
-                       Foreground="{DynamicResource TextSoft}" FontSize="9" />
+                       Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" />
           </Grid>
         </StackPanel>
       </Border>
 
       <!-- BSC -->
-      <Border Grid.Column="1" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="10,8">
+      <Border Grid.Column="1" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="5" Padding="10,8">
         <StackPanel Spacing="6">
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <TextBlock Text="⬡" FontSize="12" Foreground="#F0B90B" FontWeight="Bold" VerticalAlignment="Center" />
-            <TextBlock Text="BNB Chain" FontWeight="Bold" Foreground="#C8D8E8" FontSize="12" VerticalAlignment="Center" />
+            <TextBlock Text="⬡" FontSize="{DynamicResource FsSmall}" Foreground="#F0B90B" FontWeight="Bold" VerticalAlignment="Center" />
+            <TextBlock Text="BNB Chain" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
           </StackPanel>
           <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto" ColumnSpacing="4" RowSpacing="3">
-            <TextBlock Grid.Column="0" Grid.Row="0" Text="Slow"     Foreground="#5A7A90" FontSize="9" />
-            <TextBlock Grid.Column="1" Grid.Row="0" Text="Std"      Foreground="#5A7A90" FontSize="9" />
-            <TextBlock Grid.Column="2" Grid.Row="0" Text="Fast"     Foreground="#5A7A90" FontSize="9" />
+            <TextBlock Grid.Column="0" Grid.Row="0" Text="Slow"     Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
+            <TextBlock Grid.Column="1" Grid.Row="0" Text="Std"      Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
+            <TextBlock Grid.Column="2" Grid.Row="0" Text="Fast"     Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
             <TextBlock Grid.Column="0" Grid.Row="1" Text="{Binding GasMonitorVM.BscSlowLabel}"
-                       Foreground="{Binding GasMonitorVM.BscSlowColor}" FontSize="13" FontWeight="Bold" />
+                       Foreground="{Binding GasMonitorVM.BscSlowColor}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
             <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding GasMonitorVM.BscStdLabel}"
-                       Foreground="{Binding GasMonitorVM.BscStdColor}" FontSize="13" FontWeight="Bold" />
+                       Foreground="{Binding GasMonitorVM.BscStdColor}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
             <TextBlock Grid.Column="2" Grid.Row="1" Text="{Binding GasMonitorVM.BscFastLabel}"
-                       Foreground="{Binding GasMonitorVM.BscFastColor}" FontSize="13" FontWeight="Bold" />
+                       Foreground="{Binding GasMonitorVM.BscFastColor}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
           </Grid>
         </StackPanel>
       </Border>
 
       <!-- Solana -->
-      <Border Grid.Column="2" Background="#060D14" BorderBrush="#111C28" BorderThickness="1" CornerRadius="5" Padding="10,8">
+      <Border Grid.Column="2" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="5" Padding="10,8">
         <StackPanel Spacing="6">
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <TextBlock Text="◎" FontSize="14" Foreground="#9B59B6" FontWeight="Bold" VerticalAlignment="Center" />
-            <TextBlock Text="Solana" FontWeight="Bold" Foreground="#C8D8E8" FontSize="12" VerticalAlignment="Center" />
+            <TextBlock Text="◎" FontSize="{DynamicResource FsSubhead}" Foreground="#9B59B6" FontWeight="Bold" VerticalAlignment="Center" />
+            <TextBlock Text="Solana" FontWeight="Bold" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
           </StackPanel>
           <StackPanel Spacing="2">
-            <TextBlock Text="TPS" Foreground="#5A7A90" FontSize="9" />
+            <TextBlock Text="TPS" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
             <TextBlock Text="{Binding GasMonitorVM.SolanaTpsLabel}"
                        Foreground="{Binding GasMonitorVM.SolanaColor}"
-                       FontSize="18" FontWeight="Bold" />
+                       FontSize="{DynamicResource FsTitle}" FontWeight="Bold" />
           </StackPanel>
         </StackPanel>
       </Border>
@@ -82,7 +82,7 @@
 
     <!-- Last updated -->
     <TextBlock Text="{Binding GasMonitorVM.LastUpdatedLabel}"
-               Foreground="{DynamicResource TextSoft}" FontSize="9" HorizontalAlignment="Right" />
+               Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" />
 
   </StackPanel>
 </UserControl>

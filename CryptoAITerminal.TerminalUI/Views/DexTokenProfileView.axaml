@@ -8,12 +8,12 @@
     <StyleInclude Source="avares://CryptoAITerminal.TerminalUI/Styles/TradingDeskStyles.axaml" />
     <Style Selector="TextBlock.row">
       <Setter Property="Foreground" Value="{DynamicResource TextSoft}" />
-      <Setter Property="FontSize" Value="10" />
+      <Setter Property="FontSize" Value="{DynamicResource FsMicro}" />
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style Selector="TextBlock.val">
-      <Setter Property="Foreground" Value="#e8f4ff" />
-      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+      <Setter Property="FontSize" Value="{DynamicResource FsCaption}" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="HorizontalAlignment" Value="Right" />
       <Setter Property="VerticalAlignment" Value="Center" />
@@ -24,7 +24,7 @@
     <StackPanel Spacing="10" Margin="0,12,0,0">
 
       <!-- Header / banner image -->
-      <Border CornerRadius="8" ClipToBounds="True" Height="128" Background="#07111a" IsVisible="{Binding TokenMeta.HasBanner}">
+      <Border CornerRadius="8" ClipToBounds="True" Height="128" Background="{DynamicResource Surface1}" IsVisible="{Binding TokenMeta.HasBanner}">
         <Image Source="{Binding TokenMeta.Banner}" Stretch="UniformToFill" />
       </Border>
 
@@ -32,16 +32,16 @@
       <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
         <Border Width="46" Height="46" CornerRadius="10" ClipToBounds="True" Background="#150a20" BorderBrush="#3a1f6e" BorderThickness="1">
           <Panel>
-            <TextBlock Text="◈" Foreground="#a855f7" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !TokenMeta.HasLogo}" />
+            <TextBlock Text="◈" Foreground="#a855f7" FontSize="{DynamicResource FsTitle}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !TokenMeta.HasLogo}" />
             <Image Source="{Binding TokenMeta.Logo}" Stretch="UniformToFill" IsVisible="{Binding TokenMeta.HasLogo}" />
           </Panel>
         </Border>
         <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <TextBlock Text="{Binding TokenMeta.Name}" Foreground="#e8f4ff" FontWeight="Bold" FontSize="15" VerticalAlignment="Center" />
-            <TextBlock Text="{Binding TokenMeta.Symbol}" Foreground="#a855f7" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding TokenMeta.Name}" Foreground="{DynamicResource TextPrimary}" FontWeight="Bold" FontSize="{DynamicResource FsSubhead}" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding TokenMeta.Symbol}" Foreground="#a855f7" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
             <Border Background="#07221a" CornerRadius="4" Padding="6,1" VerticalAlignment="Center" IsVisible="{Binding TokenMeta.IsVerified}">
-              <TextBlock Text="✔ VERIFIED" Foreground="#3ddc84" FontSize="9" FontWeight="Bold" />
+              <TextBlock Text="✔ VERIFIED" Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
             </Border>
           </StackPanel>
           <!-- Tags -->
@@ -49,15 +49,15 @@
             <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate>
-                <Border Background="#0e1a12" BorderBrush="#1b3a28" BorderThickness="1" CornerRadius="999" Padding="7,1" Margin="0,0,4,4">
-                  <TextBlock Text="{Binding}" Foreground="#7fd8a6" FontSize="9" FontWeight="Bold" />
+                <Border Background="#0e1a12" BorderBrush="#1b3a28" BorderThickness="1" CornerRadius="999" Padding="6,1" Margin="0,0,4,4">
+                  <TextBlock Text="{Binding}" Foreground="#7fd8a6" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                 </Border>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
         </StackPanel>
-        <Border Grid.Column="2" Background="#0a1622" CornerRadius="4" Padding="8,3" VerticalAlignment="Center">
-          <TextBlock Text="{Binding TokenMeta.HoneypotLabel}" Foreground="{Binding TokenMeta.HoneypotBrush}" FontWeight="Bold" FontSize="9" />
+        <Border Grid.Column="2" Background="{DynamicResource Surface2}" CornerRadius="4" Padding="8,2" VerticalAlignment="Center">
+          <TextBlock Text="{Binding TokenMeta.HoneypotLabel}" Foreground="{Binding TokenMeta.HoneypotBrush}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" />
         </Border>
       </Grid>
 
@@ -75,7 +75,7 @@
           <Grid ColumnDefinitions="Auto,*"><TextBlock Classes="row" Text="Market Cap" /><TextBlock Grid.Column="1" Classes="val" Text="{Binding DexMarketCapLabel}" /></Grid>
           <Grid ColumnDefinitions="Auto,*"><TextBlock Classes="row" Text="Current Supply" /><TextBlock Grid.Column="1" Classes="val" Text="{Binding TokenMeta.CurrentSupplyLabel}" /></Grid>
           <Grid ColumnDefinitions="Auto,*"><TextBlock Classes="row" Text="Volume 24h" /><TextBlock Grid.Column="1" Classes="val" Text="{Binding DexVolume24hLabel}" /></Grid>
-          <Grid ColumnDefinitions="Auto,*"><TextBlock Classes="row" Text="Liquidity" /><TextBlock Grid.Column="1" Classes="val" Text="{Binding DexLiquidityLabel}" Foreground="#21e6c1" /></Grid>
+          <Grid ColumnDefinitions="Auto,*"><TextBlock Classes="row" Text="Liquidity" /><TextBlock Grid.Column="1" Classes="val" Text="{Binding DexLiquidityLabel}" Foreground="{DynamicResource Accent}" /></Grid>
           <Grid ColumnDefinitions="Auto,*"><TextBlock Classes="row" Text="Holders" /><TextBlock Grid.Column="1" Classes="val" Text="{Binding TokenMeta.HoldersLabel}" /></Grid>
         </StackPanel>
       </Border>
@@ -86,15 +86,15 @@
         <StackPanel Spacing="7">
           <Grid ColumnDefinitions="Auto,*,Auto">
             <TextBlock Classes="row" Text="Top 10 hold" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="1" Text="{Binding TokenMeta.ConcentrationVerdict}" Foreground="{Binding TokenMeta.Top10Brush}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" />
-            <TextBlock Grid.Column="2" Classes="val" Text="{Binding TokenMeta.Top10Label}" Foreground="{Binding TokenMeta.Top10Brush}" FontSize="14" />
+            <TextBlock Grid.Column="1" Text="{Binding TokenMeta.ConcentrationVerdict}" Foreground="{Binding TokenMeta.Top10Brush}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBlock Grid.Column="2" Classes="val" Text="{Binding TokenMeta.Top10Label}" Foreground="{Binding TokenMeta.Top10Brush}" FontSize="{DynamicResource FsSubhead}" />
           </Grid>
           <ProgressBar Minimum="0" Maximum="100" Value="{Binding TokenMeta.Top10Percent}" Height="8" Foreground="{Binding TokenMeta.Top10Brush}" Background="#152535" CornerRadius="4" />
           <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="6">
             <StackPanel Spacing="1"><TextBlock Classes="TdLabel" Text="TOP 10" /><TextBlock Classes="TdNum" Text="{Binding TokenMeta.Top10Label}" Foreground="{Binding TokenMeta.Top10Brush}" FontWeight="Bold" /></StackPanel>
-            <StackPanel Grid.Column="1" Spacing="1"><TextBlock Classes="TdLabel" Text="11–30" /><TextBlock Classes="TdNum" Text="{Binding TokenMeta.Dist1130Label}" Foreground="#c8dcef" FontWeight="Bold" /></StackPanel>
-            <StackPanel Grid.Column="2" Spacing="1"><TextBlock Classes="TdLabel" Text="31–50" /><TextBlock Classes="TdNum" Text="{Binding TokenMeta.Dist3150Label}" Foreground="#c8dcef" FontWeight="Bold" /></StackPanel>
-            <StackPanel Grid.Column="3" Spacing="1"><TextBlock Classes="TdLabel" Text="REST" /><TextBlock Classes="TdNum" Text="{Binding TokenMeta.DistRestLabel}" Foreground="#3ddc84" FontWeight="Bold" /></StackPanel>
+            <StackPanel Grid.Column="1" Spacing="1"><TextBlock Classes="TdLabel" Text="11–30" /><TextBlock Classes="TdNum" Text="{Binding TokenMeta.Dist1130Label}" Foreground="{DynamicResource TextSecondary}" FontWeight="Bold" /></StackPanel>
+            <StackPanel Grid.Column="2" Spacing="1"><TextBlock Classes="TdLabel" Text="31–50" /><TextBlock Classes="TdNum" Text="{Binding TokenMeta.Dist3150Label}" Foreground="{DynamicResource TextSecondary}" FontWeight="Bold" /></StackPanel>
+            <StackPanel Grid.Column="3" Spacing="1"><TextBlock Classes="TdLabel" Text="REST" /><TextBlock Classes="TdNum" Text="{Binding TokenMeta.DistRestLabel}" Foreground="{DynamicResource Positive}" FontWeight="Bold" /></StackPanel>
           </Grid>
         </StackPanel>
       </Border>
@@ -110,7 +110,7 @@
           <Grid ColumnDefinitions="Auto,*"><TextBlock Classes="row" Text="Freeze authority" /><TextBlock Grid.Column="1" Classes="val" Text="{Binding TokenMeta.FreezeAuthorityLabel}" Foreground="{Binding TokenMeta.FreezeAuthorityBrush}" /></Grid>
           <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding TokenMeta.HasCreator}">
             <TextBlock Classes="row" Text="Creator" />
-            <Button Grid.Column="1" Content="{Binding TokenMeta.CreatorShort}" Classes="TdSeg dex" Padding="8,3" HorizontalAlignment="Right" Command="{Binding TokenMeta.OpenCreatorCommand}" />
+            <Button Grid.Column="1" Content="{Binding TokenMeta.CreatorShort}" Classes="TdSeg dex" Padding="8,2" HorizontalAlignment="Right" Command="{Binding TokenMeta.OpenCreatorCommand}" />
           </Grid>
           <Grid ColumnDefinitions="Auto,*"><TextBlock Classes="row" Text="FDV" /><TextBlock Grid.Column="1" Classes="val" Text="{Binding TokenMeta.FdvLabel}" /></Grid>
           <Grid ColumnDefinitions="Auto,*"><TextBlock Classes="row" Text="GT score" /><TextBlock Grid.Column="1" Classes="val" Text="{Binding TokenMeta.GtScoreLabel}" Foreground="#a855f7" /></Grid>
@@ -124,21 +124,21 @@
         <StackPanel Spacing="8">
           <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
             <TextBlock Classes="row" Text="Token address" VerticalAlignment="Center" />
-            <TextBox Grid.Column="1" Text="{Binding TokenMeta.ContractAddress}" IsReadOnly="True" Classes="TdInput" Foreground="#c8dcef" FontSize="11" VerticalContentAlignment="Center" />
+            <TextBox Grid.Column="1" Text="{Binding TokenMeta.ContractAddress}" IsReadOnly="True" Classes="TdInput" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsCaption}" VerticalContentAlignment="Center" />
             <Button Grid.Column="2" Content="Explorer ↗" Classes="TdSeg dex" Padding="8,4" Command="{Binding TokenMeta.OpenExplorerCommand}" />
           </Grid>
           <WrapPanel>
-            <Button Content="🌐 Website"   Classes="TdSeg" Padding="9,4" Margin="0,0,6,6" Command="{Binding TokenMeta.OpenWebsiteCommand}"   IsVisible="{Binding TokenMeta.HasWebsite}" />
-            <Button Content="𝕏 Twitter"    Classes="TdSeg" Padding="9,4" Margin="0,0,6,6" Command="{Binding TokenMeta.OpenTwitterCommand}"   IsVisible="{Binding TokenMeta.HasTwitter}" />
-            <Button Content="✈ Telegram"   Classes="TdSeg" Padding="9,4" Margin="0,0,6,6" Command="{Binding TokenMeta.OpenTelegramCommand}"  IsVisible="{Binding TokenMeta.HasTelegram}" />
-            <Button Content="💬 Discord"   Classes="TdSeg" Padding="9,4" Margin="0,0,6,6" Command="{Binding TokenMeta.OpenDiscordCommand}"   IsVisible="{Binding TokenMeta.HasDiscord}" />
-            <Button Content="🦎 CoinGecko" Classes="TdSeg" Padding="9,4" Margin="0,0,6,6" Command="{Binding TokenMeta.OpenCoingeckoCommand}" IsVisible="{Binding TokenMeta.HasCoingecko}" />
+            <Button Content="🌐 Website"   Classes="TdSeg" Padding="8,4" Margin="0,0,6,6" Command="{Binding TokenMeta.OpenWebsiteCommand}"   IsVisible="{Binding TokenMeta.HasWebsite}" />
+            <Button Content="𝕏 Twitter"    Classes="TdSeg" Padding="8,4" Margin="0,0,6,6" Command="{Binding TokenMeta.OpenTwitterCommand}"   IsVisible="{Binding TokenMeta.HasTwitter}" />
+            <Button Content="✈ Telegram"   Classes="TdSeg" Padding="8,4" Margin="0,0,6,6" Command="{Binding TokenMeta.OpenTelegramCommand}"  IsVisible="{Binding TokenMeta.HasTelegram}" />
+            <Button Content="💬 Discord"   Classes="TdSeg" Padding="8,4" Margin="0,0,6,6" Command="{Binding TokenMeta.OpenDiscordCommand}"   IsVisible="{Binding TokenMeta.HasDiscord}" />
+            <Button Content="🦎 CoinGecko" Classes="TdSeg" Padding="8,4" Margin="0,0,6,6" Command="{Binding TokenMeta.OpenCoingeckoCommand}" IsVisible="{Binding TokenMeta.HasCoingecko}" />
           </WrapPanel>
         </StackPanel>
       </Border>
 
       <!-- Description -->
-      <TextBlock Text="{Binding TokenMeta.Description}" Foreground="#8fa3b8" FontSize="11" TextWrapping="Wrap" LineHeight="16" IsVisible="{Binding TokenMeta.HasDescription}" />
+      <TextBlock Text="{Binding TokenMeta.Description}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" LineHeight="16" IsVisible="{Binding TokenMeta.HasDescription}" />
     </StackPanel>
   </ScrollViewer>
 </UserControl>

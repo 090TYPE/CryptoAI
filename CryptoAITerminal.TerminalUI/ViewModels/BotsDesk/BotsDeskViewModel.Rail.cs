@@ -175,11 +175,11 @@ public partial class BotsDeskViewModel
     public string RailOptsCaret => RailOptsOpen ? "▾" : "▸";
     public string RailCopilotCaret => RailCopilotOpen ? "▾" : "▸";
     public string RailAgentCaret => RailAgentOpen ? "▾" : "▸";
-    public string RailRiskBorder => RailRiskOpen ? "#152233" : "#0d1b27";
-    public string RailCorrBorder => RailCorrOpen ? "#152233" : "#0d1b27";
-    public string RailOptsBorder => RailOptsOpen ? "#152233" : "#0d1b27";
-    public string RailCopilotBorder => RailCopilotOpen ? "#152233" : "#0d1b27";
-    public string RailAgentBorder => RailAgentOpen ? "#152233" : "#0d1b27";
+    public string RailRiskBorder => RailRiskOpen ? SemanticColor.Stroke : "#0d1b27";
+    public string RailCorrBorder => RailCorrOpen ? SemanticColor.Stroke : "#0d1b27";
+    public string RailOptsBorder => RailOptsOpen ? SemanticColor.Stroke : "#0d1b27";
+    public string RailCopilotBorder => RailCopilotOpen ? SemanticColor.Stroke : "#0d1b27";
+    public string RailAgentBorder => RailAgentOpen ? SemanticColor.Stroke : "#0d1b27";
     public string RailRiskTitle => RailRiskOpen ? BotsDeskData.Accent : "#5a7a94";
     public string RailCorrTitle => RailCorrOpen ? BotsDeskData.Accent : "#5a7a94";
     public string RailOptsTitle => RailOptsOpen ? BotsDeskData.Accent : "#5a7a94";
@@ -229,7 +229,7 @@ public partial class BotsDeskViewModel
         "ALLOW" => "#14302e",
         "CAUTION" => "#3a2a12",
         "REJECT" => "#3a1620",
-        _ => "#152233"
+        _ => SemanticColor.Stroke
     };
     public string RiskScore => RiskVm is { HasVerdict: true } r ? r.ScoreLabel : BotsDeskData.Dash;
     public string RiskRationale => RiskVm is { HasVerdict: true } r ? r.Rationale : "";
@@ -303,9 +303,9 @@ public partial class BotsDeskViewModel
     public string CopilotAutoLabel => CopilotVm is null ? "copilot unavailable"
         : CopilotVm.IsAutoMode ? "AUTO ON · the agent acts within its gates" : "AUTO off · approve each order";
     public string CopilotAutoColor => CopilotVm is { IsAutoMode: true } ? BotsDeskData.Amber : "#5a7a94";
-    public string CopilotAutoBorder => CopilotVm is { IsAutoMode: true } ? "#3a2a12" : "#152233";
+    public string CopilotAutoBorder => CopilotVm is { IsAutoMode: true } ? "#3a2a12" : SemanticColor.Stroke;
     public string CopilotAutoBg => CopilotVm is { IsAutoMode: true } ? "#150f04" : "transparent";
-    public string CopilotTrackBg => CopilotVm is { IsAutoMode: true } ? "#3a2a12" : "#152233";
+    public string CopilotTrackBg => CopilotVm is { IsAutoMode: true } ? "#3a2a12" : SemanticColor.Stroke;
     public string CopilotKnob => CopilotVm is { IsAutoMode: true } ? BotsDeskData.Amber : "#3d5a72";
     public double CopilotKnobLeft => CopilotVm is { IsAutoMode: true } ? 15 : 2;
 

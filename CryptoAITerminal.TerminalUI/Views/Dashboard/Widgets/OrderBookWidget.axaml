@@ -23,10 +23,10 @@
                 <Rectangle Fill="#22FF6B6B" Width="{Binding DepthWidth}" RadiusX="3" RadiusY="3"
                            HorizontalAlignment="Right" Margin="0,1" />
                 <Grid ColumnDefinitions="*,Auto" Margin="8,0">
-                  <TextBlock Grid.Column="0" Classes="Mono" FontSize="11" Foreground="#FF6B6B"
+                  <TextBlock Grid.Column="0" Classes="Mono" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource Negative}"
                              VerticalAlignment="Center"
                              Text="{Binding Price, StringFormat='{}{0:N2}'}" />
-                  <TextBlock Grid.Column="1" Classes="Mono" FontSize="11" Foreground="#8FA3B8"
+                  <TextBlock Grid.Column="1" Classes="Mono" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}"
                              VerticalAlignment="Center"
                              Text="{Binding Quantity, StringFormat='{}{0:N4}'}" />
                 </Grid>
@@ -37,13 +37,13 @@
 
         <!-- Mid price band -->
         <Border Background="#0C1E22" BorderBrush="#173B3B" BorderThickness="0,1"
-                Padding="8,7" Margin="0,3">
+                Padding="8,6" Margin="0,2">
           <Grid ColumnDefinitions="*,Auto">
-            <TextBlock Grid.Column="0" Classes="Mono" FontSize="16" FontWeight="Bold" Foreground="#21E6C1"
+            <TextBlock Grid.Column="0" Classes="Mono" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" Foreground="{DynamicResource Accent}"
                        Text="{Binding SelectedMarket.MidPrice, StringFormat='{}{0:N2}'}" />
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-              <TextBlock Text="MID" Foreground="{DynamicResource TextSoft}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
-              <TextBlock Classes="Mono" FontSize="10" Foreground="#8FA3B8" VerticalAlignment="Center"
+              <TextBlock Text="MID" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Center" />
+              <TextBlock Classes="Mono" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"
                          Text="{Binding SelectedMarket.SpreadPercentLabel}" />
             </StackPanel>
           </Grid>
@@ -57,10 +57,10 @@
                 <Rectangle Fill="#223DDC84" Width="{Binding DepthWidth}" RadiusX="3" RadiusY="3"
                            HorizontalAlignment="Right" Margin="0,1" />
                 <Grid ColumnDefinitions="*,Auto" Margin="8,0">
-                  <TextBlock Grid.Column="0" Classes="Mono" FontSize="11" Foreground="#3DDC84"
+                  <TextBlock Grid.Column="0" Classes="Mono" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource Positive}"
                              VerticalAlignment="Center"
                              Text="{Binding Price, StringFormat='{}{0:N2}'}" />
-                  <TextBlock Grid.Column="1" Classes="Mono" FontSize="11" Foreground="#8FA3B8"
+                  <TextBlock Grid.Column="1" Classes="Mono" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}"
                              VerticalAlignment="Center"
                              Text="{Binding Quantity, StringFormat='{}{0:N4}'}" />
                 </Grid>

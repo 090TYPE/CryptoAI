@@ -1,6 +1,7 @@
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
+using CryptoAITerminal.Core.Trading;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -38,15 +39,12 @@ public sealed class GridBot : IDisposable
             ? (_isHedgeMode ? FuturesPositionSide.Long : FuturesPositionSide.Both)
             : FuturesPositionSide.Both;
 
-    // Binance -2019/-1106, Bybit "position idx", OKX 51124 — the account is in the other mode.
-    private static bool IsPositionSideMismatch(Exception ex)
-    {
-        var msg = ex.Message?.ToLowerInvariant() ?? string.Empty;
-        return msg.Contains("position side") || msg.Contains("position mode")
-            || msg.Contains("position idx") || msg.Contains("51124");
-    }
     private volatile bool _isStopped;
     private readonly SemaphoreSlim _pollLock = new(1, 1);
+
+    private static readonly TimeSpan BasePollInterval = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan MaxPollInterval  = TimeSpan.FromMinutes(2);
+    private TimeSpan _pollInterval = BasePollInterval;
 
     // Ордер, пропавший из open-orders, ещё не обязательно исполнен: ручная отмена, экспирация
     // или пустой ответ биржи при сбое дают тот же снимок. Держим id, пропавший первый раз,
@@ -124,8 +122,9 @@ public sealed class GridBot : IDisposable
 
         // Не передаём async-лямбду в Timer — это эквивалент async void и
         // непойманное исключение крашит процесс. Оборачиваем в SafePollAsync.
+        _pollInterval = BasePollInterval;
         _pollTimer = new Timer(_ => { _ = SafePollAsync(); }, null,
-            TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+            _pollInterval, _pollInterval);
     }
 
     private async Task SafePollAsync()
@@ -182,7 +181,7 @@ public sealed class GridBot : IDisposable
                 _activeBuyOrders[placed.Id] = levelIndex;
                 OnLog?.Invoke($"Buy L{levelIndex} @ {price:N4}");
             }
-            catch (Exception ex) when (IsPositionSideMismatch(ex))
+            catch (Exception ex) when (ExchangeErrors.IsPositionSideMismatch(ex))
             {
                 _isHedgeMode = !_isHedgeMode;
                 order.PositionSide = GridPositionSide();
@@ -226,7 +225,7 @@ public sealed class GridBot : IDisposable
                 _activeSellOrders[placed.Id] = levelIndex;
                 OnLog?.Invoke($"Sell L{levelIndex} @ {price:N4}");
             }
-            catch (Exception ex) when (IsPositionSideMismatch(ex))
+            catch (Exception ex) when (ExchangeErrors.IsPositionSideMismatch(ex))
             {
                 _isHedgeMode = !_isHedgeMode;
                 order.PositionSide = GridPositionSide();
@@ -295,15 +294,43 @@ public sealed class GridBot : IDisposable
 
                 await PlaceBuyAtLevelAsync(lvl - 1);
             }
+
+            ApplyPollBackoff(rateLimited: false);
         }
         catch (Exception ex)
         {
             OnLog?.Invoke($"Poll error: {ex.Message}");
+            ApplyPollBackoff(RestBackoff.IsRateLimit(ex));
         }
         finally
         {
             _pollLock.Release();
         }
+    }
+
+    /// <summary>
+    /// Опрос open-orders — чтение, поэтому на 429 замедляемся, а не ретраим: биржа банит IP
+    /// за игнор лимита, а следующий тик всё равно увидит тот же снимок. Размещение ордера
+    /// не ретраится ни при каких условиях — повтор мог бы удвоить позицию.
+    /// </summary>
+    private void ApplyPollBackoff(bool rateLimited)
+    {
+        var next = rateLimited
+            ? RestBackoff.Grow(_pollInterval, MaxPollInterval)
+            : BasePollInterval;
+        if (next == _pollInterval) return;
+
+        _pollInterval = next;
+        // Пауза и остановка владеют таймером сами — иначе поздний тик снова его заведёт.
+        // Dispose мог случиться, пока этот проход был в полёте, — тогда менять нечего.
+        if (!_isStopped && !_isPaused)
+        {
+            try { _pollTimer?.Change(next, next); }
+            catch (ObjectDisposedException) { return; }
+        }
+        OnLog?.Invoke(rateLimited
+            ? $"Rate limited by the exchange — polling fills every {next.TotalSeconds:0}s."
+            : $"Rate limit cleared — polling fills every {next.TotalSeconds:0}s.");
     }
 
     /// <summary>
@@ -356,7 +383,7 @@ public sealed class GridBot : IDisposable
         }
         finally { _pollLock.Release(); }
 
-        _pollTimer?.Change(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+        _pollTimer?.Change(_pollInterval, _pollInterval);
         OnLog?.Invoke($"Grid resumed · {_activeBuyOrders.Count} buys, {_activeSellOrders.Count} sells");
     }
 

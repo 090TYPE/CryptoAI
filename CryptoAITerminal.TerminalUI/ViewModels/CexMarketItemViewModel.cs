@@ -45,7 +45,7 @@ public class CexMarketItemViewModel : ReactiveObject
     {
         "binance" => "#F0B90B",
         "bybit"   => "#F7A600",
-        "okx"     => "#8FA3B8",
+        "okx"     => SemanticColor.Muted,
         "kucoin"  => "#24AE8F",
         _         => "#7C5CFF"   // DEX
     };
@@ -128,7 +128,7 @@ public class CexMarketItemViewModel : ReactiveObject
         $"Поддержка {FormatWallUsd(BidWallUsd)}  ·  Сопротивление {FormatWallUsd(AskWallUsd)}";
 
     public string WallImbalanceBrush =>
-        BidWallUsd > AskWallUsd ? "#42F5B1" : AskWallUsd > BidWallUsd ? "#FF857B" : "#8FA3B8";
+        BidWallUsd > AskWallUsd ? SemanticColor.Positive : AskWallUsd > BidWallUsd ? SemanticColor.Negative : SemanticColor.Muted;
 
     private static string FormatWallUsd(decimal usd) =>
         usd >= 1_000_000m ? $"${usd / 1_000_000m:N2}M"
@@ -253,10 +253,10 @@ public class CexMarketItemViewModel : ReactiveObject
     public string SpreadPercentLabel => Spread > 0 ? $"{SpreadPercent:0.###}%" : "--";
     public string RangeLabel => SessionHigh > 0 && SessionLow > 0 ? $"{SessionLow:N2} - {SessionHigh:N2}" : "--";
     public string TrendLabel => !HasPriceHistory ? "Warmup" : IsPositiveTrend ? "Bullish" : "Bearish";
-    public string TrendBrush => !HasPriceHistory ? "#8FA3B8" : IsPositiveTrend ? "#21E6C1" : "#FF857B";
+    public string TrendBrush => !HasPriceHistory ? SemanticColor.Muted : IsPositiveTrend ? SemanticColor.Positive : SemanticColor.Negative;
     public string UpdatedLabel => LastUpdated == default ? "--" : LastUpdated.ToString("HH:mm:ss");
     public string ActivityScoreLabel => $"{ActivityScore:0}";
-    public string ChangeBrush => ChangePercent >= 0 ? "#21E6C1" : "#FF857B";
+    public string ChangeBrush => ChangePercent >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
 
     // ============================================================
     //  Reference-terminal (Markets board) display helpers.
@@ -310,12 +310,12 @@ public class CexMarketItemViewModel : ReactiveObject
 
     /// <summary>Green/red tinted chip behind the monogram.</summary>
     public string RowIconBackground => IsUp ? "#0A2A0A" : "#2A0A10";
-    public string RowIconForeground => IsUp ? "#3DDC84" : "#FF6B6B";
+    public string RowIconForeground => IsUp ? SemanticColor.Positive : SemanticColor.Negative;
 
     /// <summary>Venue chip on each row: BINANCE / BYBIT / OKX / KUCOIN / DEX.</summary>
     public string VenueBadge => IsDexMarket ? "DEX" : Exchange.ToUpperInvariant();
     public string VenueBadgeBackground => "#0A1A1A";
-    public string VenueBadgeForeground => "#21E6C1";
+    public string VenueBadgeForeground => SemanticColor.Accent;
 
     /// <summary>Quote/settlement shown under the ticker: USDT / SOL / WETH …</summary>
     public string QuoteBadge
@@ -434,11 +434,11 @@ public class CexMarketItemViewModel : ReactiveObject
     public string ActivityOutOf100 => $"{ActivityScore:0} / 100";
 
     /// <summary>Green when up, red when down — matches the reference pill / monogram tint.</summary>
-    public string ChangePillForeground => IsUp ? "#3DDC84" : "#FF6B6B";
-    public string ChangePillBackground => IsUp ? "#143DDC84" : "#12FF6B6B";
+    public string ChangePillForeground => IsUp ? SemanticColor.Positive : SemanticColor.Negative;
+    public string ChangePillBackground => SemanticColor.Alpha(IsUp ? SemanticColor.Positive : SemanticColor.Negative, IsUp ? "14" : "12");
 
     // ---- Trend sparkline (REAL: last live price samples mapped into a 72×24 box) ----
-    public string SparklineBrush => IsUp ? "#3DDC84" : "#FF6B6B";
+    public string SparklineBrush => IsUp ? SemanticColor.Positive : SemanticColor.Negative;
 
     /// <summary>How many trailing real price samples the sparkline draws.</summary>
     private const int SparklineMaxPoints = 32;
@@ -502,9 +502,9 @@ public class CexMarketItemViewModel : ReactiveObject
 
     public string AiSignalForeground => AiSignalLabel switch
     {
-        "STRONG BUY" or "BUY" => "#3DDC84",
-        "STRONG SELL" or "SELL" => "#FF6B6B",
-        _ => "#F4B860",
+        "STRONG BUY" or "BUY" => SemanticColor.Positive,
+        "STRONG SELL" or "SELL" => SemanticColor.Negative,
+        _ => SemanticColor.Warning,
     };
 
     public string AiSignalCardBackground => AiSignalLabel switch
@@ -540,7 +540,7 @@ public class CexMarketItemViewModel : ReactiveObject
 
     public string ChipBackground => IsActive ? "#0E2A2E" : "#07111A";
     public string ChipForeground => IsActive ? "#F4F7FB" : "#9BAFC5";
-    public string ChipBorderBrush => IsActive ? "#21E6C1" : "#1A2B39";
+    public string ChipBorderBrush => IsActive ? SemanticColor.Accent : "#1A2B39";
 
     public bool IsFavorite
     {
@@ -558,8 +558,8 @@ public class CexMarketItemViewModel : ReactiveObject
     public string FavoriteGlyph => IsFavorite ? "STAR" : "ADD";
     /// <summary>Star glyph for the board's favourite column (reference terminal look).</summary>
     public string FavoriteStar => IsFavorite ? "★" : "☆";
-    public string FavoriteBrush => IsFavorite ? "#F4B860" : "#8FA3B8";
-    public string FavoriteStarBrush => IsFavorite ? "#F4B860" : "#3D5A72";
+    public string FavoriteBrush => IsFavorite ? SemanticColor.Warning : SemanticColor.Muted;
+    public string FavoriteStarBrush => IsFavorite ? SemanticColor.Warning : "#3D5A72";
 
     public ObservableCollection<Point> ChartPoints { get; } = [];
     public ObservableCollection<OrderBookLevelViewModel> BidLevels { get; } = [];
@@ -949,7 +949,7 @@ public class OrderBookLevelViewModel : ReactiveObject
         }
     }
 
-    public string PriceBrush => IsSelected ? "#F4B860" : "#F4F7FB";
+    public string PriceBrush => IsSelected ? SemanticColor.Warning : "#F4F7FB";
 
     // Selected tint wins; otherwise a warm wall tint when large.
     public string RowBackground => IsSelected ? "#243241" : IsLarge ? "#3A2E12" : "Transparent";

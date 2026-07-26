@@ -74,9 +74,9 @@ public sealed class CorrelationInsightViewModel : ReactiveObject
     };
     public string SignalBrush => _signal switch
     {
-        "DIVERSIFIED"  => "#21E6C1",
-        "CONCENTRATED" => "#FF6B6B",
-        _              => "#F4B860"
+        "DIVERSIFIED"  => SemanticColor.Accent,
+        "CONCENTRATED" => SemanticColor.Negative,
+        _              => SemanticColor.Warning
     };
 
     public ReactiveCommand<Unit, Unit> AnalyzeCommand { get; }

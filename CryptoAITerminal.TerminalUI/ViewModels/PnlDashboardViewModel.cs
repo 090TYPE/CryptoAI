@@ -65,7 +65,7 @@ public class PnlDashboardViewModel : ReactiveObject
     private int     _lossCount;
 
     public string TotalPnlLabel    => $"{_totalPnlUsd:+0.00;-0.00;0.00} USDT";
-    public string TotalPnlBrush    => _totalPnlUsd >= 0 ? "#3DDC84" : "#FF5D73";
+    public string TotalPnlBrush    => _totalPnlUsd >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
     public string WinRateLabel     => _totalTrades == 0 ? "--" : $"{_winRate:N1}%";
     public string AvgWinLabel      => _winCount  == 0 ? "--" : $"+{_avgWinUsd:N2}";
     public string AvgLossLabel     => _lossCount == 0 ? "--" : $"-{_avgLossUsd:N2}";
@@ -311,7 +311,7 @@ public sealed class PeriodRowViewModel
     public string Label    => _row.Label;
     public string Trades   => _row.Trades.ToString();
     public string PnlLabel => $"{_row.PnlUsd:+0.00;-0.00;0.00}";
-    public string PnlBrush => _row.PnlUsd >= 0 ? "#3DDC84" : "#FF5D73";
+    public string PnlBrush => _row.PnlUsd >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
     public string WinRate  => $"{_row.WinRate:N0}%";
     public PeriodRowViewModel(PeriodRow row) => _row = row;
 }
@@ -322,7 +322,7 @@ public sealed class SourceRowViewModel
     public string Label    => _row.Label;
     public string Trades   => $"{_row.Wins}W / {_row.Trades}T";
     public string PnlLabel => $"{_row.PnlUsd:+0.00;-0.00;0.00}";
-    public string PnlBrush => _row.PnlUsd >= 0 ? "#3DDC84" : "#FF5D73";
+    public string PnlBrush => _row.PnlUsd >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
     public string WinRate  => _row.Trades == 0 ? "--" : $"{_row.WinRate:N0}%";
     public SourceRowViewModel(SourceRow row) => _row = row;
 }
@@ -336,7 +336,7 @@ public sealed class TradeRowViewModel
     public string Direction   => _t.Direction.ToString();
     public string PnlLabel    => $"{_t.PnlUsd:+0.00;-0.00;0.00}";
     public string PnlPctLabel => $"{_t.PnlPercent:+0.##;-0.##;0}%";
-    public string PnlBrush    => _t.PnlUsd >= 0 ? "#3DDC84" : "#FF5D73";
+    public string PnlBrush    => _t.PnlUsd >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
     public string Duration    => _t.DurationLabel;
     public string ExitReason  => _t.ExitReason;
     /// <summary>The underlying record, so consumers can compute on real numbers instead of parsing labels.</summary>

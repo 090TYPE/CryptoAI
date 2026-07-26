@@ -46,7 +46,7 @@ public sealed class NavItem
     public string Badge { get; init; } = "";
     public string BadgeColor { get; init; } = "#1e3048";
     public string Bg { get; init; } = "transparent";
-    public string Fg { get; init; } = "#8fa3b8";
+    public string Fg { get; init; } = SemanticColor.Muted;
     public string Mark { get; init; } = "transparent";
     public ICommand? Command { get; init; }
 }
@@ -61,9 +61,9 @@ public sealed class ProviderCard
 {
     public string Name { get; init; } = "";
     public string Hint { get; init; } = "";
-    public string Border { get; init; } = "#152233";
+    public string Border { get; init; } = SemanticColor.Stroke;
     public string Bg { get; init; } = "#050f14";
-    public string Fg { get; init; } = "#8fa3b8";
+    public string Fg { get; init; } = SemanticColor.Muted;
     public string DotBorder { get; init; } = "#2a3f54";
     public string DotBg { get; init; } = "transparent";
     public string Status { get; init; } = "";
@@ -75,7 +75,7 @@ public sealed class ProfileCard
 {
     public string Name { get; init; } = "";
     public string Meta { get; init; } = "";
-    public string Border { get; init; } = "#152233";
+    public string Border { get; init; } = SemanticColor.Stroke;
     public string Bg { get; init; } = "#050f14";
     public ICommand? LoadCommand { get; init; }
     public ICommand? ExportCommand { get; init; }
@@ -86,8 +86,8 @@ public sealed class ExTabVM
 {
     public string Label { get; init; } = "";
     public string Bg { get; init; } = "transparent";
-    public string Fg { get; init; } = "#8fa3b8";
-    public string Dot { get; init; } = "#152233";
+    public string Fg { get; init; } = SemanticColor.Muted;
+    public string Dot { get; init; } = SemanticColor.Stroke;
     public string State { get; init; } = "";
     public string StateColor { get; init; } = "#1e3048";
     public ICommand? Command { get; init; }
@@ -135,7 +135,7 @@ public sealed class IntegrationRowVM : ReactiveObject
     public string SrcColor { get => _srcColor; set => this.RaiseAndSetIfChanged(ref _srcColor, value); }
     private string _srcBg = "transparent";
     public string SrcBg { get => _srcBg; set => this.RaiseAndSetIfChanged(ref _srcBg, value); }
-    private string _srcBorder = "#152233";
+    private string _srcBorder = SemanticColor.Stroke;
     public string SrcBorder { get => _srcBorder; set => this.RaiseAndSetIfChanged(ref _srcBorder, value); }
 
     /// <summary>True when an external environment variable overrides whatever is typed here.</summary>
@@ -148,9 +148,9 @@ public sealed class DexModeChip
 {
     public string Label { get; init; } = "";
     public string Hint { get; init; } = "";
-    public string Border { get; init; } = "#152233";
+    public string Border { get; init; } = SemanticColor.Stroke;
     public string Bg { get; init; } = "#050f14";
-    public string Fg { get; init; } = "#8fa3b8";
+    public string Fg { get; init; } = SemanticColor.Muted;
     public string DotBorder { get; init; } = "#2a3f54";
     public string DotBg { get; init; } = "transparent";
     /// <summary>Set when the mode is selectable but cannot work on this build / network.</summary>
@@ -168,7 +168,7 @@ public sealed class IntegrationGroupVM
 public sealed class PermToggle
 {
     public string Label { get; init; } = "";
-    public string Border { get; init; } = "#152233";
+    public string Border { get; init; } = SemanticColor.Stroke;
     public string Bg { get; init; } = "transparent";
     public string Fg { get; init; } = "#2d4a5e";
     public ICommand? Command { get; init; }
@@ -189,17 +189,17 @@ public sealed class NtChannelVM : ReactiveObject
     public string Caret => _open ? "▾" : "▸";
 
     public string Border { get; set; } = "#0d1b27";
-    public string Dot { get; set; } = "#152233";
+    public string Dot { get; set; } = SemanticColor.Stroke;
     public string Status { get; set; } = "";
     public string StatusColor { get; set; } = "#2d4a5e";
     public string Summary { get; set; } = "";
     public string Last { get; set; } = "";
     public string EnLabel { get; set; } = "ENABLE CHANNEL";
-    public string EnColor { get; set; } = "#21e6c1";
+    public string EnColor { get; set; } = SemanticColor.Accent;
     public string EnBorder { get; set; } = "#14302e";
     public string EnBg { get; set; } = "#061615";
     public string SslMark { get; set; } = "";
-    public string SslBorder { get; set; } = "#152233";
+    public string SslBorder { get; set; } = SemanticColor.Stroke;
     public string SslBg { get; set; } = "transparent";
 
     public ICommand? ToggleOpenCommand { get; set; }
@@ -214,7 +214,7 @@ public sealed class PendingSignalVM
 {
     public string Label { get; init; } = "";
     public string Desc { get; init; } = "";
-    public string SideColor { get; init; } = "#8fa3b8";
+    public string SideColor { get; init; } = SemanticColor.Muted;
     public ICommand? AcceptCommand { get; init; }
     public ICommand? SkipCommand { get; init; }
 }
@@ -222,7 +222,7 @@ public sealed class PendingSignalVM
 public sealed class ChannelChip
 {
     public string Label { get; init; } = "";
-    public string Border { get; init; } = "#152233";
+    public string Border { get; init; } = SemanticColor.Stroke;
     public string Bg { get; init; } = "transparent";
     public string Fg { get; init; } = "#2d4a5e";
     public ICommand? Command { get; init; }
@@ -232,14 +232,14 @@ public sealed class AlertRowVM
 {
     public string Symbol { get; init; } = "";
     public string Rule { get; init; } = "";
-    public string Dot { get; init; } = "#152233";
+    public string Dot { get; init; } = SemanticColor.Stroke;
     public string Distance { get; init; } = "";
     public string DistColor { get; init; } = "#2d4a5e";
     public List<string> Channels { get; init; } = new();
     public string Repeat { get; init; } = "";
     public string Bg { get; init; } = "transparent";
     public string ToggleLabel { get; init; } = "";
-    public string ToggleColor { get; init; } = "#8fa3b8";
+    public string ToggleColor { get; init; } = SemanticColor.Muted;
     public ICommand? ToggleCommand { get; init; }
     public ICommand? DeleteCommand { get; init; }
 }
@@ -248,14 +248,14 @@ public sealed class HistoryRow
 {
     public string Time { get; init; } = "";
     public string Channel { get; init; } = "";
-    public string Color { get; init; } = "#8fa3b8";
+    public string Color { get; init; } = SemanticColor.Muted;
     public string Msg { get; init; } = "";
 }
 
 public sealed class HotkeyRowVM : ReactiveObject
 {
     public string Label { get; init; } = "";
-    public string KeyColor { get; init; } = "#8fa3b8";
+    public string KeyColor { get; init; } = SemanticColor.Muted;
     public string Placeholder { get; init; } = "";
     public Action<string>? ValueChanged { get; set; }
 

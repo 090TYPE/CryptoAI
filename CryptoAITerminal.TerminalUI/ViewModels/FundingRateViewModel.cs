@@ -69,9 +69,9 @@ public sealed class FundingRateRowViewModel : ReactiveObject
     /// Color based on direction and extremity
     public string RateColor => _rate switch
     {
-        > 0.001m  => "#FF5D73",   // positive extreme — longs pay → red
+        > 0.001m  => SemanticColor.Negative,   // positive extreme — longs pay → red
         > 0m      => "#C97B7B",   // positive mild
-        < -0.001m => "#3DDC84",   // negative extreme — shorts pay → green (good for longs)
+        < -0.001m => SemanticColor.Positive,   // negative extreme — shorts pay → green (good for longs)
         < 0m      => "#7BC9A0",   // negative mild
         _         => "#8B949E"
     };
@@ -119,7 +119,7 @@ public sealed class FundingAlertViewModel
     public string    Symbol       { get; init; } = string.Empty;
     public string    RatePct      { get; init; } = string.Empty;
     public string    Direction    { get; init; } = string.Empty;  // "HIGH" | "LOW"
-    public string    Color        { get; init; } = "#F4B860";
+    public string    Color        { get; init; } = SemanticColor.Warning;
     public string    TimeLabel    => AlertTime.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture);
     public string    DisplayLabel => $"{Symbol}  {RatePct}  ({Direction})";
 }
@@ -443,7 +443,7 @@ public class FundingRateViewModel : ReactiveObject, IDisposable
                 Symbol    = s.Symbol,
                 RatePct   = ratePct,
                 Direction = s.FundingRate > 0 ? "HIGH" : "LOW",
-                Color     = s.FundingRate > 0 ? "#FF5D73" : "#3DDC84"
+                Color     = s.FundingRate > 0 ? SemanticColor.Negative : SemanticColor.Positive
             };
 
             Alerts.Insert(0, alert);

@@ -4,7 +4,7 @@ using Binance.Net.Enums;
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
-using System.Collections.Concurrent;
+using CryptoAITerminal.Gateway.Base;
 using System.Reflection;
 using System.Reactive.Subjects;
 using System.Threading;
@@ -22,7 +22,9 @@ public class BinanceFuturesGateway : IExchangeGateway
     private readonly IReadOnlyList<string> _symbols;
     private readonly string? _apiKey;
     private readonly string? _apiSecret;
-    private readonly ConcurrentDictionary<string, string> _orderSymbols = new();
+    private readonly OrderSymbolCache _orderSymbols = new();
+    // USD-M exchangeInfo returns every instrument in one response, so one call fills the whole map.
+    private readonly SymbolFiltersCache _filters = new();
     private Timer? _userStreamKeepAliveTimer;
     private string? _userStreamListenKey;
 
@@ -125,18 +127,7 @@ public class BinanceFuturesGateway : IExchangeGateway
 
     public async Task<IReadOnlyList<DexOhlcvPoint>> GetCandlesAsync(string symbol, string timeframe, int limit = 180)
     {
-        var interval = (timeframe ?? string.Empty).Trim().ToUpperInvariant() switch
-        {
-            "1M" => KlineInterval.OneMinute,
-            "5M" => KlineInterval.FiveMinutes,
-            "15M" => KlineInterval.FifteenMinutes,
-            "1H" => KlineInterval.OneHour,
-            "4H" => KlineInterval.FourHour,
-            "1D" => KlineInterval.OneDay,
-            "1W" => KlineInterval.OneWeek,
-            "1MN" => KlineInterval.OneMonth,
-            _ => KlineInterval.OneMinute
-        };
+        var interval = BinanceTimeframeMap.Parse(timeframe);
 
         var result = await _restClient.UsdFuturesApi.ExchangeData.GetKlinesAsync(symbol, interval, limit: limit);
         if (!result.Success)
@@ -200,7 +191,7 @@ public class BinanceFuturesGateway : IExchangeGateway
 
         order.MarketType = TradingMarketType.FuturesUsdM;
         order.Id = GetStringProperty(result.Data, "Id", "OrderId") ?? order.Id;
-        if (!string.IsNullOrEmpty(order.Id)) _orderSymbols[order.Id] = order.Symbol;
+        _orderSymbols.Remember(order.Id, order.Symbol);
         order.ClientOrderId = GetStringProperty(result.Data, "ClientOrderId", "NewClientOrderId") ?? order.ClientOrderId;
         order.ExchangeType = GetStringProperty(result.Data, "Type") ?? orderType.ToString();
         order.TimeInForce = GetStringProperty(result.Data, "TimeInForce") ?? order.TimeInForce;
@@ -209,12 +200,52 @@ public class BinanceFuturesGateway : IExchangeGateway
             (order.Type == OrderType.Market && order.StopPrice is null
                 ? CryptoAITerminal.Core.Enums.OrderStatus.Filled
                 : CryptoAITerminal.Core.Enums.OrderStatus.New);
+
+        // Terminal already — nothing left to cancel, so drop the mapping instead of keeping it
+        // until the TTL expires.
+        if (IsTerminal(order.Status)) _orderSymbols.Forget(order.Id);
         return order;
+    }
+
+    private static bool IsTerminal(CryptoAITerminal.Core.Enums.OrderStatus status) =>
+        status is CryptoAITerminal.Core.Enums.OrderStatus.Filled
+               or CryptoAITerminal.Core.Enums.OrderStatus.Canceled
+               or CryptoAITerminal.Core.Enums.OrderStatus.Rejected;
+
+    /// <summary>
+    /// PRICE_FILTER / LOT_SIZE / MIN_NOTIONAL for a USD-M instrument. One call brings the whole
+    /// instrument list, so the first lookup fills the cache for every symbol at once. Null means
+    /// Binance would not answer — the caller keeps its own numbers rather than failing.
+    /// </summary>
+    public async Task<SymbolFilters?> GetSymbolFiltersAsync(string symbol, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(symbol)) return null;
+        symbol = symbol.Trim().ToUpperInvariant();
+
+        var cached = _filters.Get(symbol);
+        if (cached is not null) return cached;
+
+        var result = await _restClient.UsdFuturesApi.ExchangeData.GetExchangeInfoAsync(ct);
+        if (!result.Success) return null;
+
+        foreach (var info in result.Data.Symbols)
+        {
+            var name = info.Name?.ToUpperInvariant();
+            if (string.IsNullOrEmpty(name)) continue;
+            _filters.Store(SymbolFilters.Create(
+                name,
+                info.PriceFilter?.TickSize,
+                info.LotSizeFilter?.StepSize,
+                info.LotSizeFilter?.MinQuantity,
+                info.MinNotionalFilter?.MinNotional));
+        }
+
+        return _filters.Get(symbol);
     }
 
     public async Task CancelOrderAsync(string orderId)
     {
-        if (_orderSymbols.TryGetValue(orderId, out var sym))
+        if (_orderSymbols.TryGet(orderId, out var sym))
         {
             try { await CancelOrderAsync(sym, orderId); }
             catch { /* best-effort */ }
@@ -232,7 +263,7 @@ public class BinanceFuturesGateway : IExchangeGateway
         var result = await _restClient.UsdFuturesApi.Trading.CancelOrderAsync(symbol, parsedOrderId);
         if (!result.Success)
             throw new Exception($"Failed to cancel futures order for {symbol}: {result.Error}");
-        _orderSymbols.TryRemove(orderId, out _);
+        _orderSymbols.Forget(orderId);
     }
 
     public async Task CancelOrderAsync(string symbol, string? orderId, string? clientOrderId)
@@ -244,7 +275,7 @@ public class BinanceFuturesGateway : IExchangeGateway
         var result = await _restClient.UsdFuturesApi.Trading.CancelOrderAsync(symbol, parsedOrderId, clientOrderId);
         if (!result.Success)
             throw new Exception($"Failed to cancel futures order for {symbol}: {result.Error}");
-        if (orderId is not null) _orderSymbols.TryRemove(orderId, out _);
+        if (orderId is not null) _orderSymbols.Forget(orderId);
     }
 
     public async Task<IReadOnlyList<Order>> GetOpenOrdersAsync(string? symbol = null)
@@ -496,7 +527,7 @@ public class BinanceFuturesGateway : IExchangeGateway
         }
 
         var triggerId = GetStringProperty(result.Data, "Id", "OrderId") ?? Guid.NewGuid().ToString("N");
-        _orderSymbols[triggerId] = symbol;
+        _orderSymbols.Remember(triggerId, symbol);
 
         return new Order
         {
@@ -569,6 +600,10 @@ public class BinanceFuturesGateway : IExchangeGateway
             TimeInForce = GetStringProperty(data, "TimeInForce") ?? "GTC",
             CreatedAt = DateTimeOffset.FromUnixTimeMilliseconds((long)GetDecimalProperty(data, "UpdateTime", "TransactionTime")).UtcDateTime
         };
+
+        // The user data stream is where a fill is actually confirmed. Without this the id → symbol
+        // entry survived until the cache's TTL swept it, even though the order was long gone.
+        if (IsTerminal(order.Status)) _orderSymbols.Forget(order.Id);
 
         _orderUpdateSubject.OnNext(order);
         if (!string.IsNullOrWhiteSpace(order.Symbol))

@@ -37,7 +37,7 @@ public sealed class TapeRowVM
         ? $"{w[..6]}…{w[^4..]}"
         : Trade.Trader ?? "—";
 
-    public string SideBrush  => Trade.Side == "SELL" ? "#FF6B6B" : "#3DDC84";
+    public string SideBrush  => Trade.Side == "SELL" ? SemanticColor.Negative : SemanticColor.Positive;
     public string RowBrush   => IsLarge ? "#1A2A3A" : "Transparent";
     public string Weight     => IsLarge ? "Bold" : "Normal";
 }
@@ -88,7 +88,7 @@ public sealed class MarketTapeViewModel : ReactiveObject, IDisposable
     public bool   IsDex          => Venue == "DEX";
     public string CexTabBrush    => IsCex ? "#12293A" : "Transparent";
     public string DexTabBrush    => IsDex ? "#12293A" : "Transparent";
-    public string CexTabFg       => IsCex ? "#21E6C1" : "#7A96AF";
+    public string CexTabFg       => IsCex ? SemanticColor.Accent : "#7A96AF";
     public string DexTabFg       => IsDex ? "#B084F5" : "#7A96AF";
 
     private void SetVenue(string venue)
@@ -149,7 +149,7 @@ public sealed class MarketTapeViewModel : ReactiveObject, IDisposable
         private set => this.RaiseAndSetIfChanged(ref _pressureLabel, value);
     }
 
-    private string _pressureBrush = "#8FA3B8";
+    private string _pressureBrush = SemanticColor.Muted;
     public string PressureBrush
     {
         get => _pressureBrush;
@@ -256,14 +256,14 @@ public sealed class MarketTapeViewModel : ReactiveObject, IDisposable
         if (stats.TradeCount == 0)
         {
             PressureLabel = "Buy/Sell pressure: —";
-            PressureBrush = "#8FA3B8";
+            PressureBrush = SemanticColor.Muted;
             return;
         }
 
         var buyPct = (double)stats.BuyPressure * 100d;
         PressureLabel =
             $"Buy {buyPct:0}% / Sell {100d - buyPct:0}%  ·  {stats.LargePrintCount} large print(s) ≥ {threshold:N0}";
-        PressureBrush = buyPct >= 60d ? "#3DDC84" : buyPct <= 40d ? "#FF6B6B" : "#F4B860";
+        PressureBrush = buyPct >= 60d ? SemanticColor.Positive : buyPct <= 40d ? SemanticColor.Negative : SemanticColor.Warning;
     }
 
     public void Dispose() => Stop();

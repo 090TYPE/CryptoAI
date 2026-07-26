@@ -223,37 +223,22 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             _kucoinPassphraseInput = creds.KucoinPassphrase;
         }
 
-        var binanceApiKey    = creds.BinanceKey;
-        var binanceApiSecret = creds.BinanceSecret;
-        var bybitApiKey      = creds.BybitKey;
-        var bybitApiSecret   = creds.BybitSecret;
-        var okxApiKey        = creds.OkxKey;
-        var okxApiSecret     = creds.OkxSecret;
-        var okxApiPassphrase = creds.OkxPassphrase;
+        // All ten gateways come from one place now — see ExchangeGatewaySet for why.
+        var gateways = Services.ExchangeGatewaySet.Create(
+            DefaultSymbols.Concat(_customMarketSymbols), DefaultSymbols, creds);
 
-        // Testnet opt-ins from Settings → Exchange keys. Read once here because a gateway's
-        // environment is fixed when its client is built — switching takes a restart, and the
-        // toggle says so.
-        var testBinance = ExchangeEnvironmentStore.IsTestnet("binance");
-        var testBybit   = ExchangeEnvironmentStore.IsTestnet("bybit");
-        var testOkx     = ExchangeEnvironmentStore.IsTestnet("okx");
-
-        _gateway = new BinanceGateway(DefaultSymbols.Concat(_customMarketSymbols), testnet: testBinance);
-        _futuresGateway = new BinanceFuturesGateway(DefaultSymbols, binanceApiKey, binanceApiSecret, testBinance);
+        _gateway = gateways.BinanceSpot;
+        _futuresGateway = gateways.BinanceFutures;
         _riskManager = new RiskManager.RiskManager(maxPositionSizeUsd: 1000, maxDailyLossUsd: 500);
         ApplyRiskLimitsCommand = ReactiveCommand.Create(ApplyRiskLimits);
         ResetDailyRiskCommand = ReactiveCommand.Create(ResetDailyRisk);
 
-        var bybitSpot = new BybitGateway(DefaultSymbols, bybitApiKey, bybitApiSecret, testBybit);
-        var bybitFutures = new BybitFuturesGateway(DefaultSymbols, bybitApiKey, bybitApiSecret, testBybit);
-        var okxSpot = new OKXGateway(DefaultSymbols, okxApiKey, okxApiSecret, okxApiPassphrase, testOkx);
-        var okxFutures = new OKXFuturesGateway(DefaultSymbols, okxApiKey, okxApiSecret, okxApiPassphrase, testOkx);
-
-        var kucoinApiKey        = creds.KucoinKey;
-        var kucoinApiSecret     = creds.KucoinSecret;
-        var kucoinApiPassphrase = creds.KucoinPassphrase;
-        var kucoinSpot    = new KucoinGateway(DefaultSymbols, kucoinApiKey, kucoinApiSecret, kucoinApiPassphrase);
-        var kucoinFutures = new KucoinFuturesGateway(DefaultSymbols, kucoinApiKey, kucoinApiSecret, kucoinApiPassphrase);
+        var bybitSpot = gateways.BybitSpot;
+        var bybitFutures = gateways.BybitFutures;
+        var okxSpot = gateways.OkxSpot;
+        var okxFutures = gateways.OkxFutures;
+        var kucoinSpot = gateways.KucoinSpot;
+        var kucoinFutures = gateways.KucoinFutures;
 
         // Store gateways for Portfolio Rebalancer and Funding Arb Bot
         _bybitSpotGateway     = bybitSpot;
@@ -264,13 +249,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         _kucoinFuturesGateway = kucoinFutures;
 
         // Spot order book / price / placement can target any of these (mirrors _futuresGatewaysMap).
-        _spotGatewaysMap = new Dictionary<string, Core.Interfaces.IExchangeGateway>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["Binance"] = _gateway,
-            ["Bybit"]   = _bybitSpotGateway,
-            ["OKX"]     = _okxSpotGateway,
-            ["KuCoin"]  = _kucoinSpotGateway,
-        };
+        _spotGatewaysMap = new Dictionary<string, Core.Interfaces.IExchangeGateway>(gateways.SpotByExchange, StringComparer.OrdinalIgnoreCase);
 
         // Non-Binance CEX + DEX custom markets: refreshed by REST polling, not the live socket.
         _dexScreener = new Gateway.DEX.DexScreenerClient();
@@ -289,13 +268,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         RefreshMarketExplorerCollections();
 
         // Multi-exchange futures gateway map — used by ActiveFuturesGateway property.
-        _futuresGatewaysMap = new Dictionary<string, IExchangeGateway>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["Binance"] = _futuresGateway,
-            ["Bybit"]   = bybitFutures,
-            ["OKX"]     = okxFutures,
-            ["KuCoin"]  = kucoinFutures,
-        };
+        _futuresGatewaysMap = new Dictionary<string, IExchangeGateway>(gateways.FuturesByExchange, StringComparer.OrdinalIgnoreCase);
 
         WalletVM = new WalletWorkspaceViewModel(AddLog);
         AIBotVM = new AIBotViewModel(_gateway, _futuresGateway, bybitSpot, bybitFutures, okxSpot, okxFutures, kucoinSpot, kucoinFutures);

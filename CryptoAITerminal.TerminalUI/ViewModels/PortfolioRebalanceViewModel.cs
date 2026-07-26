@@ -132,7 +132,7 @@ public class PortfolioRebalanceViewModel : ReactiveObject, IDisposable
 
     public Avalonia.Media.IBrush TargetSumBrush =>
         _targetSumValid
-            ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#21E6C1"))
+            ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse(SemanticColor.Accent))
             : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#FFAA33"));
 
     // ── "Add asset" form ─────────────────────────────────────────────────────

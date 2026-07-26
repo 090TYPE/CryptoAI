@@ -332,7 +332,7 @@ public sealed class RuleRowVM : ReactiveObject
         Model.TriggerCount > 0 ? $"✓ {Model.TriggerCount}×" : "—";
 
     public string EnabledLabel      => _isEnabled ? "ON"       : "OFF";
-    public string EnabledColor      => _isEnabled ? "#21E6C1"  : "#8FA3B8";
+    public string EnabledColor      => _isEnabled ? SemanticColor.Accent  : SemanticColor.Muted;
     public string EnabledBackground => _isEnabled ? "#152625"  : "#111821";
 
     public ReactiveCommand<Unit, Unit> EditCommand   { get; }
@@ -493,8 +493,8 @@ public sealed class CompositeRuleViewModel : ReactiveObject
     }
 
     public string EngineButtonLabel => _isEngineRunning ? "◼ Stop Engine" : "▶ Start Engine";
-    public string EngineButtonColor => _isEngineRunning ? "#FF5D73"       : "#21E6C1";
-    public string EngineStatusColor => _isEngineRunning ? "#3DDC84"       : "#8FA3B8";
+    public string EngineButtonColor => _isEngineRunning ? SemanticColor.Negative       : SemanticColor.Accent;
+    public string EngineStatusColor => _isEngineRunning ? SemanticColor.Positive       : SemanticColor.Muted;
 
     public ObservableCollection<string> TriggerLog { get; } = [];
 

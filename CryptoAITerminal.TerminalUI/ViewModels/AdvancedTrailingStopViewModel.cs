@@ -82,7 +82,7 @@ public sealed class AdvancedTrailingStopViewModel : ReactiveObject
 
     // computed display
     public string ArmButtonText => IsArmed ? "■ Disarm" : "▶ Arm";
-    public string ArmButtonFg   => IsArmed ? "#FF6B6B"  : "#21E6C1";
+    public string ArmButtonFg   => IsArmed ? SemanticColor.Negative  : SemanticColor.Accent;
     public string StopLabel     => IsArmed && CurrentStop > 0 ? $"{CurrentStop:N2}" : "--";
     public string EntryLabel    => IsArmed && _entryPrice > 0 ? $"Entry {_entryPrice:N2}" : string.Empty;
 

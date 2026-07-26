@@ -23,11 +23,11 @@ public sealed class OnChainMetricsViewModel : ReactiveObject, IDisposable
     private string _btcRealisedLabel    = "–";
     private string _btcMvrvPhase        = "–";
     private string _btcNuplPhase        = "–";
-    private string _btcMvrvColor        = "#8FA3B8";
-    private string _ethMvrvColor        = "#8FA3B8";
-    private string _btcNuplColor        = "#8FA3B8";
-    private string _btcNetFlowColor     = "#8FA3B8";
-    private string _ethNetFlowColor     = "#8FA3B8";
+    private string _btcMvrvColor        = SemanticColor.Muted;
+    private string _ethMvrvColor        = SemanticColor.Muted;
+    private string _btcNuplColor        = SemanticColor.Muted;
+    private string _btcNetFlowColor     = SemanticColor.Muted;
+    private string _ethNetFlowColor     = SemanticColor.Muted;
     private string _lastUpdatedLabel    = "–";
     private bool   _isLoading           = true;
     private bool   _hasApiKey;
@@ -74,7 +74,7 @@ public sealed class OnChainMetricsViewModel : ReactiveObject, IDisposable
     public string InsightSignal { get => _insightSignal; private set => this.RaiseAndSetIfChanged(ref _insightSignal, value); }
     public string InsightBullets { get => _insightBullets; private set => this.RaiseAndSetIfChanged(ref _insightBullets, value); }
     public string InsightSource { get => _insightSource; private set => this.RaiseAndSetIfChanged(ref _insightSource, value); }
-    public string InsightSignalBrush => _insightSignal switch { "BULLISH" => "#3DDC84", "BEARISH" => "#FF6B6B", _ => "#8FA3B8" };
+    public string InsightSignalBrush => _insightSignal switch { "BULLISH" => SemanticColor.Positive, "BEARISH" => SemanticColor.Negative, _ => SemanticColor.Muted };
 
     public void ConfigureAi(string apiKey, string model)
     {
@@ -217,30 +217,30 @@ public sealed class OnChainMetricsViewModel : ReactiveObject, IDisposable
 
     private static string MvrvColor(decimal? v) => v switch
     {
-        null     => "#8FA3B8",
-        <= 1.0m  => "#21E6C1",
-        <= 2.0m  => "#3DDC84",
+        null     => SemanticColor.Muted,
+        <= 1.0m  => SemanticColor.Accent,
+        <= 2.0m  => SemanticColor.Positive,
         <= 3.5m  => "#F4D03F",
-        _        => "#FF6B6B"
+        _        => SemanticColor.Negative
     };
 
     private static string NuplColor(decimal? v) => v switch
     {
-        null     => "#8FA3B8",
-        < 0m     => "#21E6C1",
-        < 0.25m  => "#8FA3B8",
+        null     => SemanticColor.Muted,
+        < 0m     => SemanticColor.Accent,
+        < 0.25m  => SemanticColor.Muted,
         < 0.50m  => "#F4D03F",
         < 0.75m  => "#FF9500",
-        _        => "#FF6B6B"
+        _        => SemanticColor.Negative
     };
 
     private static string FlowColor(decimal? v) => v switch
     {
-        null    => "#8FA3B8",
-        > 5000m => "#FF6B6B",   // large inflow = sell pressure
+        null    => SemanticColor.Muted,
+        > 5000m => SemanticColor.Negative,   // large inflow = sell pressure
         > 0m    => "#F4D03F",
-        > -5000m => "#3DDC84",
-        _        => "#21E6C1"   // large outflow = accumulation
+        > -5000m => SemanticColor.Positive,
+        _        => SemanticColor.Accent   // large outflow = accumulation
     };
 
     public void Dispose()

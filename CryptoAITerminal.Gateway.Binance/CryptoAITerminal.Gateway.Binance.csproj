@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CryptoAITerminal.Core\CryptoAITerminal.Core.csproj" />
+    <ProjectReference Include="..\CryptoAITerminal.Gateway.Base\CryptoAITerminal.Gateway.Base.csproj" />
   </ItemGroup>
 
 </Project>

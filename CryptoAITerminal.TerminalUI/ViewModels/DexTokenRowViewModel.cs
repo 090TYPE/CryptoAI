@@ -105,9 +105,9 @@ public class DexTokenRowViewModel : ReactiveObject
         get
         {
             var pc = GetPriceChange();
-            if (pc > 0.1)  return new SolidColorBrush(Color.Parse("#21E6C1"));
+            if (pc > 0.1)  return new SolidColorBrush(Color.Parse(SemanticColor.Accent));
             if (pc < -0.1) return new SolidColorBrush(Color.Parse("#FF4444"));
-            return new SolidColorBrush(Color.Parse("#8FA3B8"));
+            return new SolidColorBrush(Color.Parse(SemanticColor.Muted));
         }
     }
 
@@ -161,7 +161,7 @@ public class DexTokenRowViewModel : ReactiveObject
     public double ScoreBarWidth => Math.Clamp(SecurityScore, 0, 100) / 100.0 * 44.0;
 
     /// <summary>Score meter / label colour: green ≥75, amber ≥55, else red (matches the mock).</summary>
-    public string ScoreColorHex => SecurityScore >= 75 ? "#3DDC84" : SecurityScore >= 55 ? "#F4B860" : "#FF6B6B";
+    public string ScoreColorHex => SecurityScore >= 75 ? SemanticColor.Positive : SecurityScore >= 55 ? SemanticColor.Warning : SemanticColor.Negative;
 
     public string SecurityBadge
     {

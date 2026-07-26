@@ -113,9 +113,9 @@ public class SniperCandidateViewModel : ReactiveObject
 
     public string DetailChangeHex => DetailChangePercent switch
     {
-        > 0m => "#3DDC84",
-        < 0m => "#FF5D73",
-        _ => "#8FA3B8"
+        > 0m => SemanticColor.Positive,
+        < 0m => SemanticColor.Negative,
+        _ => SemanticColor.Muted
     };
 
     public string LiquidityLabel => $"$ {TokenInfo.LiquidityUsd:N0}";
@@ -246,7 +246,7 @@ public class SniperCandidateViewModel : ReactiveObject
 
     public string AiSourceLabel => _aiVerdict?.Source ?? string.Empty;
 
-    public string AiAccentHex => _aiVerdict?.AccentHex ?? "#8FA3B8";
+    public string AiAccentHex => _aiVerdict?.AccentHex ?? SemanticColor.Muted;
 
     public string RiskBand
     {
@@ -658,15 +658,15 @@ public class SniperCandidateViewModel : ReactiveObject
 
     public string RiskAccentHex => RiskBand switch
     {
-        "Low" => "#3DDC84",
+        "Low" => SemanticColor.Positive,
         "Guarded" => "#F5C451",
         "High" => "#FF8A4C",
-        "Extreme" => "#FF5D73",
-        _ => "#8FA3B8"
+        "Extreme" => SemanticColor.Negative,
+        _ => SemanticColor.Muted
     };
 
     public string RiskBadgeText => $"Risk {RiskScore}/100 - {RiskBand}";
-    public string ExecutionAccentHex => IsExecutionBlocked ? "#FF5D73" : "#3DDC84";
+    public string ExecutionAccentHex => IsExecutionBlocked ? SemanticColor.Negative : SemanticColor.Positive;
     public string TaxSummary => $"Buy tax {SimulatedBuyTaxPercent:0.#}% | Sell tax {SimulatedSellTaxPercent:0.#}%";
     public string HoneypotLabel => IsSuspectedHoneypot ? "Suspected honeypot" : "No honeypot signal";
 
@@ -698,11 +698,11 @@ public class SniperCandidateViewModel : ReactiveObject
 
     public string SecurityVerdictColor => _securityScanResult?.Verdict switch
     {
-        "Dangerous" => "#FF5D73",
+        "Dangerous" => SemanticColor.Negative,
         "High Risk" => "#FF8A4C",
-        "Moderate Risk" => "#F4B860",
-        "Likely Safe" => "#3DDC84",
-        _ => "#8FA3B8"
+        "Moderate Risk" => SemanticColor.Warning,
+        "Likely Safe" => SemanticColor.Positive,
+        _ => SemanticColor.Muted
     };
 
     public string SecurityFlagsSummary => _securityScanResult?.Flags is { Length: > 0 }
@@ -743,7 +743,7 @@ public class SniperCandidateViewModel : ReactiveObject
     public string DeployerRiskLabel => _securityScanResult?.DeployerRiskLabel
         ?? (SecurityScanComplete ? "Deployer not analysed" : string.Empty);
 
-    public string DeployerRiskBrush => _securityScanResult?.DeployerRiskBrush ?? "#8FA3B8";
+    public string DeployerRiskBrush => _securityScanResult?.DeployerRiskBrush ?? SemanticColor.Muted;
 
     public string DeployerSummary
     {
@@ -828,9 +828,9 @@ public class SniperCandidateViewModel : ReactiveObject
 
     public string PnlAccentHex => PaperPnlPercent switch
     {
-        > 0m => "#3DDC84",
-        < 0m => "#FF5D73",
-        _ => "#8FA3B8"
+        > 0m => SemanticColor.Positive,
+        < 0m => SemanticColor.Negative,
+        _ => SemanticColor.Muted
     };
 
     public string TakeProfitSummary =>
@@ -881,8 +881,8 @@ public class SniperCandidateViewModel : ReactiveObject
 
     public string TakeProfitAccentHex =>
         TakeProfitTriggered || (EntryPriceUsd > 0m && CurrentPriceUsd >= TakeProfitTargetPriceUsd)
-            ? "#3DDC84"
-            : "#8FA3B8";
+            ? SemanticColor.Positive
+            : SemanticColor.Muted;
 
     public string ExitRuleSummary =>
         $"{TakeProfitSummary} | {StopLossSummary} | {TrailingStopSummary}";
@@ -941,12 +941,12 @@ public class SniperCandidateViewModel : ReactiveObject
         {
             if (TakeProfitTriggered)
             {
-                return "#3DDC84";
+                return SemanticColor.Positive;
             }
 
             if (PartialTakeProfitExecuted)
             {
-                return "#21E6C1";
+                return SemanticColor.Accent;
             }
 
             if (BreakEvenTriggered || StopLossTriggered || TrailingStopTriggered)
@@ -954,7 +954,7 @@ public class SniperCandidateViewModel : ReactiveObject
                 return "#FF8A4C";
             }
 
-            return "#8FA3B8";
+            return SemanticColor.Muted;
         }
     }
 

@@ -99,7 +99,7 @@ public sealed class BotRowViewModel : ReactiveObject
     public string ModeLabel => EffLive ? "LIVE" : "PAPER";
     public string ModeFg => EffLive ? BotsDeskData.Amber : "#3d5a72";
     public string ModeBg => EffLive ? "#150f04" : "transparent";
-    public string ModeBorder => EffLive ? "#3a2a12" : "#152233";
+    public string ModeBorder => EffLive ? "#3a2a12" : SemanticColor.Stroke;
 
     public string StatusLabel => BotsDeskData.StatusMeta(Status).label;
     public string StatusColor => BotsDeskData.StatusMeta(Status).color;
@@ -184,7 +184,7 @@ public sealed class BotRowViewModel : ReactiveObject
         : EffLive && Status == "running" ? "rgba(244,184,96,.02)" : "transparent";
     public double Caret => Expanded ? 90 : 0;
 
-    public string BoxBorder => Selected ? BotsDeskData.Accent : "#152233";
+    public string BoxBorder => Selected ? BotsDeskData.Accent : SemanticColor.Stroke;
     public string BoxBg => Selected ? BotsDeskData.Accent : "transparent";
     public string BoxMark => Selected ? "✓" : "";
 

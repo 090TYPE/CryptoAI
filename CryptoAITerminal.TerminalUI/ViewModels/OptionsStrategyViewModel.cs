@@ -73,10 +73,10 @@ public sealed class OptionsStrategyViewModel : ReactiveObject
     public bool   HasResult => !string.IsNullOrEmpty(_strategy);
     public string IvRegimeBrush => _ivRegime switch
     {
-        "High"     => "#FF6B6B",
-        "Low"      => "#21E6C1",
-        "Moderate" => "#F4B860",
-        _          => "#8FA3B8"
+        "High"     => SemanticColor.Negative,
+        "Low"      => SemanticColor.Accent,
+        "Moderate" => SemanticColor.Warning,
+        _          => SemanticColor.Muted
     };
 
     public ReactiveCommand<Unit, Unit> SuggestCommand { get; }

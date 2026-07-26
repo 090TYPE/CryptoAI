@@ -87,10 +87,10 @@ public sealed class DexExchangeMarketViewModel : ReactiveObject
         Symbol = m.Symbol;
         PriceLabel = m.Price >= 1000m ? $"{m.Price:N1}" : m.Price >= 1m ? $"{m.Price:N3}" : $"{m.Price:N5}";
         ChangeLabel = $"{m.Change24hPct:+0.00;-0.00;0.00}%";
-        ChangeBrush = m.Change24hPct >= 0m ? "#3ddc84" : "#ff6b6b";
+        ChangeBrush = m.Change24hPct >= 0m ? SemanticColor.Positive : SemanticColor.Negative;
         VolLabel = DexExchangeDataService.FormatUsdCompact(m.Volume24hUsd);
         FundingLabel = $"{m.Funding8hPct:+0.###;-0.###;0}%";
-        FundingBrush = m.Funding8hPct >= 0m ? "#f4b860" : "#3ddc84";
+        FundingBrush = m.Funding8hPct >= 0m ? SemanticColor.Warning : SemanticColor.Positive;
     }
 
     public string Symbol { get; }
@@ -178,9 +178,9 @@ public sealed class DexDeskViewModel : ReactiveObject, IDisposable
         {
             new("HYPERLIQUID", "Hyperliquid", "#1a9aff", "#4ab6ff", "$1.2B", "0.02%", "PERP", "HyperEVM L1", "On-chain perpetuals", "$0 (gasless)", "+0.008%/8h", "50×"),
             new("DYDX",        "dYdX v4",     "#6966ff", "#8a87ff", "$380M", "0.05%", "PERP", "Cosmos Chain", "Cosmos app-chain", "~$0.01", "+0.011%/8h", "25×"),
-            new("GMX",         "GMX v2",      "#1bbf8d", "#21e6c1", "$210M", "0.01%", "PERP", "Arbitrum One", "GLP pool backed", "~$0.40", "+0.006%/8h", "100×"),
+            new("GMX",         "GMX v2",      "#1bbf8d", SemanticColor.Accent, "$210M", "0.01%", "PERP", "Arbitrum One", "GLP pool backed", "~$0.40", "+0.006%/8h", "100×"),
             new("UNISWAP",     "Uniswap V3",  "#ff007a", "#ff4da6", "$840M", "0.30%", "SWAP", "Ethereum", "AMM swap", "~$8.20", "N/A", "N/A"),
-            new("VERTEX",      "Vertex",      "#f4b860", "#f4c87e", "$95M",  "0.02%", "PERP", "Arbitrum One", "CLOB on-chain", "~$0.20", "+0.009%/8h", "20×"),
+            new("VERTEX",      "Vertex",      SemanticColor.Warning, "#f4c87e", "$95M",  "0.02%", "PERP", "Arbitrum One", "CLOB on-chain", "~$0.20", "+0.009%/8h", "20×"),
         };
 
         SelectModeCommand = ReactiveCommand.Create<string>(SelectMode, outputScheduler: App.UiScheduler);

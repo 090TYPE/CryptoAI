@@ -68,9 +68,9 @@ public sealed class LicenseViewModel : ReactiveObject
 
     public string StateBrush => _snapshot.State switch
     {
-        LicenseState.Licensed => "#3DDC84",
-        LicenseState.Trial    => "#F4B860",
-        _                     => "#FF5D73"
+        LicenseState.Licensed => SemanticColor.Positive,
+        LicenseState.Trial    => SemanticColor.Warning,
+        _                     => SemanticColor.Negative
     };
 
     public string DetailLabel => _snapshot.State switch

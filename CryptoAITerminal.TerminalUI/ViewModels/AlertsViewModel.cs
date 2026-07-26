@@ -52,7 +52,7 @@ public class AlertItemViewModel : ReactiveObject
         }
     }
 
-    public string StatusColor => HasFired ? "#F4B860" : "#3DDC84";
+    public string StatusColor => HasFired ? SemanticColor.Warning : SemanticColor.Positive;
     public string StatusLabel => HasFired ? "Fired" : "Active";
 
     public AlertItemViewModel(PriceAlert alert)

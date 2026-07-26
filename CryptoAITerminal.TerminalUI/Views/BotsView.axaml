@@ -12,33 +12,12 @@
   </UserControl.Resources>
 
   <UserControl.Styles>
-    <!-- Flat, mock-faithful buttons: honour Background/Border/Corner/Padding only. -->
-    <Style Selector="Button">
-      <Setter Property="Cursor" Value="Hand" /><Setter Property="MinHeight" Value="0" /><Setter Property="MinWidth" Value="0" />
-      <Setter Property="HorizontalContentAlignment" Value="Center" />
-      <Setter Property="VerticalContentAlignment" Value="Center" />
-      <Setter Property="Template">
-        <ControlTemplate>
-          <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                  BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}"
-                  Padding="{TemplateBinding Padding}">
-            <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
-                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-          </Border>
-        </ControlTemplate>
-      </Setter>
-    </Style>
-    <Style Selector="Button:pointerover">
-      <Setter Property="Opacity" Value="0.86" />
-    </Style>
-
     <!-- Compact inputs -->
     <Style Selector="TextBox">
       <Setter Property="MinHeight" Value="0" />
-      <Setter Property="CaretBrush" Value="#21e6c1" />
+      <Setter Property="CaretBrush" Value="{DynamicResource Accent}" />
       <Setter Property="SelectionBrush" Value="#14302e" />
-      <Setter Property="Foreground" Value="#d0e4f4" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
     </Style>
     <Style Selector="TextBox /template/ Border#PART_BorderElement">
       <Setter Property="MinHeight" Value="0" />
@@ -47,13 +26,13 @@
     <!-- Compact selects -->
     <Style Selector="ComboBox">
       <Setter Property="MinHeight" Value="0" />
-      <Setter Property="Foreground" Value="#d0e4f4" />
-      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+      <Setter Property="FontSize" Value="{DynamicResource FsCaption}" />
     </Style>
 
     <!-- Accent sliders -->
     <Style Selector="Slider">
-      <Setter Property="Foreground" Value="#21e6c1" />
+      <Setter Property="Foreground" Value="{DynamicResource Accent}" />
       <Setter Property="MinHeight" Value="0" />
     </Style>
   </UserControl.Styles>
@@ -67,77 +46,77 @@
       <DockPanel LastChildFill="True">
 
         <!-- ───────── header (54) ───────── -->
-        <Border DockPanel.Dock="Top" Height="54" Background="#050c14" BorderBrush="#0d1b27" BorderThickness="0,0,0,1" Padding="14,0">
+        <Border DockPanel.Dock="Top" Height="54" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Padding="14,0">
           <DockPanel LastChildFill="True">
 
             <!-- right-side controls -->
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="7" VerticalAlignment="Center"
                         Margin="14,0,0,0">
-              <Border Width="1" Background="#0d1b27" Margin="0,10" />
-              <Button Command="{Binding RefreshCommand}" Background="#060d14" BorderBrush="#152233" BorderThickness="1"
-                      CornerRadius="5" Padding="9,5" Content="↻ REFRESH" Foreground="{DynamicResource TextSoft}" FontSize="9" FontWeight="Bold" />
-              <Button Command="{Binding TogglePaperOnlyCommand}" CornerRadius="10" Padding="11,5"
+              <Border Width="1" Background="{DynamicResource Surface3}" Margin="0,10" />
+              <Button Classes="FlatChrome" Command="{Binding RefreshCommand}" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1"
+                      CornerRadius="5" Padding="8,4" Content="↻ REFRESH" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+              <Button Classes="FlatChrome" Command="{Binding TogglePaperOnlyCommand}" CornerRadius="10" Padding="10,4"
                       Background="{Binding PaperBg, Converter={StaticResource StringToBrush}}"
                       BorderBrush="{Binding PaperBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1">
                 <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                   <Ellipse Width="6" Height="6" Fill="{Binding PaperColor, Converter={StaticResource StringToBrush}}" />
-                  <TextBlock Text="{Binding PaperLabel}" Foreground="{Binding PaperColor, Converter={StaticResource StringToBrush}}" FontSize="10" FontWeight="Bold" />
+                  <TextBlock Text="{Binding PaperLabel}" Foreground="{Binding PaperColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                 </StackPanel>
               </Button>
-              <Button Command="{Binding KillAllCommand}" Background="#14060a" BorderBrush="#3a1620" BorderThickness="1"
-                      CornerRadius="5" Padding="10,5" Content="⛔ KILL ALL" Foreground="#ff6b6b" FontSize="9" FontWeight="Bold" />
-              <Button Command="{Binding NewBotCommand}" Background="#0e2a2a" BorderBrush="#21e6c1" BorderThickness="1"
-                      CornerRadius="5" Padding="12,6" Content="+ NEW BOT" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+              <Button Classes="FlatChrome" Command="{Binding KillAllCommand}" Background="#14060a" BorderBrush="#3a1620" BorderThickness="1"
+                      CornerRadius="5" Padding="10,4" Content="⛔ KILL ALL" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+              <Button Classes="FlatChrome" Command="{Binding NewBotCommand}" Background="{DynamicResource AccentSoft}" BorderBrush="{DynamicResource Accent}" BorderThickness="1"
+                      CornerRadius="5" Padding="12,6" Content="+ NEW BOT" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
             </StackPanel>
 
             <!-- left-side segments -->
             <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-              <Border Padding="0,0,16,0" BorderBrush="#0d1b27" BorderThickness="0,0,1,0">
+              <Border Padding="0,0,16,0" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,1,0">
                 <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                  <TextBlock Text="/" Foreground="#1e3048" FontSize="16" FontWeight="Light" />
-                  <TextBlock Text="Bots" Foreground="#21e6c1" FontSize="13" FontWeight="Bold" />
+                  <TextBlock Text="/" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsSubhead}" FontWeight="Light" />
+                  <TextBlock Text="Bots" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsBody}" FontWeight="Bold" />
                 </StackPanel>
               </Border>
-              <Border Padding="14,0" BorderBrush="#0d1b27" BorderThickness="0,0,1,0">
+              <Border Padding="14,0" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,1,0">
                 <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
-                  <TextBlock Text="ENGINES" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
-                  <Border CornerRadius="5" Padding="9,3" BorderThickness="1"
+                  <TextBlock Text="ENGINES" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                  <Border CornerRadius="5" Padding="8,2" BorderThickness="1"
                           Background="{Binding EngineBadgeBg, Converter={StaticResource StringToBrush}}"
                           BorderBrush="{Binding EngineBadgeBorder, Converter={StaticResource StringToBrush}}">
                     <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
                       <Ellipse Width="6" Height="6" Fill="{Binding EngineBadgeColor, Converter={StaticResource StringToBrush}}" />
-                      <TextBlock Text="{Binding EngineBadgeLabel}" Foreground="{Binding EngineBadgeColor, Converter={StaticResource StringToBrush}}" FontSize="10" FontWeight="ExtraBold" />
+                      <TextBlock Text="{Binding EngineBadgeLabel}" Foreground="{Binding EngineBadgeColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
                     </StackPanel>
                   </Border>
                 </StackPanel>
               </Border>
-              <Border Padding="14,0" BorderBrush="#0d1b27" BorderThickness="0,0,1,0">
+              <Border Padding="14,0" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,1,0">
                 <StackPanel VerticalAlignment="Center" Spacing="2">
-                  <TextBlock Text="PnL 24H · ALL BOTS" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
+                  <TextBlock Text="PnL 24H · ALL BOTS" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                   <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom">
-                    <TextBlock Text="{Binding HdrPnl}" FontFamily="{StaticResource FontMono}" FontSize="16"
+                    <TextBlock Text="{Binding HdrPnl}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsSubhead}"
                                Foreground="{Binding HdrPnlColor, Converter={StaticResource StringToBrush}}" />
-                    <TextBlock Text="{Binding HdrPnlSub}" Foreground="{DynamicResource TextDim}" FontSize="9" Margin="0,0,0,2" VerticalAlignment="Bottom" />
+                    <TextBlock Text="{Binding HdrPnlSub}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" Margin="0,0,0,2" VerticalAlignment="Bottom" />
                   </StackPanel>
                 </StackPanel>
               </Border>
-              <Border Padding="14,0" BorderBrush="#0d1b27" BorderThickness="0,0,1,0">
+              <Border Padding="14,0" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,1,0">
                 <StackPanel VerticalAlignment="Center" Spacing="2">
-                  <TextBlock Text="BUDGET DEPLOYED" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
+                  <TextBlock Text="BUDGET DEPLOYED" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                   <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom">
-                    <TextBlock Text="{Binding HdrAlloc}" FontFamily="{StaticResource FontMono}" FontSize="16" Foreground="#e8f4ff" />
-                    <TextBlock Text="{Binding HdrAllocSub}" Foreground="{DynamicResource TextDim}" FontSize="9" Margin="0,0,0,2" VerticalAlignment="Bottom" />
+                    <TextBlock Text="{Binding HdrAlloc}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsSubhead}" Foreground="{DynamicResource TextPrimary}" />
+                    <TextBlock Text="{Binding HdrAllocSub}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" Margin="0,0,0,2" VerticalAlignment="Bottom" />
                   </StackPanel>
                 </StackPanel>
               </Border>
-              <Button Command="{Binding OpenDailyCapCommand}" Background="Transparent" BorderThickness="0,0,1,0" BorderBrush="#0d1b27"
+              <Button Classes="FlatChrome" Command="{Binding OpenDailyCapCommand}" Background="Transparent" BorderThickness="0,0,1,0" BorderBrush="{DynamicResource PanelStrokeSubtle}"
                       Padding="14,0" HorizontalContentAlignment="Left">
                 <StackPanel VerticalAlignment="Center" Spacing="4">
-                  <TextBlock Text="DAILY LOSS CAP" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
+                  <TextBlock Text="DAILY LOSS CAP" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                   <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding HdrCapLabel}" FontFamily="{StaticResource FontMono}" FontSize="12"
+                    <TextBlock Text="{Binding HdrCapLabel}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsSmall}"
                                Foreground="{Binding HdrCapColor, Converter={StaticResource StringToBrush}}" />
-                    <Border Width="54" Height="3" CornerRadius="2" Background="#0a1520" ClipToBounds="True" VerticalAlignment="Center">
+                    <Border Width="54" Height="3" CornerRadius="2" Background="{DynamicResource Surface2}" ClipToBounds="True" VerticalAlignment="Center">
                       <Grid>
                         <Grid.ColumnDefinitions>
                           <ColumnDefinition Width="{Binding HdrCapRatio, Converter={StaticResource RatioStar}}" />
@@ -160,9 +139,9 @@
                 <ItemsControl.ItemTemplate>
                   <DataTemplate>
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding Tag}" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
-                      <TextBlock Text="{Binding Text}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#8fa3b8" />
-                      <TextBlock Text="{Binding Val}" FontSize="10" FontWeight="SemiBold" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                      <TextBlock Text="{Binding Tag}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                      <TextBlock Text="{Binding Text}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />
+                      <TextBlock Text="{Binding Val}" FontSize="{DynamicResource FsMicro}" FontWeight="SemiBold" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
                     </StackPanel>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -172,16 +151,16 @@
         </Border>
 
         <!-- ───────── footer (26) ───────── -->
-        <Border DockPanel.Dock="Bottom" Height="26" Background="#050c14" BorderBrush="#0d1b27" BorderThickness="0,1,0,0" Padding="14,0">
+        <Border DockPanel.Dock="Bottom" Height="26" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Padding="14,0">
           <DockPanel LastChildFill="True">
-            <TextBlock DockPanel.Dock="Right" Text="{Binding FooterSync}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
+            <TextBlock DockPanel.Dock="Right" Text="{Binding FooterSync}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
             <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
-              <TextBlock FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="{Binding FooterEngineColor, Converter={StaticResource StringToBrush}}"
+              <TextBlock FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{Binding FooterEngineColor, Converter={StaticResource StringToBrush}}"
                          Text="{Binding FooterEngine, StringFormat='● executor {0}'}" />
-              <TextBlock FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="{DynamicResource TextDim}" Text="{Binding FooterMode}" />
-              <TextBlock FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="{DynamicResource TextDim}" Text="{Binding FooterGateways, StringFormat='gateways {0}'}" />
-              <TextBlock FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="{DynamicResource TextDim}" Text="{Binding FooterWs, StringFormat='ws {0}'}" />
-              <TextBlock FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="{DynamicResource TextDim}" Text="{Binding FooterOpm, StringFormat='orders/min {0}'}" />
+              <TextBlock FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" Text="{Binding FooterMode}" />
+              <TextBlock FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" Text="{Binding FooterGateways, StringFormat='gateways {0}'}" />
+              <TextBlock FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" Text="{Binding FooterWs, StringFormat='ws {0}'}" />
+              <TextBlock FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" Text="{Binding FooterOpm, StringFormat='orders/min {0}'}" />
             </StackPanel>
           </DockPanel>
         </Border>
@@ -193,44 +172,44 @@
           <Grid Grid.Column="0" RowDefinitions="Auto,Auto,Auto,*" RowSpacing="7">
 
             <!-- Daily AI briefing -->
-            <Border Grid.Row="0" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" ClipToBounds="True">
+            <Border Grid.Row="0" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="11" Background="{DynamicResource Surface1}" ClipToBounds="True">
               <Grid ColumnDefinitions="*,Auto">
-                <StackPanel Grid.Column="0" Margin="13,10" Spacing="6">
+                <StackPanel Grid.Column="0" Margin="12,10" Spacing="6">
                   <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <TextBlock Text="DAILY AI BRIEFING" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
-                    <Border CornerRadius="4" Padding="7,2" BorderThickness="1"
+                    <TextBlock Text="DAILY AI BRIEFING" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                    <Border CornerRadius="4" Padding="6,2" BorderThickness="1"
                             Background="{Binding BriefSignalBg, Converter={StaticResource StringToBrush}}"
                             BorderBrush="{Binding BriefSignalBorder, Converter={StaticResource StringToBrush}}">
-                      <TextBlock Text="{Binding BriefSignal}" Foreground="{Binding BriefSignalColor, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="ExtraBold" />
+                      <TextBlock Text="{Binding BriefSignal}" Foreground="{Binding BriefSignalColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
                     </Border>
-                    <TextBlock Text="{Binding BriefMeta}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#26405a" />
+                    <TextBlock Text="{Binding BriefMeta}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                   </StackPanel>
-                  <TextBlock Text="{Binding BriefSummary}" Foreground="#a9c2d8" FontSize="11.5" LineHeight="17" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding BriefSummary}" Foreground="#a9c2d8" FontSize="{DynamicResource FsCaption}" LineHeight="17" TextWrapping="Wrap" />
                   <ItemsControl ItemsSource="{Binding Bullets}" Margin="0,2,0,0">
                     <ItemsControl.ItemsPanel>
                       <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                       <DataTemplate>
-                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,18,0">
-                          <Ellipse Width="4" Height="4" Fill="#21e6c1" />
-                          <TextBlock Text="{Binding}" FontSize="10" Foreground="#4a6a82" />
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,16,0">
+                          <Ellipse Width="4" Height="4" Fill="{DynamicResource Accent}" />
+                          <TextBlock Text="{Binding}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                         </StackPanel>
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
                 </StackPanel>
-                <Border Grid.Column="1" Background="#060d14" BorderBrush="#0a1520" BorderThickness="1,0,0,0" Padding="13,10">
+                <Border Grid.Column="1" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1,0,0,0" Padding="12,10">
                   <StackPanel Spacing="6" VerticalAlignment="Center">
-                    <Button Command="{Binding BriefGenerateCommand}" Background="#060d14" BorderBrush="#152233" BorderThickness="1"
-                            CornerRadius="5" Padding="10,5" FontSize="9" FontWeight="Bold"
+                    <Button Classes="FlatChrome" Command="{Binding BriefGenerateCommand}" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1"
+                            CornerRadius="5" Padding="10,4" FontSize="{DynamicResource FsMicro}" FontWeight="Bold"
                             Content="{Binding BriefBtnLabel}" Foreground="{Binding BriefBtnColor, Converter={StaticResource StringToBrush}}" />
-                    <Button Command="{Binding BriefToggleAutoCommand}" Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="5">
+                    <Button Classes="FlatChrome" Command="{Binding BriefToggleAutoCommand}" Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="5">
                       <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
                         <Border Width="26" Height="14" CornerRadius="8" Background="{Binding BriefTrackBg, Converter={StaticResource StringToBrush}}">
                           <Canvas><Border Width="10" Height="10" CornerRadius="5" Canvas.Top="2" Canvas.Left="{Binding BriefKnobLeft}" Background="{Binding BriefKnob, Converter={StaticResource StringToBrush}}" /></Canvas>
                         </Border>
-                        <TextBlock Text="{Binding BriefAutoLabel}" FontSize="9" Foreground="#4a6a82" />
+                        <TextBlock Text="{Binding BriefAutoLabel}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                       </StackPanel>
                     </Button>
                   </StackPanel>
@@ -240,23 +219,23 @@
 
             <!-- toolbar -->
             <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="7">
-              <Border Height="28" Padding="9,0" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="7" Background="#07101a">
+              <Border Height="28" Padding="8,0" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="7" Background="{DynamicResource Surface1}">
                 <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                  <TextBlock Text="⌕" Foreground="{DynamicResource TextDim}" FontSize="11" VerticalAlignment="Center" />
+                  <TextBlock Text="⌕" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                   <TextBox Text="{Binding Search, Mode=TwoWay}" PlaceholderText="filter bots, symbol, venue…" Width="168"
-                           Background="Transparent" BorderThickness="0" Padding="0" FontSize="11" VerticalAlignment="Center" />
+                           Background="Transparent" BorderThickness="0" Padding="0" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                 </StackPanel>
               </Border>
-              <Border Padding="2" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="7" Background="#060d14">
+              <Border Padding="2" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="7" Background="{DynamicResource Surface0}">
                 <ItemsControl ItemsSource="{Binding TypeChips}">
                   <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                   <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                      <Button Command="{Binding Command}" Height="22" Padding="8,0" CornerRadius="5" BorderThickness="0"
+                      <Button Classes="FlatChrome" Command="{Binding Command}" Height="22" Padding="8,0" CornerRadius="5" BorderThickness="0"
                               Background="{Binding Bg, Converter={StaticResource StringToBrush}}">
                         <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                          <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" />
-                          <TextBlock Text="{Binding Count}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="{Binding CountColor, Converter={StaticResource StringToBrush}}" />
+                          <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" />
+                          <TextBlock Text="{Binding Count}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{Binding CountColor, Converter={StaticResource StringToBrush}}" />
                         </StackPanel>
                       </Button>
                     </DataTemplate>
@@ -264,63 +243,63 @@
                 </ItemsControl>
               </Border>
               <ComboBox ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding StatusOption, Mode=TwoWay}"
-                        Height="28" Padding="7,0" CornerRadius="7" Background="#07101a" BorderBrush="#0d1b27" BorderThickness="1" FontSize="10" Foreground="#8fa3b8" />
+                        Height="28" Padding="6,0" CornerRadius="7" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextMuted}" />
               <ComboBox ItemsSource="{Binding VenueOptions}" SelectedItem="{Binding VenueOption, Mode=TwoWay}"
-                        Height="28" Padding="7,0" CornerRadius="7" Background="#07101a" BorderBrush="#0d1b27" BorderThickness="1" FontSize="10" Foreground="#8fa3b8" MinWidth="120" />
+                        Height="28" Padding="6,0" CornerRadius="7" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextMuted}" MinWidth="120" />
               <Border Width="1" />
-              <Button Command="{Binding OpenColumnsCommand}" Height="28" Padding="10,0" CornerRadius="7" Background="#07101a" BorderBrush="#0d1b27" BorderThickness="1"
-                      Content="⚙ COLUMNS · ACTIONS" Foreground="{DynamicResource TextSoft}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
-              <Button Command="{Binding ToggleDensityCommand}" Height="28" Padding="10,0" CornerRadius="7" Background="#07101a" BorderBrush="#0d1b27" BorderThickness="1"
-                      Content="{Binding DensityLabel}" Foreground="{DynamicResource TextSoft}" FontSize="9" FontWeight="Bold" />
+              <Button Classes="FlatChrome" Command="{Binding OpenColumnsCommand}" Height="28" Padding="10,0" CornerRadius="7" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1"
+                      Content="⚙ COLUMNS · ACTIONS" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" />
+              <Button Classes="FlatChrome" Command="{Binding ToggleDensityCommand}" Height="28" Padding="10,0" CornerRadius="7" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1"
+                      Content="{Binding DensityLabel}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
             </StackPanel>
 
             <!-- selection bar -->
-            <Border Grid.Row="2" IsVisible="{Binding HasSelection}" Padding="11,7" CornerRadius="7" Background="#07141c"
-                    BorderBrush="#152233" BorderThickness="1">
+            <Border Grid.Row="2" IsVisible="{Binding HasSelection}" Padding="10,6" CornerRadius="7" Background="{DynamicResource SurfaceInner2}"
+                    BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1">
               <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
-                <Border Width="2" Background="#21e6c1" />
-                <TextBlock Text="{Binding SelectionLabel}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="#21e6c1" VerticalAlignment="Center" />
+                <Border Width="2" Background="{DynamicResource Accent}" />
+                <TextBlock Text="{Binding SelectionLabel}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource Accent}" VerticalAlignment="Center" />
                 <ItemsControl ItemsSource="{Binding BulkActions}">
                   <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="9" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                   <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                      <Button Command="{Binding Command}" Height="22" Padding="9,0" CornerRadius="5" Background="#060d14" BorderBrush="#152233" BorderThickness="1"
-                              Content="{Binding Label}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" />
+                      <Button Classes="FlatChrome" Command="{Binding Command}" Height="22" Padding="8,0" CornerRadius="5" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1"
+                              Content="{Binding Label}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <Button Command="{Binding ClearSelectionCommand}" Background="Transparent" BorderThickness="0" Content="CLEAR" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+                <Button Classes="FlatChrome" Command="{Binding ClearSelectionCommand}" Background="Transparent" BorderThickness="0" Content="CLEAR" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" />
               </StackPanel>
             </Border>
 
             <!-- table -->
-            <Border Grid.Row="3" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" ClipToBounds="True">
+            <Border Grid.Row="3" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="11" Background="{DynamicResource Surface1}" ClipToBounds="True">
               <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                 <DockPanel LastChildFill="True" MinWidth="1040">
 
                   <!-- sticky header row -->
-                  <Border DockPanel.Dock="Top" Height="30" Background="#060d14" BorderBrush="#0a1520" BorderThickness="0,0,0,1" Padding="10,0">
+                  <Border DockPanel.Dock="Top" Height="30" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Padding="10,0">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                       <Border Width="24">
-                        <Button Command="{Binding ToggleSelectAllCommand}" Width="12" Height="12" Padding="0" CornerRadius="3" BorderThickness="1"
+                        <Button Classes="FlatChrome" Command="{Binding ToggleSelectAllCommand}" Width="12" Height="12" Padding="0" CornerRadius="3" BorderThickness="1"
                                 Background="{Binding AllBoxBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding AllBoxBorder, Converter={StaticResource StringToBrush}}"
-                                Content="{Binding AllBoxMark}" Foreground="#04101a" FontSize="9" HorizontalAlignment="Left" />
+                                Content="{Binding AllBoxMark}" Foreground="#04101a" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Left" />
                       </Border>
-                      <TextBlock Width="232" Text="BOT · STRATEGY" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
-                      <TextBlock Width="138" Text="VENUE · MARKET" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" IsVisible="{Binding ColVenue}" />
-                      <TextBlock Width="64" Text="MODE" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" IsVisible="{Binding ColMode}" />
-                      <TextBlock Width="94" Text="STATUS" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" IsVisible="{Binding ColStatus}" />
-                      <Button Width="96" Command="{Binding SortPnl24Command}" Background="Transparent" BorderThickness="0" Padding="0" HorizontalContentAlignment="Right"
-                              Content="{Binding SortArrowPnl24}" Foreground="{Binding SortColorPnl24, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" IsVisible="{Binding ColPnl24}" />
-                      <Button Width="104" Command="{Binding SortPnlTotalCommand}" Background="Transparent" BorderThickness="0" Padding="0" HorizontalContentAlignment="Right"
-                              Content="{Binding SortArrowPnlTotal}" Foreground="{Binding SortColorPnlTotal, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" IsVisible="{Binding ColPnlTotal}" />
-                      <TextBlock Width="84" Text="EQUITY 7D" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" TextAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ColSpark}" />
-                      <TextBlock Width="92" Text="FILLS · WR" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" TextAlignment="Right" VerticalAlignment="Center" IsVisible="{Binding ColTrades}" />
-                      <Button Width="118" Command="{Binding SortAllocCommand}" Background="Transparent" BorderThickness="0" Padding="0" HorizontalContentAlignment="Right"
-                              Content="{Binding SortArrowAlloc}" Foreground="{Binding SortColorAlloc, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" IsVisible="{Binding ColAlloc}" />
-                      <TextBlock Width="76" Text="MAX DD" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" TextAlignment="Right" VerticalAlignment="Center" IsVisible="{Binding ColDd}" />
-                      <TextBlock Width="72" Text="UPTIME" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" TextAlignment="Right" VerticalAlignment="Center" IsVisible="{Binding ColUptime}" />
-                      <TextBlock Width="140" Text="ACTIONS" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" TextAlignment="Right" VerticalAlignment="Center" />
+                      <TextBlock Width="232" Text="BOT · STRATEGY" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Center" />
+                      <TextBlock Width="138" Text="VENUE · MARKET" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Center" IsVisible="{Binding ColVenue}" />
+                      <TextBlock Width="64" Text="MODE" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Center" IsVisible="{Binding ColMode}" />
+                      <TextBlock Width="94" Text="STATUS" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Center" IsVisible="{Binding ColStatus}" />
+                      <Button Classes="FlatChrome" Width="96" Command="{Binding SortPnl24Command}" Background="Transparent" BorderThickness="0" Padding="0" HorizontalContentAlignment="Right"
+                              Content="{Binding SortArrowPnl24}" Foreground="{Binding SortColorPnl24, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" IsVisible="{Binding ColPnl24}" />
+                      <Button Classes="FlatChrome" Width="104" Command="{Binding SortPnlTotalCommand}" Background="Transparent" BorderThickness="0" Padding="0" HorizontalContentAlignment="Right"
+                              Content="{Binding SortArrowPnlTotal}" Foreground="{Binding SortColorPnlTotal, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" IsVisible="{Binding ColPnlTotal}" />
+                      <TextBlock Width="84" Text="EQUITY 7D" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" TextAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ColSpark}" />
+                      <TextBlock Width="92" Text="FILLS · WR" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" TextAlignment="Right" VerticalAlignment="Center" IsVisible="{Binding ColTrades}" />
+                      <Button Classes="FlatChrome" Width="118" Command="{Binding SortAllocCommand}" Background="Transparent" BorderThickness="0" Padding="0" HorizontalContentAlignment="Right"
+                              Content="{Binding SortArrowAlloc}" Foreground="{Binding SortColorAlloc, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" IsVisible="{Binding ColAlloc}" />
+                      <TextBlock Width="76" Text="MAX DD" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" TextAlignment="Right" VerticalAlignment="Center" IsVisible="{Binding ColDd}" />
+                      <TextBlock Width="72" Text="UPTIME" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" TextAlignment="Right" VerticalAlignment="Center" IsVisible="{Binding ColUptime}" />
+                      <TextBlock Width="140" Text="ACTIONS" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" TextAlignment="Right" VerticalAlignment="Center" />
                     </StackPanel>
                   </Border>
 
@@ -330,53 +309,53 @@
                       <ItemsControl ItemsSource="{Binding VisibleBots}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate>
-                            <Border BorderBrush="#0a1520" BorderThickness="0,0,0,1" Background="{Binding RowBg, Converter={StaticResource StringToBrush}}">
+                            <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Background="{Binding RowBg, Converter={StaticResource StringToBrush}}">
                               <StackPanel>
 
                                 <!-- row line (click = expand) -->
                                 <Grid>
-                                  <Button Command="{Binding ExpandCommand}" Background="Transparent" BorderThickness="0" Padding="10,0"
+                                  <Button Classes="FlatChrome" Command="{Binding ExpandCommand}" Background="Transparent" BorderThickness="0" Padding="10,0"
                                           Height="{Binding Desk.RowHeight}" HorizontalContentAlignment="Left" HorizontalAlignment="Stretch">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                       <Border Width="24">
-                                        <Button Command="{Binding SelectCommand}" Width="12" Height="12" Padding="0" CornerRadius="3" BorderThickness="1"
+                                        <Button Classes="FlatChrome" Command="{Binding SelectCommand}" Width="12" Height="12" Padding="0" CornerRadius="3" BorderThickness="1"
                                                 Background="{Binding BoxBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding BoxBorder, Converter={StaticResource StringToBrush}}"
-                                                Content="{Binding BoxMark}" Foreground="#04101a" FontSize="9" HorizontalAlignment="Left" />
+                                                Content="{Binding BoxMark}" Foreground="#04101a" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Left" />
                                       </Border>
                                       <StackPanel Width="232" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                        <TextBlock Text="▶" Foreground="#1e3048" FontSize="9" Width="10" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                        <TextBlock Text="▶" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" Width="10" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
                                           <TextBlock.RenderTransform><RotateTransform Angle="{Binding Caret}" /></TextBlock.RenderTransform>
                                         </TextBlock>
                                         <Border CornerRadius="4" Padding="6,0" Height="17" BorderThickness="1" VerticalAlignment="Center"
                                                 Background="{Binding TypeBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding TypeBorder, Converter={StaticResource StringToBrush}}">
-                                          <TextBlock Text="{Binding TypeLabel}" Foreground="{Binding TypeFg, Converter={StaticResource StringToBrush}}" FontFamily="{StaticResource FontMono}" FontSize="9" VerticalAlignment="Center" />
+                                          <TextBlock Text="{Binding TypeLabel}" Foreground="{Binding TypeFg, Converter={StaticResource StringToBrush}}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                                         </Border>
                                         <StackPanel VerticalAlignment="Center" Spacing="1">
-                                          <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="Medium" Foreground="#e8f4ff" TextTrimming="CharacterEllipsis" />
-                                          <TextBlock Text="{Binding Subtitle}" FontSize="9" Foreground="{DynamicResource TextDim}" TextTrimming="CharacterEllipsis" />
+                                          <TextBlock Text="{Binding Name}" FontSize="{DynamicResource FsSmall}" FontWeight="Medium" Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis" />
+                                          <TextBlock Text="{Binding Subtitle}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
                                       </StackPanel>
                                       <StackPanel Width="138" VerticalAlignment="Center" Spacing="1" IsVisible="{Binding Desk.ColVenue}">
-                                        <TextBlock Text="{Binding Venue}" FontSize="11" Foreground="#8fa3b8" />
-                                        <TextBlock Text="{Binding Market}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="{DynamicResource TextDim}" />
+                                        <TextBlock Text="{Binding Venue}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />
+                                        <TextBlock Text="{Binding Market}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                                       </StackPanel>
                                       <Border Width="64" IsVisible="{Binding Desk.ColMode}" VerticalAlignment="Center">
                                         <Border CornerRadius="4" Padding="6,2" BorderThickness="1" HorizontalAlignment="Left"
                                                 Background="{Binding ModeBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding ModeBorder, Converter={StaticResource StringToBrush}}">
-                                          <TextBlock Text="{Binding ModeLabel}" Foreground="{Binding ModeFg, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="ExtraBold" />
+                                          <TextBlock Text="{Binding ModeLabel}" Foreground="{Binding ModeFg, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
                                         </Border>
                                       </Border>
                                       <StackPanel Width="94" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" IsVisible="{Binding Desk.ColStatus}">
                                         <Ellipse Width="6" Height="6" Fill="{Binding StatusColor, Converter={StaticResource StringToBrush}}" />
-                                        <TextBlock Text="{Binding StatusLabel}" FontSize="10" FontWeight="SemiBold" Foreground="{Binding StatusColor, Converter={StaticResource StringToBrush}}" />
+                                        <TextBlock Text="{Binding StatusLabel}" FontSize="{DynamicResource FsMicro}" FontWeight="SemiBold" Foreground="{Binding StatusColor, Converter={StaticResource StringToBrush}}" />
                                       </StackPanel>
                                       <StackPanel Width="96" VerticalAlignment="Center" IsVisible="{Binding Desk.ColPnl24}">
-                                        <TextBlock Text="{Binding Pnl24Pct}" FontFamily="{StaticResource FontMono}" FontSize="12" TextAlignment="Right" Foreground="{Binding Pnl24Color, Converter={StaticResource StringToBrush}}" />
-                                        <TextBlock Text="{Binding Pnl24Abs}" FontFamily="{StaticResource FontMono}" FontSize="9" TextAlignment="Right" Foreground="{DynamicResource TextDim}" />
+                                        <TextBlock Text="{Binding Pnl24Pct}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsSmall}" TextAlignment="Right" Foreground="{Binding Pnl24Color, Converter={StaticResource StringToBrush}}" />
+                                        <TextBlock Text="{Binding Pnl24Abs}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" TextAlignment="Right" Foreground="{DynamicResource TextDim}" />
                                       </StackPanel>
                                       <StackPanel Width="104" VerticalAlignment="Center" IsVisible="{Binding Desk.ColPnlTotal}">
-                                        <TextBlock Text="{Binding PnlTotalAbs}" FontFamily="{StaticResource FontMono}" FontSize="12" TextAlignment="Right" Foreground="{Binding PnlTotalColor, Converter={StaticResource StringToBrush}}" />
-                                        <TextBlock Text="{Binding PnlTotalPct}" FontFamily="{StaticResource FontMono}" FontSize="9" TextAlignment="Right" Foreground="{DynamicResource TextDim}" />
+                                        <TextBlock Text="{Binding PnlTotalAbs}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsSmall}" TextAlignment="Right" Foreground="{Binding PnlTotalColor, Converter={StaticResource StringToBrush}}" />
+                                        <TextBlock Text="{Binding PnlTotalPct}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" TextAlignment="Right" Foreground="{DynamicResource TextDim}" />
                                       </StackPanel>
                                       <Border Width="84" IsVisible="{Binding Desk.ColSpark}" VerticalAlignment="Center">
                                         <Canvas Width="70" Height="22" HorizontalAlignment="Center">
@@ -384,15 +363,15 @@
                                         </Canvas>
                                       </Border>
                                       <StackPanel Width="92" VerticalAlignment="Center" IsVisible="{Binding Desk.ColTrades}">
-                                        <TextBlock Text="{Binding Trades}" FontFamily="{StaticResource FontMono}" FontSize="12" TextAlignment="Right" Foreground="#c8dcef" />
-                                        <TextBlock Text="{Binding Winrate, StringFormat='wr {0}'}" FontFamily="{StaticResource FontMono}" FontSize="9" TextAlignment="Right" Foreground="{DynamicResource TextDim}" />
+                                        <TextBlock Text="{Binding Trades}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsSmall}" TextAlignment="Right" Foreground="{DynamicResource TextSecondary}" />
+                                        <TextBlock Text="{Binding Winrate, StringFormat='wr {0}'}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" TextAlignment="Right" Foreground="{DynamicResource TextDim}" />
                                       </StackPanel>
                                       <StackPanel Width="118" VerticalAlignment="Center" Margin="14,0,0,0" IsVisible="{Binding Desk.ColAlloc}">
                                         <Grid ColumnDefinitions="*,Auto">
-                                          <TextBlock Grid.Column="0" Text="{Binding AllocUsedPct}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="{DynamicResource TextDim}" />
-                                          <TextBlock Grid.Column="1" Text="{Binding AllocStr}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="#c8dcef" />
+                                          <TextBlock Grid.Column="0" Text="{Binding AllocUsedPct}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
+                                          <TextBlock Grid.Column="1" Text="{Binding AllocStr}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSecondary}" />
                                         </Grid>
-                                        <Border Height="3" CornerRadius="2" Background="#0a1520" Margin="0,4,0,0" ClipToBounds="True">
+                                        <Border Height="3" CornerRadius="2" Background="{DynamicResource Surface2}" Margin="0,4,0,0" ClipToBounds="True">
                                           <Grid>
                                             <Grid.ColumnDefinitions>
                                               <ColumnDefinition Width="{Binding AllocRatio, Converter={StaticResource RatioStar}}" />
@@ -402,35 +381,35 @@
                                           </Grid>
                                         </Border>
                                       </StackPanel>
-                                      <TextBlock Width="76" Text="{Binding Dd_}" FontFamily="{StaticResource FontMono}" FontSize="11" TextAlignment="Right" VerticalAlignment="Center" Foreground="{Binding DdColor, Converter={StaticResource StringToBrush}}" IsVisible="{Binding Desk.ColDd}" />
-                                      <TextBlock Width="72" Text="{Binding UptimeStr}" FontFamily="{StaticResource FontMono}" FontSize="10" TextAlignment="Right" VerticalAlignment="Center" Foreground="#4a6a82" IsVisible="{Binding Desk.ColUptime}" />
+                                      <TextBlock Width="76" Text="{Binding Dd_}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" TextAlignment="Right" VerticalAlignment="Center" Foreground="{Binding DdColor, Converter={StaticResource StringToBrush}}" IsVisible="{Binding Desk.ColDd}" />
+                                      <TextBlock Width="72" Text="{Binding UptimeStr}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" TextAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}" IsVisible="{Binding Desk.ColUptime}" />
                                       <StackPanel Width="140" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Center">
                                         <ItemsControl ItemsSource="{Binding Actions}">
                                           <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                           <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                              <Button Command="{Binding Command}" ToolTip.Tip="{Binding Title}" Width="24" Height="24" Padding="0" CornerRadius="5"
-                                                      Background="#060d14" BorderBrush="#152233" BorderThickness="1"
-                                                      Content="{Binding Icon}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" FontSize="10" />
+                                              <Button Classes="FlatChrome" Command="{Binding Command}" ToolTip.Tip="{Binding Title}" Width="24" Height="24" Padding="0" CornerRadius="5"
+                                                      Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1"
+                                                      Content="{Binding Icon}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" />
                                             </DataTemplate>
                                           </ItemsControl.ItemTemplate>
                                         </ItemsControl>
-                                        <Button Command="{Binding MenuCommand}" ToolTip.Tip="More" AutomationProperties.Name="More bot actions" Width="24" Height="24" Padding="0" CornerRadius="5"
-                                                Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="⋯" Foreground="{DynamicResource TextSoft}" FontSize="12" />
+                                        <Button Classes="FlatChrome" Command="{Binding MenuCommand}" ToolTip.Tip="More" AutomationProperties.Name="More bot actions" Width="24" Height="24" Padding="0" CornerRadius="5"
+                                                Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="⋯" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsSmall}" />
                                       </StackPanel>
                                     </StackPanel>
                                   </Button>
 
                                   <!-- context menu -->
                                   <Border IsVisible="{Binding MenuOpen}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,32,10,0"
-                                          Width="218" Padding="4" CornerRadius="8" Background="#071019" BorderBrush="#152233" BorderThickness="1" ZIndex="40" BoxShadow="0 18 40 0 #B3000000">
+                                          Width="218" Padding="4" CornerRadius="8" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" ZIndex="40" BoxShadow="0 18 40 0 #B3000000">
                                     <ItemsControl ItemsSource="{Binding MenuItems}">
                                       <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                          <Button Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0" Padding="8,7" CornerRadius="5">
+                                          <Button Classes="FlatChrome" Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0" Padding="8,6" CornerRadius="5">
                                             <Grid ColumnDefinitions="*,Auto">
-                                              <TextBlock Grid.Column="0" Text="{Binding Label}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" FontSize="11" />
-                                              <TextBlock Grid.Column="1" Text="{Binding Hint}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#1e3048" />
+                                              <TextBlock Grid.Column="0" Text="{Binding Label}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsCaption}" />
+                                              <TextBlock Grid.Column="1" Text="{Binding Hint}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                                             </Grid>
                                           </Button>
                                         </DataTemplate>
@@ -441,21 +420,21 @@
 
                                 <!-- expanded detail -->
                                 <ContentControl IsVisible="{Binding Expanded}">
-                                  <Border Background="#050c14" BorderBrush="#0a1520" BorderThickness="0,1,0,0" Padding="34,0,10,12">
+                                  <Border Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Padding="32,0,10,12">
                                     <StackPanel>
                                       <!-- detail tabs -->
-                                      <Grid ColumnDefinitions="*,Auto" Margin="0,9,0,11">
+                                      <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,10">
                                         <ItemsControl Grid.Column="0" ItemsSource="{Binding Desk.DetailTabs}">
                                           <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                           <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                              <Button Command="{Binding Command}" Height="24" Padding="11,0" CornerRadius="5" BorderThickness="1"
+                                              <Button Classes="FlatChrome" Command="{Binding Command}" Height="24" Padding="10,0" CornerRadius="5" BorderThickness="1"
                                                       Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}"
-                                                      Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" />
+                                                      Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                                             </DataTemplate>
                                           </ItemsControl.ItemTemplate>
                                         </ItemsControl>
-                                        <TextBlock Grid.Column="1" Text="{Binding Desk.DetailEngineLine}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#26405a" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Desk.DetailEngineLine}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                                       </Grid>
 
                                       <ContentControl Content="{Binding Desk}">
@@ -464,32 +443,32 @@
                                             <Panel>
                                               <!-- OVERVIEW -->
                                               <Grid IsVisible="{Binding IsOverview}" ColumnDefinitions="1.15*,8,0.85*">
-                                                <Border Grid.Column="0" Padding="12" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="10" Background="#07101a">
+                                                <Border Grid.Column="0" Padding="12" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="10" Background="{DynamicResource Surface1}">
                                                   <StackPanel>
-                                                    <TextBlock Text="PERFORMANCE" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" Margin="0,0,0,11" />
+                                                    <TextBlock Text="PERFORMANCE" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Margin="0,0,0,10" />
                                                     <ItemsControl ItemsSource="{Binding DetailStats}">
                                                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                                       <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
                                                           <StackPanel Spacing="3" Margin="0,0,10,12">
-                                                            <TextBlock Text="{Binding Label}" FontSize="9" Foreground="{DynamicResource TextDim}" />
-                                                            <TextBlock Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="13" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                                                            <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
+                                                            <TextBlock Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsBody}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
                                                           </StackPanel>
                                                         </DataTemplate>
                                                       </ItemsControl.ItemTemplate>
                                                     </ItemsControl>
-                                                    <Border BorderBrush="#0a1520" BorderThickness="0,1,0,0" Margin="0,2,0,0" Padding="0,11,0,0">
+                                                    <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Margin="0,2,0,0" Padding="0,10,0,0">
                                                       <StackPanel>
                                                         <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
-                                                          <TextBlock Grid.Column="0" Text="{Binding GridTitle}" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
-                                                          <TextBlock Grid.Column="1" Text="{Binding GridMeta}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#4a6a82" />
+                                                          <TextBlock Grid.Column="0" Text="{Binding GridTitle}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                          <TextBlock Grid.Column="1" Text="{Binding GridMeta}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                                                         </Grid>
                                                         <ItemsControl ItemsSource="{Binding DetailLevels}">
                                                           <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
                                                               <Grid ColumnDefinitions="66,8,*,8,66" Margin="0,1.5">
-                                                                <TextBlock Grid.Column="0" Text="{Binding Price}" FontFamily="{StaticResource FontMono}" FontSize="10" TextAlignment="Right" Foreground="#4a6a82" VerticalAlignment="Center" />
-                                                                <Border Grid.Column="2" Height="11" CornerRadius="3" Background="#0a1520" ClipToBounds="True">
+                                                                <TextBlock Grid.Column="0" Text="{Binding Price}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" TextAlignment="Right" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
+                                                                <Border Grid.Column="2" Height="11" CornerRadius="3" Background="{DynamicResource Surface2}" ClipToBounds="True">
                                                                   <Grid>
                                                                     <Grid.ColumnDefinitions>
                                                                       <ColumnDefinition Width="{Binding Ratio, Converter={StaticResource RatioStar}}" />
@@ -498,7 +477,7 @@
                                                                     <Border Grid.Column="0" Opacity="{Binding Opacity}" Background="{Binding Color, Converter={StaticResource StringToBrush}}" />
                                                                   </Grid>
                                                                 </Border>
-                                                                <TextBlock Grid.Column="4" Text="{Binding Tag}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="{Binding TagColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                                                                <TextBlock Grid.Column="4" Text="{Binding Tag}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{Binding TagColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
                                                               </Grid>
                                                             </DataTemplate>
                                                           </ItemsControl.ItemTemplate>
@@ -508,40 +487,40 @@
                                                   </StackPanel>
                                                 </Border>
                                                 <StackPanel Grid.Column="2" Spacing="8">
-                                                  <Border Padding="12" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="10" Background="#07101a">
+                                                  <Border Padding="12" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="10" Background="{DynamicResource Surface1}">
                                                     <StackPanel>
                                                       <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
-                                                        <TextBlock Grid.Column="0" Text="OPEN POSITION" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
-                                                        <TextBlock Grid.Column="1" Text="{Binding PosMeta}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#26405a" />
+                                                        <TextBlock Grid.Column="0" Text="OPEN POSITION" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding PosMeta}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                                                       </Grid>
                                                       <ItemsControl ItemsSource="{Binding DetailPosition}">
                                                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                                         <ItemsControl.ItemTemplate>
                                                           <DataTemplate>
                                                             <StackPanel Spacing="3" Margin="0,0,10,10">
-                                                              <TextBlock Text="{Binding Label}" FontSize="9" Foreground="{DynamicResource TextDim}" />
-                                                              <TextBlock Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="12" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                                                              <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
+                                                              <TextBlock Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsSmall}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
                                                             </StackPanel>
                                                           </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
                                                       </ItemsControl>
                                                       <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
-                                                        <Button Command="{Binding ClosePositionCommand}" Height="26" Padding="10,0" CornerRadius="5" Background="#14060a" BorderBrush="#3a1620" BorderThickness="1" Content="CLOSE AT MARKET" Foreground="#ff6b6b" FontSize="9" FontWeight="Bold" />
-                                                        <Button Command="{Binding HedgeCommand}" Height="26" Padding="10,0" CornerRadius="5" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="{Binding HedgeVenue, StringFormat='HEDGE · {0}'}" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
+                                                        <Button Classes="FlatChrome" Command="{Binding ClosePositionCommand}" Height="26" Padding="10,0" CornerRadius="5" Background="#14060a" BorderBrush="#3a1620" BorderThickness="1" Content="CLOSE AT MARKET" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                        <Button Classes="FlatChrome" Command="{Binding HedgeCommand}" Height="26" Padding="10,0" CornerRadius="5" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="{Binding HedgeVenue, StringFormat='HEDGE · {0}'}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                                                       </StackPanel>
                                                     </StackPanel>
                                                   </Border>
                                                   <Border Padding="12" BorderBrush="#14302e" BorderThickness="1" CornerRadius="10" Background="#061615">
                                                     <StackPanel>
                                                       <StackPanel Orientation="Horizontal" Spacing="7" Margin="0,0,0,8" VerticalAlignment="Center">
-                                                        <Ellipse Width="5" Height="5" Fill="#21e6c1" />
-                                                        <TextBlock Text="AI PARAMETER REVIEW" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
-                                                        <TextBlock Text="{Binding AiSource}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#2d6b64" />
+                                                        <Ellipse Width="5" Height="5" Fill="{DynamicResource Accent}" />
+                                                        <TextBlock Text="AI PARAMETER REVIEW" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                        <TextBlock Text="{Binding AiSource}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="#2d6b64" />
                                                       </StackPanel>
-                                                      <TextBlock Text="{Binding AiNote}" Foreground="#a9c2d8" FontSize="11.5" LineHeight="18" TextWrapping="Wrap" />
-                                                      <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,11,0,0">
-                                                        <Button Command="{Binding ApplyAiCommand}" Height="25" Padding="10,0" CornerRadius="5" Background="#0e2a2a" BorderBrush="#21e6c1" BorderThickness="1" Content="APPLY SUGGESTION" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
-                                                        <Button Command="{Binding AskAiCommand}" Height="25" Padding="10,0" CornerRadius="5" Background="Transparent" BorderBrush="#152233" BorderThickness="1" Content="ASK WHY" Foreground="{DynamicResource TextSoft}" FontSize="9" FontWeight="Bold" />
+                                                      <TextBlock Text="{Binding AiNote}" Foreground="#a9c2d8" FontSize="{DynamicResource FsCaption}" LineHeight="18" TextWrapping="Wrap" />
+                                                      <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,10,0,0">
+                                                        <Button Classes="FlatChrome" Command="{Binding ApplyAiCommand}" Height="25" Padding="10,0" CornerRadius="5" Background="{DynamicResource AccentSoft}" BorderBrush="{DynamicResource Accent}" BorderThickness="1" Content="APPLY SUGGESTION" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                        <Button Classes="FlatChrome" Command="{Binding AskAiCommand}" Height="25" Padding="10,0" CornerRadius="5" Background="Transparent" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="ASK WHY" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                                                       </StackPanel>
                                                     </StackPanel>
                                                   </Border>
@@ -549,20 +528,20 @@
                                               </Grid>
 
                                               <!-- PARAMETERS -->
-                                              <Border IsVisible="{Binding IsParams}" Padding="13" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="10" Background="#07101a">
+                                              <Border IsVisible="{Binding IsParams}" Padding="12" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="10" Background="{DynamicResource Surface1}">
                                                 <StackPanel>
                                                   <ItemsControl ItemsSource="{Binding DetailParams}">
                                                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                                     <ItemsControl.ItemTemplate>
                                                       <DataTemplate>
                                                         <StackPanel Spacing="4" Margin="0,0,14,12">
-                                                          <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
+                                                          <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
                                                           <ComboBox IsVisible="{Binding IsSelect}" ItemsSource="{Binding Options}" SelectedItem="{Binding Value, Mode=TwoWay}"
-                                                                    Height="28" Padding="7,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontSize="11" HorizontalAlignment="Stretch" />
-                                                          <Border IsVisible="{Binding IsText}" Height="28" Padding="8,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1">
+                                                                    Height="28" Padding="6,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" FontSize="{DynamicResource FsCaption}" HorizontalAlignment="Stretch" />
+                                                          <Border IsVisible="{Binding IsText}" Height="28" Padding="8,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1">
                                                             <Grid ColumnDefinitions="*,Auto">
-                                                              <TextBox Grid.Column="0" Text="{Binding Value, Mode=TwoWay}" Background="Transparent" BorderThickness="0" Padding="0" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
-                                                              <TextBlock Grid.Column="1" Text="{Binding Unit}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#26405a" VerticalAlignment="Center" />
+                                                              <TextBox Grid.Column="0" Text="{Binding Value, Mode=TwoWay}" Background="Transparent" BorderThickness="0" Padding="0" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
+                                                              <TextBlock Grid.Column="1" Text="{Binding Unit}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                                                             </Grid>
                                                           </Border>
                                                         </StackPanel>
@@ -571,48 +550,48 @@
                                                   </ItemsControl>
 
                                                   <!-- DCA basket -->
-                                                  <Border IsVisible="{Binding HasCoins}" BorderBrush="#0a1520" BorderThickness="0,1,0,0" Margin="0,2,0,0" Padding="0,12,0,0">
+                                                  <Border IsVisible="{Binding HasCoins}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Margin="0,2,0,0" Padding="0,12,0,0">
                                                     <StackPanel>
                                                       <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
-                                                        <TextBlock Grid.Column="0" Text="DCA BASKET" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
-                                                        <TextBlock Grid.Column="1" Text="{Binding WeightSum}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="{Binding WeightColor, Converter={StaticResource StringToBrush}}" />
+                                                        <TextBlock Grid.Column="0" Text="DCA BASKET" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding WeightSum}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{Binding WeightColor, Converter={StaticResource StringToBrush}}" />
                                                       </Grid>
                                                       <ItemsControl ItemsSource="{Binding Coins}">
                                                         <ItemsControl.ItemTemplate>
                                                           <DataTemplate>
                                                             <Grid ColumnDefinitions="116,88,116,*,30" Height="30">
-                                                              <TextBlock Grid.Column="0" Text="{Binding Symbol}" FontSize="11" FontWeight="Medium" Foreground="#e8f4ff" VerticalAlignment="Center" />
+                                                              <TextBlock Grid.Column="0" Text="{Binding Symbol}" FontSize="{DynamicResource FsCaption}" FontWeight="Medium" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
                                                               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                                                <Border Width="40" Height="22" Padding="5,0" CornerRadius="5" Background="#060d14" BorderBrush="#152233" BorderThickness="1">
-                                                                  <TextBox Text="{Binding Weight, Mode=TwoWay}" Background="Transparent" BorderThickness="0" Padding="0" FontFamily="{StaticResource FontMono}" FontSize="10" VerticalAlignment="Center" />
+                                                                <Border Width="40" Height="22" Padding="4,0" CornerRadius="5" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1">
+                                                                  <TextBox Text="{Binding Weight, Mode=TwoWay}" Background="Transparent" BorderThickness="0" Padding="0" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                                                                 </Border>
-                                                                <TextBlock Text="%" FontSize="9" Foreground="#26405a" VerticalAlignment="Center" />
+                                                                <TextBlock Text="%" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                                                               </StackPanel>
-                                                              <Button Grid.Column="2" Command="{Binding ToggleMaCommand}" HorizontalAlignment="Left" Padding="6,3" CornerRadius="5" BorderThickness="1"
+                                                              <Button Classes="FlatChrome" Grid.Column="2" Command="{Binding ToggleMaCommand}" HorizontalAlignment="Left" Padding="6,2" CornerRadius="5" BorderThickness="1"
                                                                       Background="{Binding MaBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding MaBorder, Converter={StaticResource StringToBrush}}"
-                                                                      Content="{Binding MaLabel}" Foreground="{Binding MaColor, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
-                                                              <TextBlock Grid.Column="3" Text="{Binding Stats}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="#4a6a82" VerticalAlignment="Center" />
-                                                              <Button Grid.Column="4" Command="{Binding RemoveCommand}" ToolTip.Tip="Remove" AutomationProperties.Name="Remove entry" Width="20" Height="20" Padding="0" CornerRadius="4" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="✕" Foreground="#4a6a82" FontSize="9" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                                                      Content="{Binding MaLabel}" Foreground="{Binding MaColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Center" />
+                                                              <TextBlock Grid.Column="3" Text="{Binding Stats}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
+                                                              <Button Classes="FlatChrome" Grid.Column="4" Command="{Binding RemoveCommand}" ToolTip.Tip="Remove" AutomationProperties.Name="Remove entry" Width="20" Height="20" Padding="0" CornerRadius="4" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="✕" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" VerticalAlignment="Center" />
                                                             </Grid>
                                                           </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
                                                       </ItemsControl>
-                                                      <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,9,0,0">
-                                                        <Border Width="110" Height="24" Padding="7,0" CornerRadius="5" Background="#060d14" BorderBrush="#152233" BorderThickness="1">
-                                                          <TextBox Text="{Binding NewCoin, Mode=TwoWay}" PlaceholderText="SOLUSDT" Background="Transparent" BorderThickness="0" Padding="0" FontFamily="{StaticResource FontMono}" FontSize="10" VerticalAlignment="Center" />
+                                                      <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
+                                                        <Border Width="110" Height="24" Padding="6,0" CornerRadius="5" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1">
+                                                          <TextBox Text="{Binding NewCoin, Mode=TwoWay}" PlaceholderText="SOLUSDT" Background="Transparent" BorderThickness="0" Padding="0" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                                                         </Border>
-                                                        <Button Command="{Binding AddCoinCommand}" Height="24" Padding="10,0" CornerRadius="5" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="+ ADD COIN" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                                                        <Button Classes="FlatChrome" Command="{Binding AddCoinCommand}" Height="24" Padding="10,0" CornerRadius="5" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="+ ADD COIN" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                                                       </StackPanel>
                                                     </StackPanel>
                                                   </Border>
 
-                                                  <Border BorderBrush="#0a1520" BorderThickness="0,1,0,0" Margin="0,14,0,0" Padding="0,12,0,0">
+                                                  <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Margin="0,14,0,0" Padding="0,12,0,0">
                                                     <StackPanel Orientation="Horizontal" Spacing="7">
-                                                      <Button Command="{Binding SaveParamsCommand}" Height="28" Padding="13,0" CornerRadius="6" Background="#0e2a2a" BorderBrush="#21e6c1" BorderThickness="1" Content="SAVE &amp; RESTART" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
-                                                      <Button Command="{Binding AiSuggestParamsCommand}" Height="28" Padding="11,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="🧠 AI SUGGEST PARAMS" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
-                                                      <Button Command="{Binding DryRunCommand}" Height="28" Padding="11,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="DRY-RUN 30D" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
-                                                      <Button Command="{Binding ResetParamsCommand}" Height="28" Padding="9,0" Background="Transparent" BorderThickness="0" Content="RESET" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
-                                                      <TextBlock Text="{Binding DirtyLabel}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="{Binding DirtyColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                      <Button Classes="FlatChrome" Command="{Binding SaveParamsCommand}" Height="28" Padding="12,0" CornerRadius="6" Background="{DynamicResource AccentSoft}" BorderBrush="{DynamicResource Accent}" BorderThickness="1" Content="SAVE &amp; RESTART" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                      <Button Classes="FlatChrome" Command="{Binding AiSuggestParamsCommand}" Height="28" Padding="10,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="🧠 AI SUGGEST PARAMS" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                      <Button Classes="FlatChrome" Command="{Binding DryRunCommand}" Height="28" Padding="10,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="DRY-RUN 30D" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                      <Button Classes="FlatChrome" Command="{Binding ResetParamsCommand}" Height="28" Padding="8,0" Background="Transparent" BorderThickness="0" Content="RESET" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                      <TextBlock Text="{Binding DirtyLabel}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{Binding DirtyColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" HorizontalAlignment="Right" />
                                                     </StackPanel>
                                                   </Border>
                                                 </StackPanel>
@@ -620,48 +599,48 @@
 
                                               <!-- TP / SL -->
                                               <Grid IsVisible="{Binding IsTpSl}" ColumnDefinitions="*,8,296">
-                                                <Border Grid.Column="0" Padding="13" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="10" Background="#07101a">
+                                                <Border Grid.Column="0" Padding="12" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="10" Background="{DynamicResource Surface1}">
                                                   <StackPanel>
                                                     <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
-                                                      <TextBlock Grid.Column="0" Text="TAKE PROFIT / STOP LOSS" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
-                                                      <TextBlock Grid.Column="1" Text="{Binding TpSummary}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#21e6c1" />
+                                                      <TextBlock Grid.Column="0" Text="TAKE PROFIT / STOP LOSS" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                      <TextBlock Grid.Column="1" Text="{Binding TpSummary}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource Accent}" />
                                                     </Grid>
                                                     <ItemsControl ItemsSource="{Binding Tpsl}">
                                                       <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
                                                           <Grid ColumnDefinitions="Auto,146,92,*" ColumnSpacing="10" Margin="0,1.5" Background="{Binding RowBg, Converter={StaticResource StringToBrush}}">
-                                                            <Button Grid.Column="0" Command="{Binding ToggleCommand}" Width="13" Height="13" Padding="0" CornerRadius="3" BorderThickness="1"
+                                                            <Button Classes="FlatChrome" Grid.Column="0" Command="{Binding ToggleCommand}" Width="13" Height="13" Padding="0" CornerRadius="3" BorderThickness="1"
                                                                     Background="{Binding BoxBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding BoxBorder, Converter={StaticResource StringToBrush}}"
-                                                                    Content="{Binding Mark}" Foreground="#04101a" FontSize="9" VerticalAlignment="Center" Margin="6,6,0,6" />
-                                                            <TextBlock Grid.Column="1" Text="{Binding Label}" FontSize="11" Foreground="{Binding LabelColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
-                                                            <Border Grid.Column="2" Height="26" Padding="8,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Opacity="{Binding InputOpacity}" VerticalAlignment="Center">
+                                                                    Content="{Binding Mark}" Foreground="#04101a" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" Margin="6,6,0,6" />
+                                                            <TextBlock Grid.Column="1" Text="{Binding Label}" FontSize="{DynamicResource FsCaption}" Foreground="{Binding LabelColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                                                            <Border Grid.Column="2" Height="26" Padding="8,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Opacity="{Binding InputOpacity}" VerticalAlignment="Center">
                                                               <Grid ColumnDefinitions="*,Auto">
-                                                                <TextBox Grid.Column="0" Text="{Binding Value, Mode=TwoWay}" Background="Transparent" BorderThickness="0" Padding="0" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
-                                                                <TextBlock Grid.Column="1" Text="{Binding Unit}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#26405a" VerticalAlignment="Center" />
+                                                                <TextBox Grid.Column="0" Text="{Binding Value, Mode=TwoWay}" Background="Transparent" BorderThickness="0" Padding="0" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
+                                                                <TextBlock Grid.Column="1" Text="{Binding Unit}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                                                               </Grid>
                                                             </Border>
-                                                            <TextBlock Grid.Column="3" Text="{Binding Hint}" FontSize="10" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
+                                                            <TextBlock Grid.Column="3" Text="{Binding Hint}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                                                           </Grid>
                                                         </DataTemplate>
                                                       </ItemsControl.ItemTemplate>
                                                     </ItemsControl>
-                                                    <StackPanel Orientation="Horizontal" Spacing="7" Margin="0,13,0,0">
-                                                      <Button Command="{Binding SaveTpSlCommand}" Height="27" Padding="12,0" CornerRadius="6" Background="#0e2a2a" BorderBrush="#21e6c1" BorderThickness="1" Content="APPLY TP / SL" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
-                                                      <Button Command="{Binding AiTpSlCommand}" Height="27" Padding="11,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="🧠 AI SUGGEST TP/SL" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="7" Margin="0,12,0,0">
+                                                      <Button Classes="FlatChrome" Command="{Binding SaveTpSlCommand}" Height="27" Padding="12,0" CornerRadius="6" Background="{DynamicResource AccentSoft}" BorderBrush="{DynamicResource Accent}" BorderThickness="1" Content="APPLY TP / SL" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                      <Button Classes="FlatChrome" Command="{Binding AiTpSlCommand}" Height="27" Padding="10,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="🧠 AI SUGGEST TP/SL" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                                                     </StackPanel>
                                                   </StackPanel>
                                                 </Border>
-                                                <Border Grid.Column="2" Padding="13" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="10" Background="#07101a">
+                                                <Border Grid.Column="2" Padding="12" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="10" Background="{DynamicResource Surface1}">
                                                   <StackPanel>
-                                                    <TextBlock Text="ORDER PLACEMENT" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" Margin="0,0,0,10" />
-                                                    <TextBlock Text="{Binding TpNote}" FontSize="11" LineHeight="17" Foreground="#4a6a82" TextWrapping="Wrap" />
-                                                    <Border BorderBrush="#0a1520" BorderThickness="0,1,0,0" Margin="0,12,0,0" Padding="0,11,0,0">
+                                                    <TextBlock Text="ORDER PLACEMENT" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Margin="0,0,0,10" />
+                                                    <TextBlock Text="{Binding TpNote}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="{DynamicResource TextDim}" TextWrapping="Wrap" />
+                                                    <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Margin="0,12,0,0" Padding="0,10,0,0">
                                                       <ItemsControl ItemsSource="{Binding TpPreview}">
                                                         <ItemsControl.ItemTemplate>
                                                           <DataTemplate>
                                                             <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
-                                                              <TextBlock Grid.Column="0" Text="{Binding Label}" FontSize="10" Foreground="#4a6a82" />
-                                                              <TextBlock Grid.Column="1" Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                                                              <TextBlock Grid.Column="0" Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
+                                                              <TextBlock Grid.Column="1" Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
                                                             </Grid>
                                                           </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
@@ -672,75 +651,75 @@
                                               </Grid>
 
                                               <!-- FILLS -->
-                                              <Border IsVisible="{Binding IsTrades}" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="10" Background="#07101a" ClipToBounds="True">
+                                              <Border IsVisible="{Binding IsTrades}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="10" Background="{DynamicResource Surface1}" ClipToBounds="True">
                                                 <StackPanel>
-                                                  <Border Height="26" Padding="12,0" Background="#060d14">
+                                                  <Border Height="26" Padding="12,0" Background="{DynamicResource Surface0}">
                                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                      <TextBlock Width="74" Text="TIME" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
-                                                      <TextBlock Width="90" Text="SYMBOL" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
-                                                      <TextBlock Width="56" Text="SIDE" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
-                                                      <TextBlock Width="96" Text="PRICE" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" TextAlignment="Right" />
-                                                      <TextBlock Width="90" Text="QTY" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" TextAlignment="Right" />
-                                                      <TextBlock Width="96" Text="TOTAL USDT" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" TextAlignment="Right" />
-                                                      <TextBlock Width="96" Text="REALIZED" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" TextAlignment="Right" />
-                                                      <TextBlock Width="160" Text="STATUS · ROUTE" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" TextAlignment="Right" />
+                                                      <TextBlock Width="74" Text="TIME" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                      <TextBlock Width="90" Text="SYMBOL" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                      <TextBlock Width="56" Text="SIDE" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                      <TextBlock Width="96" Text="PRICE" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" TextAlignment="Right" />
+                                                      <TextBlock Width="90" Text="QTY" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" TextAlignment="Right" />
+                                                      <TextBlock Width="96" Text="TOTAL USDT" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" TextAlignment="Right" />
+                                                      <TextBlock Width="96" Text="REALIZED" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" TextAlignment="Right" />
+                                                      <TextBlock Width="160" Text="STATUS · ROUTE" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" TextAlignment="Right" />
                                                     </StackPanel>
                                                   </Border>
                                                   <ItemsControl ItemsSource="{Binding DetailTrades}">
                                                     <ItemsControl.ItemTemplate>
                                                       <DataTemplate>
-                                                        <Border Height="28" Padding="12,0" BorderBrush="#0a1520" BorderThickness="0,1,0,0">
+                                                        <Border Height="28" Padding="12,0" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0">
                                                           <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                            <TextBlock Width="74" Text="{Binding Time}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#4a6a82" />
-                                                            <TextBlock Width="90" Text="{Binding Symbol}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#c8dcef" />
-                                                            <TextBlock Width="56" Text="{Binding Side}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="{Binding SideColor, Converter={StaticResource StringToBrush}}" />
-                                                            <TextBlock Width="96" Text="{Binding Price}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#c8dcef" TextAlignment="Right" />
-                                                            <TextBlock Width="90" Text="{Binding Qty}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#8fa3b8" TextAlignment="Right" />
-                                                            <TextBlock Width="96" Text="{Binding Total}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#8fa3b8" TextAlignment="Right" />
-                                                            <TextBlock Width="96" Text="{Binding Pnl}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="{Binding PnlColor, Converter={StaticResource StringToBrush}}" TextAlignment="Right" />
-                                                            <TextBlock Width="160" Text="{Binding Route}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="{DynamicResource TextDim}" TextAlignment="Right" />
+                                                            <TextBlock Width="74" Text="{Binding Time}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}" />
+                                                            <TextBlock Width="90" Text="{Binding Symbol}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextSecondary}" />
+                                                            <TextBlock Width="56" Text="{Binding Side}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{Binding SideColor, Converter={StaticResource StringToBrush}}" />
+                                                            <TextBlock Width="96" Text="{Binding Price}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextSecondary}" TextAlignment="Right" />
+                                                            <TextBlock Width="90" Text="{Binding Qty}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" TextAlignment="Right" />
+                                                            <TextBlock Width="96" Text="{Binding Total}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" TextAlignment="Right" />
+                                                            <TextBlock Width="96" Text="{Binding Pnl}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{Binding PnlColor, Converter={StaticResource StringToBrush}}" TextAlignment="Right" />
+                                                            <TextBlock Width="160" Text="{Binding Route}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}" TextAlignment="Right" />
                                                           </StackPanel>
                                                         </Border>
                                                       </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                   </ItemsControl>
-                                                  <Border Padding="12,9" BorderBrush="#0a1520" BorderThickness="0,1,0,0">
+                                                  <Border Padding="12,8" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0">
                                                     <StackPanel Orientation="Horizontal" Spacing="7">
-                                                      <Button Command="{Binding ExportCsvCommand}" Height="25" Padding="10,0" CornerRadius="5" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="EXPORT CSV" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
-                                                      <Button Command="{Binding TaxReportCommand}" Height="25" Padding="10,0" CornerRadius="5" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="FIFO TAX REPORT" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
-                                                      <Button Command="{Binding JournalCommand}" Height="25" Padding="10,0" CornerRadius="5" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="🧠 AI JOURNAL COACH" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
-                                                      <TextBlock Text="{Binding TradesMeta}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#26405a" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                      <Button Classes="FlatChrome" Command="{Binding ExportCsvCommand}" Height="25" Padding="10,0" CornerRadius="5" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="EXPORT CSV" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                      <Button Classes="FlatChrome" Command="{Binding TaxReportCommand}" Height="25" Padding="10,0" CornerRadius="5" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="FIFO TAX REPORT" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                      <Button Classes="FlatChrome" Command="{Binding JournalCommand}" Height="25" Padding="10,0" CornerRadius="5" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="🧠 AI JOURNAL COACH" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                                      <TextBlock Text="{Binding TradesMeta}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" HorizontalAlignment="Right" />
                                                     </StackPanel>
                                                   </Border>
                                                 </StackPanel>
                                               </Border>
 
                                               <!-- LOGS -->
-                                              <Border IsVisible="{Binding IsLogs}" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="10" Background="#04101a" ClipToBounds="True">
+                                              <Border IsVisible="{Binding IsLogs}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="10" Background="{DynamicResource Surface1}" ClipToBounds="True">
                                                 <StackPanel>
-                                                  <Border Padding="11,7" Background="#07101a" BorderBrush="#0a1520" BorderThickness="0,0,0,1">
+                                                  <Border Padding="10,6" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1">
                                                     <Grid ColumnDefinitions="*,Auto">
                                                       <ItemsControl Grid.Column="0" ItemsSource="{Binding DetailLogFilters}">
                                                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="6" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                                         <ItemsControl.ItemTemplate>
                                                           <DataTemplate>
-                                                            <Button Command="{Binding Command}" Height="21" Padding="8,0" CornerRadius="4" BorderThickness="1"
+                                                            <Button Classes="FlatChrome" Command="{Binding Command}" Height="21" Padding="8,0" CornerRadius="4" BorderThickness="1"
                                                                     Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}"
-                                                                    Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontFamily="{StaticResource FontMono}" FontSize="9" />
+                                                                    Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" />
                                                           </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
                                                       </ItemsControl>
-                                                      <Button Grid.Column="1" Command="{Binding CopyLogsCommand}" Background="Transparent" BorderThickness="0" Content="COPY BUFFER" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
+                                                      <Button Classes="FlatChrome" Grid.Column="1" Command="{Binding CopyLogsCommand}" Background="Transparent" BorderThickness="0" Content="COPY BUFFER" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                                                     </Grid>
                                                   </Border>
                                                   <ScrollViewer MaxHeight="196" VerticalScrollBarVisibility="Auto">
-                                                    <ItemsControl ItemsSource="{Binding DetailLogs}" Padding="11,8">
+                                                    <ItemsControl ItemsSource="{Binding DetailLogs}" Padding="10,8">
                                                       <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
                                                           <StackPanel Orientation="Horizontal" Spacing="11">
-                                                            <TextBlock Text="{Binding Time}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#1e3048" />
-                                                            <TextBlock Text="{Binding Level}" Width="42" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
-                                                            <TextBlock Text="{Binding Msg}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#8fa3b8" TextWrapping="Wrap" />
+                                                            <TextBlock Text="{Binding Time}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}" />
+                                                            <TextBlock Text="{Binding Level}" Width="42" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
+                                                            <TextBlock Text="{Binding Msg}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
                                                           </StackPanel>
                                                         </DataTemplate>
                                                       </ItemsControl.ItemTemplate>
@@ -751,38 +730,38 @@
 
                                               <!-- RISK -->
                                               <Grid IsVisible="{Binding IsRisk}" ColumnDefinitions="*,8,*">
-                                                <Border Grid.Column="0" Padding="13" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="10" Background="#07101a">
+                                                <Border Grid.Column="0" Padding="12" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="10" Background="{DynamicResource Surface1}">
                                                   <StackPanel Spacing="14">
-                                                    <TextBlock Text="RISK LIMITS · ENFORCED IN PAPER AND LIVE" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
+                                                    <TextBlock Text="RISK LIMITS · ENFORCED IN PAPER AND LIVE" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                                                     <StackPanel Spacing="6">
-                                                      <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Max order $" FontSize="11" Foreground="#8fa3b8" /><TextBlock Grid.Column="1" Text="{Binding RiskOrderLabel}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#21e6c1" /></Grid>
+                                                      <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Max order $" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" /><TextBlock Grid.Column="1" Text="{Binding RiskOrderLabel}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource Accent}" /></Grid>
                                                       <Slider Minimum="100" Maximum="10000" Value="{Binding RiskOrder, Mode=TwoWay}" />
                                                     </StackPanel>
                                                     <StackPanel Spacing="6">
-                                                      <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Max total exposure $" FontSize="11" Foreground="#8fa3b8" /><TextBlock Grid.Column="1" Text="{Binding RiskExposureLabel}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#21e6c1" /></Grid>
+                                                      <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Max total exposure $" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" /><TextBlock Grid.Column="1" Text="{Binding RiskExposureLabel}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource Accent}" /></Grid>
                                                       <Slider Minimum="1000" Maximum="100000" Value="{Binding RiskExposure, Mode=TwoWay}" />
                                                     </StackPanel>
                                                     <StackPanel Spacing="6">
-                                                      <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Max open positions" FontSize="11" Foreground="#8fa3b8" /><TextBlock Grid.Column="1" Text="{Binding RiskPositionsLabel}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#e8f4ff" /></Grid>
+                                                      <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Max open positions" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" /><TextBlock Grid.Column="1" Text="{Binding RiskPositionsLabel}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextPrimary}" /></Grid>
                                                       <Slider Minimum="1" Maximum="20" Value="{Binding RiskPositions, Mode=TwoWay}" />
                                                     </StackPanel>
                                                     <StackPanel Spacing="6">
-                                                      <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Max daily loss $" FontSize="11" Foreground="#8fa3b8" /><TextBlock Grid.Column="1" Text="{Binding RiskDailyLabel}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#ff6b6b" /></Grid>
+                                                      <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Max daily loss $" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" /><TextBlock Grid.Column="1" Text="{Binding RiskDailyLabel}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource Negative}" /></Grid>
                                                       <Slider Minimum="50" Maximum="5000" Value="{Binding RiskDaily, Mode=TwoWay}" />
                                                     </StackPanel>
                                                   </StackPanel>
                                                 </Border>
-                                                <Border Grid.Column="2" Padding="13" BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="10" Background="#07101a">
+                                                <Border Grid.Column="2" Padding="12" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="10" Background="{DynamicResource Surface1}">
                                                   <StackPanel>
-                                                    <TextBlock Text="GATES &amp; GUARDS" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" Margin="0,0,0,10" />
+                                                    <TextBlock Text="GATES &amp; GUARDS" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Margin="0,0,0,10" />
                                                     <ItemsControl ItemsSource="{Binding GuardsRisk}">
                                                       <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
-                                                          <Button Command="{Binding Command}" Background="Transparent" BorderThickness="0" Padding="8,7" CornerRadius="6" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch">
+                                                          <Button Classes="FlatChrome" Command="{Binding Command}" Background="Transparent" BorderThickness="0" Padding="8,6" CornerRadius="6" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch">
                                                             <Grid ColumnDefinitions="*,Auto">
                                                               <StackPanel Grid.Column="0" Spacing="2">
-                                                                <TextBlock Text="{Binding Label}" FontSize="11" Foreground="#d0e4f4" />
-                                                                <TextBlock Text="{Binding Hint}" FontSize="9" Foreground="{DynamicResource TextDim}" />
+                                                                <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextSecondary}" />
+                                                                <TextBlock Text="{Binding Hint}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                                                               </StackPanel>
                                                               <Border Grid.Column="1" Width="28" Height="15" CornerRadius="8" VerticalAlignment="Center" Background="{Binding TrackBg, Converter={StaticResource StringToBrush}}">
                                                                 <Canvas><Border Width="11" Height="11" CornerRadius="6" Canvas.Top="2" Canvas.Left="{Binding KnobLeft}" Background="{Binding Knob, Converter={StaticResource StringToBrush}}" /></Canvas>
@@ -792,10 +771,10 @@
                                                         </DataTemplate>
                                                       </ItemsControl.ItemTemplate>
                                                     </ItemsControl>
-                                                    <Border BorderBrush="#0a1520" BorderThickness="0,1,0,0" Margin="0,11,0,0" Padding="0,10,0,0">
+                                                    <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Margin="0,10,0,0" Padding="0,10,0,0">
                                                       <StackPanel>
-                                                        <TextBlock Text="SYMBOL ALLOWLIST" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" Margin="0,0,0,6" />
-                                                        <TextBox Text="{Binding Allowlist, Mode=TwoWay}" PlaceholderText="any (e.g. BTCUSDT, ETHUSDT)" Height="28" Padding="9,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="11" />
+                                                        <TextBlock Text="SYMBOL ALLOWLIST" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Margin="0,0,0,6" />
+                                                        <TextBox Text="{Binding Allowlist, Mode=TwoWay}" PlaceholderText="any (e.g. BTCUSDT, ETHUSDT)" Height="28" Padding="8,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" />
                                                       </StackPanel>
                                                     </Border>
                                                   </StackPanel>
@@ -815,30 +794,30 @@
                       </ItemsControl>
 
                       <!-- empty state -->
-                      <StackPanel IsVisible="{Binding ShowEmpty}" Margin="20,24,20,28">
+                      <StackPanel IsVisible="{Binding ShowEmpty}" Margin="20,24,20,24">
                         <StackPanel HorizontalAlignment="Center" Margin="0,0,0,20" Spacing="5">
-                          <TextBlock Text="{Binding EmptyTitle}" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" HorizontalAlignment="Center" />
-                          <TextBlock Text="{Binding EmptySub}" FontSize="11.5" Foreground="#4a6a82" HorizontalAlignment="Center" />
+                          <TextBlock Text="{Binding EmptyTitle}" FontSize="{DynamicResource FsSubhead}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" />
+                          <TextBlock Text="{Binding EmptySub}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
                         </StackPanel>
                         <ItemsControl ItemsSource="{Binding Templates}" MaxWidth="1080" HorizontalAlignment="Center">
                           <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                           <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                              <Button Command="{Binding QuickCreate}" Margin="4" Padding="12" CornerRadius="10" Background="#060d14" BorderBrush="#0d1b27" BorderThickness="1" HorizontalContentAlignment="Stretch">
+                              <Button Classes="FlatChrome" Command="{Binding QuickCreate}" Margin="4" Padding="12" CornerRadius="10" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" HorizontalContentAlignment="Stretch">
                                 <StackPanel Spacing="7">
                                   <Grid ColumnDefinitions="*,Auto">
                                     <Border CornerRadius="4" Padding="6,0" Height="17" BorderThickness="1" HorizontalAlignment="Left"
                                             Background="{Binding BadgeBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding BadgeBorder, Converter={StaticResource StringToBrush}}">
-                                      <TextBlock Text="{Binding Type}" Foreground="{Binding Accent, Converter={StaticResource StringToBrush}}" FontFamily="{StaticResource FontMono}" FontSize="9" VerticalAlignment="Center" />
+                                      <TextBlock Text="{Binding Type}" Foreground="{Binding Accent, Converter={StaticResource StringToBrush}}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                                     </Border>
-                                    <TextBlock Grid.Column="1" Text="{Binding Risk}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Risk}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                                   </Grid>
-                                  <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="Medium" Foreground="#e8f4ff" />
-                                  <TextBlock Text="{Binding Desc}" FontSize="10.5" LineHeight="16" Foreground="#4a6a82" TextWrapping="Wrap" />
-                                  <Border BorderBrush="#0a1520" BorderThickness="0,1,0,0" Padding="0,7,0,0" Margin="0,2,0,0">
+                                  <TextBlock Text="{Binding Name}" FontSize="{DynamicResource FsSmall}" FontWeight="Medium" Foreground="{DynamicResource TextPrimary}" />
+                                  <TextBlock Text="{Binding Desc}" FontSize="{DynamicResource FsMicro}" LineHeight="16" Foreground="{DynamicResource TextDim}" TextWrapping="Wrap" />
+                                  <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Padding="0,6,0,0" Margin="0,2,0,0">
                                     <Grid ColumnDefinitions="*,Auto">
-                                      <TextBlock Text="{Binding Backtest}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="{DynamicResource TextDim}" />
-                                      <TextBlock Grid.Column="1" Text="{Binding Apr}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="#3ddc84" />
+                                      <TextBlock Text="{Binding Backtest}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
+                                      <TextBlock Grid.Column="1" Text="{Binding Apr}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource Positive}" />
                                     </Grid>
                                   </Border>
                                 </StackPanel>
@@ -846,7 +825,7 @@
                             </DataTemplate>
                           </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <Button Command="{Binding NewBotCommand}" HorizontalAlignment="Center" Margin="0,18,0,0" Height="30" Padding="14,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="OR CONFIGURE FROM SCRATCH →" Foreground="#8fa3b8" FontSize="10" FontWeight="Bold" />
+                        <Button Classes="FlatChrome" Command="{Binding NewBotCommand}" HorizontalAlignment="Center" Margin="0,16,0,0" Height="30" Padding="14,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="OR CONFIGURE FROM SCRATCH →" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                       </StackPanel>
                     </StackPanel>
                   </ScrollViewer>
@@ -859,61 +838,61 @@
           <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="7">
               <Grid ColumnDefinitions="*,Auto" Margin="2,0">
-                <TextBlock Text="AI DESK · BOTS" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
-                <Border Grid.Column="1" CornerRadius="9" Padding="8,3" Background="#060d14" BorderBrush="#1a3030" BorderThickness="1">
+                <TextBlock Text="AI DESK · BOTS" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Center" />
+                <Border Grid.Column="1" CornerRadius="9" Padding="8,2" Background="{DynamicResource Surface0}" BorderBrush="#1a3030" BorderThickness="1">
                   <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                    <Ellipse Width="5" Height="5" Fill="#21e6c1" />
-                    <TextBlock Text="{Binding AiProvider}" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                    <Ellipse Width="5" Height="5" Fill="{DynamicResource Accent}" />
+                    <TextBlock Text="{Binding AiProvider}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                   </StackPanel>
                 </Border>
               </Grid>
 
               <!-- AI RISK CHECK -->
-              <Border CornerRadius="11" Background="#07101a" BorderThickness="1" ClipToBounds="True" BorderBrush="{Binding RailRiskBorder, Converter={StaticResource StringToBrush}}">
+              <Border CornerRadius="11" Background="{DynamicResource Surface1}" BorderThickness="1" ClipToBounds="True" BorderBrush="{Binding RailRiskBorder, Converter={StaticResource StringToBrush}}">
                 <StackPanel>
-                  <Button Command="{Binding RailRiskToggle}" Background="Transparent" BorderThickness="0" Padding="12,10" HorizontalContentAlignment="Stretch">
+                  <Button Classes="FlatChrome" Command="{Binding RailRiskToggle}" Background="Transparent" BorderThickness="0" Padding="12,10" HorizontalContentAlignment="Stretch">
                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-                      <TextBlock Grid.Column="0" Text="🛡 AI RISK CHECK" FontSize="9" FontWeight="Bold" Foreground="{Binding RailRiskTitle, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="1" Text="{Binding RiskVerdictShort}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="{Binding RiskVerdictColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="2" Text="{Binding RailRiskCaret}" Foreground="#1e3048" FontSize="9" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="0" Text="🛡 AI RISK CHECK" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{Binding RailRiskTitle, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="{Binding RiskVerdictShort}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{Binding RiskVerdictColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Text="{Binding RailRiskCaret}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                     </Grid>
                   </Button>
                   <StackPanel IsVisible="{Binding RailRiskOpen}" Margin="12,0,12,12">
                     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
                       <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4">
-                        <TextBlock Text="SYMBOL" FontSize="9" Foreground="{DynamicResource TextDim}" FontWeight="Bold" />
-                        <TextBox Text="{Binding RcSymbol, Mode=TwoWay}" Height="26" Padding="8,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="11" />
+                        <TextBlock Text="SYMBOL" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" FontWeight="Bold" />
+                        <TextBox Text="{Binding RcSymbol, Mode=TwoWay}" Height="26" Padding="8,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" />
                       </StackPanel>
                       <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4">
-                        <TextBlock Text="SIDE" FontSize="9" Foreground="{DynamicResource TextDim}" FontWeight="Bold" />
-                        <ComboBox ItemsSource="{Binding Sides}" SelectedItem="{Binding RcSide, Mode=TwoWay}" Height="26" Padding="6,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontSize="11" HorizontalAlignment="Stretch" />
+                        <TextBlock Text="SIDE" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" FontWeight="Bold" />
+                        <ComboBox ItemsSource="{Binding Sides}" SelectedItem="{Binding RcSide, Mode=TwoWay}" Height="26" Padding="6,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" FontSize="{DynamicResource FsCaption}" HorizontalAlignment="Stretch" />
                       </StackPanel>
                       <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4">
-                        <TextBlock Text="ORDER $" FontSize="9" Foreground="{DynamicResource TextDim}" FontWeight="Bold" />
-                        <TextBox Text="{Binding RcUsd, Mode=TwoWay}" Height="26" Padding="8,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="11" />
+                        <TextBlock Text="ORDER $" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" FontWeight="Bold" />
+                        <TextBox Text="{Binding RcUsd, Mode=TwoWay}" Height="26" Padding="8,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" />
                       </StackPanel>
                       <StackPanel Grid.Row="1" Grid.Column="1" Spacing="4">
-                        <TextBlock Text="LEVERAGE" FontSize="9" Foreground="{DynamicResource TextDim}" FontWeight="Bold" />
-                        <TextBox Text="{Binding RcLev, Mode=TwoWay}" Height="26" Padding="8,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="11" />
+                        <TextBlock Text="LEVERAGE" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" FontWeight="Bold" />
+                        <TextBox Text="{Binding RcLev, Mode=TwoWay}" Height="26" Padding="8,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" />
                       </StackPanel>
                     </Grid>
-                    <Button Command="{Binding RiskCheckCommand}" Margin="0,9,0,0" Height="27" HorizontalAlignment="Stretch" CornerRadius="6" Background="#0e2a2a" BorderBrush="#21e6c1" BorderThickness="1" Content="RUN PRE-TRADE CHECK" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                    <Button Classes="FlatChrome" Command="{Binding RiskCheckCommand}" Margin="0,8,0,0" Height="27" HorizontalAlignment="Stretch" CornerRadius="6" Background="{DynamicResource AccentSoft}" BorderBrush="{DynamicResource Accent}" BorderThickness="1" Content="RUN PRE-TRADE CHECK" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                     <StackPanel IsVisible="{Binding RiskHasVerdict}" Margin="0,10,0,0">
-                      <Border BorderBrush="#0a1520" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                      <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Padding="0,10,0,0">
                         <StackPanel>
                           <StackPanel Orientation="Horizontal" Spacing="9" Margin="0,0,0,8" VerticalAlignment="Center">
                             <Border CornerRadius="5" Padding="10,4" BorderThickness="1" Background="{Binding RiskVerdictBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding RiskVerdictBorder, Converter={StaticResource StringToBrush}}">
-                              <TextBlock Text="{Binding RiskVerdict}" Foreground="{Binding RiskVerdictColor, Converter={StaticResource StringToBrush}}" FontSize="11" FontWeight="Bold" />
+                              <TextBlock Text="{Binding RiskVerdict}" Foreground="{Binding RiskVerdictColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
                             </Border>
-                            <TextBlock Text="{Binding RiskScore, StringFormat='risk {0}'}" FontFamily="{StaticResource FontMono}" FontSize="11" Foreground="#8fa3b8" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding RiskScore, StringFormat='risk {0}'}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" />
                           </StackPanel>
-                          <TextBlock Text="{Binding RiskRationale}" FontSize="11" LineHeight="17" Foreground="#a9c2d8" TextWrapping="Wrap" />
+                          <TextBlock Text="{Binding RiskRationale}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="#a9c2d8" TextWrapping="Wrap" />
                           <ItemsControl ItemsSource="{Binding RiskReasons}" Margin="0,8,0,0">
                             <ItemsControl.ItemTemplate>
                               <DataTemplate>
                                 <StackPanel Orientation="Horizontal" Spacing="7" Margin="0,0,0,4">
-                                  <TextBlock Text="•" Foreground="#f4b860" FontSize="10" />
-                                  <TextBlock Text="{Binding}" FontSize="10" LineHeight="15" Foreground="#4a6a82" TextWrapping="Wrap" />
+                                  <TextBlock Text="•" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsMicro}" />
+                                  <TextBlock Text="{Binding}" FontSize="{DynamicResource FsMicro}" LineHeight="15" Foreground="{DynamicResource TextDim}" TextWrapping="Wrap" />
                                 </StackPanel>
                               </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -926,28 +905,28 @@
               </Border>
 
               <!-- CORRELATION INSIGHT -->
-              <Border CornerRadius="11" Background="#07101a" BorderThickness="1" ClipToBounds="True" BorderBrush="{Binding RailCorrBorder, Converter={StaticResource StringToBrush}}">
+              <Border CornerRadius="11" Background="{DynamicResource Surface1}" BorderThickness="1" ClipToBounds="True" BorderBrush="{Binding RailCorrBorder, Converter={StaticResource StringToBrush}}">
                 <StackPanel>
-                  <Button Command="{Binding RailCorrToggle}" Background="Transparent" BorderThickness="0" Padding="12,10" HorizontalContentAlignment="Stretch">
+                  <Button Classes="FlatChrome" Command="{Binding RailCorrToggle}" Background="Transparent" BorderThickness="0" Padding="12,10" HorizontalContentAlignment="Stretch">
                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-                      <TextBlock Grid.Column="0" Text="🔗 CORRELATION INSIGHT" FontSize="9" FontWeight="Bold" Foreground="{Binding RailCorrTitle, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="1" Text="{Binding CorrBadge}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="{Binding CorrBadgeColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="2" Text="{Binding RailCorrCaret}" Foreground="#1e3048" FontSize="9" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="0" Text="🔗 CORRELATION INSIGHT" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{Binding RailCorrTitle, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="{Binding CorrBadge}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{Binding CorrBadgeColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Text="{Binding RailCorrCaret}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                     </Grid>
                   </Button>
                   <StackPanel IsVisible="{Binding RailCorrOpen}" Margin="12,0,12,12">
-                    <TextBox Text="{Binding CorrSymbols, Mode=TwoWay}" PlaceholderText="BTCUSDT, ETHUSDT, SOLUSDT…" Height="27" Padding="9,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="11" />
-                    <Button Command="{Binding CorrAnalyzeCommand}" Margin="0,8,0,0" Height="27" HorizontalAlignment="Stretch" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="ANALYZE BOOK" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                    <TextBox Text="{Binding CorrSymbols, Mode=TwoWay}" PlaceholderText="BTCUSDT, ETHUSDT, SOLUSDT…" Height="27" Padding="8,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" />
+                    <Button Classes="FlatChrome" Command="{Binding CorrAnalyzeCommand}" Margin="0,8,0,0" Height="27" HorizontalAlignment="Stretch" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="ANALYZE BOOK" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                     <StackPanel IsVisible="{Binding CorrHasResult}" Margin="0,10,0,0">
-                      <Border BorderBrush="#0a1520" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                      <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Padding="0,10,0,0">
                         <StackPanel>
-                          <TextBlock Text="{Binding CorrSummary}" FontSize="11" LineHeight="17" Foreground="#a9c2d8" TextWrapping="Wrap" />
+                          <TextBlock Text="{Binding CorrSummary}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="#a9c2d8" TextWrapping="Wrap" />
                           <ItemsControl ItemsSource="{Binding CorrBullets}" Margin="0,8,0,0">
                             <ItemsControl.ItemTemplate>
                               <DataTemplate>
                                 <StackPanel Orientation="Horizontal" Spacing="7" Margin="0,0,0,4">
-                                  <TextBlock Text="•" Foreground="#21e6c1" FontSize="10" />
-                                  <TextBlock Text="{Binding}" FontSize="10" LineHeight="15" Foreground="#4a6a82" TextWrapping="Wrap" />
+                                  <TextBlock Text="•" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" />
+                                  <TextBlock Text="{Binding}" FontSize="{DynamicResource FsMicro}" LineHeight="15" Foreground="{DynamicResource TextDim}" TextWrapping="Wrap" />
                                 </StackPanel>
                               </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -960,35 +939,35 @@
               </Border>
 
               <!-- OPTIONS ADVISOR -->
-              <Border CornerRadius="11" Background="#07101a" BorderThickness="1" ClipToBounds="True" BorderBrush="{Binding RailOptsBorder, Converter={StaticResource StringToBrush}}">
+              <Border CornerRadius="11" Background="{DynamicResource Surface1}" BorderThickness="1" ClipToBounds="True" BorderBrush="{Binding RailOptsBorder, Converter={StaticResource StringToBrush}}">
                 <StackPanel>
-                  <Button Command="{Binding RailOptsToggle}" Background="Transparent" BorderThickness="0" Padding="12,10" HorizontalContentAlignment="Stretch">
+                  <Button Classes="FlatChrome" Command="{Binding RailOptsToggle}" Background="Transparent" BorderThickness="0" Padding="12,10" HorizontalContentAlignment="Stretch">
                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-                      <TextBlock Grid.Column="0" Text="📐 OPTIONS ADVISOR" FontSize="9" FontWeight="Bold" Foreground="{Binding RailOptsTitle, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="1" Text="{Binding OptsBadge}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="2" Text="{Binding RailOptsCaret}" Foreground="#1e3048" FontSize="9" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="0" Text="📐 OPTIONS ADVISOR" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{Binding RailOptsTitle, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="{Binding OptsBadge}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Text="{Binding RailOptsCaret}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                     </Grid>
                   </Button>
                   <StackPanel IsVisible="{Binding RailOptsOpen}" Margin="12,0,12,12">
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                       <StackPanel Grid.Column="0" Spacing="4">
-                        <TextBlock Text="ASSET" FontSize="9" Foreground="{DynamicResource TextDim}" FontWeight="Bold" />
-                        <ComboBox ItemsSource="{Binding OptAssets}" SelectedItem="{Binding OptAsset, Mode=TwoWay}" Height="26" Padding="6,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontSize="11" HorizontalAlignment="Stretch" />
+                        <TextBlock Text="ASSET" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" FontWeight="Bold" />
+                        <ComboBox ItemsSource="{Binding OptAssets}" SelectedItem="{Binding OptAsset, Mode=TwoWay}" Height="26" Padding="6,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" FontSize="{DynamicResource FsCaption}" HorizontalAlignment="Stretch" />
                       </StackPanel>
                       <StackPanel Grid.Column="1" Spacing="4">
-                        <TextBlock Text="VIEW" FontSize="9" Foreground="{DynamicResource TextDim}" FontWeight="Bold" />
-                        <ComboBox ItemsSource="{Binding OptViews}" SelectedItem="{Binding OptView, Mode=TwoWay}" Height="26" Padding="6,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontSize="11" HorizontalAlignment="Stretch" />
+                        <TextBlock Text="VIEW" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" FontWeight="Bold" />
+                        <ComboBox ItemsSource="{Binding OptViews}" SelectedItem="{Binding OptView, Mode=TwoWay}" Height="26" Padding="6,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" FontSize="{DynamicResource FsCaption}" HorizontalAlignment="Stretch" />
                       </StackPanel>
                     </Grid>
-                    <Button Command="{Binding OptsSuggestCommand}" Margin="0,9,0,0" Height="27" HorizontalAlignment="Stretch" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="SUGGEST STRATEGY" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                    <Button Classes="FlatChrome" Command="{Binding OptsSuggestCommand}" Margin="0,8,0,0" Height="27" HorizontalAlignment="Stretch" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="SUGGEST STRATEGY" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                     <StackPanel IsVisible="{Binding OptsHasResult}" Margin="0,10,0,0">
-                      <Border BorderBrush="#0a1520" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                      <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Padding="0,10,0,0">
                         <StackPanel>
                           <StackPanel Orientation="Horizontal" Spacing="9" Margin="0,0,0,8" VerticalAlignment="Center">
-                            <Border CornerRadius="5" Padding="9,4" Background="#04101a"><TextBlock Text="{Binding OptsStrategy}" Foreground="#e8f4ff" FontSize="11" FontWeight="Bold" /></Border>
-                            <TextBlock Text="{Binding OptsIv}" FontSize="10" FontWeight="SemiBold" Foreground="{Binding OptsIvColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                            <Border CornerRadius="5" Padding="8,4" Background="{DynamicResource Surface1}"><TextBlock Text="{Binding OptsStrategy}" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" /></Border>
+                            <TextBlock Text="{Binding OptsIv}" FontSize="{DynamicResource FsMicro}" FontWeight="SemiBold" Foreground="{Binding OptsIvColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
                           </StackPanel>
-                          <TextBlock Text="{Binding OptsRationale}" FontSize="11" LineHeight="17" Foreground="#a9c2d8" TextWrapping="Wrap" />
+                          <TextBlock Text="{Binding OptsRationale}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="#a9c2d8" TextWrapping="Wrap" />
                         </StackPanel>
                       </Border>
                     </StackPanel>
@@ -997,26 +976,26 @@
               </Border>
 
               <!-- AI COPILOT -->
-              <Border CornerRadius="11" Background="#07101a" BorderThickness="1" ClipToBounds="True" BorderBrush="{Binding RailCopilotBorder, Converter={StaticResource StringToBrush}}">
+              <Border CornerRadius="11" Background="{DynamicResource Surface1}" BorderThickness="1" ClipToBounds="True" BorderBrush="{Binding RailCopilotBorder, Converter={StaticResource StringToBrush}}">
                 <StackPanel>
-                  <Button Command="{Binding RailCopilotToggle}" Background="Transparent" BorderThickness="0" Padding="12,10" HorizontalContentAlignment="Stretch">
+                  <Button Classes="FlatChrome" Command="{Binding RailCopilotToggle}" Background="Transparent" BorderThickness="0" Padding="12,10" HorizontalContentAlignment="Stretch">
                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-                      <TextBlock Grid.Column="0" Text="💬 AI COPILOT" FontSize="9" FontWeight="Bold" Foreground="{Binding RailCopilotTitle, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="1" Text="{Binding CopilotMode}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="{Binding CopilotModeColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="2" Text="{Binding RailCopilotCaret}" Foreground="#1e3048" FontSize="9" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="0" Text="💬 AI COPILOT" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{Binding RailCopilotTitle, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="{Binding CopilotMode}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{Binding CopilotModeColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Text="{Binding RailCopilotCaret}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                     </Grid>
                   </Button>
                   <StackPanel IsVisible="{Binding RailCopilotOpen}" Margin="12,0,12,12">
-                    <Border CornerRadius="7" Background="#04101a" Padding="9" MaxHeight="186">
+                    <Border CornerRadius="7" Background="{DynamicResource Surface1}" Padding="8" MaxHeight="186">
                       <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <ItemsControl ItemsSource="{Binding CopilotMsgs}">
                           <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="9" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                           <ItemsControl.ItemTemplate>
                             <DataTemplate>
                               <StackPanel Spacing="3" HorizontalAlignment="{Binding Align}">
-                                <TextBlock Text="{Binding Role}" FontSize="9" FontWeight="Bold" Foreground="{Binding RoleColor, Converter={StaticResource StringToBrush}}" />
-                                <Border MaxWidth="244" Padding="9,7" CornerRadius="7" Background="{Binding Bg, Converter={StaticResource StringToBrush}}">
-                                  <TextBlock Text="{Binding Text}" FontSize="11" LineHeight="16" Foreground="#d0e4f4" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding Role}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{Binding RoleColor, Converter={StaticResource StringToBrush}}" />
+                                <Border MaxWidth="244" Padding="8,6" CornerRadius="7" Background="{Binding Bg, Converter={StaticResource StringToBrush}}">
+                                  <TextBlock Text="{Binding Text}" FontSize="{DynamicResource FsCaption}" LineHeight="16" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" />
                                 </Border>
                               </StackPanel>
                             </DataTemplate>
@@ -1028,21 +1007,21 @@
                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                          <Button Command="{Binding Command}" Margin="0,0,5,5" Padding="8,4" CornerRadius="5" Background="#060d14" BorderBrush="#152233" BorderThickness="1" Content="{Binding Label}" Foreground="{DynamicResource TextSoft}" FontSize="9.5" />
+                          <Button Classes="FlatChrome" Command="{Binding Command}" Margin="0,0,4,4" Padding="8,4" CornerRadius="5" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="{Binding Label}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" />
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
                     </ItemsControl>
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6" Margin="0,8,0,0">
-                      <TextBox Grid.Column="0" Text="{Binding CopilotQ, Mode=TwoWay}" PlaceholderText="ask about your bots…" Height="27" Padding="9,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontSize="11" />
-                      <Button Grid.Column="1" Command="{Binding CopilotAskCommand}" Height="27" Padding="11,0" CornerRadius="6" Background="#0e2a2a" BorderBrush="#21e6c1" BorderThickness="1" Content="ASK" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                      <TextBox Grid.Column="0" Text="{Binding CopilotQ, Mode=TwoWay}" PlaceholderText="ask about your bots…" Height="27" Padding="8,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" FontSize="{DynamicResource FsCaption}" />
+                      <Button Classes="FlatChrome" Grid.Column="1" Command="{Binding CopilotAskCommand}" Height="27" Padding="10,0" CornerRadius="6" Background="{DynamicResource AccentSoft}" BorderBrush="{DynamicResource Accent}" BorderThickness="1" Content="ASK" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                     </Grid>
-                    <Button Command="{Binding CopilotToggleAutoCommand}" Margin="0,8,0,0" Padding="8,7" CornerRadius="6" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" BorderThickness="1"
+                    <Button Classes="FlatChrome" Command="{Binding CopilotToggleAutoCommand}" Margin="0,8,0,0" Padding="8,6" CornerRadius="6" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" BorderThickness="1"
                             Background="{Binding CopilotAutoBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding CopilotAutoBorder, Converter={StaticResource StringToBrush}}">
                       <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
                         <Border Width="28" Height="15" CornerRadius="8" Background="{Binding CopilotTrackBg, Converter={StaticResource StringToBrush}}">
                           <Canvas><Border Width="11" Height="11" CornerRadius="6" Canvas.Top="2" Canvas.Left="{Binding CopilotKnobLeft}" Background="{Binding CopilotKnob, Converter={StaticResource StringToBrush}}" /></Canvas>
                         </Border>
-                        <TextBlock Text="{Binding CopilotAutoLabel}" FontSize="10" Foreground="{Binding CopilotAutoColor, Converter={StaticResource StringToBrush}}" />
+                        <TextBlock Text="{Binding CopilotAutoLabel}" FontSize="{DynamicResource FsMicro}" Foreground="{Binding CopilotAutoColor, Converter={StaticResource StringToBrush}}" />
                       </StackPanel>
                     </Button>
                   </StackPanel>
@@ -1050,47 +1029,47 @@
               </Border>
 
               <!-- AUTONOMOUS AGENT -->
-              <Border CornerRadius="11" Background="#07101a" BorderThickness="1" ClipToBounds="True" BorderBrush="{Binding RailAgentBorder, Converter={StaticResource StringToBrush}}">
+              <Border CornerRadius="11" Background="{DynamicResource Surface1}" BorderThickness="1" ClipToBounds="True" BorderBrush="{Binding RailAgentBorder, Converter={StaticResource StringToBrush}}">
                 <StackPanel>
-                  <Button Command="{Binding RailAgentToggle}" Background="Transparent" BorderThickness="0" Padding="12,10" HorizontalContentAlignment="Stretch">
+                  <Button Classes="FlatChrome" Command="{Binding RailAgentToggle}" Background="Transparent" BorderThickness="0" Padding="12,10" HorizontalContentAlignment="Stretch">
                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-                      <TextBlock Grid.Column="0" Text="🤖 AUTONOMOUS AGENT" FontSize="9" FontWeight="Bold" Foreground="{Binding RailAgentTitle, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="1" Text="{Binding AgentBadge}" FontFamily="{StaticResource FontMono}" FontSize="9" Foreground="{Binding AgentBadgeColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="2" Text="{Binding RailAgentCaret}" Foreground="#1e3048" FontSize="9" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="0" Text="🤖 AUTONOMOUS AGENT" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{Binding RailAgentTitle, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="{Binding AgentBadge}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{Binding AgentBadgeColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Text="{Binding RailAgentCaret}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                     </Grid>
                   </Button>
                   <StackPanel IsVisible="{Binding RailAgentOpen}" Margin="12,0,12,12">
-                    <TextBlock Text="OBJECTIVE" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextDim}" Margin="0,0,0,5" />
-                    <TextBox Text="{Binding AgentObjective, Mode=TwoWay}" Height="56" Padding="9,8" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontSize="11" AcceptsReturn="True" TextWrapping="Wrap" />
-                    <ItemsControl ItemsSource="{Binding AgentCaps}" Margin="0,9,0,0">
+                    <TextBlock Text="OBJECTIVE" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" Margin="0,0,0,4" />
+                    <TextBox Text="{Binding AgentObjective, Mode=TwoWay}" Height="56" Padding="8,8" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" FontSize="{DynamicResource FsCaption}" AcceptsReturn="True" TextWrapping="Wrap" />
+                    <ItemsControl ItemsSource="{Binding AgentCaps}" Margin="0,8,0,0">
                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                          <StackPanel Spacing="4" Margin="0,0,7,0">
-                            <TextBlock Text="{Binding Label}" FontSize="9" Foreground="{DynamicResource TextDim}" FontWeight="Bold" />
-                            <TextBox Text="{Binding Value, Mode=TwoWay}" Height="26" Padding="7,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="11" />
+                          <StackPanel Spacing="4" Margin="0,0,6,0">
+                            <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" FontWeight="Bold" />
+                            <TextBox Text="{Binding Value, Mode=TwoWay}" Height="26" Padding="6,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" />
                           </StackPanel>
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <TextBlock Text="SYMBOL ALLOWLIST" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextDim}" Margin="0,9,0,5" />
-                    <TextBox Text="{Binding Allowlist, Mode=TwoWay}" PlaceholderText="any (e.g. BTCUSDT, ETHUSDT)" Height="26" Padding="9,0" CornerRadius="6" Background="#060d14" BorderBrush="#152233" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="11" />
+                    <TextBlock Text="SYMBOL ALLOWLIST" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" Margin="0,8,0,4" />
+                    <TextBox Text="{Binding Allowlist, Mode=TwoWay}" PlaceholderText="any (e.g. BTCUSDT, ETHUSDT)" Height="26" Padding="8,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" />
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="6" Margin="0,10,0,0">
-                      <Button Grid.Column="0" Command="{Binding AgentToggleLiveCommand}" Height="27" CornerRadius="6" BorderThickness="1" FontSize="9" FontWeight="Bold"
+                      <Button Classes="FlatChrome" Grid.Column="0" Command="{Binding AgentToggleLiveCommand}" Height="27" CornerRadius="6" BorderThickness="1" FontSize="{DynamicResource FsMicro}" FontWeight="Bold"
                               Background="{Binding AgentLiveBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding AgentLiveBorder, Converter={StaticResource StringToBrush}}"
                               Content="{Binding AgentLiveLabel}" Foreground="{Binding AgentLiveColor, Converter={StaticResource StringToBrush}}" />
-                      <Button Grid.Column="1" Command="{Binding AgentArmCommand}" Height="27" CornerRadius="6" BorderThickness="1" FontSize="9" FontWeight="Bold"
+                      <Button Classes="FlatChrome" Grid.Column="1" Command="{Binding AgentArmCommand}" Height="27" CornerRadius="6" BorderThickness="1" FontSize="{DynamicResource FsMicro}" FontWeight="Bold"
                               Background="{Binding AgentArmBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding AgentArmBorder, Converter={StaticResource StringToBrush}}"
                               Content="{Binding AgentArmLabel}" Foreground="{Binding AgentArmColor, Converter={StaticResource StringToBrush}}" />
                     </Grid>
-                    <Border Margin="0,10,0,0" Padding="9,8" CornerRadius="7" Background="#04101a" MaxHeight="106">
+                    <Border Margin="0,10,0,0" Padding="8,8" CornerRadius="7" Background="{DynamicResource Surface1}" MaxHeight="106">
                       <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <ItemsControl ItemsSource="{Binding AgentLog}">
                           <ItemsControl.ItemTemplate>
                             <DataTemplate>
                               <StackPanel Orientation="Horizontal" Spacing="9">
-                                <TextBlock Text="{Binding Time}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="#1e3048" />
-                                <TextBlock Text="{Binding Msg}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding Time}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
+                                <TextBlock Text="{Binding Msg}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" TextWrapping="Wrap" />
                               </StackPanel>
                             </DataTemplate>
                           </ItemsControl.ItemTemplate>

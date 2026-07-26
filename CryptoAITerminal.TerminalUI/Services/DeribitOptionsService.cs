@@ -27,6 +27,12 @@ public sealed class DeribitOptionsService : IDisposable
 
     private readonly HttpClient _http;
     private readonly DispatcherTimer _timer;
+    private readonly TimeSpan _baseInterval;
+
+    // Кулдаун после 429. Держим его временем, а не интервалом таймера: RefreshAsync публичный
+    // и вызывается в том числе не из тика, а трогать DispatcherTimer не со своего потока нельзя.
+    private DateTime _nextAllowedUtc = DateTime.MinValue;
+    private TimeSpan _penalty = TimeSpan.Zero;
 
     public event Action<DeribitOptionsSnapshot>? SnapshotUpdated;
 
@@ -35,9 +41,10 @@ public sealed class DeribitOptionsService : IDisposable
     public DeribitOptionsService(TimeSpan? interval = null)
     {
         _http  = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+        _baseInterval = interval ?? TimeSpan.FromMinutes(5);
         _timer = new DispatcherTimer(DispatcherPriority.Background)
         {
-            Interval = interval ?? TimeSpan.FromMinutes(5)
+            Interval = _baseInterval
         };
         _timer.Tick += async (_, _) => await RefreshAsync();
     }
@@ -45,8 +52,15 @@ public sealed class DeribitOptionsService : IDisposable
     public void Start() => _timer.Start();
     public void Stop()  => _timer.Stop();
 
+    /// <summary>
+    /// One pass costs ~10 public Deribit calls, so a ban is both easy to earn and easy to prolong.
+    /// After a 429 the pass is skipped until the cooldown expires, doubling each time; a clean pass
+    /// clears it. The per-call retry lives in <see cref="GetJsonAsync"/>.
+    /// </summary>
     public async Task RefreshAsync(CancellationToken ct = default)
     {
+        if (DateTime.UtcNow < _nextAllowedUtc) return;
+
         try
         {
             var btcSnap = await FetchAssetSnapshotAsync("BTC", ct);
@@ -55,8 +69,20 @@ public sealed class DeribitOptionsService : IDisposable
             var snap = new DeribitOptionsSnapshot(btcSnap, ethSnap, DateTime.UtcNow);
             Latest = snap;
             SnapshotUpdated?.Invoke(snap);
+
+            _penalty        = TimeSpan.Zero;
+            _nextAllowedUtc = DateTime.MinValue;
         }
-        catch { /* network errors — keep last snapshot */ }
+        catch (Exception ex)
+        {
+            // Ordinary network errors just keep the last snapshot; only a rate limit slows us down.
+            if (!RestBackoff.IsRateLimit(ex)) return;
+
+            _penalty = _penalty == TimeSpan.Zero
+                ? _baseInterval
+                : RestBackoff.Grow(_penalty, RestBackoff.MaxPause);
+            _nextAllowedUtc = DateTime.UtcNow + _penalty;
+        }
     }
 
     private async Task<AssetOptionsData> FetchAssetSnapshotAsync(string asset, CancellationToken ct)
@@ -169,9 +195,7 @@ public sealed class DeribitOptionsService : IDisposable
 
     private async Task<JsonNode?> GetJsonAsync(string url, CancellationToken ct)
     {
-        using var resp = await _http.GetAsync(url, ct);
-        resp.EnsureSuccessStatusCode();
-        var body = await resp.Content.ReadAsStringAsync(ct);
+        var body = await RestBackoff.GetStringAsync(_http, url, ct);
         return JsonNode.Parse(body);
     }
 

@@ -153,9 +153,9 @@ public class GridBotViewModel : ReactiveObject
         : "Set Lower < Upper to preview";
 
     public string GridPnLLabel => _gridPnL >= 0 ? $"+{_gridPnL:N4} USDT" : $"{_gridPnL:N4} USDT";
-    public string GridPnLColor => _gridPnL >= 0 ? "#3DDC84" : "#FF5D73";
+    public string GridPnLColor => _gridPnL >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
     public string StatusLabel => !_isRunning ? "Stopped" : (_isPaused ? "Paused" : "Running");
-    public string StatusColor => _isRunning && !_isPaused ? "#3DDC84" : (_isPaused ? "#F4B860" : "#8FA3B8");
+    public string StatusColor => _isRunning && !_isPaused ? SemanticColor.Positive : (_isPaused ? SemanticColor.Warning : SemanticColor.Muted);
 
     public bool CanStart => !_isRunning;
     public bool CanStop => _isRunning;

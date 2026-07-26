@@ -73,8 +73,8 @@ public class PaperTradeRecordViewModel : ReactiveObject
 
     public string PnlAccentHex => PnlPercent switch
     {
-        > 0m => "#3DDC84",
-        < 0m => "#FF5D73",
-        _ => "#8FA3B8"
+        > 0m => SemanticColor.Positive,
+        < 0m => SemanticColor.Negative,
+        _ => SemanticColor.Muted
     };
 }

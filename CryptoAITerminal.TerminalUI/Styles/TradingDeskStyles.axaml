@@ -51,19 +51,19 @@
   <!-- ── Typography ─────────────────────────────────────────────────── -->
   <Style Selector="TextBlock.TdLabel">
     <Setter Property="Foreground" Value="#5a7a94" />
-    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontSize" Value="{DynamicResource FsMicro}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="LetterSpacing" Value="0.6" />
   </Style>
 
   <Style Selector="TextBlock.TdSub">
     <Setter Property="Foreground" Value="#8fa3b8" />
-    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontSize" Value="{DynamicResource FsCaption}" />
   </Style>
 
   <Style Selector="TextBlock.TdH2">
     <Setter Property="Foreground" Value="#e8f4ff" />
-    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontSize" Value="{DynamicResource FsSubhead}" />
     <Setter Property="FontWeight" Value="Bold" />
   </Style>
 
@@ -80,7 +80,7 @@
     <Setter Property="Foreground" Value="#8fa3b8" />
     <Setter Property="CornerRadius" Value="5" />
     <Setter Property="Padding" Value="10,7" />
-    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontSize" Value="{DynamicResource FsCaption}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -136,21 +136,21 @@
   <!-- compact toolbar variant -->
   <Style Selector="Button.TdSeg.mini">
     <Setter Property="Padding" Value="5,4" />
-    <Setter Property="FontSize" Value="9" />
+    <Setter Property="FontSize" Value="{DynamicResource FsMicro}" />
     <Setter Property="FontWeight" Value="Bold" />
   </Style>
 
   <!-- full-width ticket segment (zero side padding so labels fit narrow columns) -->
   <Style Selector="Button.TdSeg.fill">
     <Setter Property="Padding" Value="0,5" />
-    <Setter Property="FontSize" Value="9" />
+    <Setter Property="FontSize" Value="{DynamicResource FsMicro}" />
     <Setter Property="FontWeight" Value="Bold" />
   </Style>
 
   <!-- left-aligned stacked segment (order type / market mode) -->
   <Style Selector="Button.TdSeg.left">
     <Setter Property="Padding" Value="8,5" />
-    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontSize" Value="{DynamicResource FsMicro}" />
     <Setter Property="CornerRadius" Value="6" />
     <Setter Property="HorizontalContentAlignment" Value="Left" />
   </Style>
@@ -161,7 +161,7 @@
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="CornerRadius" Value="0" />
     <Setter Property="Foreground" Value="#5a7a94" />
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontSize" Value="{DynamicResource FsBody}" />
     <Setter Property="FontWeight" Value="ExtraBold" />
     <Setter Property="Padding" Value="0,11" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />

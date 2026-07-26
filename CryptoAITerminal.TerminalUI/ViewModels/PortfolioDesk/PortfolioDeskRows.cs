@@ -13,7 +13,7 @@ public sealed class PfHeaderStat
 {
     public string Label { get; init; } = "";
     public string Value { get; init; } = "";
-    public string Color { get; init; } = "#e8f4ff";
+    public string Color { get; init; } = SemanticColor.Primary;
 }
 
 public sealed class PfTypeFilter
@@ -39,12 +39,12 @@ public sealed class PfWalletCard
     public string Icon { get; init; } = "◈";
     public string IconBg { get; init; } = "#07111a";
     public string IconBorder { get; init; } = "#111d29";
-    public string IconColor { get; init; } = "#8fa3b8";
-    public string Accent { get; init; } = "#21e6c1";
+    public string IconColor { get; init; } = SemanticColor.Muted;
+    public string Accent { get; init; } = SemanticColor.Accent;
     public double HealthPct { get; init; }
-    public string HealthColor { get; init; } = "#3ddc84";
-    public string StatusDot { get; init; } = "#3ddc84";
-    public string TypeBadgeColor { get; init; } = "#8fa3b8";
+    public string HealthColor { get; init; } = SemanticColor.Positive;
+    public string StatusDot { get; init; } = SemanticColor.Positive;
+    public string TypeBadgeColor { get; init; } = SemanticColor.Muted;
     public string TypeBadgeBg { get; init; } = "rgba(143,163,184,.1)";
     public string RowBg { get; init; } = "transparent";
     public ICommand? SelectCommand { get; init; }
@@ -56,9 +56,9 @@ public sealed class PfSummaryCard
 {
     public string Label { get; init; } = "";
     public string Value { get; init; } = "";
-    public string Color { get; init; } = "#e8f4ff";
+    public string Color { get; init; } = SemanticColor.Primary;
     public string Sub { get; init; } = "";
-    public string SubColor { get; init; } = "#3ddc84";
+    public string SubColor { get; init; } = SemanticColor.Positive;
     public string SubLabel { get; init; } = "";
     public string Icon { get; init; } = "◈";
 }
@@ -69,7 +69,7 @@ public sealed class PfAllocBar
     public string Amount { get; init; } = "";
     public string Pct { get; init; } = "";
     public double Width { get; init; }
-    public string Color { get; init; } = "#21e6c1";
+    public string Color { get; init; } = SemanticColor.Accent;
 }
 
 public sealed class PfTopAsset
@@ -83,7 +83,7 @@ public sealed class PfTopAsset
     public string ChgColor { get; init; } = "#3d5a72";
     public string IconBg { get; init; } = "#07111a";
     public string IconBorder { get; init; } = "#111d29";
-    public string IconColor { get; init; } = "#8fa3b8";
+    public string IconColor { get; init; } = SemanticColor.Muted;
 }
 
 public sealed class PfBlotterTab
@@ -99,7 +99,7 @@ public sealed class PfBlotterTotal
 {
     public string Label { get; init; } = "";
     public string Value { get; init; } = "";
-    public string Color { get; init; } = "#e8f4ff";
+    public string Color { get; init; } = SemanticColor.Primary;
 }
 
 public sealed class PfAssetRow
@@ -115,26 +115,26 @@ public sealed class PfAssetRow
     public string Chg { get; init; } = "—";
     public string ChgColor { get; init; } = "#3d5a72";
     public string Tag { get; init; } = "";
-    public string TagColor { get; init; } = "#8fa3b8";
+    public string TagColor { get; init; } = SemanticColor.Muted;
     public string TagBg { get; init; } = "rgba(143,163,184,.1)";
     public string IconBg { get; init; } = "#07111a";
     public string IconBorder { get; init; } = "#111d29";
-    public string IconColor { get; init; } = "#8fa3b8";
+    public string IconColor { get; init; } = SemanticColor.Muted;
 }
 
 public sealed class PfActivityRow
 {
     public string Type { get; init; } = "";
-    public string TypeColor { get; init; } = "#8fa3b8";
+    public string TypeColor { get; init; } = SemanticColor.Muted;
     public string TypeBg { get; init; } = "rgba(143,163,184,.1)";
     public string WType { get; init; } = "";
-    public string WTypeColor { get; init; } = "#8fa3b8";
+    public string WTypeColor { get; init; } = SemanticColor.Muted;
     public string WTypeBg { get; init; } = "rgba(143,163,184,.1)";
     public string Wallet { get; init; } = "";
     public string Detail { get; init; } = "";
     public string Amount { get; init; } = "";
     public string Status { get; init; } = "";
-    public string StatusColor { get; init; } = "#3ddc84";
+    public string StatusColor { get; init; } = SemanticColor.Positive;
     public string StatusBg { get; init; } = "rgba(61,220,132,.1)";
     public string Fee { get; init; } = "";
     public string Time { get; init; } = "";
@@ -153,11 +153,11 @@ public sealed class PfMemeRow
     public string Mcap { get; init; } = "";
     public string Liquidity { get; init; } = "";
     public string LiqColor { get; init; } = "#5a7a94";
-    public string RugDot { get; init; } = "#3ddc84";
+    public string RugDot { get; init; } = SemanticColor.Positive;
     public string RugScore { get; init; } = "";
-    public string RugColor { get; init; } = "#3ddc84";
+    public string RugColor { get; init; } = SemanticColor.Positive;
     public string Signal { get; init; } = "";
-    public string SignalColor { get; init; } = "#21e6c1";
+    public string SignalColor { get; init; } = SemanticColor.Accent;
     public string SignalBg { get; init; } = "rgba(33,230,193,.1)";
     public string IconBg { get; init; } = "#062006";
     public string IconBorder { get; init; } = "#0d3d0d";
@@ -175,7 +175,7 @@ public sealed class PfStakingRow
     public double LockPct { get; init; }
     public string IconBg { get; init; } = "#05101a";
     public string IconBorder { get; init; } = "#0d2240";
-    public string IconColor { get; init; } = "#21e6c1";
+    public string IconColor { get; init; } = SemanticColor.Accent;
     public ICommand? ClaimCommand { get; init; }
     public ICommand? UnstakeCommand { get; init; }
 }
@@ -184,7 +184,7 @@ public sealed class PfWalletStat
 {
     public string Label { get; init; } = "";
     public string Value { get; init; } = "";
-    public string Color { get; init; } = "#e8f4ff";
+    public string Color { get; init; } = SemanticColor.Primary;
 }
 
 public sealed class PfRightTab
@@ -201,8 +201,8 @@ public sealed class PfCheckItem
 {
     public string Label { get; init; } = "";
     public string Value { get; init; } = "";
-    public string ValueColor { get; init; } = "#8fa3b8";
-    public string Dot { get; init; } = "#3ddc84";
+    public string ValueColor { get; init; } = SemanticColor.Muted;
+    public string Dot { get; init; } = SemanticColor.Positive;
     public string DotBg { get; init; } = "rgba(61,220,132,.1)";
     public string DotBorder { get; init; } = "#0d2a1e";
 }
@@ -212,7 +212,7 @@ public sealed class PfCheckGroup
     public string Icon { get; init; } = "◈";
     public string Name { get; init; } = "";
     public string Status { get; init; } = "";
-    public string StatusColor { get; init; } = "#3ddc84";
+    public string StatusColor { get; init; } = SemanticColor.Positive;
     public string StatusBg { get; init; } = "rgba(61,220,132,.1)";
     public System.Collections.Generic.IReadOnlyList<PfCheckItem> Items { get; init; } = Array.Empty<PfCheckItem>();
 }
@@ -222,10 +222,10 @@ public sealed class PfApproval
     public string Protocol { get; init; } = "";
     public string Token { get; init; } = "";
     public string Amount { get; init; } = "";
-    public string RiskDot { get; init; } = "#3ddc84";
+    public string RiskDot { get; init; } = SemanticColor.Positive;
     public string RevokeBorder { get; init; } = "#0d2a1e";
     public string RevokeBg { get; init; } = "rgba(61,220,132,.08)";
-    public string RevokeColor { get; init; } = "#3ddc84";
+    public string RevokeColor { get; init; } = SemanticColor.Positive;
     public ICommand? RevokeCommand { get; init; }
 }
 
@@ -239,10 +239,10 @@ public sealed class PfToken
     public string Chg { get; init; } = "";
     public string ChgColor { get; init; } = "#3d5a72";
     public double AllocPct { get; init; }
-    public string AllocColor { get; init; } = "#21e6c1";
+    public string AllocColor { get; init; } = SemanticColor.Accent;
     public string IconBg { get; init; } = "#07111a";
     public string IconBorder { get; init; } = "#111d29";
-    public string IconColor { get; init; } = "#8fa3b8";
+    public string IconColor { get; init; } = SemanticColor.Muted;
 }
 
 public sealed class PfTxRow
@@ -251,11 +251,11 @@ public sealed class PfTxRow
     public string IconBg { get; init; } = "rgba(61,220,132,.1)";
     public string Action { get; init; } = "";
     public string Amount { get; init; } = "";
-    public string AmountColor { get; init; } = "#e8f4ff";
+    public string AmountColor { get; init; } = SemanticColor.Primary;
     public string Hash { get; init; } = "";
     public string Fee { get; init; } = "";
     public string Status { get; init; } = "";
-    public string StatusColor { get; init; } = "#3ddc84";
+    public string StatusColor { get; init; } = SemanticColor.Positive;
     public string StatusBg { get; init; } = "rgba(61,220,132,.1)";
     public string Time { get; init; } = "";
 }
@@ -264,7 +264,7 @@ public sealed class PfAnalyticsCard
 {
     public string Label { get; init; } = "";
     public string Value { get; init; } = "";
-    public string Color { get; init; } = "#e8f4ff";
+    public string Color { get; init; } = SemanticColor.Primary;
     public string Desc { get; init; } = "";
 }
 
@@ -273,7 +273,7 @@ public sealed class PfAnalyticsCard
 public sealed class PfModalTag
 {
     public string Label { get; init; } = "";
-    public string Color { get; init; } = "#8fa3b8";
+    public string Color { get; init; } = SemanticColor.Muted;
     public string Bg { get; init; } = "rgba(143,163,184,.1)";
 }
 
@@ -283,7 +283,7 @@ public sealed class PfModalWalletType
     public string Emoji { get; init; } = "◈";
     public string Label { get; init; } = "";
     public string Desc { get; init; } = "";
-    public string LabelColor { get; init; } = "#e8f4ff";
+    public string LabelColor { get; init; } = SemanticColor.Primary;
     public string IconBg { get; init; } = "#07111a";
     public string IconBorder { get; init; } = "#111d29";
     public string Border { get; init; } = "#152535";
@@ -346,6 +346,6 @@ public sealed class PfModalCheck
     public string Border { get; init; } = "#0d2a1e";
     public string IconBg { get; init; } = "rgba(61,220,132,.1)";
     public string Status { get; init; } = "PASS";
-    public string StatusColor { get; init; } = "#3ddc84";
+    public string StatusColor { get; init; } = SemanticColor.Positive;
     public string StatusBg { get; init; } = "rgba(61,220,132,.1)";
 }

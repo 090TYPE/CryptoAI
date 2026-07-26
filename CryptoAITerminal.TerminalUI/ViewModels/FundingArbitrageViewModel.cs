@@ -44,18 +44,18 @@ public sealed class FundingArbOpportunityRowVM
     }
 
     public IBrush RateBrush =>
-        Source.FundingRatePct >= 0.10m ? new SolidColorBrush(Color.Parse("#21E6C1")) :
-        Source.FundingRatePct >= 0.05m ? new SolidColorBrush(Color.Parse("#F4B860")) :
-                                          new SolidColorBrush(Color.Parse("#8FA3B8"));
+        Source.FundingRatePct >= 0.10m ? new SolidColorBrush(Color.Parse(SemanticColor.Accent)) :
+        Source.FundingRatePct >= 0.05m ? new SolidColorBrush(Color.Parse(SemanticColor.Warning)) :
+                                          new SolidColorBrush(Color.Parse(SemanticColor.Muted));
 
     public IBrush AnnualBrush =>
-        Source.AnnualizedPct >= 50m ? new SolidColorBrush(Color.Parse("#21E6C1")) :
-        Source.AnnualizedPct >= 20m ? new SolidColorBrush(Color.Parse("#F4B860")) :
-                                       new SolidColorBrush(Color.Parse("#8FA3B8"));
+        Source.AnnualizedPct >= 50m ? new SolidColorBrush(Color.Parse(SemanticColor.Accent)) :
+        Source.AnnualizedPct >= 20m ? new SolidColorBrush(Color.Parse(SemanticColor.Warning)) :
+                                       new SolidColorBrush(Color.Parse(SemanticColor.Muted));
 
     public string ExchangeBadgeColor => Exchange switch
     {
-        "Binance" => "#F4B860",
+        "Binance" => SemanticColor.Warning,
         "Bybit"   => "#FFAA00",
         "OKX"     => "#3BBFFF",
         _         => "#5C6E82",
@@ -103,8 +103,8 @@ public sealed class FundingArbPositionRowVM : ReactiveObject
 
     public IBrush TotalPnlBrush =>
         Model.TotalPnlUsd >= 0
-            ? new SolidColorBrush(Color.Parse("#21E6C1"))
-            : new SolidColorBrush(Color.Parse("#FF5555"));
+            ? new SolidColorBrush(Color.Parse(SemanticColor.Accent))
+            : new SolidColorBrush(Color.Parse(SemanticColor.Negative));
 
     public IBrush BasisBrush =>
         Math.Abs(Model.BasisDriftPct) > 0.5m
@@ -233,8 +233,8 @@ public sealed class FundingArbitrageViewModel : ReactiveObject, IDisposable
 
     public IBrush TotalPnlBrush =>
         Positions.Sum(p => p.TotalPnlUsd) >= 0
-            ? new SolidColorBrush(Color.Parse("#21E6C1"))
-            : new SolidColorBrush(Color.Parse("#FF5555"));
+            ? new SolidColorBrush(Color.Parse(SemanticColor.Accent))
+            : new SolidColorBrush(Color.Parse(SemanticColor.Negative));
 
     public int  OpenPositionCount  => Positions.Count;
     public bool HasOpportunities   => Opportunities.Count > 0;

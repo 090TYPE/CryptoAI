@@ -1,4 +1,4 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
@@ -68,7 +68,7 @@
                 <!-- Row 3a: MA Crossover params -->
                 <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12"
                       IsVisible="{Binding BacktestVM.IsMAStrategy}">
-                  <Border Grid.Column="0" Grid.ColumnSpan="3" Background="#091520" CornerRadius="4" Padding="12,8">
+                  <Border Grid.Column="0" Grid.ColumnSpan="3" Background="{DynamicResource Surface2}" CornerRadius="4" Padding="12,8">
                     <Grid ColumnDefinitions="Auto,*,Auto,*" ColumnSpacing="12">
                       <TextBlock Grid.Column="0" Text="Fast Period" Classes="Overline" VerticalAlignment="Center" />
                       <NumericUpDown Grid.Column="1" Value="{Binding BacktestVM.MaFastPeriod}"
@@ -81,7 +81,7 @@
                 </Grid>
 
                 <!-- Row 3b: RSI params -->
-                <Border Background="#091520" CornerRadius="4" Padding="12,8"
+                <Border Background="{DynamicResource Surface2}" CornerRadius="4" Padding="12,8"
                         IsVisible="{Binding BacktestVM.IsRsiStrategy}">
                   <Grid ColumnDefinitions="Auto,100,Auto,120,Auto,120" ColumnSpacing="12">
                     <TextBlock Grid.Column="0" Text="Period" Classes="Overline" VerticalAlignment="Center" />
@@ -97,7 +97,7 @@
                 </Border>
 
                 <!-- Row 3c: Bollinger Bands params -->
-                <Border Background="#091520" CornerRadius="4" Padding="12,8"
+                <Border Background="{DynamicResource Surface2}" CornerRadius="4" Padding="12,8"
                         IsVisible="{Binding BacktestVM.IsBBStrategy}">
                   <Grid ColumnDefinitions="Auto,100,Auto,120" ColumnSpacing="12">
                     <TextBlock Grid.Column="0" Text="Period" Classes="Overline" VerticalAlignment="Center" />
@@ -110,7 +110,7 @@
                 </Border>
 
                 <!-- Row 3d: Breakout params -->
-                <Border Background="#091520" CornerRadius="4" Padding="12,8"
+                <Border Background="{DynamicResource Surface2}" CornerRadius="4" Padding="12,8"
                         IsVisible="{Binding BacktestVM.IsBreakoutStrategy}">
                   <Grid ColumnDefinitions="Auto,100" ColumnSpacing="12">
                     <TextBlock Grid.Column="0" Text="Lookback Period" Classes="Overline" VerticalAlignment="Center" />
@@ -130,14 +130,14 @@
                   <TextBlock Classes="Metric" Text="{Binding BacktestVM.StatusLabel}" />
                   <TextBlock Text="{Binding BacktestVM.WindowLabel}"
                              Foreground="{Binding BacktestVM.StatusBrush}"
-                             TextWrapping="Wrap" FontSize="11" />
+                             TextWrapping="Wrap" FontSize="{DynamicResource FsCaption}" />
                 </StackPanel>
               </Border>
               <Border Classes="SurfaceCard">
                 <StackPanel Spacing="5">
                   <TextBlock Classes="Overline" Text="Trades / Win Rate" />
                   <TextBlock Classes="Metric" Text="{Binding BacktestVM.TradeCountLabel}" />
-                  <TextBlock Text="{Binding BacktestVM.WinRateLabel}" Foreground="#8FA3B8" />
+                  <TextBlock Text="{Binding BacktestVM.WinRateLabel}" Foreground="{DynamicResource TextMuted}" />
                 </StackPanel>
               </Border>
               <Border Classes="SurfaceCard">
@@ -147,21 +147,21 @@
                              Text="{Binding BacktestVM.NetReturnLabel}"
                              Foreground="{Binding BacktestVM.NetReturnColor}" />
                   <TextBlock Text="{Binding BacktestVM.DrawdownLabel, StringFormat='Max DD {0}'}"
-                             Foreground="#8FA3B8" />
+                             Foreground="{DynamicResource TextMuted}" />
                 </StackPanel>
               </Border>
               <Border Classes="SurfaceCard">
                 <StackPanel Spacing="5">
                   <TextBlock Classes="Overline" Text="Sharpe / Bias" />
                   <TextBlock Classes="Metric" Text="{Binding BacktestVM.SharpeLabel}" />
-                  <TextBlock Text="{Binding BacktestVM.BiasLabel}" Foreground="#8FA3B8" />
+                  <TextBlock Text="{Binding BacktestVM.BiasLabel}" Foreground="{DynamicResource TextMuted}" />
                 </StackPanel>
               </Border>
               <Border Classes="SurfaceCard">
                 <StackPanel Spacing="5">
                   <TextBlock Classes="Overline" Text="Best / Worst Trade" />
-                  <TextBlock Classes="Metric" Text="{Binding BacktestVM.BestTradeLabel}" Foreground="#3DDC84" />
-                  <TextBlock Text="{Binding BacktestVM.WorstTradeLabel}" Foreground="#FF5D73" />
+                  <TextBlock Classes="Metric" Text="{Binding BacktestVM.BestTradeLabel}" Foreground="{DynamicResource Positive}" />
+                  <TextBlock Text="{Binding BacktestVM.WorstTradeLabel}" Foreground="{DynamicResource Negative}" />
                 </StackPanel>
               </Border>
             </Grid>
@@ -174,13 +174,13 @@
                   <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <Border Width="18" Height="2" Background="#1FE0B3" VerticalAlignment="Center" />
-                      <TextBlock Text="Strategy" Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                      <TextBlock Text="Strategy" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="6">
-                      <Border Width="18" Height="2" Background="#F4B860" VerticalAlignment="Center" />
-                      <TextBlock Text="Buy &amp; Hold" Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                      <Border Width="18" Height="2" Background="{DynamicResource Warning}" VerticalAlignment="Center" />
+                      <TextBlock Text="Buy &amp; Hold" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                     </StackPanel>
-                    <TextBlock Text="{Binding BacktestVM.EquityDateRange}" Foreground="{DynamicResource TextSoft}" FontSize="11" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding BacktestVM.EquityDateRange}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                   </StackPanel>
                 </Grid>
 
@@ -188,19 +188,19 @@
                 <Grid>
                   <!-- Y axis: min / max -->
                   <StackPanel HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="36">
-                    <TextBlock Text="{Binding BacktestVM.EquityMaxLabel}" FontSize="10" Foreground="{DynamicResource TextSoft}" />
-                    <TextBlock Text="{Binding BacktestVM.EquityMinLabel}" FontSize="10" Foreground="{DynamicResource TextSoft}"
-                               VerticalAlignment="Bottom" Margin="0,110,0,0" />
+                    <TextBlock Text="{Binding BacktestVM.EquityMaxLabel}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}" />
+                    <TextBlock Text="{Binding BacktestVM.EquityMinLabel}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSoft}"
+                               VerticalAlignment="Bottom" Margin="0,112,0,0" />
                   </StackPanel>
-                  <Border Background="#07131C" CornerRadius="6" Height="130" Margin="40,0,0,0" ClipToBounds="True">
+                  <Border Background="{DynamicResource SurfaceInner2}" CornerRadius="6" Height="130" Margin="40,0,0,0" ClipToBounds="True">
                     <Viewbox Stretch="Fill">
                       <Canvas Width="700" Height="130">
                         <!-- Baseline (equity = 100) -->
                         <Line StartPoint="0,65" EndPoint="700,65"
-                              Stroke="#1A2E3A" StrokeThickness="1" StrokeDashArray="4,4" />
+                              Stroke="{DynamicResource PanelStroke}" StrokeThickness="1" StrokeDashArray="4,4" />
                         <!-- Buy & Hold -->
                         <Path Data="{Binding BacktestVM.BuyHoldGeometry}"
-                              Stroke="#F4B860" StrokeThickness="1.2"
+                              Stroke="{DynamicResource Warning}" StrokeThickness="1.2"
                               Opacity="0.55" Fill="Transparent" />
                         <!-- Strategy -->
                         <Path Data="{Binding BacktestVM.EquityGeometry}"
@@ -211,7 +211,7 @@
                   </Border>
                 </Grid>
                 <TextBlock Text="{Binding BacktestVM.Narrative}"
-                           Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+                           Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" />
               </StackPanel>
             </Border>
 
@@ -223,7 +223,7 @@
                   <StackPanel Grid.Column="0">
                     <TextBlock Classes="H2" Text="Walk-Forward Optimizer" />
                     <TextBlock Text="Splits data into IS/OOS folds · sweeps all parameter combinations · ranks by OOS WF Score"
-                               Foreground="{DynamicResource TextSoft}" FontSize="11" />
+                               Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" />
                   </StackPanel>
                   <StackPanel Grid.Column="1" Spacing="4">
                     <TextBlock Classes="Overline" Text="Folds" />
@@ -248,10 +248,10 @@
                 </Grid>
 
                 <!-- Best params label -->
-                <Border Background="#091520" CornerRadius="4" Padding="10,6"
+                <Border Background="{DynamicResource Surface2}" CornerRadius="4" Padding="10,6"
                         IsVisible="{Binding BacktestVM.BestParamsLabel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                   <TextBlock Text="{Binding BacktestVM.BestParamsLabel}"
-                             Foreground="#F4B860" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+                             Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsSmall}" FontWeight="SemiBold" TextWrapping="Wrap" />
                 </Border>
 
                 <!-- Results table -->
@@ -271,39 +271,39 @@
                     <TextBlock Grid.Column="8" Classes="Overline" Text="Times #1" />
                     <TextBlock Grid.Column="9" Classes="Overline" Text="" />
                   </Grid>
-                  <Border Height="1" Background="#0E2030" />
+                  <Border Height="1" Background="{DynamicResource Surface3}" />
 
                   <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding BacktestVM.OptimizerRows}">
                       <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:WfResultRowVM">
-                          <Border Padding="0,3" BorderBrush="#1A3A50" BorderThickness="0,0,0,1">
+                          <Border Padding="0,2" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="0,0,0,1">
                             <Grid ColumnDefinitions="180,70,80,70,80,70,70,70,60,Auto" ColumnSpacing="6">
                               <TextBlock Grid.Column="0" Text="{Binding Params}"
-                                         Foreground="{Binding NameColor}" FontSize="11" VerticalAlignment="Center"
+                                         Foreground="{Binding NameColor}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center"
                                          TextTrimming="CharacterEllipsis" />
                               <TextBlock Grid.Column="1" Text="{Binding IsSharpe}"
-                                         Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                                         Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="2" Text="{Binding IsReturn}"
-                                         Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                                         Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="3" Text="{Binding OosSharpe}"
-                                         Foreground="{Binding EffColor}" FontSize="11" VerticalAlignment="Center" />
+                                         Foreground="{Binding EffColor}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="4" Text="{Binding OosReturn}"
                                          Foreground="{Binding ReturnColor}" FontWeight="SemiBold"
-                                         FontSize="11" VerticalAlignment="Center" />
+                                         FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="5" Text="{Binding OosMaxDD}"
-                                         Foreground="#FF8A4C" FontSize="11" VerticalAlignment="Center" />
+                                         Foreground="#FF8A4C" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="6" Text="{Binding Efficiency}"
-                                         Foreground="{Binding EffColor}" FontSize="11" VerticalAlignment="Center" />
+                                         Foreground="{Binding EffColor}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="7" Text="{Binding WfScore}"
                                          Foreground="{Binding ScoreColor}" FontWeight="SemiBold"
-                                         FontSize="11" VerticalAlignment="Center" />
+                                         FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="8" Text="{Binding TimesLabel}"
-                                         Foreground="#21E6C1" FontSize="11" VerticalAlignment="Center" />
+                                         Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                               <Button Grid.Column="9"
                                       Command="{Binding $parent[ItemsControl].((vm:BacktestViewModel)DataContext).ApplyCommand}"
                                       CommandParameter="{Binding}"
-                                      Content="Apply" FontSize="10" Padding="6,2"
+                                      Content="Apply" FontSize="{DynamicResource FsMicro}" Padding="6,2"
                                       Classes="SecondaryButton" VerticalAlignment="Center" />
                             </Grid>
                           </Border>
@@ -322,7 +322,7 @@
                   <StackPanel Grid.Column="0">
                     <TextBlock Classes="H2" Text="Monte Carlo Simulator" />
                     <TextBlock Text="Runs the selected strategy N times on random candle subsets · reports mean, median, σ, and a 90% confidence interval"
-                               Foreground="{DynamicResource TextSoft}" FontSize="11" />
+                               Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" />
                   </StackPanel>
                   <StackPanel Grid.Column="1" Spacing="4">
                     <TextBlock Classes="Overline" Text="Runs" />
@@ -346,9 +346,9 @@
                   </StackPanel>
                 </Grid>
 
-                <Border Background="#091520" CornerRadius="4" Padding="10,8">
+                <Border Background="{DynamicResource Surface2}" CornerRadius="4" Padding="10,8">
                   <TextBlock Text="{Binding BacktestVM.MonteCarloSummary}"
-                             Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap"
+                             Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap"
                              FontFamily="Consolas,Menlo,monospace" />
                 </Border>
 
@@ -372,7 +372,7 @@
                   </Button>
                   <TextBlock Grid.Column="2"
                              Text="{Binding BacktestVM.ExportStatus}"
-                             Foreground="#8FA3B8" FontSize="11"
+                             Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}"
                              VerticalAlignment="Center" TextWrapping="Wrap" />
                 </Grid>
               </StackPanel>
@@ -385,26 +385,26 @@
                   <StackPanel Grid.Column="0">
                     <TextBlock Classes="H2" Text="🧠 AI Review" />
                     <TextBlock Text="Robust or overfit? An AI read of this backtest."
-                               Foreground="{DynamicResource TextSoft}" FontSize="11" />
+                               Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" />
                   </StackPanel>
                   <TextBlock Grid.Column="1" Text="{Binding BacktestVM.AiReviewSource}"
-                             Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                             Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" Margin="0,0,10,0" />
                   <Button Grid.Column="2" Content="Review with AI"
                           Command="{Binding BacktestVM.ReviewWithAiCommand}"
                           IsEnabled="{Binding !BacktestVM.AiReviewRunning}" />
                 </Grid>
                 <StackPanel Spacing="8" IsVisible="{Binding BacktestVM.HasAiReview}">
-                  <Border CornerRadius="6" Padding="10,7" Background="#04101A">
+                  <Border CornerRadius="6" Padding="10,6" Background="{DynamicResource Surface1}">
                     <StackPanel Spacing="4">
                       <TextBlock Text="{Binding BacktestVM.AiReviewVerdict}"
                                  Foreground="{Binding BacktestVM.AiVerdictBrush}"
-                                 FontWeight="Bold" FontSize="14" />
+                                 FontWeight="Bold" FontSize="{DynamicResource FsSubhead}" />
                       <TextBlock Text="{Binding BacktestVM.AiReviewSummary}"
-                                 Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap" />
+                                 Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
                     </StackPanel>
                   </Border>
                   <TextBlock Text="{Binding BacktestVM.AiReviewRisks}"
-                             Foreground="#F4B860" FontSize="11" TextWrapping="Wrap" />
+                             Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" />
                 </StackPanel>
               </StackPanel>
             </Border>
@@ -417,7 +417,7 @@
                   <StackPanel Grid.Column="0">
                     <TextBlock Classes="H2" Text="Strategy Comparison" />
                     <TextBlock Text="MA · RSI · BB · Breakout presets on the same dataset. Sorted by net return."
-                               Foreground="{DynamicResource TextSoft}" FontSize="11" />
+                               Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" />
                   </StackPanel>
                 </Grid>
 
@@ -430,30 +430,30 @@
                   <TextBlock Grid.Column="5" Classes="Overline" Text="Sharpe" />
                   <TextBlock Grid.Column="6" Classes="Overline" Text="Best Trade" />
                 </Grid>
-                <Border Height="1" Background="#0E2030" />
+                <Border Height="1" Background="{DynamicResource Surface3}" />
 
                 <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
                   <ListBox ItemsSource="{Binding BacktestVM.ComparisonRows}"
                            Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <ListBox.ItemTemplate>
                       <DataTemplate x:DataType="vm:StrategyComparisonRow">
-                        <Grid ColumnDefinitions="180,55,70,90,70,70,90" ColumnSpacing="8" Margin="0,3">
+                        <Grid ColumnDefinitions="180,55,70,90,70,70,90" ColumnSpacing="8" Margin="0,2">
                           <TextBlock Grid.Column="0" Text="{Binding Name}"
-                                     Foreground="{Binding NameColor}" FontSize="12" VerticalAlignment="Center"
+                                     Foreground="{Binding NameColor}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center"
                                      TextTrimming="CharacterEllipsis" />
                           <TextBlock Grid.Column="1" Text="{Binding TradeCount}"
-                                     Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
+                                     Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
                           <TextBlock Grid.Column="2" Text="{Binding WinRate}"
-                                     Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
+                                     Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
                           <TextBlock Grid.Column="3" Text="{Binding NetReturn}"
                                      Foreground="{Binding ReturnColor}" FontWeight="SemiBold"
-                                     FontSize="12" VerticalAlignment="Center" />
+                                     FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
                           <TextBlock Grid.Column="4" Text="{Binding MaxDD}"
-                                     Foreground="#FF8A4C" FontSize="12" VerticalAlignment="Center" />
+                                     Foreground="#FF8A4C" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
                           <TextBlock Grid.Column="5" Text="{Binding Sharpe}"
-                                     Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
+                                     Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
                           <TextBlock Grid.Column="6" Text="{Binding BestTrade}"
-                                     Foreground="#3DDC84" FontSize="12" VerticalAlignment="Center" />
+                                     Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
                         </Grid>
                       </DataTemplate>
                     </ListBox.ItemTemplate>
@@ -479,25 +479,25 @@
                   <TextBlock Grid.Column="4" Classes="Overline" Text="Duration" />
                   <TextBlock Grid.Column="5" Classes="Overline" Text="P&amp;L" />
                 </Grid>
-                <Border Height="1" Background="#0E2030" />
+                <Border Height="1" Background="{DynamicResource Surface3}" />
                 <ListBox ItemsSource="{Binding BacktestVM.TradeRows}"
                          MaxHeight="280" Background="Transparent">
                   <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="vm:BacktestTradeRow">
                       <Grid ColumnDefinitions="110,80,80,110,60,50" ColumnSpacing="8" Margin="0,2">
                         <TextBlock Grid.Column="0" Text="{Binding OpenTime}"
-                                   Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                                   Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                         <TextBlock Grid.Column="1" Text="{Binding EntryPrice}"
-                                   FontSize="11" VerticalAlignment="Center" />
+                                   FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                         <TextBlock Grid.Column="2" Text="{Binding ExitPrice}"
-                                   FontSize="11" VerticalAlignment="Center" />
+                                   FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                         <TextBlock Grid.Column="3" Text="{Binding CloseTime}"
-                                   Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
+                                   Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                         <TextBlock Grid.Column="4" Text="{Binding Duration}"
-                                   Foreground="{DynamicResource TextSoft}" FontSize="11" VerticalAlignment="Center" />
+                                   Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                         <TextBlock Grid.Column="5" Text="{Binding ReturnLabel}"
                                    Foreground="{Binding ReturnColor}"
-                                   FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" />
+                                   FontWeight="SemiBold" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                       </Grid>
                     </DataTemplate>
                   </ListBox.ItemTemplate>

@@ -13,24 +13,24 @@
     <!-- Summary KPI strip -->
     <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
       <StackPanel Grid.Column="0" Spacing="2">
-        <TextBlock Text="AVG RATE" Foreground="#5A7A90" FontSize="9" />
+        <TextBlock Text="AVG RATE" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
         <TextBlock Text="{Binding FundingRateVM.AvgRateLabel}"
-                   FontSize="14" FontWeight="Bold" Foreground="#8B949E" />
+                   FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" />
       </StackPanel>
       <StackPanel Grid.Column="1" Spacing="2">
-        <TextBlock Text="EXTREMES" Foreground="#5A7A90" FontSize="9" />
+        <TextBlock Text="EXTREMES" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
         <TextBlock Text="{Binding FundingRateVM.ExtremeCount}"
-                   FontSize="14" FontWeight="Bold" Foreground="#F4B860" />
+                   FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" Foreground="{DynamicResource Warning}" />
       </StackPanel>
       <StackPanel Grid.Column="2" Spacing="2">
-        <TextBlock Text="BEST SHORT" Foreground="#5A7A90" FontSize="9" />
+        <TextBlock Text="BEST SHORT" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
         <TextBlock Text="{Binding FundingRateVM.TopBearishLabel}"
-                   FontSize="11" FontWeight="SemiBold" Foreground="#FF5D73" />
+                   FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" Foreground="{DynamicResource Negative}" />
       </StackPanel>
       <StackPanel Grid.Column="3" Spacing="2">
-        <TextBlock Text="BEST LONG" Foreground="#5A7A90" FontSize="9" />
+        <TextBlock Text="BEST LONG" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
         <TextBlock Text="{Binding FundingRateVM.TopBullishLabel}"
-                   FontSize="11" FontWeight="SemiBold" Foreground="#3DDC84" />
+                   FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" Foreground="{DynamicResource Positive}" />
       </StackPanel>
     </Grid>
 
@@ -44,11 +44,11 @@
         <ColumnDefinition Width="0.8*" MinWidth="48" />
         <ColumnDefinition Width="0.9*" MinWidth="52" />
       </Grid.ColumnDefinitions>
-      <TextBlock Grid.Column="0" Text="SYMBOL"  Foreground="#5A7A90" FontSize="9" FontWeight="Bold" />
-      <TextBlock Grid.Column="1" Text="RATE"    Foreground="#5A7A90" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
-      <TextBlock Grid.Column="2" Text="ANNL."   Foreground="#5A7A90" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
-      <TextBlock Grid.Column="3" Text="MARK $"  Foreground="#5A7A90" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
-      <TextBlock Grid.Column="4" Text="NEXT"    Foreground="#5A7A90" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="0" Text="SYMBOL"  Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+      <TextBlock Grid.Column="1" Text="RATE"    Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="2" Text="ANNL."   Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="3" Text="MARK $"  Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="4" Text="NEXT"    Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" />
     </Grid>
     </StackPanel>
 
@@ -58,7 +58,7 @@
       <ItemsControl ItemsSource="{Binding FundingRateVM.DisplayRates}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:FundingRateRowViewModel">
-            <Border Padding="0,4" BorderBrush="#12283A" BorderThickness="0,0,0,1">
+            <Border Padding="0,4" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="0,0,0,1">
               <Grid ColumnSpacing="6">
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="1.4*" MinWidth="70" />
@@ -68,20 +68,20 @@
                   <ColumnDefinition Width="0.9*" MinWidth="52" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="{Binding Symbol}" TextTrimming="CharacterEllipsis"
-                           Foreground="#C8D8E8" FontWeight="SemiBold" FontSize="11"
+                           Foreground="{DynamicResource TextSecondary}" FontWeight="SemiBold" FontSize="{DynamicResource FsCaption}"
                            VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="{Binding FundingRatePct}" TextTrimming="CharacterEllipsis"
                            Foreground="{Binding RateColor}" FontWeight="Bold"
-                           HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="11" />
+                           HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="{DynamicResource FsCaption}" />
                 <TextBlock Grid.Column="2" Text="{Binding AnnualizedLabel}" TextTrimming="CharacterEllipsis"
                            Foreground="{Binding RateColor}"
-                           HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="10" />
+                           HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="{DynamicResource FsMicro}" />
                 <TextBlock Grid.Column="3" Text="{Binding MarkPriceLabel}" TextTrimming="CharacterEllipsis"
-                           Foreground="#8B949E"
-                           HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="10" />
+                           Foreground="{DynamicResource TextMuted}"
+                           HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="{DynamicResource FsMicro}" />
                 <TextBlock Grid.Column="4" Text="{Binding NextFundingLabel}" TextTrimming="CharacterEllipsis"
-                           Foreground="#5A7080"
-                           HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="10" />
+                           Foreground="{DynamicResource TextDim}"
+                           HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="{DynamicResource FsMicro}" />
               </Grid>
             </Border>
           </DataTemplate>

@@ -13,7 +13,7 @@
                  VerticalAlignment="Center" IsVisible="{Binding IsMarketLoading}" />
       <Border Grid.Column="1" Classes="CountBadge">
         <TextBlock Text="{Binding Markets.Count, StringFormat='{}{0} coins'}"
-                   Foreground="#8FA3B8" FontSize="10" FontWeight="SemiBold" />
+                   Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontWeight="SemiBold" />
       </Border>
     </Grid>
 
@@ -36,14 +36,14 @@
               <Border Grid.Column="0" Width="30" Height="30" CornerRadius="8"
                       Background="{Binding LogoBackground}" VerticalAlignment="Center">
                 <TextBlock Text="{Binding LogoText}" Foreground="{Binding LogoForeground}"
-                           FontWeight="Bold" FontSize="13"
+                           FontWeight="Bold" FontSize="{DynamicResource FsBody}"
                            HorizontalAlignment="Center" VerticalAlignment="Center" />
               </Border>
               <!-- Pair + exchange -->
               <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                <TextBlock Text="{Binding DisplaySymbol}" Foreground="#E8F4FF"
-                           FontWeight="Bold" FontSize="12" />
-                <TextBlock Text="{Binding Exchange}" Foreground="{DynamicResource TextSoft}" FontSize="10" />
+                <TextBlock Text="{Binding DisplaySymbol}" Foreground="{DynamicResource TextPrimary}"
+                           FontWeight="Bold" FontSize="{DynamicResource FsSmall}" />
+                <TextBlock Text="{Binding Exchange}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" />
               </StackPanel>
               <!-- Sparkline -->
               <ctrl:CexPriceChart Grid.Column="2" Height="26" Width="60"
@@ -56,10 +56,10 @@
               <StackPanel Grid.Column="3" Spacing="2" VerticalAlignment="Center"
                           HorizontalAlignment="Right" MinWidth="92" Margin="0,0,6,0">
                 <TextBlock Classes="Mono" Text="{Binding LastPrice, StringFormat='{}{0:N2}'}"
-                           Foreground="#E8F4FF" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsSmall}" FontWeight="SemiBold"
                            HorizontalAlignment="Right" />
                 <TextBlock Text="{Binding ChangePercentLabel}"
-                           Foreground="{Binding ChangeBrush}" FontSize="11" FontWeight="SemiBold"
+                           Foreground="{Binding ChangeBrush}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold"
                            HorizontalAlignment="Right" />
               </StackPanel>
             </Grid>

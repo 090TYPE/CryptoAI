@@ -73,7 +73,7 @@ public partial class BotsDeskViewModel
     // ── selection header ─────────────────────────────────────────────────────
     public bool HasSelection => Selected.Count > 0;
     public string SelectionLabel => Selected.Count + " selected";
-    public string AllBoxBorder => AllSelected ? BotsDeskData.Accent : "#152233";
+    public string AllBoxBorder => AllSelected ? BotsDeskData.Accent : SemanticColor.Stroke;
     public string AllBoxBg => AllSelected ? BotsDeskData.Accent : "transparent";
     public string AllBoxMark => AllSelected ? "✓" : "";
     private bool AllSelected => VisibleBots.Count > 0 && VisibleBots.All(b => Selected.Contains(b.Id));

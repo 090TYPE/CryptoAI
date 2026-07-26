@@ -36,6 +36,9 @@ public sealed class CopyTradingFollowerService : IDisposable
     /// <summary>Сделка старше этого возраста уже не отражает цену входа лидера — пропускаем.</summary>
     private static readonly TimeSpan MaxTradeAge = TimeSpan.FromSeconds(60);
 
+    private static readonly TimeSpan PollInterval    = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan MaxPollInterval = TimeSpan.FromSeconds(60);
+
     // Шага лота биржа через IExchangeGateway пока не отдаёт: отсекаем хвост количества вниз
     // (округление вверх дало бы объём больше, чем у лидера) и не шлём заведомо мелкие ордера.
     private const decimal QuantityStep   = 0.000001m;
@@ -136,16 +139,32 @@ public sealed class CopyTradingFollowerService : IDisposable
     private async Task PollLoopAsync(CancellationToken ct)
     {
         Log("Follower started — polling leader...");
+        var delay = PollInterval;
+
         while (!ct.IsCancellationRequested)
         {
             try
             {
                 await PollOnceAsync(ct);
+                if (delay != PollInterval)
+                {
+                    delay = PollInterval;
+                    Log("Leader reachable again — back to 2s polling.");
+                }
             }
             catch (OperationCanceledException) { break; }
-            catch (Exception ex) { Log($"Poll error: {ex.Message}"); }
+            catch (Exception ex)
+            {
+                // Держать 2 с через отказ бессмысленно: если лидер отвечает 429 или лежит,
+                // частый опрос только продлевает бан. Пауза удваивается до минуты и
+                // сбрасывается первым удачным опросом.
+                Log($"Poll error: {ex.Message}");
+                delay = RestBackoff.Grow(delay, MaxPollInterval);
+                if (RestBackoff.IsRateLimit(ex))
+                    Log($"Leader rate-limited the follower — next poll in {delay.TotalSeconds:0}s.");
+            }
 
-            try { await Task.Delay(2_000, ct); } catch { break; }
+            try { await Task.Delay(delay, ct); } catch { break; }
         }
         Log("Follower stopped.");
     }
@@ -155,6 +174,8 @@ public sealed class CopyTradingFollowerService : IDisposable
         if (string.IsNullOrWhiteSpace(LeaderUrl)) return;
 
         var url  = LeaderUrl.TrimEnd('/') + "/api/copy-trades";
+        // Без ретрая внутри запроса: сам цикл опроса и есть повтор, а лишняя пауза здесь
+        // задержала бы зеркалирование свежей сделки лидера. Ордер не ретраится никогда.
         var json = await _http.GetStringAsync(url, ct);
         var trades = JsonSerializer.Deserialize<List<CopyTrade>>(json,
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });

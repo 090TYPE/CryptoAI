@@ -13,35 +13,35 @@
     <!-- Anti-rug alerts -->
     <Border Background="#160c0c" BorderBrush="#3a1414" BorderThickness="1" CornerRadius="8" Padding="8" IsVisible="{Binding HasTokenAlerts}">
       <StackPanel Spacing="4">
-        <TextBlock Text="⚠ ANTI-RUG ALERTS" Foreground="#ff8a65" FontSize="9" FontWeight="Bold" LetterSpacing="0.6" />
+        <TextBlock Text="⚠ ANTI-RUG ALERTS" Foreground="#ff8a65" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" LetterSpacing="0.6" />
         <ItemsControl ItemsSource="{Binding TokenAlerts}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:DexTokenAlertViewModel">
               <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,1">
-                <TextBlock Text="{Binding Icon}" FontSize="11" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1" Text="{Binding Message}" Foreground="{Binding Brush}" FontSize="10" Margin="6,0" VerticalAlignment="Center" TextWrapping="Wrap" />
-                <TextBlock Grid.Column="2" Text="{Binding TimeLabel}" Foreground="{DynamicResource TextSoft}" FontSize="9" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Icon}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding Message}" Foreground="{Binding Brush}" FontSize="{DynamicResource FsMicro}" Margin="6,0" VerticalAlignment="Center" TextWrapping="Wrap" />
+                <TextBlock Grid.Column="2" Text="{Binding TimeLabel}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
               </Grid>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
       </StackPanel>
     </Border>
-    <TextBlock Classes="TdSub" Text="Monitoring liquidity, whale sells &amp; volume for rug signals…" FontSize="9" IsVisible="{Binding !HasTokenAlerts}" />
+    <TextBlock Classes="TdSub" Text="Monitoring liquidity, whale sells &amp; volume for rug signals…" FontSize="{DynamicResource FsMicro}" IsVisible="{Binding !HasTokenAlerts}" />
 
     <!-- Buys / Sells 24h -->
     <Grid ColumnDefinitions="*,*">
       <StackPanel Spacing="2">
         <TextBlock Classes="TdLabel" Text="BUYS 24H" />
-        <TextBlock Classes="TdNum" Text="{Binding Buys24hLabel}" Foreground="#3ddc84" FontWeight="Bold" FontSize="16" />
+        <TextBlock Classes="TdNum" Text="{Binding Buys24hLabel}" Foreground="{DynamicResource Positive}" FontWeight="Bold" FontSize="{DynamicResource FsSubhead}" />
       </StackPanel>
       <StackPanel Grid.Column="1" Spacing="2" HorizontalAlignment="Right">
         <TextBlock Classes="TdLabel" Text="SELLS 24H" HorizontalAlignment="Right" />
-        <TextBlock Classes="TdNum" Text="{Binding Sells24hLabel}" Foreground="#ff6b6b" FontWeight="Bold" FontSize="16" HorizontalAlignment="Right" />
+        <TextBlock Classes="TdNum" Text="{Binding Sells24hLabel}" Foreground="{DynamicResource Negative}" FontWeight="Bold" FontSize="{DynamicResource FsSubhead}" HorizontalAlignment="Right" />
       </StackPanel>
     </Grid>
-    <ProgressBar Minimum="0" Maximum="100" Value="{Binding BuyPercent}" Height="8" Foreground="#3ddc84" Background="#ff6b6b" CornerRadius="4" />
-    <TextBlock Classes="TdSub" Text="{Binding BuySellRatioLabel}" HorizontalAlignment="Center" FontSize="10" />
+    <ProgressBar Minimum="0" Maximum="100" Value="{Binding BuyPercent}" Height="8" Foreground="{DynamicResource Positive}" Background="{DynamicResource Negative}" CornerRadius="4" />
+    <TextBlock Classes="TdSub" Text="{Binding BuySellRatioLabel}" HorizontalAlignment="Center" FontSize="{DynamicResource FsMicro}" />
 
     <!-- Live trade tape -->
     <Border Classes="TdCard">
@@ -56,15 +56,15 @@
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:DexMarketTradeViewModel">
                 <Grid ColumnDefinitions="*,*,*" Height="17">
-                  <TextBlock Text="{Binding SideLabel}" Foreground="{Binding SideBrush}" FontWeight="Bold" FontSize="10" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding AmountLabel}" Foreground="#c8dcef" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding TimeLabel}" Foreground="{DynamicResource TextSoft}" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                  <TextBlock Text="{Binding SideLabel}" Foreground="{Binding SideBrush}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding AmountLabel}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding TimeLabel}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" VerticalAlignment="Center" />
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
         </ScrollViewer>
-        <TextBlock Text="Waiting for live trades on this pool…" Foreground="{DynamicResource TextSoft}" FontSize="11" IsVisible="{Binding ShowMarketTradesPlaceholder}" />
+        <TextBlock Text="Waiting for live trades on this pool…" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" IsVisible="{Binding ShowMarketTradesPlaceholder}" />
       </StackPanel>
     </Border>
   </StackPanel>

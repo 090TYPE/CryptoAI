@@ -26,12 +26,12 @@ public sealed class RulePreset
 public static class RulesDeskData
 {
     // ── palette ──────────────────────────────────────────────────────────────
-    public const string Accent = BotsDeskData.Accent;
-    public const string Green = BotsDeskData.Green;
-    public const string Red = BotsDeskData.Red;
-    public const string Amber = BotsDeskData.Amber;
-    public const string Text = BotsDeskData.Text;
-    public const string Text3 = BotsDeskData.Text3;
+    public static string Accent => BotsDeskData.Accent;
+    public static string Green => BotsDeskData.Green;
+    public static string Red => BotsDeskData.Red;
+    public static string Amber => BotsDeskData.Amber;
+    public static string Text => BotsDeskData.Text;
+    public static string Text3 => BotsDeskData.Text3;
     public const string Dim = BotsDeskData.Dim;
     public const string Dimmer = BotsDeskData.Dimmer;
     public const string Faint = BotsDeskData.Faint;

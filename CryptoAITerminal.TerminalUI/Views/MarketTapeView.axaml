@@ -10,7 +10,7 @@
       <StackPanel Spacing="10">
         <TextBlock Classes="H2" Text="Live Tape (public market trades)" />
         <TextBlock Text="Other participants' trades on a venue. CEX = a symbol's anonymous fills (no identity). DEX = a pool's on-chain swaps, including the originating wallet. Large prints are highlighted."
-                   Foreground="#8FA3B8" TextWrapping="Wrap" />
+                   Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
 
         <!-- venue toggle -->
         <StackPanel Orientation="Horizontal" Spacing="8">
@@ -50,25 +50,25 @@
                     VerticalAlignment="Center" Command="{Binding MarketTapeVM.RefreshCommand}" />
           </Grid>
           <TextBlock Text="Network ids: eth, bsc, solana, base, arbitrum, polygon_pos. Pool = the pair/pool address on that chain."
-                     Foreground="#6E8198" FontSize="11" TextWrapping="Wrap" />
+                     Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" />
         </StackPanel>
 
         <TextBlock Text="{Binding MarketTapeVM.PressureLabel}" FontWeight="SemiBold"
                    Foreground="{Binding MarketTapeVM.PressureBrush}" />
-        <TextBlock Text="{Binding MarketTapeVM.StatusLabel}" Foreground="#8FA3B8" FontSize="11" />
+        <TextBlock Text="{Binding MarketTapeVM.StatusLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
       </StackPanel>
     </Border>
 
     <Border Classes="Panel">
       <StackPanel Spacing="6">
         <Grid ColumnDefinitions="44,90,60,*,*,80,110" Margin="0,0,0,2">
-          <TextBlock Grid.Column="0" Text="Src"    Foreground="#8FA3B8" FontSize="11" />
-          <TextBlock Grid.Column="1" Text="Time"   Foreground="#8FA3B8" FontSize="11" />
-          <TextBlock Grid.Column="2" Text="Side"   Foreground="#8FA3B8" FontSize="11" />
-          <TextBlock Grid.Column="3" Text="Price"  Foreground="#8FA3B8" FontSize="11" />
-          <TextBlock Grid.Column="4" Text="Qty"    Foreground="#8FA3B8" FontSize="11" />
-          <TextBlock Grid.Column="5" Text="USD"    Foreground="#8FA3B8" FontSize="11" HorizontalAlignment="Right" />
-          <TextBlock Grid.Column="6" Text="Wallet" Foreground="#8FA3B8" FontSize="11" />
+          <TextBlock Grid.Column="0" Text="Src"    Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
+          <TextBlock Grid.Column="1" Text="Time"   Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
+          <TextBlock Grid.Column="2" Text="Side"   Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
+          <TextBlock Grid.Column="3" Text="Price"  Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
+          <TextBlock Grid.Column="4" Text="Qty"    Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
+          <TextBlock Grid.Column="5" Text="USD"    Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" HorizontalAlignment="Right" />
+          <TextBlock Grid.Column="6" Text="Wallet" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
         </Grid>
         <ItemsControl ItemsSource="{Binding MarketTapeVM.Rows}">
           <ItemsControl.ItemTemplate>
@@ -76,20 +76,20 @@
               <Border Background="{Binding RowBrush}" CornerRadius="3" Padding="2,1">
                 <Grid ColumnDefinitions="44,90,60,*,*,80,110">
                   <TextBlock Grid.Column="0" Text="{Binding VenueLabel}"
-                             Foreground="{Binding VenueBrush}" FontSize="11" FontWeight="SemiBold" />
+                             Foreground="{Binding VenueBrush}" FontSize="{DynamicResource FsCaption}" FontWeight="SemiBold" />
                   <TextBlock Grid.Column="1" Text="{Binding TimeLabel}"
-                             FontFamily="Cascadia Code,Consolas,monospace" FontSize="12" Foreground="#8FA3B8" />
+                             FontFamily="Cascadia Code,Consolas,monospace" FontSize="{DynamicResource FsSmall}" Foreground="{DynamicResource TextMuted}" />
                   <TextBlock Grid.Column="2" Text="{Binding Side}"
-                             Foreground="{Binding SideBrush}" FontWeight="{Binding Weight}" FontSize="12" />
+                             Foreground="{Binding SideBrush}" FontWeight="{Binding Weight}" FontSize="{DynamicResource FsSmall}" />
                   <TextBlock Grid.Column="3" Text="{Binding PriceLabel}"
-                             FontFamily="Cascadia Code,Consolas,monospace" FontWeight="{Binding Weight}" FontSize="12" />
+                             FontFamily="Cascadia Code,Consolas,monospace" FontWeight="{Binding Weight}" FontSize="{DynamicResource FsSmall}" />
                   <TextBlock Grid.Column="4" Text="{Binding QtyLabel}"
-                             FontFamily="Cascadia Code,Consolas,monospace" FontSize="12" Foreground="#C7D3DF" />
+                             FontFamily="Cascadia Code,Consolas,monospace" FontSize="{DynamicResource FsSmall}" Foreground="{DynamicResource TextSecondary}" />
                   <TextBlock Grid.Column="5" Text="{Binding QuoteLabel}"
-                             FontFamily="Cascadia Code,Consolas,monospace" FontWeight="{Binding Weight}" FontSize="12"
-                             HorizontalAlignment="Right" Foreground="#C7D3DF" />
+                             FontFamily="Cascadia Code,Consolas,monospace" FontWeight="{Binding Weight}" FontSize="{DynamicResource FsSmall}"
+                             HorizontalAlignment="Right" Foreground="{DynamicResource TextSecondary}" />
                   <TextBlock Grid.Column="6" Text="{Binding TraderLabel}"
-                             FontFamily="Cascadia Code,Consolas,monospace" FontSize="11" Foreground="#8FA3B8" />
+                             FontFamily="Cascadia Code,Consolas,monospace" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />
                 </Grid>
               </Border>
             </DataTemplate>

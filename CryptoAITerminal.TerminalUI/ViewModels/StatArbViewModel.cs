@@ -58,9 +58,9 @@ public sealed class StatArbViewModel : ReactiveObject, IDisposable
     public string SpreadLabel => _currentSpread == 0m ? "—" : $"{_currentSpread:N4}";
 
     public IBrush ZScoreBrush =>
-        Math.Abs(_currentZScore) >= _entryZScore ? new SolidColorBrush(Color.Parse("#FF6B6B")) :
-        Math.Abs(_currentZScore) >= _exitZScore  ? new SolidColorBrush(Color.Parse("#F4B860")) :
-                                                    new SolidColorBrush(Color.Parse("#21E6C1"));
+        Math.Abs(_currentZScore) >= _entryZScore ? new SolidColorBrush(Color.Parse(SemanticColor.Negative)) :
+        Math.Abs(_currentZScore) >= _exitZScore  ? new SolidColorBrush(Color.Parse(SemanticColor.Warning)) :
+                                                    new SolidColorBrush(Color.Parse(SemanticColor.Accent));
 
     // ── Log ───────────────────────────────────────────────────────────────────
 
@@ -85,7 +85,7 @@ public sealed class StatArbViewModel : ReactiveObject, IDisposable
     public int PairScore { get => _pairScore; private set => this.RaiseAndSetIfChanged(ref _pairScore, value); }
     public string PairSignalBrush => _pairSignal switch
     {
-        "LONG_A_SHORT_B" => "#3DDC84", "SHORT_A_LONG_B" => "#3DDC84", "WAIT" => "#F4B860", _ => "#FF6B6B"
+        "LONG_A_SHORT_B" => SemanticColor.Positive, "SHORT_A_LONG_B" => SemanticColor.Positive, "WAIT" => SemanticColor.Warning, _ => SemanticColor.Negative
     };
 
     public void ConfigureAi(string apiKey, string model)

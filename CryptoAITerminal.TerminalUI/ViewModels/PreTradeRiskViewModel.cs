@@ -94,10 +94,10 @@ public sealed class PreTradeRiskViewModel : ReactiveObject
     public string ScoreLabel  => $"{_score}/100";
     public string VerdictBrush => _verdict switch
     {
-        "APPROVE" => "#21E6C1",
-        "CAUTION" => "#F4B860",
-        "BLOCK"   => "#FF6B6B",
-        _         => "#8FA3B8"
+        "APPROVE" => SemanticColor.Accent,
+        "CAUTION" => SemanticColor.Warning,
+        "BLOCK"   => SemanticColor.Negative,
+        _         => SemanticColor.Muted
     };
 
     public ReactiveCommand<Unit, Unit> CheckCommand { get; }

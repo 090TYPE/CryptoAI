@@ -10,6 +10,7 @@ using CryptoAITerminal.AIEngine.Agent;
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
+using CryptoAITerminal.Core.Trading;
 
 namespace CryptoAITerminal.TerminalUI.Services;
 
@@ -643,7 +644,7 @@ public sealed class AiTraderAgentService
             {
                 await _gateway.PlaceOrderAsync(order).ConfigureAwait(false);
             }
-            catch (Exception ex) when (IsFutures && IsPositionSideMismatch(ex))
+            catch (Exception ex) when (IsFutures && ExchangeErrors.IsPositionSideMismatch(ex))
             {
                 _isHedgeMode = !_isHedgeMode;
                 order.PositionSide = EntryPositionSide(side == OrderSide.Buy);
@@ -773,14 +774,6 @@ public sealed class AiTraderAgentService
         catch (Exception ex) { OnEvent?.Invoke(new AgentEvent(AgentEventKind.Error, "leverage", ex.Message)); }
         try { await _gateway.SetMarginModeAsync(symbol, _marginMode).ConfigureAwait(false); }
         catch (Exception ex) { OnEvent?.Invoke(new AgentEvent(AgentEventKind.Error, "margin", ex.Message)); }
-    }
-
-    /// <summary>Binance/Bybit/OKX emit different hedge-vs-one-way mismatch messages.</summary>
-    private static bool IsPositionSideMismatch(Exception ex)
-    {
-        var msg = ex.Message?.ToLowerInvariant() ?? string.Empty;
-        return msg.Contains("position side") || msg.Contains("position mode")
-            || msg.Contains("position idx") || msg.Contains("51124");
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

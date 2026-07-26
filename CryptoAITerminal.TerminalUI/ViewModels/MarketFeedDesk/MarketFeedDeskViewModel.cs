@@ -280,7 +280,7 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
     public string PulseLabel { get; private set; } = "NO DATA";
     public string PulseColor { get; private set; } = MarketFeedData.Faint;
     public string PulseBorder { get; private set; } = "#0d1b27";
-    public string PulseBg { get; private set; } = "#07101a";
+    public string PulseBg { get; private set; } = SemanticColor.Surface;
 
     public string M1Label { get; private set; } = "";
     public string M1Value { get; private set; } = "";
@@ -294,7 +294,7 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
     public string StreamLabel => !Live ? "NOT CONNECTED" : _streaming ? "STREAMING" : "PAUSED";
     public string StreamColor => !Live ? MarketFeedData.Faint : _streaming ? MarketFeedData.Green : MarketFeedData.Amber;
     public string StreamBorder => !Live ? "#0d1b27" : _streaming ? "#14302e" : "#3a2a12";
-    public string StreamBg => !Live ? "#07101a" : _streaming ? "#061615" : "#150f04";
+    public string StreamBg => !Live ? SemanticColor.Surface : _streaming ? "#061615" : "#150f04";
     public string AiBtn => AiRunning ? "✦ ANALYSING…" : "✦ AI ANALYSE";
 
     private bool AiRunning => IsNews ? _newsVm?.AiDigestRunning == true
@@ -306,7 +306,7 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
     public string DigestSignal { get; private set; } = "";
     public string DigestBadgeColor { get; private set; } = MarketFeedData.Text3;
     public string DigestBadgeBg { get; private set; } = "#050f14";
-    public string DigestBadgeBorder { get; private set; } = "#152233";
+    public string DigestBadgeBorder { get; private set; } = SemanticColor.Stroke;
     public string DigestMeta { get; private set; } = "";
     public string DigestText { get; private set; } = "";
     public string DigestBtnLabel => AiRunning ? "ANALYSING…" : "↻ REGENERATE";
@@ -315,11 +315,11 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
     // ── news view ────────────────────────────────────────────────────────────
     private bool Important => _newsVm?.ShowImportantOnly == true;
     public string ImpMark => Important ? "✓" : "";
-    public string ImpBoxBorder => Important ? MarketFeedData.Accent : "#152233";
+    public string ImpBoxBorder => Important ? MarketFeedData.Accent : SemanticColor.Stroke;
     public string ImpBoxBg => Important ? MarketFeedData.Accent : "transparent";
     public string ImpColor => Important ? MarketFeedData.Accent : MarketFeedData.Text3;
     public string ImpBorder => Important ? "#14302e" : "#0d1b27";
-    public string ImpBg => Important ? "#061615" : "#07101a";
+    public string ImpBg => Important ? "#061615" : SemanticColor.Surface;
     public bool HasUnread => (_newsVm?.UnreadCount ?? 0) > 0;
     public string UnreadLabel => (_newsVm?.UnreadCount ?? 0) + " NEW";
     public string NewsMeta { get; private set; } = "";
@@ -611,7 +611,7 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
         if (_newsVm is null || string.IsNullOrWhiteSpace(_newsVm.PulseLabel))
         {
             PulseLabel = "NO DATA"; PulseColor = MarketFeedData.Faint;
-            PulseBorder = "#0d1b27"; PulseBg = "#07101a";
+            PulseBorder = "#0d1b27"; PulseBg = SemanticColor.Surface;
             return;
         }
         PulseLabel = _newsVm.PulseLabel.ToUpperInvariant();
@@ -692,7 +692,7 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
         if (!Live)
         {
             DigestSignal = "NO DATA"; DigestBadgeColor = MarketFeedData.Faint;
-            DigestBadgeBg = "#07101a"; DigestBadgeBorder = "#0d1b27";
+            DigestBadgeBg = SemanticColor.Surface; DigestBadgeBorder = "#0d1b27";
             DigestMeta = "not connected";
             DigestText = "The desk has no live sources attached, so there is nothing to summarise.";
             return;
@@ -800,7 +800,7 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
             Sorts.Add(new SortChip
             {
                 Label = label,
-                Border = on ? "#152233" : "#0d1b27",
+                Border = on ? SemanticColor.Stroke : "#0d1b27",
                 Bg = on ? "#08131d" : "transparent",
                 Fg = on ? MarketFeedData.Accent : MarketFeedData.Faint,
                 Command = new RelayCommand(() => { _newsSort = key; Recompute(); }),
@@ -905,7 +905,7 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
             QuickSyms.Add(new SymBtn
             {
                 Label = x.Replace("USDT", ""),
-                Border = on ? "#14302e" : "#152233",
+                Border = on ? "#14302e" : SemanticColor.Stroke,
                 Bg = on ? "#061615" : "#050f14",
                 Fg = on ? MarketFeedData.Accent : MarketFeedData.Text3,
                 Command = new RelayCommand(() =>
@@ -1006,7 +1006,7 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
             {
                 Label = x.Replace("USDT", ""),
                 Border = on ? "#14302e" : "#0d1b27",
-                Bg = on ? "#061615" : "#07101a",
+                Bg = on ? "#061615" : SemanticColor.Surface,
                 Fg = on ? MarketFeedData.Accent : MarketFeedData.Text3,
                 Command = new RelayCommand(() =>
                 {
@@ -1023,9 +1023,9 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
             => LiqSides.Add(new SideToggle
             {
                 Label = label, Mark = on ? "✓" : "",
-                BoxBorder = on ? col : "#152233", BoxBg = on ? col : "transparent",
+                BoxBorder = on ? col : SemanticColor.Stroke, BoxBg = on ? col : "transparent",
                 Fg = on ? col : MarketFeedData.Faint,
-                Border = on ? "#152233" : "#0d1b27", Bg = on ? "#08131d" : "#07101a",
+                Border = on ? SemanticColor.Stroke : "#0d1b27", Bg = on ? "#08131d" : SemanticColor.Surface,
                 Command = new RelayCommand(() =>
                 {
                     if (_liqVm is null) return;
@@ -1113,7 +1113,7 @@ public sealed class MarketFeedDeskViewModel : ReactiveObject, IDisposable
             {
                 var b = bands[i];
                 var ratio = Math.Clamp(b.Width / LiqPlotWidth, 0.0, 1.0);
-                var fill = MarketFeedData.Hex(b.Fill, "#152233");
+                var fill = MarketFeedData.Hex(b.Fill, SemanticColor.Stroke);
                 var isShort = b.Fill is Avalonia.Media.ISolidColorBrush s && s.Color.G < 0x80;
                 // The VM lays bands out in pixel space over ±20% around the mark; invert for a label.
                 var approx = price > 0 ? price * (decimal)(1.2 - 0.4 * Math.Clamp((b.Y + b.Height / 2.0) / 460.0, 0.0, 1.0)) : 0m;

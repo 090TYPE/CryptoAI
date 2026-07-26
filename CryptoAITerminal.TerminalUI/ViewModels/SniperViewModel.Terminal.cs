@@ -116,10 +116,10 @@ public partial class SniperViewModel
     // ── ARM pill / toggle button (derived from IsArmed) ─────────────────────────
     public string ArmStatusLabel => IsArmed ? "ARMED · SCANNING" : "IDLE";
     public string ArmToggleLabel => IsArmed ? "DISARM SNIPER" : "ARM SNIPER";
-    public string ArmDotHex      => IsArmed ? "#3DDC84" : "#5A7A94";
-    public string ArmBorderHex   => IsArmed ? "#21E6C1" : "#22384F";
+    public string ArmDotHex      => IsArmed ? SemanticColor.Positive : "#5A7A94";
+    public string ArmBorderHex   => IsArmed ? SemanticColor.Accent : "#22384F";
     public string ArmFillHex     => IsArmed ? "#0E2A2A" : "#07111A";
-    public string ArmTextHex     => IsArmed ? "#21E6C1" : "#C8DCEF";
+    public string ArmTextHex     => IsArmed ? SemanticColor.Accent : "#C8DCEF";
 
     private void RaiseArmPillProperties()
     {
@@ -133,7 +133,7 @@ public partial class SniperViewModel
 
     // ── Paper / live execution pill ─────────────────────────────────────────────
     public string PaperPillLabel => PaperTradingEnabled ? "PAPER MODE" : "LIVE MODE";
-    public string PaperPillHex   => PaperTradingEnabled ? "#F4B860" : "#3DDC84";
+    public string PaperPillHex   => PaperTradingEnabled ? SemanticColor.Warning : SemanticColor.Positive;
 
     private void RaisePaperPillProperties()
     {

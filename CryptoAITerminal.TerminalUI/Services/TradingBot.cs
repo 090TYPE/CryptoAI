@@ -1,6 +1,7 @@
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
+using CryptoAITerminal.Core.Trading;
 using CryptoAITerminal.OrderRouter;
 using System;
 using System.Linq;
@@ -183,7 +184,7 @@ public class TradingBot
             {
                 await _gateway.PlaceOrderAsync(order);
             }
-            catch (Exception ex) when (IsPositionSideMismatch(ex))
+            catch (Exception ex) when (ExchangeErrors.IsPositionSideMismatch(ex))
             {
                 // Один раз перепрыгиваем mode (hedge ↔ one-way) и retry.
                 _isHedgeMode = !_isHedgeMode;
@@ -275,7 +276,7 @@ public class TradingBot
             {
                 await _gateway.PlaceOrderAsync(order);
             }
-            catch (Exception ex) when (IsPositionSideMismatch(ex))
+            catch (Exception ex) when (ExchangeErrors.IsPositionSideMismatch(ex))
             {
                 _isHedgeMode = !_isHedgeMode;
                 order.PositionSide = EntryPositionSide(isBuy: false);
@@ -386,19 +387,6 @@ public class TradingBot
         _isHedgeMode
             ? (isBuy ? FuturesPositionSide.Long : FuturesPositionSide.Short)
             : FuturesPositionSide.Both;
-
-    /// <summary>
-    /// Эвристика: биржи возвращают разные сообщения при mismatch position-side mode.
-    /// Binance: "position side does not match the user's settings".
-    /// Bybit: "position idx not match position mode".
-    /// OKX: "Position side mismatch" / 51124.
-    /// </summary>
-    private static bool IsPositionSideMismatch(Exception ex)
-    {
-        var msg = ex.Message?.ToLowerInvariant() ?? string.Empty;
-        return msg.Contains("position side") || msg.Contains("position mode")
-            || msg.Contains("position idx") || msg.Contains("51124");
-    }
 
     public async Task StopAsync()
     {

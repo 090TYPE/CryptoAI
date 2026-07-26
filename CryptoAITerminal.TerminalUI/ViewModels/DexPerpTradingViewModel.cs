@@ -244,8 +244,8 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
         : (_liveTestnet?.Invoke() ?? true) ? "LIVE · TESTNET" : "LIVE · MAINNET";
 
     public string ModeBadgeBrush => !_isLiveTrading
-        ? "#f4b860"
-        : (_liveTestnet?.Invoke() ?? true) ? "#3ddc84" : "#ff6b6b";
+        ? SemanticColor.Warning
+        : (_liveTestnet?.Invoke() ?? true) ? SemanticColor.Positive : SemanticColor.Negative;
 
     public ReactiveCommand<Unit, Unit> ToggleLiveTradingCommand { get; }
 
@@ -478,7 +478,7 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
     public string MarkPriceLabel => Format(_sim.Mark);
     public string MidPriceLabel => Format(_sim.Mark);
     public string FundingRateLabel => $"{_sim.FundingRate * 100m:+0.####;-0.####;0}%";
-    public string FundingBrush => _sim.FundingRate >= 0m ? "#f4b860" : "#3ddc84";
+    public string FundingBrush => _sim.FundingRate >= 0m ? SemanticColor.Warning : SemanticColor.Positive;
     public string SettlementLabel => "every 8h (paper)";
     public string FundingCountdownLabel => $"{Math.Max(0, 8 - _fundingCounter)}s";
     public string FundingPaidLabel => $"{_engine.FundingPaid:+0.00;-0.00;0.00}";
@@ -486,16 +486,16 @@ public sealed class DexPerpTradingViewModel : ReactiveObject, IDisposable
     public string EquityCurvePoints => BuildEquityCurve();
     public string EquityLabel => $"{_engine.AccountEquity:N2} USDT";
     public string RealizedPnlLabel => $"{_engine.RealizedPnl:+0.00;-0.00;0.00} USDT";
-    public string RealizedPnlBrush => _engine.RealizedPnl >= 0m ? "#3ddc84" : "#ff6b6b";
+    public string RealizedPnlBrush => _engine.RealizedPnl >= 0m ? SemanticColor.Positive : SemanticColor.Negative;
 
     public string PositionSideLabel => _engine.Position?.Side.ToString().ToUpperInvariant() ?? "FLAT";
-    public string PositionSideBrush => _engine.Position is null ? "#5a7a94" : _engine.Position.Side == PerpSide.Long ? "#3ddc84" : "#ff6b6b";
+    public string PositionSideBrush => _engine.Position is null ? "#5a7a94" : _engine.Position.Side == PerpSide.Long ? SemanticColor.Positive : SemanticColor.Negative;
     public string PositionSizeLabel => _engine.Position is null ? "--" : $"{_engine.Position.Size:0.####}";
     public string EntryLabel => _engine.Position is null ? "--" : Format(_engine.Position.EntryPrice);
     public string LiquidationLabel => _engine.Position is null ? "--" : Format(_engine.Position.LiquidationPrice);
     public string MarginLabel => _engine.Position is null ? "--" : $"{_engine.Position.Margin:N2}";
     public string UpnlLabel => _engine.Position is null ? "--" : $"{_engine.Position.UnrealizedPnl:+0.00;-0.00;0.00}";
-    public string UpnlBrush => (_engine.Position?.UnrealizedPnl ?? 0m) >= 0m ? "#3ddc84" : "#ff6b6b";
+    public string UpnlBrush => (_engine.Position?.UnrealizedPnl ?? 0m) >= 0m ? SemanticColor.Positive : SemanticColor.Negative;
     public string RoeLabel => _engine.Position is null ? "--" : $"{_engine.Position.Roe * 100m:+0.0;-0.0;0.0}%";
 
     private void RebuildBook()
@@ -638,7 +638,7 @@ public sealed class DexPerpBookRowViewModel : ReactiveObject
         SizeLabel = size.ToString("0.###", CultureInfo.InvariantCulture);
         CumulativeLabel = cumulative.ToString("0.#", CultureInfo.InvariantCulture);
         DepthWidth = depthWidth;
-        PriceBrush = isAsk ? "#ff7070" : "#3ddc84";
+        PriceBrush = isAsk ? "#ff7070" : SemanticColor.Positive;
         DepthBrush = isAsk ? "#12ff6b6b" : "#123ddc84";
     }
 
@@ -656,14 +656,14 @@ public sealed class DexPerpPositionRowViewModel : ReactiveObject
     {
         Symbol = symbol;
         SideLabel = p.Side.ToString().ToUpperInvariant();
-        SideBrush = p.Side == PerpSide.Long ? "#3ddc84" : "#ff6b6b";
+        SideBrush = p.Side == PerpSide.Long ? SemanticColor.Positive : SemanticColor.Negative;
         SizeLabel = p.Size.ToString("0.####", CultureInfo.InvariantCulture);
         EntryLabel = DexPerpFormat.Price(p.EntryPrice);
         MarkLabel = DexPerpFormat.Price(p.MarkPrice);
         LiqLabel = DexPerpFormat.Price(p.LiquidationPrice);
         MarginLabel = p.Margin.ToString("N2", CultureInfo.InvariantCulture);
         UpnlLabel = p.UnrealizedPnl.ToString("+0.00;-0.00;0.00", CultureInfo.InvariantCulture);
-        UpnlBrush = p.UnrealizedPnl >= 0m ? "#3ddc84" : "#ff6b6b";
+        UpnlBrush = p.UnrealizedPnl >= 0m ? SemanticColor.Positive : SemanticColor.Negative;
         RoeLabel = (p.Roe * 100m).ToString("+0.0;-0.0;0.0", CultureInfo.InvariantCulture) + "%";
         LeverageLabel = $"{p.Leverage}× {p.MarginMode.ToString().ToUpperInvariant()}";
     }
@@ -688,7 +688,7 @@ public sealed class DexPerpOrderRowViewModel : ReactiveObject
     {
         Id = o.Id;
         SideLabel = o.Side.ToString().ToUpperInvariant();
-        SideBrush = o.Side == PerpSide.Long ? "#3ddc84" : "#ff6b6b";
+        SideBrush = o.Side == PerpSide.Long ? SemanticColor.Positive : SemanticColor.Negative;
         TypeLabel = o.PlanId is null ? o.Kind.ToString().ToUpperInvariant()
             : o.PlanId.StartsWith("GRID", StringComparison.OrdinalIgnoreCase) ? "GRID"
             : o.PlanId.StartsWith("DCA", StringComparison.OrdinalIgnoreCase) ? "DCA"
@@ -712,9 +712,9 @@ public sealed class DexPerpFillRowViewModel : ReactiveObject
     public DexPerpFillRowViewModel(DexPerpFill f)
     {
         SideLabel = f.Side.ToString().ToUpperInvariant();
-        SideBrush = f.Side == PerpSide.Long ? "#3ddc84" : "#ff6b6b";
+        SideBrush = f.Side == PerpSide.Long ? SemanticColor.Positive : SemanticColor.Negative;
         KindLabel = f.Kind;
-        KindBrush = f.Kind switch { "LIQ" => "#ff6b6b", "CLOSE" => "#f4b860", _ => "#8fa3b8" };
+        KindBrush = f.Kind switch { "LIQ" => SemanticColor.Negative, "CLOSE" => SemanticColor.Warning, _ => SemanticColor.Muted };
         PriceLabel = DexPerpFormat.Price(f.Price);
         SizeLabel = f.SizeTokens.ToString("0.####", CultureInfo.InvariantCulture);
         TimeLabel = f.TimeUtc.ToLocalTime().ToString("HH:mm:ss");

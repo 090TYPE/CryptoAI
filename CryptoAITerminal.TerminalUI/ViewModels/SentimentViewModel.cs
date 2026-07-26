@@ -24,10 +24,10 @@ public class SentimentViewModel : ReactiveObject, IDisposable
     public string DeribitEthPcRatio   => _deribitSnap?.Eth.PcRatioLabel  ?? "--";
     public string DeribitBtcSkew      => _deribitSnap?.Btc.SkewLabel     ?? "--";
     public string DeribitEthSkew      => _deribitSnap?.Eth.SkewLabel     ?? "--";
-    public string DeribitBtcSkewBrush => _deribitSnap?.Btc.SkewBrush     ?? "#8FA3B8";
-    public string DeribitEthSkewBrush => _deribitSnap?.Eth.SkewBrush     ?? "#8FA3B8";
+    public string DeribitBtcSkewBrush => _deribitSnap?.Btc.SkewBrush     ?? SemanticColor.Muted;
+    public string DeribitEthSkewBrush => _deribitSnap?.Eth.SkewBrush     ?? SemanticColor.Muted;
     public string DeribitSentiment    => _deribitSnap?.MarketSentiment   ?? "No data";
-    public string DeribitSentimentBrush => _deribitSnap?.MarketSentimentBrush ?? "#8FA3B8";
+    public string DeribitSentimentBrush => _deribitSnap?.MarketSentimentBrush ?? SemanticColor.Muted;
     public string DeribitUpdated      => _deribitSnap?.UpdatedLabel      ?? "Not loaded";
     public bool   HasDeribitData      => _deribitSnap is not null;
 
@@ -139,9 +139,9 @@ public class SentimentViewModel : ReactiveObject, IDisposable
     public IBrush FearGreedBrush =>
         _fearGreedValue <= 24 ? new SolidColorBrush(Color.Parse("#FF4444")) :
         _fearGreedValue <= 44 ? new SolidColorBrush(Color.Parse("#FF8C42")) :
-        _fearGreedValue <= 55 ? new SolidColorBrush(Color.Parse("#F4B860")) :
+        _fearGreedValue <= 55 ? new SolidColorBrush(Color.Parse(SemanticColor.Warning)) :
         _fearGreedValue <= 74 ? new SolidColorBrush(Color.Parse("#4CAF50")) :
-                                new SolidColorBrush(Color.Parse("#21E6C1"));
+                                new SolidColorBrush(Color.Parse(SemanticColor.Accent));
 
     public IBrush FearGreedChangeBrush =>
         _fearGreedValue >= _fearGreedPrevious
@@ -200,7 +200,7 @@ public class SentimentViewModel : ReactiveObject, IDisposable
     public string InsightSignal { get => _insightSignal; private set => this.RaiseAndSetIfChanged(ref _insightSignal, value); }
     public string InsightBullets { get => _insightBullets; private set => this.RaiseAndSetIfChanged(ref _insightBullets, value); }
     public string InsightSource { get => _insightSource; private set => this.RaiseAndSetIfChanged(ref _insightSource, value); }
-    public string InsightSignalBrush => _insightSignal switch { "BULLISH" => "#3DDC84", "BEARISH" => "#FF6B6B", _ => "#8FA3B8" };
+    public string InsightSignalBrush => _insightSignal switch { "BULLISH" => SemanticColor.Positive, "BEARISH" => SemanticColor.Negative, _ => SemanticColor.Muted };
 
     public void ConfigureAi(string apiKey, string model)
     {

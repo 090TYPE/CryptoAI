@@ -28,7 +28,7 @@ public sealed class DashboardViewModel : ReactiveObject, IDisposable
 
     private string  _totalEquityLabel     = "--";
     private string  _pnlTodayLabel        = "--";
-    private string  _pnlTodayBrush        = "#8FA3B8";
+    private string  _pnlTodayBrush        = SemanticColor.Muted;
     private string  _openPositionsLabel   = "0";
     private string  _activeBotsSummary    = "No bots running";
     private string  _lastUpdated          = string.Empty;
@@ -53,10 +53,10 @@ public sealed class DashboardViewModel : ReactiveObject, IDisposable
 
     // ── News market pulse + AI digest (mirrored from NewsFeedViewModel) ──────────
     private string _newsPulseLabel  = "No data";
-    private string _newsPulseBrush  = "#8FA3B8";
+    private string _newsPulseBrush  = SemanticColor.Muted;
     private string _newsPulseDetail = "Awaiting headlines";
     private string _newsAiDigest    = "AI digest pending…";
-    private string _newsAiDigestBrush = "#8FA3B8";
+    private string _newsAiDigestBrush = SemanticColor.Muted;
     public string NewsPulseLabel    { get => _newsPulseLabel;    private set => this.RaiseAndSetIfChanged(ref _newsPulseLabel, value); }
     public string NewsPulseBrush    { get => _newsPulseBrush;    private set => this.RaiseAndSetIfChanged(ref _newsPulseBrush, value); }
     public string NewsPulseDetail   { get => _newsPulseDetail;   private set => this.RaiseAndSetIfChanged(ref _newsPulseDetail, value); }
@@ -116,21 +116,21 @@ public sealed class DashboardViewModel : ReactiveObject, IDisposable
         SetCard(0, new BotStatusCard(
             "AI Bot",
             _aiBot.IsRunning ? "RUNNING" : "IDLE",
-            _aiBot.IsRunning ? "#21E6C1" : "#8FA3B8",
+            _aiBot.IsRunning ? SemanticColor.Accent : SemanticColor.Muted,
             _aiBot.IsRunning ? $"{_aiBot.Symbol} · {_aiBot.SelectedStrategy}" : "Not started",
             "🤖"));
 
         SetCard(1, new BotStatusCard(
             "Grid Bot",
             _gridBot.IsRunning ? "RUNNING" : "IDLE",
-            _gridBot.IsRunning ? "#21E6C1" : "#8FA3B8",
+            _gridBot.IsRunning ? SemanticColor.Accent : SemanticColor.Muted,
             _gridBot.IsRunning ? _gridBot.GridSummary : "Not started",
             "⚡"));
 
         SetCard(2, new BotStatusCard(
             "DCA Bot",
             _dcaBot.IsRunning ? "RUNNING" : "IDLE",
-            _dcaBot.IsRunning ? "#21E6C1" : "#8FA3B8",
+            _dcaBot.IsRunning ? SemanticColor.Accent : SemanticColor.Muted,
             _dcaBot.IsRunning ? _dcaBot.NextExecutionLabel : "Not started",
             "📈"));
 
@@ -162,7 +162,7 @@ public sealed class DashboardViewModel : ReactiveObject, IDisposable
         var metrics = _pnl.ComputeMetrics(records);
 
         PnlTodayLabel = $"{(metrics.TotalPnlUsd >= 0 ? "+" : "")}{metrics.TotalPnlUsd:F2} USD";
-        PnlTodayBrush = metrics.TotalPnlUsd >= 0 ? "#3DDC84" : "#FF6B6B";
+        PnlTodayBrush = metrics.TotalPnlUsd >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
 
         var posCount = _positions?.Rows.Count ?? 0;
         OpenPositionsLabel = posCount.ToString();

@@ -12,31 +12,31 @@
 
     <!-- KPI strip -->
     <StackPanel Orientation="Horizontal" Spacing="8">
-      <Border Background="#0D1B29" CornerRadius="6" Padding="10,5">
+      <Border Background="{DynamicResource Surface3}" CornerRadius="6" Padding="10,4">
         <StackPanel Spacing="1" HorizontalAlignment="Center">
-          <TextBlock Text="Total" FontSize="9" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
-          <TextBlock Text="{Binding ScannerVM.TotalSymbols}" FontSize="14" FontWeight="Bold"
-                     Foreground="#8FA3B8" HorizontalAlignment="Center" />
+          <TextBlock Text="Total" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
+          <TextBlock Text="{Binding ScannerVM.TotalSymbols}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"
+                     Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
         </StackPanel>
       </Border>
-      <Border Background="#0A1F16" CornerRadius="6" Padding="10,5">
+      <Border Background="#0A1F16" CornerRadius="6" Padding="10,4">
         <StackPanel Spacing="1" HorizontalAlignment="Center">
-          <TextBlock Text="Hot" FontSize="9" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
-          <TextBlock Text="{Binding ScannerVM.HotCount}" FontSize="14" FontWeight="Bold"
+          <TextBlock Text="Hot" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
+          <TextBlock Text="{Binding ScannerVM.HotCount}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"
                      Foreground="#FF6B00" HorizontalAlignment="Center" />
         </StackPanel>
       </Border>
-      <Border Background="#0A1F0A" CornerRadius="6" Padding="10,5">
+      <Border Background="#0A1F0A" CornerRadius="6" Padding="10,4">
         <StackPanel Spacing="1" HorizontalAlignment="Center">
-          <TextBlock Text="Gainers" FontSize="9" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
-          <TextBlock Text="{Binding ScannerVM.GainersCount}" FontSize="14" FontWeight="Bold"
-                     Foreground="#21E6C1" HorizontalAlignment="Center" />
+          <TextBlock Text="Gainers" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
+          <TextBlock Text="{Binding ScannerVM.GainersCount}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"
+                     Foreground="{DynamicResource Accent}" HorizontalAlignment="Center" />
         </StackPanel>
       </Border>
-      <Border Background="#1F0A0A" CornerRadius="6" Padding="10,5">
+      <Border Background="#1F0A0A" CornerRadius="6" Padding="10,4">
         <StackPanel Spacing="1" HorizontalAlignment="Center">
-          <TextBlock Text="Losers" FontSize="9" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
-          <TextBlock Text="{Binding ScannerVM.LosersCount}" FontSize="14" FontWeight="Bold"
+          <TextBlock Text="Losers" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
+          <TextBlock Text="{Binding ScannerVM.LosersCount}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold"
                      Foreground="#FF5555" HorizontalAlignment="Center" />
         </StackPanel>
       </Border>
@@ -44,12 +44,12 @@
 
     <!-- Table header -->
     <Grid ColumnDefinitions="20,*,80,70,80,60">
-      <TextBlock Grid.Column="0" Text="" FontSize="9" Foreground="{DynamicResource TextDim}" />
-      <TextBlock Grid.Column="1" Text="SYMBOL"  Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
-      <TextBlock Grid.Column="2" Text="PRICE"   Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
-      <TextBlock Grid.Column="3" Text="24h %"   Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
-      <TextBlock Grid.Column="4" Text="VOLUME"  Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
-      <TextBlock Grid.Column="5" Text="RSI"     Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="0" Text="" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
+      <TextBlock Grid.Column="1" Text="SYMBOL"  Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+      <TextBlock Grid.Column="2" Text="PRICE"   Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="3" Text="24h %"   Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="4" Text="VOLUME"  Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="5" Text="RSI"     Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" HorizontalAlignment="Right" />
     </Grid>
     <Rectangle Height="1" Fill="#1E3A5F" />
     </StackPanel>
@@ -63,29 +63,29 @@
             <Border Background="{Binding RowBackground}" Margin="0,1" Padding="0">
               <Grid ColumnDefinitions="20,*,80,70,80,60" Margin="2,4">
                 <TextBlock Grid.Column="0" Text="{Binding HotBadgeText}"
-                           FontSize="11" VerticalAlignment="Center"
+                           FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center"
                            HorizontalAlignment="Center" />
                 <StackPanel Grid.Column="1" Spacing="0" VerticalAlignment="Center">
-                  <TextBlock Text="{Binding Symbol}" FontSize="11"
-                             FontWeight="SemiBold" Foreground="#E8F0FE" />
-                  <TextBlock Text="{Binding Exchange}" FontSize="9"
+                  <TextBlock Text="{Binding Symbol}" FontSize="{DynamicResource FsCaption}"
+                             FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                  <TextBlock Text="{Binding Exchange}" FontSize="{DynamicResource FsMicro}"
                              Foreground="{DynamicResource TextDim}" />
                 </StackPanel>
                 <TextBlock Grid.Column="2" Text="{Binding PriceLabel}"
-                           FontFamily="Consolas" FontSize="10"
-                           Foreground="#8FA3B8"
+                           FontFamily="Consolas" FontSize="{DynamicResource FsMicro}"
+                           Foreground="{DynamicResource TextMuted}"
                            HorizontalAlignment="Right" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="3" Text="{Binding ChangeLabel}"
-                           FontFamily="Consolas" FontSize="11"
+                           FontFamily="Consolas" FontSize="{DynamicResource FsCaption}"
                            FontWeight="SemiBold"
                            Foreground="{Binding ChangeBrush}"
                            HorizontalAlignment="Right" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="4" Text="{Binding VolumeLabel}"
-                           FontFamily="Consolas" FontSize="10"
-                           Foreground="#5C6E82"
+                           FontFamily="Consolas" FontSize="{DynamicResource FsMicro}"
+                           Foreground="{DynamicResource TextDim}"
                            HorizontalAlignment="Right" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="5" Text="{Binding RsiLabel}"
-                           FontFamily="Consolas" FontSize="11"
+                           FontFamily="Consolas" FontSize="{DynamicResource FsCaption}"
                            FontWeight="SemiBold"
                            Foreground="{Binding RsiBrush}"
                            HorizontalAlignment="Right" VerticalAlignment="Center" />

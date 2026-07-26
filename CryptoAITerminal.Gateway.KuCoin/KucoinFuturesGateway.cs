@@ -4,6 +4,7 @@ using Kucoin.Net.Enums;
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
+using CryptoAITerminal.Gateway.Base;
 using System.Collections.Concurrent;
 using System.Reactive.Subjects;
 using KucoinOrderSide = Kucoin.Net.Enums.OrderSide;
@@ -19,8 +20,10 @@ public class KucoinFuturesGateway : IExchangeGateway, IDisposable
     private readonly KucoinRestClient _restClient;
     private readonly Subject<MarketData> _marketDataSubject = new();
     private readonly IReadOnlyList<string> _symbols;
-    private readonly ConcurrentDictionary<string, string> _orderSymbols = new();
+    // No orderId → symbol map here on purpose: KuCoin cancels by order id alone, so the six other
+    // gateways' cache would be write-only state that nothing ever read and only cancels cleared.
     private readonly ConcurrentDictionary<string, decimal> _contractMultipliers = new();
+    private readonly SymbolFiltersCache _filters = new();
     private Timer? _tickerTimer;
     private int _polling;
     private int _defaultLeverage = 1;
@@ -202,11 +205,7 @@ public class KucoinFuturesGateway : IExchangeGateway, IDisposable
             throw new Exception($"KuCoin futures place order failed: {result.Error}");
 
         var id = result.Data.Id ?? string.Empty;
-        if (!string.IsNullOrEmpty(id))
-        {
-            order.Id = id;
-            _orderSymbols[id] = kucoinSymbol;
-        }
+        if (!string.IsNullOrEmpty(id)) order.Id = id;
         return order;
     }
 
@@ -214,7 +213,6 @@ public class KucoinFuturesGateway : IExchangeGateway, IDisposable
     {
         if (string.IsNullOrWhiteSpace(orderId)) return;
         await _restClient.FuturesApi.Trading.CancelOrderAsync(orderId);
-        _orderSymbols.TryRemove(orderId, out _);
     }
 
     // Symbol is ignored — KuCoin Futures cancel needs only the order ID.
@@ -306,28 +304,36 @@ public class KucoinFuturesGateway : IExchangeGateway, IDisposable
             .ToList();
     }
 
+    /// <summary>
+    /// KuCoin /api/v1/contracts/{symbol}: tickSize is a price, but lotSize is in CONTRACTS while
+    /// every quantity crossing <see cref="IExchangeGateway"/> is in the base asset — so the lot step
+    /// and the minimum are multiplied by the same contract multiplier that
+    /// <see cref="PlaceOrderAsync"/> divides by. KuCoin publishes no notional floor for futures,
+    /// so <see cref="SymbolFilters.MinNotional"/> stays 0 = "no rule".
+    /// </summary>
+    public async Task<SymbolFilters?> GetSymbolFiltersAsync(string symbol, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(symbol)) return null;
+        symbol = symbol.Trim().ToUpperInvariant();
+
+        var cached = _filters.Get(symbol);
+        if (cached is not null) return cached;
+
+        var kucoinSymbol = KucoinSymbolHelper.ToFuturesSymbol(symbol);
+        var result = await _restClient.FuturesApi.ExchangeData.GetContractAsync(kucoinSymbol, ct);
+        if (!result.Success || result.Data is null || result.Data.Multiplier <= 0m) return null;
+
+        var contract = result.Data;
+        var stepBase = contract.LotSize > 0m ? contract.LotSize * contract.Multiplier : contract.Multiplier;
+        var filters = SymbolFilters.Create(symbol, contract.TickSize, stepBase, stepBase, null);
+
+        _filters.Store(filters);
+        return filters;
+    }
+
     public void Dispose()
     {
         _tickerTimer?.Dispose();
         _restClient?.Dispose();
     }
-}
-
-internal static class KucoinFuturesTimeframeMap
-{
-    public static FuturesKlineInterval Parse(string timeframe) => (timeframe ?? string.Empty).Trim().ToUpperInvariant() switch
-    {
-        "1M"   => FuturesKlineInterval.OneMinute,
-        "5M"   => FuturesKlineInterval.FiveMinutes,
-        "15M"  => FuturesKlineInterval.FifteenMinutes,
-        "30M"  => FuturesKlineInterval.ThirtyMinutes,
-        "1H"   => FuturesKlineInterval.OneHour,
-        "2H"   => FuturesKlineInterval.TwoHours,
-        "4H"   => FuturesKlineInterval.FourHours,
-        "8H"   => FuturesKlineInterval.EightHours,
-        "12H"  => FuturesKlineInterval.TwelveHours,
-        "1D"   => FuturesKlineInterval.OneDay,
-        "1W"   => FuturesKlineInterval.OneWeek,
-        _      => FuturesKlineInterval.OneHour,
-    };
 }

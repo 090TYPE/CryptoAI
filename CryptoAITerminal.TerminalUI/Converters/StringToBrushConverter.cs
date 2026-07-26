@@ -4,15 +4,21 @@ using System.Globalization;
 using Avalonia.Data;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
+using CryptoAITerminal.TerminalUI.ViewModels;
 
 namespace CryptoAITerminal.TerminalUI.Converters;
 
 /// <summary>
-/// Turns a dynamic colour <b>string</b> (e.g. "#3ddc84", "#AARRGGBB", or an
-/// "rgba(r,g,b,a)" literal carried over from the design mock) into an
-/// <see cref="IBrush"/>. Many portfolio-desk panels compute their accent colour
-/// per-row on the view model, so a single converter keeps the XAML free of a
-/// bespoke brush property per cell. Parsed brushes are cached and frozen.
+/// Turns a dynamic colour <b>string</b> into an <see cref="IBrush"/>. Two shapes are accepted:
+/// <list type="bullet">
+/// <item><description>a semantic key from <see cref="SemanticColor.Keys"/> ("positive", "stroke", …),
+/// resolved against the application palette so the colour survives a theme swap;</description></item>
+/// <item><description>a literal — "#3ddc84", "#AARRGGBB", a named colour, or an "rgba(r,g,b,a)"
+/// string carried over from the design mock.</description></item>
+/// </list>
+/// Many portfolio-desk panels compute their accent colour per-row on the view model, so a single
+/// converter keeps the XAML free of a bespoke brush property per cell. Parsed literals are cached
+/// and frozen; semantic keys are not, because the palette behind them can change.
 /// </summary>
 public sealed class StringToBrushConverter : IValueConverter
 {
@@ -28,8 +34,34 @@ public sealed class StringToBrushConverter : IValueConverter
         if (value is IBrush brush) return brush;
         var text = value as string;
         if (string.IsNullOrWhiteSpace(text)) return Fallback;
-        return Cache.GetOrAdd(text.Trim(), Parse) ?? Fallback;
+        var raw = text.Trim();
+        if (TryResolveToken(raw, out var themed)) return themed;
+        return Cache.GetOrAdd(raw, Parse) ?? Fallback;
     }
+
+    /// <summary>
+    /// Semantic key → the brush object living in the application resources. Deliberately outside
+    /// <see cref="Cache"/>: caching would freeze the palette that was loaded first.
+    /// </summary>
+    private static bool TryResolveToken(string raw, out IBrush brush)
+    {
+        brush = Brushes.Transparent;
+        if (!SemanticColor.TryToken(raw, out var resource, out var fallback)) return false;
+        if (SemanticColor.TryPaletteBrush(resource, out var live))
+        {
+            brush = live;
+            return true;
+        }
+        // Палитра ещё не поднята (превьюер дизайнера) — рисуем токен его дефолтом,
+        // иначе ключ провалился бы в парсер hex и элемент остался бы без цвета.
+        brush = Cache.GetOrAdd(fallback, ParseLiteral);
+        return true;
+    }
+
+    private static IBrush ParseLiteral(string raw)
+        => TryParseColor(raw, out var color)
+            ? new SolidColorBrush(color).ToImmutable()
+            : Brushes.Transparent;
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => BindingOperations.DoNothing;

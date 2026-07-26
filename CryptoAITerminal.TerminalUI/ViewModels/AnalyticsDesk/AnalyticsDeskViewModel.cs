@@ -538,8 +538,8 @@ public sealed class AnalyticsDeskViewModel : ReactiveObject
         void T(string key, string label, string sw, bool on)
             => EqToggles.Add(new EqToggle
             {
-                Label = label, Swatch = on ? sw : "#152233", Fg = on ? AnalyticsData.Text : AnalyticsData.Faint,
-                Border = on ? "#152233" : "#0d1b27", Bg = on ? "#08131d" : "transparent",
+                Label = label, Swatch = on ? sw : SemanticColor.Stroke, Fg = on ? AnalyticsData.Text : AnalyticsData.Faint,
+                Border = on ? SemanticColor.Stroke : "#0d1b27", Bg = on ? "#08131d" : "transparent",
                 Command = new RelayCommand(() =>
                 {
                     if (key == "eq") _showEquity = !_showEquity;

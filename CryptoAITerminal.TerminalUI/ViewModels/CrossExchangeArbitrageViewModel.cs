@@ -89,7 +89,7 @@ public sealed class CrossExchangeSpreadRowVM : ReactiveObject
         Opp is null ? Gray :
         Opp.NetSpreadPct >= 0.3m  ? Teal :
         Opp.NetSpreadPct >= 0.1m  ? Amber :
-        Opp.NetSpreadPct >= 0     ? new SolidColorBrush(Color.Parse("#8FA3B8")) :
+        Opp.NetSpreadPct >= 0     ? new SolidColorBrush(Color.Parse(SemanticColor.Muted)) :
                                      Red;
 
     public IBrush ProfitBrush =>
@@ -148,11 +148,11 @@ public sealed class CrossExchangeSpreadRowVM : ReactiveObject
         p >= 1    ? $"{p:N3}" :
                     $"{p:G5}";
 
-    private static readonly IBrush Teal      = new SolidColorBrush(Color.Parse("#21E6C1"));
-    private static readonly IBrush Amber     = new SolidColorBrush(Color.Parse("#F4B860"));
-    private static readonly IBrush Red       = new SolidColorBrush(Color.Parse("#FF5555"));
+    private static readonly IBrush Teal      = new SolidColorBrush(Color.Parse(SemanticColor.Accent));
+    private static readonly IBrush Amber     = new SolidColorBrush(Color.Parse(SemanticColor.Warning));
+    private static readonly IBrush Red       = new SolidColorBrush(Color.Parse(SemanticColor.Negative));
     private static readonly IBrush Gray      = new SolidColorBrush(Color.Parse("#3A4F63"));
-    private static readonly IBrush DefaultFg = new SolidColorBrush(Color.Parse("#8FA3B8"));
+    private static readonly IBrush DefaultFg = new SolidColorBrush(Color.Parse(SemanticColor.Muted));
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -178,13 +178,13 @@ public sealed class ArbExecutionRowVM
 
     public IBrush ProfitBrush =>
         _exec.IsSuccess
-            ? new SolidColorBrush(Color.Parse("#21E6C1"))
-            : new SolidColorBrush(Color.Parse("#FF5555"));
+            ? new SolidColorBrush(Color.Parse(SemanticColor.Accent))
+            : new SolidColorBrush(Color.Parse(SemanticColor.Negative));
 
     public IBrush StatusBrush =>
         _exec.IsSuccess
-            ? new SolidColorBrush(Color.Parse("#21E6C1"))
-            : new SolidColorBrush(Color.Parse("#FF5555"));
+            ? new SolidColorBrush(Color.Parse(SemanticColor.Accent))
+            : new SolidColorBrush(Color.Parse(SemanticColor.Negative));
 }
 
 // ════════════════════════════════════════════════════════════════════════════

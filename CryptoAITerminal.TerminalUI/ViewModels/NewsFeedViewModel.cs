@@ -34,9 +34,9 @@ public sealed class NewsItemRowVM : ReactiveObject
 
     public string SentimentBrush => Item.Sentiment switch
     {
-        NewsSentiment.Bullish => "#21E6C1",
-        NewsSentiment.Bearish => "#FF6B6B",
-        _                     => "#8FA3B8"
+        NewsSentiment.Bullish => SemanticColor.Accent,
+        NewsSentiment.Bearish => SemanticColor.Negative,
+        _                     => SemanticColor.Muted
     };
 
     public string SentimentBackground => Item.Sentiment switch
@@ -46,10 +46,10 @@ public sealed class NewsItemRowVM : ReactiveObject
         _                     => "#0A1018"
     };
 
-    public string ImportantBadgeBrush => "#F4B860";
+    public string ImportantBadgeBrush => SemanticColor.Warning;
 
     public string VotesLabel => Item.Votes > 0 ? $"+{Item.Votes}" : Item.Votes.ToString();
-    public string VotesBrush => Item.Votes >= 0 ? "#21E6C1" : "#FF6B6B";
+    public string VotesBrush => Item.Votes >= 0 ? SemanticColor.Accent : SemanticColor.Negative;
 
     public NewsItemRowVM(NewsItem item)
     {
@@ -87,7 +87,7 @@ public sealed class NewsFeedViewModel : ReactiveObject, IDisposable
     private static readonly TimeSpan PulseWindow = TimeSpan.FromHours(1);
     private int _pulseScore;
     private string _pulseLabel = "No data";
-    private string _pulseBrush = "#8FA3B8";
+    private string _pulseBrush = SemanticColor.Muted;
     private string _pulseDetail = "Awaiting headlines";
 
     // ── AI market digest ────────────────────────────────────────────────────────
@@ -151,9 +151,9 @@ public sealed class NewsFeedViewModel : ReactiveObject, IDisposable
 
     public string AiDigestBrush => _aiDigestBias switch
     {
-        "BULLISH" => "#21E6C1",
-        "BEARISH" => "#FF6B6B",
-        _         => "#8FA3B8"
+        "BULLISH" => SemanticColor.Accent,
+        "BEARISH" => SemanticColor.Negative,
+        _         => SemanticColor.Muted
     };
 
     public ReactiveCommand<Unit, Unit> RefreshDigestCommand { get; }
@@ -321,7 +321,7 @@ public sealed class NewsFeedViewModel : ReactiveObject, IDisposable
         {
             PulseScore  = 0;
             PulseLabel  = "No data";
-            PulseBrush  = "#8FA3B8";
+            PulseBrush  = SemanticColor.Muted;
             PulseDetail = "No headlines in the last hour";
             return;
         }
@@ -331,11 +331,11 @@ public sealed class NewsFeedViewModel : ReactiveObject, IDisposable
 
         (PulseLabel, PulseBrush) = PulseScore switch
         {
-            >= 40  => ("Bullish",        "#21E6C1"),
-            >= 10  => ("Mildly bullish", "#3DDC84"),
-            <= -40 => ("Bearish",        "#FF6B6B"),
+            >= 40  => ("Bullish",        SemanticColor.Accent),
+            >= 10  => ("Mildly bullish", SemanticColor.Positive),
+            <= -40 => ("Bearish",        SemanticColor.Negative),
             <= -10 => ("Mildly bearish", "#FF8A4C"),
-            _      => ("Neutral",        "#8FA3B8")
+            _      => ("Neutral",        SemanticColor.Muted)
         };
 
         PulseDetail = $"{total} headlines/h · {bull}▲ {bear}▼ {neutral}● · score {PulseScore:+0;-0;0}";

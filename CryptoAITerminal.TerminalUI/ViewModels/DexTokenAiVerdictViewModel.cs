@@ -67,7 +67,7 @@ public sealed class DexTokenAiVerdictViewModel : ReactiveObject
     public bool HasSourceLabel => !string.IsNullOrWhiteSpace(_verdict.Source);
 
     /// <summary>Amber for the offline heuristic, muted for a live model — a buyer must tell the two apart at a glance.</summary>
-    public string SourceHex => _verdict.IsFallback ? "#f4b860" : "#5a7a94";
+    public string SourceHex => _verdict.IsFallback ? SemanticColor.Warning : "#5a7a94";
 
     public void ApplyVerdict(TokenAiVerdict verdict)
     {

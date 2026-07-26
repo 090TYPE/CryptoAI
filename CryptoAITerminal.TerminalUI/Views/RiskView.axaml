@@ -1,4 +1,4 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
@@ -19,14 +19,14 @@
                 <StackPanel Spacing="6">
                   <TextBlock Classes="Overline" Text="Risk Budget" />
                   <TextBlock Text="{Binding RiskRuntimeSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding RiskCexExposureSummary}" Foreground="#8FA3B8" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding RiskCexExposureSummary}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="2" Classes="SurfaceCard">
                 <StackPanel Spacing="6">
                   <TextBlock Classes="Overline" Text="Sniper Safety" />
                   <TextBlock Text="{Binding RiskSniperGuardSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding SniperVM.StatusMessage}" Foreground="#8FA3B8" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding SniperVM.StatusMessage}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
             </Grid>
@@ -38,7 +38,7 @@
                   <TextBlock Classes="Overline" Text="Realized P&amp;L" />
                   <TextBlock Classes="Metric" Text="{Binding PnlDashboardVM.TotalPnlLabel}"
                              Foreground="{Binding PnlDashboardVM.TotalPnlBrush}" />
-                  <TextBlock Text="{Binding PnlDashboardVM.TradeCountLabel}" Foreground="#8FA3B8" FontSize="11" />
+                  <TextBlock Text="{Binding PnlDashboardVM.TradeCountLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="1" Classes="SurfaceCard">
@@ -46,22 +46,22 @@
                   <TextBlock Classes="Overline" Text="Open P&amp;L (unrealized)" />
                   <TextBlock Classes="Metric" Text="{Binding AllPositionsVM.TotalPnlLabel}"
                              Foreground="{Binding AllPositionsVM.TotalPnlBrush}" />
-                  <TextBlock Text="{Binding AllPositionsVM.StatusLabel}" Foreground="#8FA3B8" FontSize="11" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding AllPositionsVM.StatusLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="2" Classes="SurfaceCard">
                 <StackPanel Spacing="4">
                   <TextBlock Classes="Overline" Text="Open Positions" />
                   <TextBlock Classes="Metric" Text="{Binding AllPositionsVM.PositionCount}" />
-                  <TextBlock Text="{Binding AllPositionsVM.TotalSizeLabel}" Foreground="#8FA3B8" FontSize="11" />
+                  <TextBlock Text="{Binding AllPositionsVM.TotalSizeLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="3" Classes="SurfaceCard">
                 <StackPanel Spacing="4">
                   <TextBlock Classes="Overline" Text="Win Rate / PF" />
                   <TextBlock Classes="Metric" Text="{Binding PnlDashboardVM.WinRateLabel}" />
-                  <TextBlock Text="{Binding PnlDashboardVM.ProfitFactorLabel, StringFormat='PF {0}'}" Foreground="#8FA3B8" FontSize="11" />
-                  <TextBlock Text="{Binding PnlDashboardVM.MaxDrawdownLabel, StringFormat='Max DD {0}'}" Foreground="#8FA3B8" FontSize="11" />
+                  <TextBlock Text="{Binding PnlDashboardVM.ProfitFactorLabel, StringFormat='PF {0}'}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
+                  <TextBlock Text="{Binding PnlDashboardVM.MaxDrawdownLabel, StringFormat='Max DD {0}'}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
                 </StackPanel>
               </Border>
             </Grid>
@@ -71,7 +71,7 @@
               <StackPanel Spacing="10">
                 <TextBlock Classes="H2" Text="Risk Limits (CEX order guard)" />
                 <TextBlock Text="Hard caps enforced on every CEX order before it is placed."
-                           Foreground="#8FA3B8" TextWrapping="Wrap" />
+                           Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
                 <Grid ColumnDefinitions="Auto,160,Auto,160,Auto" ColumnSpacing="12" RowSpacing="8">
                   <TextBlock Grid.Column="0" Text="Max position / exposure (USDT)" VerticalAlignment="Center" />
                   <NumericUpDown Grid.Column="1" Minimum="0" Increment="50"
@@ -85,7 +85,7 @@
                 </Grid>
                 <TextBlock Text="{Binding RiskBudgetPositionCapLabel}" FontWeight="SemiBold" />
                 <TextBlock Text="{Binding RiskBudgetDailyLossLabel}" FontWeight="SemiBold" />
-                <TextBlock Text="{Binding RiskBudgetRemainingLabel}" Foreground="#8FA3B8" />
+                <TextBlock Text="{Binding RiskBudgetRemainingLabel}" Foreground="{DynamicResource TextMuted}" />
                 <TextBlock Text="{Binding RiskBudgetWarningLabel}" FontWeight="SemiBold"
                            Foreground="{Binding RiskBudgetWarningBrush}" TextWrapping="Wrap" />
                 <TextBlock Text="{Binding RiskBudgetBlockReason}"
@@ -102,31 +102,31 @@
                 <StackPanel Spacing="10">
                   <TextBlock Classes="H2" Text="Daily Loss Trajectory" />
                   <TextBlock Text="Cumulative realized loss today vs the daily cap."
-                             Foreground="#8FA3B8" TextWrapping="Wrap" />
-                  <Border Background="#0E1622" CornerRadius="6" Padding="8" Height="64"
+                             Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
+                  <Border Background="{DynamicResource Surface2}" CornerRadius="6" Padding="8" Height="64"
                           IsVisible="{Binding HasRiskDailyLossSparkline}">
                     <Polyline Points="{Binding RiskDailyLossSparkline}"
                               Stroke="{Binding RiskBudgetWarningBrush}" StrokeThickness="2"
                               StrokeJoin="Round" />
                   </Border>
                   <TextBlock Text="No realized losses recorded today."
-                             Foreground="#8FA3B8" FontSize="12"
+                             Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}"
                              IsVisible="{Binding !HasRiskDailyLossSparkline}" />
-                  <TextBlock Text="{Binding RiskBudgetRemainingLabel}" Foreground="#8FA3B8" FontSize="12" />
+                  <TextBlock Text="{Binding RiskBudgetRemainingLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="1" Classes="Panel">
                 <StackPanel Spacing="10">
                   <TextBlock Classes="H2" Text="Blocked Orders" />
                   <TextBlock Text="{Binding RiskBlockHistoryEmptyLabel}"
-                             Foreground="#8FA3B8" TextWrapping="Wrap"
+                             Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"
                              IsVisible="{Binding !HasRiskBlockHistory}" />
                   <ItemsControl ItemsSource="{Binding RiskBlockHistoryLines}"
                                 IsVisible="{Binding HasRiskBlockHistory}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate>
-                        <TextBlock Text="{Binding}" Foreground="#F4B860"
-                                   FontSize="12" FontFamily="Cascadia Code,Consolas,monospace"
+                        <TextBlock Text="{Binding}" Foreground="{DynamicResource Warning}"
+                                   FontSize="{DynamicResource FsSmall}" FontFamily="Cascadia Code,Consolas,monospace"
                                    TextWrapping="Wrap" Margin="0,0,0,2" />
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
@@ -168,8 +168,8 @@
               <Border Grid.Column="1" Classes="Panel">
                 <StackPanel Spacing="10">
                   <TextBlock Classes="H2" Text="Readiness Notes" />
-                  <TextBlock Text="{Binding WalletVM.GlobalExecutionSummary}" Foreground="#8FA3B8" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding WalletVM.GlobalQuoteAssetSummary}" Foreground="#8FA3B8" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding WalletVM.GlobalExecutionSummary}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding WalletVM.GlobalQuoteAssetSummary}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
                   <TextBlock Text="{Binding FuturesPrivateApiStatusLabel}" Foreground="{Binding FuturesPrivateApiStatusBrush}" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>

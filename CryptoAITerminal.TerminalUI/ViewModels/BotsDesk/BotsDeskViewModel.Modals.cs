@@ -23,9 +23,9 @@ public sealed class ConfirmConfig
 {
     public string Kind { get; init; } = "";
     public string? BotId { get; init; }
-    public string Accent { get; init; } = "#152233";
+    public string Accent { get; init; } = SemanticColor.Stroke;
     public string Icon { get; init; } = "?";
-    public string IconColor { get; init; } = "#21e6c1";
+    public string IconColor { get; init; } = SemanticColor.Accent;
     public string Title { get; init; } = "";
     public string Body { get; init; } = "";
     public List<ConfirmCheck> Checks { get; } = new();
@@ -33,8 +33,8 @@ public sealed class ConfirmConfig
     public string TypeWord { get; init; } = "";
     public string Cta { get; init; } = "CONFIRM";
     public string BtnBg { get; init; } = "#0e2a2a";
-    public string BtnFg { get; init; } = "#21e6c1";
-    public string BtnBorder { get; init; } = "#21e6c1";
+    public string BtnFg { get; init; } = SemanticColor.Accent;
+    public string BtnBorder { get; init; } = SemanticColor.Accent;
     public WizardResult? Opts { get; init; }
     public string? TemplateId { get; init; }
 }
@@ -133,8 +133,8 @@ public partial class BotsDeskViewModel
             ColumnToggles.Add(new ColumnToggle
             {
                 Label = label, Mark = on ? "✓" : "",
-                BoxBorder = on ? BotsDeskData.Accent : "#152233", BoxBg = on ? BotsDeskData.Accent : "transparent",
-                Border = on ? "#152233" : "#0d1b27", Bg = on ? "#08131d" : "transparent", Fg = on ? BotsDeskData.Text : BotsDeskData.Faint,
+                BoxBorder = on ? BotsDeskData.Accent : SemanticColor.Stroke, BoxBg = on ? BotsDeskData.Accent : "transparent",
+                Border = on ? SemanticColor.Stroke : "#0d1b27", Bg = on ? "#08131d" : "transparent", Fg = on ? BotsDeskData.Text : BotsDeskData.Faint,
                 Command = new RelayCommand(() => { _cols[k] = !_cols[k]; RaiseColFlags(); RebuildColumnToggles(); })
             });
         }
@@ -145,7 +145,7 @@ public partial class BotsDeskViewModel
             ActionToggles.Add(new ActionToggle
             {
                 Label = label, Icon = icon, IcColor = on ? color : "#1e3048",
-                Border = on ? "#152233" : "#0d1b27", Bg = on ? "#08131d" : "transparent", Fg = on ? BotsDeskData.Text : BotsDeskData.Faint,
+                Border = on ? SemanticColor.Stroke : "#0d1b27", Bg = on ? "#08131d" : "transparent", Fg = on ? BotsDeskData.Text : BotsDeskData.Faint,
                 Command = new RelayCommand(() => ToggleQuickAction(k))
             });
         }
@@ -450,7 +450,7 @@ public partial class BotsDeskViewModel
             Hint = supportsPaper
                 ? "Simulated fills on live market data. The engine's own paper mode."
                 : "This engine has no paper mode — the wallet guard is the only paper gate.",
-            Border = _wizMode == "paper" ? "#14302e" : "#152233", Bg = _wizMode == "paper" ? "#061615" : "transparent",
+            Border = _wizMode == "paper" ? "#14302e" : SemanticColor.Stroke, Bg = _wizMode == "paper" ? "#061615" : "transparent",
             Fg = _wizMode == "paper" ? BotsDeskData.Accent : BotsDeskData.Faint,
             Command = new RelayCommand(() => { _wizMode = "paper"; RebuildWizard(); })
         });
@@ -458,7 +458,7 @@ public partial class BotsDeskViewModel
         {
             Label = "LIVE",
             Hint = "Real orders through the exchange gateway, subject to the wallet risk caps.",
-            Border = _wizMode == "live" ? "#3a2a12" : "#152233", Bg = _wizMode == "live" ? "#150f04" : "transparent",
+            Border = _wizMode == "live" ? "#3a2a12" : SemanticColor.Stroke, Bg = _wizMode == "live" ? "#150f04" : "transparent",
             Fg = _wizMode == "live" ? BotsDeskData.Amber : BotsDeskData.Faint,
             Command = new RelayCommand(() => { _wizMode = "live"; RebuildWizard(); })
         });
@@ -588,7 +588,7 @@ public partial class BotsDeskViewModel
     private bool ConfirmReady => !_confirm.HasType || string.Equals((_confirmTyped ?? "").Trim(), _confirm.TypeWord, StringComparison.OrdinalIgnoreCase);
     public string ConfirmBtnBg => ConfirmReady ? _confirm.BtnBg : "#0a1520";
     public string ConfirmBtnFg => ConfirmReady ? _confirm.BtnFg : "#3d5a72";
-    public string ConfirmBtnBorder => ConfirmReady ? _confirm.BtnBorder : "#152233";
+    public string ConfirmBtnBorder => ConfirmReady ? _confirm.BtnBorder : SemanticColor.Stroke;
     public double ConfirmBtnOpacity => ConfirmReady ? 1 : .7;
 
     private void RaiseConfirmBtn()

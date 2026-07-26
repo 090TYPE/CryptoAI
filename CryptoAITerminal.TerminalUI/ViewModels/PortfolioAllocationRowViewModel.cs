@@ -157,14 +157,14 @@ public class PortfolioAllocationRowViewModel : ReactiveObject
         IsUnderweight ? "▼" : "✓";
 
     public IBrush StatusBrush =>
-        IsOverweight  ? new SolidColorBrush(Color.Parse("#FF5555")) :
+        IsOverweight  ? new SolidColorBrush(Color.Parse(SemanticColor.Negative)) :
         IsUnderweight ? new SolidColorBrush(Color.Parse("#FFAA33")) :
-                        new SolidColorBrush(Color.Parse("#21E6C1"));
+                        new SolidColorBrush(Color.Parse(SemanticColor.Accent));
 
     public IBrush DeviationBrush =>
-        IsOverweight  ? new SolidColorBrush(Color.Parse("#FF5555")) :
+        IsOverweight  ? new SolidColorBrush(Color.Parse(SemanticColor.Negative)) :
         IsUnderweight ? new SolidColorBrush(Color.Parse("#FFAA33")) :
-                        new SolidColorBrush(Color.Parse("#21E6C1"));
+                        new SolidColorBrush(Color.Parse(SemanticColor.Accent));
 
     // ── Rebalancing order suggestion ──────────────────────────────────────────
 
@@ -182,8 +182,8 @@ public class PortfolioAllocationRowViewModel : ReactiveObject
     }
 
     public IBrush RebalanceOrderBrush =>
-        _rebalanceDeltaUsd > 0 ? new SolidColorBrush(Color.Parse("#21E6C1")) :
-        _rebalanceDeltaUsd < 0 ? new SolidColorBrush(Color.Parse("#FF5555")) :
+        _rebalanceDeltaUsd > 0 ? new SolidColorBrush(Color.Parse(SemanticColor.Accent)) :
+        _rebalanceDeltaUsd < 0 ? new SolidColorBrush(Color.Parse(SemanticColor.Negative)) :
                                   new SolidColorBrush(Color.Parse("#5C6E82"));
 
     // ── Constructor ───────────────────────────────────────────────────────────

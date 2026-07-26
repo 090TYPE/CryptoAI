@@ -39,7 +39,7 @@ public partial class SniperViewModel
         {
             IsManualSnipeLoading = true;
             ManualSnipeInfoLabel = "Resolving token...";
-            ManualSnipeInfoBrush = "#8FA3B8";
+            ManualSnipeInfoBrush = SemanticColor.Muted;
             ManualSnipeStatusMessage = string.Empty;
         });
 
@@ -78,7 +78,7 @@ public partial class SniperViewModel
                     quoteLabel = tokensOut > 0
                         ? $"≈ {tokensOut:0.########} {token.Symbol}"
                         : "Router quote unavailable.";
-                    quoteBrush = tokensOut > 0 ? "#21E6C1" : "#8FA3B8";
+                    quoteBrush = tokensOut > 0 ? SemanticColor.Accent : SemanticColor.Muted;
                 }
                 catch
                 {
@@ -92,7 +92,7 @@ public partial class SniperViewModel
                 quoteLabel = priceUsd > 0
                     ? $"≈ {BuyAmountBnb / (token.PriceNative > 0 ? token.PriceNative : priceUsd):0.########} {token.Symbol} (est.)"
                     : string.Empty;
-                quoteBrush = "#F4B860";
+                quoteBrush = SemanticColor.Warning;
             }
 
             var networkLabel = $"{token.ChainId.ToUpperInvariant()} / {token.DexId} / {(token.PriceUsd > 0 ? $"${token.PriceUsd:N6}" : "price n/a")}";
@@ -101,7 +101,7 @@ public partial class SniperViewModel
             await RunOnUiAsync(() =>
             {
                 ManualSnipeInfoLabel = $"{token.Name} ({token.Symbol}) — {networkLabel}{liqLabel}";
-                ManualSnipeInfoBrush = "#21E6C1";
+                ManualSnipeInfoBrush = SemanticColor.Accent;
                 ManualSnipeQuoteLabel = quoteLabel;
                 ManualSnipeQuoteBrush = quoteBrush;
                 IsManualSnipeLoading = false;
@@ -292,7 +292,7 @@ public partial class SniperViewModel
             await RunOnUiAsync(() =>
             {
                 ManualSnipeStatusMessage = summary;
-                ManualSnipeInfoBrush = probe.Passed ? "#21E6C1" : "#FF8A65";
+                ManualSnipeInfoBrush = probe.Passed ? SemanticColor.Accent : "#FF8A65";
                 PushLog($"Manual snipe probe for {address[..Math.Min(10, address.Length)]}...: {probe.Narrative}", probe.Passed);
             });
         }

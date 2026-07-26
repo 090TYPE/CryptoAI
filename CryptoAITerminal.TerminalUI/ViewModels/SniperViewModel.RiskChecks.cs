@@ -263,7 +263,7 @@ public partial class SniperViewModel
             ? "Structure guard blocked this pair"
             : "Structure guard passed";
         LatestStructureNarrative = risk.StructureSummary;
-        LatestStructureAccentHex = risk.StructureBlocked ? "#FF6B6B" : "#1FE0B3";
+        LatestStructureAccentHex = risk.StructureBlocked ? SemanticColor.Negative : "#1FE0B3";
     }
 
     private void UpdateLatestExecution(SniperCandidateViewModel candidate)

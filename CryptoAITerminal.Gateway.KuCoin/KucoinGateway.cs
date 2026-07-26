@@ -4,7 +4,7 @@ using Kucoin.Net.Enums;
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
-using System.Collections.Concurrent;
+using CryptoAITerminal.Gateway.Base;
 using System.Reactive.Subjects;
 using KucoinOrderSide = Kucoin.Net.Enums.OrderSide;
 using KucoinNewOrderType = Kucoin.Net.Enums.NewOrderType;
@@ -19,7 +19,9 @@ public class KucoinGateway : IExchangeGateway, IDisposable
     private readonly KucoinRestClient _restClient;
     private readonly Subject<MarketData> _marketDataSubject = new();
     private readonly IReadOnlyList<string> _symbols;
-    private readonly ConcurrentDictionary<string, string> _orderSymbols = new();
+    // No orderId → symbol map here on purpose: KuCoin cancels by order id alone, so the six other
+    // gateways' cache would be write-only state that nothing ever read and only cancels cleared.
+    private readonly SymbolFiltersCache _filters = new();
     private Timer? _tickerTimer;
     private int _polling;
 
@@ -171,11 +173,7 @@ public class KucoinGateway : IExchangeGateway, IDisposable
             throw new Exception($"KuCoin place order failed: {result.Error}");
 
         var id = result.Data.Id ?? string.Empty;
-        if (!string.IsNullOrEmpty(id))
-        {
-            order.Id = id;
-            _orderSymbols[id] = kucoinSymbol;
-        }
+        if (!string.IsNullOrEmpty(id)) order.Id = id;
         return order;
     }
 
@@ -183,7 +181,6 @@ public class KucoinGateway : IExchangeGateway, IDisposable
     {
         if (string.IsNullOrWhiteSpace(orderId)) return;
         await _restClient.SpotApi.Trading.CancelOrderAsync(orderId);
-        _orderSymbols.TryRemove(orderId, out _);
     }
 
     public async Task<IReadOnlyList<DexOhlcvPoint>> GetCandlesAsync(string symbol, string timeframe, int limit = 180)
@@ -211,31 +208,42 @@ public class KucoinGateway : IExchangeGateway, IDisposable
             .ToList();
     }
 
+    /// <summary>
+    /// KuCoin /api/v2/symbols for one spot pair: priceIncrement, baseIncrement, baseMinSize and
+    /// minFunds (the notional floor, which KuCoin leaves null on some pairs). Null when KuCoin will
+    /// not answer — the caller then sends its own numbers rather than failing.
+    /// </summary>
+    public async Task<SymbolFilters?> GetSymbolFiltersAsync(string symbol, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(symbol)) return null;
+        symbol = symbol.Trim().ToUpperInvariant();
+
+        var cached = _filters.Get(symbol);
+        if (cached is not null) return cached;
+
+        // KuCoin has no per-symbol variant of this endpoint; one call returns every pair, so fill
+        // the cache for all of them and answer from it.
+        var result = await _restClient.SpotApi.ExchangeData.GetSymbolsAsync(ct: ct);
+        if (!result.Success) return null;
+
+        foreach (var info in result.Data)
+        {
+            var terminalSymbol = KucoinSymbolHelper.FromKucoinSymbol(info.Symbol);
+            if (string.IsNullOrEmpty(terminalSymbol)) continue;
+            _filters.Store(terminalSymbol, SymbolFilters.Create(
+                terminalSymbol,
+                info.PriceIncrement,
+                info.BaseIncrement,
+                info.BaseMinQuantity,
+                info.MinFunds));
+        }
+
+        return _filters.Get(symbol);
+    }
+
     public void Dispose()
     {
         _tickerTimer?.Dispose();
         _restClient?.Dispose();
     }
-}
-
-internal static class KucoinSpotTimeframeMap
-{
-    public static KlineInterval Parse(string timeframe) => (timeframe ?? string.Empty).Trim().ToUpperInvariant() switch
-    {
-        "1M"   => KlineInterval.OneMinute,
-        "3M"   => KlineInterval.ThreeMinutes,
-        "5M"   => KlineInterval.FiveMinutes,
-        "15M"  => KlineInterval.FifteenMinutes,
-        "30M"  => KlineInterval.ThirtyMinutes,
-        "1H"   => KlineInterval.OneHour,
-        "2H"   => KlineInterval.TwoHours,
-        "4H"   => KlineInterval.FourHours,
-        "6H"   => KlineInterval.SixHours,
-        "8H"   => KlineInterval.EightHours,
-        "12H"  => KlineInterval.TwelveHours,
-        "1D"   => KlineInterval.OneDay,
-        "1W"   => KlineInterval.OneWeek,
-        "1MN"  => KlineInterval.OneMonth,
-        _      => KlineInterval.OneHour,
-    };
 }

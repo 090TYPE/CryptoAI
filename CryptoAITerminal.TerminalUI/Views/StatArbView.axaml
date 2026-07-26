@@ -1,4 +1,4 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
@@ -12,7 +12,7 @@
               <StackPanel Grid.Column="0" Spacing="2">
                 <TextBlock Classes="H1" Text="Statistical Arbitrage" />
                 <TextBlock Text="{Binding StatArbVM.StatusLabel}"
-                           FontSize="11" Foreground="#8FA3B8" />
+                           FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />
               </StackPanel>
               <Button Grid.Column="1" Classes="GhostButton" Content="▶ Start"
                       IsEnabled="{Binding !StatArbVM.IsRunning}"
@@ -27,22 +27,22 @@
               <StackPanel Spacing="8">
                 <Grid ColumnDefinitions="*,Auto,Auto">
                   <StackPanel Grid.Column="0">
-                    <TextBlock Text="🧠 AI Pair Verdict" FontWeight="SemiBold" Foreground="#E8F0FE" FontSize="13" />
+                    <TextBlock Text="🧠 AI Pair Verdict" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsBody}" />
                   </StackPanel>
                   <TextBlock Grid.Column="1" Text="{Binding StatArbVM.PairSource}"
-                             Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
+                             Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" Margin="0,0,10,0" />
                   <Button Grid.Column="2" Content="Evaluate with AI"
                           Command="{Binding StatArbVM.EvaluatePairCommand}"
-                          IsEnabled="{Binding !StatArbVM.PairRunning}" Foreground="#21E6C1" />
+                          IsEnabled="{Binding !StatArbVM.PairRunning}" Foreground="{DynamicResource Accent}" />
                 </Grid>
                 <StackPanel Spacing="5" IsVisible="{Binding StatArbVM.HasPairVerdict}">
                   <StackPanel Orientation="Horizontal" Spacing="10">
                     <TextBlock Text="{Binding StatArbVM.PairSignal}"
-                               Foreground="{Binding StatArbVM.PairSignalBrush}" FontWeight="Bold" FontSize="13" />
+                               Foreground="{Binding StatArbVM.PairSignalBrush}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
                     <TextBlock Text="{Binding StatArbVM.PairScore, StringFormat='score {0}/100'}"
-                               Foreground="#8FA3B8" FontSize="12" VerticalAlignment="Center" />
+                               Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
                   </StackPanel>
-                  <TextBlock Text="{Binding StatArbVM.PairReason}" Foreground="#D7E3EE" FontSize="12" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding StatArbVM.PairReason}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
                 </StackPanel>
               </StackPanel>
             </Border>
@@ -52,9 +52,9 @@
               <Grid ColumnDefinitions="Auto,*,Auto,*,Auto,*,Auto,*,Auto,*,Auto,*"
                     ColumnSpacing="10" VerticalAlignment="Center">
                 <TextBlock Grid.Column="0"  Text="Symbol A" Classes="Overline" VerticalAlignment="Center" />
-                <TextBox   Grid.Column="1"  Text="{Binding StatArbVM.SymbolA}" FontFamily="Consolas" FontSize="12" />
+                <TextBox   Grid.Column="1"  Text="{Binding StatArbVM.SymbolA}" FontFamily="Consolas" FontSize="{DynamicResource FsSmall}" />
                 <TextBlock Grid.Column="2"  Text="Symbol B" Classes="Overline" VerticalAlignment="Center" Margin="8,0,0,0" />
-                <TextBox   Grid.Column="3"  Text="{Binding StatArbVM.SymbolB}" FontFamily="Consolas" FontSize="12" />
+                <TextBox   Grid.Column="3"  Text="{Binding StatArbVM.SymbolB}" FontFamily="Consolas" FontSize="{DynamicResource FsSmall}" />
                 <TextBlock Grid.Column="4"  Text="Window"   Classes="Overline" VerticalAlignment="Center" Margin="8,0,0,0" />
                 <NumericUpDown Grid.Column="5" Value="{Binding StatArbVM.Window}"
                                Minimum="10" Maximum="500" Increment="10" FormatString="N0" />
@@ -83,21 +83,21 @@
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="POSITION" />
                   <TextBlock Text="{Binding StatArbVM.PositionLabel}"
-                             Classes="Metric" Foreground="#F4B860" />
+                             Classes="Metric" Foreground="{DynamicResource Warning}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="2" Classes="SurfaceCard">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="SPREAD" />
                   <TextBlock Text="{Binding StatArbVM.SpreadLabel}"
-                             Classes="Metric" Foreground="#8FA3B8" />
+                             Classes="Metric" Foreground="{DynamicResource TextMuted}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="3" Classes="SurfaceCard">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="Overline" Text="TOTAL PNL" />
                   <TextBlock Text="{Binding StatArbVM.PnlLabel}"
-                             Classes="Metric" Foreground="#21E6C1" />
+                             Classes="Metric" Foreground="{DynamicResource Accent}" />
                 </StackPanel>
               </Border>
             </Grid>
@@ -111,41 +111,41 @@
                     <ItemsControl.ItemTemplate>
                       <DataTemplate>
                         <TextBlock Text="{Binding}"
-                                   FontFamily="Consolas" FontSize="10"
-                                   Foreground="#8FA3B8" TextWrapping="Wrap"
+                                   FontFamily="Consolas" FontSize="{DynamicResource FsMicro}"
+                                   Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"
                                    Margin="0,1" />
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
                 </ScrollViewer>
                 <TextBlock Text="Engine not started. Click ▶ Start to begin."
-                           Foreground="{DynamicResource TextDim}" FontSize="11"
+                           Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsCaption}"
                            IsVisible="{Binding !StatArbVM.IsRunning}" />
               </StackPanel>
             </Border>
 
             <!-- Info box -->
-            <Border Background="#080F18" BorderBrush="#1E3A52" BorderThickness="1"
+            <Border Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1"
                     CornerRadius="8" Padding="14,10">
               <Grid ColumnDefinitions="*,*,*" ColumnSpacing="20">
                 <StackPanel Grid.Column="0" Spacing="4">
-                  <TextBlock Text="Strategy" FontWeight="Bold" FontSize="12" Foreground="#21E6C1" />
-                  <TextBlock FontSize="11" Foreground="#8FA3B8" TextWrapping="Wrap" LineHeight="18">
+                  <TextBlock Text="Strategy" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" Foreground="{DynamicResource Accent}" />
+                  <TextBlock FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="18">
                     Computes spread = ln(A) − β·ln(B) and z-score over a rolling window.
                     Opens delta-neutral pairs trade when |z| exceeds EntryZ.
                     Closes when |z| drops below ExitZ.
                   </TextBlock>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Spacing="4">
-                  <TextBlock Text="Hedge ratio" FontWeight="Bold" FontSize="12" Foreground="#F4B860" />
-                  <TextBlock FontSize="11" Foreground="#8FA3B8" TextWrapping="Wrap" LineHeight="18">
+                  <TextBlock Text="Hedge ratio" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" Foreground="{DynamicResource Warning}" />
+                  <TextBlock FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="18">
                     β is estimated via OLS regression on historical 1h candles (Window×2 bars).
                     Recalculated on each Start. Default pair BTC/ETH is historically cointegrated.
                   </TextBlock>
                 </StackPanel>
                 <StackPanel Grid.Column="2" Spacing="4">
-                  <TextBlock Text="Risk" FontWeight="Bold" FontSize="12" Foreground="#5C6E82" />
-                  <TextBlock FontSize="11" Foreground="#8FA3B8" TextWrapping="Wrap" LineHeight="18">
+                  <TextBlock Text="Risk" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" Foreground="{DynamicResource TextDim}" />
+                  <TextBlock FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" LineHeight="18">
                     Cointegration can break during structural market shifts.
                     Always size Notional conservatively and monitor basis.
                     Stop the engine immediately if z-score remains elevated.

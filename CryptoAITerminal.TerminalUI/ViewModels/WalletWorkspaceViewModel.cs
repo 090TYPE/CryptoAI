@@ -260,8 +260,8 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
         string.Equals(TronTrc20ContractAddress, TronTradeGateway.DefaultUsdcContractAddress, StringComparison.OrdinalIgnoreCase);
     public string TronUsdtPresetBackground => IsTronUsdtSelected ? "#17373B" : "#0F1721";
     public string TronUsdcPresetBackground => IsTronUsdcSelected ? "#17373B" : "#0F1721";
-    public string TronUsdtPresetForeground => IsTronUsdtSelected ? "#F4F7FB" : "#8FA3B8";
-    public string TronUsdcPresetForeground => IsTronUsdcSelected ? "#F4F7FB" : "#8FA3B8";
+    public string TronUsdtPresetForeground => IsTronUsdtSelected ? "#F4F7FB" : SemanticColor.Muted;
+    public string TronUsdcPresetForeground => IsTronUsdcSelected ? "#F4F7FB" : SemanticColor.Muted;
 
     public string TronPaymentStatus
     {
@@ -299,10 +299,10 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
 
     public string GlobalQuoteAssetModeBrush =>
         string.Equals(EffectiveGlobalQuoteAssetSymbol, "USDT", StringComparison.OrdinalIgnoreCase)
-            ? "#14E0C1"
+            ? SemanticColor.Positive
             : string.Equals(EffectiveGlobalQuoteAssetSymbol, "USDC", StringComparison.OrdinalIgnoreCase)
-                ? "#F4B860"
-                : "#8FA3B8";
+                ? SemanticColor.Warning
+                : SemanticColor.Muted;
 
     public string GlobalQuoteAssetSummary
     {
@@ -356,7 +356,7 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
 
     public bool GlobalLiveExecutionEnabled => !GlobalPaperOnlyMode;
     public string GlobalExecutionModeLabel => GlobalPaperOnlyMode ? "PAPER ONLY" : "LIVE ALLOWED";
-    public string GlobalExecutionModeBrush => GlobalPaperOnlyMode ? "#F4B860" : "#FF6B6B";
+    public string GlobalExecutionModeBrush => GlobalPaperOnlyMode ? SemanticColor.Warning : SemanticColor.Negative;
     public string GlobalExecutionSummary => GlobalPaperOnlyMode
         ? "All real sends are blocked across Trading, DEX, Sniper and Tron payments."
         : "Live sends are allowed across Trading, DEX, Sniper and Tron payments.";
@@ -690,11 +690,11 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
     public string WalletReadinessBrush =>
         WalletReadinessLabel switch
         {
-            "LIVE READY" => "#14E0C1",
-            "PAPER ARMED" => "#F4B860",
+            "LIVE READY" => SemanticColor.Positive,
+            "PAPER ARMED" => SemanticColor.Warning,
             "WATCH READY" => "#5BC0EB",
             "KEY LOADED" => "#FF9F43",
-            _ => "#8FA3B8"
+            _ => SemanticColor.Muted
         };
 
     public string WalletReadinessSummary
@@ -738,12 +738,12 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
 
     public string RouteReadinessBrush =>
         RouteReadinessLabel.StartsWith("LIVE", StringComparison.OrdinalIgnoreCase)
-            ? "#14E0C1"
+            ? SemanticColor.Positive
             : RouteReadinessLabel.StartsWith("PAPER", StringComparison.OrdinalIgnoreCase)
-                ? "#F4B860"
+                ? SemanticColor.Warning
                 : string.Equals(RouteReadinessLabel, "MONITOR ONLY", StringComparison.OrdinalIgnoreCase)
                     ? "#5BC0EB"
-                    : "#8FA3B8";
+                    : SemanticColor.Muted;
 
     public string RouteReadinessSummary
     {
@@ -1688,7 +1688,7 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
     public string GlobalLiveButtonLabel => LiveArmPending ? "Confirm LIVE" : "Live Allowed";
 
     /// <summary>Red once armed, so the confirming click is never mistaken for a neutral button.</summary>
-    public string GlobalLiveButtonForeground => LiveArmPending ? "#FF6B6B" : "#8FA3B8";
+    public string GlobalLiveButtonForeground => LiveArmPending ? SemanticColor.Negative : SemanticColor.Muted;
 
     private void ApplyGlobalExecutionMode(string? mode)
     {

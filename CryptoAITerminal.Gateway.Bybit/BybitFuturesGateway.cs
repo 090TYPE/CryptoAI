@@ -4,7 +4,7 @@ using Bybit.Net.Enums;
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
-using System.Collections.Concurrent;
+using CryptoAITerminal.Gateway.Base;
 using System.Reactive.Subjects;
 using BybitOrderSide = Bybit.Net.Enums.OrderSide;
 using BybitOrderType = Bybit.Net.Enums.OrderType;
@@ -19,7 +19,9 @@ public class BybitFuturesGateway : IExchangeGateway
     private readonly BybitSocketClient _socketClient;
     private readonly Subject<MarketData> _marketDataSubject = new();
     private readonly IReadOnlyList<string> _symbols;
-    private readonly ConcurrentDictionary<string, string> _orderSymbols = new();
+    private readonly OrderSymbolCache _orderSymbols = new();
+    // instruments-info answers change once in months; one lookup per symbol per session is enough.
+    private readonly SymbolFiltersCache _filters = new();
 
     public IObservable<MarketData> MarketDataStream => _marketDataSubject;
 
@@ -134,21 +136,24 @@ public class BybitFuturesGateway : IExchangeGateway
             throw new Exception($"Bybit futures place order failed: {result.Error}");
 
         order.Id = result.Data.OrderId;
-        _orderSymbols[result.Data.OrderId] = order.Symbol;
+        // Bybit's place-order response carries no status, but a market order is already filled by
+        // the time the id comes back and can never be cancelled — remembering it would leave an
+        // entry that only a cancel ever cleared.
+        if (order.Type != CoreOrderType.Market) _orderSymbols.Remember(order.Id, order.Symbol);
         return order;
     }
 
     public async Task CancelOrderAsync(string orderId)
     {
-        if (!_orderSymbols.TryGetValue(orderId, out var symbol)) return;
+        if (!_orderSymbols.TryGet(orderId, out var symbol)) return;
         await _restClient.V5Api.Trading.CancelOrderAsync(Category.Linear, symbol, orderId);
-        _orderSymbols.TryRemove(orderId, out _);
+        _orderSymbols.Forget(orderId);
     }
 
     public async Task CancelOrderAsync(string symbol, string orderId)
     {
         await _restClient.V5Api.Trading.CancelOrderAsync(Category.Linear, symbol, orderId);
-        _orderSymbols.TryRemove(orderId, out _);
+        _orderSymbols.Forget(orderId);
     }
 
     public Task<Order> PlaceTakeProfitOrderAsync(string symbol, CoreOrderSide side, decimal quantity, decimal triggerPrice, FuturesPositionSide positionSide, bool reduceOnly = true)
@@ -188,7 +193,7 @@ public class BybitFuturesGateway : IExchangeGateway
             throw new Exception($"Bybit futures conditional order failed: {result.Error}");
 
         var id = result.Data.OrderId;
-        _orderSymbols[id] = symbol;
+        _orderSymbols.Remember(id, symbol);
         return new Order
         {
             Id = id,
@@ -283,5 +288,37 @@ public class BybitFuturesGateway : IExchangeGateway
                 Volume    = k.Volume
             })
             .ToList();
+    }
+
+    /// <summary>
+    /// Bybit linear instruments-info: tick size, quantity step, minimum order quantity and the
+    /// minimum notional value. Null when Bybit will not answer — the caller then sends its own
+    /// numbers rather than failing on a metadata lookup.
+    /// </summary>
+    public async Task<SymbolFilters?> GetSymbolFiltersAsync(string symbol, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(symbol)) return null;
+        symbol = symbol.Trim().ToUpperInvariant();
+
+        var cached = _filters.Get(symbol);
+        if (cached is not null) return cached;
+
+        var result = await _restClient.V5Api.ExchangeData.GetLinearInverseSymbolsAsync(
+            Category.Linear, symbol, ct: ct);
+        if (!result.Success) return null;
+
+        var info = result.Data.List
+            .FirstOrDefault(s => string.Equals(s.Name, symbol, StringComparison.OrdinalIgnoreCase));
+        if (info is null) return null;
+
+        var filters = SymbolFilters.Create(
+            symbol,
+            info.PriceFilter?.TickSize,
+            info.LotSizeFilter?.QuantityStep,
+            info.LotSizeFilter?.MinOrderQuantity,
+            info.LotSizeFilter?.MinNotionalValue);
+
+        _filters.Store(filters);
+        return filters;
     }
 }

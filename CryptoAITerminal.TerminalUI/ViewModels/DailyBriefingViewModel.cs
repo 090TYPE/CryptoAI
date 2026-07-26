@@ -132,9 +132,9 @@ public sealed class DailyBriefingViewModel : ReactiveObject
     };
     public string SignalBrush => _signal switch
     {
-        "RISK_ON"  => "#21E6C1",
-        "RISK_OFF" => "#FF6B6B",
-        _          => "#8FA3B8"
+        "RISK_ON"  => SemanticColor.Accent,
+        "RISK_OFF" => SemanticColor.Negative,
+        _          => SemanticColor.Muted
     };
 
     public ReactiveCommand<Unit, Unit> RefreshCommand { get; }

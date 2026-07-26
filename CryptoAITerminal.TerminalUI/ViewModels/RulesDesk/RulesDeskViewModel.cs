@@ -204,7 +204,7 @@ public sealed class RulesDeskViewModel : ReactiveObject
 
     public string EngLabel => EngineRunning ? "RUNNING" : "STOPPED";
     public string EngColor => EngineRunning ? RulesDeskData.Green : RulesDeskData.Dimmer;
-    public string EngBorder => EngineRunning ? "#14302e" : "#152233";
+    public string EngBorder => EngineRunning ? "#14302e" : SemanticColor.Stroke;
     public string EngBg => EngineRunning ? "#061615" : "#060d14";
     public string EngBtnLabel => EngineRunning ? "■ STOP ENGINE" : "▶ START ENGINE";
     public string EngBtnColor => EngineRunning ? RulesDeskData.Red : RulesDeskData.Accent;
@@ -708,7 +708,7 @@ public sealed class RulesDeskViewModel : ReactiveObject
             LogFilters.Add(new LogFilter
             {
                 Label = lv == "all" ? "ALL" : lv,
-                Border = active ? "#152233" : "#0d1b27",
+                Border = active ? SemanticColor.Stroke : "#0d1b27",
                 Bg = active ? "#08131d" : "transparent",
                 Fg = active ? RulesDeskData.Accent : RulesDeskData.Faint,
                 Command = new RelayCommand(() => { _logLevel = key; RebuildLogFilters(); RebuildLog(); })

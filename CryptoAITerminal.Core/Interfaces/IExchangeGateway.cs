@@ -28,6 +28,13 @@ public interface IExchangeGateway
     // Symbol-aware cancel — required for Binance Futures; other gateways may ignore symbol.
     Task CancelOrderAsync(string symbol, string orderId) => CancelOrderAsync(orderId);
 
+    // Exchange trading rules (tick size, lot step, min quantity, min notional) for one symbol.
+    // The default returns null on purpose: null means "this gateway cannot tell", and every caller
+    // must then send its numbers unrounded exactly as before. That keeps the paper gateway, the DEX
+    // gateways and the test stubs working without each having to answer.
+    Task<SymbolFilters?> GetSymbolFiltersAsync(string symbol, CancellationToken ct = default)
+        => Task.FromResult<SymbolFilters?>(null);
+
     IObservable<MarketData> MarketDataStream { get; } // для реального времени
 
     // True when the gateway has API credentials for private endpoints (account, order placement).

@@ -23,9 +23,9 @@ public sealed class JournalEntryRowVM : ReactiveObject
     public string  DateLabel      => Model.ClosedAtUtc.ToLocalTime().ToString("dd MMM  HH:mm");
     public string  SymbolLabel    => Model.Symbol;
     public string  DirectionLabel => Model.Direction == TradeDirection.Long ? "▲ L" : "▼ S";
-    public string  DirectionBrush => Model.Direction == TradeDirection.Long ? "#21E6C1" : "#FF6B6B";
+    public string  DirectionBrush => Model.Direction == TradeDirection.Long ? SemanticColor.Accent : SemanticColor.Negative;
     public string  PnlLabel       => $"{(Model.PnlUsd >= 0 ? "+" : "")}{Model.PnlUsd:0.00} USD";
-    public string  PnlBrush       => Model.PnlUsd >= 0 ? "#3DDC84" : "#FF6B6B";
+    public string  PnlBrush       => Model.PnlUsd >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
     public string  PnlPctLabel    => $"{(Model.PnlPercent >= 0 ? "+" : "")}{Model.PnlPercent:0.00}%";
     public string  ExchangeLabel  => string.IsNullOrWhiteSpace(Model.Exchange) ? Model.Source.ToString() : Model.Exchange;
 
@@ -62,8 +62,8 @@ public sealed class JournalEntryRowVM : ReactiveObject
     public string TagLabel => _tag == JournalTag.None ? "—" : _tag.ToString();
     public string TagBrush => _tag switch
     {
-        JournalTag.BotSignal => "#21E6C1",
-        JournalTag.Manual    => "#F4B860",
+        JournalTag.BotSignal => SemanticColor.Accent,
+        JournalTag.Manual    => SemanticColor.Warning,
         JournalTag.Sniper    => "#A855F7",
         JournalTag.Scalp     => "#3B82F6",
         JournalTag.Swing     => "#10B981",
@@ -308,7 +308,7 @@ public sealed class TradeJournalViewModel : ReactiveObject
                 row.Wins,
                 $"{row.WinRate:0.0}%",
                 $"{(row.PnlUsd >= 0 ? "+" : "")}{row.PnlUsd:0.00}",
-                row.PnlUsd >= 0 ? "#3DDC84" : "#FF6B6B"));
+                row.PnlUsd >= 0 ? SemanticColor.Positive : SemanticColor.Negative));
         }
     }
 
@@ -361,8 +361,8 @@ public sealed class TradeJournalViewModel : ReactiveObject
 
     private static string GetTagBrush(string tagLabel) => tagLabel switch
     {
-        "BotSignal" => "#21E6C1",
-        "Manual"    => "#F4B860",
+        "BotSignal" => SemanticColor.Accent,
+        "Manual"    => SemanticColor.Warning,
         "Sniper"    => "#A855F7",
         "Scalp"     => "#3B82F6",
         "Swing"     => "#10B981",

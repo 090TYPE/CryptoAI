@@ -36,17 +36,17 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
 
     private static DirStyle Ds(string dir) => dir switch
     {
-        "BUY"  => new DirStyle("#3ddc84", Rgba(29, 74, 46, 0.55), "#1a4a2e", "LONG"),
-        "SELL" => new DirStyle("#ff6b6b", Rgba(74, 26, 30, 0.55), "#4a1a1e", "SHORT"),
-        _      => new DirStyle("#f4b860", Rgba(74, 56, 16, 0.45), "#3a2c10", "HOLD"),
+        "BUY"  => new DirStyle(SemanticColor.Positive, Rgba(29, 74, 46, 0.55), "#1a4a2e", "LONG"),
+        "SELL" => new DirStyle(SemanticColor.Negative, Rgba(74, 26, 30, 0.55), "#4a1a1e", "SHORT"),
+        _      => new DirStyle(SemanticColor.Warning, Rgba(74, 56, 16, 0.45), "#3a2c10", "HOLD"),
     };
 
     // Tone palette for regime / news / insight badges.
     private static (string Bg, string Border, string Color) ToneStyle(string tone) => tone switch
     {
-        "bull" => (Rgba(29, 74, 46, 0.55), "#1a4a2e", "#3ddc84"),
-        "bear" => (Rgba(74, 26, 30, 0.55), "#4a1a1e", "#ff6b6b"),
-        _      => (Rgba(74, 56, 16, 0.45), "#3a2c10", "#f4b860"),
+        "bull" => (Rgba(29, 74, 46, 0.55), "#1a4a2e", SemanticColor.Positive),
+        "bear" => (Rgba(74, 26, 30, 0.55), "#4a1a1e", SemanticColor.Negative),
+        _      => (Rgba(74, 56, 16, 0.45), "#3a2c10", SemanticColor.Warning),
     };
 
     private static string BiasTone(string bias) => bias.ToUpperInvariant() switch
@@ -58,9 +58,9 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
 
     private static string DotColor(string tone) => tone switch
     {
-        "bear" => "#ff6b6b",
-        "warn" => "#f4b860",
-        _      => "#21e6c1",
+        "bear" => SemanticColor.Negative,
+        "warn" => SemanticColor.Warning,
+        _      => SemanticColor.Accent,
     };
 
     // Neutral palette for the offline empty states — deliberately unlike the bull/bear
@@ -415,14 +415,14 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
     public string RegimeMeta { get; private set; } = "ADX 38 · Vol: MED · Corr: HIGH · OI: LONG";
     public string RegimeBadgeBg { get; private set; } = Rgba(29, 74, 46, 0.55);
     public string RegimeBadgeBorder { get; private set; } = "#1a4a2e";
-    public string RegimeBadgeColor { get; private set; } = "#3ddc84";
+    public string RegimeBadgeColor { get; private set; } = SemanticColor.Positive;
 
     public string NewsBias { get; private set; } = "BULLISH";
     public string NewsSummary { get; private set; } =
         "ETF inflows accelerating for the third consecutive week as the Fed signals a pause on rate hikes, boosting risk appetite across crypto markets.";
     public string NewsBadgeBg { get; private set; } = Rgba(29, 74, 46, 0.55);
     public string NewsBadgeBorder { get; private set; } = "#1a4a2e";
-    public string NewsBadgeColor { get; private set; } = "#3ddc84";
+    public string NewsBadgeColor { get; private set; } = SemanticColor.Positive;
 
     public string JournalSummary { get; private set; } =
         "No AI review of your trade history yet — connect a server or add an API key.";
@@ -496,7 +496,7 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
         SelTime = sig.Time;
         SelPrice = sig.Price;
         SelChange = sig.Change;
-        SelChangeColor = sig.Change.StartsWith('-') ? "#ff6b6b" : "#3ddc84";
+        SelChangeColor = sig.Change.StartsWith('-') ? SemanticColor.Negative : SemanticColor.Positive;
         SelDirColor = d.Color;
         SelDirBg = d.Bg;
         SelDirBorder = d.Border;
@@ -523,8 +523,8 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
     public string SelTime { get; private set; } = string.Empty;
     public string SelPrice { get; private set; } = string.Empty;
     public string SelChange { get; private set; } = string.Empty;
-    public string SelChangeColor { get; private set; } = "#3ddc84";
-    public string SelDirColor { get; private set; } = "#3ddc84";
+    public string SelChangeColor { get; private set; } = SemanticColor.Positive;
+    public string SelDirColor { get; private set; } = SemanticColor.Positive;
     public string SelDirBg { get; private set; } = string.Empty;
     public string SelDirBorder { get; private set; } = string.Empty;
     public string SelDirLabel { get; private set; } = string.Empty;
@@ -630,7 +630,7 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
 
     public string ChatPlaceholder { get; private set; } = "Ask AI about BTC...";
     public string ChatSendBg => string.IsNullOrEmpty(_chatInput) ? "#0a1520" : Rgba(33, 230, 193, 0.18);
-    public string ChatSendFg => string.IsNullOrEmpty(_chatInput) ? "#2d4a5e" : "#21e6c1";
+    public string ChatSendFg => string.IsNullOrEmpty(_chatInput) ? "#2d4a5e" : SemanticColor.Accent;
     public bool ShowSuggestions => ChatMessages.Count <= 1;
 
     private async Task SendChatAsync()
@@ -695,18 +695,18 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
     // ── Static / demo content build ─────────────────────────────────────
     private void BuildStaticContent()
     {
-        Ticker.Add(new AiSignalTickerViewModel("BTC",  "67,432", "+2.34%", "#3ddc84"));
-        Ticker.Add(new AiSignalTickerViewModel("ETH",  "3,521",  "+1.87%", "#3ddc84"));
-        Ticker.Add(new AiSignalTickerViewModel("SOL",  "182.40", "-0.92%", "#ff6b6b"));
-        Ticker.Add(new AiSignalTickerViewModel("BNB",  "584.20", "+0.41%", "#3ddc84"));
-        Ticker.Add(new AiSignalTickerViewModel("AVAX", "37.84",  "-2.18%", "#ff6b6b"));
-        Ticker.Add(new AiSignalTickerViewModel("LINK", "18.42",  "+3.14%", "#3ddc84"));
-        Ticker.Add(new AiSignalTickerViewModel("ARB",  "1.142",  "+4.22%", "#3ddc84"));
-        Ticker.Add(new AiSignalTickerViewModel("INJ",  "31.44",  "+5.82%", "#3ddc84"));
+        Ticker.Add(new AiSignalTickerViewModel("BTC",  "67,432", "+2.34%", SemanticColor.Positive));
+        Ticker.Add(new AiSignalTickerViewModel("ETH",  "3,521",  "+1.87%", SemanticColor.Positive));
+        Ticker.Add(new AiSignalTickerViewModel("SOL",  "182.40", "-0.92%", SemanticColor.Negative));
+        Ticker.Add(new AiSignalTickerViewModel("BNB",  "584.20", "+0.41%", SemanticColor.Positive));
+        Ticker.Add(new AiSignalTickerViewModel("AVAX", "37.84",  "-2.18%", SemanticColor.Negative));
+        Ticker.Add(new AiSignalTickerViewModel("LINK", "18.42",  "+3.14%", SemanticColor.Positive));
+        Ticker.Add(new AiSignalTickerViewModel("ARB",  "1.142",  "+4.22%", SemanticColor.Positive));
+        Ticker.Add(new AiSignalTickerViewModel("INJ",  "31.44",  "+5.82%", SemanticColor.Positive));
 
-        DexTokens.Add(new AiSignalDexTokenViewModel("PEPE",  "PE", "#1a0c2a", "ETH", 88, "MOMENTUM", "#3ddc84", "+128%"));
-        DexTokens.Add(new AiSignalDexTokenViewModel("WIF",   "WF", "#160c1a", "SOL", 72, "EARLY",    "#21e6c1", "+44%"));
-        DexTokens.Add(new AiSignalDexTokenViewModel("TURBO", "TB", "#2a1a0c", "ETH", 41, "FADING",   "#f4b860", "+12%"));
+        DexTokens.Add(new AiSignalDexTokenViewModel("PEPE",  "PE", "#1a0c2a", "ETH", 88, "MOMENTUM", SemanticColor.Positive, "+128%"));
+        DexTokens.Add(new AiSignalDexTokenViewModel("WIF",   "WF", "#160c1a", "SOL", 72, "EARLY",    SemanticColor.Accent, "+44%"));
+        DexTokens.Add(new AiSignalDexTokenViewModel("TURBO", "TB", "#2a1a0c", "ETH", 41, "FADING",   SemanticColor.Warning, "+12%"));
 
         // Offline there is no scored-opportunity feed. One placeholder row keeps the panel
         // shaped while saying so — invented pairs, scores and setups read as real calls.
@@ -763,7 +763,7 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
             "sell" => Rgba(255, 107, 107, 0.1 + c * 0.5),
             _      => Rgba(244, 184, 96, 0.08 + c * 0.32),
         };
-        static string CellFg(string dir) => dir == "buy" ? "#3ddc84" : dir == "sell" ? "#ff6b6b" : "#f4b860";
+        static string CellFg(string dir) => dir == "buy" ? SemanticColor.Positive : dir == "sell" ? SemanticColor.Negative : SemanticColor.Warning;
         static string CellBr(string dir) => dir == "buy" ? Rgba(61, 220, 132, 0.18) : dir == "sell" ? Rgba(255, 107, 107, 0.18) : Rgba(244, 184, 96, 0.12);
 
         // Deterministic per-timeframe jitter so lower/higher TFs read slightly differently.
@@ -826,7 +826,7 @@ public sealed class AiSignalFilterViewModel(string key, string label, bool activ
     public string Label { get; } = label;
     public string Background { get; } = active ? "#0c1e2e" : "Transparent";
     public string BorderBrush { get; } = active ? "#1a3a4a" : "Transparent";
-    public string Foreground { get; } = active ? "#21e6c1" : "#3d5a72";
+    public string Foreground { get; } = active ? SemanticColor.Accent : "#3d5a72";
     public ReactiveCommand<string, Unit> Command { get; } = command;
 }
 
@@ -886,7 +886,7 @@ public sealed class AiSignalCardViewModel : ReactiveObject
     }
 
     public string CardBg => _isSelected ? "#0b1d2e" : "#060e18";
-    public string CardBorder => _isSelected ? "#21e6c1" : "#0c1a26";
+    public string CardBorder => _isSelected ? SemanticColor.Accent : "#0c1a26";
 }
 
 public sealed class AiSignalDexTokenViewModel(
@@ -943,8 +943,8 @@ public sealed class AiSignalDetailTabViewModel(string key, string label, bool ac
 {
     public string Key { get; } = key;
     public string Label { get; } = label;
-    public string Foreground { get; } = active ? "#21e6c1" : "#3d5a72";
-    public string BorderColor { get; } = active ? "#21e6c1" : "Transparent";
+    public string Foreground { get; } = active ? SemanticColor.Accent : "#3d5a72";
+    public string BorderColor { get; } = active ? SemanticColor.Accent : "Transparent";
     public ReactiveCommand<string, Unit> Command { get; } = command;
 }
 

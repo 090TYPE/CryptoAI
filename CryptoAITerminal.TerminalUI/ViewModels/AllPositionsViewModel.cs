@@ -59,14 +59,15 @@ public sealed class UnifiedPositionRowVM : ReactiveObject
     }
 
     // ── Computed display labels ───────────────────────────────────────────────
-    public string SideBrush       => Side == "Short" ? "#FF6B6B" : "#21E6C1";
+    public string SideBrush       => Side == "Short" ? SemanticColor.Negative : SemanticColor.Positive;
+    // Цвета бирж — часть их бренда, а не палитры приложения: остаются литералами.
     public string ExchangeBrush   => Exchange switch
     {
         "Binance" => "#F0B90B",
         "Bybit"   => "#F7A600",
         "OKX"     => "#3BBFFF",
         "DEX"     => "#9B59B6",
-        _         => "#8FA3B8"
+        _         => SemanticColor.Muted
     };
     public string EntryPriceLabel => $"{EntryPrice:N2}";
     public string MarkPriceLabel  => _markPrice > 0 ? $"{_markPrice:N2}" : "–";
@@ -75,7 +76,7 @@ public sealed class UnifiedPositionRowVM : ReactiveObject
     public string LiqLabel        => LiquidationPrice > 0 ? $"{LiquidationPrice:N2}" : "–";
     public string NotionalLabel   => $"{Size * EntryPrice:N0} USDT";
     public string PnlLabel        => $"{_unrealizedPnl:+#,##0.00;-#,##0.00;0.00} ({_pnlPct:+0.##;-0.##;0}%)";
-    public string PnlBrush        => _unrealizedPnl >= 0 ? "#21E6C1" : "#FF6B6B";
+    public string PnlBrush        => _unrealizedPnl >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
 
     public UnifiedPositionRowVM(string exchange, FuturesPosition pos, IExchangeGateway gateway)
     {
@@ -105,7 +106,7 @@ public sealed class AllPositionsViewModel : ReactiveObject
     private readonly IReadOnlyList<(string Name, IExchangeGateway Gateway)> _gateways;
 
     private string _totalPnlLabel   = "–";
-    private string _totalPnlBrush   = "#8FA3B8";
+    private string _totalPnlBrush   = SemanticColor.Muted;
     private string _totalSizeLabel  = "–";
     private string _statusLabel     = "No data yet — press Refresh";
     private string _sortBy          = "PnlPct";
@@ -142,7 +143,7 @@ public sealed class AllPositionsViewModel : ReactiveObject
         ? string.Empty
         : $"⚠ {string.Join(", ", _failedGateways)} unavailable — the list is incomplete.";
     /// <summary>Жёлтый, пока данные неполные: цифры в шапке нельзя считать итогом.</summary>
-    public string StatusBrush => HasGatewayFailures ? "#F4B860" : "#8FA3B8";
+    public string StatusBrush => HasGatewayFailures ? SemanticColor.Warning : SemanticColor.Muted;
     /// <summary>CLOSE ALL заблокирован, пока хотя бы одна биржа не ответила.</summary>
     public bool   CanCloseAll => Rows.Count > 0 && !HasGatewayFailures;
 
@@ -379,7 +380,7 @@ public sealed class AllPositionsViewModel : ReactiveObject
         if (Rows.Count == 0)
         {
             TotalPnlLabel  = "–";
-            TotalPnlBrush  = "#8FA3B8";
+            TotalPnlBrush  = SemanticColor.Muted;
             TotalSizeLabel = "–";
             return;
         }
@@ -390,7 +391,7 @@ public sealed class AllPositionsViewModel : ReactiveObject
         TotalPnlLabel  = totalPnl >= 0
             ? $"+{totalPnl:N2} USDT"
             : $"{totalPnl:N2} USDT";
-        TotalPnlBrush  = totalPnl >= 0 ? "#21E6C1" : "#FF6B6B";
+        TotalPnlBrush  = totalPnl >= 0 ? SemanticColor.Positive : SemanticColor.Negative;
         TotalSizeLabel = $"{totalNotl:N0} USDT notional";
     }
 

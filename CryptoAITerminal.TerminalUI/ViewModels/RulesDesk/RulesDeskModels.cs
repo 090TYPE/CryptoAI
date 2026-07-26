@@ -25,7 +25,7 @@ public sealed class RuleViewModel : ReactiveObject
     public string StateLabel => Row.IsEnabled ? "ENABLED" : "DISABLED";
     public string StateColor => Row.EnabledColor;
     public string StateBg => Row.IsEnabled ? "#061615" : "transparent";
-    public string StateBorder => Row.IsEnabled ? "#14302e" : "#152233";
+    public string StateBorder => Row.IsEnabled ? "#14302e" : SemanticColor.Stroke;
 
     public string LogicLabel =>
         $"{RulesDeskData.LogicShort(Model.Logic)} · {Model.Conditions.Count}c / {Model.Actions.Count}a";
@@ -57,7 +57,7 @@ public sealed class RuleActionButton
 {
     public string Label { get; init; } = "";
     public string Title { get; init; } = "";
-    public string Color { get; init; } = "#8fa3b8";
+    public string Color { get; init; } = SemanticColor.Muted;
     public ICommand? Command { get; init; }
 }
 

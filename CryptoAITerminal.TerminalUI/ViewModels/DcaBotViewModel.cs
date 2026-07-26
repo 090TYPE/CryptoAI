@@ -97,7 +97,7 @@ public class DcaExecutionRowViewModel
         QtyLabel = e.Quantity > 0 ? $"{e.Quantity:N6}" : "—";
         TotalLabel = e.TotalUsdt > 0 ? $"{e.TotalUsdt:N2}" : "—";
         StatusLabel = e.Executed ? "Executed" : "Skipped";
-        StatusColor = e.Executed ? "#3DDC84" : "#F4B860";
+        StatusColor = e.Executed ? SemanticColor.Positive : SemanticColor.Warning;
     }
 }
 
@@ -237,7 +237,7 @@ public class DcaBotViewModel : ReactiveObject
         }
     }
 
-    public string WeightSumColor => Coins.Sum(c => c.WeightPercent) == 100 ? "#3DDC84" : "#F4B860";
+    public string WeightSumColor => Coins.Sum(c => c.WeightPercent) == 100 ? SemanticColor.Positive : SemanticColor.Warning;
 
     public bool CanStart => !_isRunning;
     public bool CanStop => _isRunning;

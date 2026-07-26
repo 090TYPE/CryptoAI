@@ -189,7 +189,7 @@ public partial class BotsDeskViewModel : ReactiveObject
 
     public string EngineBadgeLabel => Bots.Count == 0 ? BotsDeskData.Dash : Running.Count + "/" + Bots.Count;
     public string EngineBadgeColor => Running.Count > 0 ? BotsDeskData.Green : BotsDeskData.Dimmer;
-    public string EngineBadgeBorder => Running.Count > 0 ? "#14302e" : "#152233";
+    public string EngineBadgeBorder => Running.Count > 0 ? "#14302e" : SemanticColor.Stroke;
     public string EngineBadgeBg => Running.Count > 0 ? "#061615" : "transparent";
 
     public string HdrPnl => Sum24 is { } v ? Money(v, true) : BotsDeskData.Dash;
@@ -255,7 +255,7 @@ public partial class BotsDeskViewModel : ReactiveObject
         "RISK_ON" => "#14302e",
         "RISK_OFF" => "#3a1620",
         "NEUTRAL" => "#3a2a12",
-        _ => "#152233"
+        _ => SemanticColor.Stroke
     };
     public string BriefMeta => Brief is null ? ""
         : Brief.Running ? "generating…"
@@ -266,7 +266,7 @@ public partial class BotsDeskViewModel : ReactiveObject
     public string BriefBtnColor => Brief is { Running: true } ? BotsDeskData.Accent : "#5a7a94";
     public string BriefAutoLabel => Brief is null ? "auto off"
         : Brief.AutoEnabled ? "auto " + Brief.AutoHour.ToString("00") + ":00" : "auto off";
-    public string BriefTrackBg => Brief is { AutoEnabled: true } ? "#14302e" : "#152233";
+    public string BriefTrackBg => Brief is { AutoEnabled: true } ? "#14302e" : SemanticColor.Stroke;
     public string BriefKnob => Brief is { AutoEnabled: true } ? BotsDeskData.Accent : "#3d5a72";
     public double BriefKnobLeft => Brief is { AutoEnabled: true } ? 14 : 2;
 

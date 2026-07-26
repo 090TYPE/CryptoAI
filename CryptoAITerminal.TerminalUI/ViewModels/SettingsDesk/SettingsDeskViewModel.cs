@@ -481,7 +481,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
             {
                 Name = pn,
                 Meta = ProfileMeta(h, pn) + (active ? " · selected" : ""),
-                Border = active ? "#14302e" : "#152233",
+                Border = active ? "#14302e" : SemanticColor.Stroke,
                 Bg = active ? "#061615" : "#050f14",
                 LoadCommand = new RelayCommand(() => { h.ProfileName = pn; Exec(h.LoadProfileCommand); Refresh(); RaiseInputs(); Toast(OrNotConfigured(h.ProfileStatus), "ok"); }),
                 ExportCommand = new RelayCommand(() => { h.ProfileName = pn; Exec(h.ExportProfileCommand); Refresh(); Toast(OrNotConfigured(h.ProfileStatus), "ok"); }),
@@ -707,7 +707,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
             Providers.Add(new ProviderCard
             {
                 Name = name, Hint = hint,
-                Border = on ? "#14302e" : "#152233", Bg = on ? "#061615" : "#050f14",
+                Border = on ? "#14302e" : SemanticColor.Stroke, Bg = on ? "#061615" : "#050f14",
                 Fg = on ? SettingsData.Text : SettingsData.Text3,
                 DotBorder = on ? SettingsData.Accent : "#2a3f54", DotBg = on ? SettingsData.Accent : "transparent",
                 Status = hasKey ? "key set" : "no key",
@@ -803,7 +803,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     public string ExSrcLabel => ExSourceOf(_exTab) switch { "ENV" => "ENV VARS", "FILE" => "LOCAL FILE", _ => "NOT SET" };
     public string ExSrcColor => ExIsEnv(_exTab) ? SettingsData.Amber : ExHasKey(_exTab) ? SettingsData.Accent : SettingsData.Faint;
     public string ExSrcBg => ExIsEnv(_exTab) ? "#150f04" : ExHasKey(_exTab) ? "#061615" : "transparent";
-    public string ExSrcBorder => ExIsEnv(_exTab) ? "#3a2a12" : ExHasKey(_exTab) ? "#14302e" : "#152233";
+    public string ExSrcBorder => ExIsEnv(_exTab) ? "#3a2a12" : ExHasKey(_exTab) ? "#14302e" : SemanticColor.Stroke;
     public string ExMask => ExHasKey(_exTab) ? ExMaskOf(_exTab) : "no key set";
     public string ExStatus
     {
@@ -834,9 +834,9 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     public bool ExTestnetSupported => ExchangeEnvironmentStore.IsSupported(_exTab);
     public string TnColor => !ExTestnetSupported ? SettingsData.Faint
         : ExTestnet ? SettingsData.Amber : SettingsData.Text3;
-    public string TnBorder => ExTestnet ? "#3a2a12" : "#152233";
+    public string TnBorder => ExTestnet ? "#3a2a12" : SemanticColor.Stroke;
     public string TnBg => ExTestnet ? "#150f04" : "transparent";
-    public string TnTrack => ExTestnet ? "#3a2a12" : "#152233";
+    public string TnTrack => ExTestnet ? "#3a2a12" : SemanticColor.Stroke;
     public string TnKnob => ExTestnet ? SettingsData.Amber : SettingsData.Dimmer;
     public double TnKnobLeft => ExTestnet ? 13 : 2;
 
@@ -920,7 +920,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
                 Label = name,
                 Bg = on ? "#0e2a2a" : "transparent",
                 Fg = on ? SettingsData.Text : SettingsData.Text3,
-                Dot = has ? SettingsData.Green : "#152233",
+                Dot = has ? SettingsData.Green : SemanticColor.Stroke,
                 // Being on a testnet outranks the credential source here — it is the thing you
                 // most need to notice when glancing at the tab strip.
                 State = EnvOf(key) ? "testnet" : _host is null ? Dash : has ? ExSourceOf(key).ToLowerInvariant() : "empty",
@@ -1060,7 +1060,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     private static DexModeChip Chip(string label, string hint, string warn, bool on, Action act) => new()
     {
         Label = label, Hint = hint, Warn = warn,
-        Border = on ? "#14302e" : "#152233",
+        Border = on ? "#14302e" : SemanticColor.Stroke,
         Bg = on ? "#061615" : "#050f14",
         Fg = on ? SettingsData.Text : SettingsData.Text3,
         DotBorder = on ? SettingsData.Accent : "#2a3f54",
@@ -1097,7 +1097,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         void Flag(string label, string hint, bool on, Action act) => DexFlags.Add(new GuardToggle
         {
             Label = label, Hint = hint,
-            TrackBg = on ? "#14302e" : "#152233",
+            TrackBg = on ? "#14302e" : SemanticColor.Stroke,
             Knob = on ? SettingsData.Accent : SettingsData.Dimmer,
             KnobLeft = on ? 15 : 2,
             Command = new RelayCommand(act),
@@ -1209,7 +1209,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
             {
                 CredentialsService.CredentialSource.Env => ("ENV VAR", SettingsData.Amber, "#150f04", "#3a2a12"),
                 CredentialsService.CredentialSource.File => ("SAVED", SettingsData.Accent, "#061615", "#14302e"),
-                _ => ("NOT SET", SettingsData.Faint, "transparent", "#152233"),
+                _ => ("NOT SET", SettingsData.Faint, "transparent", SemanticColor.Stroke),
             };
         }
     }
@@ -1265,7 +1265,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
 
     public string WalletBadge => Wal is null ? Dash : WalletConnected ? "CONNECTED" : "NOT CONNECTED";
     public string WalletColor => WalletConnected ? SettingsData.Green : SettingsData.Faint;
-    public string WalletBorder => WalletConnected ? "#14302e" : "#152233";
+    public string WalletBorder => WalletConnected ? "#14302e" : SemanticColor.Stroke;
     public string WalletBg => WalletConnected ? "#061615" : "#050f14";
     public string WalletDetail => Wal is null ? NotConfigured
         : WalletConnected ? Wal.SelectedProvider + " · " + Wal.SelectedNetwork
@@ -1330,8 +1330,8 @@ public sealed class SettingsDeskViewModel : ReactiveObject
 
         var configured = IsChannelConfigured(id);
         ch.Open = _ntOpen == id;
-        ch.Border = ch.Open ? "#152233" : "#0d1b27";
-        ch.Dot = configured ? SettingsData.Green : "#152233";
+        ch.Border = ch.Open ? SemanticColor.Stroke : "#0d1b27";
+        ch.Dot = configured ? SettingsData.Green : SemanticColor.Stroke;
         ch.Status = ChannelStatus(id);
         ch.StatusColor = configured ? SettingsData.Green : SettingsData.Faint;
         ch.Summary = configured ? "configured" : NotConfigured;
@@ -1343,7 +1343,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         if (ch.HasSsl && Al is { } a)
         {
             ch.SslMark = a.EmailUseSsl ? "✓" : "";
-            ch.SslBorder = a.EmailUseSsl ? SettingsData.Accent : "#152233";
+            ch.SslBorder = a.EmailUseSsl ? SettingsData.Accent : SemanticColor.Stroke;
             ch.SslBg = a.EmailUseSsl ? SettingsData.Accent : "transparent";
         }
         ch.Refresh();
@@ -1439,7 +1439,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
 
     public string TgBadge => Tga is null ? Dash : Tga.IsConnected ? "SIGNED IN" : "SIGNED OUT";
     public string TgColor => Tga?.IsConnected == true ? SettingsData.Green : SettingsData.Faint;
-    public string TgBorder => Tga?.IsConnected == true ? "#14302e" : "#152233";
+    public string TgBorder => Tga?.IsConnected == true ? "#14302e" : SemanticColor.Stroke;
     public string TgBg => Tga?.IsConnected == true ? "#061615" : "#050f14";
     public bool TgNeedCode => Tga is { } t && (t.IsCodeVisible || t.IsPasswordVisible);
     public string TgStatus => Tga is null ? NotConfigured : OrNotConfigured(Tga.StatusText);
@@ -1453,10 +1453,10 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     public string TgBtnBg => Tga?.IsConnected == true ? "#14060a" : "#061615";
 
     private bool TgInline => Tgs?.InlineButtonsEnabled ?? false;
-    public string TgInlineTrack => TgInline ? "#14302e" : "#152233";
+    public string TgInlineTrack => TgInline ? "#14302e" : SemanticColor.Stroke;
     public string TgInlineKnob => TgInline ? SettingsData.Accent : SettingsData.Dimmer;
     public double TgInlineKnobLeft => TgInline ? 15 : 2;
-    public string TgInlineBorder => TgInline ? "#14302e" : "#152233";
+    public string TgInlineBorder => TgInline ? "#14302e" : SemanticColor.Stroke;
     public string TgInlineBg => TgInline ? "#061615" : "#050f14";
     public bool TgHasPending => TgInline && (Tgs?.HasPendingSignals ?? false);
     public bool TgNoPending => !TgHasPending;
@@ -1536,15 +1536,15 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     private bool NaRepeat => Al?.NewAlertRepeat ?? false;
     public string RepeatLabel => NaRepeat ? "repeating" : "once";
     public string RepeatColor => NaRepeat ? SettingsData.Accent : SettingsData.Text3;
-    public string RepeatBorder => NaRepeat ? "#14302e" : "#152233";
+    public string RepeatBorder => NaRepeat ? "#14302e" : SemanticColor.Stroke;
     public string RepeatBg => NaRepeat ? "#061615" : "#050f14";
     public string RepeatMark => NaRepeat ? "✓" : "";
-    public string RepeatBoxBorder => NaRepeat ? SettingsData.Accent : "#152233";
+    public string RepeatBoxBorder => NaRepeat ? SettingsData.Accent : SemanticColor.Stroke;
     public string RepeatBoxBg => NaRepeat ? SettingsData.Accent : "transparent";
 
     private bool Sound => Al?.SoundEnabled ?? false;
     public string SoundMark => Sound ? "✓" : "";
-    public string SoundBorder => Sound ? SettingsData.Accent : "#152233";
+    public string SoundBorder => Sound ? SettingsData.Accent : SemanticColor.Stroke;
     public string SoundBg => Sound ? SettingsData.Accent : "transparent";
 
     public string AlNote => "Conditions come from the live alert engine — anything not listed is not evaluated.";
@@ -1561,7 +1561,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
             NewChannels.Add(new ChannelChip
             {
                 Label = label,
-                Border = on ? "#14302e" : "#152233",
+                Border = on ? "#14302e" : SemanticColor.Stroke,
                 Bg = on ? "#061615" : "transparent",
                 Fg = on ? SettingsData.Accent : SettingsData.Faint,
                 Command = new RelayCommand(() => { set(!get()); RebuildNewChannels(); }),
@@ -1650,7 +1650,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         {
             Label = "Paper-only mode",
             Hint = paper ? "Every order is simulated" : "Live orders are allowed",
-            TrackBg = paper ? "#14302e" : "#152233",
+            TrackBg = paper ? "#14302e" : SemanticColor.Stroke,
             Knob = paper ? SettingsData.Accent : SettingsData.Dimmer,
             KnobLeft = paper ? 15 : 2,
             Command = new RelayCommand(() =>
@@ -1666,7 +1666,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         {
             Label = "License allows live trading",
             Hint = allows ? "A valid license is active" : "Activate a license to unlock live orders",
-            TrackBg = allows ? "#14302e" : "#152233",
+            TrackBg = allows ? "#14302e" : SemanticColor.Stroke,
             Knob = allows ? SettingsData.Accent : SettingsData.Dimmer,
             KnobLeft = allows ? 15 : 2,
             Command = null,   // read-only: driven by the license, not by this desk
@@ -1972,7 +1972,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     private bool ConfirmReady => !_confirm.HasType || string.Equals((_confirmTyped ?? "").Trim(), _confirm.TypeWord, StringComparison.OrdinalIgnoreCase);
     public string ConfirmBtnBg => ConfirmReady ? _confirm.BtnBg : "#0a1520";
     public string ConfirmBtnFg => ConfirmReady ? _confirm.BtnFg : "#3d5a72";
-    public string ConfirmBtnBorder => ConfirmReady ? _confirm.BtnBorder : "#152233";
+    public string ConfirmBtnBorder => ConfirmReady ? _confirm.BtnBorder : SemanticColor.Stroke;
     public double ConfirmBtnOpacity => ConfirmReady ? 1 : .7;
     private void RaiseConfirmBtn() { foreach (var n in new[] { nameof(ConfirmBtnBg), nameof(ConfirmBtnFg), nameof(ConfirmBtnBorder), nameof(ConfirmBtnOpacity) }) this.RaisePropertyChanged(n); }
 
