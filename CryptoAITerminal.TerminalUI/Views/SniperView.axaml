@@ -3,8 +3,8 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.SniperView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vm:SniperScreenViewModel"
+             x:CompileBindings="True">
 
   <UserControl.Styles>
     <!-- Section overline -->
@@ -590,7 +590,7 @@
                           <Button Grid.Column="9" Content="▶ Snipe" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource Accent}"
                                   Background="#0A1E1C" BorderBrush="#1A3A3A" BorderThickness="1" CornerRadius="6" Padding="8,4"
                                   HorizontalAlignment="Left" VerticalAlignment="Center"
-                                  Command="{Binding $parent[Window].DataContext.DexTrendingVM.OpenInSniperCommand}" CommandParameter="{Binding}" />
+                                  Command="{Binding $parent[ItemsControl].((vm:SniperScreenViewModel)DataContext).DexTrendingVM.OpenInSniperCommand}" CommandParameter="{Binding}" />
                           <Grid Grid.Column="10" ColumnDefinitions="44,*" VerticalAlignment="Center">
                             <Border Grid.Column="0" Height="5" CornerRadius="3" Background="{DynamicResource PanelStroke}" ClipToBounds="True" VerticalAlignment="Center">
                               <Border HorizontalAlignment="Left" CornerRadius="3" Background="{Binding ScoreColorHex, Converter={StaticResource StringToBrush}}" Width="{Binding ScoreBarWidth}" />
@@ -614,7 +614,7 @@
               <DataTemplate x:DataType="vm:SniperCandidateViewModel">
                 <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="0" Margin="0,0,0,10"
                         Background="Transparent" BorderThickness="0"
-                        Command="{Binding $parent[Window].DataContext.SniperVM.SelectSniperCandidateCommand}" CommandParameter="{Binding}">
+                        Command="{Binding $parent[ItemsControl].((vm:SniperScreenViewModel)DataContext).SniperVM.SelectSniperCandidateCommand}" CommandParameter="{Binding}">
                   <Border Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="10" Padding="12,12">
                     <StackPanel Spacing="8">
                       <Grid ColumnDefinitions="*,Auto">
@@ -634,13 +634,13 @@
                       </StackPanel>
                       <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button Content="BUY NOW" Background="{DynamicResource Accent}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" CornerRadius="6" Padding="16,6"
-                                IsVisible="{Binding !$parent[Window].DataContext.SniperVM.IsPositionsTab}"
-                                Command="{Binding $parent[Window].DataContext.SniperVM.BuyCandidateCommand}" CommandParameter="{Binding}" />
+                                IsVisible="{Binding !$parent[ItemsControl].((vm:SniperScreenViewModel)DataContext).SniperVM.IsPositionsTab}"
+                                Command="{Binding $parent[ItemsControl].((vm:SniperScreenViewModel)DataContext).SniperVM.BuyCandidateCommand}" CommandParameter="{Binding}" />
                         <Button Content="EMERGENCY CLOSE" Background="{DynamicResource Negative}" Foreground="{DynamicResource OnAccentText}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" CornerRadius="6" Padding="16,6"
-                                IsVisible="{Binding $parent[Window].DataContext.SniperVM.IsPositionsTab}"
-                                Command="{Binding $parent[Window].DataContext.SniperVM.EmergencyClosePositionCommand}" CommandParameter="{Binding}" />
+                                IsVisible="{Binding $parent[ItemsControl].((vm:SniperScreenViewModel)DataContext).SniperVM.IsPositionsTab}"
+                                Command="{Binding $parent[ItemsControl].((vm:SniperScreenViewModel)DataContext).SniperVM.EmergencyClosePositionCommand}" CommandParameter="{Binding}" />
                         <Button Content="CLEAR" Classes="tf" Padding="16,6"
-                                Command="{Binding $parent[Window].DataContext.SniperVM.ClearPositionCommand}" CommandParameter="{Binding}" />
+                                Command="{Binding $parent[ItemsControl].((vm:SniperScreenViewModel)DataContext).SniperVM.ClearPositionCommand}" CommandParameter="{Binding}" />
                       </StackPanel>
                     </StackPanel>
                   </Border>

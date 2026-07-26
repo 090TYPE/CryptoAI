@@ -141,6 +141,46 @@ public partial class MainWindowViewModel
 
     public bool HasRiskDailyLossSparkline => _riskManager.GetDailyLossHistory().Count >= 2;
 
+    private RiskScreenViewModel? _riskScreenVM;
+
+    /// <summary>
+    /// Host view model for the Risk page. The four sub-view-models are passed by reference; the
+    /// risk-envelope members above are handed over as delegates, so the page keeps reading this
+    /// instance rather than a snapshot taken at construction time.
+    /// </summary>
+    public RiskScreenViewModel RiskScreenVM =>
+        _riskScreenVM ??= new RiskScreenViewModel(
+            AllPositionsVM,
+            PnlDashboardVM,
+            SniperVM,
+            WalletVM,
+            this,
+            () => RiskRuntimeStatusBrush,
+            () => RiskRuntimeSummary,
+            () => RiskCexExposureSummary,
+            () => RiskSniperGuardSummary,
+            () => RiskLimitPositionInput,
+            value => RiskLimitPositionInput = value,
+            () => RiskLimitDailyLossInput,
+            value => RiskLimitDailyLossInput = value,
+            ApplyRiskLimitsCommand,
+            ResetDailyRiskCommand,
+            () => RiskBudgetPositionCapLabel,
+            () => RiskBudgetDailyLossLabel,
+            () => RiskBudgetRemainingLabel,
+            () => RiskBudgetWarningLabel,
+            () => RiskBudgetWarningBrush,
+            () => RiskBudgetBlockReason,
+            () => RiskBudgetBlockBrush,
+            RiskBlockHistoryEmptyLabel,
+            () => RiskBlockHistoryLines,
+            () => HasRiskBlockHistory,
+            () => RiskDailyLossSparkline,
+            () => HasRiskDailyLossSparkline,
+            () => FuturesPrivateApiStatusLabel,
+            () => FuturesPrivateApiStatusBrush,
+            SelectMainTabCommand);
+
     public string BacktestStatusLabel => BacktestVM.StatusLabel;
     public string BacktestStatusBrush => BacktestVM.StatusBrush;
     public string BacktestWindowLabel => BacktestVM.WindowLabel;
@@ -646,6 +686,20 @@ public partial class MainWindowViewModel
     public LiquidationHeatmapViewModel LiquidationHeatmapVM { get; private set; } = null!;
     public SentimentViewModel          SentimentVM          { get; private set; } = null!;
     public DexTrendingViewModel        DexTrendingVM        { get; private set; } = null!;
+
+    // Composites for screens that need more than one sub-view-model. Lazy, because the parts are
+    // assigned partway through the constructor and a field initialiser would capture nulls.
+    private SniperScreenViewModel? _sniperScreenVM;
+
+    /// <summary>Sniper desk plus the DEX Trending feed that shares its tab bar.</summary>
+    public SniperScreenViewModel SniperScreenVM =>
+        _sniperScreenVM ??= new SniperScreenViewModel(SniperVM, DexTrendingVM);
+
+    private SentimentScreenViewModel? _sentimentScreenVM;
+
+    /// <summary>Sentiment widget: the sentiment desk plus the 8h funding average beside it.</summary>
+    public SentimentScreenViewModel SentimentScreenVM =>
+        _sentimentScreenVM ??= new SentimentScreenViewModel(SentimentVM, FundingRateVM);
     public AiSignalDeskViewModel       AiSignalDeskVM       { get; }
     public PortfolioRebalanceViewModel PortfolioRebalanceVM { get; private set; } = null!;
     public PnlDashboardViewModel      PnlDashboardVM      { get; private set; } = null!;

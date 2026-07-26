@@ -1,18 +1,17 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:vmd="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels.Dashboard"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              xmlns:dash="clr-namespace:CryptoAITerminal.TerminalUI.Views.Dashboard"
              x:Class="CryptoAITerminal.TerminalUI.Views.DashboardView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vmd:DashboardLayoutViewModel"
+             x:CompileBindings="True">
   <DockPanel LastChildFill="True">
     <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto,Auto" Margin="0,0,0,16">
       <StackPanel Grid.Column="0" Spacing="4" VerticalAlignment="Center">
         <TextBlock Classes="H1" Text="Dashboard" />
         <TextBlock Classes="StatLabel"
-                   Text="{Binding DashboardLayoutVM.Widgets.Count, StringFormat='DEFAULT LAYOUT · {0} WIDGETS'}" />
+                   Text="{Binding Widgets.Count, StringFormat='DEFAULT LAYOUT · {0} WIDGETS'}" />
       </StackPanel>
 
       <!-- LIVE indicator -->
@@ -27,14 +26,14 @@
         <Button.Flyout>
           <Flyout Placement="Bottom">
             <ScrollViewer MaxHeight="360">
-              <ItemsControl ItemsSource="{Binding DashboardLayoutVM.AddableCatalog}" Width="240">
+              <ItemsControl ItemsSource="{Binding AddableCatalog}" Width="240">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vmd:WidgetCatalogEntry">
                     <Button Content="{Binding Title}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left"
                             Margin="0,0,0,4"
-                            Command="{Binding $parent[ItemsControl].DataContext.DashboardLayoutVM.AddWidgetCommand}"
+                            Command="{Binding $parent[ItemsControl].((vmd:DashboardLayoutViewModel)DataContext).AddWidgetCommand}"
                             CommandParameter="{Binding Key}" />
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -44,21 +43,24 @@
         </Button.Flyout>
       </Button>
       <Button Grid.Column="3" Content="↺ Reset" Margin="0,0,8,0" VerticalAlignment="Center"
-              IsVisible="{Binding DashboardLayoutVM.IsEditMode}"
-              Command="{Binding DashboardLayoutVM.ResetLayoutCommand}" />
+              IsVisible="{Binding IsEditMode}"
+              Command="{Binding ResetLayoutCommand}" />
       <Button Grid.Column="4" Content="✎ Edit Layout" Classes="AccentButton" VerticalAlignment="Center"
-              Command="{Binding DashboardLayoutVM.ToggleEditCommand}" />
+              Command="{Binding ToggleEditCommand}" />
     </Grid>
 
     <ScrollViewer Classes="PageScroll">
-      <ItemsControl ItemsSource="{Binding DashboardLayoutVM.Widgets}">
+      <ItemsControl ItemsSource="{Binding Widgets}">
         <ItemsControl.ItemsPanel>
           <ItemsPanelTemplate>
             <ctrl:WidgetGridPanel />
           </ItemsPanelTemplate>
         </ItemsControl.ItemsPanel>
         <ItemsControl.Styles>
-          <Style Selector="ContentPresenter">
+          <!-- The setters bind the ContentPresenter's item (DashboardWidget), not this view's
+               DataContext, and a Style carries no x:DataType — a compiled binding would resolve
+               Col/Row against DashboardLayoutViewModel and fail. -->
+          <Style Selector="ContentPresenter" x:CompileBindings="False">
             <Setter Property="(ctrl:WidgetGridPanel.Col)"     Value="{Binding Col}" />
             <Setter Property="(ctrl:WidgetGridPanel.Row)"     Value="{Binding Row}" />
             <Setter Property="(ctrl:WidgetGridPanel.ColSpan)" Value="{Binding ColSpan}" />
@@ -67,7 +69,7 @@
         </ItemsControl.Styles>
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vmd:DashboardWidget">
-            <dash:WidgetHost IsEditMode="{Binding $parent[ItemsControl].DataContext.DashboardLayoutVM.IsEditMode}" />
+            <dash:WidgetHost IsEditMode="{Binding $parent[ItemsControl].((vmd:DashboardLayoutViewModel)DataContext).IsEditMode}" />
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ItemsControl>

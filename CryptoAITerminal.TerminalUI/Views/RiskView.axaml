@@ -3,15 +3,15 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.RiskView"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
-          <StackPanel Spacing="16" IsVisible="{Binding IsRiskSectionVisible}">
+             x:DataType="vm:RiskScreenViewModel"
+             x:CompileBindings="True">
+          <StackPanel Spacing="16">
             <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16">
               <Border Grid.Column="0" Classes="SurfaceCard">
                 <StackPanel Spacing="6">
                   <TextBlock Classes="Overline" Text="Execution Guard" />
-                  <TextBlock Classes="Metric" Text="{Binding WalletVM.GlobalExecutionModeLabel}" />
-                  <TextBlock Text="{Binding WalletVM.GlobalExecutionGuardStatusLabel}"
+                  <TextBlock Classes="Metric" Text="{Binding Wallet.GlobalExecutionModeLabel}" />
+                  <TextBlock Text="{Binding Wallet.GlobalExecutionGuardStatusLabel}"
                              Foreground="{Binding RiskRuntimeStatusBrush, Converter={StaticResource StringToBrush}}" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
@@ -26,7 +26,7 @@
                 <StackPanel Spacing="6">
                   <TextBlock Classes="Overline" Text="Sniper Safety" />
                   <TextBlock Text="{Binding RiskSniperGuardSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding SniperVM.StatusMessage}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding Sniper.StatusMessage}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
             </Grid>
@@ -36,32 +36,32 @@
               <Border Grid.Column="0" Classes="SurfaceCard">
                 <StackPanel Spacing="4">
                   <TextBlock Classes="Overline" Text="Realized P&amp;L" />
-                  <TextBlock Classes="Metric" Text="{Binding PnlDashboardVM.TotalPnlLabel}"
-                             Foreground="{Binding PnlDashboardVM.TotalPnlBrush, Converter={StaticResource StringToBrush}}" />
-                  <TextBlock Text="{Binding PnlDashboardVM.TradeCountLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
+                  <TextBlock Classes="Metric" Text="{Binding Pnl.TotalPnlLabel}"
+                             Foreground="{Binding Pnl.TotalPnlBrush, Converter={StaticResource StringToBrush}}" />
+                  <TextBlock Text="{Binding Pnl.TradeCountLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="1" Classes="SurfaceCard">
                 <StackPanel Spacing="4">
                   <TextBlock Classes="Overline" Text="Open P&amp;L (unrealized)" />
-                  <TextBlock Classes="Metric" Text="{Binding AllPositionsVM.TotalPnlLabel}"
-                             Foreground="{Binding AllPositionsVM.TotalPnlBrush, Converter={StaticResource StringToBrush}}" />
-                  <TextBlock Text="{Binding AllPositionsVM.StatusLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" />
+                  <TextBlock Classes="Metric" Text="{Binding Positions.TotalPnlLabel}"
+                             Foreground="{Binding Positions.TotalPnlBrush, Converter={StaticResource StringToBrush}}" />
+                  <TextBlock Text="{Binding Positions.StatusLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="2" Classes="SurfaceCard">
                 <StackPanel Spacing="4">
                   <TextBlock Classes="Overline" Text="Open Positions" />
-                  <TextBlock Classes="Metric" Text="{Binding AllPositionsVM.PositionCount}" />
-                  <TextBlock Text="{Binding AllPositionsVM.TotalSizeLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
+                  <TextBlock Classes="Metric" Text="{Binding Positions.PositionCount}" />
+                  <TextBlock Text="{Binding Positions.TotalSizeLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
                 </StackPanel>
               </Border>
               <Border Grid.Column="3" Classes="SurfaceCard">
                 <StackPanel Spacing="4">
                   <TextBlock Classes="Overline" Text="Win Rate / PF" />
-                  <TextBlock Classes="Metric" Text="{Binding PnlDashboardVM.WinRateLabel}" />
-                  <TextBlock Text="{Binding PnlDashboardVM.ProfitFactorLabel, StringFormat='PF {0}'}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
-                  <TextBlock Text="{Binding PnlDashboardVM.MaxDrawdownLabel, StringFormat='Max DD {0}'}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
+                  <TextBlock Classes="Metric" Text="{Binding Pnl.WinRateLabel}" />
+                  <TextBlock Text="{Binding Pnl.ProfitFactorLabel, StringFormat='PF {0}'}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
+                  <TextBlock Text="{Binding Pnl.MaxDrawdownLabel, StringFormat='Max DD {0}'}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" />
                 </StackPanel>
               </Border>
             </Grid>
@@ -124,7 +124,7 @@
                   <ItemsControl ItemsSource="{Binding RiskBlockHistoryLines}"
                                 IsVisible="{Binding HasRiskBlockHistory}">
                     <ItemsControl.ItemTemplate>
-                      <DataTemplate>
+                      <DataTemplate x:DataType="x:String">
                         <TextBlock Text="{Binding}" Foreground="{DynamicResource Warning}"
                                    FontSize="{DynamicResource FsSmall}" FontFamily="Cascadia Code,Consolas,monospace"
                                    TextWrapping="Wrap" Margin="0,0,0,2" />
@@ -143,20 +143,20 @@
                     <Button Classes="GhostButton"
                             Content="Paper Mode"
                             Margin="0,0,10,10"
-                            Command="{Binding WalletVM.ApplyGlobalExecutionModeCommand}"
+                            Command="{Binding Wallet.ApplyGlobalExecutionModeCommand}"
                             CommandParameter="PAPER" />
                     <!-- Two-step: first click arms and turns the label red, second click applies. -->
                     <Button Classes="GhostButton"
-                            Content="{Binding WalletVM.GlobalLiveButtonLabel}"
-                            Foreground="{Binding WalletVM.GlobalLiveButtonForeground, Converter={StaticResource StringToBrush}}"
+                            Content="{Binding Wallet.GlobalLiveButtonLabel}"
+                            Foreground="{Binding Wallet.GlobalLiveButtonForeground, Converter={StaticResource StringToBrush}}"
                             ToolTip.Tip="Drops the global paper-only guard for Trading, DEX, Sniper and TRON. Click twice to confirm."
                             Margin="0,0,10,10"
-                            Command="{Binding WalletVM.ApplyGlobalExecutionModeCommand}"
+                            Command="{Binding Wallet.ApplyGlobalExecutionModeCommand}"
                             CommandParameter="LIVE" />
                     <Button Classes="GhostButton"
                             Content="Refresh Wallet"
                             Margin="0,0,10,10"
-                            Command="{Binding WalletVM.RefreshWalletCommand}" />
+                            Command="{Binding Wallet.RefreshWalletCommand}" />
                     <Button Classes="GhostButton"
                             Content="Open Logs"
                             Margin="0,0,10,10"
@@ -168,8 +168,8 @@
               <Border Grid.Column="1" Classes="Panel">
                 <StackPanel Spacing="10">
                   <TextBlock Classes="H2" Text="Readiness Notes" />
-                  <TextBlock Text="{Binding WalletVM.GlobalExecutionSummary}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding WalletVM.GlobalQuoteAssetSummary}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding Wallet.GlobalExecutionSummary}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding Wallet.GlobalQuoteAssetSummary}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" />
                   <TextBlock Text="{Binding FuturesPrivateApiStatusLabel}" Foreground="{Binding FuturesPrivateApiStatusBrush, Converter={StaticResource StringToBrush}}" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>

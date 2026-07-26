@@ -44,6 +44,7 @@ public sealed class WidgetTemplateSelector : IDataTemplate
     public static object ResolveDataContext(string key, MainWindowViewModel main) => key switch
     {
         "liq-heatmap" => main.LiquidationHeatmapVM,
+        "sentiment"   => main.SentimentScreenVM,
         "news"        => main.NewsFeedVM,
         "positions"   => main.AllPositionsVM,
         "portfolio"   => main.WalletVM,

@@ -500,7 +500,7 @@
                 Classes="PrimaryNavTabs">
       <TabItem Header="Dashboard">
         <ScrollViewer Classes="PageScroll">
-        <views:DashboardView />
+        <views:DashboardView DataContext="{Binding DashboardLayoutVM}" />
         </ScrollViewer>
       </TabItem>
 
@@ -536,7 +536,7 @@
           </StackPanel>
         </TabItem.Header>
         <Grid>
-          <views:SniperView />
+          <views:SniperView DataContext="{Binding SniperScreenVM}" />
         </Grid>
       </TabItem>
 
@@ -912,7 +912,12 @@
           <TextBlock Classes="H1" Text="{Binding CurrentSectionTitle}" Margin="0,0,0,16"
                      IsVisible="{Binding ShowSectionTitle}" />
 
-          <views:RiskView />
+          <!-- ══════════ RISK ══════════ -->
+          <!-- Wrapper holds the section toggle: putting DataContext and IsVisible on the view
+               itself would resolve IsVisible against RiskScreenViewModel, which has no such flag. -->
+          <Panel IsVisible="{Binding IsRiskSectionVisible}">
+            <views:RiskView DataContext="{Binding RiskScreenVM}" />
+          </Panel>
 
           <!-- ══════════ BACKTEST ENGINE ══════════ -->
           <Panel IsVisible="{Binding IsBacktestSectionVisible}">

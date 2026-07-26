@@ -32,25 +32,25 @@
                     IsVisible="{Binding $parent[dash:WidgetHost].IsEditMode}">
           <Button Content="W−" FontSize="{DynamicResource FsCaption}" Padding="6,2" ToolTip.Tip="Narrower"
                   AutomationProperties.Name="Make widget narrower"
-                  Command="{Binding $parent[ItemsControl].DataContext.DashboardLayoutVM.NarrowCommand}"
+                  Command="{Binding $parent[ItemsControl].DataContext.NarrowCommand}"
                   CommandParameter="{Binding}" />
           <Button Content="W+" FontSize="{DynamicResource FsCaption}" Padding="6,2" ToolTip.Tip="Wider"
                   AutomationProperties.Name="Make widget wider"
-                  Command="{Binding $parent[ItemsControl].DataContext.DashboardLayoutVM.WidenCommand}"
+                  Command="{Binding $parent[ItemsControl].DataContext.WidenCommand}"
                   CommandParameter="{Binding}" />
           <Button Content="H−" FontSize="{DynamicResource FsCaption}" Padding="6,2" ToolTip.Tip="Shorter"
                   AutomationProperties.Name="Make widget shorter"
-                  Command="{Binding $parent[ItemsControl].DataContext.DashboardLayoutVM.ShorterCommand}"
+                  Command="{Binding $parent[ItemsControl].DataContext.ShorterCommand}"
                   CommandParameter="{Binding}" />
           <Button Content="H+" FontSize="{DynamicResource FsCaption}" Padding="6,2" ToolTip.Tip="Taller"
                   AutomationProperties.Name="Make widget taller"
-                  Command="{Binding $parent[ItemsControl].DataContext.DashboardLayoutVM.TallerCommand}"
+                  Command="{Binding $parent[ItemsControl].DataContext.TallerCommand}"
                   CommandParameter="{Binding}" />
         </StackPanel>
         <Button Grid.Column="4" Content="✕" Classes="GhostButton"
                 ToolTip.Tip="Remove widget" AutomationProperties.Name="Remove widget"
                 IsVisible="{Binding $parent[dash:WidgetHost].IsEditMode}"
-                Command="{Binding $parent[ItemsControl].DataContext.DashboardLayoutVM.RemoveWidgetCommand}"
+                Command="{Binding $parent[ItemsControl].DataContext.RemoveWidgetCommand}"
                 CommandParameter="{Binding}" />
       </Grid>
       <ContentControl Grid.Row="1" x:Name="Body" />
