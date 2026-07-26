@@ -32,9 +32,9 @@
             <Grid ColumnDefinitions="*,Auto">
               <StackPanel Spacing="3">
                 <TextBlock Text="{Binding PanelTitle}" FontSize="13" FontWeight="SemiBold" Foreground="#e8f4ff" />
-                <TextBlock Text="{Binding PanelSub}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" />
+                <TextBlock Text="{Binding PanelSub}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="{DynamicResource TextDim}" />
               </StackPanel>
-              <Button Grid.Column="1" Command="{Binding CloseModalCommand}" Background="Transparent" BorderThickness="0" Content="✕" Foreground="#2d4a5e" FontSize="15" />
+              <Button Grid.Column="1" Command="{Binding CloseModalCommand}" Background="Transparent" BorderThickness="0" Content="✕" Foreground="{DynamicResource TextDim}" FontSize="15" />
             </Grid>
           </Border>
           <Border DockPanel.Dock="Bottom" BorderBrush="#0d1b27" BorderThickness="0,1,0,0" Background="#060d14" Padding="15,12">
@@ -91,7 +91,7 @@
       <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
         <TextBlock Text="{Binding ToastIcon}" FontSize="11" Foreground="{Binding ToastColor, Converter={StaticResource StringToBrush}}" />
         <TextBlock Text="{Binding ToastMsg}" FontSize="11.5" Foreground="#e8f4ff" />
-        <TextBlock Text="{Binding ToastMeta}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" />
+        <TextBlock Text="{Binding ToastMeta}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="{DynamicResource TextDim}" />
       </StackPanel>
     </Border>
   </Panel>

@@ -24,7 +24,7 @@
         <TextBlock Classes="StatLabel" Text="BEST BID" />
         <TextBlock Classes="Mono" FontSize="17" FontWeight="Bold" Foreground="#3DDC84"
                    Text="{Binding SelectedMarket.BestBid, StringFormat='{}{0:N2}'}" />
-        <TextBlock FontSize="10" Foreground="#5A7A94"
+        <TextBlock FontSize="10" Foreground="{DynamicResource TextSoft}"
                    Text="{Binding SelectedMarket.SpreadPercentLabel, StringFormat='{}{0} spread'}" />
       </StackPanel>
     </Border>
@@ -35,7 +35,7 @@
         <TextBlock Classes="StatLabel" Text="BEST ASK" />
         <TextBlock Classes="Mono" FontSize="17" FontWeight="Bold" Foreground="#FF6B6B"
                    Text="{Binding SelectedMarket.BestAsk, StringFormat='{}{0:N2}'}" />
-        <TextBlock FontSize="10" Foreground="#5A7A94"
+        <TextBlock FontSize="10" Foreground="{DynamicResource TextSoft}"
                    Text="{Binding SelectedMarket.SpreadPercentLabel, StringFormat='{}{0} spread'}" />
       </StackPanel>
     </Border>
@@ -82,7 +82,7 @@
         <TextBlock Classes="Mono" FontSize="14" FontWeight="Bold" Foreground="#5BC0FF"
                    TextWrapping="Wrap"
                    Text="{Binding SelectedMarket.RangeLabel}" />
-        <TextBlock FontSize="10" Foreground="#5A7A94"
+        <TextBlock FontSize="10" Foreground="{DynamicResource TextSoft}"
                    Text="{Binding SelectedMarket.RangePercent, StringFormat='{}{0:N2}% band'}" />
       </StackPanel>
     </Border>
@@ -93,7 +93,7 @@
         <TextBlock Classes="StatLabel" Text="SPREAD" />
         <TextBlock Classes="Mono" FontSize="17" FontWeight="Bold" Foreground="#A78BFA"
                    Text="{Binding SelectedMarket.Spread, StringFormat='{}{0:N2}'}" />
-        <TextBlock FontSize="10" Foreground="#5A7A94"
+        <TextBlock FontSize="10" Foreground="{DynamicResource TextSoft}"
                    Text="{Binding SelectedMarket.UpdatedLabel, StringFormat='upd {0}'}" />
       </StackPanel>
     </Border>

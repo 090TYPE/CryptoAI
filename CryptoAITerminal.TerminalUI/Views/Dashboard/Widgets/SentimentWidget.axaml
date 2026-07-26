@@ -9,7 +9,7 @@
     <!-- Header row: status + AI Read -->
     <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
       <TextBlock Grid.Column="0" Text="{Binding SentimentVM.StatusLabel}"
-                 Foreground="#5A7A94" FontSize="11" VerticalAlignment="Center" />
+                 Foreground="{DynamicResource TextSoft}" FontSize="11" VerticalAlignment="Center" />
       <Button Grid.Column="2" Content="🧠 AI Read" Classes="MiniPill"
               Command="{Binding SentimentVM.AnalyzeWithAiCommand}"
               IsEnabled="{Binding !SentimentVM.InsightRunning}"
@@ -28,7 +28,7 @@
                      FontSize="24" FontWeight="Bold"
                      Foreground="{Binding SentimentVM.FearGreedBrush}"
                      HorizontalAlignment="Center" />
-          <TextBlock Text="{Binding SentimentVM.FearGreedLabel}" FontSize="8" FontWeight="Bold"
+          <TextBlock Text="{Binding SentimentVM.FearGreedLabel}" FontSize="9" FontWeight="Bold"
                      Foreground="#8FA3B8" HorizontalAlignment="Center" />
         </StackPanel>
       </Border>
@@ -72,7 +72,7 @@
           <TextBlock Classes="Mono" FontSize="15" FontWeight="Bold" Foreground="#A78BFA"
                      Text="{Binding SentimentVM.DeribitBtcIv}" />
           <TextBlock Text="{Binding SentimentVM.DeribitBtcPcRatio, StringFormat='P/C {0}'}"
-                     Foreground="#5A7A94" FontSize="10" />
+                     Foreground="{DynamicResource TextSoft}" FontSize="10" />
         </StackPanel>
       </Border>
 
@@ -82,7 +82,7 @@
           <TextBlock Classes="StatLabel" Text="FUNDING AVG" />
           <TextBlock Classes="Mono" FontSize="15" FontWeight="Bold" Foreground="#F4B860"
                      Text="{Binding FundingRateVM.AvgRateLabel}" />
-          <TextBlock Text="8h funding" Foreground="#5A7A94" FontSize="10" />
+          <TextBlock Text="8h funding" Foreground="{DynamicResource TextSoft}" FontSize="10" />
         </StackPanel>
       </Border>
 
@@ -92,7 +92,7 @@
           <Grid ColumnDefinitions="Auto,*">
             <TextBlock Grid.Column="0" Classes="StatLabel" Text="AI SIGNAL" />
             <TextBlock Grid.Column="1" Text="{Binding SentimentVM.InsightSource}"
-                       Foreground="#3D5A72" FontSize="9" HorizontalAlignment="Right"
+                       Foreground="{DynamicResource TextDim}" FontSize="9" HorizontalAlignment="Right"
                        VerticalAlignment="Center" />
           </Grid>
           <TextBlock Text="{Binding SentimentVM.InsightSignal}"
@@ -103,7 +103,7 @@
                      FontSize="11" TextWrapping="Wrap" MaxLines="3"
                      IsVisible="{Binding SentimentVM.HasInsight}" />
           <TextBlock Text="Tap 🧠 AI Read for a live market read."
-                     Foreground="#5A7A94" FontSize="11" TextWrapping="Wrap"
+                     Foreground="{DynamicResource TextSoft}" FontSize="11" TextWrapping="Wrap"
                      IsVisible="{Binding !SentimentVM.HasInsight}" />
         </StackPanel>
       </Border>

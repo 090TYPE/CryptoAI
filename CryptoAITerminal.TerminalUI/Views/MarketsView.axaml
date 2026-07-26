@@ -18,7 +18,7 @@
       <Setter Property="FontSize" Value="9" />
       <Setter Property="FontWeight" Value="Bold" />
       <Setter Property="LetterSpacing" Value="0.6" />
-      <Setter Property="Foreground" Value="#3D5A72" />
+      <Setter Property="Foreground" Value="{DynamicResource TextDim}" />
     </Style>
 
     <!-- filter / sort text pill -->
@@ -67,7 +67,7 @@
       <Setter Property="Background" Value="#07111A" />
       <Setter Property="BorderBrush" Value="#1A3040" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Foreground" Value="#3D5A72" />
+      <Setter Property="Foreground" Value="{DynamicResource TextDim}" />
       <Setter Property="FontSize" Value="9" />
       <Setter Property="FontWeight" Value="Bold" />
       <Setter Property="Padding" Value="6,4" />
@@ -184,7 +184,7 @@
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:MarketStatCellViewModel">
               <StackPanel Margin="0,0,26,0" VerticalAlignment="Center" Spacing="1">
-                <TextBlock Text="{Binding Label}" Classes="cap" FontSize="8" />
+                <TextBlock Text="{Binding Label}" Classes="cap" FontSize="9" />
                 <TextBlock Text="{Binding Value}" Classes="mono"
                            FontSize="13" FontWeight="Bold"
                            Foreground="{Binding ValueBrush}" />
@@ -204,7 +204,7 @@
               <Ellipse Width="7" Height="7" Fill="#3DDC84" Classes="PulseDot"
                        VerticalAlignment="Center" />
               <TextBlock Text="LIVE" FontSize="9" FontWeight="Bold"
-                         Foreground="#5A7A94" VerticalAlignment="Center" />
+                         Foreground="{DynamicResource TextSoft}" VerticalAlignment="Center" />
             </StackPanel>
           </Border>
         </StackPanel>
@@ -228,10 +228,10 @@
               <StackPanel Orientation="Horizontal" Spacing="5">
                 <TextBlock Text="{Binding TrackedMarketsCount}" FontSize="11"
                            FontWeight="Bold" Foreground="#C8DCEF" />
-                <TextBlock Text="tracked ·" FontSize="11" Foreground="#3D5A72" />
+                <TextBlock Text="tracked ·" FontSize="11" Foreground="{DynamicResource TextDim}" />
                 <TextBlock Text="{Binding FavoriteMarketsCount}" FontSize="11"
                            FontWeight="Bold" Foreground="#F4B860" />
-                <TextBlock Text="favourites" FontSize="11" Foreground="#3D5A72" />
+                <TextBlock Text="favourites" FontSize="11" Foreground="{DynamicResource TextDim}" />
               </StackPanel>
             </StackPanel>
 
@@ -321,7 +321,7 @@
                       Background="#091E1E" BorderThickness="0" Foreground="#21E6C1"
                       FontSize="11" FontWeight="Bold" Padding="0,7" CornerRadius="8"
                       MinHeight="0" />
-              <TextBlock Text="{Binding MarketsStatus}" Foreground="#5A7A94"
+              <TextBlock Text="{Binding MarketsStatus}" Foreground="{DynamicResource TextSoft}"
                          FontSize="10" TextWrapping="Wrap"
                          IsVisible="{Binding MarketsStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
             </StackPanel>
@@ -372,19 +372,19 @@
               <TextBlock Text="BREADTH" Classes="cap" />
               <TextBlock FontSize="12" Foreground="#C8DCEF">
                 <Run Text="{Binding PositiveMarketsCount}" />
-                <Run Text="/" Foreground="#3D5A72" />
-                <Run Text="{Binding TrackedMarketsCount}" Foreground="#3D5A72" />
-                <Run Text=" up" Foreground="#3D5A72" />
+                <Run Text="/" Foreground="{DynamicResource TextDim}" />
+                <Run Text="{Binding TrackedMarketsCount}" Foreground="{DynamicResource TextDim}" />
+                <Run Text=" up" Foreground="{DynamicResource TextDim}" />
               </TextBlock>
               <Grid ColumnDefinitions="*,*">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
-                  <TextBlock Text="↑ gainers" FontSize="10" Foreground="#3D5A72" />
+                  <TextBlock Text="↑ gainers" FontSize="10" Foreground="{DynamicResource TextDim}" />
                   <TextBlock Text="{Binding PositiveMarketsCount}" FontSize="10"
                              FontWeight="Bold" Foreground="#3DDC84" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4"
                             HorizontalAlignment="Right">
-                  <TextBlock Text="losers ↓" FontSize="10" Foreground="#3D5A72" />
+                  <TextBlock Text="losers ↓" FontSize="10" Foreground="{DynamicResource TextDim}" />
                   <TextBlock Text="{Binding NegativeMarketsCount}" FontSize="10"
                              FontWeight="Bold" Foreground="#FF6B6B" />
                 </StackPanel>
@@ -452,10 +452,10 @@
                                   CornerRadius="3" Padding="4,1">
                             <TextBlock Text="{Binding VenueBadge}"
                                        Foreground="{Binding VenueBadgeForeground}"
-                                       FontSize="8" FontWeight="Bold" />
+                                       FontSize="9" FontWeight="Bold" />
                           </Border>
                           <TextBlock Text="{Binding QuoteBadge}" FontSize="9"
-                                     Foreground="#3D5A72" VerticalAlignment="Center" />
+                                     Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                         </StackPanel>
                       </StackPanel>
                     </StackPanel>
@@ -477,12 +477,12 @@
 
                     <!-- volume -->
                     <TextBlock Grid.Column="4" Text="{Binding Volume24hLabel}"
-                               Classes="mono" FontSize="11" Foreground="#5A7A94"
+                               Classes="mono" FontSize="11" Foreground="{DynamicResource TextSoft}"
                                HorizontalAlignment="Right" VerticalAlignment="Center" />
 
                     <!-- market cap -->
                     <TextBlock Grid.Column="5" Text="{Binding MarketCapLabel}"
-                               Classes="mono" FontSize="11" Foreground="#5A7A94"
+                               Classes="mono" FontSize="11" Foreground="{DynamicResource TextSoft}"
                                HorizontalAlignment="Right" VerticalAlignment="Center" />
 
                     <!-- Live trend (real accumulated price samples) -->
@@ -525,9 +525,9 @@
                 <TextBlock Text="{Binding BaseAssetSymbol}" FontSize="16" FontWeight="Bold"
                            Foreground="#E8F4FF" />
                 <StackPanel Orientation="Horizontal" Spacing="5">
-                  <TextBlock Text="{Binding CoinName}" FontSize="10" Foreground="#3D5A72" />
-                  <TextBlock Text="·" FontSize="10" Foreground="#3D5A72" />
-                  <TextBlock Text="{Binding VenueBadge}" FontSize="10" Foreground="#3D5A72" />
+                  <TextBlock Text="{Binding CoinName}" FontSize="10" Foreground="{DynamicResource TextDim}" />
+                  <TextBlock Text="·" FontSize="10" Foreground="{DynamicResource TextDim}" />
+                  <TextBlock Text="{Binding VenueBadge}" FontSize="10" Foreground="{DynamicResource TextDim}" />
                 </StackPanel>
               </StackPanel>
               <Button Grid.Column="2" Content="☆ Save"
@@ -548,19 +548,19 @@
                   <TextBlock Text="{Binding ChangePercentLabel}" Classes="mono"
                              FontSize="13" FontWeight="Bold"
                              Foreground="{Binding ChangePillForeground}" />
-                  <TextBlock Text="· 24h · Updated" FontSize="11" Foreground="#3D5A72"
+                  <TextBlock Text="· 24h · Updated" FontSize="11" Foreground="{DynamicResource TextDim}"
                              VerticalAlignment="Center" />
                   <TextBlock Text="{Binding UpdatedLabel}" Classes="mono" FontSize="11"
-                             Foreground="#5A7A94" VerticalAlignment="Center" />
+                             Foreground="{DynamicResource TextSoft}" VerticalAlignment="Center" />
                 </StackPanel>
                 <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
                   <StackPanel Grid.Column="0" Spacing="2">
-                    <TextBlock Text="24H Low" FontSize="9" Foreground="#3D5A72" />
+                    <TextBlock Text="24H Low" FontSize="9" Foreground="{DynamicResource TextDim}" />
                     <TextBlock Text="{Binding Low24hLabel}" Classes="mono" FontSize="12"
                                FontWeight="SemiBold" Foreground="#C8DCEF" />
                   </StackPanel>
                   <StackPanel Grid.Column="1" Spacing="2" HorizontalAlignment="Right">
-                    <TextBlock Text="24H High" FontSize="9" Foreground="#3D5A72"
+                    <TextBlock Text="24H High" FontSize="9" Foreground="{DynamicResource TextDim}"
                                HorizontalAlignment="Right" />
                     <TextBlock Text="{Binding High24hLabel}" Classes="mono" FontSize="12"
                                FontWeight="SemiBold" Foreground="#C8DCEF"
@@ -654,7 +654,7 @@
                                      Classes="mono" FontSize="10" Foreground="#3DDC84"
                                      VerticalAlignment="Center" />
                           <TextBlock Grid.Column="1" Text="{Binding Quantity, StringFormat={}{0:0.###}}"
-                                     Classes="mono" FontSize="10" Foreground="#5A7A94"
+                                     Classes="mono" FontSize="10" Foreground="{DynamicResource TextSoft}"
                                      VerticalAlignment="Center" />
                         </Grid>
                       </Grid>
@@ -674,7 +674,7 @@
                                 Width="{Binding DepthWidth}" MaxWidth="150" />
                         <Grid ColumnDefinitions="Auto,*">
                           <TextBlock Grid.Column="0" Text="{Binding Quantity, StringFormat={}{0:0.###}}"
-                                     Classes="mono" FontSize="10" Foreground="#5A7A94"
+                                     Classes="mono" FontSize="10" Foreground="{DynamicResource TextSoft}"
                                      VerticalAlignment="Center" />
                           <TextBlock Grid.Column="1" Text="{Binding Price, StringFormat={}{0:0.####}}"
                                      Classes="mono" FontSize="10" Foreground="#FF6B6B"
@@ -690,10 +690,10 @@
             <!-- spread footer -->
             <Grid ColumnDefinitions="*,Auto">
               <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
-                <TextBlock Text="Spread" FontSize="9" Foreground="#3D5A72"
+                <TextBlock Text="Spread" FontSize="9" Foreground="{DynamicResource TextDim}"
                            VerticalAlignment="Center" />
                 <TextBlock Text="{Binding SpreadPercentLabel}" Classes="mono" FontSize="10"
-                           Foreground="#5A7A94" VerticalAlignment="Center" />
+                           Foreground="{DynamicResource TextSoft}" VerticalAlignment="Center" />
               </StackPanel>
               <TextBlock Grid.Column="1" Text="{Binding MidPriceLabel}" Classes="mono"
                          FontSize="11" FontWeight="Bold" Foreground="#C8DCEF" />

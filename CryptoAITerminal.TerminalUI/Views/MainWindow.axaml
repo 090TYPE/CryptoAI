@@ -106,7 +106,7 @@
                   CornerRadius="8" Padding="10,6" MinHeight="0">
             <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
               <Viewbox Width="13" Height="13" VerticalAlignment="Center"><Canvas Width="24" Height="24"><Path Classes="NavIcon" Stroke="#5A7A94" Data="M11 3a8 8 0 100 16A8 8 0 0011 3zM21 21l-4.35-4.35" /></Canvas></Viewbox>
-              <TextBlock Text="Ask AI…" Foreground="#5A7A94" FontSize="12" VerticalAlignment="Center" />
+              <TextBlock Text="Ask AI…" Foreground="{DynamicResource TextSoft}" FontSize="12" VerticalAlignment="Center" />
               <Border Background="#0D1B27" CornerRadius="4" Padding="5,1">
                 <TextBlock Text="Ctrl K" Foreground="#4E7A96" FontSize="9" FontWeight="SemiBold" />
               </Border>
@@ -127,7 +127,7 @@
                   Padding="10,6" Margin="0,0,8,0">
             <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
               <Ellipse Classes="PulseDot" Width="7" Height="7" Fill="#3DDC84" VerticalAlignment="Center" />
-              <TextBlock Text="{Binding ConnectionStateLabel}" Foreground="#5A7A94"
+              <TextBlock Text="{Binding ConnectionStateLabel}" Foreground="{DynamicResource TextSoft}"
                          FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
             </StackPanel>
           </Border>
@@ -152,7 +152,7 @@
                       Background="#FF6B6B" CornerRadius="7" MinWidth="14" Height="14"
                       Padding="3,0" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0">
                 <TextBlock Text="{Binding NotificationCountLabel}" Foreground="White"
-                           FontSize="8" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                           FontSize="9" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
               </Border>
             </Panel>
           </Button>
@@ -183,7 +183,7 @@
           <Border Background="#07111A" BorderBrush="#152535" BorderThickness="1" CornerRadius="8"
                   Padding="12,5" Margin="4,0,0,0">
             <StackPanel Spacing="1">
-              <TextBlock Text="EQUITY" Foreground="#2D4A5E" FontSize="9" FontWeight="Bold" LetterSpacing="0.8" />
+              <TextBlock Text="EQUITY" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" LetterSpacing="0.8" />
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <TextBlock Classes="Mono" Text="{Binding AccountEquityLabel}" Foreground="#E8F4FF"
                            FontSize="13" FontWeight="Bold" VerticalAlignment="Center" />
@@ -353,7 +353,7 @@
                         Background="#FF6B6B" CornerRadius="6" Width="12" Height="12"
                         HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-5,0">
                   <TextBlock Text="{Binding NewsFeedVM.UnreadBadge}" Foreground="White"
-                             FontSize="8" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                             FontSize="9" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
               </Panel>
               <TextBlock Grid.Column="1" Text="News" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" IsVisible="{Binding IsSidebarLabelsVisible}" />
@@ -1426,7 +1426,7 @@
               <StackPanel Spacing="6">
                 <StackPanel Orientation="Horizontal" Spacing="6">
                   <Ellipse Width="7" Height="7" Fill="#21E6C1" VerticalAlignment="Center" />
-                  <TextBlock Text="LIVE · what the agent is doing" Foreground="#4A6880" FontSize="10" FontWeight="SemiBold" />
+                  <TextBlock Text="LIVE · what the agent is doing" Foreground="{DynamicResource TextSoft}" FontSize="10" FontWeight="SemiBold" />
                 </StackPanel>
                 <ScrollViewer MaxHeight="160" VerticalScrollBarVisibility="Auto">
                   <ItemsControl ItemsSource="{Binding AgentActivity}">
@@ -1487,7 +1487,7 @@
 
             <!-- Footer: hint + AUTO toggle -->
             <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Foreground="#4A6880" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center"
+              <TextBlock Grid.Column="0" Foreground="{DynamicResource TextSoft}" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center"
                          Text="Ask, navigate, or command — the agent acts on the terminal. Order actions ask for approval above; turn on AUTO to let it act on its own." />
               <ToggleSwitch Grid.Column="1" IsChecked="{Binding CopilotVM.IsAutoMode}"
                             OffContent="AUTO off" OnContent="AUTO on" VerticalAlignment="Center" />

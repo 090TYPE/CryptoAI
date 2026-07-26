@@ -114,10 +114,13 @@
                  symmetrically on narrow ones so longs/shorts stay balanced. -->
             <Grid ColumnDefinitions="*,56" ColumnSpacing="0">
 
+              <!-- The heat bands are laid out against a fixed 1200px canvas. Centring it inside a
+                   clipping Border meant that on anything narrower than 1200 both edges of the map
+                   were silently cut off. Scroll instead of hiding, as BotsView and SniperView do. -->
               <Border Grid.Column="0" Background="#04101A" CornerRadius="8"
                       ClipToBounds="True" Height="460">
-                <Canvas Width="1200" Height="460"
-                        HorizontalAlignment="Center" VerticalAlignment="Top">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                <Canvas Width="1200" Height="460" VerticalAlignment="Top">
 
                   <!-- Heat bands — full-width, colour = side, opacity = magnitude -->
                   <ItemsControl ItemsSource="{Binding LiquidationHeatmapVM.HeatBands}">
@@ -147,6 +150,7 @@
                         StrokeDashArray="8,4" />
 
                 </Canvas>
+                </ScrollViewer>
               </Border>
 
               <!-- Price axis labels — absolute-positioned on a Canvas -->

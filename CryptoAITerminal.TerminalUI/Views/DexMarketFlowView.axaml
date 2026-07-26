@@ -20,7 +20,7 @@
               <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,1">
                 <TextBlock Text="{Binding Icon}" FontSize="11" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="{Binding Message}" Foreground="{Binding Brush}" FontSize="10" Margin="6,0" VerticalAlignment="Center" TextWrapping="Wrap" />
-                <TextBlock Grid.Column="2" Text="{Binding TimeLabel}" Foreground="#5a7a94" FontSize="9" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding TimeLabel}" Foreground="{DynamicResource TextSoft}" FontSize="9" VerticalAlignment="Center" />
               </Grid>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
@@ -58,13 +58,13 @@
                 <Grid ColumnDefinitions="*,*,*" Height="17">
                   <TextBlock Text="{Binding SideLabel}" Foreground="{Binding SideBrush}" FontWeight="Bold" FontSize="10" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding AmountLabel}" Foreground="#c8dcef" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding TimeLabel}" Foreground="#5a7a94" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding TimeLabel}" Foreground="{DynamicResource TextSoft}" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
         </ScrollViewer>
-        <TextBlock Text="Waiting for live trades on this pool…" Foreground="#5a7a94" FontSize="11" IsVisible="{Binding ShowMarketTradesPlaceholder}" />
+        <TextBlock Text="Waiting for live trades on this pool…" Foreground="{DynamicResource TextSoft}" FontSize="11" IsVisible="{Binding ShowMarketTradesPlaceholder}" />
       </StackPanel>
     </Border>
   </StackPanel>

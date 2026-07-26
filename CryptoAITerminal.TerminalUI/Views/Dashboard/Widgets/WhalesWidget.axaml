@@ -5,7 +5,11 @@
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.WhalesWidget"
              x:DataType="vm:MainWindowViewModel"
              x:CompileBindings="False">
-  <StackPanel Spacing="8">
+  <!-- Grid, not StackPanel: a StackPanel measures its children with infinite height, so the
+       ScrollViewer below got a viewport as tall as its content, never showed a scrollbar and
+       spilled out of the widget cell. The star row gives it a real height to scroll inside. -->
+  <Grid RowDefinitions="Auto,*">
+    <StackPanel Grid.Row="0" Spacing="8">
 
     <!-- Stats row -->
     <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
@@ -34,9 +38,11 @@
       <TextBlock Text="{Binding WhaleTrackerVM.KnownWalletCount, StringFormat='{}{0} wallets tracked'}"
                  Foreground="#8FA3B8" FontSize="10" VerticalAlignment="Center" />
     </StackPanel>
+    </StackPanel>
 
     <!-- Live whale alerts list -->
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+
+    <ScrollViewer Grid.Row="1" Margin="0,8,0,0" VerticalScrollBarVisibility="Auto">
       <ItemsControl ItemsSource="{Binding WhaleTrackerVM.RecentAlerts}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:WhaleAlertViewModel">
@@ -68,5 +74,5 @@
       </ItemsControl>
     </ScrollViewer>
 
-  </StackPanel>
+  </Grid>
 </UserControl>

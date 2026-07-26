@@ -132,11 +132,11 @@
 
                 <!-- Column headers -->
                 <Grid ColumnDefinitions="120,*,*,*,100">
-                  <TextBlock Grid.Column="0" Text="Exchange" FontSize="10" Foreground="#3A4F63" />
-                  <TextBlock Grid.Column="1" Text="Price (raw)" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="2" Text="Fee" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="3" Text="Eff. price" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="4" Text="Liquidity" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="0" Text="Exchange" FontSize="10" Foreground="{DynamicResource TextDim}" />
+                  <TextBlock Grid.Column="1" Text="Price (raw)" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="2" Text="Fee" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="3" Text="Eff. price" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="4" Text="Liquidity" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
                 </Grid>
                 <Rectangle Height="1" Fill="#1E3A5F" />
 
@@ -173,7 +173,7 @@
                                      HorizontalAlignment="Right" VerticalAlignment="Center" />
                           <TextBlock Grid.Column="4" Text="{Binding LiqLabel}"
                                      FontFamily="Consolas" FontSize="11"
-                                     Foreground="#3A4F63"
+                                     Foreground="{DynamicResource TextDim}"
                                      HorizontalAlignment="Right" VerticalAlignment="Center" />
                         </Grid>
                       </Border>
@@ -202,18 +202,18 @@
                   <!-- Summary stats -->
                   <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20">
                     <StackPanel Spacing="1" HorizontalAlignment="Right">
-                      <TextBlock Text="Average price" FontSize="10" Foreground="#3A4F63" />
+                      <TextBlock Text="Average price" FontSize="10" Foreground="{DynamicResource TextDim}" />
                       <TextBlock Text="{Binding WavgLabel}" FontFamily="Consolas"
                                  FontSize="13" FontWeight="SemiBold" Foreground="#E8F0FE" />
                     </StackPanel>
                     <StackPanel Spacing="1" HorizontalAlignment="Right">
-                      <TextBlock Text="Savings vs worst" FontSize="10" Foreground="#3A4F63" />
+                      <TextBlock Text="Savings vs worst" FontSize="10" Foreground="{DynamicResource TextDim}" />
                       <TextBlock Text="{Binding SavingsLabel}" FontFamily="Consolas"
                                  FontSize="13" FontWeight="Bold"
                                  Foreground="{Binding SavingsBrush}" />
                     </StackPanel>
                     <StackPanel Spacing="1" HorizontalAlignment="Right">
-                      <TextBlock Text="Size" FontSize="10" Foreground="#3A4F63" />
+                      <TextBlock Text="Size" FontSize="10" Foreground="{DynamicResource TextDim}" />
                       <TextBlock Text="{Binding TotalLabel}" FontFamily="Consolas"
                                  FontSize="13" Foreground="#8FA3B8" />
                     </StackPanel>
@@ -224,12 +224,12 @@
 
                 <!-- Column headers -->
                 <Grid ColumnDefinitions="120,*,*,*,*,80">
-                  <TextBlock Grid.Column="0" Text="Exchange" FontSize="10" Foreground="#3A4F63" />
-                  <TextBlock Grid.Column="1" Text="Quantity" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="2" Text="Avg price" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="3" Text="Fee" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="4" Text="Cost" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="5" Text="Share" FontSize="10" Foreground="#3A4F63" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="0" Text="Exchange" FontSize="10" Foreground="{DynamicResource TextDim}" />
+                  <TextBlock Grid.Column="1" Text="Quantity" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="2" Text="Avg price" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="3" Text="Fee" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="4" Text="Cost" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="5" Text="Share" FontSize="10" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" />
                 </Grid>
 
                 <!-- Leg rows -->

@@ -9,7 +9,7 @@
     <!-- Status + unread badge + actions -->
     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
       <TextBlock Grid.Column="0" Text="{Binding AiFeedVM.StatusLabel}"
-                 Foreground="#4A6880" FontSize="10" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                 Foreground="{DynamicResource TextSoft}" FontSize="10" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
       <Border Grid.Column="1" IsVisible="{Binding AiFeedVM.HasUnread}"
               Background="#FF6B6B" CornerRadius="8" Padding="5,1" VerticalAlignment="Center">
         <TextBlock Text="{Binding AiFeedVM.UnreadBadge, StringFormat='{}{0} new'}"
@@ -20,14 +20,14 @@
     </Grid>
 
     <TextBlock IsVisible="{Binding AiFeedVM.IsLoading}" Text="Loading server feed…"
-               Foreground="#4A6880" FontSize="11" />
+               Foreground="{DynamicResource TextSoft}" FontSize="11" />
 
     <!-- Your events (alerts, AI anomalies, bots) -->
     <StackPanel Spacing="3" IsVisible="{Binding AiFeedVM.HasInbox}">
       <Grid ColumnDefinitions="*,Auto">
         <TextBlock Grid.Column="0" Text="YOUR EVENTS" Foreground="#2D4A5A" FontSize="9" FontWeight="Bold" />
         <Button Grid.Column="1" Content="mark all read" FontSize="9" Padding="4,0"
-                Background="Transparent" Foreground="#4A6880"
+                Background="Transparent" Foreground="{DynamicResource TextSoft}"
                 Command="{Binding AiFeedVM.MarkAllReadCommand}" />
       </Grid>
       <ItemsControl ItemsSource="{Binding AiFeedVM.Inbox}">
@@ -47,7 +47,7 @@
                 <StackPanel Grid.Column="2" Spacing="2" VerticalAlignment="Top">
                   <Ellipse Width="6" Height="6" Fill="#FF6B6B" HorizontalAlignment="Right"
                            IsVisible="{Binding IsUnread}" />
-                  <TextBlock Text="{Binding AgeLabel}" Foreground="#4A6880" FontSize="9" />
+                  <TextBlock Text="{Binding AgeLabel}" Foreground="{DynamicResource TextSoft}" FontSize="9" />
                 </StackPanel>
               </Grid>
             </Border>
@@ -75,9 +75,9 @@
                   <TextBlock Grid.Column="1" Text="{Binding Title}" Foreground="#C8D8E8"
                              FontSize="11" FontWeight="Bold" TextWrapping="Wrap" />
                   <StackPanel Grid.Column="2" VerticalAlignment="Top" HorizontalAlignment="Right">
-                    <TextBlock Text="{Binding AgeLabel}" Foreground="#4A6880" FontSize="9"
+                    <TextBlock Text="{Binding AgeLabel}" Foreground="{DynamicResource TextSoft}" FontSize="9"
                                HorizontalAlignment="Right" />
-                    <TextBlock Text="{Binding Cadence}" Foreground="#2D4A5A" FontSize="8"
+                    <TextBlock Text="{Binding Cadence}" Foreground="#2D4A5A" FontSize="9"
                                HorizontalAlignment="Right" />
                   </StackPanel>
                 </Grid>
@@ -100,19 +100,19 @@
                     BorderBrush="#17263A" BorderThickness="0,0,0,1">
               <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
                 <Border Grid.Column="0" Background="#111C28" CornerRadius="3" Padding="4,2" VerticalAlignment="Top">
-                  <TextBlock Text="{Binding Group}" Foreground="#4A6880" FontSize="8" FontWeight="Bold" />
+                  <TextBlock Text="{Binding Group}" Foreground="{DynamicResource TextSoft}" FontSize="9" FontWeight="Bold" />
                 </Border>
                 <StackPanel Grid.Column="1" Spacing="1">
                   <TextBlock Text="{Binding Name}" Foreground="#C8D8E8" FontSize="10" FontWeight="Bold" />
-                  <TextBlock Text="{Binding Description}" Foreground="#4A6880" FontSize="9"
+                  <TextBlock Text="{Binding Description}" Foreground="{DynamicResource TextSoft}" FontSize="9"
                              TextWrapping="Wrap" MaxLines="1" />
                   <TextBlock Text="{Binding LatestTitle}" Foreground="#7A93A8" FontSize="9"
                              TextWrapping="Wrap" MaxLines="1" />
                 </StackPanel>
                 <StackPanel Grid.Column="2" VerticalAlignment="Top" HorizontalAlignment="Right">
-                  <TextBlock Text="{Binding Cadence}" Foreground="#2D4A5A" FontSize="8"
+                  <TextBlock Text="{Binding Cadence}" Foreground="#2D4A5A" FontSize="9"
                              HorizontalAlignment="Right" />
-                  <TextBlock Text="{Binding AgeLabel}" Foreground="#4A6880" FontSize="9"
+                  <TextBlock Text="{Binding AgeLabel}" Foreground="{DynamicResource TextSoft}" FontSize="9"
                              HorizontalAlignment="Right" IsVisible="{Binding HasLatest}" />
                 </StackPanel>
               </Grid>

@@ -4,7 +4,11 @@
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.FundingWidget"
              x:DataType="vm:MainWindowViewModel"
              x:CompileBindings="False">
-  <StackPanel Spacing="8">
+  <!-- Grid, not StackPanel: a StackPanel measures its children with infinite height, so the
+       ScrollViewer below got a viewport as tall as its content, never showed a scrollbar and
+       spilled out of the widget cell. The star row gives it a real height to scroll inside. -->
+  <Grid RowDefinitions="Auto,*">
+    <StackPanel Grid.Row="0" Spacing="8">
 
     <!-- Summary KPI strip -->
     <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
@@ -38,9 +42,11 @@
       <TextBlock Grid.Column="3" Text="MARK $"  Foreground="#5A7A90" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
       <TextBlock Grid.Column="4" Text="NEXT"    Foreground="#5A7A90" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
     </Grid>
+    </StackPanel>
 
     <!-- Rates list -->
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+
+    <ScrollViewer Grid.Row="1" Margin="0,8,0,0" VerticalScrollBarVisibility="Auto">
       <ItemsControl ItemsSource="{Binding FundingRateVM.DisplayRates}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:FundingRateRowViewModel">
@@ -68,5 +74,5 @@
       </ItemsControl>
     </ScrollViewer>
 
-  </StackPanel>
+  </Grid>
 </UserControl>

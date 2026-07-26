@@ -20,28 +20,28 @@
               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                 <Border Background="#0D1B29" CornerRadius="8" Padding="14,8">
                   <StackPanel Spacing="1" HorizontalAlignment="Center">
-                    <TextBlock Text="Total" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
+                    <TextBlock Text="Total" FontSize="9" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
                     <TextBlock Text="{Binding TotalSymbols}" FontSize="16" FontWeight="Bold"
                                Foreground="#8FA3B8" HorizontalAlignment="Center" />
                   </StackPanel>
                 </Border>
                 <Border Background="#0A1F16" CornerRadius="8" Padding="14,8">
                   <StackPanel Spacing="1" HorizontalAlignment="Center">
-                    <TextBlock Text="🔥 Hot" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
+                    <TextBlock Text="🔥 Hot" FontSize="9" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
                     <TextBlock Text="{Binding HotCount}" FontSize="16" FontWeight="Bold"
                                Foreground="#FF6B00" HorizontalAlignment="Center" />
                   </StackPanel>
                 </Border>
                 <Border Background="#0A1F0A" CornerRadius="8" Padding="14,8">
                   <StackPanel Spacing="1" HorizontalAlignment="Center">
-                    <TextBlock Text="▲ Gainers" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
+                    <TextBlock Text="▲ Gainers" FontSize="9" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
                     <TextBlock Text="{Binding GainersCount}" FontSize="16" FontWeight="Bold"
                                Foreground="#21E6C1" HorizontalAlignment="Center" />
                   </StackPanel>
                 </Border>
                 <Border Background="#1F0A0A" CornerRadius="8" Padding="14,8">
                   <StackPanel Spacing="1" HorizontalAlignment="Center">
-                    <TextBlock Text="▼ Losers" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
+                    <TextBlock Text="▼ Losers" FontSize="9" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
                     <TextBlock Text="{Binding LosersCount}" FontSize="16" FontWeight="Bold"
                                Foreground="#FF5555" HorizontalAlignment="Center" />
                   </StackPanel>
@@ -112,7 +112,7 @@
                                  FormatString="F1" Increment="0.5"
                                  Background="#131F2E" Foreground="#E8F0FE"
                                  BorderBrush="#445E78" CornerRadius="8" Padding="8,6" MinHeight="38" />
-                  <TextBlock Grid.Column="7" Text="…" FontSize="11" Foreground="#3A4F63" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                  <TextBlock Grid.Column="7" Text="…" FontSize="11" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" HorizontalAlignment="Center" />
                   <NumericUpDown Grid.Column="8" Value="{Binding MaxChange, Mode=TwoWay}"
                                  FormatString="F1" Increment="0.5"
                                  Background="#131F2E" Foreground="#E8F0FE"
@@ -124,7 +124,7 @@
                                  FormatString="F0"
                                  Background="#131F2E" Foreground="#E8F0FE"
                                  BorderBrush="#445E78" CornerRadius="8" Padding="8,6" MinHeight="38" />
-                  <TextBlock Grid.Column="13" Text="…" FontSize="11" Foreground="#3A4F63" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                  <TextBlock Grid.Column="13" Text="…" FontSize="11" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" HorizontalAlignment="Center" />
                   <NumericUpDown Grid.Column="14" Value="{Binding MaxRsi, Mode=TwoWay}"
                                  Minimum="0" Maximum="100" Increment="5"
                                  FormatString="F0"
@@ -149,7 +149,7 @@
 
                   <!-- Column headers (sortable) -->
                   <Grid ColumnDefinitions="30,*,90,80,90,80,70,70">
-                    <TextBlock Grid.Column="0" Text="" FontSize="10" Foreground="#3A4F63" />
+                    <TextBlock Grid.Column="0" Text="" FontSize="10" Foreground="{DynamicResource TextDim}" />
                     <Button Grid.Column="1" Classes="SortHeader"
                             Command="{Binding SortByCommand}" CommandParameter="symbol">
                       Symbol</Button>
@@ -169,7 +169,7 @@
                             Command="{Binding SortByCommand}" CommandParameter="activity"
                             HorizontalAlignment="Right">Act.</Button>
                     <TextBlock Grid.Column="7" Text="H/L" FontSize="10"
-                               Foreground="#3A4F63" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                               Foreground="{DynamicResource TextDim}" HorizontalAlignment="Right" VerticalAlignment="Center" />
                   </Grid>
 
                   <Rectangle Height="1" Fill="#1E3A5F" />
@@ -194,7 +194,7 @@
                                 <TextBlock Text="{Binding Symbol}" FontSize="12"
                                            FontWeight="SemiBold" Foreground="#E8F0FE" />
                                 <TextBlock Text="{Binding Exchange}" FontSize="9"
-                                           Foreground="#3A4F63" />
+                                           Foreground="{DynamicResource TextDim}" />
                               </StackPanel>
                               <!-- Price -->
                               <TextBlock Grid.Column="2" Text="{Binding PriceLabel}"
@@ -226,7 +226,7 @@
                               <!-- High / Low -->
                               <TextBlock Grid.Column="7" Text="{Binding HighLowLabel}"
                                          FontFamily="Consolas" FontSize="9"
-                                         Foreground="#3A4F63"
+                                         Foreground="{DynamicResource TextDim}"
                                          HorizontalAlignment="Right" VerticalAlignment="Center" />
                             </Grid>
                           </Button>
@@ -262,7 +262,7 @@
                                              Foreground="#8FA3B8" TextWrapping="Wrap" />
                                 </StackPanel>
                                 <TextBlock Grid.Column="2" Text="{Binding TimeLabel}"
-                                           FontSize="9" Foreground="#3A4F63"
+                                           FontSize="9" Foreground="{DynamicResource TextDim}"
                                            VerticalAlignment="Top" />
                               </Grid>
                             </Border>
@@ -315,7 +315,7 @@
                                 <TextBlock Text="{Binding Symbol}" FontSize="11"
                                            FontWeight="SemiBold" Foreground="#E8F0FE" />
                                 <TextBlock Text="{Binding Note}" FontSize="9"
-                                           Foreground="#3A4F63" />
+                                           Foreground="{DynamicResource TextDim}" />
                               </StackPanel>
                               <TextBlock Grid.Column="1" Text="{Binding PriceLabel}"
                                          FontFamily="Consolas" FontSize="11"
@@ -331,7 +331,7 @@
                               <Button Grid.Column="3"
                                       Command="{Binding $parent[ItemsControl].DataContext.RemoveLevelCommand}"
                                       CommandParameter="{Binding}"
-                                      Background="Transparent" Foreground="#3A4F63"
+                                      Background="Transparent" Foreground="{DynamicResource TextDim}"
                                       FontSize="12" Padding="2,0"
                                       VerticalAlignment="Center">×</Button>
                             </Grid>
@@ -683,7 +683,7 @@
 
                       <!-- Token links -->
                       <TextBlock Text="{Binding SelectedToken.TokenAddress, StringFormat=Token: {0}}"
-                                 Foreground="#3A4F63" TextWrapping="Wrap" FontSize="10"
+                                 Foreground="{DynamicResource TextDim}" TextWrapping="Wrap" FontSize="10"
                                  IsVisible="{Binding HasSelectedToken}" />
                     </StackPanel>
                     </ScrollViewer>

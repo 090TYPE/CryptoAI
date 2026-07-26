@@ -7,7 +7,7 @@
   <UserControl.Styles>
     <StyleInclude Source="avares://CryptoAITerminal.TerminalUI/Styles/TradingDeskStyles.axaml" />
     <Style Selector="TextBlock.row">
-      <Setter Property="Foreground" Value="#5a7a94" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSoft}" />
       <Setter Property="FontSize" Value="10" />
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
@@ -41,7 +41,7 @@
             <TextBlock Text="{Binding TokenMeta.Name}" Foreground="#e8f4ff" FontWeight="Bold" FontSize="15" VerticalAlignment="Center" />
             <TextBlock Text="{Binding TokenMeta.Symbol}" Foreground="#a855f7" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" />
             <Border Background="#07221a" CornerRadius="4" Padding="6,1" VerticalAlignment="Center" IsVisible="{Binding TokenMeta.IsVerified}">
-              <TextBlock Text="✔ VERIFIED" Foreground="#3ddc84" FontSize="8" FontWeight="Bold" />
+              <TextBlock Text="✔ VERIFIED" Foreground="#3ddc84" FontSize="9" FontWeight="Bold" />
             </Border>
           </StackPanel>
           <!-- Tags -->

@@ -27,11 +27,11 @@
             <TextBlock Grid.Column="2" Grid.Row="1" Text="{Binding GasMonitorVM.EthFastLabel}"
                        Foreground="{Binding GasMonitorVM.EthFastColor}" FontSize="13" FontWeight="Bold" />
             <TextBlock Grid.Column="0" Grid.Row="2" Text="{Binding GasMonitorVM.EthSlowTimeLabel}"
-                       Foreground="#4A6880" FontSize="9" />
+                       Foreground="{DynamicResource TextSoft}" FontSize="9" />
             <TextBlock Grid.Column="1" Grid.Row="2" Text="{Binding GasMonitorVM.EthStdTimeLabel}"
-                       Foreground="#4A6880" FontSize="9" />
+                       Foreground="{DynamicResource TextSoft}" FontSize="9" />
             <TextBlock Grid.Column="2" Grid.Row="2" Text="{Binding GasMonitorVM.EthFastTimeLabel}"
-                       Foreground="#4A6880" FontSize="9" />
+                       Foreground="{DynamicResource TextSoft}" FontSize="9" />
           </Grid>
         </StackPanel>
       </Border>
@@ -77,7 +77,7 @@
 
     <!-- Last updated -->
     <TextBlock Text="{Binding GasMonitorVM.LastUpdatedLabel}"
-               Foreground="#4A6880" FontSize="9" HorizontalAlignment="Right" />
+               Foreground="{DynamicResource TextSoft}" FontSize="9" HorizontalAlignment="Right" />
 
   </StackPanel>
 </UserControl>

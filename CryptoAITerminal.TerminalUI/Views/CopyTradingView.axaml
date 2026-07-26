@@ -149,7 +149,7 @@
                   </ItemsControl>
                 </ScrollViewer>
                 <TextBlock Text="No activity yet. Switch to Leader or Follower mode to start."
-                           Foreground="#3A4F63" FontSize="11"
+                           Foreground="{DynamicResource TextDim}" FontSize="11"
                            IsVisible="{Binding !CopyTradingVM.Log.Count}" />
               </StackPanel>
             </Border>

@@ -20,7 +20,7 @@
 
     <Border Classes="TdCard">
       <Grid ColumnDefinitions="Auto,*">
-        <TextBlock Text="Native balance" Foreground="#5a7a94" FontSize="11" VerticalAlignment="Center" />
+        <TextBlock Text="Native balance" Foreground="{DynamicResource TextSoft}" FontSize="11" VerticalAlignment="Center" />
         <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding PortfolioNativeLabel}" Foreground="#e8f4ff" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" TextWrapping="Wrap" />
       </Grid>
     </Border>
@@ -29,7 +29,7 @@
       <TextBlock Classes="TdLabel" Text="COVALENT (GOLDRUSH) API KEY — OPTIONAL" />
       <TextBox Text="{Binding PortfolioApiKey}" PlaceholderText="paste key for cross-chain holdings + USD value"
                PasswordChar="•" FontSize="10" Background="#0a1420" BorderBrush="#1c2f42" Foreground="#c8dcef" />
-      <TextBlock Text="{Binding PortfolioModeLabel}" Foreground="#5a7a94" FontSize="9" TextWrapping="Wrap" />
+      <TextBlock Text="{Binding PortfolioModeLabel}" Foreground="{DynamicResource TextSoft}" FontSize="9" TextWrapping="Wrap" />
     </StackPanel>
 
     <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="10" Margin="2,0">
@@ -52,6 +52,6 @@
     </ItemsControl>
 
     <TextBlock Text="No tracked holdings on the wallet's active network yet. Add tokens to the watchlist and connect a wallet — balances are read live for the current chain."
-               Foreground="#5a7a94" FontSize="10" TextWrapping="Wrap" IsVisible="{Binding ShowPortfolioPlaceholder}" />
+               Foreground="{DynamicResource TextSoft}" FontSize="10" TextWrapping="Wrap" IsVisible="{Binding ShowPortfolioPlaceholder}" />
   </StackPanel>
 </UserControl>

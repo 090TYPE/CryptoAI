@@ -42,7 +42,7 @@
             <TextBlock Grid.Column="0" Classes="Mono" FontSize="16" FontWeight="Bold" Foreground="#21E6C1"
                        Text="{Binding SelectedMarket.MidPrice, StringFormat='{}{0:N2}'}" />
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-              <TextBlock Text="MID" Foreground="#5A7A94" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
+              <TextBlock Text="MID" Foreground="{DynamicResource TextSoft}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
               <TextBlock Classes="Mono" FontSize="10" Foreground="#8FA3B8" VerticalAlignment="Center"
                          Text="{Binding SelectedMarket.SpreadPercentLabel}" />
             </StackPanel>

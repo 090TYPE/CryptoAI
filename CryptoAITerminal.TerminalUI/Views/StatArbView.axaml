@@ -119,7 +119,7 @@
                   </ItemsControl>
                 </ScrollViewer>
                 <TextBlock Text="Engine not started. Click ▶ Start to begin."
-                           Foreground="#3A4F63" FontSize="11"
+                           Foreground="{DynamicResource TextDim}" FontSize="11"
                            IsVisible="{Binding !StatArbVM.IsRunning}" />
               </StackPanel>
             </Border>

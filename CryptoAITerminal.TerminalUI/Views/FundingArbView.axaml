@@ -44,7 +44,7 @@
                                FormatString="N0" />
 
                 <!-- Risk reminder -->
-                <TextBlock Grid.Column="6" FontSize="10" Foreground="#3A4F63"
+                <TextBlock Grid.Column="6" FontSize="10" Foreground="{DynamicResource TextDim}"
                            TextWrapping="Wrap" VerticalAlignment="Center" Margin="16,0,0,0"
                            Text="Strategy: long spot + short perp. Delta-neutral. Earns funding payments every 8 h." />
               </Grid>
@@ -65,7 +65,7 @@
                                Minimum="1" Maximum="10000" Increment="5"
                                FormatString="N0"
                                IsEnabled="{Binding FundingArbitrageVM.AutoReinvest}" />
-                <TextBlock Grid.Column="4" FontSize="10" Foreground="#3A4F63"
+                <TextBlock Grid.Column="4" FontSize="10" Foreground="{DynamicResource TextDim}"
                            TextWrapping="Wrap" VerticalAlignment="Center" Margin="8,0,0,0"
                            Text="Reinvest fires when funding collected ≥ Threshold USD." />
               </Grid>
@@ -187,7 +187,7 @@
                   <!-- Empty state -->
                   <TextBlock IsVisible="{Binding !FundingArbitrageVM.HasOpportunities}"
                              Text="No opportunities above threshold. Try lowering Min rate or press Refresh."
-                             Foreground="#3A4F63" FontSize="12" TextWrapping="Wrap" Margin="0,8" />
+                             Foreground="{DynamicResource TextDim}" FontSize="12" TextWrapping="Wrap" Margin="0,8" />
                 </StackPanel>
               </Border>
 
@@ -268,7 +268,7 @@
                   <StackPanel IsVisible="{Binding !FundingArbitrageVM.Positions.Count}"
                               Spacing="6" Margin="0,16">
                     <TextBlock Text="No open positions"
-                               Foreground="#3A4F63" FontSize="13"
+                               Foreground="{DynamicResource TextDim}" FontSize="13"
                                HorizontalAlignment="Center" />
                     <TextBlock Text="Press ⚡ Open on any opportunity to start earning funding."
                                Foreground="#2A3A4A" FontSize="11"

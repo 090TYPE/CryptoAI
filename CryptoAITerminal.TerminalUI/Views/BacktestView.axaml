@@ -180,7 +180,7 @@
                       <Border Width="18" Height="2" Background="#F4B860" VerticalAlignment="Center" />
                       <TextBlock Text="Buy &amp; Hold" Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
                     </StackPanel>
-                    <TextBlock Text="{Binding BacktestVM.EquityDateRange}" Foreground="#4A6880" FontSize="11" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding BacktestVM.EquityDateRange}" Foreground="{DynamicResource TextSoft}" FontSize="11" VerticalAlignment="Center" />
                   </StackPanel>
                 </Grid>
 
@@ -188,8 +188,8 @@
                 <Grid>
                   <!-- Ось Y: мин/макс -->
                   <StackPanel HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="36">
-                    <TextBlock Text="{Binding BacktestVM.EquityMaxLabel}" FontSize="10" Foreground="#4A6880" />
-                    <TextBlock Text="{Binding BacktestVM.EquityMinLabel}" FontSize="10" Foreground="#4A6880"
+                    <TextBlock Text="{Binding BacktestVM.EquityMaxLabel}" FontSize="10" Foreground="{DynamicResource TextSoft}" />
+                    <TextBlock Text="{Binding BacktestVM.EquityMinLabel}" FontSize="10" Foreground="{DynamicResource TextSoft}"
                                VerticalAlignment="Bottom" Margin="0,110,0,0" />
                   </StackPanel>
                   <Border Background="#07131C" CornerRadius="6" Height="130" Margin="40,0,0,0" ClipToBounds="True">
@@ -223,7 +223,7 @@
                   <StackPanel Grid.Column="0">
                     <TextBlock Classes="H2" Text="Walk-Forward Optimizer" />
                     <TextBlock Text="Splits data into IS/OOS folds · sweeps all parameter combinations · ranks by OOS WF Score"
-                               Foreground="#4A6880" FontSize="11" />
+                               Foreground="{DynamicResource TextSoft}" FontSize="11" />
                   </StackPanel>
                   <StackPanel Grid.Column="1" Spacing="4">
                     <TextBlock Classes="Overline" Text="Folds" />
@@ -322,7 +322,7 @@
                   <StackPanel Grid.Column="0">
                     <TextBlock Classes="H2" Text="Monte Carlo Simulator" />
                     <TextBlock Text="Runs the selected strategy N times on random candle subsets · reports mean, median, σ, and a 90% confidence interval"
-                               Foreground="#4A6880" FontSize="11" />
+                               Foreground="{DynamicResource TextSoft}" FontSize="11" />
                   </StackPanel>
                   <StackPanel Grid.Column="1" Spacing="4">
                     <TextBlock Classes="Overline" Text="Runs" />
@@ -385,7 +385,7 @@
                   <StackPanel Grid.Column="0">
                     <TextBlock Classes="H2" Text="🧠 AI Review" />
                     <TextBlock Text="Robust or overfit? An AI read of this backtest."
-                               Foreground="#4A6880" FontSize="11" />
+                               Foreground="{DynamicResource TextSoft}" FontSize="11" />
                   </StackPanel>
                   <TextBlock Grid.Column="1" Text="{Binding BacktestVM.AiReviewSource}"
                              Foreground="#5C6E82" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0" />
@@ -417,7 +417,7 @@
                   <StackPanel Grid.Column="0">
                     <TextBlock Classes="H2" Text="Strategy Comparison" />
                     <TextBlock Text="MA · RSI · BB · Breakout presets on the same dataset. Sorted by net return."
-                               Foreground="#4A6880" FontSize="11" />
+                               Foreground="{DynamicResource TextSoft}" FontSize="11" />
                   </StackPanel>
                 </Grid>
 
@@ -469,7 +469,7 @@
                   <TextBlock Classes="H2" Text="Trades" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="1"
                              Text="{Binding BacktestVM.TradeCountLabel, StringFormat='Total: {0}'}"
-                             Foreground="#4A6880" VerticalAlignment="Center" />
+                             Foreground="{DynamicResource TextSoft}" VerticalAlignment="Center" />
                 </Grid>
                 <Grid ColumnDefinitions="110,80,80,110,60,50" ColumnSpacing="8">
                   <TextBlock Grid.Column="0" Classes="Overline" Text="Opened" />
@@ -494,7 +494,7 @@
                         <TextBlock Grid.Column="3" Text="{Binding CloseTime}"
                                    Foreground="#8FA3B8" FontSize="11" VerticalAlignment="Center" />
                         <TextBlock Grid.Column="4" Text="{Binding Duration}"
-                                   Foreground="#4A6880" FontSize="11" VerticalAlignment="Center" />
+                                   Foreground="{DynamicResource TextSoft}" FontSize="11" VerticalAlignment="Center" />
                         <TextBlock Grid.Column="5" Text="{Binding ReturnLabel}"
                                    Foreground="{Binding ReturnColor}"
                                    FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" />

@@ -21,12 +21,27 @@
     <SolidColorBrush x:Key="PanelStroke" Color="#152233" />
     <SolidColorBrush x:Key="PanelStrokeBright" Color="#22384F" />
     <SolidColorBrush x:Key="PanelStrokeSubtle" Color="#111C28" />
-    <!-- Текст -->
+    <!-- Текст.
+         Значения TextSoft и TextDim подняты до контраста WCAG AA на фоне #07101A: были #5A7A94
+         (4,2:1) и #3D5A72 (2,6:1), а самый частый размер текста в приложении — 9–11px, где 4,5:1
+         это минимум, а не пожелание. Прежний #2d4a5e давал 2,1:1 и стоял на 378 подписях, включая
+         данные, а не только заголовки колонок. Для рамок и разделителей тёмные оттенки остались
+         как были — там контраст текста ни при чём. -->
     <SolidColorBrush x:Key="TextPrimary" Color="#E8F4FF" />
     <SolidColorBrush x:Key="TextSecondary" Color="#D0E4F4" />
     <SolidColorBrush x:Key="TextMuted" Color="#8FA3B8" />
-    <SolidColorBrush x:Key="TextSoft" Color="#5A7A94" />
-    <SolidColorBrush x:Key="TextDim" Color="#3D5A72" />
+    <SolidColorBrush x:Key="TextSoft" Color="#7C97AF" />
+    <SolidColorBrush x:Key="TextDim" Color="#6A85A0" />
+    <!-- Fluent paints ToggleSwitch, Slider and selection highlights with the Windows accent colour,
+         which is whatever the user picked in personalisation — by default blue. The switches here
+         arm real money (Auto-Execute, Auto-Reinvest, auto mode), so they must read as this app's
+         accent, not as a system default that changes per machine. -->
+    <Color x:Key="SystemAccentColor">#21E6C1</Color>
+    <Color x:Key="SystemAccentColorDark1">#1BC7A8</Color>
+    <Color x:Key="SystemAccentColorDark2">#149E86</Color>
+    <Color x:Key="SystemAccentColorLight1">#4FF1D4</Color>
+    <Color x:Key="SystemAccentColorLight2">#7FF6E1</Color>
+
     <!-- Акценты -->
     <SolidColorBrush x:Key="Accent" Color="#21E6C1" />
     <SolidColorBrush x:Key="AccentSoft" Color="#0E2A2A" />
@@ -317,7 +332,9 @@
     <Setter Property="FontSize" Value="13" />
   </Style>
 
-  <Style Selector="Button.SideNavButton:pointerover">
+  <!-- Fluent applies the hover/pressed visual to PART_ContentPresenter, so a Background
+       setter on the Button itself is overridden and never shows. -->
+  <Style Selector="Button.SideNavButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="#0A1826" />
     <Setter Property="Foreground" Value="#C8DCEF" />
   </Style>
@@ -349,7 +366,9 @@
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
 
-  <Style Selector="Button.TopNavButton:pointerover">
+  <!-- Fluent applies the hover/pressed visual to PART_ContentPresenter, so a Background
+       setter on the Button itself is overridden and never shows. -->
+  <Style Selector="Button.TopNavButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="#0F1823" />
   </Style>
 
@@ -385,7 +404,9 @@
     <Setter Property="MinHeight" Value="36" />
   </Style>
 
-  <Style Selector="Button:pointerover">
+  <!-- Fluent applies the hover/pressed visual to PART_ContentPresenter, so a Background
+       setter on the Button itself is overridden and never shows. -->
+  <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="#1A2840" />
     <Setter Property="BorderBrush" Value="#4A7AAA" />
   </Style>
@@ -428,7 +449,9 @@
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="CornerRadius" Value="6" />
   </Style>
-  <Style Selector="Button.AccentButton:disabled">
+  <!-- Fluent applies the hover/pressed visual to PART_ContentPresenter, so a Background
+       setter on the Button itself is overridden and never shows. -->
+  <Style Selector="Button.AccentButton:disabled /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="#1A2E3A" />
     <Setter Property="Foreground" Value="#3A5570" />
   </Style>
@@ -615,6 +638,32 @@
 
   <Style Selector="Slider.TradeSlider">
     <Setter Property="MinHeight" Value="28" />
+  </Style>
+
+  <!-- ToggleSwitch: the "on" pill is drawn by the template, so it needs template-targeted setters
+       the same way Button hover does. These switches gate live execution — Auto-Execute in the
+       arbitrage scanner, Auto-Reinvest in funding arb — so "on" has to be unmistakable. -->
+  <Style Selector="ToggleSwitch">
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="MinWidth" Value="0" />
+  </Style>
+  <Style Selector="ToggleSwitch:checked /template/ Border#SwitchKnobBounds">
+    <Setter Property="Background" Value="{DynamicResource Accent}" />
+  </Style>
+  <Style Selector="ToggleSwitch:unchecked /template/ Border#SwitchKnobBounds">
+    <Setter Property="Background" Value="#16232F" />
+  </Style>
+
+  <!-- Slider: in Avalonia's Fluent template the track is two RepeatButtons, not a Foreground brush —
+       PART_DecreaseButton is the filled portion, PART_IncreaseButton the remainder. -->
+  <Style Selector="Slider /template/ RepeatButton#PART_DecreaseButton">
+    <Setter Property="Background" Value="{DynamicResource Accent}" />
+  </Style>
+  <Style Selector="Slider /template/ RepeatButton#PART_IncreaseButton">
+    <Setter Property="Background" Value="#16232F" />
+  </Style>
+  <Style Selector="Slider /template/ Thumb">
+    <Setter Property="Background" Value="{DynamicResource Accent}" />
   </Style>
 
   <!-- ============================================================
@@ -975,12 +1024,16 @@
     <Setter Property="BorderBrush" Value="#4A2831" />
   </Style>
 
-  <Style Selector="Button.OrderBookBidRow:pointerover">
+  <!-- Fluent applies the hover/pressed visual to PART_ContentPresenter, so a Background
+       setter on the Button itself is overridden and never shows. -->
+  <Style Selector="Button.OrderBookBidRow:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="#143026" />
     <Setter Property="BorderBrush" Value="#2F7158" />
   </Style>
 
-  <Style Selector="Button.OrderBookAskRow:pointerover">
+  <!-- Fluent applies the hover/pressed visual to PART_ContentPresenter, so a Background
+       setter on the Button itself is overridden and never shows. -->
+  <Style Selector="Button.OrderBookAskRow:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="#2A171D" />
     <Setter Property="BorderBrush" Value="#7C3F4D" />
   </Style>

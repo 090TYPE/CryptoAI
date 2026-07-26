@@ -4,34 +4,38 @@
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.ScannerWidget"
              x:DataType="vm:MainWindowViewModel"
              x:CompileBindings="False">
-  <StackPanel Spacing="8">
+  <!-- Grid, not StackPanel: a StackPanel measures its children with infinite height, so the
+       ScrollViewer below got a viewport as tall as its content, never showed a scrollbar and
+       spilled out of the widget cell. The star row gives it a real height to scroll inside. -->
+  <Grid RowDefinitions="Auto,*">
+    <StackPanel Grid.Row="0" Spacing="8">
 
     <!-- KPI strip -->
     <StackPanel Orientation="Horizontal" Spacing="8">
       <Border Background="#0D1B29" CornerRadius="6" Padding="10,5">
         <StackPanel Spacing="1" HorizontalAlignment="Center">
-          <TextBlock Text="Total" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
+          <TextBlock Text="Total" FontSize="9" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
           <TextBlock Text="{Binding ScannerVM.TotalSymbols}" FontSize="14" FontWeight="Bold"
                      Foreground="#8FA3B8" HorizontalAlignment="Center" />
         </StackPanel>
       </Border>
       <Border Background="#0A1F16" CornerRadius="6" Padding="10,5">
         <StackPanel Spacing="1" HorizontalAlignment="Center">
-          <TextBlock Text="Hot" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
+          <TextBlock Text="Hot" FontSize="9" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
           <TextBlock Text="{Binding ScannerVM.HotCount}" FontSize="14" FontWeight="Bold"
                      Foreground="#FF6B00" HorizontalAlignment="Center" />
         </StackPanel>
       </Border>
       <Border Background="#0A1F0A" CornerRadius="6" Padding="10,5">
         <StackPanel Spacing="1" HorizontalAlignment="Center">
-          <TextBlock Text="Gainers" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
+          <TextBlock Text="Gainers" FontSize="9" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
           <TextBlock Text="{Binding ScannerVM.GainersCount}" FontSize="14" FontWeight="Bold"
                      Foreground="#21E6C1" HorizontalAlignment="Center" />
         </StackPanel>
       </Border>
       <Border Background="#1F0A0A" CornerRadius="6" Padding="10,5">
         <StackPanel Spacing="1" HorizontalAlignment="Center">
-          <TextBlock Text="Losers" FontSize="9" Foreground="#3A4F63" HorizontalAlignment="Center" />
+          <TextBlock Text="Losers" FontSize="9" Foreground="{DynamicResource TextDim}" HorizontalAlignment="Center" />
           <TextBlock Text="{Binding ScannerVM.LosersCount}" FontSize="14" FontWeight="Bold"
                      Foreground="#FF5555" HorizontalAlignment="Center" />
         </StackPanel>
@@ -40,17 +44,19 @@
 
     <!-- Table header -->
     <Grid ColumnDefinitions="20,*,80,70,80,60">
-      <TextBlock Grid.Column="0" Text="" FontSize="9" Foreground="#3A4F63" />
-      <TextBlock Grid.Column="1" Text="SYMBOL"  Foreground="#3A4F63" FontSize="9" FontWeight="Bold" />
-      <TextBlock Grid.Column="2" Text="PRICE"   Foreground="#3A4F63" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
-      <TextBlock Grid.Column="3" Text="24h %"   Foreground="#3A4F63" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
-      <TextBlock Grid.Column="4" Text="VOLUME"  Foreground="#3A4F63" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
-      <TextBlock Grid.Column="5" Text="RSI"     Foreground="#3A4F63" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="0" Text="" FontSize="9" Foreground="{DynamicResource TextDim}" />
+      <TextBlock Grid.Column="1" Text="SYMBOL"  Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
+      <TextBlock Grid.Column="2" Text="PRICE"   Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="3" Text="24h %"   Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="4" Text="VOLUME"  Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+      <TextBlock Grid.Column="5" Text="RSI"     Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
     </Grid>
     <Rectangle Height="1" Fill="#1E3A5F" />
+    </StackPanel>
 
     <!-- Scanner rows -->
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+
+    <ScrollViewer Grid.Row="1" Margin="0,8,0,0" VerticalScrollBarVisibility="Auto">
       <ItemsControl ItemsSource="{Binding ScannerVM.Rows}">
         <ItemsControl.ItemTemplate>
           <DataTemplate>
@@ -63,7 +69,7 @@
                   <TextBlock Text="{Binding Symbol}" FontSize="11"
                              FontWeight="SemiBold" Foreground="#E8F0FE" />
                   <TextBlock Text="{Binding Exchange}" FontSize="9"
-                             Foreground="#3A4F63" />
+                             Foreground="{DynamicResource TextDim}" />
                 </StackPanel>
                 <TextBlock Grid.Column="2" Text="{Binding PriceLabel}"
                            FontFamily="Consolas" FontSize="10"
@@ -90,5 +96,5 @@
       </ItemsControl>
     </ScrollViewer>
 
-  </StackPanel>
+  </Grid>
 </UserControl>

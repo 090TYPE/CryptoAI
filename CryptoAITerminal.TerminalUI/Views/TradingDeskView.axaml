@@ -43,7 +43,7 @@
                   <TextBlock Text="PERP" Foreground="#5bc0ff" FontSize="9" FontWeight="Bold" />
                 </Border>
               </StackPanel>
-              <TextBlock Text="{Binding SelectedSpotExchange, StringFormat={}{0} · CEX}" Foreground="#5a7a94" FontSize="10" LetterSpacing="0.5" />
+              <TextBlock Text="{Binding SelectedSpotExchange, StringFormat={}{0} · CEX}" Foreground="{DynamicResource TextSoft}" FontSize="10" LetterSpacing="0.5" />
             </StackPanel>
           </Grid>
 
@@ -176,10 +176,10 @@
                 </Grid>
                 <Slider Minimum="1" Maximum="125" Value="{Binding ManualFuturesLeverage}" Classes="TradeSlider" />
                 <Grid ColumnDefinitions="*,*,*,*">
-                  <TextBlock Grid.Column="0" Text="1×" Foreground="#3d5a72" FontSize="9" />
-                  <TextBlock Grid.Column="1" Text="25×" Foreground="#3d5a72" FontSize="9" HorizontalAlignment="Center" />
-                  <TextBlock Grid.Column="2" Text="50×" Foreground="#3d5a72" FontSize="9" HorizontalAlignment="Center" />
-                  <TextBlock Grid.Column="3" Text="125×" Foreground="#3d5a72" FontSize="9" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="0" Text="1×" Foreground="{DynamicResource TextDim}" FontSize="9" />
+                  <TextBlock Grid.Column="1" Text="25×" Foreground="{DynamicResource TextDim}" FontSize="9" HorizontalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Text="50×" Foreground="{DynamicResource TextDim}" FontSize="9" HorizontalAlignment="Center" />
+                  <TextBlock Grid.Column="3" Text="125×" Foreground="{DynamicResource TextDim}" FontSize="9" HorizontalAlignment="Right" />
                 </Grid>
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="5">
                   <Button Grid.Column="0" Content="CROSS" Classes="TdSeg fill amber" Command="{Binding SelectMarginModeCommand}" CommandParameter="Cross"
@@ -205,7 +205,7 @@
                 <TextBlock Classes="TdLabel" Text="SIZE" />
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
                   <TextBlock Classes="TdNum" Text="{Binding WalletVM.GlobalPositionSizingPercent, StringFormat={}{0:0}%}" Foreground="#e8f4ff" FontWeight="Bold" FontSize="11" />
-                  <TextBlock Text="·" Foreground="#5a7a94" FontSize="11" />
+                  <TextBlock Text="·" Foreground="{DynamicResource TextSoft}" FontSize="11" />
                   <TextBlock Classes="TdNum" Text="{Binding TradeNotionalLabel}" Foreground="#e8f4ff" FontWeight="Bold" FontSize="11" />
                 </StackPanel>
               </Grid>
@@ -258,10 +258,10 @@
                   </StackPanel>
                 </Grid>
                 <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="4">
-                  <TextBlock Grid.Row="0" Text="Trading fee (0.10%)" Foreground="#3d5a72" FontSize="10" />
-                  <TextBlock Grid.Row="0" Grid.Column="1" Classes="TdNum" Text="{Binding EstimatedTradingFeeLabel}" Foreground="#5a7a94" FontSize="10" />
-                  <TextBlock Grid.Row="1" Text="Network / gas" Foreground="#3d5a72" FontSize="10" />
-                  <TextBlock Grid.Row="1" Grid.Column="1" Classes="TdNum" Text="{Binding EstimatedNetworkFeeLabel}" Foreground="#5a7a94" FontSize="10" />
+                  <TextBlock Grid.Row="0" Text="Trading fee (0.10%)" Foreground="{DynamicResource TextDim}" FontSize="10" />
+                  <TextBlock Grid.Row="0" Grid.Column="1" Classes="TdNum" Text="{Binding EstimatedTradingFeeLabel}" Foreground="{DynamicResource TextSoft}" FontSize="10" />
+                  <TextBlock Grid.Row="1" Text="Network / gas" Foreground="{DynamicResource TextDim}" FontSize="10" />
+                  <TextBlock Grid.Row="1" Grid.Column="1" Classes="TdNum" Text="{Binding EstimatedNetworkFeeLabel}" Foreground="{DynamicResource TextSoft}" FontSize="10" />
                   <Border Grid.Row="2" Grid.ColumnSpan="2" Height="1" Background="#111d29" Margin="0,2" />
                 </Grid>
                 <Grid ColumnDefinitions="*,Auto">
@@ -300,7 +300,7 @@
             <Border Background="#061e14" BorderBrush="#0d2a1e" BorderThickness="1" CornerRadius="9" Padding="10,11">
               <StackPanel Spacing="7">
                 <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock Text="EXECUTION GUARD" Classes="TdLabel" Foreground="#2d4a5e" VerticalAlignment="Center" />
+                  <TextBlock Text="EXECUTION GUARD" Classes="TdLabel" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                   <Border Grid.Column="1" Background="#143ddc84" CornerRadius="5" Padding="8,2">
                     <TextBlock Text="{Binding GuardPassLabel}" Foreground="{Binding TradingGuardStatusBrush}" FontSize="9" FontWeight="ExtraBold" />
                   </Border>
@@ -463,14 +463,14 @@
                           <StackPanel Orientation="Horizontal" Spacing="6">
                             <TextBlock Text="{Binding SideLabel}" Foreground="{Binding SideBrush}" FontWeight="Bold" FontSize="11" />
                             <TextBlock Classes="TdNum" Text="{Binding PriceLabel}" Foreground="#c8dcef" FontSize="11" />
-                            <TextBlock Classes="TdNum" Text="{Binding QuantityLabel}" Foreground="#5a7a94" FontSize="11" />
-                            <TextBlock Classes="TdNum" Text="{Binding TimeLabel}" Foreground="#3d5a72" FontSize="11" />
+                            <TextBlock Classes="TdNum" Text="{Binding QuantityLabel}" Foreground="{DynamicResource TextSoft}" FontSize="11" />
+                            <TextBlock Classes="TdNum" Text="{Binding TimeLabel}" Foreground="{DynamicResource TextDim}" FontSize="11" />
                           </StackPanel>
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
                     </ItemsControl>
                   </ScrollViewer>
-                  <TextBlock Text="Waiting for trade tape…" Foreground="#5a7a94" FontSize="11" IsVisible="{Binding ShowTapePlaceholder}" />
+                  <TextBlock Text="Waiting for trade tape…" Foreground="{DynamicResource TextSoft}" FontSize="11" IsVisible="{Binding ShowTapePlaceholder}" />
                 </Grid>
               </Border>
             </StackPanel>
@@ -520,7 +520,7 @@
                                 <TextBlock Grid.Column="4" Classes="TdNum" Text="{Binding TriggerLabel}" HorizontalAlignment="Right" />
                                 <TextBlock Grid.Column="5" Classes="TdNum" Text="{Binding QuantityLabel}" HorizontalAlignment="Right" />
                                 <TextBlock Grid.Column="6" Text="{Binding StatusLabel}" Foreground="{Binding StatusBrush}" HorizontalAlignment="Center" FontSize="11" />
-                                <TextBlock Grid.Column="7" Classes="TdNum" Text="{Binding CreatedLabel}" HorizontalAlignment="Right" Foreground="#5a7a94" />
+                                <TextBlock Grid.Column="7" Classes="TdNum" Text="{Binding CreatedLabel}" HorizontalAlignment="Right" Foreground="{DynamicResource TextSoft}" />
                               </Grid>
                             </Border>
                           </DataTemplate>
@@ -528,7 +528,7 @@
                       </ItemsControl>
                     </ScrollViewer>
                     <TextBlock Text="No working orders yet. Arm a limit, TP or SL to populate the blotter."
-                               Foreground="#5a7a94" IsVisible="{Binding ShowWorkingOrdersPlaceholder}" />
+                               Foreground="{DynamicResource TextSoft}" IsVisible="{Binding ShowWorkingOrdersPlaceholder}" />
                   </StackPanel>
                 </TabItem>
 
@@ -565,7 +565,7 @@
                       </ItemsControl>
                     </ScrollViewer>
                     <TextBlock Text="No open positions. Use the ticket to open the first trade."
-                               Foreground="#5a7a94" IsVisible="{Binding ShowPositionRowsPlaceholder}" />
+                               Foreground="{DynamicResource TextSoft}" IsVisible="{Binding ShowPositionRowsPlaceholder}" />
                   </StackPanel>
                 </TabItem>
 
@@ -590,7 +590,7 @@
                                 <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding PriceLabel}" HorizontalAlignment="Right" />
                                 <TextBlock Grid.Column="3" Classes="TdNum" Text="{Binding QuantityLabel}" HorizontalAlignment="Right" />
                                 <TextBlock Grid.Column="4" Text="{Binding Status}" HorizontalAlignment="Right" Foreground="{Binding StatusBrush}" />
-                                <TextBlock Grid.Column="5" Classes="TdNum" Text="{Binding TimeLabel}" HorizontalAlignment="Right" Foreground="#5a7a94" />
+                                <TextBlock Grid.Column="5" Classes="TdNum" Text="{Binding TimeLabel}" HorizontalAlignment="Right" Foreground="{DynamicResource TextSoft}" />
                               </Grid>
                             </Border>
                           </DataTemplate>
@@ -598,7 +598,7 @@
                       </ItemsControl>
                     </ScrollViewer>
                     <TextBlock Text="No fills yet. Execution tape will appear here after the first order."
-                               Foreground="#5a7a94" IsVisible="{Binding ShowRecentFillsPlaceholder}" />
+                               Foreground="{DynamicResource TextSoft}" IsVisible="{Binding ShowRecentFillsPlaceholder}" />
                   </StackPanel>
                 </TabItem>
 
@@ -631,7 +631,7 @@
                       </ItemsControl>
                     </ScrollViewer>
                     <TextBlock Text="Signals are waiting for stronger market structure before activating."
-                               Foreground="#5a7a94" IsVisible="{Binding ShowSignalRowsPlaceholder}" />
+                               Foreground="{DynamicResource TextSoft}" IsVisible="{Binding ShowSignalRowsPlaceholder}" />
                   </StackPanel>
                 </TabItem>
               </TabControl>
@@ -659,7 +659,7 @@
                           BorderThickness="0,0,0,2" CornerRadius="0" Padding="4,7" HorizontalAlignment="Stretch">
                     <StackPanel Spacing="1" HorizontalAlignment="Center">
                       <TextBlock Text="{Binding Exchange}" Foreground="{Binding NameBrush}" FontWeight="Bold" FontSize="10" HorizontalAlignment="Center" />
-                      <TextBlock Classes="TdNum" Text="{Binding DeltaLabel}" Foreground="{Binding DeltaBrush}" FontSize="8" HorizontalAlignment="Center" />
+                      <TextBlock Classes="TdNum" Text="{Binding DeltaLabel}" Foreground="{Binding DeltaBrush}" FontSize="9" HorizontalAlignment="Center" />
                     </StackPanel>
                   </Button>
                 </DataTemplate>
@@ -672,15 +672,15 @@
               <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                 <Ellipse Width="6" Height="6" Fill="#3ddc84" VerticalAlignment="Center" />
                 <TextBlock Text="{Binding SelectedSpotExchange}" Foreground="#e8f4ff" FontWeight="Bold" FontSize="11" VerticalAlignment="Center" />
-                <TextBlock Text="{Binding SelectedMarket.Symbol}" Foreground="#3d5a72" FontSize="10" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding SelectedMarket.Symbol}" Foreground="{DynamicResource TextDim}" FontSize="10" VerticalAlignment="Center" />
               </StackPanel>
               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
                 <StackPanel Orientation="Horizontal" Spacing="4">
-                  <TextBlock Text="24H Vol" Foreground="#3d5a72" FontSize="9" VerticalAlignment="Center" />
+                  <TextBlock Text="24H Vol" Foreground="{DynamicResource TextDim}" FontSize="9" VerticalAlignment="Center" />
                   <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.Volume24hLabel}" Foreground="#8fa3b8" FontSize="10" FontWeight="Bold" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="4">
-                  <TextBlock Text="Fee" Foreground="#3d5a72" FontSize="9" VerticalAlignment="Center" />
+                  <TextBlock Text="Fee" Foreground="{DynamicResource TextDim}" FontSize="9" VerticalAlignment="Center" />
                   <TextBlock Classes="TdNum" Text="{Binding ExchangeFeeLabel}" Foreground="#f4b860" FontSize="10" FontWeight="Bold" />
                 </StackPanel>
               </StackPanel>
@@ -697,15 +697,15 @@
                   <Border Background="{Binding PositionSideBackground}" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
                     <TextBlock Text="{Binding PositionSideLabel}" Foreground="{Binding PositionSideBrush}" FontWeight="Bold" FontSize="9" />
                   </Border>
-                  <TextBlock Text="{Binding ManualLeverageLabel}" Foreground="#3d5a72" FontSize="9" VerticalAlignment="Center" IsVisible="{Binding IsManualFuturesMode}" />
+                  <TextBlock Text="{Binding ManualLeverageLabel}" Foreground="{DynamicResource TextDim}" FontSize="9" VerticalAlignment="Center" IsVisible="{Binding IsManualFuturesMode}" />
                 </StackPanel>
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
                   <StackPanel Grid.Column="0" Spacing="1">
-                    <TextBlock Text="Entry" Foreground="#3d5a72" FontSize="8" />
+                    <TextBlock Text="Entry" Foreground="{DynamicResource TextDim}" FontSize="9" />
                     <TextBlock Classes="TdNum" Text="{Binding EntryPriceLabel}" Foreground="#8fa3b8" FontWeight="Bold" FontSize="10" />
                   </StackPanel>
                   <StackPanel Grid.Column="1" Spacing="1">
-                    <TextBlock Text="uPnL" Foreground="#3d5a72" FontSize="8" />
+                    <TextBlock Text="uPnL" Foreground="{DynamicResource TextDim}" FontSize="9" />
                     <TextBlock Classes="TdNum" Text="{Binding ExchangeUnrealizedPnlLabel}" Foreground="{Binding SessionPnlBrush}" FontWeight="Bold" FontSize="11" />
                   </StackPanel>
                 </Grid>
@@ -723,23 +723,23 @@
                     <TextBlock Text="{Binding SelectedMarket.AiSignalLabel}" Foreground="{Binding SelectedMarket.AiSignalForeground}" FontWeight="Bold" FontSize="10" />
                   </Border>
                 </Grid>
-                <TextBlock Text="{Binding SelectedMarket.AiSignalDetail}" Foreground="#5a7a94" TextWrapping="Wrap" FontSize="9" LineHeight="14" />
+                <TextBlock Text="{Binding SelectedMarket.AiSignalDetail}" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" FontSize="9" LineHeight="14" />
                 <Grid ColumnDefinitions="*,*,*" ColumnSpacing="3">
                   <Border Grid.Column="0" Background="#07111a" CornerRadius="4" Padding="4,3">
                     <StackPanel Spacing="1" HorizontalAlignment="Center">
-                      <TextBlock Text="ENTRY" Foreground="#3d5a72" FontSize="7" HorizontalAlignment="Center" />
+                      <TextBlock Text="ENTRY" Foreground="{DynamicResource TextDim}" FontSize="9" HorizontalAlignment="Center" />
                       <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.MidPriceLabel}" Foreground="#c8dcef" FontWeight="Bold" FontSize="9" HorizontalAlignment="Center" />
                     </StackPanel>
                   </Border>
                   <Border Grid.Column="1" Background="#061e14" CornerRadius="4" Padding="4,3">
                     <StackPanel Spacing="1" HorizontalAlignment="Center">
-                      <TextBlock Text="TP" Foreground="#3d5a72" FontSize="7" HorizontalAlignment="Center" />
+                      <TextBlock Text="TP" Foreground="{DynamicResource TextDim}" FontSize="9" HorizontalAlignment="Center" />
                       <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.High24hLabel}" Foreground="#3ddc84" FontWeight="Bold" FontSize="9" HorizontalAlignment="Center" />
                     </StackPanel>
                   </Border>
                   <Border Grid.Column="2" Background="#200a0a" CornerRadius="4" Padding="4,3">
                     <StackPanel Spacing="1" HorizontalAlignment="Center">
-                      <TextBlock Text="SL" Foreground="#3d5a72" FontSize="7" HorizontalAlignment="Center" />
+                      <TextBlock Text="SL" Foreground="{DynamicResource TextDim}" FontSize="9" HorizontalAlignment="Center" />
                       <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.Low24hLabel}" Foreground="#ff8080" FontWeight="Bold" FontSize="9" HorizontalAlignment="Center" />
                     </StackPanel>
                   </Border>
@@ -752,7 +752,7 @@
             <Grid ColumnDefinitions="*,Auto" Margin="12,6">
               <TextBlock Classes="TdLabel" Text="ORDER BOOK" VerticalAlignment="Center" />
               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                <TextBlock Text="Depth" Foreground="#3d5a72" FontSize="9" VerticalAlignment="Center" />
+                <TextBlock Text="Depth" Foreground="{DynamicResource TextDim}" FontSize="9" VerticalAlignment="Center" />
                 <Button Content="0.01" Classes="TdSeg mini" Command="{Binding SelectObDepthCommand}" CommandParameter="0.01" Classes.active="{Binding SelectedObDepth, Converter={StaticResource StrEq}, ConverterParameter=0.01}" />
                 <Button Content="0.1" Classes="TdSeg mini" Command="{Binding SelectObDepthCommand}" CommandParameter="0.1" Classes.active="{Binding SelectedObDepth, Converter={StaticResource StrEq}, ConverterParameter=0.1}" />
                 <Button Content="1" Classes="TdSeg mini" Command="{Binding SelectObDepthCommand}" CommandParameter="1" Classes.active="{Binding SelectedObDepth, Converter={StaticResource StrEq}, ConverterParameter=1}" />
@@ -761,10 +761,10 @@
 
             <!-- Ask column labels -->
             <Grid ColumnDefinitions="0.9*,0.9*,1*,0.7*" Margin="12,2">
-              <TextBlock Text="TOTAL" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
-              <TextBlock Grid.Column="1" Text="SIZE" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
-              <TextBlock Grid.Column="2" Text="ASK PRICE" Foreground="#ff8080" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
-              <TextBlock Grid.Column="3" Text="DEPTH" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
+              <TextBlock Text="TOTAL" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
+              <TextBlock Grid.Column="1" Text="SIZE" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="2" Text="ASK PRICE" Foreground="#ff8080" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="3" Text="DEPTH" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
             </Grid>
 
             <!-- Asks -->
@@ -794,7 +794,7 @@
                   <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.ChangePercentLabel}" Foreground="{Binding SelectedMarket.ChangeBrush}" FontWeight="Bold" FontSize="11" VerticalAlignment="Center" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Spacing="1" HorizontalAlignment="Right">
-                  <TextBlock Text="Spread" Foreground="#3d5a72" FontSize="9" HorizontalAlignment="Right" />
+                  <TextBlock Text="Spread" Foreground="{DynamicResource TextDim}" FontSize="9" HorizontalAlignment="Right" />
                   <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.SpreadPercentLabel}" Foreground="#f4b860" FontWeight="Bold" FontSize="11" HorizontalAlignment="Right" />
                 </StackPanel>
               </Grid>
@@ -822,10 +822,10 @@
             <!-- Bid column labels -->
             <Border BorderBrush="#0d1b27" BorderThickness="0,1,0,0" Margin="0,2,0,0">
               <Grid ColumnDefinitions="0.9*,0.9*,1*,0.7*" Margin="12,3">
-                <TextBlock Text="TOTAL" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
-                <TextBlock Grid.Column="1" Text="SIZE" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
-                <TextBlock Grid.Column="2" Text="BID PRICE" Foreground="#3ddc84" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
-                <TextBlock Grid.Column="3" Text="DEPTH" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
+                <TextBlock Text="TOTAL" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
+                <TextBlock Grid.Column="1" Text="SIZE" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+                <TextBlock Grid.Column="2" Text="BID PRICE" Foreground="#3ddc84" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+                <TextBlock Grid.Column="3" Text="DEPTH" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
               </Grid>
             </Border>
 
@@ -840,7 +840,7 @@
                   <Border Background="#f4b860" CornerRadius="3" HorizontalAlignment="Left" Width="{Binding WalletVM.GlobalPositionSizingPercent}" />
                 </Border>
                 <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock Text="Max DD" Foreground="#3d5a72" FontSize="9" />
+                  <TextBlock Text="Max DD" Foreground="{DynamicResource TextDim}" FontSize="9" />
                   <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding WalletVM.GlobalRiskCapLabel}" Foreground="#f4b860" FontSize="9" />
                 </Grid>
               </StackPanel>
@@ -890,7 +890,7 @@
                     <TextBlock Text="{Binding DexDeskVM.SymbolTypeLabel}" Foreground="#a855f7" FontSize="9" FontWeight="Bold" />
                   </Border>
                 </StackPanel>
-                <TextBlock Text="{Binding DexTradingVM.SelectedTokenSubtitle}" Foreground="#5a7a94" FontSize="10" LetterSpacing="0.5" TextTrimming="CharacterEllipsis" MaxWidth="260" />
+                <TextBlock Text="{Binding DexTradingVM.SelectedTokenSubtitle}" Foreground="{DynamicResource TextSoft}" FontSize="10" LetterSpacing="0.5" TextTrimming="CharacterEllipsis" MaxWidth="260" />
               </StackPanel>
             </Grid>
 
@@ -1038,7 +1038,7 @@
                                 CommandParameter="{Binding Key}">
                           <StackPanel Spacing="1" HorizontalAlignment="Center">
                             <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Center" />
-                            <TextBlock Text="{Binding GweiLabel}" FontSize="8" Foreground="#5a7a94" HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding GweiLabel}" FontSize="9" Foreground="{DynamicResource TextSoft}" HorizontalAlignment="Center" />
                           </StackPanel>
                         </Button>
                       </DataTemplate>
@@ -1051,7 +1051,7 @@
                   <Grid ColumnDefinitions="*,Auto">
                     <StackPanel VerticalAlignment="Center" Spacing="1">
                       <TextBlock Classes="TdLabel" Text="MEV PROTECTION" />
-                      <TextBlock Text="Flashbots / private mempool" Foreground="#3d5a72" FontSize="9" />
+                      <TextBlock Text="Flashbots / private mempool" Foreground="{DynamicResource TextDim}" FontSize="9" />
                     </StackPanel>
                     <Button Grid.Column="1" Content="{Binding DexDeskVM.MevLabel}" Classes="TdSeg dex" Width="62" VerticalAlignment="Center"
                             Classes.active="{Binding DexDeskVM.MevProtectionEnabled}" Command="{Binding DexDeskVM.ToggleMevCommand}" />
@@ -1064,32 +1064,32 @@
                     <Grid ColumnDefinitions="*,Auto">
                       <TextBlock Classes="TdLabel" Text="SWAP PREVIEW" VerticalAlignment="Center" />
                       <Border Grid.Column="1" Background="#150a20" BorderBrush="#3a1f6e" BorderThickness="1" CornerRadius="4" Padding="6,1" IsVisible="{Binding DexTradingVM.HasAggQuote}">
-                        <TextBlock Text="BEST ROUTE" Foreground="#a855f7" FontSize="8" FontWeight="Bold" />
+                        <TextBlock Text="BEST ROUTE" Foreground="#a855f7" FontSize="9" FontWeight="Bold" />
                       </Border>
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*">
-                      <TextBlock Text="Est. output" Foreground="#3d5a72" FontSize="10" />
+                      <TextBlock Text="Est. output" Foreground="{DynamicResource TextDim}" FontSize="10" />
                       <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexTradingVM.BuyQuoteLabel}" Foreground="{Binding DexTradingVM.BuyQuoteBrush}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" TextAlignment="Right" TextWrapping="Wrap" />
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding DexTradingVM.HasAggQuote}">
-                      <TextBlock Text="Aggregator out" Foreground="#3d5a72" FontSize="10" />
+                      <TextBlock Text="Aggregator out" Foreground="{DynamicResource TextDim}" FontSize="10" />
                       <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexTradingVM.AggOutputLabel}" Foreground="#21e6c1" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" TextAlignment="Right" TextWrapping="Wrap" />
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding DexTradingVM.HasAggQuote}">
-                      <TextBlock Text="Price impact" Foreground="#3d5a72" FontSize="10" />
+                      <TextBlock Text="Price impact" Foreground="{DynamicResource TextDim}" FontSize="10" />
                       <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexTradingVM.AggImpactLabel}" Foreground="{Binding DexTradingVM.AggImpactBrush}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" />
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding DexTradingVM.HasAggQuote}">
-                      <TextBlock Text="Route via" Foreground="#3d5a72" FontSize="10" />
+                      <TextBlock Text="Route via" Foreground="{DynamicResource TextDim}" FontSize="10" />
                       <TextBlock Grid.Column="1" Text="{Binding DexTradingVM.AggRouteLabel}" Foreground="#a855f7" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" />
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*">
-                      <TextBlock Text="Route" Foreground="#3d5a72" FontSize="10" />
+                      <TextBlock Text="Route" Foreground="{DynamicResource TextDim}" FontSize="10" />
                       <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexTradingVM.SelectedTokenSubtitle}" Foreground="#a855f7" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" />
                     </Grid>
                     <Border Height="1" Background="#111d29" />
                     <Grid ColumnDefinitions="Auto,*">
-                      <TextBlock Text="Slippage" Foreground="#3d5a72" FontSize="10" />
+                      <TextBlock Text="Slippage" Foreground="{DynamicResource TextDim}" FontSize="10" />
                       <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexTradingVM.SlippagePercent, StringFormat={}{0:0.##}%}" Foreground="#8fa3b8" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" />
                     </Grid>
                   </StackPanel>
@@ -1235,10 +1235,10 @@
                     </Grid>
                     <Slider Minimum="1" Maximum="125" Value="{Binding DexDeskVM.Perp.Leverage}" Classes="TradeSlider" />
                     <Grid ColumnDefinitions="*,*,*,*">
-                      <TextBlock Grid.Column="0" Text="1×" Foreground="#3d5a72" FontSize="9" />
-                      <TextBlock Grid.Column="1" Text="25×" Foreground="#3d5a72" FontSize="9" HorizontalAlignment="Center" />
-                      <TextBlock Grid.Column="2" Text="50×" Foreground="#3d5a72" FontSize="9" HorizontalAlignment="Center" />
-                      <TextBlock Grid.Column="3" Text="125×" Foreground="#3d5a72" FontSize="9" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="0" Text="1×" Foreground="{DynamicResource TextDim}" FontSize="9" />
+                      <TextBlock Grid.Column="1" Text="25×" Foreground="{DynamicResource TextDim}" FontSize="9" HorizontalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Text="50×" Foreground="{DynamicResource TextDim}" FontSize="9" HorizontalAlignment="Center" />
+                      <TextBlock Grid.Column="3" Text="125×" Foreground="{DynamicResource TextDim}" FontSize="9" HorizontalAlignment="Right" />
                     </Grid>
                   </StackPanel>
                 </Border>
@@ -1309,24 +1309,24 @@
                   <StackPanel Spacing="7">
                     <TextBlock Classes="TdLabel" Text="PROTOCOL INFO (PAPER)" />
                     <Grid ColumnDefinitions="*,Auto">
-                      <TextBlock Text="Mark" Foreground="#3d5a72" FontSize="10" />
+                      <TextBlock Text="Mark" Foreground="{DynamicResource TextDim}" FontSize="10" />
                       <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexDeskVM.Perp.MarkPriceLabel}" Foreground="#21e6c1" FontSize="10" FontWeight="Bold" />
                     </Grid>
                     <Grid ColumnDefinitions="*,Auto">
-                      <TextBlock Text="Funding" Foreground="#3d5a72" FontSize="10" />
+                      <TextBlock Text="Funding" Foreground="{DynamicResource TextDim}" FontSize="10" />
                       <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexDeskVM.Perp.FundingRateLabel}" Foreground="{Binding DexDeskVM.Perp.FundingBrush}" FontSize="10" FontWeight="Bold" />
                     </Grid>
                     <Grid ColumnDefinitions="*,Auto">
-                      <TextBlock Text="Settlement" Foreground="#3d5a72" FontSize="10" />
+                      <TextBlock Text="Settlement" Foreground="{DynamicResource TextDim}" FontSize="10" />
                       <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexDeskVM.Perp.SettlementLabel}" Foreground="#8fa3b8" FontSize="10" FontWeight="Bold" />
                     </Grid>
                     <Border Height="1" Background="#111d29" />
                     <Grid ColumnDefinitions="*,Auto">
-                      <TextBlock Text="Est. liquidation" Foreground="#3d5a72" FontSize="10" />
+                      <TextBlock Text="Est. liquidation" Foreground="{DynamicResource TextDim}" FontSize="10" />
                       <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexDeskVM.Perp.LiquidationLabel}" Foreground="#ff6b6b" FontSize="10" FontWeight="Bold" />
                     </Grid>
                     <Grid ColumnDefinitions="*,Auto">
-                      <TextBlock Text="Equity" Foreground="#3d5a72" FontSize="10" />
+                      <TextBlock Text="Equity" Foreground="{DynamicResource TextDim}" FontSize="10" />
                       <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexDeskVM.Perp.EquityLabel}" Foreground="#c8dcef" FontSize="10" FontWeight="Bold" />
                     </Grid>
                   </StackPanel>
@@ -1373,9 +1373,9 @@
                     </Grid>
 
                     <Grid ColumnDefinitions="Auto,*,Auto,Auto">
-                      <TextBlock Text="Funding in" Foreground="#3d5a72" FontSize="9" VerticalAlignment="Center" />
+                      <TextBlock Text="Funding in" Foreground="{DynamicResource TextDim}" FontSize="9" VerticalAlignment="Center" />
                       <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding DexDeskVM.Perp.FundingCountdownLabel}" Foreground="#8fa3b8" FontSize="9" Margin="5,0,0,0" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="2" Text="Funding paid" Foreground="#3d5a72" FontSize="9" VerticalAlignment="Center" Margin="0,0,5,0" />
+                      <TextBlock Grid.Column="2" Text="Funding paid" Foreground="{DynamicResource TextDim}" FontSize="9" VerticalAlignment="Center" Margin="0,0,5,0" />
                       <TextBlock Grid.Column="3" Classes="TdNum" Text="{Binding DexDeskVM.Perp.FundingPaidLabel}" Foreground="#f4b860" FontSize="9" VerticalAlignment="Center" />
                     </Grid>
                   </StackPanel>
@@ -1454,7 +1454,7 @@
 
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                   <TextBlock Classes="TdSub" Text="{Binding DexTradingVM.ChartStatusMessage}" TextWrapping="Wrap" />
-                  <TextBlock Grid.Column="1" Text="{Binding DexTradingVM.ChartTelemetry}" Foreground="#5a7a94" TextAlignment="Right" FontSize="10" />
+                  <TextBlock Grid.Column="1" Text="{Binding DexTradingVM.ChartTelemetry}" Foreground="{DynamicResource TextSoft}" TextAlignment="Right" FontSize="10" />
                 </Grid>
               </StackPanel>
             </Border>
@@ -1498,7 +1498,7 @@
                                   <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding AmountLabel}" HorizontalAlignment="Right" />
                                   <TextBlock Grid.Column="3" Classes="TdNum" Text="{Binding PriceLabel}" HorizontalAlignment="Right" />
                                   <TextBlock Grid.Column="4" Text="{Binding StatusLabel}" Foreground="{Binding StatusBrush}" HorizontalAlignment="Center" FontSize="11" />
-                                  <TextBlock Grid.Column="5" Classes="TdNum" Text="{Binding TimeLabel}" HorizontalAlignment="Right" Foreground="#5a7a94" />
+                                  <TextBlock Grid.Column="5" Classes="TdNum" Text="{Binding TimeLabel}" HorizontalAlignment="Right" Foreground="{DynamicResource TextSoft}" />
                                 </Grid>
                               </Border>
                             </DataTemplate>
@@ -1506,7 +1506,7 @@
                         </ItemsControl>
                       </ScrollViewer>
                       <TextBlock Text="No trades yet. Execute a buy or sell to populate the blotter."
-                                 Foreground="#5a7a94" IsVisible="{Binding DexTradingVM.ShowDexTradesPlaceholder}" />
+                                 Foreground="{DynamicResource TextSoft}" IsVisible="{Binding DexTradingVM.ShowDexTradesPlaceholder}" />
                     </StackPanel>
                   </TabItem>
 
@@ -1602,7 +1602,7 @@
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
                       <TextBlock Text="No open paper position. Arm an order to simulate one."
-                                 Foreground="#5a7a94" IsVisible="{Binding DexDeskVM.Perp.ShowPositionsPlaceholder}" />
+                                 Foreground="{DynamicResource TextSoft}" IsVisible="{Binding DexDeskVM.Perp.ShowPositionsPlaceholder}" />
                     </StackPanel>
                   </TabItem>
 
@@ -1623,7 +1623,7 @@
                             <DataTemplate x:DataType="vm:DexPerpOrderRowViewModel">
                               <Border Classes="TdCardTight" Margin="0,0,0,6">
                                 <Grid ColumnDefinitions="0.6*,0.6*,0.7*,0.9*,0.7*,0.7*,0.5*" ColumnSpacing="10">
-                                  <TextBlock Classes="TdNum" Text="{Binding Id}" Foreground="#5a7a94" />
+                                  <TextBlock Classes="TdNum" Text="{Binding Id}" Foreground="{DynamicResource TextSoft}" />
                                   <TextBlock Grid.Column="1" Text="{Binding SideLabel}" Foreground="{Binding SideBrush}" FontWeight="Bold" />
                                   <TextBlock Grid.Column="2" Text="{Binding TypeLabel}" Foreground="#a855f7" />
                                   <TextBlock Grid.Column="3" Classes="TdNum" Text="{Binding TriggerLabel}" HorizontalAlignment="Right" />
@@ -1637,7 +1637,7 @@
                         </ItemsControl>
                       </ScrollViewer>
                       <TextBlock Text="No working orders. Arm a limit, stop, DCA or grid to populate the blotter."
-                                 Foreground="#5a7a94" IsVisible="{Binding DexDeskVM.Perp.ShowOrdersPlaceholder}" />
+                                 Foreground="{DynamicResource TextSoft}" IsVisible="{Binding DexDeskVM.Perp.ShowOrdersPlaceholder}" />
                     </StackPanel>
                   </TabItem>
 
@@ -1660,7 +1660,7 @@
                                   <TextBlock Grid.Column="1" Text="{Binding KindLabel}" Foreground="{Binding KindBrush}" />
                                   <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding PriceLabel}" HorizontalAlignment="Right" />
                                   <TextBlock Grid.Column="3" Classes="TdNum" Text="{Binding SizeLabel}" HorizontalAlignment="Right" />
-                                  <TextBlock Grid.Column="4" Classes="TdNum" Text="{Binding TimeLabel}" HorizontalAlignment="Right" Foreground="#5a7a94" />
+                                  <TextBlock Grid.Column="4" Classes="TdNum" Text="{Binding TimeLabel}" HorizontalAlignment="Right" Foreground="{DynamicResource TextSoft}" />
                                 </Grid>
                               </Border>
                             </DataTemplate>
@@ -1668,7 +1668,7 @@
                         </ItemsControl>
                       </ScrollViewer>
                       <TextBlock Text="No fills yet. Paper executions will appear here."
-                                 Foreground="#5a7a94" IsVisible="{Binding DexDeskVM.Perp.ShowFillsPlaceholder}" />
+                                 Foreground="{DynamicResource TextSoft}" IsVisible="{Binding DexDeskVM.Perp.ShowFillsPlaceholder}" />
                     </StackPanel>
                   </TabItem>
 
@@ -1712,7 +1712,7 @@
                           <Ellipse Width="6" Height="6" Fill="{Binding DotBrush}" VerticalAlignment="Center" />
                           <TextBlock Text="{Binding Name}" Foreground="{Binding TabNameBrush}" FontWeight="Bold" FontSize="9" HorizontalAlignment="Center" />
                         </StackPanel>
-                        <TextBlock Classes="TdNum" Text="{Binding Vol}" Foreground="#5a7a94" FontSize="8" HorizontalAlignment="Center" />
+                        <TextBlock Classes="TdNum" Text="{Binding Vol}" Foreground="{DynamicResource TextSoft}" FontSize="9" HorizontalAlignment="Center" />
                       </StackPanel>
                     </Button>
                   </DataTemplate>
@@ -1733,39 +1733,39 @@
                       <Border Grid.Column="1" Background="#07221a" BorderBrush="#0e3a2a" BorderThickness="1" CornerRadius="999" Padding="7,1">
                         <StackPanel Orientation="Horizontal" Spacing="4">
                           <Ellipse Width="5" Height="5" Fill="#3ddc84" VerticalAlignment="Center" IsVisible="{Binding DexDeskVM.SelectedExchangeIsLive}" />
-                          <TextBlock Text="{Binding DexDeskVM.SelectedExchangeFeedLabel}" Foreground="#3ddc84" FontSize="8" FontWeight="Bold" />
+                          <TextBlock Text="{Binding DexDeskVM.SelectedExchangeFeedLabel}" Foreground="#3ddc84" FontSize="9" FontWeight="Bold" />
                         </StackPanel>
                       </Border>
                     </Grid>
 
                     <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="6">
                       <StackPanel Spacing="1">
-                        <TextBlock Text="CHAIN" Foreground="#3d5a72" FontSize="8" />
+                        <TextBlock Text="CHAIN" Foreground="{DynamicResource TextDim}" FontSize="9" />
                         <TextBlock Text="{Binding DexDeskVM.SelectedExchangeChainBadge}" Foreground="#a855f7" FontSize="9" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
                       </StackPanel>
                       <StackPanel Grid.Column="1" Spacing="1">
-                        <TextBlock Text="FEE" Foreground="#3d5a72" FontSize="8" />
+                        <TextBlock Text="FEE" Foreground="{DynamicResource TextDim}" FontSize="9" />
                         <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.SelectedExchangeFee}" Foreground="#f4b860" FontSize="9" FontWeight="Bold" />
                       </StackPanel>
                       <StackPanel Grid.Column="2" Spacing="1">
-                        <TextBlock Text="FUNDING" Foreground="#3d5a72" FontSize="8" />
+                        <TextBlock Text="FUNDING" Foreground="{DynamicResource TextDim}" FontSize="9" />
                         <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.SelectedExchangeFunding}" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
                       </StackPanel>
                       <StackPanel Grid.Column="3" Spacing="1">
-                        <TextBlock Text="MAX LEV" Foreground="#3d5a72" FontSize="8" />
+                        <TextBlock Text="MAX LEV" Foreground="{DynamicResource TextDim}" FontSize="9" />
                         <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.SelectedExchangeMaxLev}" Foreground="#c8dcef" FontSize="9" FontWeight="Bold" />
                       </StackPanel>
                     </Grid>
-                    <TextBlock Text="{Binding DexDeskVM.SelectedExchangeSettlement}" Foreground="#5a7a94" FontSize="9" />
+                    <TextBlock Text="{Binding DexDeskVM.SelectedExchangeSettlement}" Foreground="{DynamicResource TextSoft}" FontSize="9" />
 
                     <!-- Live markets from the selected exchange -->
                     <StackPanel Spacing="3" IsVisible="{Binding DexDeskVM.ShowExchangeMarkets}">
                       <Border Height="1" Background="#0d1b27" />
                       <Grid ColumnDefinitions="1.1*,1.2*,0.9*,1*" Margin="2,0">
-                        <TextBlock Text="MARKET" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
-                        <TextBlock Grid.Column="1" Text="PRICE" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
-                        <TextBlock Grid.Column="2" Text="24H" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
-                        <TextBlock Grid.Column="3" Text="FUND" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
+                        <TextBlock Text="MARKET" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
+                        <TextBlock Grid.Column="1" Text="PRICE" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+                        <TextBlock Grid.Column="2" Text="24H" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+                        <TextBlock Grid.Column="3" Text="FUND" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
                       </Grid>
                       <ItemsControl ItemsSource="{Binding DexDeskVM.ExchangeMarkets}">
                         <ItemsControl.ItemTemplate>
@@ -1795,11 +1795,11 @@
                   </StackPanel>
                   <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" Spacing="4">
-                      <TextBlock Text="24H Vol" Foreground="#3d5a72" FontSize="9" VerticalAlignment="Center" />
+                      <TextBlock Text="24H Vol" Foreground="{DynamicResource TextDim}" FontSize="9" VerticalAlignment="Center" />
                       <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexVolume24hLabel}" Foreground="#8fa3b8" FontSize="10" FontWeight="Bold" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="4">
-                      <TextBlock Text="Fee" Foreground="#3d5a72" FontSize="9" VerticalAlignment="Center" />
+                      <TextBlock Text="Fee" Foreground="{DynamicResource TextDim}" FontSize="9" VerticalAlignment="Center" />
                       <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexPairFeeLabel}" Foreground="#f4b860" FontSize="10" FontWeight="Bold" />
                     </StackPanel>
                   </StackPanel>
@@ -1814,15 +1814,15 @@
                     <TextBlock Classes="TdLabel" Text="POSITION" />
                     <StackPanel Orientation="Horizontal" Spacing="5">
                       <TextBlock Text="{Binding DexDeskVM.Perp.PositionSideLabel}" Foreground="{Binding DexDeskVM.Perp.PositionSideBrush}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" />
-                      <TextBlock Text="{Binding DexDeskVM.Perp.LeverageLabel}" Foreground="#3d5a72" FontSize="9" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding DexDeskVM.Perp.LeverageLabel}" Foreground="{DynamicResource TextDim}" FontSize="9" VerticalAlignment="Center" />
                     </StackPanel>
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
                       <StackPanel Spacing="1">
-                        <TextBlock Text="Entry" Foreground="#3d5a72" FontSize="8" />
+                        <TextBlock Text="Entry" Foreground="{DynamicResource TextDim}" FontSize="9" />
                         <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.EntryLabel}" Foreground="#8fa3b8" FontWeight="Bold" FontSize="10" />
                       </StackPanel>
                       <StackPanel Grid.Column="1" Spacing="1">
-                        <TextBlock Text="uPnL" Foreground="#3d5a72" FontSize="8" />
+                        <TextBlock Text="uPnL" Foreground="{DynamicResource TextDim}" FontSize="9" />
                         <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.UpnlLabel}" Foreground="{Binding DexDeskVM.Perp.UpnlBrush}" FontWeight="Bold" FontSize="11" />
                       </StackPanel>
                     </Grid>
@@ -1843,19 +1843,19 @@
                     <Grid ColumnDefinitions="*,*,*" ColumnSpacing="3">
                       <Border Grid.Column="0" Background="#07111a" CornerRadius="4" Padding="4,3">
                         <StackPanel Spacing="1" HorizontalAlignment="Center">
-                          <TextBlock Text="ENTRY" Foreground="#3d5a72" FontSize="7" HorizontalAlignment="Center" />
+                          <TextBlock Text="ENTRY" Foreground="{DynamicResource TextDim}" FontSize="9" HorizontalAlignment="Center" />
                           <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Assistant.EntryLabel}" Foreground="#c8dcef" FontWeight="Bold" FontSize="9" HorizontalAlignment="Center" />
                         </StackPanel>
                       </Border>
                       <Border Grid.Column="1" Background="#061e14" CornerRadius="4" Padding="4,3">
                         <StackPanel Spacing="1" HorizontalAlignment="Center">
-                          <TextBlock Text="TP" Foreground="#3d5a72" FontSize="7" HorizontalAlignment="Center" />
+                          <TextBlock Text="TP" Foreground="{DynamicResource TextDim}" FontSize="9" HorizontalAlignment="Center" />
                           <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Assistant.TakeProfitLabel}" Foreground="#3ddc84" FontWeight="Bold" FontSize="9" HorizontalAlignment="Center" />
                         </StackPanel>
                       </Border>
                       <Border Grid.Column="2" Background="#200a0a" CornerRadius="4" Padding="4,3">
                         <StackPanel Spacing="1" HorizontalAlignment="Center">
-                          <TextBlock Text="SL" Foreground="#3d5a72" FontSize="7" HorizontalAlignment="Center" />
+                          <TextBlock Text="SL" Foreground="{DynamicResource TextDim}" FontSize="9" HorizontalAlignment="Center" />
                           <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Assistant.StopLossLabel}" Foreground="#ff8080" FontWeight="Bold" FontSize="9" HorizontalAlignment="Center" />
                         </StackPanel>
                       </Border>
@@ -1869,19 +1869,19 @@
                 <StackPanel>
                   <Grid ColumnDefinitions="*,*,*,*">
                     <StackPanel Margin="9,7" Spacing="3">
-                      <TextBlock Text="TVL" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+                      <TextBlock Text="TVL" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
                       <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexLiquidityLabel}" Foreground="#21e6c1" FontWeight="Bold" FontSize="12" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Margin="9,7" Spacing="3">
-                      <TextBlock Text="24H VOL" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+                      <TextBlock Text="24H VOL" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
                       <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexVolume24hLabel}" Foreground="#c8dcef" FontWeight="Bold" FontSize="12" />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Margin="9,7" Spacing="3">
-                      <TextBlock Text="MKT CAP" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+                      <TextBlock Text="MKT CAP" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
                       <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexMarketCapLabel}" Foreground="#a855f7" FontWeight="Bold" FontSize="12" />
                     </StackPanel>
                     <StackPanel Grid.Column="3" Margin="9,7" Spacing="3">
-                      <TextBlock Text="24H FEES" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+                      <TextBlock Text="24H FEES" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
                       <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexFees24hLabel}" Foreground="#f4b860" FontWeight="Bold" FontSize="12" />
                     </StackPanel>
                   </Grid>
@@ -1890,18 +1890,18 @@
 
                   <!-- Fee tiers -->
                   <StackPanel Orientation="Horizontal" Spacing="8" Margin="12,8" VerticalAlignment="Center">
-                    <TextBlock Text="FEE TIERS" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                    <TextBlock Text="FEE TIERS" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
                     <Border Background="#150a20" BorderBrush="#6a2a9a" BorderThickness="1" CornerRadius="4" Padding="8,2">
                       <TextBlock Text="0.30%" Foreground="#a855f7" FontSize="9" FontWeight="Bold" />
                     </Border>
                     <Border Background="#07111a" BorderBrush="#1e3248" BorderThickness="1" CornerRadius="4" Padding="8,2">
-                      <TextBlock Text="0.01%" Foreground="#5a7a94" FontSize="9" FontWeight="Bold" />
+                      <TextBlock Text="0.01%" Foreground="{DynamicResource TextSoft}" FontSize="9" FontWeight="Bold" />
                     </Border>
                     <Border Background="#07111a" BorderBrush="#1e3248" BorderThickness="1" CornerRadius="4" Padding="8,2">
-                      <TextBlock Text="0.05%" Foreground="#5a7a94" FontSize="9" FontWeight="Bold" />
+                      <TextBlock Text="0.05%" Foreground="{DynamicResource TextSoft}" FontSize="9" FontWeight="Bold" />
                     </Border>
                     <Border Background="#07111a" BorderBrush="#1e3248" BorderThickness="1" CornerRadius="4" Padding="8,2">
-                      <TextBlock Text="1.00%" Foreground="#5a7a94" FontSize="9" FontWeight="Bold" />
+                      <TextBlock Text="1.00%" Foreground="{DynamicResource TextSoft}" FontSize="9" FontWeight="Bold" />
                     </Border>
                   </StackPanel>
 
@@ -1909,7 +1909,7 @@
 
                   <!-- Liquidity depth (representative, scaled to real utilization) -->
                   <StackPanel Margin="12,8" Spacing="6">
-                    <TextBlock Text="LIQUIDITY DEPTH" Foreground="#2d4a5e" FontSize="9" FontWeight="Bold" />
+                    <TextBlock Text="LIQUIDITY DEPTH" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
                     <Border Height="34" Background="#040c14" BorderBrush="#111d29" BorderThickness="1" CornerRadius="6" Padding="6" ClipToBounds="True">
                       <Grid ColumnDefinitions="*,*,*,*,*,*,*,*,*" VerticalAlignment="Bottom">
                         <Border Grid.Column="0" Height="8"  Background="#123ddc84" CornerRadius="1" Margin="1,0" VerticalAlignment="Bottom" />
@@ -1925,15 +1925,15 @@
                     </Border>
                     <Grid ColumnDefinitions="*,*,*">
                       <StackPanel Spacing="1">
-                        <TextBlock Text="UTILIZATION" Foreground="#3d5a72" FontSize="8" />
+                        <TextBlock Text="UTILIZATION" Foreground="{DynamicResource TextDim}" FontSize="9" />
                         <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexUtilizationLabel}" Foreground="#3ddc84" FontWeight="Bold" FontSize="11" />
                       </StackPanel>
                       <StackPanel Grid.Column="1" Spacing="1">
-                        <TextBlock Text="24H CHG" Foreground="#3d5a72" FontSize="8" />
+                        <TextBlock Text="24H CHG" Foreground="{DynamicResource TextDim}" FontSize="9" />
                         <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.DexChange24hLabel}" Foreground="{Binding DexTradingVM.DexChange24hBrush}" FontWeight="Bold" FontSize="11" />
                       </StackPanel>
                       <StackPanel Grid.Column="2" Spacing="1">
-                        <TextBlock Text="PRICE" Foreground="#3d5a72" FontSize="8" />
+                        <TextBlock Text="PRICE" Foreground="{DynamicResource TextDim}" FontSize="9" />
                         <TextBlock Classes="TdNum" Text="{Binding DexTradingVM.SelectedToken.PriceUsd, StringFormat=\$ {0:N6}}" Foreground="#a855f7" FontWeight="Bold" FontSize="11" />
                       </StackPanel>
                     </Grid>
@@ -1944,9 +1944,9 @@
               <!-- ── REGULAR ORDER BOOK (PERP) ── -->
               <StackPanel Spacing="0" IsVisible="{Binding DexDeskVM.IsPerpMode}">
                 <Grid ColumnDefinitions="1*,1*,1.1*" Margin="2,2">
-                  <TextBlock Text="TOTAL" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
-                  <TextBlock Grid.Column="1" Text="SIZE" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
-                  <TextBlock Grid.Column="2" Text="ASK PRICE" Foreground="#ff8080" FontSize="8" FontWeight="Bold" HorizontalAlignment="Right" />
+                  <TextBlock Text="TOTAL" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" />
+                  <TextBlock Grid.Column="1" Text="SIZE" Foreground="{DynamicResource TextDim}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
+                  <TextBlock Grid.Column="2" Text="ASK PRICE" Foreground="#ff8080" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" />
                 </Grid>
                 <ItemsControl ItemsSource="{Binding DexDeskVM.Perp.AskLevels}">
                   <ItemsControl.ItemTemplate>
@@ -1966,7 +1966,7 @@
                   <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.MarkPriceLabel}" Foreground="#a855f7" FontWeight="Bold" FontSize="16" />
                     <StackPanel Grid.Column="1" Spacing="1" HorizontalAlignment="Right">
-                      <TextBlock Text="Funding" Foreground="#3d5a72" FontSize="9" HorizontalAlignment="Right" />
+                      <TextBlock Text="Funding" Foreground="{DynamicResource TextDim}" FontSize="9" HorizontalAlignment="Right" />
                       <TextBlock Classes="TdNum" Text="{Binding DexDeskVM.Perp.FundingRateLabel}" Foreground="{Binding DexDeskVM.Perp.FundingBrush}" FontWeight="Bold" FontSize="11" HorizontalAlignment="Right" />
                     </StackPanel>
                   </Grid>
@@ -2070,7 +2070,7 @@
                           <TextBlock Grid.Row="0" Text="{Binding DisplayName}" Foreground="#c8dcef" FontWeight="Bold" />
                           <TextBlock Grid.Row="0" Grid.Column="1" Classes="TdNum" Text="{Binding PriceUsd, StringFormat=\$ {0:N6}}" Foreground="#a855f7" />
                           <TextBlock Grid.Row="1" Classes="TdSub" Text="{Binding PairLabel}" />
-                          <TextBlock Grid.Row="1" Grid.Column="1" Classes="TdNum" Text="{Binding Volume24h, StringFormat=Vol \$ {0:N0}}" Foreground="#5a7a94" />
+                          <TextBlock Grid.Row="1" Grid.Column="1" Classes="TdNum" Text="{Binding Volume24h, StringFormat=Vol \$ {0:N0}}" Foreground="{DynamicResource TextSoft}" />
                         </Grid>
                       </Border>
                     </DataTemplate>
@@ -2090,7 +2090,7 @@
                       <Border Background="#f4b860" CornerRadius="3" HorizontalAlignment="Left" Width="{Binding WalletVM.GlobalPositionSizingPercent}" />
                     </Border>
                     <Grid ColumnDefinitions="*,Auto">
-                      <TextBlock Text="Max DD" Foreground="#3d5a72" FontSize="9" />
+                      <TextBlock Text="Max DD" Foreground="{DynamicResource TextDim}" FontSize="9" />
                       <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding WalletVM.GlobalRiskCapLabel}" Foreground="#f4b860" FontSize="9" />
                     </Grid>
                   </StackPanel>

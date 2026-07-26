@@ -42,21 +42,21 @@
                     <TextBlock Grid.Column="2" Grid.Row="1" Text="{Binding GasMonitorVM.EthFastLabel}"
                                Foreground="{Binding GasMonitorVM.EthFastColor}" FontSize="15" FontWeight="Bold" />
                     <TextBlock Grid.Column="0" Grid.Row="2" Text="{Binding GasMonitorVM.EthSlowTimeLabel}"
-                               Foreground="#4A6880" FontSize="10" />
+                               Foreground="{DynamicResource TextSoft}" FontSize="10" />
                     <TextBlock Grid.Column="1" Grid.Row="2" Text="{Binding GasMonitorVM.EthStdTimeLabel}"
-                               Foreground="#4A6880" FontSize="10" />
+                               Foreground="{DynamicResource TextSoft}" FontSize="10" />
                     <TextBlock Grid.Column="2" Grid.Row="2" Text="{Binding GasMonitorVM.EthFastTimeLabel}"
-                               Foreground="#4A6880" FontSize="10" />
+                               Foreground="{DynamicResource TextSoft}" FontSize="10" />
                   </Grid>
                   <!-- ETH alert threshold -->
                   <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
-                    <TextBlock Text="Alert below:" Foreground="#4A6880" FontSize="11" VerticalAlignment="Center" />
+                    <TextBlock Text="Alert below:" Foreground="{DynamicResource TextSoft}" FontSize="11" VerticalAlignment="Center" />
                     <NumericUpDown Value="{Binding GasMonitorVM.EthAlertGwei}"
                                   Minimum="1" Maximum="200" Increment="1"
                                   FormatString="N0"
                                   Width="80" Height="26" FontSize="11"
                                   Background="#0A1018" Foreground="#C8D8E8" />
-                    <TextBlock Text="gwei" Foreground="#4A6880" FontSize="11" VerticalAlignment="Center" />
+                    <TextBlock Text="gwei" Foreground="{DynamicResource TextSoft}" FontSize="11" VerticalAlignment="Center" />
                   </StackPanel>
                 </StackPanel>
               </Border>
@@ -85,13 +85,13 @@
                   </Grid>
                   <!-- BSC alert threshold -->
                   <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
-                    <TextBlock Text="Alert below:" Foreground="#4A6880" FontSize="11" VerticalAlignment="Center" />
+                    <TextBlock Text="Alert below:" Foreground="{DynamicResource TextSoft}" FontSize="11" VerticalAlignment="Center" />
                     <NumericUpDown Value="{Binding GasMonitorVM.BscAlertGwei}"
                                   Minimum="1" Maximum="50" Increment="1"
                                   FormatString="N0"
                                   Width="80" Height="26" FontSize="11"
                                   Background="#0A1018" Foreground="#C8D8E8" />
-                    <TextBlock Text="gwei" Foreground="#4A6880" FontSize="11" VerticalAlignment="Center" />
+                    <TextBlock Text="gwei" Foreground="{DynamicResource TextSoft}" FontSize="11" VerticalAlignment="Center" />
                   </StackPanel>
                 </StackPanel>
               </Border>
@@ -109,7 +109,7 @@
                                Foreground="{Binding GasMonitorVM.SolanaColor}"
                                FontSize="22" FontWeight="Bold" />
                     <TextBlock Text="Solana has no gas — congestion is measured by TPS."
-                               Foreground="#4A6880" FontSize="10" TextWrapping="Wrap" />
+                               Foreground="{DynamicResource TextSoft}" FontSize="10" TextWrapping="Wrap" />
                   </StackPanel>
                 </StackPanel>
               </Border>
@@ -119,7 +119,7 @@
             <!-- Last updated / Refresh row -->
             <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
               <TextBlock Text="{Binding GasMonitorVM.LastUpdatedLabel}"
-                         Foreground="#4A6880" FontSize="11" VerticalAlignment="Center" />
+                         Foreground="{DynamicResource TextSoft}" FontSize="11" VerticalAlignment="Center" />
               <Button Content="↻  Refresh" Classes="SecondaryAction"
                       Command="{Binding GasMonitorVM.RefreshCommand}"
                       IsEnabled="{Binding !GasMonitorVM.IsLoading}"
@@ -128,7 +128,7 @@
 
             <!-- Info note -->
             <Border Background="#0A1018" CornerRadius="4" Padding="12,8">
-              <TextBlock Foreground="#4A6880" FontSize="11" TextWrapping="Wrap">
+              <TextBlock Foreground="{DynamicResource TextSoft}" FontSize="11" TextWrapping="Wrap">
                 <Run Text="ℹ " />
                 <Run Text="Gas prices update every 30 seconds. Powered by Etherscan · BSCScan · Solana RPC.  " />
                 <Run Text="Set ETHERSCAN_API_KEY / BSCSCAN_API_KEY environment variables for higher rate limits."

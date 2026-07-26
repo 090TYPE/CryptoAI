@@ -43,7 +43,7 @@
               <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
                 <TextBlock Text="{Binding DisplaySymbol}" Foreground="#E8F4FF"
                            FontWeight="Bold" FontSize="12" />
-                <TextBlock Text="{Binding Exchange}" Foreground="#5A7A94" FontSize="10" />
+                <TextBlock Text="{Binding Exchange}" Foreground="{DynamicResource TextSoft}" FontSize="10" />
               </StackPanel>
               <!-- Sparkline -->
               <ctrl:CexPriceChart Grid.Column="2" Height="26" Width="60"

@@ -12,9 +12,9 @@
                  Foreground="{Binding AllPositionsVM.TotalPnlBrush}"
                  FontSize="18" FontWeight="Bold" />
       <TextBlock Text="{Binding AllPositionsVM.TotalSizeLabel}"
-                 Foreground="#4A6880" FontSize="12" VerticalAlignment="Bottom" />
+                 Foreground="{DynamicResource TextSoft}" FontSize="12" VerticalAlignment="Bottom" />
       <TextBlock Text="{Binding AllPositionsVM.StatusLabel}"
-                 Foreground="#4A6880" FontSize="10" VerticalAlignment="Bottom" />
+                 Foreground="{DynamicResource TextSoft}" FontSize="10" VerticalAlignment="Bottom" />
     </StackPanel>
 
     <!-- Table header -->
@@ -33,7 +33,7 @@
     <Border IsVisible="{Binding AllPositionsVM.HasNoPositions}"
             Background="#060D14" CornerRadius="4" Padding="12,10">
       <TextBlock Text="No open futures positions"
-                 Foreground="#4A6880" FontSize="12" HorizontalAlignment="Center" />
+                 Foreground="{DynamicResource TextSoft}" FontSize="12" HorizontalAlignment="Center" />
     </Border>
 
     <!-- Positions list -->
@@ -68,7 +68,7 @@
                 <!-- Size -->
                 <StackPanel Grid.Column="4" VerticalAlignment="Center" Spacing="1">
                   <TextBlock Text="{Binding SizeLabel}" Foreground="#C8D8E8" FontSize="11" />
-                  <TextBlock Text="{Binding NotionalLabel}" Foreground="#4A6880" FontSize="9" />
+                  <TextBlock Text="{Binding NotionalLabel}" Foreground="{DynamicResource TextSoft}" FontSize="9" />
                 </StackPanel>
                 <!-- Leverage / Liq -->
                 <StackPanel Grid.Column="5" VerticalAlignment="Center" Spacing="1">

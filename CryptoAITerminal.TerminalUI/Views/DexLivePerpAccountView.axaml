@@ -83,9 +83,9 @@
               <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                 <TextBlock Text="{Binding Coin}" Foreground="#e8f4ff" FontWeight="Bold" FontSize="11" />
                 <Border Background="#0d1b12" CornerRadius="3" Padding="4,0">
-                  <TextBlock Text="{Binding Side}" Foreground="{Binding SideBrush}" FontSize="8" FontWeight="Bold" />
+                  <TextBlock Text="{Binding Side}" Foreground="{Binding SideBrush}" FontSize="9" FontWeight="Bold" />
                 </Border>
-                <TextBlock Text="{Binding LeverageLabel}" Foreground="#5a7a94" FontSize="8" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding LeverageLabel}" Foreground="{DynamicResource TextSoft}" FontSize="9" VerticalAlignment="Center" />
               </StackPanel>
               <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding SizeLabel}" Foreground="#c8dcef" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />
               <TextBlock Grid.Column="2" Classes="TdNum" Text="{Binding EntryLabel}" Foreground="#8fa3b8" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center" />

@@ -114,7 +114,7 @@
                 </Grid>
 
                 <TextBlock Text="No trades match the current filter."
-                           Foreground="#4A6880" FontSize="12" Margin="0,16"
+                           Foreground="{DynamicResource TextSoft}" FontSize="12" Margin="0,16"
                            IsVisible="{Binding TradeJournalVM.HasNoRows}" />
 
                 <ScrollViewer MaxHeight="480">
@@ -168,7 +168,7 @@
                                     Command="{Binding EditCommand}"
                                     Classes="GhostButton"
                                     FontSize="9" Padding="0"
-                                    Foreground="#4A6880"
+                                    Foreground="{DynamicResource TextSoft}"
                                     HorizontalAlignment="Left"
                                     IsVisible="{Binding !IsEditing}" />
                           </StackPanel>

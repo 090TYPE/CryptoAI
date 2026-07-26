@@ -54,7 +54,7 @@
                                Value="{Binding CrossExchangeArbVM.TakerFeePct}"
                                Minimum="0.01" Maximum="1" Increment="0.01" FormatString="N2" />
 
-                <TextBlock Grid.Column="6" FontSize="10" Foreground="#3A4F63"
+                <TextBlock Grid.Column="6" FontSize="10" Foreground="{DynamicResource TextDim}"
                            VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap"
                            Text="Round-trip fee = Taker × 2. Net spread = Gross − Round-trip. Opportunities refresh every second." />
               </Grid>
@@ -254,7 +254,7 @@
                 <!-- Empty history -->
                 <TextBlock IsVisible="{Binding !CrossExchangeArbVM.History.Count}"
                            Text="No executions yet. Click ⚡ Execute on a profitable row, or enable Auto-Execute."
-                           Foreground="#3A4F63" FontSize="12" TextWrapping="Wrap" Margin="0,8" />
+                           Foreground="{DynamicResource TextDim}" FontSize="12" TextWrapping="Wrap" Margin="0,8" />
               </StackPanel>
             </Border>
 

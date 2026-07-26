@@ -11,14 +11,14 @@
     <Style Selector="TextBlock.secLabel">
       <Setter Property="FontSize" Value="9" />
       <Setter Property="FontWeight" Value="Bold" />
-      <Setter Property="Foreground" Value="#3D5A72" />
+      <Setter Property="Foreground" Value="{DynamicResource TextDim}" />
       <Setter Property="LetterSpacing" Value="0.6" />
     </Style>
     <!-- Stat strip label / value -->
     <Style Selector="TextBlock.stripLabel">
       <Setter Property="FontSize" Value="8" />
       <Setter Property="FontWeight" Value="Bold" />
-      <Setter Property="Foreground" Value="#3D5A72" />
+      <Setter Property="Foreground" Value="{DynamicResource TextDim}" />
       <Setter Property="LetterSpacing" Value="0.6" />
     </Style>
     <Style Selector="TextBlock.stripValue">
@@ -152,7 +152,7 @@
             <!-- Header -->
             <StackPanel Spacing="3">
               <TextBlock Text="Sniper" FontSize="18" FontWeight="Bold" Foreground="#E8F4FF" />
-              <TextBlock FontSize="11" Foreground="#3D5A72">
+              <TextBlock FontSize="11" Foreground="{DynamicResource TextDim}">
                 <Run Text="{Binding SniperVM.OpenPositionCount}" Foreground="#C8DCEF" FontWeight="Bold" />
                 <Run Text=" open · " />
                 <Run Text="{Binding SniperVM.AcceptedPairs.Count}" Foreground="#F4B860" FontWeight="Bold" />
@@ -178,10 +178,10 @@
                   <Button Grid.Column="2" Classes="tf" Content="AGGRO" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                           Command="{Binding SniperVM.ApplyScalpPresetCommand}" CommandParameter="Aggro" />
                 </Grid>
-                <TextBlock Text="{Binding SniperVM.ScalpPresetSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding SniperVM.ScalpPresetSummary}" FontSize="10" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" />
               </StackPanel>
-              <TextBlock Text="{Binding SniperVM.VenueSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
-              <TextBlock Text="{Binding SniperVM.TradingProfileSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding SniperVM.VenueSummary}" FontSize="10" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding SniperVM.TradingProfileSummary}" FontSize="10" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" />
               <Expander Header="Advanced — futures" IsVisible="{Binding SniperVM.IsFuturesVenue}">
                 <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8" Margin="0,6,0,0">
                   <TextBlock Grid.Row="0" Grid.Column="0" Classes="fieldName" Text="Leverage" />
@@ -189,7 +189,7 @@
                   <TextBlock Grid.Row="1" Grid.Column="0" Classes="fieldName" Text="Bias" />
                   <ComboBox Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" FontSize="11"
                             ItemsSource="{Binding SniperVM.FuturesBiasOptions}" SelectedItem="{Binding SniperVM.SelectedFuturesBias}" />
-                  <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding SniperVM.FuturesExecutionSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+                  <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding SniperVM.FuturesExecutionSummary}" FontSize="10" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" />
                 </Grid>
               </Expander>
             </StackPanel>
@@ -205,7 +205,7 @@
                 <Button Grid.Column="2" Classes="tf" Content="AGGRO" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                         Command="{Binding SniperVM.ApplyAggressivePresetCommand}" />
               </Grid>
-              <TextBlock Text="{Binding SniperVM.PresetSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding SniperVM.PresetSummary}" FontSize="10" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" />
             </StackPanel>
 
             <!-- Execution mode -->
@@ -228,10 +228,10 @@
               <Expander Header="Advanced — quote routing" IsVisible="{Binding SniperVM.IsDexVenue}">
                 <StackPanel Spacing="8" Margin="0,6,0,0">
                   <CheckBox FontSize="11" Content="Stable-first quote routing" IsChecked="{Binding SniperVM.PreferStableQuote}" />
-                  <TextBlock Text="{Binding SniperVM.StableQuoteSpendableLabel}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding SniperVM.StableQuoteSpendableLabel}" FontSize="10" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" />
                   <TextBlock Text="{Binding SniperVM.StableQuoteAvailabilityMessage}" Foreground="{Binding SniperVM.StableQuoteAvailabilityBrush}" FontSize="10" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding SniperVM.QuoteRoutingSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding SniperVM.SupportedQuoteRoutesSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding SniperVM.QuoteRoutingSummary}" FontSize="10" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding SniperVM.SupportedQuoteRoutesSummary}" FontSize="10" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" />
                 </StackPanel>
               </Expander>
             </StackPanel>
@@ -245,8 +245,8 @@
                 <Button Grid.Column="1" Classes="tf" Content="EVM ONLY" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                         Command="{Binding SniperVM.ApplyEvmChainsCommand}" />
               </Grid>
-              <TextBlock Text="{Binding SniperVM.ChainCoverageSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
-              <TextBlock Text="{Binding SniperVM.TokenFilterSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding SniperVM.ChainCoverageSummary}" FontSize="10" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding SniperVM.TokenFilterSummary}" FontSize="10" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" />
             </StackPanel>
 
             <!-- Buy amount -->
@@ -340,7 +340,7 @@
                     <NumericUpDown Grid.Row="1" Grid.Column="1" Classes="rail" Value="{Binding SniperVM.PartialTakeProfitSellPercent}" Increment="5" Minimum="1" Maximum="99" FormatString="0.##" />
                   </Grid>
                   <CheckBox FontSize="11" Content="Arm break-even after a green move" IsChecked="{Binding SniperVM.BreakEvenEnabled}" />
-                  <TextBlock Text="{Binding SniperVM.ExitEngineSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding SniperVM.ExitEngineSummary}" FontSize="10" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" />
                 </StackPanel>
               </Expander>
             </StackPanel>
@@ -366,7 +366,7 @@
                   <NumericUpDown Grid.Column="1" Classes="rail" Value="{Binding SniperVM.TinyDryRunCapNative}" Increment="0.001" Minimum="0" FormatString="0.0000" />
                 </Grid>
               </Expander>
-              <TextBlock Text="{Binding SniperVM.LiveRiskSummary}" FontSize="10" Foreground="#5A7A94" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding SniperVM.LiveRiskSummary}" FontSize="10" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" />
             </StackPanel>
 
             <!-- Word lists -->
@@ -396,7 +396,7 @@
                            IsVisible="{Binding SniperVM.ManualSnipeInfoLabel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 <TextBlock Text="{Binding SniperVM.ManualSnipeQuoteLabel}" Foreground="{Binding SniperVM.ManualSnipeQuoteBrush}" FontSize="11" FontWeight="SemiBold"
                            IsVisible="{Binding SniperVM.ManualSnipeQuoteLabel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                <TextBlock Text="Sell amount" FontSize="10" Foreground="#5A7A94" />
+                <TextBlock Text="Sell amount" FontSize="10" Foreground="{DynamicResource TextSoft}" />
                 <NumericUpDown Classes="rail" HorizontalAlignment="Stretch" Value="{Binding SniperVM.ManualSnipeSellAmount}" Increment="1000" Minimum="0" FormatString="0.########" />
                 <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="5">
                   <Button Grid.Column="0" Classes="tf" Content="25%" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding SniperVM.ApplyManualSnipeSellPresetCommand}" CommandParameter="25" />
@@ -437,7 +437,7 @@
                 <Button Grid.Column="1" Classes="tf" Content="STOP" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,8" Command="{Binding SniperVM.StopCommand}" />
               </Grid>
               <Button Content="RESET SAFETY" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                      Background="Transparent" BorderBrush="#152233" BorderThickness="1" Foreground="#5A7A94"
+                      Background="Transparent" BorderBrush="#152233" BorderThickness="1" Foreground="{DynamicResource TextSoft}"
                       CornerRadius="8" FontSize="11" FontWeight="Bold" Padding="0,8"
                       Command="{Binding SniperVM.ResetSafetyCommand}" />
             </StackPanel>
@@ -502,21 +502,21 @@
             <!-- filter row -->
             <WrapPanel Orientation="Horizontal">
               <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,14,6" VerticalAlignment="Center">
-                <TextBlock Text="Min Liq $" FontSize="10" Foreground="#3D5A72" VerticalAlignment="Center" />
+                <TextBlock Text="Min Liq $" FontSize="10" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                 <NumericUpDown Width="130" FontSize="11" Value="{Binding DexTrendingVM.MinLiquidityUsd}" Minimum="0" Maximum="10000000" Increment="5000" />
               </StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,14,6" VerticalAlignment="Center">
-                <TextBlock Text="Age ≤" FontSize="10" Foreground="#3D5A72" VerticalAlignment="Center" />
+                <TextBlock Text="Age ≤" FontSize="10" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                 <NumericUpDown Width="110" FontSize="11" Value="{Binding DexTrendingVM.MaxPoolAgeHours}" Minimum="1" Maximum="8760" Increment="24" />
-                <TextBlock Text="h" FontSize="10" Foreground="#3D5A72" VerticalAlignment="Center" />
+                <TextBlock Text="h" FontSize="10" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
               </StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,14,6" VerticalAlignment="Center">
-                <TextBlock Text="Score ≥" FontSize="10" Foreground="#3D5A72" VerticalAlignment="Center" />
+                <TextBlock Text="Score ≥" FontSize="10" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                 <NumericUpDown Width="100" FontSize="11" Value="{Binding DexTrendingVM.MinSecurityScore}" Minimum="0" Maximum="100" Increment="10" />
               </StackPanel>
               <TextBox Width="130" FontSize="11" Margin="0,0,14,6" Text="{Binding DexTrendingVM.SearchQuery}" PlaceholderText="symbol / name…" />
               <Button Classes="tf" Content="⟳ Refresh" Margin="0,0,14,6" Command="{Binding DexTrendingVM.RefreshCommand}" />
-              <TextBlock Text="{Binding DexTrendingVM.StatusLabel}" FontSize="10" Foreground="#3D5A72" VerticalAlignment="Center" Margin="0,0,0,6" />
+              <TextBlock Text="{Binding DexTrendingVM.StatusLabel}" FontSize="10" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" Margin="0,0,0,6" />
             </WrapPanel>
 
             <!-- AI picks -->
@@ -524,7 +524,7 @@
               <StackPanel Spacing="8">
                 <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
                   <TextBlock Grid.Column="0" Text="AI Trending Picks — momentum vs rug risk" FontSize="12" FontWeight="Bold" Foreground="#E8F4FF" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" Text="{Binding DexTrendingVM.AiSource}" FontSize="9" Foreground="#3D5A72" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <TextBlock Grid.Column="1" Text="{Binding DexTrendingVM.AiSource}" FontSize="9" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" Margin="0,0,10,0" />
                   <Button Grid.Column="2" Classes="tf active" Content="Rank with AI" Command="{Binding DexTrendingVM.RankWithAiCommand}" IsEnabled="{Binding !DexTrendingVM.AiRunning}" />
                 </Grid>
                 <ItemsControl ItemsSource="{Binding DexTrendingVM.AiPicks}" IsVisible="{Binding DexTrendingVM.HasAiPicks}">
@@ -574,7 +574,7 @@
                           <TextBlock Grid.Column="0" Text="{Binding ChainIcon}" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
                           <StackPanel Grid.Column="1" Spacing="0" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Symbol}" FontSize="12" FontWeight="Bold" Foreground="#D4EEFF" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
-                            <TextBlock Text="{Binding DexId}" FontSize="9" Foreground="#3D5A72" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding DexId}" FontSize="9" Foreground="{DynamicResource TextDim}" TextTrimming="CharacterEllipsis" />
                           </StackPanel>
                           <TextBlock Grid.Column="2" Text="{Binding PriceLabel}" FontFamily="Consolas, monospace" FontSize="11" Foreground="#C8DCEF" VerticalAlignment="Center" />
                           <Border Grid.Column="3" Background="#0A1520" CornerRadius="5" Padding="6,3" Margin="0,0,6,0" VerticalAlignment="Center" HorizontalAlignment="Left">
@@ -583,10 +583,10 @@
                           <Border Grid.Column="4" Width="90" Height="20" VerticalAlignment="Center" ClipToBounds="True">
                             <Polyline Points="{Binding SparkPoints}" Stroke="{Binding PriceChangeBrush}" StrokeThickness="1.4" />
                           </Border>
-                          <TextBlock Grid.Column="5" Text="{Binding VolumeLabel}" FontFamily="Consolas, monospace" FontSize="11" Foreground="#5A7A94" VerticalAlignment="Center" />
-                          <TextBlock Grid.Column="6" Text="{Binding LiquidityLabel}" FontFamily="Consolas, monospace" FontSize="11" Foreground="#5A7A94" VerticalAlignment="Center" />
-                          <TextBlock Grid.Column="7" Text="{Binding MarketCapLabel}" FontFamily="Consolas, monospace" FontSize="11" Foreground="#5A7A94" VerticalAlignment="Center" />
-                          <TextBlock Grid.Column="8" Text="{Binding AgeLabel}" FontSize="11" Foreground="#5A7A94" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="5" Text="{Binding VolumeLabel}" FontFamily="Consolas, monospace" FontSize="11" Foreground="{DynamicResource TextSoft}" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="6" Text="{Binding LiquidityLabel}" FontFamily="Consolas, monospace" FontSize="11" Foreground="{DynamicResource TextSoft}" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="7" Text="{Binding MarketCapLabel}" FontFamily="Consolas, monospace" FontSize="11" Foreground="{DynamicResource TextSoft}" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="8" Text="{Binding AgeLabel}" FontSize="11" Foreground="{DynamicResource TextSoft}" VerticalAlignment="Center" />
                           <Button Grid.Column="9" Content="▶ Snipe" FontSize="10" FontWeight="Bold" Foreground="#21E6C1"
                                   Background="#0A1E1C" BorderBrush="#1A3A3A" BorderThickness="1" CornerRadius="6" Padding="8,5"
                                   HorizontalAlignment="Left" VerticalAlignment="Center"
@@ -621,7 +621,7 @@
                         <TextBlock Grid.Column="0" Text="{Binding DisplayName}" FontSize="13" FontWeight="Bold" Foreground="#D4EEFF" />
                         <TextBlock Grid.Column="1" Text="{Binding PaperPnlLabel}" FontFamily="Consolas, monospace" FontSize="12" FontWeight="Bold" Foreground="{Binding PnlAccentHex}" />
                       </Grid>
-                      <TextBlock Text="{Binding PairLabel}" FontSize="11" Foreground="#3D5A72" />
+                      <TextBlock Text="{Binding PairLabel}" FontSize="11" Foreground="{DynamicResource TextDim}" />
                       <WrapPanel Orientation="Horizontal">
                         <TextBlock Text="{Binding RiskBadgeText}" FontSize="10" FontWeight="Bold" Foreground="{Binding RiskAccentHex}" Margin="0,0,10,0" />
                         <TextBlock Text="{Binding Reason}" FontSize="10" Foreground="#8FA3B8" TextWrapping="Wrap" MaxWidth="520" />
@@ -630,7 +630,7 @@
                         <Border Background="{Binding SecurityVerdictColor}" CornerRadius="4" Padding="7,2" VerticalAlignment="Center">
                           <TextBlock Text="{Binding SecurityVerdict}" FontSize="9" FontWeight="Bold" Foreground="White" />
                         </Border>
-                        <TextBlock Text="{Binding SecurityChecksSummary}" FontSize="10" Foreground="#5A7A94" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="480" />
+                        <TextBlock Text="{Binding SecurityChecksSummary}" FontSize="10" Foreground="{DynamicResource TextSoft}" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="480" />
                       </StackPanel>
                       <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button Content="BUY NOW" Background="#21E6C1" Foreground="#081018" FontSize="10" FontWeight="Bold" CornerRadius="6" Padding="16,6"
@@ -696,7 +696,7 @@
                       <StackPanel Spacing="4">
                         <Grid ColumnDefinitions="*,Auto">
                           <TextBlock Grid.Column="0" Text="{Binding AuditTitle}" FontSize="12" FontWeight="Bold" Foreground="#E8F4FF" />
-                          <TextBlock Grid.Column="1" Text="{Binding TxLine}" FontSize="10" Foreground="#5A7A94" />
+                          <TextBlock Grid.Column="1" Text="{Binding TxLine}" FontSize="10" Foreground="{DynamicResource TextSoft}" />
                         </Grid>
                         <TextBlock Text="{Binding MetaLine}" FontSize="10" Foreground="#8FA3B8" TextWrapping="Wrap" />
                       </StackPanel>
@@ -714,7 +714,7 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto">
           <Grid>
             <!-- Empty state -->
-            <TextBlock Text="Select a token to inspect it here." Foreground="#3D5A72" FontSize="12"
+            <TextBlock Text="Select a token to inspect it here." Foreground="{DynamicResource TextDim}" FontSize="12"
                        HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20"
                        IsVisible="{Binding !SniperVM.HasSelectedCandidate}" />
 
@@ -726,7 +726,7 @@
                 </Border>
                 <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
                   <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.DetailSymbol}" FontSize="15" FontWeight="Bold" Foreground="#E8F4FF" />
-                  <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.DetailPairChainLabel}" FontSize="10" Foreground="#3D5A72" />
+                  <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.DetailPairChainLabel}" FontSize="10" Foreground="{DynamicResource TextDim}" />
                 </StackPanel>
                 <Border Grid.Column="2" Background="#07111A" BorderBrush="#152233" BorderThickness="1" CornerRadius="7" Padding="10,6" VerticalAlignment="Center">
                   <TextBlock Text="☆ Watch" FontSize="10" FontWeight="Bold" Foreground="#F4B860" />
@@ -739,7 +739,7 @@
                   <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.DetailPriceLabel}" FontFamily="Consolas, monospace" FontSize="22" FontWeight="Bold" Foreground="#E8F4FF" />
                   <StackPanel Orientation="Horizontal" Spacing="6">
                     <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.DetailChangeLabel}" FontFamily="Consolas, monospace" FontSize="12" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.DetailChangeHex}" />
-                    <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.MarketTickLabel}" FontSize="10" Foreground="#3D5A72" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.MarketTickLabel}" FontSize="10" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                   </StackPanel>
                 </StackPanel>
               </Border>
@@ -784,7 +784,7 @@
                       <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.SecurityVerdict}" FontSize="10" FontWeight="Bold" Foreground="White" />
                     </Border>
                     <TextBlock Grid.Column="1" Text="{Binding SniperVM.SelectedSniperCandidate.SecurityScoreLabel}" FontSize="11" FontWeight="Bold" Foreground="{Binding SniperVM.SelectedSniperCandidate.SecurityVerdictColor}" VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="3" Text="GoPlus + RugCheck" FontSize="9" Foreground="#3D5A72" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="3" Text="GoPlus + RugCheck" FontSize="9" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                   </Grid>
                   <TextBlock Text="{Binding SniperVM.SelectedSniperCandidate.SecurityChecksSummary}" FontSize="10" Foreground="#8FA3B8" TextWrapping="Wrap" />
                 </StackPanel>
@@ -828,7 +828,7 @@
                     <DataTemplate x:DataType="vm:SniperLogEntryViewModel">
                       <Border Background="#07111A" CornerRadius="8" Padding="8,8" Margin="0,0,0,6">
                         <StackPanel Spacing="2">
-                          <TextBlock Text="{Binding LocalTime, StringFormat={}{0:HH:mm:ss}}" FontFamily="Consolas, monospace" FontSize="10" Foreground="#3D5A72" />
+                          <TextBlock Text="{Binding LocalTime, StringFormat={}{0:HH:mm:ss}}" FontFamily="Consolas, monospace" FontSize="10" Foreground="{DynamicResource TextDim}" />
                           <TextBlock Text="{Binding Message}" FontSize="11" TextWrapping="Wrap"
                                      Foreground="{Binding IsPositive, Converter={StaticResource BoolToColorConverter}}" />
                         </StackPanel>

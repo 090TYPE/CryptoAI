@@ -158,7 +158,7 @@
                   <!-- No API key note -->
                   <Border IsVisible="{Binding !OnChainVM.HasApiKey}"
                           Background="#0A1018" CornerRadius="4" Padding="10,8">
-                    <TextBlock Foreground="#4A6880" FontSize="11" TextWrapping="Wrap">
+                    <TextBlock Foreground="{DynamicResource TextSoft}" FontSize="11" TextWrapping="Wrap">
                       <Run Text="Set " />
                       <Run Text="GLASSNODE_API_KEY" FontWeight="Bold" />
                       <Run Text=" environment variable before launching to enable live on-chain data." />
@@ -173,7 +173,7 @@
             <!-- Last updated + Refresh -->
             <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
               <TextBlock Text="{Binding OnChainVM.LastUpdatedLabel}"
-                         Foreground="#4A6880" FontSize="11" VerticalAlignment="Center" />
+                         Foreground="{DynamicResource TextSoft}" FontSize="11" VerticalAlignment="Center" />
               <Button Content="↻  Refresh" Classes="SecondaryAction"
                       Command="{Binding OnChainVM.RefreshCommand}"
                       IsEnabled="{Binding !OnChainVM.IsLoading}"
