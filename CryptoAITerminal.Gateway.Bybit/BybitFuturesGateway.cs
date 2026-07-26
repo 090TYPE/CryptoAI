@@ -23,7 +23,9 @@ public class BybitFuturesGateway : IExchangeGateway
 
     public IObservable<MarketData> MarketDataStream => _marketDataSubject;
 
-    public BybitFuturesGateway(IEnumerable<string>? symbols = null, string? apiKey = null, string? apiSecret = null)
+    /// <param name="testnet">Route to the Bybit testnet, which issues its own API keys.</param>
+    public BybitFuturesGateway(IEnumerable<string>? symbols = null, string? apiKey = null, string? apiSecret = null,
+        bool testnet = false)
     {
         _symbols = (symbols ?? ["BTCUSDT", "ETHUSDT", "SOLUSDT"])
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -36,8 +38,12 @@ public class BybitFuturesGateway : IExchangeGateway
         _restClient = new BybitRestClient(opts =>
         {
             if (creds is not null) opts.ApiCredentials = creds;
+            if (testnet) opts.Environment = BybitEnvironment.Testnet;
         });
-        _socketClient = new BybitSocketClient();
+        _socketClient = new BybitSocketClient(opts =>
+        {
+            if (testnet) opts.Environment = BybitEnvironment.Testnet;
+        });
     }
 
     public async Task ConnectAsync()

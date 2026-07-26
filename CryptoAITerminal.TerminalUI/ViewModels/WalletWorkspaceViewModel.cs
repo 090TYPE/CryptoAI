@@ -28,6 +28,14 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
             ["Arbitrum"] = new("Arbitrum", "ETH", "https://arb1.arbitrum.io/rpc", "https://arbiscan.io/address/", true)
         };
 
+    /// <summary>Networks and the RPC endpoint each one falls back to. The Settings desk renders
+    /// these as the placeholder behind an empty override, so the two can never drift apart.
+    /// Solana's is blank here because its gateway carries its own default.</summary>
+    public static IReadOnlyList<(string Network, string DefaultRpc)> NetworkRpcDefaults { get; } =
+        NetworkDefinitions.Select(kv => (kv.Key, string.IsNullOrWhiteSpace(kv.Value.RpcUrl)
+            ? Services.DexSettingsStore.SolanaDefaultRpc
+            : kv.Value.RpcUrl)).ToList();
+
     private static readonly IReadOnlyDictionary<string, string> ProviderLaunchUrls =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -914,7 +922,7 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
         try
         {
             string address;
-            var rpcUrl = GetCurrentNetwork().RpcUrl;
+            var rpcUrl = EffectiveRpcUrl();
             string? normalizedSolanaSecret = null;
 
             if (string.Equals(SelectedNetwork, "Solana", StringComparison.OrdinalIgnoreCase))
@@ -937,12 +945,21 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
                 address = EvmWalletClient.DeriveAddress(privateKey);
             }
 
+            // MEV protection comes from Settings → DEX & networks. Both gateways have always
+            // accepted a mode; until that section existed nothing ever passed one, so Flashbots
+            // and Jito were unreachable and every swap went through the public mempool.
+            var dexCfg = Services.DexSettingsStore.Current;
+
             ActiveDexGateway = string.Equals(SelectedNetwork, "Solana", StringComparison.OrdinalIgnoreCase)
-                ? new SolanaTradeGateway(address, normalizedSecretMaterial: normalizedSolanaSecret)
+                ? new SolanaTradeGateway(
+                    address,
+                    Services.DexSettingsStore.RpcOverride("Solana") ?? Services.DexSettingsStore.SolanaDefaultRpc,
+                    normalizedSolanaSecret,
+                    Services.DexSettingsStore.SolanaMode) { JitoTipLamports = dexCfg.JitoTipLamports }
                 : IsTronNetworkSelected
                     ? new TronTradeGateway(privateKey, rpcUrl)
                 : GetCurrentNetwork().SupportsDexTrading
-                    ? DEXGateway.CreateForNetwork(SelectedNetwork, privateKey, rpcUrl)
+                    ? DEXGateway.CreateForNetwork(SelectedNetwork, privateKey, rpcUrl, Services.DexSettingsStore.EvmMode)
                     : null;
 
             _sessionPrivateKey = privateKey;
@@ -989,7 +1006,7 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
 
             if (IsTronNetworkSelected)
             {
-                var tronClient = new TronWalletClient(rpcUrl: GetCurrentNetwork().RpcUrl);
+                var tronClient = new TronWalletClient(rpcUrl: EffectiveRpcUrl());
                 NativeBalance = await tronClient.GetNativeBalanceAsync(ConnectedAddress);
                 TronTrc20Balance = ValidateAddress(TronTrc20ContractAddress)
                     ? await tronClient.GetTrc20BalanceAsync(ConnectedAddress, TronTrc20ContractAddress)
@@ -1008,7 +1025,7 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
                 return;
             }
 
-            var walletClient = new EvmWalletClient(GetCurrentNetwork().RpcUrl);
+            var walletClient = new EvmWalletClient(EffectiveRpcUrl());
             NativeBalance = await walletClient.GetNativeBalanceAsync(ConnectedAddress);
             LastSyncLocal = DateTime.Now;
             RebuildAssets(
@@ -1488,6 +1505,12 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
 
         return EvmWalletClient.IsValidAddress(address);
     }
+
+    /// <summary>The selected network's RPC endpoint with the user's Settings override applied.
+    /// Falls back to the built-in public node, which is what every session used before the
+    /// override existed.</summary>
+    private string EffectiveRpcUrl() =>
+        Services.DexSettingsStore.RpcOverride(SelectedNetwork) ?? GetCurrentNetwork().RpcUrl;
 
     private WalletNetworkDefinition GetCurrentNetwork()
     {

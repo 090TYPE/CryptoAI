@@ -25,8 +25,11 @@ public class OKXGateway : IExchangeGateway
 
     public IObservable<MarketData> MarketDataStream => _marketDataSubject;
 
+    /// <param name="demoTrading">Route to OKX demo trading — OKX's equivalent of a testnet.
+    /// Demo keys are created separately in the OKX demo account.</param>
     public OKXGateway(IEnumerable<string>? symbols = null,
-                      string? apiKey = null, string? apiSecret = null, string? passphrase = null)
+                      string? apiKey = null, string? apiSecret = null, string? passphrase = null,
+                      bool demoTrading = false)
     {
         _symbols = (symbols ?? ["BTCUSDT", "ETHUSDT", "SOLUSDT"])
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -41,8 +44,12 @@ public class OKXGateway : IExchangeGateway
         _restClient = new OKXRestClient(opts =>
         {
             if (creds is not null) opts.ApiCredentials = creds;
+            if (demoTrading) opts.Environment = OKXEnvironment.Demo;
         });
-        _socketClient = new OKXSocketClient();
+        _socketClient = new OKXSocketClient(opts =>
+        {
+            if (demoTrading) opts.Environment = OKXEnvironment.Demo;
+        });
     }
 
     public async Task ConnectAsync()

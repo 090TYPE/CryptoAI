@@ -19,9 +19,18 @@
 
 > **Права ключа:** включить Spot + Futures Trade. IP-whitelist ДА. Право на вывод средств — НЕТ.
 
+> **Тестовая среда.** В **Settings → Exchange keys** у каждой биржи есть тумблер `TESTNET`:
+> Binance Testnet, Bybit Testnet, OKX Demo trading. Ключи там свои — мейннет-ключ тестовая
+> среда отвергает, поэтому после переключения вставь ключ, выданный тестовой средой, и
+> перезапусти терминал (окружение гейтвея фиксируется при старте). У KuCoin песочницы нет:
+> биржа её закрыла, в клиентской библиотеке тестового окружения не осталось.
+
 ### [ ] DEX кошелёк (реальные свапы)
 - [ ] Импортировать приватный ключ: вкладка **Wallet → Import Private Key** (для каждой сети своя: EVM / Solana / Tron), либо `CRYPTOAI_DEX_PRIVATE_KEY`.
 - [ ] Держать на hot-кошельке только рабочую сумму.
+- [ ] **Settings → DEX & networks**: свой RPC на сеть (пусто = встроенная публичная нода) и
+      MEV-защита (Flashbots Protect для ETH/Base, Jito-бандлы для Solana). Читается в момент
+      импорта кошелька — после изменения переимпортировать сессию.
 
 ---
 
@@ -55,7 +64,7 @@
 
 ## 3. LIVE перпы (Hyperliquid) — если нужна реальная перп-торговля на десктопе перпов
 
-- [ ] В SWAP-панели: включить **Hyperliquid live orders**.
+- [ ] Включить **Hyperliquid live orders** — в SWAP-панели либо в **Settings → DEX & networks**.
 - [ ] Импортировать trade-enabled EVM кошелёк (не watch-режим).
 - [ ] **Сначала протестировать на TESTNET** (по умолчанию включён).
 - [ ] На десктопе перпов нажать **PAPER / LIVE** — бейдж покажет `LIVE · TESTNET`.
@@ -64,6 +73,11 @@
 ---
 
 ## 4. On-chain / DEX данные (кошельки, цены токенов, история сделок)
+
+> Ключи из §4 и §5 больше не требуют переменных окружения: их можно вписать прямо в
+> **Settings → Data providers**. Значения шифруются DPAPI в `api-credentials.json`.
+> Если переменная окружения всё же выставлена — она перекрывает сохранённое значение,
+> и карточка ключа помечается бейджем `ENV VAR`.
 
 - [ ] **Alchemy** (`ALCHEMY_API_KEY`) — EVM RPC/цены
 - [ ] **Etherscan** (`ETHERSCAN_API_KEY`) — история tx ETH
@@ -86,7 +100,12 @@
 
 ## 6. Уведомления (опционально)
 
+Заполняются в **Settings → Notifications** и сохраняются на диск (DPAPI) — переживают перезапуск.
+
 - [ ] **Telegram** — `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`
+- [ ] **Discord** — `DISCORD_WEBHOOK_URL`
+- [ ] **ntfy.sh** — `NTFY_TOPIC`
+- [ ] **Email (SMTP)** — `EMAIL_SMTP_HOST` / `EMAIL_SMTP_PORT` / `EMAIL_SMTP_SSL` / `EMAIL_SMTP_USER` / `EMAIL_SMTP_PASS` / `EMAIL_FROM` / `EMAIL_TO`
 
 ---
 

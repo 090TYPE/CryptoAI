@@ -93,6 +93,78 @@ public sealed class ExTabVM
     public ICommand? Command { get; init; }
 }
 
+/// <summary>One provider / integration credential row in the Data providers section.
+/// Stable instance — the value survives a refresh so a focused caret is never reset.</summary>
+public sealed class IntegrationRowVM : ReactiveObject
+{
+    public string Id { get; init; } = "";
+    public string Label { get; init; } = "";
+    public string EnvVar { get; init; } = "";
+    public string Powers { get; init; } = "";
+    public string Applies { get; init; } = "";
+    public string Placeholder { get; init; } = "";
+    public bool Secret { get; init; }
+    public bool HasConsole { get; init; }
+    public ICommand? ConsoleCommand { get; init; }
+
+    public Action<string>? Changed { get; set; }
+
+    private string _value = "";
+    public string Value
+    {
+        get => _value;
+        set { this.RaiseAndSetIfChanged(ref _value, value ?? ""); Changed?.Invoke(_value); }
+    }
+
+    /// <summary>Push a stored value in without echoing it back to the writer.</summary>
+    public void SetSilent(string? v)
+    {
+        var s = v ?? "";
+        if (_value == s) return;
+        _value = s;
+        this.RaisePropertyChanged(nameof(Value));
+    }
+
+    /// <summary>'\0' once the section is revealed; secrets are masked until then.</summary>
+    private char _mask;
+    public char Mask { get => _mask; set => this.RaiseAndSetIfChanged(ref _mask, value); }
+
+    private string _srcLabel = "NOT SET";
+    public string SrcLabel { get => _srcLabel; set => this.RaiseAndSetIfChanged(ref _srcLabel, value); }
+    private string _srcColor = "#2d4a5e";
+    public string SrcColor { get => _srcColor; set => this.RaiseAndSetIfChanged(ref _srcColor, value); }
+    private string _srcBg = "transparent";
+    public string SrcBg { get => _srcBg; set => this.RaiseAndSetIfChanged(ref _srcBg, value); }
+    private string _srcBorder = "#152233";
+    public string SrcBorder { get => _srcBorder; set => this.RaiseAndSetIfChanged(ref _srcBorder, value); }
+
+    /// <summary>True when an external environment variable overrides whatever is typed here.</summary>
+    private bool _envWins;
+    public bool EnvWins { get => _envWins; set => this.RaiseAndSetIfChanged(ref _envWins, value); }
+}
+
+/// <summary>A radio-style option in the DEX section — MEV mode or Jito tip preset.</summary>
+public sealed class DexModeChip
+{
+    public string Label { get; init; } = "";
+    public string Hint { get; init; } = "";
+    public string Border { get; init; } = "#152233";
+    public string Bg { get; init; } = "#050f14";
+    public string Fg { get; init; } = "#8fa3b8";
+    public string DotBorder { get; init; } = "#2a3f54";
+    public string DotBg { get; init; } = "transparent";
+    /// <summary>Set when the mode is selectable but cannot work on this build / network.</summary>
+    public string Warn { get; init; } = "";
+    public bool HasWarn => Warn.Length > 0;
+    public ICommand? Command { get; init; }
+}
+
+public sealed class IntegrationGroupVM
+{
+    public string Label { get; init; } = "";
+    public ObservableCollection<IntegrationRowVM> Items { get; } = new();
+}
+
 public sealed class PermToggle
 {
     public string Label { get; init; } = "";

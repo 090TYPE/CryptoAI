@@ -31,7 +31,9 @@ public class BinanceFuturesGateway : IExchangeGateway
     public IObservable<TradeExecution> TradeUpdateStream => _tradeUpdateSubject;
     public IObservable<string> AccountStateChangedStream => _accountStateChangedSubject;
 
-    public BinanceFuturesGateway(IEnumerable<string>? symbols = null, string? apiKey = null, string? apiSecret = null)
+    /// <param name="testnet">Route to the Binance futures testnet, which issues its own API keys.</param>
+    public BinanceFuturesGateway(IEnumerable<string>? symbols = null, string? apiKey = null, string? apiSecret = null,
+        bool testnet = false)
     {
         _apiKey = string.IsNullOrWhiteSpace(apiKey) ? null : apiKey;
         _apiSecret = string.IsNullOrWhiteSpace(apiSecret) ? null : apiSecret;
@@ -46,11 +48,13 @@ public class BinanceFuturesGateway : IExchangeGateway
         _restClient = new BinanceRestClient(options =>
         {
             options.ApiCredentials = credentials;
+            if (testnet) options.Environment = BinanceEnvironment.Testnet;
         });
 
         _socketClient = new BinanceSocketClient(options =>
         {
             options.ApiCredentials = credentials;
+            if (testnet) options.Environment = BinanceEnvironment.Testnet;
         });
     }
 

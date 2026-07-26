@@ -74,6 +74,15 @@
               </Border>
               <Border Padding="14,0" BorderBrush="#0d1b27" BorderThickness="0,0,1,0">
                 <StackPanel VerticalAlignment="Center" Spacing="2">
+                  <TextBlock Text="DATA KEYS" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
+                  <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom">
+                    <TextBlock Text="{Binding HdrData}" FontFamily="{StaticResource FontMono}" FontSize="16" Foreground="#e8f4ff" />
+                    <TextBlock Text="{Binding HdrDataSub}" Foreground="#3d5a72" FontSize="9" Margin="0,0,0,2" VerticalAlignment="Bottom" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+              <Border Padding="14,0" BorderBrush="#0d1b27" BorderThickness="0,0,1,0">
+                <StackPanel VerticalAlignment="Center" Spacing="2">
                   <TextBlock Text="ALERT CHANNELS" Foreground="#2d4a5e" FontSize="8" FontWeight="Bold" />
                   <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom">
                     <TextBlock Text="{Binding HdrChannels}" FontFamily="{StaticResource FontMono}" FontSize="16" Foreground="#21e6c1" />
@@ -334,6 +343,9 @@
                       <TextBlock Grid.Column="0" Text="Exchange API keys" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
                       <Button Grid.Column="2" Command="{Binding ExToggleHelpCommand}" Width="26" Height="26" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="0" Content="?" Foreground="#8fa3b8" FontSize="12" FontWeight="Bold" />
                     </Grid>
+                    <Border IsVisible="{Binding HasTestnetBanner}" Margin="0,11,0,0" BorderBrush="#3a2a12" BorderThickness="1" CornerRadius="8" Background="#150f04" Padding="11">
+                      <TextBlock Text="{Binding TestnetBanner}" TextWrapping="Wrap" FontSize="11" LineHeight="16" Foreground="#f0b90b" />
+                    </Border>
                     <Border IsVisible="{Binding ExHelp}" Margin="0,11,0,0" BorderBrush="#2a3a12" BorderThickness="1" CornerRadius="8" Background="#0d1004" Padding="12">
                       <StackPanel Spacing="5">
                         <TextBlock Text="How to create keys" FontSize="11.5" FontWeight="Bold" Foreground="#f0b90b" Margin="0,0,0,2" />
@@ -383,6 +395,7 @@
                             </StackPanel>
                           </Button>
                         </Grid>
+                        <TextBlock Text="{Binding TnNote}" TextWrapping="Wrap" FontFamily="{StaticResource FontMono}" FontSize="10" LineHeight="15" Foreground="{Binding TnNoteColor, Converter={StaticResource StringToBrush}}" Margin="0,-4,0,11" />
                         <ItemsControl ItemsSource="{Binding ExFields}">
                           <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                           <ItemsControl.ItemTemplate>
@@ -472,13 +485,209 @@
                 </Border>
               </StackPanel>
 
+              <!-- ══════════ DEX & NETWORKS ══════════ -->
+              <StackPanel Spacing="7" IsVisible="{Binding IsDex}">
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14">
+                  <StackPanel>
+                    <Grid ColumnDefinitions="Auto,9,Auto,*,Auto" Margin="0,0,0,4">
+                      <TextBlock Grid.Column="0" Text="DEX execution" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
+                      <Border Grid.Column="2" BorderBrush="#152233" BorderThickness="1" CornerRadius="4" Background="#060d14" Padding="7,2" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding DexRpcCount, StringFormat='{}{0} custom endpoints'}" Foreground="#8fa3b8" FontSize="8" FontWeight="ExtraBold" />
+                      </Border>
+                      <Button Grid.Column="4" Command="{Binding DexResetRpcCommand}" Height="26" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="11,0" Content="RESET ENDPOINTS" Foreground="#5a7a94" FontSize="9" FontWeight="Bold" />
+                    </Grid>
+                    <TextBlock TextWrapping="Wrap" MaxWidth="760" HorizontalAlignment="Left" FontSize="11.5" LineHeight="18" Foreground="#4a6a82"
+                               Text="The DEX venues on the market desk are public data and need no keys. A DEX connection here is your imported wallet plus the endpoint it talks to — leave a field blank to keep the built-in public node, or paste a paid endpoint (Alchemy, Helius, QuickNode) when the free one starts rate-limiting." />
+                    <ItemsControl ItemsSource="{Binding RpcFields}" Margin="0,13,0,0">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <StackPanel Spacing="5" Margin="5">
+                            <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                            <Border Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
+                              <TextBox Text="{Binding Value, Mode=TwoWay}" Watermark="{Binding Placeholder}" FontFamily="{StaticResource FontMono}" FontSize="11" VerticalAlignment="Center" />
+                            </Border>
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14">
+                  <StackPanel>
+                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,4">
+                      <TextBlock Grid.Column="0" Text="MEV protection" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Text="{Binding DexStatus}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="{Binding DexStatusColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                    </Grid>
+                    <TextBlock TextWrapping="Wrap" MaxWidth="760" HorizontalAlignment="Left" FontSize="11.5" LineHeight="18" Foreground="#4a6a82"
+                               Text="Where a swap is submitted. On the public mempool a large trade can be sandwiched before it confirms; a private relay hides it until it lands. The mode is picked up when a wallet session is armed, so re-import the wallet after changing it." />
+
+                    <TextBlock Text="EVM (Ethereum · BSC · Base · Polygon · Arbitrum)" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" Margin="0,13,0,6" />
+                    <ItemsControl ItemsSource="{Binding EvmMevModes}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Button Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="9" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Padding="12" Margin="0,0,0,5">
+                            <StackPanel>
+                              <Grid ColumnDefinitions="Auto,9,Auto,*">
+                                <Border Grid.Column="0" Width="12" Height="12" CornerRadius="6" BorderBrush="{Binding DotBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" Background="{Binding DotBg, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="2" Text="{Binding Label}" FontSize="12" FontWeight="SemiBold" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                              </Grid>
+                              <TextBlock Text="{Binding Hint}" TextWrapping="Wrap" FontSize="10.5" LineHeight="15" Foreground="#4a6a82" Margin="21,5,0,0" />
+                              <TextBlock IsVisible="{Binding HasWarn}" Text="{Binding Warn}" TextWrapping="Wrap" FontSize="9.5" LineHeight="14" Foreground="#f0b90b" Margin="21,4,0,0" />
+                            </StackPanel>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Text="SOLANA" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" Margin="0,11,0,6" />
+                    <ItemsControl ItemsSource="{Binding SolMevModes}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Button Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="9" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Padding="12" Margin="0,0,0,5">
+                            <StackPanel>
+                              <Grid ColumnDefinitions="Auto,9,Auto,*">
+                                <Border Grid.Column="0" Width="12" Height="12" CornerRadius="6" BorderBrush="{Binding DotBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" Background="{Binding DotBg, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="2" Text="{Binding Label}" FontSize="12" FontWeight="SemiBold" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                              </Grid>
+                              <TextBlock Text="{Binding Hint}" TextWrapping="Wrap" FontSize="10.5" LineHeight="15" Foreground="#4a6a82" Margin="21,5,0,0" />
+                            </StackPanel>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <StackPanel IsVisible="{Binding ShowJitoTip}" Margin="0,9,0,0">
+                      <TextBlock Text="{Binding JitoTipLabel}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" Margin="0,0,0,6" />
+                      <ItemsControl ItemsSource="{Binding JitoTips}">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="5" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Button Command="{Binding Command}" Height="26" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="6" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Padding="11,0" Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontSize="9" FontWeight="Bold" />
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14">
+                  <StackPanel>
+                    <TextBlock Text="Swap defaults &amp; live venues" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" Margin="0,0,0,11" />
+                    <ItemsControl ItemsSource="{Binding DexSwapFields}">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <StackPanel Spacing="5" Margin="5">
+                            <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="Bold" Foreground="#2d4a5e" />
+                            <Border Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#050f14" Padding="9,0">
+                              <Grid ColumnDefinitions="*,Auto">
+                                <TextBox Grid.Column="0" Text="{Binding Value, Mode=TwoWay}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="{Binding Unit}" FontSize="9.5" Foreground="#2d4a5e" VerticalAlignment="Center" />
+                              </Grid>
+                            </Border>
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <ItemsControl ItemsSource="{Binding DexFlags}" Margin="0,9,0,0">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Button Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" BorderThickness="0" CornerRadius="6" Background="Transparent" Padding="9,8">
+                            <Grid ColumnDefinitions="*,12,Auto">
+                              <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock Text="{Binding Label}" FontSize="11.5" Foreground="#d0e4f4" />
+                                <TextBlock Text="{Binding Hint}" FontSize="9.5" Foreground="#2d4a5e" TextTrimming="CharacterEllipsis" />
+                              </StackPanel>
+                              <Border Grid.Column="2" Width="28" Height="15" CornerRadius="8" Background="{Binding TrackBg, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center">
+                                <Canvas><Border Canvas.Left="{Binding KnobLeft}" Canvas.Top="2" Width="11" Height="11" CornerRadius="6" Background="{Binding Knob, Converter={StaticResource StringToBrush}}" /></Canvas>
+                              </Border>
+                            </Grid>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Border IsVisible="{Binding DexHlDanger}" Margin="0,9,0,0" BorderBrush="#3a1620" BorderThickness="1" CornerRadius="8" Background="#14060a" Padding="11">
+                      <TextBlock Text="{Binding DexHlWarning}" TextWrapping="Wrap" FontSize="11" LineHeight="16" Foreground="#ff6b6b" />
+                    </Border>
+                    <Border BorderBrush="#0a1520" BorderThickness="0,1,0,0" Margin="0,13,0,0" Padding="0,12,0,0">
+                      <Grid ColumnDefinitions="Auto,*,Auto">
+                        <Button Grid.Column="0" Command="{Binding DexSaveCommand}" Height="29" BorderBrush="#21e6c1" BorderThickness="1" CornerRadius="6" Background="#0e2a2a" Padding="13,0" Content="SAVE DEX SETTINGS" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                        <TextBlock Grid.Column="2" Text="{Binding DexStorePath}" FontFamily="{StaticResource FontMono}" FontSize="9.5" TextWrapping="Wrap" MaxWidth="620" Foreground="#2d4a5e" VerticalAlignment="Center" />
+                      </Grid>
+                    </Border>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+
+              <!-- ══════════ DATA PROVIDERS ══════════ -->
+              <StackPanel Spacing="7" IsVisible="{Binding IsData}">
+                <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14">
+                  <StackPanel>
+                    <Grid ColumnDefinitions="Auto,9,Auto,*,Auto" Margin="0,0,0,4">
+                      <TextBlock Grid.Column="0" Text="Data providers &amp; integrations" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
+                      <Border Grid.Column="2" BorderBrush="#152233" BorderThickness="1" CornerRadius="4" Background="#060d14" Padding="7,2" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding IntStatus}" Foreground="{Binding IntStatusColor, Converter={StaticResource StringToBrush}}" FontSize="8" FontWeight="ExtraBold" />
+                      </Border>
+                      <Button Grid.Column="4" Command="{Binding IntRevealCommand}" Height="26" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="11,0" Content="{Binding IntRevealIcon}" Foreground="#5a7a94" FontSize="9" FontWeight="Bold" />
+                    </Grid>
+                    <TextBlock TextWrapping="Wrap" MaxWidth="760" HorizontalAlignment="Left" FontSize="11.5" LineHeight="18" Foreground="#4a6a82"
+                               Text="Optional keys for everything the terminal reads outside the exchanges — wallet history, on-chain metrics, liquidations, news, DEX quotes. The terminal runs without them; a desk whose key is missing simply stays empty. Keys are encrypted with DPAPI on this PC and are never written into a configuration profile." />
+                    <ItemsControl ItemsSource="{Binding IntGroups}" Margin="0,13,0,0">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <StackPanel Margin="0,0,0,9">
+                            <TextBlock Text="{Binding Label}" FontSize="8.5" FontWeight="Bold" Foreground="#1e3048" Margin="0,0,0,6" />
+                            <ItemsControl ItemsSource="{Binding Items}">
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                  <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="9" Background="#050f14" Padding="12" Margin="0,0,0,5">
+                                    <StackPanel>
+                                      <Grid ColumnDefinitions="Auto,9,Auto,9,Auto,*,Auto" Margin="0,0,0,8">
+                                        <TextBlock Grid.Column="0" Text="{Binding Label}" FontSize="12" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
+                                        <Border Grid.Column="2" BorderBrush="{Binding SrcBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="4" Background="{Binding SrcBg, Converter={StaticResource StringToBrush}}" Padding="7,2" VerticalAlignment="Center">
+                                          <TextBlock Text="{Binding SrcLabel}" Foreground="{Binding SrcColor, Converter={StaticResource StringToBrush}}" FontSize="8" FontWeight="ExtraBold" />
+                                        </Border>
+                                        <TextBlock Grid.Column="4" Text="{Binding EnvVar}" FontFamily="{StaticResource FontMono}" FontSize="10" Foreground="#2d4a5e" VerticalAlignment="Center" />
+                                        <Button Grid.Column="6" IsVisible="{Binding HasConsole}" Command="{Binding ConsoleCommand}" Height="24" BorderBrush="#152233" BorderThickness="1" CornerRadius="5" Background="#060d14" Padding="10,0" Content="GET KEY" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
+                                      </Grid>
+                                      <Border Height="30" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="9,0">
+                                        <TextBox Text="{Binding Value, Mode=TwoWay}" PasswordChar="{Binding Mask}" Watermark="{Binding Placeholder}" FontFamily="{StaticResource FontMono}" FontSize="11.5" VerticalAlignment="Center" />
+                                      </Border>
+                                      <TextBlock Text="{Binding Powers}" TextWrapping="Wrap" FontSize="10.5" LineHeight="16" Foreground="#4a6a82" Margin="0,7,0,0" />
+                                      <TextBlock Text="{Binding Applies}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" Margin="0,3,0,0" />
+                                      <TextBlock IsVisible="{Binding EnvWins}" Text="An environment variable of the same name is set on this machine — it wins over anything typed here." TextWrapping="Wrap" FontSize="9.5" LineHeight="14" Foreground="#f0b90b" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                  </Border>
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Border BorderBrush="#0a1520" BorderThickness="0,1,0,0" Margin="0,4,0,0" Padding="0,12,0,0">
+                      <Grid ColumnDefinitions="Auto,7,Auto,*,Auto">
+                        <Button Grid.Column="0" Command="{Binding IntSaveCommand}" Height="29" BorderBrush="#21e6c1" BorderThickness="1" CornerRadius="6" Background="#0e2a2a" Padding="13,0" Content="SAVE PROVIDER KEYS" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                        <Button Grid.Column="2" Command="{Binding IntClearCommand}" Height="29" BorderBrush="#3a1620" BorderThickness="1" CornerRadius="6" Background="#14060a" Padding="11,0" Content="REMOVE ALL KEYS" Foreground="#ff6b6b" FontSize="9" FontWeight="Bold" />
+                        <TextBlock Grid.Column="4" Text="{Binding IntStorePath}" FontFamily="{StaticResource FontMono}" FontSize="9.5" Foreground="#2d4a5e" VerticalAlignment="Center" />
+                      </Grid>
+                    </Border>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+
               <!-- ══════════ NOTIFICATIONS ══════════ -->
               <StackPanel Spacing="7" IsVisible="{Binding IsNotify}">
                 <Border BorderBrush="#0d1b27" BorderThickness="1" CornerRadius="11" Background="#07101a" Padding="14">
                   <StackPanel>
                     <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,11">
                       <TextBlock Grid.Column="0" Text="Notification channels" FontSize="14" FontWeight="SemiBold" Foreground="#e8f4ff" VerticalAlignment="Center" />
-                      <Button Grid.Column="2" Command="{Binding NtTestAllCommand}" Height="26" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="11,0" Content="TEST ALL CHANNELS" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
+                      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="7">
+                        <Button Command="{Binding NtTestAllCommand}" Height="26" BorderBrush="#152233" BorderThickness="1" CornerRadius="6" Background="#060d14" Padding="11,0" Content="TEST ALL CHANNELS" Foreground="#8fa3b8" FontSize="9" FontWeight="Bold" />
+                        <Button Command="{Binding NtSaveAllCommand}" Height="26" BorderBrush="#21e6c1" BorderThickness="1" CornerRadius="6" Background="#0e2a2a" Padding="11,0" Content="SAVE ALL CHANNELS" Foreground="#21e6c1" FontSize="9" FontWeight="Bold" />
+                      </StackPanel>
                     </Grid>
                     <ItemsControl ItemsSource="{Binding NtChannels}">
                       <ItemsControl.ItemTemplate>

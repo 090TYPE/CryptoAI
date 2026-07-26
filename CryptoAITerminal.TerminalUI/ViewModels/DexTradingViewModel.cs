@@ -62,7 +62,10 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
     private bool _isQuoteAssetBalanceLoading;
     private bool _pendingGlobalSizingApply = true;
     private bool _isSynchronizingQuoteAssetSelection;
-    private decimal _slippagePercent = 3m;
+    // Seeded from Settings → DEX & networks. Was a hardcoded 3% that came back on every launch
+    // however the user left the panel.
+    private decimal _slippagePercent =
+        Math.Max(0.1m, Math.Min(50m, DexSettingsStore.Current.DefaultSlippagePercent));
     private string _buyQuoteLabel = string.Empty;
     private string _buyQuoteBrush = "#8FA3B8";
     private decimal _tokenBalance;
@@ -540,7 +543,7 @@ public class DexTradingViewModel : ReactiveObject, IDisposable
 
     // When on, manual buys route through the aggregator's best cross-DEX path (real build+sign+send)
     // instead of the gateway's single-DEX router. Falls back automatically if the chain/gateway can't.
-    private bool _useBestRouteSwap = true;
+    private bool _useBestRouteSwap = DexSettingsStore.Current.BestRouteByDefault;
     public bool UseBestRouteSwap
     {
         get => _useBestRouteSwap;

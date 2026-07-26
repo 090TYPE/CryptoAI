@@ -21,14 +21,25 @@ public class BinanceGateway : IExchangeGateway
     public IReadOnlyList<string> Symbols => _symbols;
     public bool HasPrivateApiCredentials => !string.IsNullOrWhiteSpace(_apiKey) && !string.IsNullOrWhiteSpace(_apiSecret);
 
-    public BinanceGateway(IEnumerable<string>? symbols = null, string? apiKey = null, string? apiSecret = null)
+    /// <param name="testnet">Route to the Binance testnet. Testnet issues its own API keys —
+    /// a mainnet key is rejected there, and vice versa.</param>
+    public BinanceGateway(IEnumerable<string>? symbols = null, string? apiKey = null, string? apiSecret = null,
+        bool testnet = false)
     {
         _apiKey = string.IsNullOrWhiteSpace(apiKey) ? null : apiKey;
         _apiSecret = string.IsNullOrWhiteSpace(apiSecret) ? null : apiSecret;
         var credentials = HasPrivateApiCredentials ? new BinanceCredentials(_apiKey!, _apiSecret!) : null;
 
-        _restClient = new BinanceRestClient(options => options.ApiCredentials = credentials);
-        _socketClient = new BinanceSocketClient(options => options.ApiCredentials = credentials);
+        _restClient = new BinanceRestClient(options =>
+        {
+            options.ApiCredentials = credentials;
+            if (testnet) options.Environment = BinanceEnvironment.Testnet;
+        });
+        _socketClient = new BinanceSocketClient(options =>
+        {
+            options.ApiCredentials = credentials;
+            if (testnet) options.Environment = BinanceEnvironment.Testnet;
+        });
         _symbols = (symbols ?? ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"])
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();

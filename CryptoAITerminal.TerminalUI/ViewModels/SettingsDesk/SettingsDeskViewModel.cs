@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Input;
 using Avalonia.Threading;
+using CryptoAITerminal.Gateway.DEX;
 using CryptoAITerminal.TerminalUI.Services;
 using CryptoAITerminal.TerminalUI.ViewModels.BotsDesk;
 using ReactiveUI;
@@ -33,6 +34,8 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     private bool _dirty;
     private DateTime? _lastSaved;
     private bool _aiRevealed;
+    private bool _intRevealed;
+    private bool _intLoaded;
     private string _exTab = "binance";
     private string? _ntOpen = "telegram";
     private string? _capturing;
@@ -44,6 +47,12 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     private readonly List<(HotkeyRowVM row, Func<string> read)> _boundHotkeys = new();
     private readonly Dictionary<string, List<SetField>> _exFieldsByTab = new();
 
+    // Data-provider keys. Sources are cached rather than re-read on every refresh: the
+    // credential file is DPAPI-encrypted, so a read is a decrypt, and Refresh() runs on
+    // every source notification.
+    private readonly List<IntegrationRowVM> _intRows = new();
+    private Dictionary<string, CredentialsService.CredentialSource> _intSources = new(StringComparer.Ordinal);
+
     // ── collections (names are bound by SettingsView.axaml — do not rename) ──
     public ObservableCollection<NavGroup> NavGroups { get; } = new();
     public ObservableCollection<ProviderCard> Providers { get; } = new();
@@ -51,6 +60,13 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     public ObservableCollection<ProfileCard> Profiles { get; } = new();
     public ObservableCollection<ExTabVM> ExTabs { get; } = new();
     public ObservableCollection<SetField> ExFields { get; } = new();
+    public ObservableCollection<IntegrationGroupVM> IntGroups { get; } = new();
+    public ObservableCollection<SetField> RpcFields { get; } = new();
+    public ObservableCollection<DexModeChip> EvmMevModes { get; } = new();
+    public ObservableCollection<DexModeChip> SolMevModes { get; } = new();
+    public ObservableCollection<DexModeChip> JitoTips { get; } = new();
+    public ObservableCollection<SetField> DexSwapFields { get; } = new();
+    public ObservableCollection<GuardToggle> DexFlags { get; } = new();
     public ObservableCollection<PermToggle> Perms { get; } = new();
 
     // Both stay empty in this build (no per-feature AI switches, no readable key scopes),
@@ -96,11 +112,16 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         ExTestCommand = new RelayCommand(() =>
             Toast("No connection test in this build — save the keys and restart to apply them", "info"));
         ExClearCommand = new RelayCommand(ExClear);
-        TestnetCommand = new RelayCommand(() =>
-            Toast("No testnet switch is wired up — keys are used against the live endpoints", "info"));
+        TestnetCommand = new RelayCommand(TestnetToggle);
         WalletCommand = new RelayCommand(WalletToggle);
         WalletRotateCommand = new RelayCommand(() => RunWallet(w => w.RefreshWalletCommand, "Wallet session refreshed"));
+        DexSaveCommand = new RelayCommand(DexSave);
+        DexResetRpcCommand = new RelayCommand(DexResetRpc);
+        IntSaveCommand = new RelayCommand(IntSave);
+        IntRevealCommand = new RelayCommand(() => { _intRevealed = !_intRevealed; RefreshIntegrations(); this.RaisePropertyChanged(nameof(IntRevealIcon)); });
+        IntClearCommand = new RelayCommand(IntClear);
         NtTestAllCommand = new RelayCommand(NtTestAll);
+        NtSaveAllCommand = new RelayCommand(NtSaveAll);
         TgConnectCommand = new RelayCommand(TgConnect);
         TgToggleInlineCommand = new RelayCommand(TgToggleInline);
         NlGenerateCommand = new RelayCommand(() => RunAlerts(a => a.GenerateAlertFromTextCommand, null));
@@ -261,7 +282,13 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     public ICommand TestnetCommand { get; }
     public ICommand WalletCommand { get; }
     public ICommand WalletRotateCommand { get; }
+    public ICommand DexSaveCommand { get; }
+    public ICommand DexResetRpcCommand { get; }
+    public ICommand IntSaveCommand { get; }
+    public ICommand IntRevealCommand { get; }
+    public ICommand IntClearCommand { get; }
     public ICommand NtTestAllCommand { get; }
+    public ICommand NtSaveAllCommand { get; }
     public ICommand TgConnectCommand { get; }
     public ICommand TgToggleInlineCommand { get; }
     public ICommand NlGenerateCommand { get; }
@@ -278,6 +305,8 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     public bool IsAi => _section == "ai";
     public bool IsLicense => _section == "license";
     public bool IsKeys => _section == "keys";
+    public bool IsDex => _section == "dex";
+    public bool IsData => _section == "data";
     public bool IsNotify => _section == "notify";
     public bool IsAlerts => _section == "alerts";
     public bool IsExec => _section == "exec";
@@ -482,12 +511,16 @@ public sealed class SettingsDeskViewModel : ReactiveObject
 
     // ── header / dirty / footer ──────────────────────────────────────────────
     private int KeysConfigured => SettingsData.Exchanges.Count(e => ExHasKey(e.id));
+    private int DataKeysConfigured => _intSources.Count(kv => kv.Value != CredentialsService.CredentialSource.None);
+    private static int DataKeysTotal => CredentialsService.IntegrationKeys.Count;
     private int ChannelsConfigured => NtChannels.Count(c => IsChannelConfigured(c.Id));
     private int ActiveAlertCount => _host?.AlertsVM?.Alerts.Count(a => !a.HasFired) ?? 0;
     private int FiredAlertCount => _host?.AlertsVM?.Alerts.Count(a => a.HasFired) ?? 0;
 
     public string HdrKeys => _host is null ? Dash : KeysConfigured.ToString();
     public string HdrKeysSub => "of 4";
+    public string HdrData => DataKeysConfigured.ToString();
+    public string HdrDataSub => "of " + DataKeysTotal;
     public string HdrChannels => _host is null ? Dash : ChannelsConfigured.ToString();
     public string HdrChannelsSub => "configured";
     public string HdrAlerts => _host is null ? Dash : ActiveAlertCount.ToString();
@@ -519,6 +552,9 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         RebuildProfiles();
         RebuildExTabs();
         RebuildExFields();
+        RebuildDexModes();
+        RebuildDexFlags();
+        RefreshIntegrations();
         RefreshNtDisplay();
         RebuildTgPending();
         RebuildNewChannels();
@@ -552,7 +588,10 @@ public sealed class SettingsDeskViewModel : ReactiveObject
 
     private static readonly string[] Scalars =
     {
-        nameof(IsAi), nameof(IsLicense), nameof(IsKeys), nameof(IsNotify), nameof(IsAlerts), nameof(IsExec),
+        nameof(IsAi), nameof(IsLicense), nameof(IsKeys), nameof(IsDex), nameof(IsData), nameof(IsNotify), nameof(IsAlerts), nameof(IsExec),
+        nameof(HdrData), nameof(HdrDataSub), nameof(IntStatus), nameof(IntStatusColor), nameof(IntRevealIcon), nameof(IntStorePath),
+        nameof(DexMevOn), nameof(DexStatus), nameof(DexStatusColor), nameof(DexRpcCount), nameof(DexStorePath),
+        nameof(JitoTipLabel), nameof(ShowJitoTip), nameof(DexHlDanger), nameof(DexHlWarning),
         nameof(AiClaude), nameof(AiKeyLabel), nameof(AiKeyChar), nameof(AiKeyPlaceholder), nameof(AiModelPlaceholder),
         nameof(AiRevealIcon), nameof(AiActiveBadge), nameof(AiStatusText), nameof(AiStatusColor),
         nameof(LicBadge), nameof(LicColor), nameof(LicBorder), nameof(LicBg), nameof(LicDetail),
@@ -563,6 +602,8 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         nameof(FooterProfile), nameof(FooterSaved), nameof(HelpSteps), nameof(HelpPath), nameof(ExHelp),
         nameof(ExCurName), nameof(ExSrcLabel), nameof(ExSrcColor), nameof(ExSrcBg), nameof(ExSrcBorder),
         nameof(ExMask), nameof(ExStatus), nameof(ExStatusColor), nameof(ExTestnet),
+        nameof(ExTestnetSupported), nameof(TnNote), nameof(TnNoteColor),
+        nameof(HasTestnetBanner), nameof(TestnetBanner),
         nameof(TnColor), nameof(TnBorder), nameof(TnBg), nameof(TnTrack), nameof(TnKnob), nameof(TnKnobLeft),
         nameof(WalletBadge), nameof(WalletColor), nameof(WalletBorder), nameof(WalletBg), nameof(WalletDetail),
         nameof(WalletAddr), nameof(WalletAddrColor), nameof(WalletExpires), nameof(WalletExpiresColor),
@@ -638,6 +679,8 @@ public sealed class SettingsDeskViewModel : ReactiveObject
             "ai" => AiClaude ? "claude" : "gpt",
             "license" => LicBadge.ToLowerInvariant(),
             "keys" => KeysConfigured + "/4",
+            "dex" => DexMevOn ? "mev on" : "mev off",
+            "data" => DataKeysConfigured + "/" + DataKeysTotal,
             "notify" => ChannelsConfigured + "/4",
             "alerts" => ActiveAlertCount.ToString(),
             "exec" => h.HotkeySettings is { } hk ? hk.BuyMarketDisplay + "/" + hk.SellMarketDisplay : Dash,
@@ -647,7 +690,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
 
     private void RaiseSections()
     {
-        foreach (var n in new[] { nameof(IsAi), nameof(IsLicense), nameof(IsKeys), nameof(IsNotify), nameof(IsAlerts), nameof(IsExec) })
+        foreach (var n in new[] { nameof(IsAi), nameof(IsLicense), nameof(IsKeys), nameof(IsDex), nameof(IsData), nameof(IsNotify), nameof(IsAlerts), nameof(IsExec) })
             this.RaisePropertyChanged(n);
     }
 
@@ -774,14 +817,78 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     }
     public string ExStatusColor => ExHasKey(_exTab) ? SettingsData.Green : SettingsData.Faint;
 
-    // No testnet flag exists in this build — the toggle stays off and says so.
-    public bool ExTestnet => false;
-    public string TnColor => SettingsData.Faint;
-    public string TnBorder => "#152233";
-    public string TnBg => "transparent";
-    public string TnTrack => "#152233";
-    public string TnKnob => SettingsData.Dimmer;
-    public double TnKnobLeft => 2;
+    // ── testnet / demo environment ────────────────────────────────────────────
+    // The gateways always took an environment flag — the exchange client libraries expose one —
+    // but nothing ever set it, so this toggle used to say outright that it was not wired up.
+    private ExchangeEnvironments _env = ExchangeEnvironmentStore.Current.Clone();
+
+    private bool EnvOf(string id) => id switch
+    {
+        "binance" => _env.Binance,
+        "bybit" => _env.Bybit,
+        "okx" => _env.Okx,
+        _ => false,
+    };
+
+    public bool ExTestnet => EnvOf(_exTab);
+    public bool ExTestnetSupported => ExchangeEnvironmentStore.IsSupported(_exTab);
+    public string TnColor => !ExTestnetSupported ? SettingsData.Faint
+        : ExTestnet ? SettingsData.Amber : SettingsData.Text3;
+    public string TnBorder => ExTestnet ? "#3a2a12" : "#152233";
+    public string TnBg => ExTestnet ? "#150f04" : "transparent";
+    public string TnTrack => ExTestnet ? "#3a2a12" : "#152233";
+    public string TnKnob => ExTestnet ? SettingsData.Amber : SettingsData.Dimmer;
+    public double TnKnobLeft => ExTestnet ? 13 : 2;
+
+    /// <summary>Explains the current environment for the selected exchange — including why the
+    /// switch is unavailable, when it is.</summary>
+    public string TnNote
+    {
+        get
+        {
+            var (envName, note) = ExchangeEnvironmentStore.Describe(_exTab);
+            if (!ExTestnetSupported) return ExName(_exTab) + ": no test environment. " + note;
+            return ExTestnet
+                ? "Pointed at " + envName + ". " + note + " Takes effect after a restart."
+                : "Pointed at the live exchange. " + envName + " is available — " + note;
+        }
+    }
+
+    public string TnNoteColor => !ExTestnetSupported ? SettingsData.Faint
+        : ExTestnet ? SettingsData.Amber : SettingsData.Dimmer;
+
+    /// <summary>Standing reminder on the keys page — being on a testnet without noticing is
+    /// the kind of thing you find out only when a "filled" order never shows up on the exchange.</summary>
+    public bool HasTestnetBanner => ExchangeEnvironmentStore.ActiveTestnets().Count > 0;
+
+    public string TestnetBanner =>
+        "Test environment active: " + string.Join(", ", ExchangeEnvironmentStore.ActiveTestnets().Select(ExName))
+        + " — balances and fills there are not real, and the API key must be one issued by that test environment.";
+
+    private void TestnetToggle()
+    {
+        if (!ExTestnetSupported)
+        {
+            Toast(ExName(_exTab) + " has no test environment to switch to", "warn");
+            return;
+        }
+
+        switch (_exTab)
+        {
+            case "binance": _env.Binance = !_env.Binance; break;
+            case "bybit": _env.Bybit = !_env.Bybit; break;
+            case "okx": _env.Okx = !_env.Okx; break;
+        }
+
+        var error = ExchangeEnvironmentStore.Save(_env);
+        if (error is not null) { Toast(error, "bad"); return; }
+        _env = ExchangeEnvironmentStore.Current.Clone();
+
+        MarkSaved(); Refresh();
+        Toast(EnvOf(_exTab)
+            ? ExName(_exTab) + " switched to its test environment · restart, and paste the test API key"
+            : ExName(_exTab) + " switched back to the live exchange · restart to apply", "warn");
+    }
     public string HelpPath => "stored in %LOCALAPPDATA%\\CryptoAITerminal\\api-credentials.json (DPAPI) · env vars take priority";
 
     private void ToggleExHelp()
@@ -814,8 +921,10 @@ public sealed class SettingsDeskViewModel : ReactiveObject
                 Bg = on ? "#0e2a2a" : "transparent",
                 Fg = on ? SettingsData.Text : SettingsData.Text3,
                 Dot = has ? SettingsData.Green : "#152233",
-                State = _host is null ? Dash : has ? ExSourceOf(key).ToLowerInvariant() : "empty",
-                StateColor = has ? SettingsData.Green : "#1e3048",
+                // Being on a testnet outranks the credential source here — it is the thing you
+                // most need to notice when glancing at the tab strip.
+                State = EnvOf(key) ? "testnet" : _host is null ? Dash : has ? ExSourceOf(key).ToLowerInvariant() : "empty",
+                StateColor = EnvOf(key) ? SettingsData.Amber : has ? SettingsData.Green : "#1e3048",
                 Command = new RelayCommand(() => { _exTab = key; RebuildExFields(); Refresh(); }),
             });
         }
@@ -839,6 +948,316 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         Body = "The stored key, secret and passphrase for " + ExName(_exTab) + " are overwritten with empty values. Environment variables are not touched.",
         Cta = "REMOVE KEYS", BtnBg = "#14060a", BtnFg = SettingsData.Red, BtnBorder = SettingsData.Red,
     });
+
+    // ── DEX execution: networks, MEV protection, swap defaults ───────────────
+    // The venues on the DEX desk (Hyperliquid, dYdX, GMX, Uniswap, Vertex) are read-only
+    // market data and need no credentials. What a DEX *connection* actually is in this
+    // terminal: an imported wallet, the RPC endpoint it talks to, and how the transaction
+    // reaches the chain. The last two were unreachable — the endpoints were a private table
+    // of free public nodes, and every gateway's MevMode was left at None because nothing
+    // ever assigned it, so the Flashbots and Jito paths were dead code.
+
+    private DexSettings _dex = DexSettingsStore.Current.Clone();
+    private string? _dexStatus;
+
+    private DexTradingViewModel? Dex => _host?.DexTradingVM;
+
+    public bool DexMevOn => DexSettingsStore.EvmMode != EvmMevMode.None
+                         || DexSettingsStore.SolanaMode != SolanaMevMode.None;
+
+    public string DexStatus => _dexStatus ?? (DexMevOn
+        ? "MEV protection on · applies the next time a wallet session is armed"
+        : "MEV protection off — swaps go through the public mempool");
+
+    public string DexStatusColor => _dexStatus is not null
+        ? SettingsData.Red
+        : DexMevOn ? SettingsData.Green : SettingsData.Amber;
+
+    public string DexRpcCount => RpcFields.Count(f => f.Value.Trim().Length > 0) + "/" + RpcFields.Count;
+
+    public string DexStorePath =>
+        "stored in %LOCALAPPDATA%\\CryptoAITerminal\\dex_settings.json · endpoints and MEV mode are read when a wallet session is armed";
+
+    public string JitoTipLabel => "tip " + DexSettingsStore.TipLabel(_dex.JitoTipLamports);
+
+    /// <summary>Jito's tip only matters while the Solana mode is Jito — the row hides otherwise.
+    /// Follows the draft, not the saved value, so picking Jito reveals the tip straight away.</summary>
+    public bool ShowJitoTip =>
+        string.Equals(_dex.SolanaMev, nameof(SolanaMevMode.Jito), StringComparison.OrdinalIgnoreCase);
+
+    private void BuildDexFields()
+    {
+        RpcFields.Clear();
+        foreach (var (network, defaultRpc) in WalletWorkspaceViewModel.NetworkRpcDefaults)
+        {
+            var key = network;
+            var f = new SetField { Label = network.ToUpperInvariant() + " RPC", Placeholder = defaultRpc, IsText = true };
+            f.Changed = v =>
+            {
+                if (string.IsNullOrWhiteSpace(v)) _dex.RpcOverrides.Remove(key);
+                else _dex.RpcOverrides[key] = v.Trim();
+                Touch();
+                this.RaisePropertyChanged(nameof(DexRpcCount));
+            };
+            RpcFields.Add(f);
+            _boundFields.Add((f, () => _dex.RpcOverrides.TryGetValue(key, out var v) ? v : ""));
+        }
+
+        DexSwapFields.Clear();
+        var slip = new SetField
+        {
+            Label = "DEFAULT SLIPPAGE", Unit = "%", IsText = true, Clean = BotsDeskData.Decimalish,
+        };
+        slip.Changed = v =>
+        {
+            if (decimal.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
+            { _dex.DefaultSlippagePercent = Math.Max(0.1m, Math.Min(50m, d)); Touch(); }
+        };
+        DexSwapFields.Add(slip);
+        _boundFields.Add((slip, () => _dex.DefaultSlippagePercent.ToString("0.##", CultureInfo.InvariantCulture)));
+    }
+
+    private void RebuildDexModes()
+    {
+        EvmMevModes.Clear();
+        EvmMev("None", nameof(EvmMevMode.None), "Public mempool. Fastest to include, visible to sandwich bots.", "");
+        EvmMev("Flashbots Protect", nameof(EvmMevMode.FlashbotsProtect),
+            "Free private relay — the swap never hits the public mempool.",
+            "Only Ethereum and Base. Other networks keep their normal endpoint.");
+        EvmMev("BloxRoute BDN", nameof(EvmMevMode.BloxRoute),
+            "Faster propagation over the BloxRoute network on Ethereum and BSC.",
+            "BloxRoute authenticates by API key and this build sends none — expect the endpoint to reject the transaction.");
+
+        SolMevModes.Clear();
+        SolMev("None", nameof(SolanaMevMode.None), "Standard RPC submission.");
+        SolMev("Jito bundles", nameof(SolanaMevMode.Jito), "Skips the public mempool; a tip buys inclusion priority.");
+
+        JitoTips.Clear();
+        JitoTip("Normal", 10_000);
+        JitoTip("Fast", 100_000);
+        JitoTip("Urgent", 1_000_000);
+    }
+
+    private void EvmMev(string label, string value, string hint, string warn)
+    {
+        var on = string.Equals(_dex.EvmMev, value, StringComparison.OrdinalIgnoreCase);
+        EvmMevModes.Add(Chip(label, hint, warn, on, () => { _dex.EvmMev = value; Touch(); Refresh(); }));
+    }
+
+    private void SolMev(string label, string value, string hint)
+    {
+        var on = string.Equals(_dex.SolanaMev, value, StringComparison.OrdinalIgnoreCase);
+        SolMevModes.Add(Chip(label, hint, "", on, () => { _dex.SolanaMev = value; Touch(); Refresh(); }));
+    }
+
+    private void JitoTip(string label, long lamports)
+    {
+        var on = _dex.JitoTipLamports == lamports;
+        JitoTips.Add(Chip(label + " · " + DexSettingsStore.TipLabel(lamports), "", "", on,
+            () => { _dex.JitoTipLamports = lamports; Touch(); Refresh(); }));
+    }
+
+    private static DexModeChip Chip(string label, string hint, string warn, bool on, Action act) => new()
+    {
+        Label = label, Hint = hint, Warn = warn,
+        Border = on ? "#14302e" : "#152233",
+        Bg = on ? "#061615" : "#050f14",
+        Fg = on ? SettingsData.Text : SettingsData.Text3,
+        DotBorder = on ? SettingsData.Accent : "#2a3f54",
+        DotBg = on ? SettingsData.Accent : "transparent",
+        Command = new RelayCommand(act),
+    };
+
+    private void RebuildDexFlags()
+    {
+        DexFlags.Clear();
+
+        Flag("Best route by default",
+            _dex.BestRouteByDefault
+                ? "Manual buys are routed through the cross-DEX aggregator"
+                : "Manual buys use the gateway's single-DEX router",
+            _dex.BestRouteByDefault,
+            () => { _dex.BestRouteByDefault = !_dex.BestRouteByDefault; Touch(); Refresh(); });
+
+        // Hyperliquid writes straight through the live desk, which persists itself — so the
+        // switch takes effect at once instead of on the next start like the rest of this section.
+        if (Dex is { } d)
+        {
+            Flag("Hyperliquid live orders",
+                d.HlEnableLiveOrders ? "Orders are sent for real" : "Order placement is blocked",
+                d.HlEnableLiveOrders,
+                () => { d.HlEnableLiveOrders = !d.HlEnableLiveOrders; Refresh(); });
+
+            Flag("Hyperliquid testnet",
+                d.HlTestnet ? "Signing against testnet" : "MAINNET — real funds",
+                d.HlTestnet,
+                () => { d.HlTestnet = !d.HlTestnet; Refresh(); });
+        }
+
+        void Flag(string label, string hint, bool on, Action act) => DexFlags.Add(new GuardToggle
+        {
+            Label = label, Hint = hint,
+            TrackBg = on ? "#14302e" : "#152233",
+            Knob = on ? SettingsData.Accent : SettingsData.Dimmer,
+            KnobLeft = on ? 15 : 2,
+            Command = new RelayCommand(act),
+        });
+    }
+
+    /// <summary>Live warning line — shown only when live mainnet order placement is armed.</summary>
+    public bool DexHlDanger => Dex is { HlEnableLiveOrders: true, HlTestnet: false };
+
+    public string DexHlWarning =>
+        "Hyperliquid live orders are enabled against MAINNET — the SWAP panel will sign and send with real funds.";
+
+    private void DexSave()
+    {
+        var error = DexSettingsStore.Save(_dex);
+        _dexStatus = error;
+        if (error is not null) { Toast(error, "bad"); RaiseScalars(); return; }
+
+        _dex = DexSettingsStore.Current.Clone();
+        MarkSaved(); Refresh();
+        Toast("DEX settings saved · re-arm the wallet session to apply endpoints and MEV mode", "ok");
+    }
+
+    private void DexResetRpc()
+    {
+        foreach (var f in RpcFields) f.Value = "";
+        _dex.RpcOverrides.Clear();
+        Touch(); Refresh();
+        Toast("Custom endpoints cleared — the built-in public nodes are used again", "info");
+    }
+
+    // ── data providers & integration keys ────────────────────────────────────
+    // Until this section existed the only way to hand the terminal an Etherscan, Glassnode,
+    // Coinglass, Covalent or TronGrid key was to set an environment variable by hand. The
+    // credential store already had a slot for every one of them and exported them at start-up,
+    // but nothing in the app could write one — so the on-chain, liquidation, approvals and
+    // wallet-history desks stayed empty with nothing on screen explaining why.
+
+    private string? _intStatus;
+
+    public string IntRevealIcon => _intRevealed ? "HIDE ALL" : "SHOW ALL";
+
+    public string IntStorePath =>
+        "stored in %LOCALAPPDATA%\\CryptoAITerminal\\api-credentials.json (DPAPI) · env vars take priority";
+
+    public string IntStatus => _intStatus ?? DataKeysConfigured + " of " + DataKeysTotal + " keys set";
+
+    public string IntStatusColor => _intStatus is not null
+        ? SettingsData.Red
+        : DataKeysConfigured > 0 ? SettingsData.Green : SettingsData.Faint;
+
+    private void BuildIntegrationRows()
+    {
+        IntGroups.Clear();
+        _intRows.Clear();
+
+        foreach (var group in CredentialsService.IntegrationKeys.GroupBy(k => k.Group))
+        {
+            var g = new IntegrationGroupVM { Label = group.Key.ToUpperInvariant() };
+            foreach (var meta in group)
+            {
+                var url = meta.ConsoleUrl;
+                var row = new IntegrationRowVM
+                {
+                    Id = meta.Id,
+                    Label = meta.Label,
+                    EnvVar = meta.EnvVar,
+                    Powers = meta.Powers,
+                    Applies = meta.Applies,
+                    Placeholder = meta.Placeholder,
+                    Secret = meta.Secret,
+                    HasConsole = url.Length > 0,
+                    ConsoleCommand = url.Length > 0 ? new RelayCommand(() => OpenUrl(url)) : null,
+                };
+                row.Changed = _ => Touch();
+                _intRows.Add(row);
+                g.Items.Add(row);
+            }
+            IntGroups.Add(g);
+        }
+    }
+
+    /// <summary>Pulls the stored values into the rows. A value that comes from an environment
+    /// variable is never echoed into an input — it cannot be changed from here, and showing it
+    /// in an editable box would say otherwise.</summary>
+    private void SyncIntegrationValues()
+    {
+        var stored = CredentialsService.LoadIntegrationFileValues();
+        foreach (var row in _intRows)
+            row.SetSilent(stored.TryGetValue(row.Id, out var v) ? v : "");
+    }
+
+    private void RefreshIntegrations()
+    {
+        // First paint: one decrypt for the values and one for the sources, then cached.
+        if (!_intLoaded)
+        {
+            _intLoaded = true;
+            _intSources = CredentialsService.IntegrationSources();
+            SyncIntegrationValues();
+        }
+
+        foreach (var row in _intRows)
+        {
+            var src = _intSources.TryGetValue(row.Id, out var s) ? s : CredentialsService.CredentialSource.None;
+            row.EnvWins = src == CredentialsService.CredentialSource.Env;
+            row.Mask = !row.Secret || _intRevealed ? '\0' : '•';
+            (row.SrcLabel, row.SrcColor, row.SrcBg, row.SrcBorder) = src switch
+            {
+                CredentialsService.CredentialSource.Env => ("ENV VAR", SettingsData.Amber, "#150f04", "#3a2a12"),
+                CredentialsService.CredentialSource.File => ("SAVED", SettingsData.Accent, "#061615", "#14302e"),
+                _ => ("NOT SET", SettingsData.Faint, "transparent", "#152233"),
+            };
+        }
+    }
+
+    private bool PersistIntegrations(out string error)
+    {
+        error = "";
+        try
+        {
+            CredentialsService.SaveIntegrations(
+                _intRows.ToDictionary(r => r.Id, r => r.Value, StringComparer.Ordinal));
+            _intSources = CredentialsService.IntegrationSources();
+            SyncIntegrationValues();
+            _intStatus = null;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            error = "Could not save the keys: " + ex.Message;
+            _intStatus = error;
+            return false;
+        }
+    }
+
+    private void IntSave()
+    {
+        if (!PersistIntegrations(out var error)) { Toast(error, "bad"); RaiseScalars(); return; }
+        MarkSaved(); Refresh();
+        Toast("Provider keys saved · encrypted with DPAPI", "ok");
+    }
+
+    private void IntClear() => AskConfirm(new ConfirmConfig
+    {
+        Kind = "clearInt", Accent = "#3a1620", IconColor = SettingsData.Red, Icon = "✕",
+        Title = "Remove every provider key",
+        Body = "All " + DataKeysTotal + " data-provider, Telegram and DEX values are overwritten with empty "
+             + "values in the local store. Environment variables are not touched.",
+        Cta = "REMOVE ALL", BtnBg = "#14060a", BtnFg = SettingsData.Red, BtnBorder = SettingsData.Red,
+    });
+
+    private static void OpenUrl(string url)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch { /* no browser available — non-fatal */ }
+    }
 
     // ── wallet session ───────────────────────────────────────────────────────
     private WalletWorkspaceViewModel? Wal => _host?.WalletVM;
@@ -916,9 +1335,8 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         ch.Status = ChannelStatus(id);
         ch.StatusColor = configured ? SettingsData.Green : SettingsData.Faint;
         ch.Summary = configured ? "configured" : NotConfigured;
-        // Channel credentials come from env vars / the secrets file; the desk never writes them to disk.
-        ch.Last = "applies to this session · not saved to disk";
-        ch.EnLabel = "APPLY TO SESSION";
+        ch.Last = "saved encrypted · restored on the next start";
+        ch.EnLabel = "SAVE CHANNEL";
         ch.EnColor = SettingsData.Accent;
         ch.EnBorder = "#14302e";
         ch.EnBg = "#061615";
@@ -940,8 +1358,8 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         Toast("Test sent — the channel status line shows the result", "info");
     }
 
-    /// <summary>Re-applies the typed values to the live notification services for this
-    /// session. Nothing is persisted — Discord/ntfy/Email are env-var only.</summary>
+    /// <summary>Re-applies the typed values to the live notification services and writes every
+    /// channel to the encrypted store, so the tab is no longer session-only.</summary>
     private void NtApply(string id)
     {
         if (Al is not { } a) { Toast("Alerts are not connected yet", "warn"); return; }
@@ -953,8 +1371,43 @@ public sealed class SettingsDeskViewModel : ReactiveObject
             case "ntfy": a.NtfyTopic = a.NtfyTopic.Trim(); break;
             case "email": a.EmailHost = a.EmailHost.Trim(); break;
         }
+        if (!PersistNotifications(out var error))
+        {
+            RefreshNtChannel(id); Refresh();
+            Toast(error, "bad");
+            return;
+        }
+        MarkSaved();
         RefreshNtChannel(id); Refresh();
-        Toast("Applied for this session — channel settings are not written to disk", "info");
+        Toast("Applied to the live services · every channel written to the encrypted store", "ok");
+    }
+
+    /// <summary>Writes every channel's credentials to the encrypted store. They are exported back
+    /// into the environment on the next start, which is where the alert engine reads them from.</summary>
+    private bool PersistNotifications(out string error)
+    {
+        error = "";
+        if (Al is not { } a) { error = "Alerts are not connected yet"; return false; }
+        try
+        {
+            CredentialsService.SaveNotifications(new CredentialsService.NotificationSettings(
+                a.TelegramBotToken, a.TelegramChatId, a.DiscordWebhookUrl, a.NtfyTopic,
+                a.EmailHost, a.EmailPort, a.EmailUseSsl,
+                a.EmailUsername, a.EmailPassword, a.EmailFrom, a.EmailTo));
+            return true;
+        }
+        catch (Exception ex)
+        {
+            error = "Could not save the channels: " + ex.Message;
+            return false;
+        }
+    }
+
+    private void NtSaveAll()
+    {
+        if (!PersistNotifications(out var error)) { Toast(error, "bad"); return; }
+        MarkSaved(); Refresh();
+        Toast("All notification channels saved · encrypted with DPAPI", "ok");
     }
 
     private void NtTestAll()
@@ -1268,6 +1721,12 @@ public sealed class SettingsDeskViewModel : ReactiveObject
             () => _host?.KucoinSecretInput ?? "", (h, v) => h.KucoinSecretInput = v,
             () => _host?.KucoinPassphraseInput ?? "", (h, v) => h.KucoinPassphraseInput = v);
 
+        // DEX endpoints and swap defaults
+        BuildDexFields();
+
+        // data-provider / integration keys — one stable row per credential
+        BuildIntegrationRows();
+
         // notification channels
         NtChannels.Clear();
         var telegram = Channel("telegram", "Telegram", 2, false,
@@ -1468,10 +1927,19 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         }
 
         Exec(h.SaveAffiliateLinksCommand); done.Add("affiliate links");
+
+        var failed = new List<string>();
+        if (DexSettingsStore.Save(_dex) is { } dexError) failed.Add(dexError); else { _dex = DexSettingsStore.Current.Clone(); done.Add("DEX settings"); }
+        if (PersistIntegrations(out var intError)) done.Add("provider keys"); else failed.Add(intError);
+        if (PersistNotifications(out var ntError)) done.Add("notification channels"); else failed.Add(ntError);
+
         if (h.HotkeySettings is { } hk) { hk.Save(); done.Add("hotkeys"); }
 
         MarkSaved(); Refresh();
-        Toast("Saved: " + string.Join(", ", done) + " · notification channels are session-only", "ok");
+        Toast(failed.Count == 0
+            ? "Saved: " + string.Join(", ", done)
+            : "Saved: " + string.Join(", ", done) + " · " + string.Join(" · ", failed),
+            failed.Count == 0 ? "ok" : "warn");
     }
 
     private void OnRevert()
@@ -1523,9 +1991,21 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         switch (_confirm.Kind)
         {
             case "revert":
+                _dex = DexSettingsStore.Current.Clone();
                 SyncFields();
+                SyncIntegrationValues();
                 _dirty = false; RaiseDirty(); RaiseInputs();
                 Toast("Fields reloaded from the stored configuration", "info");
+                break;
+
+            case "clearInt":
+                foreach (var r in _intRows) r.Value = "";
+                if (PersistIntegrations(out var clearError))
+                {
+                    MarkSaved();
+                    Toast("Every provider key removed from the local store", "warn");
+                }
+                else Toast(clearError, "bad");
                 break;
 
             case "delProfile":

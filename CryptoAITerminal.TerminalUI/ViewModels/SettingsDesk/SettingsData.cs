@@ -25,7 +25,7 @@ public static class SettingsData
     {
         ("ASSISTANT", new[] { ("ai", "AI provider") }),
         ("ACCOUNT", new[] { ("license", "License & profiles") }),
-        ("CONNECTIVITY", new[] { ("keys", "Exchange keys"), ("notify", "Notifications") }),
+        ("CONNECTIVITY", new[] { ("keys", "Exchange keys"), ("dex", "DEX & networks"), ("data", "Data providers"), ("notify", "Notifications") }),
         ("TRADING", new[] { ("alerts", "Alerts"), ("exec", "Execution & hotkeys") }),
     };
 

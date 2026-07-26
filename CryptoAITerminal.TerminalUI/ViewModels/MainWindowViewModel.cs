@@ -48,6 +48,10 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         "CryptoAITerminal", "custom-markets-ext.json");
     private sealed record ExtMarketDto(string Exchange, string Symbol, string DexChain, string DexAddress);
     private readonly List<ExtMarketDto> _extMarkets;
+
+    // Starred rows on the Markets desk. Without this the star lived only in the row view model,
+    // which is rebuilt on every launch — the tracked markets came back but every star was gone.
+    private readonly Services.MarketFavoritesStore _favoritesStore = new();
     private CustomMarketPoller _customPoller = null!;
     private Gateway.DEX.DexScreenerClient _dexScreener = null!;
     private string _selectedMarketSource = "Binance";
@@ -229,17 +233,24 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         var okxApiSecret     = creds.OkxSecret;
         var okxApiPassphrase = creds.OkxPassphrase;
 
-        _gateway = new BinanceGateway(DefaultSymbols.Concat(_customMarketSymbols));
-        _futuresGateway = new BinanceFuturesGateway(DefaultSymbols, binanceApiKey, binanceApiSecret);
+        // Testnet opt-ins from Settings → Exchange keys. Read once here because a gateway's
+        // environment is fixed when its client is built — switching takes a restart, and the
+        // toggle says so.
+        var testBinance = ExchangeEnvironmentStore.IsTestnet("binance");
+        var testBybit   = ExchangeEnvironmentStore.IsTestnet("bybit");
+        var testOkx     = ExchangeEnvironmentStore.IsTestnet("okx");
+
+        _gateway = new BinanceGateway(DefaultSymbols.Concat(_customMarketSymbols), testnet: testBinance);
+        _futuresGateway = new BinanceFuturesGateway(DefaultSymbols, binanceApiKey, binanceApiSecret, testBinance);
         _router = new MarketOrderRouter(_gateway);
         _riskManager = new RiskManager.RiskManager(maxPositionSizeUsd: 1000, maxDailyLossUsd: 500);
         ApplyRiskLimitsCommand = ReactiveCommand.Create(ApplyRiskLimits);
         ResetDailyRiskCommand = ReactiveCommand.Create(ResetDailyRisk);
 
-        var bybitSpot = new BybitGateway(DefaultSymbols, bybitApiKey, bybitApiSecret);
-        var bybitFutures = new BybitFuturesGateway(DefaultSymbols, bybitApiKey, bybitApiSecret);
-        var okxSpot = new OKXGateway(DefaultSymbols, okxApiKey, okxApiSecret, okxApiPassphrase);
-        var okxFutures = new OKXFuturesGateway(DefaultSymbols, okxApiKey, okxApiSecret, okxApiPassphrase);
+        var bybitSpot = new BybitGateway(DefaultSymbols, bybitApiKey, bybitApiSecret, testBybit);
+        var bybitFutures = new BybitFuturesGateway(DefaultSymbols, bybitApiKey, bybitApiSecret, testBybit);
+        var okxSpot = new OKXGateway(DefaultSymbols, okxApiKey, okxApiSecret, okxApiPassphrase, testOkx);
+        var okxFutures = new OKXFuturesGateway(DefaultSymbols, okxApiKey, okxApiSecret, okxApiPassphrase, testOkx);
 
         var kucoinApiKey        = creds.KucoinKey;
         var kucoinApiSecret     = creds.KucoinSecret;
@@ -277,6 +288,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             _dexScreener);
         _extMarkets = LoadExtMarkets();
         RestoreExtMarkets();
+        ApplySavedFavorites();   // after every row exists — default, custom and ext alike
         RefreshMarketExplorerCollections();
 
         // Multi-exchange futures gateway map — used by ActiveFuturesGateway property.
@@ -5605,7 +5617,70 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
 
         market.IsFavorite = !market.IsFavorite;
+        SaveMarketFavorites();
+        SyncFavoriteWithServer(market);
         RaiseMarketExplorerStateChanged();
+    }
+
+    /// <summary>Re-applies the saved stars once, at start-up, after every market row exists.</summary>
+    private void ApplySavedFavorites()
+    {
+        var saved = _favoritesStore.Load();
+        if (saved.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var market in Markets)
+        {
+            if (saved.Contains(Services.MarketFavoritesStore.KeyOf(market.Exchange, market.Symbol)))
+            {
+                market.IsFavorite = true;
+            }
+        }
+    }
+
+    /// <summary>Writes the full set of stars still on screen. Deriving it from <see cref="Markets"/>
+    /// rather than patching the file means a removed market takes its star with it.</summary>
+    private void SaveMarketFavorites() =>
+        _favoritesStore.Save(Markets
+            .Where(static market => market.IsFavorite)
+            .Select(static market => Services.MarketFavoritesStore.KeyOf(market.Exchange, market.Symbol)));
+
+    /// <summary>
+    /// Mirrors a starred DEX token into the synced watchlist so the server tracks it 24/7, and
+    /// drops it again when the star comes off — otherwise un-starring here would leave the server
+    /// polling a token the user believes they removed.
+    /// </summary>
+    /// <remarks>
+    /// CEX rows stay local on purpose: <c>/api/favorites</c> is keyed by chain plus contract
+    /// address, and a CEX ticker has neither.
+    /// </remarks>
+    private void SyncFavoriteWithServer(CexMarketItemViewModel market)
+    {
+        if (!market.IsDexMarket)
+        {
+            return;
+        }
+
+        var dto = _extMarkets.FirstOrDefault(d =>
+            string.Equals(d.Exchange, "DEX", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(d.Symbol, market.Symbol, StringComparison.OrdinalIgnoreCase));
+        if (dto is null || string.IsNullOrWhiteSpace(dto.DexAddress))
+        {
+            return;
+        }
+
+        // Routed through DexTradingVM because it owns the watchlist: FavoritesSyncService PUTs the
+        // FULL list, so a second pusher with its own set would delete this one server-side.
+        if (market.IsFavorite)
+        {
+            DexTradingVM.AddToWatchlist(dto.DexChain, dto.DexAddress, dto.Symbol);
+        }
+        else
+        {
+            DexTradingVM.RemoveFromWatchlist(dto.DexAddress);
+        }
     }
 
     private async Task RefreshMarketsHubAsync()
@@ -7751,6 +7826,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             Markets.Remove(market);
             _extMarkets.Remove(extDto);
             SaveExtMarkets();
+            SaveMarketFavorites();   // the row is gone, so its star must go with it
 
             // Keep the synced watchlist in step, otherwise removing here would leave the server
             // polling a token the user believes they deleted.
@@ -7773,6 +7849,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         Markets.Remove(market);
         _customMarketSymbols.RemoveAll(s => string.Equals(s, market.Symbol, StringComparison.OrdinalIgnoreCase));
         SaveCustomMarketSymbols();
+        SaveMarketFavorites();   // the row is gone, so its star must go with it
         if (ReferenceEquals(SelectedMarket, market)) SelectedMarket = Markets.FirstOrDefault();
         RefreshMarketExplorerCollections();
         RaiseMarketExplorerStateChanged();
