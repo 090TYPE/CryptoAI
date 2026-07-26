@@ -21,6 +21,11 @@ public sealed class TpSlManager : IDisposable
     private IDisposable? _priceSub;
     private readonly object _lock = new();
     private bool _closed;
+    // Set while a close order is in flight. _closed used to be set here instead, before the order
+    // was known to have gone through: if the market order was rejected (429, network, minNotional)
+    // the catch only logged, HandlePrice kept returning early on _closed, and the position sat with
+    // no protection at all — at exactly the moment its stop had triggered.
+    private bool _closing;
 
     // Position context
     private IExchangeGateway? _gateway;
@@ -35,12 +40,23 @@ public sealed class TpSlManager : IDisposable
     private bool _usingExchangeTpSl;
     private string? _slOrderId;
     private readonly SemaphoreSlim _slUpdateSem = new(1, 1); // БАГ-08
+    // Newest trailing level that still has to reach the exchange, set by ticks that arrived while
+    // an update was already running.
+    private decimal? _pendingSlPrice;
+    private decimal _pendingSlFrom;
 
     // Trailing / peak tracking
     private decimal _currentSlPrice;
     private decimal _peakPrice;
 
     public event Action<string>? OnEvent;
+
+    /// <summary>
+    /// Raised when a triggered TP/SL could not be executed and the position is therefore left open
+    /// and unprotected. Separate from <see cref="OnEvent"/> so the UI can surface it loudly instead
+    /// of letting it scroll past in a log.
+    /// </summary>
+    public event Action<string>? OnProtectionLost;
 
     public TpSlManager(TpSlConfig cfg) => _cfg = cfg;
 
@@ -63,6 +79,7 @@ public sealed class TpSlManager : IDisposable
         _gateway = gateway;
         _peakPrice = entryPrice;
         _closed = false;
+        _closing = false;
         _usingExchangeTpSl = false;
 
         bool isLong = side == OrderSide.Buy;
@@ -173,7 +190,7 @@ public sealed class TpSlManager : IDisposable
     {
         lock (_lock)
         {
-            if (_closed) return;
+            if (_closed || _closing) return;
 
             bool isLong = _side == OrderSide.Buy;
 
@@ -208,7 +225,7 @@ public sealed class TpSlManager : IDisposable
                         }
                         else
                         {
-                            _closed = true;
+                            _closing = true;
                             _ = FireSpotCloseAsync(price, "TP");
                         }
                         return;
@@ -218,7 +235,7 @@ public sealed class TpSlManager : IDisposable
                 if (_cfg.SlEnabled)
                 {
                     bool slHit = isLong ? price <= effectiveSl : price >= effectiveSl;
-                    if (slHit) { _closed = true; _ = FireSpotCloseAsync(price, "SL"); return; }
+                    if (slHit) { _closing = true; _ = FireSpotCloseAsync(price, "SL"); return; }
                 }
             }
 
@@ -239,7 +256,7 @@ public sealed class TpSlManager : IDisposable
 
                     if (tpHit)
                     {
-                        _closed = true;
+                        _closing = true;
                         _ = FireFuturesCloseAsync(price, "TP");
                         return;
                     }
@@ -248,7 +265,7 @@ public sealed class TpSlManager : IDisposable
                 if (_cfg.SlEnabled)
                 {
                     bool slHit = isLong ? price <= effectiveSl : price >= effectiveSl;
-                    if (slHit) { _closed = true; _ = FireFuturesCloseAsync(price, "SL"); return; }
+                    if (slHit) { _closing = true; _ = FireFuturesCloseAsync(price, "SL"); return; }
                 }
             }
 
@@ -290,25 +307,61 @@ public sealed class TpSlManager : IDisposable
     private async Task UpdateFuturesSlAsync(decimal newSlPrice, decimal oldSlPrice)
     {
         // БАГ-08: SemaphoreSlim предотвращает одновременные вызовы из параллельных тиков.
+        // A tick that finds the semaphore taken must NOT just drop its update: _currentSlPrice has
+        // already been moved by the caller, so the exchange order would stay behind the software
+        // level forever. Record it as pending and let the holder replay it before releasing.
+        lock (_lock) { _pendingSlPrice = newSlPrice; _pendingSlFrom = oldSlPrice; }
         if (!await _slUpdateSem.WaitAsync(0)) return;
         try
         {
-            if (_slOrderId is not null)
+            while (true)
             {
-                try { await _gateway!.CancelOrderAsync(_symbol, _slOrderId); }
-                catch { /* may already have fired */ }
-                _slOrderId = null;
-            }
+                decimal target, from;
+                lock (_lock)
+                {
+                    if (_pendingSlPrice is null) return;
+                    target = _pendingSlPrice.Value;
+                    from = _pendingSlFrom;
+                    _pendingSlPrice = null;
+                }
 
-            var closeSide = _side == OrderSide.Buy ? OrderSide.Sell : OrderSide.Buy;
-            var slOrder = await _gateway!.PlaceStopLossOrderAsync(
-                _symbol, closeSide, _remainingQty, newSlPrice, _posSide, reduceOnly: true);
-            _slOrderId = slOrder.Id;
-            OnEvent?.Invoke($"Trailing SL: {oldSlPrice:N4} → {newSlPrice:N4}");
-        }
-        catch (Exception ex)
-        {
-            OnEvent?.Invoke($"Trailing SL update failed: {ex.Message}");
+                var previousOrderId = _slOrderId;
+                var closeSide = _side == OrderSide.Buy ? OrderSide.Sell : OrderSide.Buy;
+
+                try
+                {
+                    // Place BEFORE cancelling. The old order sequence cancelled first, so a failure
+                    // to place left the position with no stop on the exchange at all, and the
+                    // software fallback stays disabled while _usingExchangeTpSl is true.
+                    var slOrder = await _gateway!.PlaceStopLossOrderAsync(
+                        _symbol, closeSide, _remainingQty, target, _posSide, reduceOnly: true);
+                    _slOrderId = slOrder.Id;
+
+                    if (previousOrderId is not null)
+                    {
+                        try { await _gateway!.CancelOrderAsync(_symbol, previousOrderId); }
+                        catch { /* may already have fired */ }
+                    }
+
+                    OnEvent?.Invoke($"Trailing SL: {from:N4} → {target:N4}");
+                }
+                catch (Exception ex)
+                {
+                    // The old stop is still live because we never cancelled it. Roll the software
+                    // level back to match what the exchange actually holds, so the two agree.
+                    lock (_lock) { _currentSlPrice = from; }
+                    OnEvent?.Invoke($"Trailing SL update failed, keeping stop at {from:N4}: {ex.Message}");
+
+                    if (previousOrderId is null)
+                    {
+                        // Nothing is protecting the position on the exchange — drop to the software
+                        // stop rather than pretending a native one exists.
+                        _usingExchangeTpSl = false;
+                        OnProtectionLost?.Invoke($"{_symbol}: could not place the trailing stop ({ex.Message}). Switched to the in-app stop — keep the terminal open.");
+                    }
+                    return;
+                }
+            }
         }
         finally
         {
@@ -328,11 +381,15 @@ public sealed class TpSlManager : IDisposable
                 Quantity = _remainingQty,
                 MarketType = _marketType
             });
+            lock (_lock) { _closed = true; _closing = false; }
             OnEvent?.Invoke($"[{reason}] Spot closed @ {price:N4}");
         }
         catch (Exception ex)
         {
+            // Re-arm rather than latch closed: the trigger will fire again on the next tick.
+            lock (_lock) { _closing = false; }
             OnEvent?.Invoke($"[{reason}] Spot close failed: {ex.Message}");
+            OnProtectionLost?.Invoke($"{_symbol}: {reason} triggered but the close order failed ({ex.Message}). Position is still open — close it manually.");
         }
     }
 
@@ -372,11 +429,15 @@ public sealed class TpSlManager : IDisposable
                 ReduceOnly = true,
                 PositionSide = _posSide
             });
+            lock (_lock) { _closed = true; _closing = false; }
             OnEvent?.Invoke($"[{reason}] Futures closed @ {price:N4}");
         }
         catch (Exception ex)
         {
+            // Re-arm rather than latch closed: the trigger will fire again on the next tick.
+            lock (_lock) { _closing = false; }
             OnEvent?.Invoke($"[{reason}] Futures close failed: {ex.Message}");
+            OnProtectionLost?.Invoke($"{_symbol}: {reason} triggered but the close order failed ({ex.Message}). Position is still open — close it manually.");
         }
     }
 

@@ -319,6 +319,16 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             cexLiveAllowed: () => WalletVM.GlobalLiveExecutionEnabled);
         GridBotVM = new GridBotViewModel(_gateway, _futuresGateway);
         DcaBotVM = new DcaBotViewModel(_gateway, _bybitSpotGateway, _okxSpotGateway, _kucoinSpotGateway);
+
+        // These three place real exchange orders and have no paper path of their own, so they were
+        // the one route that ignored PAPER ONLY entirely — the badge said PAPER-ONLY while ▶ START
+        // laid a live grid. Route them through the same guard as manual CEX/DEX/Sniper trading.
+        static Func<string, string?> LiveGuard(WalletWorkspaceViewModel wallet) =>
+            route => wallet.TryApproveLiveExecution(route, out var reason) ? null : reason;
+
+        AIBotVM.LiveExecutionGuard = LiveGuard(WalletVM);
+        GridBotVM.LiveExecutionGuard = LiveGuard(WalletVM);
+        DcaBotVM.LiveExecutionGuard = LiveGuard(WalletVM);
         DexTradingVM = new DexTradingViewModel(WalletVM);
         DexDeskVM = new DexDeskViewModel(DexTradingVM);
         TradeAssistantVM = new AiTradeAssistantViewModel("CEX", () => TradingCandles, () => CurrentTradePrice, ApplyCexTradeSetup, armAlerts: ArmCexSetupAlerts);

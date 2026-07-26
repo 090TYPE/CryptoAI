@@ -333,6 +333,27 @@ public sealed class BotExecutorService : BackgroundService
         var pos = await _tslStore.LoadAsync(bot.Id, ct);
         if (pos is null || pos.Closed) { await _bots.MarkRunAsync(bot.Id, ct); return; }
 
+        // Kill-switch: the grid and DCA branches check it, this one did not — so a halted user's
+        // trailing bot went on placing live exit orders after the switch was pulled. Paper is
+        // unaffected, same as the other two.
+        var (killed, killReason) = LiveGate.Check(mode, await _flags.IsLiveHaltedAsync(bot.UserId, ct));
+        if (killed)
+        {
+            await _bots.MarkRunAsync(bot.Id, ct);
+            await _audit.WriteAsync(bot.UserId, "bot", "kill_switch",
+                JsonSerializer.Serialize(new { bot.Id, strategy = "trailing", symbol, reason = killReason }), null, ct);
+            _log.LogWarning("trailing bot {Id} live BLOCKED by kill-switch", bot.Id);
+            return;
+        }
+
+        // Symbol allowlist for live exits, mirroring the grid branch.
+        if (string.Equals(mode, "live", StringComparison.OrdinalIgnoreCase) && !_allowlist.IsAllowed(symbol))
+        {
+            await _bots.MarkRunAsync(bot.Id, ct);
+            _log.LogWarning("trailing bot {Id} live BLOCKED: {Symbol} is not on the allowlist", bot.Id, symbol);
+            return;
+        }
+
         var price = await _price.GetPriceAsync(exchange, symbol, ct);
         if (price <= 0) { _log.LogWarning("trailing bot {Id}: no price for {Symbol}", bot.Id, symbol); return; }
 

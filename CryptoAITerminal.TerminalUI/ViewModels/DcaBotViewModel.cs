@@ -266,6 +266,15 @@ public class DcaBotViewModel : ReactiveObject
     /// <summary>
     /// Constructor для обратной совместимости — только Binance.
     /// </summary>
+
+    /// <summary>
+    /// Asks the workspace whether live execution is allowed; returns a block reason, or null when
+    /// clear. Defaults to blocking: the DCA bot places real exchange orders and has no paper path, so
+    /// an instance that was never wired to the guard must refuse rather than trade.
+    /// </summary>
+    public Func<string, string?> LiveExecutionGuard { get; set; } =
+        _ => "Live execution guard is not wired up — refusing to place real orders.";
+
     public DcaBotViewModel(BinanceGateway gateway)
         : this(gateway, null, null, null)
     {
@@ -302,6 +311,12 @@ public class DcaBotViewModel : ReactiveObject
     private async Task StartAsync()
     {
         if (_bot is not null) await StopAsync();
+
+        if (LiveExecutionGuard("DCA bot") is { } blocked)
+        {
+            AppendLog(blocked);
+            return;
+        }
         if (Coins.Count == 0) { AppendLog("No coins configured."); return; }
 
         var intervalType = _selectedIntervalType switch

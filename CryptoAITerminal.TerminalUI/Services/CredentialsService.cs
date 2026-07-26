@@ -545,6 +545,12 @@ public static class CredentialsService
     // the same Windows user account, even though they could call DPAPI too.
     private static readonly byte[] DpapiEntropy = Encoding.UTF8.GetBytes("CryptoAITerminal::api-credentials::v1");
 
+    /// <summary>
+    /// Last storage problem worth telling the user about: an unreadable credentials file, or
+    /// secrets that had to be written without DPAPI. Null when everything is normal.
+    /// </summary>
+    public static string? LastStorageWarning { get; private set; }
+
     private static AllCredentials ReadFromDisk()
     {
         try
@@ -554,7 +560,43 @@ public static class CredentialsService
             var json = TryDecrypt(raw);
             return JsonSerializer.Deserialize<AllCredentials>(json, JsonOpts) ?? new();
         }
-        catch { return new(); }
+        catch (Exception ex)
+        {
+            // A read failure used to return empty credentials, and the next SaveXxx wrote that
+            // empty object straight over the file — the DEX signing key and every exchange key
+            // gone for good, from one transient DPAPI or IO error. Keep the original bytes before
+            // anything can overwrite them.
+            PreserveUnreadableFile(ex);
+            return new();
+        }
+    }
+
+    private static void PreserveUnreadableFile(Exception cause)
+    {
+        LastStorageWarning =
+            $"Could not read {FilePath}: {cause.Message}. A copy was kept so nothing is lost; " +
+            "saved credentials will start from empty until it is restored.";
+
+        try
+        {
+            if (!File.Exists(FilePath)) return;
+
+            // One backup per broken file: never overwrite an earlier rescue copy, that would defeat
+            // the point on the second start.
+            var backup = FilePath + ".unreadable";
+            for (var i = 1; File.Exists(backup) && i < 100; i++)
+                backup = FilePath + ".unreadable." + i;
+
+            if (!File.Exists(backup))
+            {
+                File.Copy(FilePath, backup);
+                LastStorageWarning += $" Copy: {backup}";
+            }
+        }
+        catch
+        {
+            // Best-effort. The warning above is still set, which is the part that matters.
+        }
     }
 
     private static void WriteToDisk(AllCredentials creds)
@@ -573,7 +615,13 @@ public static class CredentialsService
         // DPAPI is Windows-only. On other platforms (or if DPAPI throws — e.g. a
         // local profile without crypto support) we fall back to plaintext rather
         // than locking the user out of their own credentials.
-        if (!OperatingSystem.IsWindows()) return plaintextJson;
+        if (!OperatingSystem.IsWindows())
+        {
+            LastStorageWarning =
+                $"DPAPI is unavailable on this platform — API keys and the DEX signing key are " +
+                $"stored in clear text in {FilePath}.";
+            return plaintextJson;
+        }
 
         try
         {
@@ -581,8 +629,14 @@ public static class CredentialsService
             var cipher = ProtectedData.Protect(plain, DpapiEntropy, DataProtectionScope.CurrentUser);
             return DpapiMarker + Convert.ToBase64String(cipher);
         }
-        catch
+        catch (Exception ex)
         {
+            // Still falling back rather than locking the user out of their own keys — but not
+            // silently: writing a wallet private key in clear text is not something to discover
+            // by opening the file.
+            LastStorageWarning =
+                $"Windows encryption (DPAPI) failed: {ex.Message}. API keys and the DEX signing " +
+                $"key were written in CLEAR TEXT to {FilePath}.";
             return plaintextJson;
         }
     }

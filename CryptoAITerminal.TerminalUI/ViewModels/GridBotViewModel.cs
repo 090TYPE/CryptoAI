@@ -211,6 +211,15 @@ public class GridBotViewModel : ReactiveObject
         finally { AiParamsRunning = false; }
     }
 
+
+    /// <summary>
+    /// Asks the workspace whether live execution is allowed; returns a block reason, or null when
+    /// clear. Defaults to blocking: the grid bot places real exchange orders and has no paper path, so
+    /// an instance that was never wired to the guard must refuse rather than trade.
+    /// </summary>
+    public Func<string, string?> LiveExecutionGuard { get; set; } =
+        _ => "Live execution guard is not wired up — refusing to place real orders.";
+
     public GridBotViewModel(BinanceGateway spotGateway, BinanceFuturesGateway futuresGateway)
     {
         _spotGateway = spotGateway;
@@ -226,6 +235,12 @@ public class GridBotViewModel : ReactiveObject
     private async Task StartAsync()
     {
         if (_bot is not null) await StopAsync();
+
+        if (LiveExecutionGuard("Grid bot") is { } blocked)
+        {
+            BotLog = blocked;
+            return;
+        }
 
         if (_upperPrice <= _lowerPrice || _gridLevels < 2)
         {

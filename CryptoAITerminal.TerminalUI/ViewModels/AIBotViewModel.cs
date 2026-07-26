@@ -404,6 +404,15 @@ public class AIBotViewModel : ReactiveObject
         finally { TpSlSuggestRunning = false; }
     }
 
+
+    /// <summary>
+    /// Asks the workspace whether live execution is allowed; returns a block reason, or null when
+    /// clear. Defaults to blocking: the rule/AI bot places real exchange orders and has no paper path, so
+    /// an instance that was never wired to the guard must refuse rather than trade.
+    /// </summary>
+    public Func<string, string?> LiveExecutionGuard { get; set; } =
+        _ => "Live execution guard is not wired up — refusing to place real orders.";
+
     public AIBotViewModel(
         BinanceGateway binanceSpot,
         BinanceFuturesGateway binanceFutures,
@@ -433,6 +442,12 @@ public class AIBotViewModel : ReactiveObject
         if (_bot is not null)
         {
             StopBot();
+        }
+
+        if (LiveExecutionGuard("Rule/AI bot") is { } blocked)
+        {
+            BotLog += $"\n{blocked}";
+            return;
         }
 
         var marketType = IsFuturesMode ? TradingMarketType.FuturesUsdM : TradingMarketType.Spot;
