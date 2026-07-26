@@ -2,8 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.PriceStatsWidget"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vm:MarketFeedOwnerViewModel"
+             x:CompileBindings="True">
   <Grid ColumnDefinitions="*,*,*,*,*,*,*,*" ColumnSpacing="10">
 
     <!-- LAST PRICE -->

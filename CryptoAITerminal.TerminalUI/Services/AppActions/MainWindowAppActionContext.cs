@@ -87,7 +87,7 @@ public sealed class MainWindowAppActionContext : IAppActionContext
     public Task<ActionMarketSnapshot?> GetMarketAsync(string symbol, CancellationToken ct)
         => Task.FromResult(OnUi(() =>
         {
-            var row = _vm.Markets.FirstOrDefault(m => string.Equals(m.Symbol, symbol, StringComparison.OrdinalIgnoreCase));
+            var row = _vm.MarketFeedVM.Markets.FirstOrDefault(m => string.Equals(m.Symbol, symbol, StringComparison.OrdinalIgnoreCase));
             return row is null
                 ? (ActionMarketSnapshot?)null
                 : new ActionMarketSnapshot(row.Symbol, row.BestBid, row.BestAsk, row.LastPrice);

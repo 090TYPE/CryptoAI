@@ -33,29 +33,6 @@ namespace CryptoAITerminal.TerminalUI.ViewModels;
 public partial class MainWindowViewModel : ReactiveObject, IDisposable
 {
     private static readonly string[] DefaultSymbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT", "ADAUSDT", "DOGEUSDT", "AVAXUSDT", "LINKUSDT", "TRXUSDT", "LTCUSDT"];
-    private static readonly string[] KnownQuoteAssets = ["USDT", "USDC", "FDUSD", "TUSD", "BUSD", "BTC", "ETH", "BNB"];
-    private static readonly string CustomMarketsPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "CryptoAITerminal", "custom-markets.json");
-
-    private readonly List<string> _customMarketSymbols;
-    private string _newMarketSymbol = "";
-    private string _marketsStatus = "";
-
-    // Extra (non-Binance CEX + DEX) custom markets fed by REST polling.
-    private static readonly string ExtMarketsPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "CryptoAITerminal", "custom-markets-ext.json");
-    private sealed record ExtMarketDto(string Exchange, string Symbol, string DexChain, string DexAddress);
-    private readonly List<ExtMarketDto> _extMarkets;
-
-    // Starred rows on the Markets desk. Without this the star lived only in the row view model,
-    // which is rebuilt on every launch — the tracked markets came back but every star was gone.
-    private readonly Services.MarketFavoritesStore _favoritesStore = new();
-    private CustomMarketPoller _customPoller = null!;
-    private Gateway.DEX.DexScreenerClient _dexScreener = null!;
-    private string _selectedMarketSource = "Binance";
-    private string _selectedDexChain = "ethereum";
 
     private readonly BinanceGateway _gateway;
     private readonly BinanceFuturesGateway _futuresGateway;
@@ -86,14 +63,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private int _selectedTabIndex;
     private MarketData? _currentMarketData;
-    private CexMarketItemViewModel? _selectedMarket;
     private decimal _tradeQuantity = 0.001m;
     private decimal _limitPrice;
     private decimal _takeProfitPrice;
     private decimal _stopLossPrice;
     private string _selectedTimeInForce = "DAY";
     private string _logMessages = string.Empty;
-    private bool _isMarketLoading = true;
     private decimal _availableBalanceUsdt = 10000m;
     private decimal _positionQuantity;
     private decimal _averageEntryPrice;
@@ -123,13 +98,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     private string _selectedOrderSide = "BUY";
     private string _selectedOrderType = "Limit";
     private decimal _slippageTolerancePercent = 0.50m;
-    private string _marketsSearchText = string.Empty;
-    private string _selectedMarketSortMode = "Momentum";
-    private bool _showFavoriteMarketsOnly;
-    private string _selectedMarketFilter = "ALL";
-    private string _selectedAddMode = "CEX";
-    private string _selectedMarketTimeframe = "1H";
-    private bool _isRefreshingMarketExplorerCollections;
     private string _selectedCexMarketMode = "Spot";
     private string _selectedFuturesExchange = "Binance";
     private IReadOnlyDictionary<string, IExchangeGateway>? _futuresGatewaysMap;
@@ -150,7 +118,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     private bool _isWorkingOrderEvaluationScheduled;
     private bool _isWorkingOrderEvaluationRunning;
     private readonly UiLocalizationService _localization = UiLocalizationService.Instance;
-    private readonly Services.BookWallSettingsStore _wallSettingsStore = new();
     private string _aiAssistantDraftPrompt = string.Empty;
     private string _aiAssistantStatusLabel = "LOCAL CRYPTO COPILOT";
     private string _aiAssistantStatusBrush = "#21E6C1";
@@ -175,16 +142,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         IReleaseNotesService? releaseNotes = null,
         WhatsNewGate? whatsNewGate = null)
     {
-        _customMarketSymbols = LoadCustomMarketSymbols();
-        foreach (var symbol in DefaultSymbols.Concat(_customMarketSymbols))
-        {
-            var market = new CexMarketItemViewModel(symbol);
-            ConfigureWallSettings(market);
-            market.PropertyChanged += OnMarketItemPropertyChanged;
-            Markets.Add(market);
-        }
-
-        RefreshMarketExplorerCollections();
+        // The market board owns its rows, filters and the active symbol; the shell keeps the
+        // orchestration that a symbol change triggers (see OnMarketFeedSelectedMarketChanged).
+        MarketFeedVM = new MarketFeedOwnerViewModel(DefaultSymbols);
+        MarketFeedVM.SelectedMarketChanged += OnMarketFeedSelectedMarketChanged;
+        MarketFeedVM.IsMarketLoadingChanged += OnMarketFeedLoadingChanged;
+        MarketFeedVM.ExplorerStateChanged += OnMarketFeedExplorerStateChanged;
 
         // ── Load API credentials (file takes second priority, env vars override) ──
         var credResult = CredentialsService.Load();
@@ -225,7 +188,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
         // All ten gateways come from one place now — see ExchangeGatewaySet for why.
         var gateways = Services.ExchangeGatewaySet.Create(
-            DefaultSymbols.Concat(_customMarketSymbols), DefaultSymbols, creds);
+            DefaultSymbols.Concat(MarketFeedVM.CustomMarketSymbols), DefaultSymbols, creds);
 
         _gateway = gateways.BinanceSpot;
         _futuresGateway = gateways.BinanceFutures;
@@ -251,9 +214,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         // Spot order book / price / placement can target any of these (mirrors _futuresGatewaysMap).
         _spotGatewaysMap = new Dictionary<string, Core.Interfaces.IExchangeGateway>(gateways.SpotByExchange, StringComparer.OrdinalIgnoreCase);
 
-        // Non-Binance CEX + DEX custom markets: refreshed by REST polling, not the live socket.
-        _dexScreener = new Gateway.DEX.DexScreenerClient();
-        _customPoller = new Services.CustomMarketPoller(
+        // Hands the board the gateways it polls non-Binance rows with, the DEX desk it mirrors
+        // starred tokens into, and the shell's open-in-trading routing.
+        MarketFeedVM.AttachSources(
             exchange => exchange switch
             {
                 "Bybit"  => _bybitSpotGateway,
@@ -261,11 +224,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                 "KuCoin" => _kucoinSpotGateway,
                 _        => _gateway,
             },
-            _dexScreener);
-        _extMarkets = LoadExtMarkets();
-        RestoreExtMarkets();
-        ApplySavedFavorites();   // after every row exists — default, custom and ext alike
-        RefreshMarketExplorerCollections();
+            _gateway.AddSymbolAsync,
+            // DexTradingVM is one of the late-assigned `null!` properties, so the compiler cannot
+            // see that this is safe. The accessor exists precisely because it is: it is only
+            // invoked when the user adds a DEX market, long after the constructor has finished.
+            () => DexTradingVM!,
+            OpenMarketInTrading);
 
         // Multi-exchange futures gateway map — used by ActiveFuturesGateway property.
         _futuresGatewaysMap = new Dictionary<string, IExchangeGateway>(gateways.FuturesByExchange, StringComparer.OrdinalIgnoreCase);
@@ -1214,8 +1178,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         {
             Dispatcher.UIThread.Post(() =>
             {
-                var market = Markets.FirstOrDefault(item => string.Equals(item.Symbol, data.Symbol, StringComparison.OrdinalIgnoreCase));
-                market?.UpdateMarketData(data);
+                MarketFeedVM.ApplyTicker(data);
 
                 if (SelectedMarket is not null &&
                     string.Equals(SelectedMarket.Symbol, data.Symbol, StringComparison.OrdinalIgnoreCase))
@@ -1342,15 +1305,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         ToggleLadderCenterModeCommand = ReactiveCommand.Create(ToggleLadderCenterMode, outputScheduler: App.UiScheduler);
         SelectTradingVenueCommand = ReactiveCommand.Create<string>(SelectTradingVenue, outputScheduler: App.UiScheduler);
         FocusMarketCommand = ReactiveCommand.Create<CexMarketItemViewModel>(FocusMarket, outputScheduler: App.UiScheduler);
-        OpenMarketInTradingCommand = ReactiveCommand.Create<CexMarketItemViewModel>(OpenMarketInTrading, outputScheduler: App.UiScheduler);
-        ToggleMarketFavoriteCommand = ReactiveCommand.Create<CexMarketItemViewModel>(ToggleMarketFavorite, outputScheduler: App.UiScheduler);
         RefreshMarketsCommand = ReactiveCommand.CreateFromTask(RefreshMarketsHubAsync, outputScheduler: App.UiScheduler);
-        AddCustomMarketCommand = ReactiveCommand.CreateFromTask(AddCustomMarketAsync, outputScheduler: App.UiScheduler);
-        RemoveMarketCommand = ReactiveCommand.Create<CexMarketItemViewModel>(RemoveCustomMarket, outputScheduler: App.UiScheduler);
-        SetMarketFilterCommand = ReactiveCommand.Create<string>(key => SelectedMarketFilter = key, outputScheduler: App.UiScheduler);
-        SetMarketSortCommand = ReactiveCommand.Create<string>(SetMarketSort, outputScheduler: App.UiScheduler);
-        SetAddModeCommand = ReactiveCommand.Create<string>(key => SelectedAddMode = key, outputScheduler: App.UiScheduler);
-        SelectMarketTimeframeCommand = ReactiveCommand.Create<string>(SelectMarketTimeframe, outputScheduler: App.UiScheduler);
         SafeLogoutCommand = ReactiveCommand.CreateFromTask(ExecuteSafeLogoutAsync, outputScheduler: App.UiScheduler);
 
         // Needs SelectMainTabCommand and SafeLogoutCommand to exist, hence the position.
@@ -1436,9 +1391,16 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
     }
 
-    public ObservableCollection<CexMarketItemViewModel> Markets { get; } = [];
-    public ObservableCollection<CexMarketItemViewModel> VisibleMarkets { get; } = [];
-    public ObservableCollection<CexMarketItemViewModel> MarketHeatmapMarkets { get; } = [];
+    /// <summary>
+    /// The live market board: tracked rows, filters, the add-coin form, the stats strip and the
+    /// active symbol. The shell re-exposes <see cref="Markets"/>, <see cref="SelectedMarket"/> and
+    /// <see cref="IsMarketLoading"/> below because the trading desk, order templates, working
+    /// orders and agent actions all read the active symbol off the shell.
+    /// </summary>
+    public MarketFeedOwnerViewModel MarketFeedVM { get; }
+
+    /// <summary>Read-through alias for <see cref="MarketFeedOwnerViewModel.Markets"/>.</summary>
+    public ObservableCollection<CexMarketItemViewModel> Markets => MarketFeedVM.Markets;
     public ObservableCollection<TradeLadderLevelViewModel> LadderLevels { get; } = [];
     public ObservableCollection<WorkingOrderViewModel> WorkingOrders { get; } = [];
     public ObservableCollection<TradeFillViewModel> RecentFills { get; } = [];
@@ -1453,52 +1415,66 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public ObservableCollection<AiPromptPresetViewModel> AiSavedPromptPresets { get; } = [];
     public ObservableCollection<AiPromptPresetViewModel> AiCustomPromptPresets { get; } = [];
 
+    /// <summary>
+    /// The app-wide active symbol. Owned by <see cref="MarketFeedVM"/>; this is the shell's
+    /// read-through alias, and everything the old setter did afterwards now lives in
+    /// <see cref="OnMarketFeedSelectedMarketChanged"/>.
+    /// </summary>
     public CexMarketItemViewModel? SelectedMarket
     {
-        get => _selectedMarket;
-        set
+        get => MarketFeedVM.SelectedMarket;
+        set => MarketFeedVM.SelectedMarket = value;
+    }
+
+    /// <summary>
+    /// Runs on every symbol switch, whatever raised it. This is verbatim the tail of the old
+    /// SelectedMarket setter: order book, trading desk, snapshot, candles and futures account.
+    /// </summary>
+    private void OnMarketFeedSelectedMarketChanged(CexMarketItemViewModel? resolvedMarket)
+    {
+        this.RaisePropertyChanged(nameof(SelectedMarket));
+        this.RaisePropertyChanged(nameof(SelectedTradingSymbol));
+        this.RaisePropertyChanged(nameof(SelectedMarketTitle));
+        _ = RefreshSelectedOrderBookAsync();
+        OnTradingSymbolChanged();
+
+        if (resolvedMarket is not null)
         {
-            var resolvedMarket = value is null
-                ? _selectedMarket ?? Markets.FirstOrDefault()
-                : Markets.FirstOrDefault(item => string.Equals(item.Symbol, value.Symbol, StringComparison.OrdinalIgnoreCase)) ?? value;
-
-            if (ReferenceEquals(_selectedMarket, resolvedMarket))
+            resolvedMarket.ApplyTimeframe(SelectedTradeTimeframe);
+            CurrentMarketData = new MarketData
             {
-                return;
-            }
+                Symbol = resolvedMarket.Symbol,
+                LastPrice = resolvedMarket.LastPrice,
+                BestBid = resolvedMarket.BestBid,
+                BestAsk = resolvedMarket.BestAsk,
+                Timestamp = resolvedMarket.LastUpdated == default ? DateTime.UtcNow : resolvedMarket.LastUpdated.ToUniversalTime()
+            };
+        }
 
-            this.RaiseAndSetIfChanged(ref _selectedMarket, resolvedMarket);
-            this.RaisePropertyChanged(nameof(SelectedTradingSymbol));
-            this.RaisePropertyChanged(nameof(SelectedMarketTitle));
-            _ = RefreshSelectedOrderBookAsync();
-            OnTradingSymbolChanged();
-
-            if (resolvedMarket is not null)
-            {
-                resolvedMarket.ApplyTimeframe(SelectedTradeTimeframe);
-                CurrentMarketData = new MarketData
-                {
-                    Symbol = resolvedMarket.Symbol,
-                    LastPrice = resolvedMarket.LastPrice,
-                    BestBid = resolvedMarket.BestBid,
-                    BestAsk = resolvedMarket.BestAsk,
-                    Timestamp = resolvedMarket.LastUpdated == default ? DateTime.UtcNow : resolvedMarket.LastUpdated.ToUniversalTime()
-                };
-            }
-
-            _focusLatestCandlesOnNextRefresh = true;
-            _ = RefreshSelectedCandlesAsync();
-            if (resolvedMarket is not null && IsManualFuturesMode)
-            {
-                _ = RefreshManualAccountStateAsync();
-            }
-            if (resolvedMarket is null)
-            {
-                RaiseTradingStateChanged();
-                RefreshQuickBacktestSnapshot();
-            }
+        _focusLatestCandlesOnNextRefresh = true;
+        _ = RefreshSelectedCandlesAsync();
+        if (resolvedMarket is not null && IsManualFuturesMode)
+        {
+            _ = RefreshManualAccountStateAsync();
+        }
+        if (resolvedMarket is null)
+        {
+            RaiseTradingStateChanged();
+            RefreshQuickBacktestSnapshot();
         }
     }
+
+    /// <summary>The connection labels are derived from the board's loading flag, so they follow it.</summary>
+    private void OnMarketFeedLoadingChanged()
+    {
+        this.RaisePropertyChanged(nameof(IsMarketLoading));
+        this.RaisePropertyChanged(nameof(ConnectionStateLabel));
+        this.RaisePropertyChanged(nameof(FeedStatusLabel));
+    }
+
+    /// <summary>Analytics reads the board's breadth and leaders, so it refreshes with them.</summary>
+    private void OnMarketFeedExplorerStateChanged() =>
+        this.RaisePropertyChanged(nameof(AnalyticsMarketSummary));
 
     public string SelectedTradingSymbol => SelectedMarket?.Symbol ?? DefaultSymbols[0];
     public string SelectedMarketTitle => SelectedMarket?.DisplaySymbol ?? "Select a coin";
@@ -1734,112 +1710,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
     }
 
-    public string MarketsSearchText
-    {
-        get => _marketsSearchText;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _marketsSearchText, value);
-            RefreshMarketExplorerCollections();
-            RaiseMarketExplorerStateChanged();
-        }
-    }
-
-    public string SelectedMarketSortMode
-    {
-        get => _selectedMarketSortMode;
-        set
-        {
-            var normalized = string.IsNullOrWhiteSpace(value) ? "Momentum" : value.Trim();
-            this.RaiseAndSetIfChanged(ref _selectedMarketSortMode, normalized);
-            RefreshMarketExplorerCollections();
-            RaiseMarketExplorerStateChanged();
-        }
-    }
-
-    public bool ShowFavoriteMarketsOnly
-    {
-        get => _showFavoriteMarketsOnly;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _showFavoriteMarketsOnly, value);
-            RefreshMarketExplorerCollections();
-            RaiseMarketExplorerStateChanged();
-        }
-    }
-
+    /// <summary>Read-through alias for <see cref="MarketFeedOwnerViewModel.IsMarketLoading"/>.</summary>
     public bool IsMarketLoading
     {
-        get => _isMarketLoading;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _isMarketLoading, value);
-            this.RaisePropertyChanged(nameof(ConnectionStateLabel));
-            this.RaisePropertyChanged(nameof(FeedStatusLabel));
-        }
+        get => MarketFeedVM.IsMarketLoading;
+        set => MarketFeedVM.IsMarketLoading = value;
     }
-
-    public IReadOnlyList<string> MarketSortOptions { get; } = ["Momentum", "Spread", "Updated", "Alphabetical", "Price", "Volume"];
-
-    /// <summary>Global market-stats strip cells across the top of the board.</summary>
-    public ObservableCollection<MarketStatCellViewModel> GlobalMarketStats { get; } = [];
-
-    // ---- Reference board: row filter (ALL / CEX / DEX / FAV / GAINERS / LOSERS) ----
-    public IReadOnlyList<string> MarketFilterOptions { get; } = ["ALL", "CEX", "DEX", "FAV", "GAINERS", "LOSERS"];
-
-    public string SelectedMarketFilter
-    {
-        get => _selectedMarketFilter;
-        set
-        {
-            var normalized = string.IsNullOrWhiteSpace(value) ? "ALL" : value.Trim().ToUpperInvariant();
-            this.RaiseAndSetIfChanged(ref _selectedMarketFilter, normalized);
-            RefreshMarketExplorerCollections();
-            RaiseMarketExplorerStateChanged();
-        }
-    }
-
-    // ---- Reference board: "ADD COIN" segment (CEX / DEX / TOKEN) ----
-    public string SelectedAddMode
-    {
-        get => _selectedAddMode;
-        set
-        {
-            var normalized = string.IsNullOrWhiteSpace(value) ? "CEX" : value.Trim().ToUpperInvariant();
-            this.RaiseAndSetIfChanged(ref _selectedAddMode, normalized);
-            // Map the segment onto the underlying add-source pipeline.
-            SelectedMarketSource = normalized == "CEX" ? "Binance" : "DEX";
-            this.RaisePropertyChanged(nameof(AddCoinPlaceholder));
-        }
-    }
-
-    public string AddCoinPlaceholder => _selectedAddMode switch
-    {
-        "TOKEN" => "0x… contract address",
-        "DEX" => "PEPE, WIF, 0x…",
-        _ => "BTC, ETH, SOL…",
-    };
-
-    // ---- Reference detail panel: MICRO TREND timeframe (15M / 1H / 4H / 1D) ----
-    public IReadOnlyList<string> MarketTimeframeOptions { get; } = ["15M", "1H", "4H", "1D"];
-    public string SelectedMarketTimeframe => _selectedMarketTimeframe;
-
-    public int TrackedMarketsCount => Markets.Count;
-    public int VisibleMarketsCount => VisibleMarkets.Count;
-    public int FavoriteMarketsCount => Markets.Count(static market => market.IsFavorite);
-    public int PositiveMarketsCount => Markets.Count(static market => market.ChangePercent > 0.15m);
-    public int NegativeMarketsCount => Markets.Count(static market => market.ChangePercent < -0.15m);
-    public string MarketBreadthLabel => $"Up {PositiveMarketsCount} | Down {NegativeMarketsCount}";
-    public string MarketsScreenSummary =>
-        $"Live Binance spot board with {TrackedMarketsCount} tracked pairs, {VisibleMarketsCount} visible under the current filter, and direct jump-to-trading actions.";
-    public string MarketsSelectionSummary =>
-        SelectedMarket is null
-            ? "Select a market to inspect price action, spread and order book."
-            : $"{SelectedMarket.DisplaySymbol} | {SelectedMarket.TrendLabel} | Change {SelectedMarket.ChangePercentLabel} | Spread {SelectedMarket.SpreadPercentLabel}";
-    public string StrongestMarketLabel => FormatMarketLeaderLabel(GetStrongestMarket(), market => market.ChangePercentLabel);
-    public string WeakestMarketLabel => FormatMarketLeaderLabel(GetWeakestMarket(), market => market.ChangePercentLabel);
-    public string TightestSpreadMarketLabel => FormatMarketLeaderLabel(GetTightestSpreadMarket(), market => market.SpreadPercentLabel);
-    public string MostActiveMarketLabel => FormatMarketLeaderLabel(GetMostActiveMarket(), market => market.ActivityScoreLabel);
 
     public ReactiveCommand<Unit, Unit> BuyMarketCommand { get; }
     public ReactiveCommand<Unit, Unit> SellMarketCommand { get; }
@@ -1877,50 +1753,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> ToggleLadderCenterModeCommand { get; }
     public ReactiveCommand<string, Unit> SelectTradingVenueCommand { get; }
     public ReactiveCommand<CexMarketItemViewModel, Unit> FocusMarketCommand { get; }
-    public ReactiveCommand<CexMarketItemViewModel, Unit> OpenMarketInTradingCommand { get; }
-    public ReactiveCommand<CexMarketItemViewModel, Unit> ToggleMarketFavoriteCommand { get; }
     public ReactiveCommand<Unit, Unit> RefreshMarketsCommand { get; }
-    public ReactiveCommand<Unit, Unit> AddCustomMarketCommand { get; }
-    public ReactiveCommand<CexMarketItemViewModel, Unit> RemoveMarketCommand { get; }
-    public ReactiveCommand<string, Unit> SetMarketFilterCommand { get; }
-    public ReactiveCommand<string, Unit> SetMarketSortCommand { get; }
-    public ReactiveCommand<string, Unit> SetAddModeCommand { get; }
-    public ReactiveCommand<string, Unit> SelectMarketTimeframeCommand { get; }
-
-    public string NewMarketSymbol
-    {
-        get => _newMarketSymbol;
-        set => this.RaiseAndSetIfChanged(ref _newMarketSymbol, value);
-    }
-
-    public string MarketsStatus
-    {
-        get => _marketsStatus;
-        private set => this.RaiseAndSetIfChanged(ref _marketsStatus, value);
-    }
-
-    // Where a newly added coin comes from. "DEX" means "add a token by contract address".
-    public IReadOnlyList<string> MarketSourceOptions { get; } = ["Binance", "Bybit", "OKX", "KuCoin", "DEX"];
-    public string SelectedMarketSource
-    {
-        get => _selectedMarketSource;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _selectedMarketSource, value);
-            this.RaisePropertyChanged(nameof(IsDexSource));
-            this.RaisePropertyChanged(nameof(AddMarketHint));
-        }
-    }
-    public bool IsDexSource => string.Equals(SelectedMarketSource, "DEX", StringComparison.OrdinalIgnoreCase);
-    public IReadOnlyList<string> DexChainOptions { get; } = ["ethereum", "bsc", "base", "solana", "arbitrum", "polygon"];
-    public string SelectedDexChain
-    {
-        get => _selectedDexChain;
-        set => this.RaiseAndSetIfChanged(ref _selectedDexChain, value);
-    }
-    public string AddMarketHint => IsDexSource
-        ? "Вставь адрес контракта токена (0x… или адрес Solana)."
-        : "Введи тикер (например PEPE или WIFUSDT).";
     public ReactiveCommand<Unit, Unit> SafeLogoutCommand { get; }
     public ReactiveCommand<Unit, Unit> SendAiAssistantPromptCommand { get; }
     public ReactiveCommand<AiAssistantQuickPromptViewModel, Unit> UseAiAssistantQuickPromptCommand { get; }
@@ -4575,7 +4408,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     {
         // Mirror the coins the user actually tracks on the Markets tab (VisibleMarkets),
         // in the same order they see there; fall back to the full market set.
-        var source = VisibleMarkets.Count > 0 ? (IEnumerable<CexMarketItemViewModel>)VisibleMarkets : Markets;
+        var source = MarketFeedVM.VisibleMarkets.Count > 0
+            ? (IEnumerable<CexMarketItemViewModel>)MarketFeedVM.VisibleMarkets
+            : MarketFeedVM.Markets;
         var rows = source
             .Where(m => m is not null && m.LastPrice > 0)
             .Take(20)
@@ -4625,13 +4460,11 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
             DexDeskVM.SelectModeCommand.Execute("SWAP").Subscribe();
 
-            var dto = _extMarkets.FirstOrDefault(d =>
-                string.Equals(d.Exchange, "DEX", StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(d.Symbol, targetMarket.Symbol, StringComparison.OrdinalIgnoreCase));
+            var dexAddress = MarketFeedVM.GetDexAddress(targetMarket.Symbol);
 
-            if (dto is not null && !string.IsNullOrWhiteSpace(dto.DexAddress))
+            if (!string.IsNullOrWhiteSpace(dexAddress))
             {
-                _ = DexTradingVM.SelectTokenByAddressAsync(dto.DexAddress, targetMarket.BaseAssetSymbol);
+                _ = DexTradingVM.SelectTokenByAddressAsync(dexAddress, targetMarket.BaseAssetSymbol);
             }
             else
             {
@@ -4684,86 +4517,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         await Task.CompletedTask;
     }
 
-    private void ToggleMarketFavorite(CexMarketItemViewModel? market)
-    {
-        if (market is null)
-        {
-            return;
-        }
-
-        market.IsFavorite = !market.IsFavorite;
-        SaveMarketFavorites();
-        SyncFavoriteWithServer(market);
-        RaiseMarketExplorerStateChanged();
-    }
-
-    /// <summary>Re-applies the saved stars once, at start-up, after every market row exists.</summary>
-    private void ApplySavedFavorites()
-    {
-        var saved = _favoritesStore.Load();
-        if (saved.Count == 0)
-        {
-            return;
-        }
-
-        foreach (var market in Markets)
-        {
-            if (saved.Contains(Services.MarketFavoritesStore.KeyOf(market.Exchange, market.Symbol)))
-            {
-                market.IsFavorite = true;
-            }
-        }
-    }
-
-    /// <summary>Writes the full set of stars still on screen. Deriving it from <see cref="Markets"/>
-    /// rather than patching the file means a removed market takes its star with it.</summary>
-    private void SaveMarketFavorites() =>
-        _favoritesStore.Save(Markets
-            .Where(static market => market.IsFavorite)
-            .Select(static market => Services.MarketFavoritesStore.KeyOf(market.Exchange, market.Symbol)));
-
-    /// <summary>
-    /// Mirrors a starred DEX token into the synced watchlist so the server tracks it 24/7, and
-    /// drops it again when the star comes off — otherwise un-starring here would leave the server
-    /// polling a token the user believes they removed.
-    /// </summary>
-    /// <remarks>
-    /// CEX rows stay local on purpose: <c>/api/favorites</c> is keyed by chain plus contract
-    /// address, and a CEX ticker has neither.
-    /// </remarks>
-    private void SyncFavoriteWithServer(CexMarketItemViewModel market)
-    {
-        if (!market.IsDexMarket)
-        {
-            return;
-        }
-
-        var dto = _extMarkets.FirstOrDefault(d =>
-            string.Equals(d.Exchange, "DEX", StringComparison.OrdinalIgnoreCase)
-            && string.Equals(d.Symbol, market.Symbol, StringComparison.OrdinalIgnoreCase));
-        if (dto is null || string.IsNullOrWhiteSpace(dto.DexAddress))
-        {
-            return;
-        }
-
-        // Routed through DexTradingVM because it owns the watchlist: FavoritesSyncService PUTs the
-        // FULL list, so a second pusher with its own set would delete this one server-side.
-        if (market.IsFavorite)
-        {
-            DexTradingVM.AddToWatchlist(dto.DexChain, dto.DexAddress, dto.Symbol);
-        }
-        else
-        {
-            DexTradingVM.RemoveFromWatchlist(dto.DexAddress);
-        }
-    }
-
     private async Task RefreshMarketsHubAsync()
     {
         AddLog("Refreshing market radar data and order books.");
         await RefreshAllOrderBooksAsync();
         await RefreshSelectedCandlesAsync();
-        RaiseMarketExplorerStateChanged();
+        MarketFeedVM.RaiseExplorerStateChanged();
     }
 
     private void ToggleLadderCenterMode()
@@ -4920,70 +4679,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
 
         RefreshAiSignalStudioContext();
-    }
-
-    private void ConfigureWallSettings(CexMarketItemViewModel market)
-    {
-        var settings = _wallSettingsStore.Get(market.Symbol);
-        // Apply persisted values BEFORE wiring the callback so loading doesn't re-save.
-        market.WallUsdThreshold = settings.UsdThreshold;
-        market.WallQtyThreshold = settings.QtyThreshold;
-        market.WallMode = _wallSettingsStore.Mode;
-        market.WallSettingsChanged = () =>
-        {
-            _wallSettingsStore.Mode = market.WallMode;
-            _wallSettingsStore.Set(market.Symbol, new Core.Models.BookWallSettings
-            {
-                UsdThreshold = market.WallUsdThreshold,
-                QtyThreshold = market.WallQtyThreshold
-            });
-        };
-    }
-
-    private Avalonia.Threading.DispatcherTimer? _marketExplorerRefreshTimer;
-    private bool _marketExplorerRefreshDirty;
-
-    private void OnMarketItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName is nameof(CexMarketItemViewModel.LastPrice) or
-            nameof(CexMarketItemViewModel.BestBid) or
-            nameof(CexMarketItemViewModel.BestAsk) or
-            nameof(CexMarketItemViewModel.LastUpdated) or
-            nameof(CexMarketItemViewModel.ChangePercent) or
-            nameof(CexMarketItemViewModel.SpreadPercent) or
-            nameof(CexMarketItemViewModel.ActivityScore) or
-            nameof(CexMarketItemViewModel.IsFavorite))
-        {
-            // Coalesce: a full explorer re-sort + stats recompute is O(N). Running it synchronously
-            // on every market's every price tick is O(N²) per wave and, with hundreds of markets
-            // streaming, saturates the UI thread and hangs the app. Throttle to at most once per
-            // window instead — the analytics stay fresh without blocking the dispatcher.
-            _marketExplorerRefreshDirty = true;
-            if (_marketExplorerRefreshTimer is null)
-            {
-                _marketExplorerRefreshTimer = new Avalonia.Threading.DispatcherTimer
-                {
-                    Interval = TimeSpan.FromMilliseconds(400)
-                };
-                _marketExplorerRefreshTimer.Tick += (_, _) =>
-                {
-                    if (!_marketExplorerRefreshDirty)
-                    {
-                        _marketExplorerRefreshTimer!.Stop();
-                        return;
-                    }
-
-                    _marketExplorerRefreshDirty = false;
-                    RefreshMarketExplorerCollections();
-                    RaiseMarketExplorerStateChanged();
-                };
-            }
-
-            if (!_marketExplorerRefreshTimer.IsEnabled)
-            {
-                _marketExplorerRefreshTimer.Start();
-            }
-        }
     }
 
     private async Task PlacePrimaryOrderAsync()
@@ -5503,7 +5198,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         RefreshPositionRows();
         UpdateTradeIdea();
         RefreshSignalRows();
-        RaiseMarketExplorerStateChanged();
+        MarketFeedVM.RaiseExplorerStateChanged();
         RefreshAiSignalStudioContext();
     }
 
@@ -5525,24 +5220,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(IsSpotPrivateApiReady));
         this.RaisePropertyChanged(nameof(SpotPrivateApiStatusLabel));
         this.RaisePropertyChanged(nameof(SpotPrivateApiStatusBrush));
-    }
-
-    private void RaiseMarketExplorerStateChanged()
-    {
-        this.RaisePropertyChanged(nameof(TrackedMarketsCount));
-        this.RaisePropertyChanged(nameof(VisibleMarketsCount));
-        this.RaisePropertyChanged(nameof(FavoriteMarketsCount));
-        this.RaisePropertyChanged(nameof(PositiveMarketsCount));
-        this.RaisePropertyChanged(nameof(NegativeMarketsCount));
-        this.RaisePropertyChanged(nameof(MarketBreadthLabel));
-        this.RaisePropertyChanged(nameof(MarketsScreenSummary));
-        this.RaisePropertyChanged(nameof(MarketsSelectionSummary));
-        this.RaisePropertyChanged(nameof(StrongestMarketLabel));
-        this.RaisePropertyChanged(nameof(WeakestMarketLabel));
-        this.RaisePropertyChanged(nameof(TightestSpreadMarketLabel));
-        this.RaisePropertyChanged(nameof(MostActiveMarketLabel));
-        this.RaisePropertyChanged(nameof(AnalyticsMarketSummary));
-        BuildGlobalMarketStats();
     }
 
     private string GetCexExecutionGuardReason(string routeLabel)
@@ -6096,526 +5773,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(AiDirectionBrush));
         this.RaisePropertyChanged(nameof(AiWarningTertiary));
     }
-
-    private IEnumerable<CexMarketItemViewModel> GetVisibleMarkets()
-    {
-        IEnumerable<CexMarketItemViewModel> query = Markets;
-
-        if (!string.IsNullOrWhiteSpace(MarketsSearchText))
-        {
-            var search = MarketsSearchText.Trim();
-            query = query.Where(market =>
-                market.Symbol.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                market.BaseAssetSymbol.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                market.DisplaySymbol.Contains(search, StringComparison.OrdinalIgnoreCase));
-        }
-
-        if (ShowFavoriteMarketsOnly)
-        {
-            query = query.Where(static market => market.IsFavorite);
-        }
-
-        // Reference board row filter (ALL / CEX / DEX / FAV / GAINERS / LOSERS).
-        query = _selectedMarketFilter switch
-        {
-            "CEX" => query.Where(static market => !market.IsDexMarket),
-            "DEX" => query.Where(static market => market.IsDexMarket),
-            "FAV" => query.Where(static market => market.IsFavorite),
-            "GAINERS" => query.Where(static market => market.ChangePercent > 0m),
-            "LOSERS" => query.Where(static market => market.ChangePercent < 0m),
-            _ => query,
-        };
-
-        return SelectedMarketSortMode switch
-        {
-            "Spread" => query.OrderBy(market => market.SpreadPercent <= 0 ? decimal.MaxValue : market.SpreadPercent)
-                             .ThenByDescending(market => market.ActivityScore),
-            "Updated" => query.OrderByDescending(market => market.LastUpdated)
-                              .ThenByDescending(market => market.ActivityScore),
-            "Alphabetical" => query.OrderBy(market => market.BaseAssetSymbol),
-            "Price" => query.OrderByDescending(market => market.LastPrice),
-            "Volume" => query.OrderByDescending(market => market.Volume24hUsd),
-            _ => query.OrderByDescending(market => market.ActivityScore)
-                      .ThenByDescending(market => Math.Abs(market.ChangePercent))
-                      .ThenBy(market => market.SpreadPercent <= 0 ? decimal.MaxValue : market.SpreadPercent)
-        };
-    }
-
-    private static string NormalizeMarketSymbol(string? input)
-    {
-        if (string.IsNullOrWhiteSpace(input)) return "";
-        var s = new string(input.Trim().ToUpperInvariant().Where(char.IsLetterOrDigit).ToArray());
-        if (s.Length == 0) return "";
-        // Append the default USDT quote unless the user already typed a known quote suffix.
-        if (!KnownQuoteAssets.Any(q => s.Length > q.Length && s.EndsWith(q, StringComparison.Ordinal)))
-            s += "USDT";
-        return s;
-    }
-
-    private async Task AddCustomMarketAsync()
-    {
-        if (IsDexSource)
-        {
-            await AddDexMarketAsync();
-            return;
-        }
-        if (!string.Equals(SelectedMarketSource, "Binance", StringComparison.OrdinalIgnoreCase))
-        {
-            await AddExtCexMarketAsync(SelectedMarketSource);
-            return;
-        }
-
-        var symbol = NormalizeMarketSymbol(NewMarketSymbol);
-        if (symbol.Length < 5)
-        {
-            MarketsStatus = "Введите тикер монеты (например PEPE или WIFUSDT).";
-            return;
-        }
-        if (Markets.Any(m => string.Equals(m.Symbol, symbol, StringComparison.OrdinalIgnoreCase)))
-        {
-            MarketsStatus = $"{symbol} уже в списке.";
-            return;
-        }
-
-        MarketsStatus = $"Добавляю {symbol}…";
-        bool ok;
-        try { ok = await _gateway.AddSymbolAsync(symbol); }
-        catch { ok = false; }
-        if (!ok)
-        {
-            MarketsStatus = $"{symbol} не найден на Binance — проверь тикер.";
-            return;
-        }
-
-        var market = new CexMarketItemViewModel(symbol);
-        ConfigureWallSettings(market);
-        market.PropertyChanged += OnMarketItemPropertyChanged;
-        Markets.Add(market);
-
-        if (!_customMarketSymbols.Contains(symbol, StringComparer.OrdinalIgnoreCase))
-        {
-            _customMarketSymbols.Add(symbol);
-            SaveCustomMarketSymbols();
-        }
-
-        RefreshMarketExplorerCollections();
-        RaiseMarketExplorerStateChanged();
-        SelectedMarket = market;
-        NewMarketSymbol = "";
-        MarketsStatus = $"{symbol} добавлен.";
-    }
-
-    // Add a coin from another CEX (Bybit/OKX/KuCoin). Validated by pulling one order book;
-    // kept fresh by the REST poller rather than the Binance socket.
-    private async Task AddExtCexMarketAsync(string exchange)
-    {
-        var symbol = NormalizeMarketSymbol(NewMarketSymbol);
-        if (symbol.Length < 5)
-        {
-            MarketsStatus = "Введите тикер монеты (например PEPE или WIFUSDT).";
-            return;
-        }
-        if (Markets.Any(m => string.Equals(m.Symbol, symbol, StringComparison.OrdinalIgnoreCase)
-                             && string.Equals(m.Exchange, exchange, StringComparison.OrdinalIgnoreCase)))
-        {
-            MarketsStatus = $"{symbol} ({exchange}) уже в списке.";
-            return;
-        }
-
-        MarketsStatus = $"Проверяю {symbol} на {exchange}…";
-        var gateway = exchange switch
-        {
-            "Bybit"  => _bybitSpotGateway,
-            "OKX"    => _okxSpotGateway,
-            "KuCoin" => _kucoinSpotGateway,
-            _        => _gateway,
-        };
-        bool ok;
-        try
-        {
-            var book = await gateway.GetOrderBookAsync(symbol, 5);
-            ok = book.Bids.Count > 0 || book.Asks.Count > 0;
-        }
-        catch { ok = false; }
-        if (!ok)
-        {
-            MarketsStatus = $"{symbol} не найден на {exchange} — проверь тикер.";
-            return;
-        }
-
-        var market = new CexMarketItemViewModel(symbol, exchange);
-        ConfigureWallSettings(market);
-        market.PropertyChanged += OnMarketItemPropertyChanged;
-        Markets.Add(market);
-        _customPoller.AddCex(market, exchange, symbol);
-
-        _extMarkets.Add(new ExtMarketDto(exchange, symbol, "", ""));
-        SaveExtMarkets();
-
-        RefreshMarketExplorerCollections();
-        RaiseMarketExplorerStateChanged();
-        SelectedMarket = market;
-        NewMarketSymbol = "";
-        MarketsStatus = $"{symbol} ({exchange}) добавлен.";
-    }
-
-    // Add a DEX token by contract address. Price/volume come from DexScreener.
-    private async Task AddDexMarketAsync()
-    {
-        var address = (NewMarketSymbol ?? "").Trim();
-        if (address.Length < 8)
-        {
-            MarketsStatus = "Вставь адрес контракта токена (0x… или адрес Solana).";
-            return;
-        }
-        var chain = SelectedDexChain;
-        if (_extMarkets.Any(d => d.Exchange == "DEX"
-                                 && string.Equals(d.DexAddress, address, StringComparison.OrdinalIgnoreCase)))
-        {
-            MarketsStatus = "Этот токен уже добавлен.";
-            return;
-        }
-
-        MarketsStatus = "Ищу токен на DexScreener…";
-        Core.Models.DexTokenInfo? token;
-        try
-        {
-            var tokens = await _dexScreener.SearchTokensAsync(address);
-            token = tokens.FirstOrDefault(t => string.Equals(t.TokenAddress, address, StringComparison.OrdinalIgnoreCase)
-                                               && string.Equals(t.ChainId, chain, StringComparison.OrdinalIgnoreCase))
-                    ?? tokens.FirstOrDefault(t => string.Equals(t.TokenAddress, address, StringComparison.OrdinalIgnoreCase))
-                    ?? tokens.FirstOrDefault();
-        }
-        catch { token = null; }
-        if (token is null || token.PriceUsd <= 0m)
-        {
-            MarketsStatus = "Токен не найден — проверь адрес и сеть.";
-            return;
-        }
-
-        var resolvedChain = string.IsNullOrWhiteSpace(token.ChainId) ? chain : token.ChainId;
-        var resolvedAddress = string.IsNullOrWhiteSpace(token.TokenAddress) ? address : token.TokenAddress;
-        var displaySymbol = string.IsNullOrWhiteSpace(token.Symbol)
-            ? $"{resolvedChain.ToUpperInvariant()}·{resolvedAddress[..Math.Min(6, resolvedAddress.Length)]}"
-            : token.Symbol.ToUpperInvariant();
-        if (Markets.Any(m => m.IsDexMarket && string.Equals(m.Symbol, displaySymbol, StringComparison.OrdinalIgnoreCase)))
-            displaySymbol += "·" + resolvedAddress[^4..];
-
-        var market = new CexMarketItemViewModel(displaySymbol, $"DEX·{resolvedChain}");
-        ConfigureWallSettings(market);
-        market.PropertyChanged += OnMarketItemPropertyChanged;
-        market.UpdateMarketData(new Core.Models.MarketData
-        {
-            Symbol = displaySymbol,
-            BestBid = token.PriceUsd,
-            BestAsk = token.PriceUsd,
-            LastPrice = token.PriceUsd,
-            ChangePct24h = token.PriceChange24h,
-            Volume24hUsd = token.Volume24h,
-            Timestamp = DateTime.UtcNow,
-        });
-        Markets.Add(market);
-        _customPoller.AddDex(market, resolvedChain, resolvedAddress);
-
-        _extMarkets.Add(new ExtMarketDto("DEX", displaySymbol, resolvedChain, resolvedAddress));
-        SaveExtMarkets();
-
-        // Mirror into the DEX desk's watchlist, which is the only list synced to the server, so a
-        // token added here is tracked 24/7 like one added on the DEX tab. Routed through that desk
-        // rather than pushed directly: FavoritesSyncService PUTs the whole set, so a second pusher
-        // with its own list would wipe the other one server-side.
-        DexTradingVM.AddToWatchlist(resolvedChain, resolvedAddress, displaySymbol,
-            token.PriceUsd, token.PriceChange24h);
-
-        RefreshMarketExplorerCollections();
-        RaiseMarketExplorerStateChanged();
-        SelectedMarket = market;
-        NewMarketSymbol = "";
-        MarketsStatus = $"{displaySymbol} (DEX·{resolvedChain}) добавлен.";
-    }
-
-    private void RemoveCustomMarket(CexMarketItemViewModel market)
-    {
-        if (market is null) return;
-
-        // Non-Binance CEX + DEX markets live in the ext list / poller.
-        var extDto = _extMarkets.FirstOrDefault(d =>
-            (d.Exchange == "DEX" && market.IsDexMarket && string.Equals(d.Symbol, market.Symbol, StringComparison.OrdinalIgnoreCase))
-            || (d.Exchange != "DEX" && string.Equals(d.Exchange, market.Exchange, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(d.Symbol, market.Symbol, StringComparison.OrdinalIgnoreCase)));
-        if (extDto is not null)
-        {
-            market.PropertyChanged -= OnMarketItemPropertyChanged;
-            _customPoller.Remove(market);
-            Markets.Remove(market);
-            _extMarkets.Remove(extDto);
-            SaveExtMarkets();
-            SaveMarketFavorites();   // the row is gone, so its star must go with it
-
-            // Keep the synced watchlist in step, otherwise removing here would leave the server
-            // polling a token the user believes they deleted.
-            if (extDto.Exchange == "DEX" && !string.IsNullOrWhiteSpace(extDto.DexAddress))
-                DexTradingVM.RemoveFromWatchlist(extDto.DexAddress);
-            if (ReferenceEquals(SelectedMarket, market)) SelectedMarket = Markets.FirstOrDefault();
-            RefreshMarketExplorerCollections();
-            RaiseMarketExplorerStateChanged();
-            MarketsStatus = $"{market.Symbol} удалён.";
-            return;
-        }
-
-        if (!_customMarketSymbols.Contains(market.Symbol, StringComparer.OrdinalIgnoreCase))
-        {
-            MarketsStatus = "Стандартные монеты удалять нельзя.";
-            return;
-        }
-
-        market.PropertyChanged -= OnMarketItemPropertyChanged;
-        Markets.Remove(market);
-        _customMarketSymbols.RemoveAll(s => string.Equals(s, market.Symbol, StringComparison.OrdinalIgnoreCase));
-        SaveCustomMarketSymbols();
-        SaveMarketFavorites();   // the row is gone, so its star must go with it
-        if (ReferenceEquals(SelectedMarket, market)) SelectedMarket = Markets.FirstOrDefault();
-        RefreshMarketExplorerCollections();
-        RaiseMarketExplorerStateChanged();
-        MarketsStatus = $"{market.Symbol} удалён (вернётся после перезапуска только если снова добавить).";
-    }
-
-    private void RestoreExtMarkets()
-    {
-        foreach (var dto in _extMarkets)
-        {
-            var isDex = string.Equals(dto.Exchange, "DEX", StringComparison.OrdinalIgnoreCase);
-            var exchangeTag = isDex ? $"DEX·{dto.DexChain}" : dto.Exchange;
-            var market = new CexMarketItemViewModel(dto.Symbol, exchangeTag);
-            ConfigureWallSettings(market);
-            market.PropertyChanged += OnMarketItemPropertyChanged;
-            Markets.Add(market);
-            if (isDex) _customPoller.AddDex(market, dto.DexChain, dto.DexAddress);
-            else       _customPoller.AddCex(market, dto.Exchange, dto.Symbol);
-        }
-    }
-
-    private static List<ExtMarketDto> LoadExtMarkets()
-    {
-        try
-        {
-            if (File.Exists(ExtMarketsPath))
-                return Services.AtomicJsonFile.Read<List<ExtMarketDto>>(ExtMarketsPath) ?? [];
-        }
-        catch { /* ignore corrupt cache */ }
-        return [];
-    }
-
-    private void SaveExtMarkets()
-    {
-        try { Services.AtomicJsonFile.Write(ExtMarketsPath, _extMarkets); }
-        catch { /* best-effort */ }
-    }
-
-    private static List<string> LoadCustomMarketSymbols()
-    {
-        try
-        {
-            if (File.Exists(CustomMarketsPath))
-                return Services.AtomicJsonFile.Read<List<string>>(CustomMarketsPath) ?? [];
-        }
-        catch { /* ignore corrupt cache */ }
-        return [];
-    }
-
-    private void SaveCustomMarketSymbols()
-    {
-        try { Services.AtomicJsonFile.Write(CustomMarketsPath, _customMarketSymbols); }
-        catch { /* best-effort */ }
-    }
-
-    private void RefreshMarketExplorerCollections()
-    {
-        if (_isRefreshingMarketExplorerCollections)
-        {
-            return;
-        }
-
-        _isRefreshingMarketExplorerCollections = true;
-
-        try
-        {
-            var visible = GetVisibleMarkets().ToList();
-            SyncMarketCollection(VisibleMarkets, visible);
-            SyncMarketCollection(MarketHeatmapMarkets, visible.Take(12));
-            BuildGlobalMarketStats();
-        }
-        finally
-        {
-            _isRefreshingMarketExplorerCollections = false;
-        }
-    }
-
-    private void SetMarketSort(string? key) => SelectedMarketSortMode = (key ?? "").ToUpperInvariant() switch
-    {
-        "PRICE" => "Price",
-        "VOLUME" => "Volume",
-        "NAME" => "Alphabetical",
-        _ => "Momentum",
-    };
-
-    private void SelectMarketTimeframe(string? timeframe)
-    {
-        if (string.IsNullOrWhiteSpace(timeframe))
-        {
-            return;
-        }
-
-        this.RaiseAndSetIfChanged(ref _selectedMarketTimeframe, timeframe.Trim().ToUpperInvariant(), nameof(SelectedMarketTimeframe));
-        SelectedMarket?.ApplyTimeframe(_selectedMarketTimeframe);
-    }
-
-    /// <summary>
-    /// Rebuilds the top market-stats strip from the tracked board. Genuine live
-    /// figures where the data exists (caps track live price, breadth-based alt
-    /// index, cap-weighted average change); plausible derivations for the rest.
-    /// Cells update in place so the strip ticks without collection churn.
-    /// </summary>
-    private void BuildGlobalMarketStats()
-    {
-        decimal totalCap = 0m, totalVol = 0m, btcCap = 0m, ethCap = 0m, capWeightedChange = 0m;
-        foreach (var market in Markets)
-        {
-            var cap = market.MarketCapUsd;
-            totalCap += cap;
-            totalVol += market.Volume24hUsd;
-            capWeightedChange += cap * market.ChangePercent;
-            if (string.Equals(market.BaseAssetSymbol, "BTC", StringComparison.OrdinalIgnoreCase)) btcCap += cap;
-            if (string.Equals(market.BaseAssetSymbol, "ETH", StringComparison.OrdinalIgnoreCase)) ethCap += cap;
-        }
-
-        var avgChange = totalCap > 0m ? capWeightedChange / totalCap : 0m;
-        var btcDom = totalCap > 0m ? btcCap / totalCap * 100m : 0m;
-        var ethDom = totalCap > 0m ? ethCap / totalCap * 100m : 0m;
-        var openInterest = totalVol * 0.32m;
-        var defiTvl = totalCap * 0.045m;
-        var funding = avgChange * 0.002m;
-        var totalCount = Math.Max(Markets.Count, 1);
-        var altIdx = (int)Math.Round(100.0 * PositiveMarketsCount / totalCount);
-        var altLabel = altIdx >= 75 ? "ALT SEASON" : altIdx <= 25 ? "BTC SEASON" : "NEUTRAL";
-
-        var cells = new (string Label, string Value, string ValueBrush, string? Delta, string DeltaBrush)[]
-        {
-            ("TOTAL MKT CAP", CompactUsd(totalCap), "#E8F4FF", SignedPct(avgChange), PctBrush(avgChange)),
-            ("24H VOLUME", CompactUsd(totalVol), "#E8F4FF", SignedPct(Math.Abs(avgChange) * 1.4m), "#3DDC84"),
-            ("BTC DOMINANCE", $"{btcDom:0.0}%", "#E8F4FF", SignedPct(-avgChange * 0.05m), PctBrush(-avgChange * 0.05m)),
-            ("ETH DOMINANCE", $"{ethDom:0.0}%", "#E8F4FF", SignedPct(avgChange * 0.04m), PctBrush(avgChange * 0.04m)),
-            ("OPEN INTEREST", CompactUsd(openInterest), "#E8F4FF", SignedPct(avgChange * 0.6m), PctBrush(avgChange * 0.6m)),
-            ("FUNDING AVG", SignedPct(funding, 3), PctBrush(funding), null, "#3DDC84"),
-            ("DEFI TVL", CompactUsd(defiTvl), "#E8F4FF", SignedPct(avgChange * 0.5m), PctBrush(avgChange * 0.5m)),
-            ("ALT SEASON IDX", altIdx.ToString(), "#E8F4FF", altLabel, "#8FA3B8"),
-        };
-
-        if (GlobalMarketStats.Count != cells.Length)
-        {
-            GlobalMarketStats.Clear();
-            foreach (var cell in cells)
-            {
-                GlobalMarketStats.Add(new MarketStatCellViewModel(cell.Label)
-                {
-                    Value = cell.Value,
-                    ValueBrush = cell.ValueBrush,
-                    Delta = cell.Delta,
-                    DeltaBrush = cell.DeltaBrush,
-                });
-            }
-
-            return;
-        }
-
-        for (var index = 0; index < cells.Length; index++)
-        {
-            var target = GlobalMarketStats[index];
-            var cell = cells[index];
-            target.Value = cell.Value;
-            target.ValueBrush = cell.ValueBrush;
-            target.Delta = cell.Delta;
-            target.DeltaBrush = cell.DeltaBrush;
-        }
-    }
-
-    private static string CompactUsd(decimal value)
-    {
-        if (value <= 0m) return "--";
-        if (value >= 1_000_000_000_000m) return $"${value / 1_000_000_000_000m:0.##}T";
-        if (value >= 1_000_000_000m) return $"${value / 1_000_000_000m:0.##}B";
-        if (value >= 1_000_000m) return $"${value / 1_000_000m:0.##}M";
-        if (value >= 1_000m) return $"${value / 1_000m:0.##}K";
-        return $"${value:0.##}";
-    }
-
-    private static string SignedPct(decimal value, int decimals = 2)
-    {
-        var format = decimals switch
-        {
-            3 => "+0.000;-0.000;+0.000",
-            1 => "+0.0;-0.0;+0.0",
-            _ => "+0.00;-0.00;+0.00",
-        };
-        return value.ToString(format, System.Globalization.CultureInfo.InvariantCulture) + "%";
-    }
-
-    private static string PctBrush(decimal value) => value >= 0m ? "#3DDC84" : "#FF6B6B";
-
-    private static void SyncMarketCollection(ObservableCollection<CexMarketItemViewModel> target, IEnumerable<CexMarketItemViewModel> source)
-    {
-        var desired = source.ToList();
-
-        for (var index = target.Count - 1; index >= 0; index--)
-        {
-            if (!desired.Contains(target[index]))
-            {
-                target.RemoveAt(index);
-            }
-        }
-
-        for (var index = 0; index < desired.Count; index++)
-        {
-            var item = desired[index];
-            if (index < target.Count && ReferenceEquals(target[index], item))
-            {
-                continue;
-            }
-
-            var existingIndex = target.IndexOf(item);
-            if (existingIndex >= 0)
-            {
-                target.Move(existingIndex, index);
-            }
-            else
-            {
-                target.Insert(index, item);
-            }
-        }
-
-        while (target.Count > desired.Count)
-        {
-            target.RemoveAt(target.Count - 1);
-        }
-    }
-
-    private CexMarketItemViewModel? GetStrongestMarket() =>
-        Markets.OrderByDescending(market => market.ChangePercent).FirstOrDefault();
-
-    private CexMarketItemViewModel? GetWeakestMarket() =>
-        Markets.OrderBy(market => market.ChangePercent).FirstOrDefault();
-
-    private CexMarketItemViewModel? GetTightestSpreadMarket() =>
-        Markets.Where(static market => market.SpreadPercent > 0)
-            .OrderBy(market => market.SpreadPercent)
-            .ThenByDescending(market => market.ActivityScore)
-            .FirstOrDefault();
-
-    private CexMarketItemViewModel? GetMostActiveMarket() =>
-        Markets.OrderByDescending(market => market.ActivityScore).FirstOrDefault();
-
-    private static string FormatMarketLeaderLabel(CexMarketItemViewModel? market, Func<CexMarketItemViewModel, string> valueSelector) =>
-        market is null ? "--" : $"{market.BaseAssetSymbol} | {valueSelector(market)}";
 
     private string GetShellNavBackground(int tabIndex) =>
         SelectedTabIndex == tabIndex && !IsPlaceholderSectionVisible ? "#12293A" : "Transparent";
@@ -8212,10 +7369,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         {
             subscription.Dispose();
         }
-        foreach (var market in Markets)
-        {
-            market.PropertyChanged -= OnMarketItemPropertyChanged;
-        }
+        MarketFeedVM.DetachMarketRows();
         _localization.LanguageChanged -= OnLocalizationLanguageChanged;
         WalletVM.PropertyChanged -= OnWalletWorkspacePropertyChanged;
         if (AIBotVM != null) AIBotVM.PropertyChanged -= OnAIBotPropertyChanged;

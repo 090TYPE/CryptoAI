@@ -196,7 +196,7 @@ public partial class MainWindowViewModel
     public string BotsRuntimeStatusLabel => AIBotVM.IsRunning ? "Rule bot is running" : "Rule bot is idle";
     public string BotsRuntimeStatusBrush => AIBotVM.IsRunning ? "#3DDC84" : "#8FA3B8";
     public string AnalyticsExecutionSummary => $"Working orders {WorkingOrdersCountLabel} | Fills {RecentFillsCountLabel} | Positions {PositionsCountLabel} | Signals {SignalsCountLabel}";
-    public string AnalyticsMarketSummary => $"{MarketBreadthLabel} | Strongest {StrongestMarketLabel} | Weakest {WeakestMarketLabel}";
+    public string AnalyticsMarketSummary => $"{MarketFeedVM.MarketBreadthLabel} | Strongest {MarketFeedVM.StrongestMarketLabel} | Weakest {MarketFeedVM.WeakestMarketLabel}";
     public string AnalyticsSniperSummary => $"Closed trades {SniperVM.CombinedTradeCount} | Win rate {SniperVM.CombinedWinRateLabel} | Net {SniperVM.NetClosedPnlLabel}";
     public string SettingsConnectivitySummary => $"{WalletVM.ConnectionSummary} | {WalletVM.GlobalExecutionSummary}";
     public string HelpQuickStartSummary => "Use Markets to pick a symbol, Trading for manual execution, Sniper for DEX monitoring, and Logs for the full runtime trail.";

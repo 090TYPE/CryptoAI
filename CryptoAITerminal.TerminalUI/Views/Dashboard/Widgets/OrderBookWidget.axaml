@@ -2,8 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.OrderBookWidget"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vm:MarketFeedOwnerViewModel"
+             x:CompileBindings="True">
   <Grid RowDefinitions="Auto,*">
 
     <!-- Column header -->
@@ -72,7 +72,10 @@
       </StackPanel>
     </ScrollViewer>
 
-    <TextBlock Grid.Row="1" Classes="WidgetEmpty"
+    <!-- Reflection binding: TopBids is an IEnumerable<T> produced by Take(9), so Count exists only
+         on the runtime iterator, not on the declared type a compiled path would resolve against.
+         Left as-is on purpose — the empty-state behaviour is unchanged by this refactor. -->
+    <TextBlock Grid.Row="1" Classes="WidgetEmpty" x:CompileBindings="False"
                IsVisible="{Binding !SelectedMarket.TopBids.Count}"
                Text="No depth for this market yet. Pick a pair on the Markets desk and wait for the book to stream in." />
   </Grid>

@@ -3,8 +3,8 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.TrackedCoinsWidget"
-             x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:DataType="vm:MarketFeedOwnerViewModel"
+             x:CompileBindings="True">
   <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8">
 
     <!-- Count badge + loading -->

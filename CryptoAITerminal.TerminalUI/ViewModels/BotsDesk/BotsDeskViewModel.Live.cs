@@ -435,7 +435,7 @@ public partial class BotsDeskViewModel
         if (_host is null) return BotsDeskData.Dash;
 
         DateTime newest = default;
-        foreach (var m in _host.Markets)
+        foreach (var m in _host.MarketFeedVM.Markets)
             if (m.LastUpdated > newest) newest = m.LastUpdated;
         if (newest == default) return BotsDeskData.Dash;
 
