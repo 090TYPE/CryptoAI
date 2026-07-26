@@ -9,7 +9,9 @@ public static class WidgetCatalog
     /// <summary>All widgets available on the dashboard. Phase 1 = first six; Phase 2 = nine market/portfolio widgets.</summary>
     public static readonly IReadOnlyList<WidgetCatalogEntry> All = new[]
     {
-        new WidgetCatalogEntry("price-stats",   "OVERVIEW",                  12, 1),
+        // Two rows, not one: the tile is ~77px of content and a single 84px cell leaves ~17px after
+        // the host's gap, padding, border and title, so it drew over the row below it.
+        new WidgetCatalogEntry("price-stats",   "OVERVIEW",                  12, 2),
         new WidgetCatalogEntry("tracked-coins", "WATCHLIST",                  4, 4),
         new WidgetCatalogEntry("price-chart",   "PRICE CHART",                8, 3),
         new WidgetCatalogEntry("liq-heatmap",   "LIQ MAP",                    4, 2),

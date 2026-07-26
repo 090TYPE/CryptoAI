@@ -9,10 +9,12 @@ namespace CryptoAITerminal.TerminalUI.Controls;
 public class WidgetGridPanel : Panel
 {
     public const int Columns = 12;
-    // 84 did not survive the host chrome: minus the 10px gap, the panel's 14+14 padding, its border
-    // and the widget title row, a rowSpan=1 cell left about 17px for content — and the default
-    // OVERVIEW layout puts PriceStatsWidget (~77px tall) in one. Widgets drew over their neighbours.
-    public const double CellHeight = 128;
+    // Keep this at 84. A rowSpan=1 cell genuinely leaves only ~17px once the 10px gap, the panel's
+    // 14+14 padding, its border and the title row are taken out — but the fix for that is to give
+    // the one widget that needs more height a second row (see WidgetCatalogEntry), not to raise the
+    // cell. Raising it multiplies through every rowSpan=2..4 widget and leaves the chart, news and
+    // analytics panels mostly empty.
+    public const double CellHeight = 84;
     public const double Gap = 10;
 
     public static readonly AttachedProperty<int> ColProperty =

@@ -1655,6 +1655,10 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
     // second click within the window applies. Anything else disarms.
     private static readonly TimeSpan LiveArmWindow = TimeSpan.FromSeconds(8);
     private DateTime _liveArmedAtUtc = DateTime.MinValue;
+    // Disarms on screen, not just on the next click. Without it the button kept reading
+    // "Confirm LIVE" in red long after the window had passed — the label claimed a state the code
+    // no longer honoured.
+    private System.Threading.Timer? _liveArmExpiryTimer;
 
     private bool _liveArmPending;
     public bool LiveArmPending
@@ -1665,6 +1669,19 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
             this.RaiseAndSetIfChanged(ref _liveArmPending, value);
             this.RaisePropertyChanged(nameof(GlobalLiveButtonLabel));
             this.RaisePropertyChanged(nameof(GlobalLiveButtonForeground));
+
+            _liveArmExpiryTimer?.Dispose();
+            _liveArmExpiryTimer = null;
+
+            if (!value) return;
+
+            _liveArmExpiryTimer = new System.Threading.Timer(
+                _ => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    if (LiveArmPending && DateTime.UtcNow - _liveArmedAtUtc >= LiveArmWindow)
+                        LiveArmPending = false;
+                }),
+                null, LiveArmWindow, System.Threading.Timeout.InfiniteTimeSpan);
         }
     }
 
