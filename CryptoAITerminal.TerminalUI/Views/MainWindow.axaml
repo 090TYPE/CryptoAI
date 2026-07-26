@@ -13,7 +13,7 @@
         MinWidth="960"
         MinHeight="640"
         WindowDecorations="None"
-        WindowState="FullScreen"
+        WindowState="Maximized"
         ExtendClientAreaToDecorationsHint="True">
 
   <!-- Hotkeys: Shift+1…9 apply order templates without clicking -->
@@ -42,7 +42,9 @@
           <DoubleTransition Property="Opacity" Duration="0:0:0.55" />
         </Transitions>
       </Grid.Transitions>
-    <Border Grid.Row="0" Grid.Column="1" Classes="TopBarShell" Padding="18,0">
+    <!-- Acts as the title bar: with WindowDecorations="None" there is no OS one to drag by. -->
+    <Border Grid.Row="0" Grid.Column="1" Classes="TopBarShell" Padding="18,0"
+            PointerPressed="OnTitleBarPressed">
       <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16" Height="54">
         <!-- Page title breadcrumb: "/ Section" -->
         <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
@@ -192,6 +194,28 @@
               </StackPanel>
             </StackPanel>
           </Border>
+
+          <!-- Window controls. WindowDecorations="None" removes the OS title bar, and the app had
+               no replacement: it could not be minimised, restored to a window, or moved to another
+               monitor. F11 toggles full screen; the title bar itself is draggable (see
+               OnTitleBarPressed). -->
+          <StackPanel Orientation="Horizontal" Spacing="2" Margin="10,0,0,0" VerticalAlignment="Center">
+            <Button Classes="GhostButton" Width="34" Height="28" Padding="0"
+                    Click="OnMinimizeClick"
+                    AutomationProperties.Name="Minimise window" ToolTip.Tip="Minimise">
+              <TextBlock Text="—" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Button>
+            <Button Classes="GhostButton" Width="34" Height="28" Padding="0"
+                    Click="OnMaximizeClick"
+                    AutomationProperties.Name="Maximise or restore window" ToolTip.Tip="Maximise / restore">
+              <TextBlock Text="▢" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Button>
+            <Button Classes="GhostButton" Width="34" Height="28" Padding="0"
+                    Click="OnExitClick"
+                    AutomationProperties.Name="Close window" ToolTip.Tip="Close (keeps running in the tray)">
+              <TextBlock Text="✕" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Button>
+          </StackPanel>
         </WrapPanel>
       </Grid>
     </Border>

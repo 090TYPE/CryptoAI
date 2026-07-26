@@ -680,6 +680,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             _gateway,          // Binance spot
             _bybitSpotGateway, // Bybit spot
             _okxSpotGateway);  // OKX spot
+        cexArbSvc.LiveExecutionGuard =
+            route => WalletVM.TryApproveLiveExecution(route, out var reason) ? null : reason;
         CrossExchangeArbVM = new CrossExchangeArbitrageViewModel(cexArbSvc);
         CrossExchangeArbVM.ToastRequested += ShowToast;
 

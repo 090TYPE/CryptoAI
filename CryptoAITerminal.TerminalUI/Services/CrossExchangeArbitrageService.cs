@@ -69,6 +69,15 @@ public sealed class CrossExchangeArbitrageService : IDisposable
         if (okx     != null) _gateways["OKX"]     = okx;
     }
 
+    /// <summary>
+    /// Asks the workspace whether live execution is allowed; returns a block reason, or null when
+    /// clear. Defaults to blocking. This service places two real orders per opportunity and the
+    /// scanner can call it once a second with AutoExecute on, and it consulted paper-only mode
+    /// nowhere at all — so an unwired instance must refuse.
+    /// </summary>
+    public Func<string, string?> LiveExecutionGuard { get; set; } =
+        _ => "Live execution guard is not wired up — refusing to place real orders.";
+
     // ── Monitoring ────────────────────────────────────────────────────────────
 
     /// <summary>
@@ -196,6 +205,9 @@ public sealed class CrossExchangeArbitrageService : IDisposable
     public async Task<(bool Ok, string Error, decimal ProfitUsd)> ExecuteArbAsync(
         CrossExchangeOpportunity opp, CancellationToken ct = default)
     {
+        if (LiveExecutionGuard($"Cross-exchange arbitrage {opp.BuyExchange}→{opp.SellExchange}") is { } blocked)
+            return (false, blocked, 0m);
+
         if (!_gateways.TryGetValue(opp.BuyExchange,  out var buyGw)  ||
             !_gateways.TryGetValue(opp.SellExchange, out var sellGw))
             return (false, $"Gateway not configured for {opp.BuyExchange} or {opp.SellExchange}", 0m);

@@ -40,7 +40,11 @@ public partial class MainWindow : Window
     private readonly UiLocalizationService _localization = UiLocalizationService.Instance;
     private readonly Dictionary<LocalizationKey, string> _sourceTexts = [];
     private readonly HashSet<LocalizationKey> _observedProperties = [];
-    private readonly List<IDisposable> _localizationSubscriptions = [];
+    // Keyed by target rather than a flat list, so registrations belonging to a control that has
+    // left the visual tree can be disposed and dropped. LocalizationKey holds a strong reference to
+    // its AvaloniaObject, and nothing ever removed entries: every row, modal and popup the app had
+    // ever rendered stayed alive here for the lifetime of the window.
+    private readonly Dictionary<AvaloniaObject, List<IDisposable>> _localizationSubscriptions = [];
     private DateTime _splashStartedAt;
     private bool _splashCompleted;
     private bool _isApplyingLocalization;
@@ -88,8 +92,10 @@ public partial class MainWindow : Window
             _localizationScanTimer.Stop();
             _localization.LanguageChanged -= OnLanguageChanged;
             _localization.TranslationsUpdated -= OnTranslationsUpdated;
-            foreach (var subscription in _localizationSubscriptions)
-                subscription.Dispose();
+            foreach (var subscriptions in _localizationSubscriptions.Values)
+                foreach (var subscription in subscriptions)
+                    subscription.Dispose();
+            _localizationSubscriptions.Clear();
 
             if (ViewModel?.AIBotVM is { } botVm)
             {
@@ -175,6 +181,21 @@ public partial class MainWindow : Window
         // Don't fire if user is typing in an input control
         if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement()
             is TextBox or NumericUpDown or ComboBox) return;
+
+        if (e.Key == Key.F11)
+        {
+            ToggleFullScreen();
+            e.Handled = true;
+            return;
+        }
+
+        // Escape skips the intro. It used to run 3.3s of fixed Task.Delay with no way out.
+        if (e.Key == Key.Escape && !_splashCompleted)
+        {
+            FinishSplash();
+            e.Handled = true;
+            return;
+        }
 
         // Don't steal keys with modifiers (those are handled by Window.KeyBindings)
         if (e.KeyModifiers != KeyModifiers.None) return;
@@ -279,10 +300,45 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Starts maximised rather than full screen. Forcing FullScreen here meant the terminal could
+    /// not share a screen with a chart or a browser, could not be moved to a second monitor and,
+    /// with WindowDecorations="None", could not be minimised at all. F11 still gives full screen.
+    /// </summary>
     private void ConfigureFullscreenWindow()
     {
-        WindowState = WindowState.FullScreen;
+        if (WindowState == WindowState.Normal)
+            WindowState = WindowState.Maximized;
     }
+
+    /// <summary>
+    /// Drags the window by its top bar, and double-click maximises, the way a real title bar does.
+    /// Only when the press lands on the bar itself — pressing a button or the ticker inside it must
+    /// still behave normally.
+    /// </summary>
+    private void OnTitleBarPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        if (e.Source is not Border && e.Source is not Grid) return;
+
+        if (e.ClickCount == 2)
+        {
+            OnMaximizeClick(sender, e);
+            e.Handled = true;
+            return;
+        }
+
+        BeginMoveDrag(e);
+    }
+
+    private void OnMinimizeClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e) =>
+        WindowState = WindowState.Minimized;
+
+    private void OnMaximizeClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e) =>
+        WindowState = WindowState == WindowState.Normal ? WindowState.Maximized : WindowState.Normal;
+
+    private void ToggleFullScreen() =>
+        WindowState = WindowState == WindowState.FullScreen ? WindowState.Maximized : WindowState.FullScreen;
 
     private void StartSplashSequence()
     {
@@ -300,6 +356,15 @@ public partial class MainWindow : Window
     {
         await Task.Delay(TimeSpan.FromMilliseconds(2600));
 
+        // Escape may have finished it already.
+        if (_splashCompleted) return;
+        FinishSplash();
+    }
+
+    /// <summary>Ends the intro immediately. Also the Escape path.</summary>
+    private async void FinishSplash()
+    {
+        if (_splashCompleted) return;
         _splashCompleted = true;
         _splashTimer.Stop();
         SplashStatusText.Text = "Workspace online";
@@ -357,6 +422,8 @@ public partial class MainWindow : Window
     /// </summary>
     private void RunLocalizationScanTick()
     {
+        PruneDetachedLocalizationTargets();
+
         var before = _observedProperties.Count;
         AttachLocalizationObservers();
         var registered = _observedProperties.Count - before;
@@ -369,6 +436,56 @@ public partial class MainWindow : Window
         else
         {
             _localizationScanStableTicks = 0;
+        }
+    }
+
+    /// <summary>
+    /// Registers a localization subscription against the control that owns it, so it can be
+    /// released when that control leaves the tree.
+    /// </summary>
+    private void TrackSubscription(AvaloniaObject target, IDisposable subscription)
+    {
+        if (!_localizationSubscriptions.TryGetValue(target, out var list))
+        {
+            list = [];
+            _localizationSubscriptions[target] = list;
+        }
+        list.Add(subscription);
+    }
+
+    /// <summary>
+    /// Drops registrations for controls that are no longer in the visual tree. Switching sections,
+    /// opening a modal or scrolling a virtualized list creates and discards controls constantly;
+    /// without this the registry — and every control in it — grew for as long as the app ran.
+    /// </summary>
+    private void PruneDetachedLocalizationTargets()
+    {
+        List<AvaloniaObject>? dead = null;
+
+        foreach (var target in _localizationSubscriptions.Keys)
+        {
+            // Only Visuals can be judged this way. Non-visual targets are kept.
+            if (target is Visual visual && !visual.IsAttachedToVisualTree())
+                (dead ??= []).Add(target);
+        }
+
+        if (dead is null) return;
+
+        foreach (var target in dead)
+        {
+            if (_localizationSubscriptions.Remove(target, out var subscriptions))
+            {
+                foreach (var subscription in subscriptions)
+                    subscription.Dispose();
+            }
+
+            _observedProperties.RemoveWhere(k => ReferenceEquals(k.Target, target));
+
+            foreach (var key in new List<LocalizationKey>(_sourceTexts.Keys))
+            {
+                if (ReferenceEquals(key.Target, target))
+                    _sourceTexts.Remove(key);
+            }
         }
     }
 
@@ -473,7 +590,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        _localizationSubscriptions.Add(control.GetObservable(ToolTip.TipProperty).Subscribe(tip =>
+        TrackSubscription(control, control.GetObservable(ToolTip.TipProperty).Subscribe(tip =>
         {
             if (tip is string text)
             {
@@ -548,7 +665,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        _localizationSubscriptions.Add(toggleSwitch.GetObservable(property).Subscribe(value =>
+        TrackSubscription(toggleSwitch, toggleSwitch.GetObservable(property).Subscribe(value =>
         {
             if (value is string text)
             {
@@ -570,7 +687,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        _localizationSubscriptions.Add(run.GetObservable(Run.TextProperty).Subscribe(text =>
+        TrackSubscription(run, run.GetObservable(Run.TextProperty).Subscribe(text =>
             HandleStringChanged(
                 key,
                 text,
@@ -588,7 +705,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        _localizationSubscriptions.Add(textBlock.GetObservable(TextBlock.TextProperty).Subscribe(text =>
+        TrackSubscription(textBlock, textBlock.GetObservable(TextBlock.TextProperty).Subscribe(text =>
             HandleStringChanged(
                 key,
                 text,
@@ -606,7 +723,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        _localizationSubscriptions.Add(contentControl.GetObservable(ContentControl.ContentProperty).Subscribe(content =>
+        TrackSubscription(contentControl, contentControl.GetObservable(ContentControl.ContentProperty).Subscribe(content =>
         {
             if (content is string text)
             {
@@ -632,7 +749,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        _localizationSubscriptions.Add(headeredControl.GetObservable(HeaderedContentControl.HeaderProperty).Subscribe(header =>
+        TrackSubscription(headeredControl, headeredControl.GetObservable(HeaderedContentControl.HeaderProperty).Subscribe(header =>
         {
             if (header is string text)
             {
@@ -658,7 +775,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        _localizationSubscriptions.Add(textBox.GetObservable(TextBox.PlaceholderTextProperty).Subscribe(placeholder =>
+        TrackSubscription(textBox, textBox.GetObservable(TextBox.PlaceholderTextProperty).Subscribe(placeholder =>
             HandleStringChanged(
                 key,
                 placeholder,

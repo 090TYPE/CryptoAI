@@ -31,6 +31,13 @@ public sealed class CompositeRuleEngine : IDisposable
     private readonly Dictionary<string, decimal>       _fundingRate = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<(string Symbol, decimal Entry, decimal PnlPct)> _openPositions = [];
 
+    // Every dictionary above is written from exchange socket callbacks (FeedMarketData /
+    // FeedCandle arrive on whatever thread the gateway publishes on) and read by EvaluateAll
+    // from the UI timer. Plain Dictionary is not safe for that: a resize during a concurrent
+    // read can throw or return a torn value. One lock, because an evaluation pass reads
+    // several of these maps and wants them consistent with each other.
+    private readonly object _stateLock = new();
+
     // ─── timer ───────────────────────────────────────────────────────────────
     private readonly DispatcherTimer _timer;
 
@@ -98,43 +105,61 @@ public sealed class CompositeRuleEngine : IDisposable
     public void FeedMarketData(string symbol, decimal lastPrice, decimal fundingRate = 0m,
         decimal price24hAgo = 0m)
     {
-        if (_lastPrice.TryGetValue(symbol, out var prev))
-            _prevPrice[symbol] = prev;
-        _lastPrice[symbol] = lastPrice;
-        if (fundingRate != 0m) _fundingRate[symbol] = fundingRate;
-        if (price24hAgo > 0m)  _price24hAgo[symbol] = price24hAgo;
+        lock (_stateLock)
+        {
+            if (_lastPrice.TryGetValue(symbol, out var prev))
+                _prevPrice[symbol] = prev;
+            _lastPrice[symbol] = lastPrice;
+            if (fundingRate != 0m) _fundingRate[symbol] = fundingRate;
+            if (price24hAgo > 0m)  _price24hAgo[symbol] = price24hAgo;
+        }
     }
 
     /// <summary>Feed a closed candle (close price + volume) for RSI/MA/VolSMA computation.</summary>
     public void FeedCandle(string symbol, decimal close, decimal volume)
     {
-        Push(_closes,  symbol, close,  MaxHistory);
-        Push(_volumes, symbol, volume, MaxHistory);
-        _lastPrice[symbol] = close;
+        lock (_stateLock)
+        {
+            Push(_closes,  symbol, close,  MaxHistory);
+            Push(_volumes, symbol, volume, MaxHistory);
+            _lastPrice[symbol] = close;
+        }
     }
 
     /// <summary>Update the open-position snapshot used by P&amp;L conditions.</summary>
     public void UpdatePositions(IEnumerable<(string Symbol, decimal Entry, decimal PnlPct)> positions)
     {
-        _openPositions.Clear();
-        _openPositions.AddRange(positions);
+        lock (_stateLock)
+        {
+            _openPositions.Clear();
+            _openPositions.AddRange(positions);
+        }
     }
 
     /// <summary>Push fresh funding-rate data (e.g. from FundingArbitrageViewModel).</summary>
     public void UpdateFundingRates(IEnumerable<(string Symbol, decimal Rate)> rates)
     {
-        foreach (var (sym, rate) in rates)
-            _fundingRate[sym] = rate;
+        lock (_stateLock)
+        {
+            foreach (var (sym, rate) in rates)
+                _fundingRate[sym] = rate;
+        }
     }
 
     // ─── public evaluation (for "Test Now" button) ────────────────────────────
 
     public void EvaluateAll()
     {
-        foreach (var rule in _rules.ToList())
+        // Held across the whole pass so a rule cannot see the price from one tick and the
+        // candle history from the next. The body is in-memory arithmetic; the socket threads
+        // only ever wait to write a few dictionary entries.
+        lock (_stateLock)
         {
-            if (rule.IsEnabled)
-                TryFireRule(rule);
+            foreach (var rule in _rules.ToList())
+            {
+                if (rule.IsEnabled)
+                    TryFireRule(rule);
+            }
         }
     }
 

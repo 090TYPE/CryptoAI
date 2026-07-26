@@ -20,16 +20,17 @@
                         FallbackValue=#0D1E2D}">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <ToggleSwitch IsChecked="{Binding CrossExchangeArbVM.AutoExecute}"
-                                OffContent="" OnContent="" Margin="0,-2,0,0" />
+                                OffContent="" OnContent="" Margin="0,-2,0,0"
+                                ToolTip.Tip="Places two real orders per opportunity, unattended, as often as once a second. Subject to the global paper-only guard." />
                   <TextBlock Text="Auto-Execute" FontSize="11" FontWeight="SemiBold"
                              Foreground="#F4B860" VerticalAlignment="Center" />
                 </StackPanel>
               </Border>
-              <!-- Warning badge when auto-execute is on -->
+              <!-- Always visible: this warned only once auto-execute was already on, which is a
+                   second too late to be a warning. -->
               <Border Grid.Column="2" CornerRadius="6" Padding="8,5"
-                      Background="#2A1500" VerticalAlignment="Center"
-                      IsVisible="{Binding CrossExchangeArbVM.AutoExecute}">
-                <TextBlock Text="⚠ LIVE ORDERS" FontSize="10" FontWeight="Bold"
+                      Background="#2A1500" VerticalAlignment="Center">
+                <TextBlock Text="⚠ PLACES LIVE ORDERS" FontSize="10" FontWeight="Bold"
                            Foreground="#FFAA33" />
               </Border>
             </Grid>
