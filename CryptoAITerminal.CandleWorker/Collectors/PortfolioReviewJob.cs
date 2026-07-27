@@ -26,7 +26,7 @@ public sealed class PortfolioReviewJob : IDataCollector
         INotifier notifier, IConfiguration cfg, ILogger<PortfolioReviewJob> log)
     {
         _keys = keys; _personal = personal; _ai = ai; _notifier = notifier; _log = log;
-        _model = cfg["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022";
+        _model = cfg["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001";
         _days = int.TryParse(cfg["AI_REVIEW_DAYS"], out var d) ? d : 7;
         _batch = int.TryParse(cfg["AI_REVIEW_BATCH"], out var b) ? b : 3;
     }

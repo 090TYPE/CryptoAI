@@ -10,7 +10,7 @@ namespace CryptoAITerminal.CandleWorker.Collectors;
 public sealed class ChainRotationJob : AiDigestJob
 {
     public ChainRotationJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<ChainRotationJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", l) { }
+        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
     public override string Kind => "chain_rotation";
     public override TimeSpan Period => TimeSpan.FromHours(12);
     protected override string SystemPrompt =>
@@ -23,7 +23,7 @@ public sealed class ChainRotationJob : AiDigestJob
 public sealed class OnchainPulseJob : AiDigestJob
 {
     public OnchainPulseJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<OnchainPulseJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", l) { }
+        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
     public override string Kind => "onchain_pulse";
     public override TimeSpan Period => TimeSpan.FromHours(12);
     protected override string SystemPrompt =>
@@ -36,7 +36,7 @@ public sealed class OnchainPulseJob : AiDigestJob
 public sealed class SentimentReadJob : AiDigestJob
 {
     public SentimentReadJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<SentimentReadJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", l) { }
+        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
     public override string Kind => "sentiment_read";
     public override TimeSpan Period => TimeSpan.FromHours(12);
     protected override string SystemPrompt =>
@@ -53,7 +53,7 @@ public sealed class SentimentReadJob : AiDigestJob
 public sealed class LiquidationReportJob : AiDigestJob
 {
     public LiquidationReportJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<LiquidationReportJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", l) { }
+        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
     public override string Kind => "liquidations";
     public override TimeSpan Period => TimeSpan.FromHours(6);
     protected override string SystemPrompt =>
@@ -66,7 +66,7 @@ public sealed class LiquidationReportJob : AiDigestJob
 public sealed class StablecoinFlowJob : AiDigestJob
 {
     public StablecoinFlowJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<StablecoinFlowJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", l) { }
+        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
     public override string Kind => "stablecoin_flows";
     public override TimeSpan Period => TimeSpan.FromHours(12);
     protected override string SystemPrompt =>
@@ -80,7 +80,7 @@ public sealed class StablecoinFlowJob : AiDigestJob
 public sealed class VolatilityReportJob : AiDigestJob
 {
     public VolatilityReportJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<VolatilityReportJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", l) { }
+        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
     public override string Kind => "volatility";
     public override TimeSpan Period => TimeSpan.FromHours(6);
     protected override string SystemPrompt =>
@@ -94,7 +94,7 @@ public sealed class VolatilityReportJob : AiDigestJob
 public sealed class MomentumScanJob : AiDigestJob
 {
     public MomentumScanJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<MomentumScanJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", l) { }
+        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
     public override string Kind => "momentum";
     public override TimeSpan Period => TimeSpan.FromHours(4);
     protected override string SystemPrompt =>
@@ -107,7 +107,7 @@ public sealed class MomentumScanJob : AiDigestJob
 public sealed class ReversalWatchJob : AiDigestJob
 {
     public ReversalWatchJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<ReversalWatchJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", l) { }
+        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
     public override string Kind => "reversals";
     public override TimeSpan Period => TimeSpan.FromHours(4);
     protected override string SystemPrompt =>
@@ -120,7 +120,7 @@ public sealed class ReversalWatchJob : AiDigestJob
 public sealed class LiquidityLeadersJob : AiDigestJob
 {
     public LiquidityLeadersJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<LiquidityLeadersJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", l) { }
+        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
     public override string Kind => "liquidity_leaders";
     public override TimeSpan Period => TimeSpan.FromHours(12);
     protected override string SystemPrompt =>
@@ -133,7 +133,7 @@ public sealed class LiquidityLeadersJob : AiDigestJob
 public sealed class MicrocapRadarJob : AiDigestJob
 {
     public MicrocapRadarJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<MicrocapRadarJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", l) { }
+        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
     public override string Kind => "microcaps";
     public override TimeSpan Period => TimeSpan.FromHours(12);
     protected override string SystemPrompt =>
@@ -146,7 +146,7 @@ public sealed class MicrocapRadarJob : AiDigestJob
 public sealed class NewsPriceGapJob : AiDigestJob
 {
     public NewsPriceGapJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<NewsPriceGapJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", l) { }
+        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
     public override string Kind => "news_price_gap";
     public override TimeSpan Period => TimeSpan.FromHours(6);
     protected override string SystemPrompt =>
@@ -163,7 +163,7 @@ public sealed class NewsPriceGapJob : AiDigestJob
 public sealed class GasVsActivityJob : AiDigestJob
 {
     public GasVsActivityJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<GasVsActivityJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", l) { }
+        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
     public override string Kind => "gas_vs_activity";
     public override TimeSpan Period => TimeSpan.FromHours(12);
     protected override string SystemPrompt =>
@@ -180,7 +180,7 @@ public sealed class GasVsActivityJob : AiDigestJob
 public sealed class TokenOfTheDayJob : AiDigestJob
 {
     public TokenOfTheDayJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<TokenOfTheDayJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", l) { }
+        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
     public override string Kind => "token_of_the_day";
     public override TimeSpan Period => TimeSpan.FromHours(24);
     protected override string SystemPrompt =>

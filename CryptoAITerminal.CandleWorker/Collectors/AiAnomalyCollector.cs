@@ -27,7 +27,7 @@ public sealed class AiAnomalyCollector : IDataCollector
         INotifier notifier, IConfiguration cfg, ILogger<AiAnomalyCollector> log)
     {
         _keys = keys; _anomalies = anomalies; _ai = ai; _notifier = notifier; _log = log;
-        _model = cfg["AI_ANOMALY_MODEL"] ?? "claude-3-5-haiku-20241022";
+        _model = cfg["AI_ANOMALY_MODEL"] ?? "claude-haiku-4-5-20251001";
         _minMovePct = decimal.TryParse(cfg["AI_ANOMALY_MIN_MOVE_PCT"], out var m) ? m : 15m;
         _cooldownHours = int.TryParse(cfg["AI_ANOMALY_COOLDOWN_HOURS"], out var c) ? c : 6;
         _batch = int.TryParse(cfg["AI_ANOMALY_BATCH"], out var b) ? b : 5;

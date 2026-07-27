@@ -43,11 +43,16 @@ public sealed record AiPolicyOptions(
             // an outage: all ~20 AIEngine providers and ClaudeAgentRunner send claude-sonnet-4-6
             // (AiRuntime.cs:53), and OpenAiAgentRunner sends gpt-4o (AiRuntime.cs:57). The haiku
             // and sonnet-5 entries are for the server's own jobs and for forward compatibility.
+            //
+            // claude-3-5-haiku-20241022 was removed on 2026-07-27: Anthropic retired it on
+            // 2026-02-19, so every request naming it now 404s. It was the default for all 31
+            // digests, the token scorer, the anomaly detector and the pre-trade reviewer, which
+            // is why those jobs had gone silent. Leaving a retired id in the allow-list only
+            // lets a stale client fail slowly at the vendor instead of fast here.
             AllowedAnthropicModels: Models(cfg("AI_ALLOWED_ANTHROPIC_MODELS"), new[]
             {
                 "claude-sonnet-4-6",
                 "claude-haiku-4-5-20251001",
-                "claude-3-5-haiku-20241022",
                 "claude-sonnet-5",
             }),
             AllowedOpenAiModels: Models(cfg("AI_ALLOWED_OPENAI_MODELS"), new[]

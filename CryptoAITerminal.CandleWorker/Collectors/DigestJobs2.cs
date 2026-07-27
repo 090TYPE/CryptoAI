@@ -8,7 +8,7 @@ namespace CryptoAITerminal.CandleWorker.Collectors;
 public sealed class WeeklyRecapJob : AiDigestJob
 {
     public WeeklyRecapJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, ILogger<WeeklyRecapJob> log)
-        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", log) { }
+        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", log) { }
 
     public override string Kind => "weekly";
     public override TimeSpan Period => TimeSpan.FromDays(7);
@@ -36,7 +36,7 @@ public sealed class WeeklyRecapJob : AiDigestJob
 public sealed class NewListingRadarJob : AiDigestJob
 {
     public NewListingRadarJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, ILogger<NewListingRadarJob> log)
-        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", log) { }
+        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", log) { }
 
     public override string Kind => "new_listings";
     public override TimeSpan Period => TimeSpan.FromHours(6);
@@ -56,7 +56,7 @@ public sealed class NewListingRadarJob : AiDigestJob
 public sealed class WhaleInterpreterJob : AiDigestJob
 {
     public WhaleInterpreterJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, ILogger<WhaleInterpreterJob> log)
-        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", log) { }
+        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", log) { }
 
     public override string Kind => "whales";
     public override TimeSpan Period => TimeSpan.FromHours(6);
@@ -76,7 +76,7 @@ public sealed class WhaleInterpreterJob : AiDigestJob
 public sealed class GasAdvisorJob : AiDigestJob
 {
     public GasAdvisorJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, ILogger<GasAdvisorJob> log)
-        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", log) { }
+        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", log) { }
 
     public override string Kind => "gas";
     public override TimeSpan Period => TimeSpan.FromHours(6);
@@ -96,7 +96,7 @@ public sealed class GasAdvisorJob : AiDigestJob
 public sealed class RugPostMortemJob : AiDigestJob
 {
     public RugPostMortemJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, ILogger<RugPostMortemJob> log)
-        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", log) { }
+        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", log) { }
 
     public override string Kind => "rug_postmortem";
     public override TimeSpan Period => TimeSpan.FromHours(12);

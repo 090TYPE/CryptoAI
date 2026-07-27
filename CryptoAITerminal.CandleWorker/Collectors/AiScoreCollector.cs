@@ -26,7 +26,7 @@ public sealed class AiScoreCollector : IDataCollector
         AiProxy ai, IConfiguration cfg, ILogger<AiScoreCollector> log)
     {
         _keys = keys; _scores = scores; _read = read; _ai = ai; _log = log;
-        _model = cfg["AI_SCORE_MODEL"] ?? "claude-3-5-haiku-20241022";
+        _model = cfg["AI_SCORE_MODEL"] ?? "claude-haiku-4-5-20251001";
         _batch = int.TryParse(cfg["AI_SCORE_BATCH"], out var b) ? b : 5;
         _maxAgeHours = int.TryParse(cfg["AI_SCORE_MAX_AGE_HOURS"], out var h) ? h : 24;
     }

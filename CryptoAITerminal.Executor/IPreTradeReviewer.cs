@@ -33,7 +33,7 @@ public sealed class AiPreTradeReviewer : IPreTradeReviewer
         IConfiguration cfg, ILogger<AiPreTradeReviewer> log)
     {
         _keys = keys; _ai = ai; _facts = facts; _log = log;
-        _model = cfg["AI_PRETRADE_MODEL"] ?? "claude-3-5-haiku-20241022";
+        _model = cfg["AI_PRETRADE_MODEL"] ?? "claude-haiku-4-5-20251001";
         _required = bool.TryParse(cfg["AI_PRETRADE_REQUIRED"], out var r) && r;
     }
 

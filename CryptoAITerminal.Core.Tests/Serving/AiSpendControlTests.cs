@@ -160,7 +160,7 @@ public class AiSpendControlTests
     public void FromConfig_takes_overrides_and_ignores_unusable_values()
     {
         var configured = Options(
-            ("AI_ALLOWED_ANTHROPIC_MODELS", " claude-sonnet-5 , claude-3-5-haiku-20241022 "),
+            ("AI_ALLOWED_ANTHROPIC_MODELS", " claude-sonnet-5 , claude-haiku-4-5-20251001 "),
             ("AI_MAX_TOKENS_CAP", "250"),
             ("AI_MAX_MESSAGES", "0"),
             ("AI_DAILY_TOKENS_PER_LICENSE", "not a number"));

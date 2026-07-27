@@ -8,7 +8,7 @@ namespace CryptoAITerminal.CandleWorker.Collectors;
 public sealed class DailyDigestJob : AiDigestJob
 {
     public DailyDigestJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, ILogger<DailyDigestJob> log)
-        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", log) { }
+        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", log) { }
 
     public override string Kind => "daily";
     public override TimeSpan Period => TimeSpan.FromHours(24);
@@ -36,7 +36,7 @@ public sealed class DailyDigestJob : AiDigestJob
 public sealed class MoversDigestJob : AiDigestJob
 {
     public MoversDigestJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, ILogger<MoversDigestJob> log)
-        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", log) { }
+        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", log) { }
 
     public override string Kind => "movers";
     public override TimeSpan Period => TimeSpan.FromHours(6);
@@ -57,7 +57,7 @@ public sealed class MoversDigestJob : AiDigestJob
 public sealed class NarrativeDigestJob : AiDigestJob
 {
     public NarrativeDigestJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, ILogger<NarrativeDigestJob> log)
-        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", log) { }
+        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", log) { }
 
     public override string Kind => "narratives";
     public override TimeSpan Period => TimeSpan.FromHours(12);
@@ -77,7 +77,7 @@ public sealed class NarrativeDigestJob : AiDigestJob
 public sealed class NewsImpactDigestJob : AiDigestJob
 {
     public NewsImpactDigestJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, ILogger<NewsImpactDigestJob> log)
-        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-3-5-haiku-20241022", log) { }
+        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", log) { }
 
     public override string Kind => "news_impact";
     public override TimeSpan Period => TimeSpan.FromHours(3);
