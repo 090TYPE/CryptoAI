@@ -349,6 +349,62 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         && !_host.AiSettingsStatus.StartsWith("Error", StringComparison.OrdinalIgnoreCase)
         ? SettingsData.Green : SettingsData.Amber;
 
+    // ── Subscription (bound to a CryptoAI server) ────────────────────────────
+    //
+    // When the terminal is bound to a server, the customer has no AI provider to configure: the
+    // server holds the key, picks the model per feature and meters the spend. Showing key and
+    // model fields there is worse than useless — they imply the customer controls something they
+    // do not, and anything typed into them is ignored. The section shows the subscription instead.
+    //
+    // On a customer's own key nothing changes: the fields are still the only way to set it up.
+
+    private AiSubscription? _sub;
+
+    public bool IsServerBound => AiSubscriptionService.IsServerBound;
+    public bool IsOwnKey => !IsServerBound;
+
+    public string SubTier => _sub?.Edition is { Length: > 0 } e ? e.ToUpperInvariant() : "—";
+
+    public string SubUsage => _sub is not { } s || s.Cap <= 0
+        ? "нет данных"
+        : $"{s.Used / 1000.0:0.#}k из {s.Cap / 1000.0:0.#}k токенов";
+
+    public string SubRemaining => _sub is not { } s || s.Cap <= 0
+        ? ""
+        : $"осталось {s.Remaining / 1000.0:0.#}k · обновится в {s.ResetsUtc.ToLocalTime():HH:mm}";
+
+    /// <summary>Width of the filled part of the allowance bar, in the 320px track the view draws.</summary>
+    public double SubBarWidth => (_sub?.Fraction ?? 0) * 320;
+
+    // Amber from 80% so running out is not a surprise, red once there is nothing left.
+    public string SubBarColor => (_sub?.Fraction ?? 0) switch
+    {
+        >= 1.0 => SettingsData.Red,
+        >= 0.8 => SettingsData.Amber,
+        _ => SettingsData.Green
+    };
+
+    public string SubStatusText => _sub is null
+        ? "Не удалось получить данные подписки — проверьте лицензию и связь с сервером."
+        : _sub.Fraction >= 1.0
+            ? "Дневной лимит исчерпан. AI-панели работают на встроенных расчётах до обновления лимита."
+            : "AI работает через сервер CryptoAI: ключ, модель и лимит — на стороне сервиса.";
+
+    public string SubStatusColor => _sub is null ? SettingsData.Amber
+        : _sub.Fraction >= 1.0 ? SettingsData.Red : SettingsData.Green;
+
+    /// <summary>Pulls the allowance and repaints. Safe to call when unbound — it just clears.</summary>
+    public async void RefreshSubscription()
+    {
+        _sub = await AiSubscriptionService.FetchAsync().ConfigureAwait(true);
+        foreach (var n in new[]
+                 {
+                     nameof(SubTier), nameof(SubUsage), nameof(SubRemaining), nameof(SubBarWidth),
+                     nameof(SubBarColor), nameof(SubStatusText), nameof(SubStatusColor)
+                 })
+            this.RaisePropertyChanged(n);
+    }
+
     private void AiSave()
     {
         if (_host is not { } h) { Toast("Settings are not connected yet", "warn"); return; }
@@ -507,6 +563,16 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     // ── refresh orchestration ────────────────────────────────────────────────
     private void Refresh()
     {
+        // Raised unconditionally: the binding to a server is established during startup, which can
+        // land after this panel has already drawn once. Without this the section stays on whichever
+        // branch it happened to render first — key fields for a licensed customer who has none, or
+        // an empty subscription block for someone on their own key.
+        this.RaisePropertyChanged(nameof(IsServerBound));
+        this.RaisePropertyChanged(nameof(IsOwnKey));
+
+        // Fetched on every section switch rather than once at startup: the number moves while the
+        // terminal is open, and a stale allowance is the one figure a customer will act on.
+        if (IsServerBound) RefreshSubscription();
         SyncFields();
         RebuildNav();
         RebuildProviders();
