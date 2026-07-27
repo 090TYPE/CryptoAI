@@ -166,7 +166,11 @@ app.Use(async (ctx, next) =>
     var licensed =
         !path.StartsWith("/health", StringComparison.OrdinalIgnoreCase) &&
         !path.StartsWith("/api/keys", StringComparison.OrdinalIgnoreCase) &&
-        !path.StartsWith("/api/admin", StringComparison.OrdinalIgnoreCase);
+        !path.StartsWith("/api/admin", StringComparison.OrdinalIgnoreCase) &&
+        // The admin panel is a page, and a browser navigating to a page cannot set headers. It
+        // carries no data of its own — the operator types the token into it and every call it
+        // then makes lands on /api/admin, which is gated normally.
+        !path.Equals("/admin", StringComparison.OrdinalIgnoreCase);
 
     if (licensed)
     {
@@ -191,7 +195,8 @@ app.Use(async (ctx, next) =>
 {
     var path = ctx.Request.Path.Value ?? string.Empty;
 
-    if (path.StartsWith("/health", StringComparison.OrdinalIgnoreCase))
+    if (path.StartsWith("/health", StringComparison.OrdinalIgnoreCase) ||
+        path.Equals("/admin", StringComparison.OrdinalIgnoreCase))
     {
         await next();
         return;
@@ -720,6 +725,18 @@ app.MapDelete("/api/admin/settings/{key}", async (string key, SettingsStore sett
 
 app.MapGet("/api/admin/settings/history", async (string? key, int? limit, SettingsStore settings, CancellationToken ct) =>
     Results.Ok(await settings.HistoryAsync(key, limit ?? 100, ct)));
+
+// The panel itself. Served outside the /api/admin prefix because a browser navigating to a page
+// cannot send X-Admin — the operator types the token into the page, which then sends it on every
+// data call. The HTML carries no secrets, so serving it unauthenticated costs nothing beyond
+// advertising that an admin API exists.
+//
+// It is reachable from the internet whenever caddy is in front, so it is opt-out: ADMIN_UI=off
+// leaves it unmapped for deployments that would rather reach it through an ssh tunnel.
+if (!string.Equals(builder.Configuration["ADMIN_UI"], "off", StringComparison.OrdinalIgnoreCase))
+{
+    app.MapGet("/admin", () => Results.Content(AdminUi.Html, "text/html; charset=utf-8"));
+}
 
 // Who made the change, for the audit trail. There is no per-admin identity yet — everyone shares
 // ADMIN_TOKEN — so the address is the most specific thing available and is better than null.
