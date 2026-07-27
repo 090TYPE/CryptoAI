@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -44,7 +44,7 @@ public sealed class BotParameterAiProvider
                 "Provide a numeric value for EVERY requested key. " +
                 "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"params\":{<key>:number,...},\"rationale\":string}.",
-            userContent: prompt, _http, ct).ConfigureAwait(false);
+            userContent: prompt, AiFeatureIds.BotParameters, _http, ct).ConfigureAwait(false);
 
         return ParseResponse(text, _model, paramKeys);
     }

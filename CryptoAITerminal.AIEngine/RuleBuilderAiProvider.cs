@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -53,7 +53,7 @@ public sealed class RuleBuilderAiProvider
         var text = await ChatClient.CompleteTextAsync(
             _apiKey, _model, maxTokens: 600, temperature: 0.1,
             system: system,
-            userContent: "Instruction: " + instruction + "\n\nReturn the JSON rule.",
+            userContent: "Instruction: " + instruction + "\n\nReturn the JSON rule.", AiFeatureIds.RuleBuilder,
             _http, ct).ConfigureAwait(false);
 
         return ParseResponse(text, _model);

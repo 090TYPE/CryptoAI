@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
@@ -94,7 +94,7 @@ public sealed class AiSignalDeskProvider
         var text = await ChatClient.CompleteTextAsync(
             _apiKey, _model, maxTokens: 2000, temperature: 0.4,
             system: system,
-            userContent: BuildUserContent(ctx),
+            userContent: BuildUserContent(ctx), AiFeatureIds.SignalDesk,
             _http, ct).ConfigureAwait(false);
 
         return Parse(text, $"{AiRuntime.VendorLabel} {_model}");

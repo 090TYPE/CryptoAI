@@ -51,7 +51,15 @@ public static class ChatClient
     /// back to their offline heuristic, exactly as the old per-provider code did.
     /// </summary>
     /// <param name="apiKey">Key for the active vendor (callers pass <c>AiRuntime.ActiveApiKey</c> by default).</param>
-    /// <param name="model">Model id for the active vendor.</param>
+    /// <param name="model">
+    /// Model id for the active vendor. When bound to a server this is a REQUEST, not a decision:
+    /// the server substitutes whatever it has assigned to <paramref name="feature"/>.
+    /// </param>
+    /// <param name="feature">
+    /// Which product feature is calling, from <see cref="AiFeatureIds"/>. Sent only in server mode,
+    /// where it is what lets an operator route this feature to a different model without a new
+    /// build. Null means "do not participate" and the model above stands.
+    /// </param>
     public static async Task<string> CompleteTextAsync(
         string apiKey,
         string model,
@@ -59,6 +67,7 @@ public static class ChatClient
         double? temperature,
         string system,
         string userContent,
+        string? feature,
         HttpClient? http = null,
         CancellationToken ct = default)
     {
@@ -68,16 +77,40 @@ public static class ChatClient
 
         var client = http ?? SharedHttp;
         return AiRuntime.Vendor == AiVendor.OpenAi
-            ? await OpenAiAsync(client, apiKey, model, maxTokens, temperature, system, userContent, ct).ConfigureAwait(false)
-            : await AnthropicAsync(client, apiKey, model, maxTokens, temperature, system, userContent, ct).ConfigureAwait(false);
+            ? await OpenAiAsync(client, apiKey, model, maxTokens, temperature, system, userContent, feature, ct).ConfigureAwait(false)
+            : await AnthropicAsync(client, apiKey, model, maxTokens, temperature, system, userContent, feature, ct).ConfigureAwait(false);
     }
 
     private static readonly HttpClient SharedHttp = new() { Timeout = TimeSpan.FromSeconds(30) };
 
+    // ── What the server actually ran ─────────────────────────────────────────
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> LastModels = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The model the server reported for this feature on its last call, or null if it has not run
+    /// yet. Kept per feature rather than as one "last model" because several panels refresh at
+    /// once and a single slot would show whichever finished last.
+    ///
+    /// Used for the Source label under a result, so it names what produced the answer rather than
+    /// what the terminal asked for — which after a server-side switch are different things.
+    /// </summary>
+    public static string? LastServerModel(string feature) =>
+        LastModels.TryGetValue(feature, out var m) ? m : null;
+
+    private static void RecordServerModel(string? feature, HttpResponseMessage res)
+    {
+        if (string.IsNullOrEmpty(feature)) return;
+        if (res.Headers.TryGetValues("X-AI-Model", out var vals))
+        {
+            var m = vals.FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(m)) LastModels[feature] = m;
+        }
+    }
+
     // ── Anthropic Messages API ────────────────────────────────────────────────
     private static async Task<string> AnthropicAsync(
         HttpClient http, string apiKey, string model, int maxTokens, double? temperature,
-        string system, string userContent, CancellationToken ct)
+        string system, string userContent, string? feature, CancellationToken ct)
     {
         var payload = new Dictionary<string, object?>
         {
@@ -97,6 +130,8 @@ public static class ChatClient
         {
             var token = LicenseToken;
             if (!string.IsNullOrWhiteSpace(token)) req.Headers.Add("X-License", token);
+            // Only in server mode: on a customer's own key there is nobody to interpret it.
+            if (!string.IsNullOrEmpty(feature)) req.Headers.Add("X-AI-Feature", feature);
         }
         else
         {
@@ -105,6 +140,7 @@ public static class ChatClient
         }
 
         using var res = await http.SendAsync(req, ct).ConfigureAwait(false);
+        RecordServerModel(feature, res);
         var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
         if (!res.IsSuccessStatusCode)
             throw AiCallException.FromResponse("Anthropic", (int)res.StatusCode, body);
@@ -126,7 +162,7 @@ public static class ChatClient
     // ── OpenAI Chat Completions API ───────────────────────────────────────────
     private static async Task<string> OpenAiAsync(
         HttpClient http, string apiKey, string model, int maxTokens, double? temperature,
-        string system, string userContent, CancellationToken ct)
+        string system, string userContent, string? feature, CancellationToken ct)
     {
         var payload = new Dictionary<string, object?>
         {
@@ -149,6 +185,7 @@ public static class ChatClient
         {
             var token = LicenseToken;
             if (!string.IsNullOrWhiteSpace(token)) req.Headers.Add("X-License", token);
+            if (!string.IsNullOrEmpty(feature)) req.Headers.Add("X-AI-Feature", feature);
         }
         else
         {
@@ -156,6 +193,7 @@ public static class ChatClient
         }
 
         using var res = await http.SendAsync(req, ct).ConfigureAwait(false);
+        RecordServerModel(feature, res);
         var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
         if (!res.IsSuccessStatusCode)
             throw AiCallException.FromResponse("OpenAI", (int)res.StatusCode, body);

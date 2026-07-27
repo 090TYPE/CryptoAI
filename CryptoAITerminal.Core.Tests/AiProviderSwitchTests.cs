@@ -78,7 +78,7 @@ public class AiProviderSwitchTests
         var http = new HttpClient(handler);
 
         var text = await WithVendor(AiVendor.OpenAi, () =>
-            ChatClient.CompleteTextAsync("sk-test", "gpt-4o", 100, 0.2, "sys", "hi", http));
+            ChatClient.CompleteTextAsync("sk-test", "gpt-4o", 100, 0.2, "sys", "hi", null, http));
 
         Assert.Equal("hello from gpt", text);
         Assert.Contains("api.openai.com", handler.LastUri!.ToString());
@@ -92,7 +92,7 @@ public class AiProviderSwitchTests
         var http = new HttpClient(handler);
 
         var text = await WithVendor(AiVendor.Anthropic, () =>
-            ChatClient.CompleteTextAsync("sk-ant", "claude-sonnet-4-6", 100, 0.2, "sys", "hi", http));
+            ChatClient.CompleteTextAsync("sk-ant", "claude-sonnet-4-6", 100, 0.2, "sys", "hi", null, http));
 
         Assert.Equal("hi from claude", text);
         Assert.Contains("api.anthropic.com", handler.LastUri!.ToString());
@@ -108,7 +108,7 @@ public class AiProviderSwitchTests
         // but Assert.ThrowsAsync demands an exact type — assert the real one.
         var ex = await Assert.ThrowsAsync<AiCallException>(() =>
             WithVendor(AiVendor.OpenAi, () =>
-                ChatClient.CompleteTextAsync("k", "gpt-4o", 50, null, "s", "u", failing)));
+                ChatClient.CompleteTextAsync("k", "gpt-4o", 50, null, "s", "u", null, failing)));
 
         Assert.IsAssignableFrom<HttpRequestException>(ex);
         Assert.Equal(HttpStatusCode.TooManyRequests, ex.StatusCode);

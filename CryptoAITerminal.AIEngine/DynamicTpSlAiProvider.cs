@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -38,7 +38,7 @@ public sealed class DynamicTpSlAiProvider
                 "markets, tighter in calm ones; keep reward:risk в‰Ґ 1.3. Both values are positive percentages " +
                 "from entry. Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"tp_percent\":number,\"sl_percent\":number,\"trailing\":boolean,\"rationale\":string}.",
-            userContent: prompt, _http, ct).ConfigureAwait(false);
+            userContent: prompt, AiFeatureIds.DynamicTpSl, _http, ct).ConfigureAwait(false);
 
         var text = AiJson.StripFences(raw);
         if (text is null) return null;

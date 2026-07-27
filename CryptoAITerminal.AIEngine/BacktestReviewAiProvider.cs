@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -35,7 +35,7 @@ public sealed class BacktestReviewAiProvider
                 "buy&hold by luck, sky-high Sharpe on tiny samples, and large drawdowns. " +
                 "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"verdict\":\"ROBUST\"|\"PROMISING\"|\"WEAK\"|\"OVERFIT\",\"summary\":string,\"risks\":[string]}.",
-            userContent: prompt, _http, ct).ConfigureAwait(false);
+            userContent: prompt, AiFeatureIds.BacktestReview, _http, ct).ConfigureAwait(false);
 
         return ParseResponse(text, _model);
     }

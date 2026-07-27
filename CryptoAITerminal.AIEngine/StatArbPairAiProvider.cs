@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -41,7 +41,7 @@ public sealed class StatArbPairAiProvider
                 "WAIT when inside thresholds, AVOID when correlation/half-life are poor. " +
                 "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"tradeable\":boolean,\"score\":0..100,\"signal\":\"LONG_A_SHORT_B\"|\"SHORT_A_LONG_B\"|\"WAIT\"|\"AVOID\",\"reason\":string}.",
-            userContent: prompt, _http, ct).ConfigureAwait(false);
+            userContent: prompt, AiFeatureIds.StatArbPair, _http, ct).ConfigureAwait(false);
 
         var text = AiJson.StripFences(raw);
         if (text is null) return null;

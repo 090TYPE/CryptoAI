@@ -44,7 +44,8 @@ public static class AiUiTranslator
                 // whole batch vanishes with no error. Keep the request under the cap and keep
                 // batches small enough to fit.
                 maxTokens: 2000, temperature: 0.0,
-                system: System, userContent: user, ct: ct).ConfigureAwait(false);
+                system: System, userContent: user,
+                feature: AiFeatureIds.UiTranslate, ct: ct).ConfigureAwait(false);
         }
         catch
         {

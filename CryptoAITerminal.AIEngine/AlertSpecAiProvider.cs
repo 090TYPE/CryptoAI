@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -44,7 +44,7 @@ public sealed class AlertSpecAiProvider
         var raw = await ChatClient.CompleteTextAsync(
             _apiKey, _model, maxTokens: 200, temperature: 0.0,
             system: system,
-            userContent: "Request: " + instruction + "\n\nReturn the JSON alert.",
+            userContent: "Request: " + instruction + "\n\nReturn the JSON alert.", AiFeatureIds.AlertSpec,
             _http, ct).ConfigureAwait(false);
 
         var text = AiJson.StripFences(raw);

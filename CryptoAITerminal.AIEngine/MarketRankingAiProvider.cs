@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -41,7 +41,7 @@ public sealed class MarketRankingAiProvider
                 "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"opportunities\":[{\"symbol\":string,\"score\":0..100,\"bias\":\"LONG\"|\"SHORT\"|\"WATCH\",\"reason\":string}]}. " +
                 "Higher score = stronger setup. Only include symbols present in the input.",
-            userContent: prompt, _http, ct).ConfigureAwait(false);
+            userContent: prompt, AiFeatureIds.MarketRanking, _http, ct).ConfigureAwait(false);
 
         return ParseResponse(text, _model);
     }

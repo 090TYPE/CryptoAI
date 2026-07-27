@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -38,7 +38,7 @@ public sealed class ExecutionScheduleAiProvider
                 "slices and longer intervals for large-vs-liquidity orders; fewer/faster when urgent. " +
                 "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"slices\":int,\"interval_seconds\":int,\"slice_usd\":number,\"rationale\":string}.",
-            userContent: prompt, _http, ct).ConfigureAwait(false);
+            userContent: prompt, AiFeatureIds.ExecutionSchedule, _http, ct).ConfigureAwait(false);
 
         var text = AiJson.StripFences(raw);
         if (text is null) return null;

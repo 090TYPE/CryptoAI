@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -38,7 +38,7 @@ public sealed class DexTrendingAiProvider
                 "(thin liquidity, parabolic-then-fading, volume >> liquidity churn). " +
                 "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"tokens\":[{\"symbol\":string,\"address\":string,\"score\":0..100,\"signal\":\"MOMENTUM\"|\"EARLY\"|\"FADING\"|\"AVOID\",\"reason\":string}]}.",
-            userContent: prompt, _http, ct).ConfigureAwait(false);
+            userContent: prompt, AiFeatureIds.DexTrending, _http, ct).ConfigureAwait(false);
 
         return Parse(text, _model);
     }

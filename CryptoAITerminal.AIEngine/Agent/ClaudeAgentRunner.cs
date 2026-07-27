@@ -99,6 +99,9 @@ public sealed class ClaudeAgentRunner : IAgentRunner
             {
                 var token = ChatClient.LicenseTokenProvider?.Invoke();
                 if (!string.IsNullOrWhiteSpace(token)) req.Headers.Add("X-License", token);
+                // Every iteration of the loop is the same feature, so the operator sets one model
+                // and it applies to the whole run rather than to the first call only.
+                req.Headers.Add("X-AI-Feature", AiFeatureIds.Agent);
             }
             else
             {

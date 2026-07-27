@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -43,7 +43,7 @@ public sealed class PortfolioRebalanceAiProvider
                 "the holdings (you may add USDT as a cash buffer). " +
                 "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"targets\":[{\"symbol\":string,\"target_pct\":0..100,\"reason\":string}],\"commentary\":string}.",
-            userContent: prompt, _http, ct).ConfigureAwait(false);
+            userContent: prompt, AiFeatureIds.PortfolioRebalance, _http, ct).ConfigureAwait(false);
 
         return ParseResponse(text, _model);
     }

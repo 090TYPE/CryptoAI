@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -39,7 +39,7 @@ public sealed class NewsDigestAiProvider
                 "You are a crypto market analyst. Read the headlines and write a concise market-pulse digest. " +
                 "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"summary\":string,\"bias\":\"BULLISH\"|\"BEARISH\"|\"NEUTRAL\"}.",
-            userContent: prompt, _http, ct).ConfigureAwait(false);
+            userContent: prompt, AiFeatureIds.NewsDigest, _http, ct).ConfigureAwait(false);
 
         return ParseResponse(text, _model);
     }

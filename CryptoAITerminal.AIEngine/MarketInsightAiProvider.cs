@@ -47,7 +47,7 @@ public sealed class MarketInsightAiProvider
             _apiKey, _model, maxTokens: 400, temperature: 0.3,
             system: system,
             userContent: string.Join('\n', dataLines.Take(40)) + "\n\nReturn the JSON.",
-            _http, ct).ConfigureAwait(false);
+            AiFeatureIds.MarketInsight, _http, ct).ConfigureAwait(false);
 
         return ParseResponse(text, _model, signalVocabulary);
     }

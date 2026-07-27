@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -40,7 +40,7 @@ public sealed class ClaudeSignalProvider
                 "You are a quantitative crypto trading assistant. " +
                 "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"signal\":\"buy\"|\"sell\"|\"hold\",\"confidence\":0..1,\"reason\":string}.",
-            userContent: prompt, _http, ct).ConfigureAwait(false);
+            userContent: prompt, AiFeatureIds.Signal, _http, ct).ConfigureAwait(false);
 
         return ParseResponse(text);
     }

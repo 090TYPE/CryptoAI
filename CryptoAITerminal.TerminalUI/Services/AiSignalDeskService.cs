@@ -65,7 +65,8 @@ public sealed class AiSignalDeskService
         {
             var reply = await ChatClient.CompleteTextAsync(
                 ApiKey, Model, maxTokens: 500, temperature: 0.5,
-                system: system, userContent: question, ct: ct).ConfigureAwait(false);
+                system: system, userContent: question,
+                feature: AiFeatureIds.SignalDeskStream, ct: ct).ConfigureAwait(false);
             return string.IsNullOrWhiteSpace(reply) ? null : reply.Trim();
         }
         catch (OperationCanceledException) { throw; }

@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using CryptoAITerminal.Core.Models;
 
 namespace CryptoAITerminal.AIEngine;
@@ -44,7 +44,7 @@ public sealed class TokenSecurityAiProvider
                 "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"risk\":0..100,\"verdict\":\"AVOID\"|\"RISKY\"|\"NEUTRAL\"|\"FAVORABLE\",\"red_flags\":[string],\"reason\":string}. " +
                 "Higher risk = more dangerous. Be conservative: thin liquidity, parabolic pumps, and fresh deployers are red flags.",
-            userContent: prompt, _http, ct).ConfigureAwait(false);
+            userContent: prompt, AiFeatureIds.TokenSecurity, _http, ct).ConfigureAwait(false);
 
         return ParseResponse(text, _model);
     }

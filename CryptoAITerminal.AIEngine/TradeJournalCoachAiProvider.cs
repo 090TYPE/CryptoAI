@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -40,7 +40,7 @@ public sealed class TradeJournalCoachAiProvider
                 "suggestions to improve. Be direct and practical; avoid generic platitudes. " +
                 "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
                 "Schema: {\"summary\":string,\"strengths\":[string],\"leaks\":[string],\"suggestions\":[string]}.",
-            userContent: prompt, _http, ct).ConfigureAwait(false);
+            userContent: prompt, AiFeatureIds.TradeJournalCoach, _http, ct).ConfigureAwait(false);
 
         return ParseResponse(text, _model);
     }

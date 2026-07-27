@@ -38,13 +38,17 @@ public class ChatClientServerRoutingTests
             ChatClient.LicenseTokenProvider = () => "tok-abc";
 
             var text = await ChatClient.CompleteTextAsync(
-                apiKey: "", model: "claude-3-5-haiku", maxTokens: 50, temperature: null,
-                system: "sys", userContent: "hi", http: new HttpClient(handler));
+                apiKey: "", model: "claude-sonnet-4-6", maxTokens: 50, temperature: null,
+                system: "sys", userContent: "hi", feature: AiFeatureIds.TokenSecurity,
+                http: new HttpClient(handler));
 
             Assert.Equal("hello from server", text);
             Assert.Equal("https://api.example.com/api/ai/message", handler.Request!.RequestUri!.ToString());
             Assert.Equal("tok-abc", Assert.Single(handler.Request.Headers.GetValues("X-License")));
             Assert.False(handler.Request.Headers.Contains("x-api-key"));
+            // The server needs this to know which model to substitute; without it a bound terminal
+            // silently keeps whatever model it was built with.
+            Assert.Equal("token_security", Assert.Single(handler.Request.Headers.GetValues("X-AI-Feature")));
         }
         finally
         {
@@ -64,11 +68,15 @@ public class ChatClientServerRoutingTests
             AiRuntime.Vendor = AiVendor.Anthropic;
             ChatClient.ServerBaseUrl = null;
 
-            await ChatClient.CompleteTextAsync("sk-key", "claude", 10, null, "s", "u", http: new HttpClient(handler));
+            await ChatClient.CompleteTextAsync("sk-key", "claude", 10, null, "s", "u",
+                feature: AiFeatureIds.TokenSecurity, http: new HttpClient(handler));
 
             Assert.Equal("https://api.anthropic.com/v1/messages", handler.Request!.RequestUri!.ToString());
             Assert.True(handler.Request.Headers.Contains("x-api-key"));
             Assert.False(handler.Request.Headers.Contains("X-License"));
+            // On the customer's own key there is no server to interpret the feature, and sending an
+            // unknown header straight to the vendor is at best noise.
+            Assert.False(handler.Request.Headers.Contains("X-AI-Feature"));
         }
         finally { AiRuntime.Vendor = prevVendor; }
     }
