@@ -39,6 +39,14 @@ tools
 .claude
 .github
 db
+# The bot's real config and its order history are untracked files that exist only on a dev machine.
+# Without these lines a local build bakes the live BotFather and Crypto Pay tokens into an image
+# layer, and appsettings.json is copied to the output directory by the csproj, so it would also
+# silently win over the environment variables the compose service sets.
+CryptoAITerminal.LicenseBot/appsettings.json
+CryptoAITerminal.LicenseBot/licensebot.db
+CryptoAITerminal.LicenseBot/licensebot.db-wal
+CryptoAITerminal.LicenseBot/licensebot.db-shm
 !**/.gitignore
 !.git/HEAD
 !.git/config

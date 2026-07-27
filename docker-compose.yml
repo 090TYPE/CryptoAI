@@ -71,6 +71,42 @@ services:
       # Honour X-Forwarded-For only from caddy on the compose bridge; without this every audit
       # row records the proxy's address and all anonymous traffic shares one rate-limit window.
       TRUSTED_PROXY_CIDRS: "${TRUSTED_PROXY_CIDRS:-127.0.0.1/32,::1/128,172.16.0.0/12}"
+      #
+      # ── Pass-through from .env ────────────────────────────────────────────────────────────
+      # Everything below is read straight from the process environment by the code and documented
+      # in .env.example. Without these lines a .env entry reaches compose but never reaches the
+      # container, so setting ANTHROPIC_API_KEY or LICENSE_PUBLIC_KEY_PEM there did nothing at all.
+      #
+      # Declared with NO value on purpose. Compose then passes the variable through only when .env
+      # actually defines it and leaves it absent otherwise, so the code's own defaults apply.
+      # Writing "${VAR:-}" instead injects an empty string, and empty is not "unset" here:
+      # LICENSE_PUBLIC_KEY_PEM="" is a key that fails to parse, i.e. every licence rejected.
+      LICENSE_PUBLIC_KEY_PEM:
+      RATE_LIMIT_PER_MIN:
+      # Vendor keys. The admin console writes them into provider_keys instead, which wins; these
+      # are the bootstrap path for a fresh box that has no console session yet.
+      ANTHROPIC_API_KEY:
+      OPENAI_API_KEY:
+      AI_ALLOWED_ANTHROPIC_MODELS:
+      AI_ALLOWED_OPENAI_MODELS:
+      AI_MAX_TOKENS_CAP:
+      AI_MAX_REQUEST_BYTES:
+      AI_MAX_MESSAGES:
+      AI_DAILY_TOKENS_PER_LICENSE:
+      AI_ASK_MODEL:
+      CACHE_TTL_CANDLES:
+      CACHE_TTL_TOKEN:
+      CACHE_TTL_NEWS:
+      CACHE_TTL_SENTIMENT:
+      CACHE_TTL_GAS:
+      CACHE_TTL_ONCHAIN:
+      CACHE_TTL_WHALES:
+      CACHE_TTL_LIQUIDATIONS:
+      CACHE_TTL_DIGESTS:
+      WATCHLIST_MAX_TOKENS:
+      # How long a collector may go quiet before /api/admin/collectors reports degraded.
+      COLLECTOR_STALE_MINUTES:
+      MANUAL_MAX_NOTIONAL_USD:
     ports:
       # Loopback only. The internet reaches the API through caddy, which terminates TLS; this
       # binding is kept so curl and the admin console still work on the host itself.
@@ -110,10 +146,70 @@ services:
       # Reads the same protected columns as api (telegram tokens for pushes, provider keys for
       # the collectors), so it needs the same key or those rows read as "not configured".
       CRYPTOAI_DATA_KEY_B64: ${CRYPTOAI_DATA_KEY_B64:-}
+      #
+      # Pass-through from .env, same rule as on api: no value, so an unset variable stays unset in
+      # the container rather than becoming an empty string. The AI_* models here are the ones the
+      # background jobs run on — a blank model name is an outage, not a default.
+      ANTHROPIC_API_KEY:
+      OPENAI_API_KEY:
+      # Collection cadence. POLL_BATCH / POLL_TICK_SECONDS * 60 is the request rate ceiling against
+      # GeckoTerminal's free tier (~30/min) — the reason to touch these at all.
+      POLL_BATCH:
+      POLL_TICK_SECONDS:
+      POLL_CANDLE_LIMIT:
+      POOL_RESOLVE_BATCH:
+      POLL_HOT_WINDOW_S:
+      POLL_WARM_WINDOW_S:
+      POLL_WARM_INTERVAL_S:
+      POLL_COLD_INTERVAL_S:
+      AI_DIGEST_MODEL:
+      AI_SCORE_MODEL:
+      AI_ANOMALY_MODEL:
+      AI_SCORE_BATCH:
+      AI_SCORE_MAX_AGE_HOURS:
+      AI_ANOMALY_BATCH:
+      AI_ANOMALY_COOLDOWN_HOURS:
+      AI_ANOMALY_MIN_MOVE_PCT:
+      AI_REVIEW_BATCH:
+      AI_REVIEW_DAYS:
     depends_on:
       db:
         condition: service_healthy
     networks: [core]
+    restart: unless-stopped
+
+  # Sells licences: Telegram Stars and Crypto Pay, signs the RSA token the terminal validates.
+  #
+  # Publishes no port and joins neither edge nor core. It talks to api.telegram.org by long polling
+  # and to pay.crypt.bot outbound, and it reads nothing out of Postgres - its own SQLite file is the
+  # order history. That is also why an outage of this box cannot lose a payment: there is no webhook
+  # to miss, the bot simply resumes polling from the last update id when it comes back.
+  licensebot:
+    build:
+      context: .
+      dockerfile: CryptoAITerminal.LicenseBot/Dockerfile
+    environment:
+      # The signing key is mounted, not baked and not passed inline: it is the one secret that lets
+      # anyone mint licences for the product. Read-only, and outside the image.
+      LICENSE_PRIVATE_KEY_PATH: /run/secrets/license-signing/private.pem
+      BOT_DB_PATH: /data/licensebot.db
+      # No value: absent unless .env sets it, so the code's defaults apply. See the note on api.
+      BOT_TOKEN:
+      BOT_ADMIN_IDS:
+      BOT_CURRENCY:
+      BOT_PROVIDER_TOKEN:
+      CRYPTOPAY_TOKEN:
+      CRYPTOPAY_ASSETS:
+      CRYPTOPAY_API_BASE:
+      CRYPTO_FIAT:
+    volumes:
+      # The DIRECTORY is mounted, not the file. A bind mount of a missing file makes Docker create a
+      # directory in its place, which surfaces later as an unreadable-key error from inside the
+      # container; a missing directory just mounts empty, and the bot then exits on its own message
+      # ("License private key missing") which says exactly what to do.
+      - ./.license-signing:/run/secrets/license-signing:ro
+      - licensebot_data:/data
+    networks: [bot]
     restart: unless-stopped
 
   # Encrypted incremental backups of the database to S3. Off until RESTIC_REPOSITORY and
@@ -135,6 +231,11 @@ services:
       BACKUP_KEEP_DAILY: ${BACKUP_KEEP_DAILY:-7}
       BACKUP_KEEP_WEEKLY: ${BACKUP_KEEP_WEEKLY:-4}
       BACKUP_KEEP_MONTHLY: ${BACKUP_KEEP_MONTHLY:-6}
+      # The bot's order history, backed up alongside Postgres. Skipped with a log line when the file
+      # is not there, so this stays correct on a box where the bot has not been started.
+      BOT_DB: /licensebot/licensebot.db
+    volumes:
+      - licensebot_data:/licensebot:ro
     depends_on:
       db:
         condition: service_healthy
@@ -158,8 +259,13 @@ services:
 networks:
   edge: {}
   core: {}
+  # Its own segment on purpose: the bot needs outbound internet and nothing else. On core it could
+  # reach Postgres, on edge the api - neither is a thing it ever does, and it is the process holding
+  # the licence signing key.
+  bot: {}
 
 volumes:
   pgdata: {}
   caddy_data: {}
   caddy_config: {}
+  licensebot_data: {}

@@ -17,10 +17,19 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
 - ✅ docker-compose whole contour
 
 ## 🔴 Critical for selling (do first)
-- 🔴 **Billing / subscriptions** (Stripe / CryptoBot / ЮKassa) → issue license on payment; tiers Free/Pro/VIP
-- 🔴 **Plan limits** (rate limit, #bots, feature gating) per tier
+- ✅ **Billing** — `CryptoAITerminal.LicenseBot`: Telegram Stars + Crypto Pay (USDT/TON), signs the
+  RSA licence the terminal validates (cross-project test), hardware-bound, admin `/issue`, SQLite
+  order history. Long-polling, so it needs no public endpoint, no webhook idempotency and no
+  inbound firewall rule. **In the compose contour**: own network, no published port, signing key
+  bind-mounted read-only from `.license-signing/`, order history on the `licensebot_data` volume
+  and backed up alongside Postgres.
+- 🔴 **Plan limits** (rate limit, #bots, feature gating) per tier — the licence token carries
+  `Edition`, and **no server endpoint reads it**. Every paying tier gets the same thing.
 - 🔴 **MPC / threshold signer** for withdrawals (replace StubWithdrawalSigner) — before real funds
-- 🔴 **Deploy to Timeweb** (2-node Amsterdam) + domain + Cloudflare
+- 🟡 **Deploy** — one VPS, not the old 2-node Amsterdam plan: trading and bots run on the customer's
+  machine, so no node here ever holds `CRYPTOAI_KEK_B64` and there is nothing to isolate. Contour is
+  ready (`docker compose up -d --build`); domain + Cloudflare + firewall are the remaining work.
+  Runbook: `docs/DEPLOY.md`.
 - 🟡 **2FA** (TOTP) — server done (Totp RFC6238 + /api/2fa/setup|enable|verify + withdrawal gated; secret envelope-encrypted); client UI + login gate TODO
 
 ## AI
@@ -77,13 +86,19 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
 - 🔴 Referral program
 
 ## Ops / reliability
-- 🔴 Monitoring + status page (Grafana over collector_runs)
-- 🔴 Encrypted DB backups to S3
+- 🟡 Monitoring — `GET /api/admin/collectors` (X-Admin) reports failing and stale collectors out of
+  `collector_runs`; `/health` reports the process + database. Nothing polls either yet, and there is
+  no status page or Grafana.
+- 🟡 Encrypted backups to S3 — `docker/backup` streams `pg_dump` and the bot's `sqlite3 .dump` into
+  restic as two separately-retained snapshots (client-side encryption, no plaintext on disk).
+  Ships **off**: it logs the risk and idles until `RESTIC_REPOSITORY` + `RESTIC_PASSWORD` are set.
+  **Restore never tested.**
 - 🟡 Health dashboard in console (live status done — extend)
 
 ## Recommended order
-1. Deploy what exists (Timeweb + domain)
-2. Billing + tiers
-3. Server-side bots 24/7 + price alerts ← "works with PC off"
-4. MPC + 2FA (before real money)
-5. AI alerts, streaming, web dashboard
+1. Deploy what exists (one VPS + domain + Cloudflare + the licence bot) — `docs/DEPLOY.md`
+2. Turn backups on and **test a restore** — before the first sale
+3. Plan limits per `Edition` ← the bot sells four priced tiers and the server serves them identically
+4. Server-side bots 24/7 + price alerts ← "works with PC off"
+5. MPC + 2FA (before real money)
+6. AI alerts, streaming, web dashboard

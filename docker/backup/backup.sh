@@ -38,14 +38,40 @@ fi
 
 while true; do
     started=$(date -u '+%s')
+    ok=1
 
     # --clean lets the dump restore into an empty database; the stream never lands on disk.
     if pg_dump --host="$DB_HOST" --username="$DB_USER" --dbname="$DB_NAME" --format=plain --clean --if-exists \
         | restic backup --stdin --stdin-filename "${DB_NAME}.sql" --tag cryptoai-db --host cryptoai
     then
-        log "snapshot written"
+        log "postgres snapshot written"
+    else
+        ok=0
+        log "ERROR postgres backup failed - will retry at the next interval"
+    fi
 
-        if restic forget --tag cryptoai-db \
+    # The bot's SQLite order history: who paid, how much, and which key they were issued. Losing it
+    # loses the answer to "I paid and my licence stopped working".
+    #
+    # ".dump" rather than copying the file: sqlite reads it inside a transaction, so the result is
+    # consistent even though the bot is writing to it, and no temporary plaintext copy is made.
+    if [ -n "${BOT_DB:-}" ] && [ -f "$BOT_DB" ]; then
+        if sqlite3 -readonly "$BOT_DB" .dump \
+            | restic backup --stdin --stdin-filename "licensebot.sql" --tag cryptoai-licensebot --host cryptoai
+        then
+            log "licensebot snapshot written"
+        else
+            ok=0
+            log "ERROR licensebot backup failed - will retry at the next interval"
+        fi
+    else
+        log "licensebot database not present at ${BOT_DB:-<unset>} - skipping (bot not started here?)"
+    fi
+
+    # Grouped by path, so each stream keeps its own daily/weekly/monthly history rather than the two
+    # competing for the same slots.
+    if [ "$ok" = 1 ]; then
+        if restic forget --tag cryptoai-db --tag cryptoai-licensebot --group-by host,paths \
             --keep-daily "$BACKUP_KEEP_DAILY" \
             --keep-weekly "$BACKUP_KEEP_WEEKLY" \
             --keep-monthly "$BACKUP_KEEP_MONTHLY" \
@@ -55,11 +81,9 @@ while true; do
         else
             log "WARNING retention failed - snapshots kept, storage will grow"
         fi
-    else
-        # Never exit on a failed run: a transient database restart or S3 blip must not stop all
-        # future backups until somebody notices the container is gone.
-        log "ERROR backup failed - will retry at the next interval"
     fi
+    # Never exit on a failed run: a transient database restart or S3 blip must not stop all future
+    # backups until somebody notices the container is gone.
 
     elapsed=$(( $(date -u '+%s') - started ))
     sleep_for=$(( BACKUP_INTERVAL_SECONDS - elapsed ))

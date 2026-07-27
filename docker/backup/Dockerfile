@@ -4,7 +4,8 @@ FROM postgres:16-alpine
 
 # restic gives client-side encryption and deduplicated, incremental snapshots. The point of the
 # encryption is that the S3 bucket alone is not enough to read the licence database.
-RUN apk add --no-cache restic ca-certificates tzdata
+# sqlite is here for the licence bot's order history, which lives in SQLite rather than in Postgres.
+RUN apk add --no-cache restic ca-certificates tzdata sqlite
 
 COPY backup.sh /usr/local/bin/backup.sh
 RUN chmod +x /usr/local/bin/backup.sh
