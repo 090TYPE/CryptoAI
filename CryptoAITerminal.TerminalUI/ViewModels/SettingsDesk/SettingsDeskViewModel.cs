@@ -99,7 +99,6 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         RevealCommand = new RelayCommand(() => { _aiRevealed = !_aiRevealed; RaiseAi(); });
         AiConsoleCommand = new RelayCommand(OpenAiConsole);
         AiSaveCommand = new RelayCommand(AiSave);
-        ServerSaveCommand = new RelayCommand(ServerSave);
         AiTestCommand = new RelayCommand(() =>
             Toast("This build has no AI test call — press SAVE PROVIDER, the status line reports the result", "info"));
         ProfSaveCommand = new RelayCommand(() => RunHost(h => h.SaveProfileCommand, "Profile saved"));
@@ -269,7 +268,6 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     public ICommand RevealCommand { get; }
     public ICommand AiConsoleCommand { get; }
     public ICommand AiSaveCommand { get; }
-    public ICommand ServerSaveCommand { get; }
     public ICommand AiTestCommand { get; }
     public ICommand ProfSaveCommand { get; }
     public ICommand ProfImportCommand { get; }
@@ -367,59 +365,22 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     }
 
     // ── CryptoAI server ──────────────────────────────────────────────────────
-    // Until this section existed the only way to bind a terminal to a server was to create
-    // server_url.txt by hand. Unbound, every server feature is off: no 24/7 candle collection for
-    // your watchlist, no shared AI digests, and AI runs on your own key instead of the server's.
-    // None of that announced itself, so "nothing works" and "not connected" looked identical.
-
-    private string? _serverUrl;
-
-    public string ServerUrl
-    {
-        get => _serverUrl ??= Services.ServerEndpoint.ResolveBaseUrl() ?? "";
-        set { _serverUrl = value ?? ""; Touch(); RaiseServer(); }
-    }
-
-    public string ServerUrlPlaceholder => "https://api.example.com";
+    // Status only. The endpoint is built into the build (ServerEndpoint.DefaultBaseUrl) rather than
+    // typed in: a customer cannot know the address, cannot improve it by editing it, and a typo
+    // used to turn every server feature off with no way to tell that from a broken product.
+    // What is still worth showing is whether the connection is actually up, because unconnected
+    // means no 24/7 candle collection for the watchlist, no shared AI digests, and AI falling back
+    // to the customer's own key.
 
     public bool ServerConnected => !string.IsNullOrWhiteSpace(AIEngine.ChatClient.ServerBaseUrl);
 
     public string ServerBadge => ServerConnected ? "CONNECTED" : "LOCAL ONLY";
 
-    public string ServerStatusText => _serverStatus ?? (ServerConnected
+    public string ServerStatusText => ServerConnected
         ? "Watchlist tokens are tracked 24/7 and AI runs on the server's key."
-        : "Not connected — the terminal works fully locally, on your own AI key.");
+        : "Not connected — the terminal works fully locally, on your own AI key.";
 
-    public string ServerStatusColor => _serverStatus is not null && _serverStatus.StartsWith("Could not", StringComparison.OrdinalIgnoreCase)
-        ? SettingsData.Amber
-        : ServerConnected ? SettingsData.Green : SettingsData.Amber;
-
-    private string? _serverStatus;
-
-    private void ServerSave()
-    {
-        var error = Services.ServerEndpoint.Save(ServerUrl);
-        _serverStatus = error;
-
-        if (error is null)
-        {
-            MarkSaved();
-            Toast(string.IsNullOrWhiteSpace(ServerUrl) ? "Disconnected — running locally" : "Connected to the server", "ok");
-        }
-        else
-        {
-            Toast(error, "warn");
-        }
-
-        RaiseServer();
-    }
-
-    private void RaiseServer()
-    {
-        foreach (var n in new[] { nameof(ServerUrl), nameof(ServerConnected), nameof(ServerBadge),
-                                  nameof(ServerStatusText), nameof(ServerStatusColor) })
-            this.RaisePropertyChanged(n);
-    }
+    public string ServerStatusColor => ServerConnected ? SettingsData.Green : SettingsData.Amber;
 
     // ── license ──────────────────────────────────────────────────────────────
     private LicenseViewModel? Lic => _host?.LicenseVM;

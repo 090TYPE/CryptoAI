@@ -5,12 +5,27 @@ namespace CryptoAITerminal.TerminalUI.Services;
 
 /// <summary>
 /// Resolves the CryptoAI server base URL (the edge API node). Precedence:
-///   1. env var CRYPTOAI_SERVER_URL
-///   2. file  {LocalAppData}/CryptoAITerminal/server_url.txt
-///   3. none  → server features disabled (app stays fully local)
+///   1. env var CRYPTOAI_SERVER_URL          — operator override, wins over everything
+///   2. file  {LocalAppData}/CryptoAITerminal/server_url.txt — a machine pinned elsewhere
+///   3. <see cref="DefaultBaseUrl"/>         — the production server, built in
 /// </summary>
 public static class ServerEndpoint
 {
+    /// <summary>
+    /// The server every shipped terminal talks to unless it is explicitly told otherwise.
+    ///
+    /// Built in rather than asked for. A customer has no way to know this address, and asking them
+    /// to type it is asking them to get it wrong; before it was here, every server feature was off
+    /// for them out of the box — no 24/7 candles for their watchlist, no shared AI digests, AI on
+    /// their own key — and none of that announced itself, so a correctly working product looked
+    /// broken.
+    ///
+    /// Moving customers to a different server is a change to THIS line plus a release build. That
+    /// includes the move to a domain and TLS: until it happens the licence token in the X-License
+    /// header travels unencrypted on every request, because http:// is what is written here.
+    /// </summary>
+    public const string DefaultBaseUrl = "http://46.19.68.215";
+
     private static string ConfigPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "CryptoAITerminal", "server_url.txt");
@@ -30,64 +45,13 @@ public static class ServerEndpoint
         }
         catch { /* ignore */ }
 
-        return null;
+        // Deliberately not null. Null meant "run fully locally", which was the right default only
+        // while there was no server to point at.
+        return string.IsNullOrWhiteSpace(DefaultBaseUrl) ? null : DefaultBaseUrl;
     }
 
-    /// <summary>
-    /// Persist the server URL and apply it immediately.
-    ///
-    /// Until this existed the only way to bind a terminal to a server was to create
-    /// server_url.txt by hand, which is not something a customer can be asked to do - so every
-    /// server feature silently stayed off for them, indistinguishable from being broken.
-    ///
-    /// The live statics are updated as well as the file: ChatClient reads ServerBaseUrl once at
-    /// startup, so writing only the file would leave the setting apparently ignored until restart.
-    /// Pass null or blank to unbind and go fully local again.
-    /// </summary>
-    /// <returns>An error message to show the user, or null on success.</returns>
-    public static string? Save(string? url)
-    {
-        var trimmed = url?.Trim();
-
-        if (!string.IsNullOrWhiteSpace(trimmed))
-        {
-            if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var parsed) ||
-                (parsed.Scheme != Uri.UriSchemeHttp && parsed.Scheme != Uri.UriSchemeHttps))
-            {
-                return "Enter a full URL, for example https://api.example.com";
-            }
-
-            // Stored without a trailing slash: every caller appends "/api/...", and a double slash
-            // is the kind of thing that only shows up as a 404 much later.
-            trimmed = trimmed.TrimEnd('/');
-        }
-
-        try
-        {
-            var dir = Path.GetDirectoryName(ConfigPath);
-            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-
-            if (string.IsNullOrWhiteSpace(trimmed))
-            {
-                if (File.Exists(ConfigPath)) File.Delete(ConfigPath);
-            }
-            else
-            {
-                File.WriteAllText(ConfigPath, trimmed);
-            }
-        }
-        catch (Exception ex)
-        {
-            return $"Could not save the setting: {ex.Message}";
-        }
-
-        // An environment variable still wins on the next start, so say so rather than let the user
-        // wonder why their saved value was ignored.
-        var env = Environment.GetEnvironmentVariable("CRYPTOAI_SERVER_URL");
-        AIEngine.ChatClient.ServerBaseUrl = string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
-
-        return string.IsNullOrWhiteSpace(env)
-            ? null
-            : "Saved, but CRYPTOAI_SERVER_URL is set and takes precedence on the next start.";
-    }
+    // There is deliberately no Save(): nothing in the product writes this any more. The address is
+    // built in, and the two override paths above are for an operator, not a customer — both are set
+    // from outside the app (an environment variable, or dropping server_url.txt in place), which is
+    // exactly the audience they are meant for.
 }

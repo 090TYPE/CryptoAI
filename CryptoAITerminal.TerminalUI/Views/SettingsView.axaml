@@ -211,9 +211,11 @@
                       </Grid>
                     </Border>
 
-                    <!-- CryptoAI server. Without this the only way to bind a terminal was to create
-                         server_url.txt by hand, so for a customer every server feature stayed off
-                         and looked identical to being broken. -->
+                    <!-- CryptoAI server: status only, no address.
+                         The endpoint is built into the build (ServerEndpoint.DefaultBaseUrl) and is
+                         not the customer's business — they cannot know it, cannot improve it by
+                         editing it, and a typo here used to turn every server feature off silently.
+                         What is worth showing is whether the connection is up. -->
                     <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Margin="0,12,0,0" Padding="0,12,0,0">
                       <StackPanel Spacing="5">
                         <Grid ColumnDefinitions="Auto,8,Auto">
@@ -223,15 +225,8 @@
                                        Foreground="{Binding ServerStatusColor, Converter={StaticResource StringToBrush}}" />
                           </Border>
                         </Grid>
-                        <StackPanel Orientation="Horizontal" Spacing="7">
-                          <Border Width="330" Height="30" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="6" Background="{DynamicResource Surface0}" Padding="8,0">
-                            <TextBox Text="{Binding ServerUrl, Mode=TwoWay}" PlaceholderText="{Binding ServerUrlPlaceholder}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
-                          </Border>
-                          <Button Classes="FlatChrome" Command="{Binding ServerSaveCommand}" Height="30" BorderBrush="{DynamicResource Accent}" BorderThickness="1" CornerRadius="6" Background="{DynamicResource AccentSoft}" Padding="12,0" Content="CONNECT" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
-                        </StackPanel>
                         <TextBlock Text="{Binding ServerStatusText}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap"
                                    Foreground="{Binding ServerStatusColor, Converter={StaticResource StringToBrush}}" />
-                        <TextBlock Text="Leave empty to disconnect and run fully locally." FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                       </StackPanel>
                     </Border>
                   </StackPanel>
