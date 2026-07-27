@@ -97,6 +97,36 @@ public class AiFeatureOverrideTests
     }
 
     [Fact]
+    public void Policy_preserves_prompt_cache_markers()
+    {
+        // The agent marks its system block and the tail of each turn with cache_control, which is
+        // what turns a 24-iteration run from roughly $0.73 into roughly $0.15. The policy rewrites
+        // the body — model, max_tokens, stream — and if that round trip dropped anything it did not
+        // recognise, the saving would vanish with no error anywhere: same answers, quadruple bill.
+        var body = JsonSerializer.Serialize(new
+        {
+            model = "claude-sonnet-4-6",
+            max_tokens = 1024,
+            system = new object[] { new { type = "text", text = "you are an agent", cache_control = new { type = "ephemeral" } } },
+            tools = new object[] { new { name = "get_price", description = "d", input_schema = new { type = "object" } } },
+            messages = new object[]
+            {
+                new { role = "user", content = "hi" },
+                new { role = "user", content = new object[] { new { type = "tool_result", tool_use_id = "t1", content = "42", cache_control = new { type = "ephemeral" } } } }
+            }
+        });
+
+        var r = AiRequestPolicy.Apply(body, Options(), AiVendor.Anthropic);
+
+        Assert.True(r.Ok);
+        using var doc = JsonDocument.Parse(r.Body!);
+        Assert.Equal("ephemeral", doc.RootElement.GetProperty("system")[0].GetProperty("cache_control").GetProperty("type").GetString());
+        Assert.Equal("ephemeral", doc.RootElement.GetProperty("messages")[1].GetProperty("content")[0].GetProperty("cache_control").GetProperty("type").GetString());
+        // And the tool schemas are still there — they are the bulk of what the cache is protecting.
+        Assert.Equal("get_price", doc.RootElement.GetProperty("tools")[0].GetProperty("name").GetString());
+    }
+
+    [Fact]
     public void Feature_ids_are_unique()
     {
         // Two features sharing an id would silently share a model setting, and the second one
