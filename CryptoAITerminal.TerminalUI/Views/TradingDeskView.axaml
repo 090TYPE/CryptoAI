@@ -28,17 +28,17 @@
           <!-- Identity -->
           <Grid Grid.Column="0" ColumnDefinitions="Auto,Auto" ColumnSpacing="12" VerticalAlignment="Center">
             <Border Width="42" Height="42"
-                    Background="{Binding SelectedMarket.LogoBackground, Converter={StaticResource StringToBrush}}"
+                    Background="{Binding MarketFeedVM.SelectedMarket.LogoBackground, Converter={StaticResource StringToBrush}}"
                     BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1" CornerRadius="10"
                     VerticalAlignment="Center">
-              <TextBlock Text="{Binding SelectedMarket.LogoText}"
-                         Foreground="{Binding SelectedMarket.LogoForeground, Converter={StaticResource StringToBrush}}"
+              <TextBlock Text="{Binding MarketFeedVM.SelectedMarket.LogoText}"
+                         Foreground="{Binding MarketFeedVM.SelectedMarket.LogoForeground, Converter={StaticResource StringToBrush}}"
                          HorizontalAlignment="Center" VerticalAlignment="Center"
                          FontSize="{DynamicResource FsTitle}" FontWeight="Bold" />
             </Border>
             <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
               <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock Text="{Binding SelectedMarket.DisplaySymbol}" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding MarketFeedVM.SelectedMarket.DisplaySymbol}" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" VerticalAlignment="Center" />
                 <Border Background="#0e2840" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
                   <TextBlock Text="PERP" Foreground="{DynamicResource AccentBlue}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                 </Border>
@@ -52,29 +52,29 @@
             <StackPanel Spacing="3">
               <TextBlock Classes="TdLabel" Text="LAST PRICE" />
               <StackPanel Orientation="Horizontal" Spacing="6">
-                <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.LastPriceDisplay}" Foreground="{DynamicResource Accent}" FontWeight="Bold" FontSize="{DynamicResource FsSubhead}" />
-                <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.ChangePercentLabel}" Foreground="{Binding SelectedMarket.ChangeBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
+                <TextBlock Classes="TdNum" Text="{Binding MarketFeedVM.SelectedMarket.LastPriceDisplay}" Foreground="{DynamicResource Accent}" FontWeight="Bold" FontSize="{DynamicResource FsSubhead}" />
+                <TextBlock Classes="TdNum" Text="{Binding MarketFeedVM.SelectedMarket.ChangePercentLabel}" Foreground="{Binding MarketFeedVM.SelectedMarket.ChangeBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
               </StackPanel>
             </StackPanel>
             <StackPanel Spacing="3">
               <TextBlock Classes="TdLabel" Text="24H HIGH" />
-              <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.High24hLabel}" Foreground="#4ff1c9" FontSize="{DynamicResource FsSubhead}" />
+              <TextBlock Classes="TdNum" Text="{Binding MarketFeedVM.SelectedMarket.High24hLabel}" Foreground="#4ff1c9" FontSize="{DynamicResource FsSubhead}" />
             </StackPanel>
             <StackPanel Spacing="3">
               <TextBlock Classes="TdLabel" Text="24H LOW" />
-              <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.Low24hLabel}" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsSubhead}" />
+              <TextBlock Classes="TdNum" Text="{Binding MarketFeedVM.SelectedMarket.Low24hLabel}" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsSubhead}" />
             </StackPanel>
             <StackPanel Spacing="3">
               <TextBlock Classes="TdLabel" Text="24H VOL" />
-              <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.Volume24hLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSubhead}" />
+              <TextBlock Classes="TdNum" Text="{Binding MarketFeedVM.SelectedMarket.Volume24hLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSubhead}" />
             </StackPanel>
             <StackPanel Spacing="3">
               <TextBlock Classes="TdLabel" Text="FUNDING" />
-              <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.FundingRateLabel}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsSubhead}" />
+              <TextBlock Classes="TdNum" Text="{Binding MarketFeedVM.SelectedMarket.FundingRateLabel}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsSubhead}" />
             </StackPanel>
             <StackPanel Spacing="3">
               <TextBlock Classes="TdLabel" Text="OI" />
-              <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.OpenInterestLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSubhead}" />
+              <TextBlock Classes="TdNum" Text="{Binding MarketFeedVM.SelectedMarket.OpenInterestLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSubhead}" />
             </StackPanel>
           </StackPanel>
 
@@ -126,7 +126,7 @@
             <!-- Symbol chips -->
             <StackPanel Spacing="5">
               <TextBlock Classes="TdLabel" Text="SYMBOL" />
-              <ItemsControl ItemsSource="{Binding Markets}">
+              <ItemsControl ItemsSource="{Binding MarketFeedVM.Markets}">
                 <ItemsControl.ItemsPanel>
                   <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
@@ -363,107 +363,107 @@
               <StackPanel Orientation="Horizontal" Spacing="28">
                 <StackPanel Spacing="3">
                   <TextBlock Classes="TdLabel" Text="MARK PRICE" />
-                  <TextBlock Classes="TdNum" Text="{Binding CurrentTradePrice, StringFormat={}{0:N2} USDT}" Foreground="{DynamicResource Accent}" FontWeight="Bold" FontSize="{DynamicResource FsTitle}" />
+                  <TextBlock Classes="TdNum" Text="{Binding ChartPanelVM.CurrentTradePrice, StringFormat={}{0:N2} USDT}" Foreground="{DynamicResource Accent}" FontWeight="Bold" FontSize="{DynamicResource FsTitle}" />
                 </StackPanel>
                 <StackPanel Spacing="3">
                   <TextBlock Classes="TdLabel" Text="SPREAD" />
-                  <TextBlock Classes="TdNum" Text="{Binding SpreadLabel}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSubhead}" />
+                  <TextBlock Classes="TdNum" Text="{Binding ChartPanelVM.SpreadLabel}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSubhead}" />
                 </StackPanel>
                 <StackPanel Spacing="3">
                   <TextBlock Classes="TdLabel" Text="HIGH" />
-                  <TextBlock Classes="TdNum" Text="{Binding ChartHighLabel}" Foreground="#4ff1c9" FontSize="{DynamicResource FsSubhead}" />
+                  <TextBlock Classes="TdNum" Text="{Binding ChartPanelVM.ChartHighLabel}" Foreground="#4ff1c9" FontSize="{DynamicResource FsSubhead}" />
                 </StackPanel>
                 <StackPanel Spacing="3">
                   <TextBlock Classes="TdLabel" Text="LOW" />
-                  <TextBlock Classes="TdNum" Text="{Binding ChartLowLabel}" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsSubhead}" />
+                  <TextBlock Classes="TdNum" Text="{Binding ChartPanelVM.ChartLowLabel}" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsSubhead}" />
                 </StackPanel>
                 <StackPanel Spacing="3">
                   <TextBlock Classes="TdLabel" Text="VOLUME" />
-                  <TextBlock Classes="TdNum" Text="{Binding ChartVolumeLabel}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSubhead}" />
+                  <TextBlock Classes="TdNum" Text="{Binding ChartPanelVM.ChartVolumeLabel}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSubhead}" />
                 </StackPanel>
               </StackPanel>
 
               <!-- Toolbar row 1: timeframes · chart type · zoom · alert · fullscreen -->
               <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="5">
-                  <Button Content="1M" Classes="TdSeg mini" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1M" Classes.active="{Binding SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=1M}" />
-                  <Button Content="5M" Classes="TdSeg mini" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="5M" Classes.active="{Binding SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=5M}" />
-                  <Button Content="15M" Classes="TdSeg mini" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="15M" Classes.active="{Binding SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=15M}" />
-                  <Button Content="1H" Classes="TdSeg mini" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1H" Classes.active="{Binding SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=1H}" />
-                  <Button Content="4H" Classes="TdSeg mini" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="4H" Classes.active="{Binding SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=4H}" />
-                  <Button Content="1D" Classes="TdSeg mini" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1D" Classes.active="{Binding SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=1D}" />
-                  <Button Content="1W" Classes="TdSeg mini" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1W" Classes.active="{Binding SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=1W}" />
+                  <Button Content="1M" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="1M" Classes.active="{Binding ChartPanelVM.SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=1M}" />
+                  <Button Content="5M" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="5M" Classes.active="{Binding ChartPanelVM.SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=5M}" />
+                  <Button Content="15M" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="15M" Classes.active="{Binding ChartPanelVM.SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=15M}" />
+                  <Button Content="1H" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="1H" Classes.active="{Binding ChartPanelVM.SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=1H}" />
+                  <Button Content="4H" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="4H" Classes.active="{Binding ChartPanelVM.SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=4H}" />
+                  <Button Content="1D" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="1D" Classes.active="{Binding ChartPanelVM.SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=1D}" />
+                  <Button Content="1W" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="1W" Classes.active="{Binding ChartPanelVM.SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=1W}" />
                 </StackPanel>
                 <Border Grid.Column="1" Width="1" Background="{DynamicResource PanelStroke}" Margin="6,2" />
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5">
-                  <Button Content="Candles" Classes="TdSeg mini" Command="{Binding SelectChartTypeCommand}" CommandParameter="Candles" Classes.active="{Binding SelectedChartType, Converter={StaticResource StrEq}, ConverterParameter=Candles}" />
-                  <Button Content="HA" Classes="TdSeg mini" Command="{Binding SelectChartTypeCommand}" CommandParameter="HA" Classes.active="{Binding SelectedChartType, Converter={StaticResource StrEq}, ConverterParameter=HA}" />
-                  <Button Content="Line" Classes="TdSeg mini" Command="{Binding SelectChartTypeCommand}" CommandParameter="Line" Classes.active="{Binding SelectedChartType, Converter={StaticResource StrEq}, ConverterParameter=Line}" />
-                  <Button Content="Area" Classes="TdSeg mini" Command="{Binding SelectChartTypeCommand}" CommandParameter="Area" Classes.active="{Binding SelectedChartType, Converter={StaticResource StrEq}, ConverterParameter=Area}" />
+                  <Button Content="Candles" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectChartTypeCommand}" CommandParameter="Candles" Classes.active="{Binding ChartPanelVM.SelectedChartType, Converter={StaticResource StrEq}, ConverterParameter=Candles}" />
+                  <Button Content="HA" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectChartTypeCommand}" CommandParameter="HA" Classes.active="{Binding ChartPanelVM.SelectedChartType, Converter={StaticResource StrEq}, ConverterParameter=HA}" />
+                  <Button Content="Line" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectChartTypeCommand}" CommandParameter="Line" Classes.active="{Binding ChartPanelVM.SelectedChartType, Converter={StaticResource StrEq}, ConverterParameter=Line}" />
+                  <Button Content="Area" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectChartTypeCommand}" CommandParameter="Area" Classes.active="{Binding ChartPanelVM.SelectedChartType, Converter={StaticResource StrEq}, ConverterParameter=Area}" />
                 </StackPanel>
                 <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                  <Button Content="−" Classes="TdSeg mini" Command="{Binding ZoomChartOutCommand}"
+                  <Button Content="−" Classes="TdSeg mini" Command="{Binding ChartPanelVM.ZoomChartOutCommand}"
                           ToolTip.Tip="Zoom out" AutomationProperties.Name="Zoom chart out" />
-                  <TextBlock Classes="TdNum" Text="{Binding ChartZoomLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" Width="34" TextAlignment="Center" />
-                  <Button Content="+" Classes="TdSeg mini" Command="{Binding ZoomChartInCommand}"
+                  <TextBlock Classes="TdNum" Text="{Binding ChartPanelVM.ChartZoomLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" Width="34" TextAlignment="Center" />
+                  <Button Content="+" Classes="TdSeg mini" Command="{Binding ChartPanelVM.ZoomChartInCommand}"
                           ToolTip.Tip="Zoom in" AutomationProperties.Name="Zoom chart in" />
                 </StackPanel>
                 <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="4" Margin="8,0,0,0">
-                  <TextBox Text="{Binding ChartAlertPriceInput}" PlaceholderText="Price alert…" Width="96" FontSize="{DynamicResource FsCaption}"
-                           IsVisible="{Binding ShowChartAlertInput}" VerticalContentAlignment="Center" />
-                  <Button Content="⚑ ALERT" Classes="TdSeg mini" Command="{Binding ChartAlertCommand}" Classes.active="{Binding ShowChartAlertInput}" />
+                  <TextBox Text="{Binding ChartPanelVM.ChartAlertPriceInput}" PlaceholderText="Price alert…" Width="96" FontSize="{DynamicResource FsCaption}"
+                           IsVisible="{Binding ChartPanelVM.ShowChartAlertInput}" VerticalContentAlignment="Center" />
+                  <Button Content="⚑ ALERT" Classes="TdSeg mini" Command="{Binding ChartPanelVM.ChartAlertCommand}" Classes.active="{Binding ChartPanelVM.ShowChartAlertInput}" />
                 </StackPanel>
-                <Button Grid.Column="6" Content="{Binding ChartFullscreenGlyph}" Classes="TdSeg mini" Margin="6,0,0,0"
+                <Button Grid.Column="6" Content="{Binding ChartPanelVM.ChartFullscreenGlyph}" Classes="TdSeg mini" Margin="6,0,0,0"
                         ToolTip.Tip="Toggle fullscreen chart" AutomationProperties.Name="Toggle fullscreen chart"
-                        Command="{Binding ToggleChartFullscreenCommand}" Classes.active="{Binding IsChartExpanded}" />
+                        Command="{Binding ChartPanelVM.ToggleChartFullscreenCommand}" Classes.active="{Binding ChartPanelVM.IsChartExpanded}" />
               </Grid>
 
               <!-- Toolbar row 2: drawing tools · IND indicators -->
               <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="5">
-                  <Button Content="CURSOR" Classes="TdSeg mini" Command="{Binding SelectChartToolCommand}" CommandParameter="Cursor" Classes.active="{Binding SelectedChartTool, Converter={StaticResource StrEq}, ConverterParameter=Cursor}" />
-                  <Button Content="TREND" Classes="TdSeg mini" Command="{Binding SelectChartToolCommand}" CommandParameter="Trend" Classes.active="{Binding SelectedChartTool, Converter={StaticResource StrEq}, ConverterParameter=Trend}" />
-                  <Button Content="H-LINE" Classes="TdSeg mini" Command="{Binding SelectChartToolCommand}" CommandParameter="Horizontal" Classes.active="{Binding SelectedChartTool, Converter={StaticResource StrEq}, ConverterParameter=Horizontal}" />
-                  <Button Content="RECT" Classes="TdSeg mini" Command="{Binding SelectChartToolCommand}" CommandParameter="Rectangle" Classes.active="{Binding SelectedChartTool, Converter={StaticResource StrEq}, ConverterParameter=Rectangle}" />
-                  <Button Content="CHANNEL" Classes="TdSeg mini" Command="{Binding SelectChartToolCommand}" CommandParameter="Channel" Classes.active="{Binding SelectedChartTool, Converter={StaticResource StrEq}, ConverterParameter=Channel}" />
-                  <Button Content="ERASE" Classes="TdSeg mini" Command="{Binding SelectChartToolCommand}" CommandParameter="Erase" Classes.active="{Binding SelectedChartTool, Converter={StaticResource StrEq}, ConverterParameter=Erase}" />
-                  <Button Content="RESET" Classes="TdSeg mini" Command="{Binding ResetChartViewCommand}" />
-                  <Button Content="CLEAR" Classes="TdSeg mini" Command="{Binding ClearChartDrawingsCommand}" />
+                  <Button Content="CURSOR" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectChartToolCommand}" CommandParameter="Cursor" Classes.active="{Binding ChartPanelVM.SelectedChartTool, Converter={StaticResource StrEq}, ConverterParameter=Cursor}" />
+                  <Button Content="TREND" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectChartToolCommand}" CommandParameter="Trend" Classes.active="{Binding ChartPanelVM.SelectedChartTool, Converter={StaticResource StrEq}, ConverterParameter=Trend}" />
+                  <Button Content="H-LINE" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectChartToolCommand}" CommandParameter="Horizontal" Classes.active="{Binding ChartPanelVM.SelectedChartTool, Converter={StaticResource StrEq}, ConverterParameter=Horizontal}" />
+                  <Button Content="RECT" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectChartToolCommand}" CommandParameter="Rectangle" Classes.active="{Binding ChartPanelVM.SelectedChartTool, Converter={StaticResource StrEq}, ConverterParameter=Rectangle}" />
+                  <Button Content="CHANNEL" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectChartToolCommand}" CommandParameter="Channel" Classes.active="{Binding ChartPanelVM.SelectedChartTool, Converter={StaticResource StrEq}, ConverterParameter=Channel}" />
+                  <Button Content="ERASE" Classes="TdSeg mini" Command="{Binding ChartPanelVM.SelectChartToolCommand}" CommandParameter="Erase" Classes.active="{Binding ChartPanelVM.SelectedChartTool, Converter={StaticResource StrEq}, ConverterParameter=Erase}" />
+                  <Button Content="RESET" Classes="TdSeg mini" Command="{Binding ChartPanelVM.ResetChartViewCommand}" />
+                  <Button Content="CLEAR" Classes="TdSeg mini" Command="{Binding ChartPanelVM.ClearChartDrawingsCommand}" />
                 </StackPanel>
                 <TextBlock Grid.Column="2" Classes="TdLabel" Text="IND" VerticalAlignment="Center" Margin="0,0,6,0" />
                 <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="5">
-                  <Button Content="MA20" Classes="TdSeg mini" Command="{Binding ToggleChartIndicatorCommand}" CommandParameter="MA20" Classes.active="{Binding ShowMa20}" />
-                  <Button Content="MA50" Classes="TdSeg mini" Command="{Binding ToggleChartIndicatorCommand}" CommandParameter="MA50" Classes.active="{Binding ShowMa50}" />
-                  <Button Content="BB" Classes="TdSeg mini" Command="{Binding ToggleChartIndicatorCommand}" CommandParameter="BB" Classes.active="{Binding ShowBollinger}" />
-                  <Button Content="RSI" Classes="TdSeg mini" Command="{Binding ToggleChartIndicatorCommand}" CommandParameter="RSI" Classes.active="{Binding ShowRsi}" />
-                  <Button Content="WALLS" Classes="TdSeg mini" Command="{Binding ToggleChartIndicatorCommand}" CommandParameter="WALLS" Classes.active="{Binding ShowWalls}" />
+                  <Button Content="MA20" Classes="TdSeg mini" Command="{Binding ChartPanelVM.ToggleChartIndicatorCommand}" CommandParameter="MA20" Classes.active="{Binding ChartPanelVM.ShowMa20}" />
+                  <Button Content="MA50" Classes="TdSeg mini" Command="{Binding ChartPanelVM.ToggleChartIndicatorCommand}" CommandParameter="MA50" Classes.active="{Binding ChartPanelVM.ShowMa50}" />
+                  <Button Content="BB" Classes="TdSeg mini" Command="{Binding ChartPanelVM.ToggleChartIndicatorCommand}" CommandParameter="BB" Classes.active="{Binding ChartPanelVM.ShowBollinger}" />
+                  <Button Content="RSI" Classes="TdSeg mini" Command="{Binding ChartPanelVM.ToggleChartIndicatorCommand}" CommandParameter="RSI" Classes.active="{Binding ChartPanelVM.ShowRsi}" />
+                  <Button Content="WALLS" Classes="TdSeg mini" Command="{Binding ChartPanelVM.ToggleChartIndicatorCommand}" CommandParameter="WALLS" Classes.active="{Binding ChartPanelVM.ShowWalls}" />
                 </StackPanel>
               </Grid>
 
               <!-- Chart -->
               <Border Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="8" Padding="6">
-                <ctrl:CexCandlestickChart Height="{Binding ChartHeight}"
-                                          Candles="{Binding ActiveTradingCandles}"
-                                          ChartType="{Binding SelectedChartType}"
-                                          ShowMa20="{Binding ShowMa20}"
-                                          ShowMa50="{Binding ShowMa50}"
-                                          ShowBollinger="{Binding ShowBollinger}"
-                                          ShowRsi="{Binding ShowRsi}"
-                                          ShowWalls="{Binding ShowWalls}"
-                                          ToolMode="{Binding SelectedChartTool}"
-                                          PersistenceKey="{Binding SelectedTradingSymbol}"
-                                          ClearDrawingsVersion="{Binding ChartClearDrawingsVersion}"
-                                          ResetViewVersion="{Binding ChartResetViewVersion}"
-                                          ZoomInVersion="{Binding ChartZoomInVersion}"
-                                          ZoomOutVersion="{Binding ChartZoomOutVersion}"
-                                          Walls="{Binding SelectedMarket.LargeWalls}" />
+                <ctrl:CexCandlestickChart Height="{Binding ChartPanelVM.ChartHeight}"
+                                          Candles="{Binding ChartPanelVM.ActiveTradingCandles}"
+                                          ChartType="{Binding ChartPanelVM.SelectedChartType}"
+                                          ShowMa20="{Binding ChartPanelVM.ShowMa20}"
+                                          ShowMa50="{Binding ChartPanelVM.ShowMa50}"
+                                          ShowBollinger="{Binding ChartPanelVM.ShowBollinger}"
+                                          ShowRsi="{Binding ChartPanelVM.ShowRsi}"
+                                          ShowWalls="{Binding ChartPanelVM.ShowWalls}"
+                                          ToolMode="{Binding ChartPanelVM.SelectedChartTool}"
+                                          PersistenceKey="{Binding ChartPanelVM.SelectedTradingSymbol}"
+                                          ClearDrawingsVersion="{Binding ChartPanelVM.ChartClearDrawingsVersion}"
+                                          ResetViewVersion="{Binding ChartPanelVM.ChartResetViewVersion}"
+                                          ZoomInVersion="{Binding ChartPanelVM.ChartZoomInVersion}"
+                                          ZoomOutVersion="{Binding ChartPanelVM.ChartZoomOutVersion}"
+                                          Walls="{Binding MarketFeedVM.SelectedMarket.LargeWalls}" />
               </Border>
 
               <!-- Trade tape -->
               <Border Classes="TdMid">
                 <Grid>
                   <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                    <ItemsControl ItemsSource="{Binding TapeTrades}">
+                    <ItemsControl ItemsSource="{Binding TradeBlotterVM.TapeTrades}">
                       <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="16" /></ItemsPanelTemplate>
                       </ItemsControl.ItemsPanel>
@@ -479,7 +479,7 @@
                       </ItemsControl.ItemTemplate>
                     </ItemsControl>
                   </ScrollViewer>
-                  <TextBlock Text="Waiting for trade tape…" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" IsVisible="{Binding ShowTapePlaceholder}" />
+                  <TextBlock Text="Waiting for trade tape…" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" IsVisible="{Binding TradeBlotterVM.ShowTapePlaceholder}" />
                 </Grid>
               </Border>
             </StackPanel>
@@ -491,11 +491,11 @@
               <StackPanel Orientation="Horizontal" Spacing="16" HorizontalAlignment="Right">
                 <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
                   <TextBlock Classes="TdLabel" Text="ORDERS" />
-                  <TextBlock Classes="TdNum" Text="{Binding WorkingOrders.Count}" Foreground="#8fb9de" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
+                  <TextBlock Classes="TdNum" Text="{Binding TradeBlotterVM.WorkingOrders.Count}" Foreground="#8fb9de" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
                   <TextBlock Classes="TdLabel" Text="POSITIONS" />
-                  <TextBlock Classes="TdNum" Text="{Binding PositionRows.Count}" Foreground="{DynamicResource Warning}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
+                  <TextBlock Classes="TdNum" Text="{Binding TradeBlotterVM.PositionRows.Count}" Foreground="{DynamicResource Warning}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
                   <TextBlock Classes="TdLabel" Text="SESSION PNL" />
@@ -503,7 +503,7 @@
                 </StackPanel>
               </StackPanel>
 
-              <TabControl SelectedIndex="{Binding SelectedTradingBottomTabIndex}" Classes="DeskTabs">
+              <TabControl SelectedIndex="{Binding TradeBlotterVM.SelectedTradingBottomTabIndex}" Classes="DeskTabs">
                 <TabItem Header="Orders">
                   <StackPanel Margin="0,12,0,0" Spacing="10">
                     <Grid ColumnDefinitions="0.8*,0.9*,0.7*,0.7*,0.9*,0.7*,0.7*,0.8*" ColumnSpacing="10">
@@ -517,7 +517,7 @@
                       <TextBlock Grid.Column="7" Classes="TdLabel" Text="CREATED" HorizontalAlignment="Right" />
                     </Grid>
                     <ScrollViewer MaxHeight="240">
-                      <ItemsControl ItemsSource="{Binding WorkingOrders}">
+                      <ItemsControl ItemsSource="{Binding TradeBlotterVM.WorkingOrders}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate x:DataType="vm:WorkingOrderViewModel">
                             <Border Classes="TdCardTight" Margin="0,0,0,6">
@@ -537,7 +537,7 @@
                       </ItemsControl>
                     </ScrollViewer>
                     <TextBlock Text="No working orders yet. Arm a limit, TP or SL to populate the blotter."
-                               Foreground="{DynamicResource TextSoft}" IsVisible="{Binding ShowWorkingOrdersPlaceholder}" />
+                               Foreground="{DynamicResource TextSoft}" IsVisible="{Binding TradeBlotterVM.ShowWorkingOrdersPlaceholder}" />
                   </StackPanel>
                 </TabItem>
 
@@ -554,7 +554,7 @@
                       <TextBlock Grid.Column="7" Classes="TdLabel" Text="ROE" HorizontalAlignment="Right" />
                     </Grid>
                     <ScrollViewer MaxHeight="240">
-                      <ItemsControl ItemsSource="{Binding PositionRows}">
+                      <ItemsControl ItemsSource="{Binding TradeBlotterVM.PositionRows}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate x:DataType="vm:PositionRowViewModel">
                             <Border Classes="TdCardTight" Margin="0,0,0,6">
@@ -574,7 +574,7 @@
                       </ItemsControl>
                     </ScrollViewer>
                     <TextBlock Text="No open positions. Use the ticket to open the first trade."
-                               Foreground="{DynamicResource TextSoft}" IsVisible="{Binding ShowPositionRowsPlaceholder}" />
+                               Foreground="{DynamicResource TextSoft}" IsVisible="{Binding TradeBlotterVM.ShowPositionRowsPlaceholder}" />
                   </StackPanel>
                 </TabItem>
 
@@ -589,7 +589,7 @@
                       <TextBlock Grid.Column="5" Classes="TdLabel" Text="TIME" HorizontalAlignment="Right" />
                     </Grid>
                     <ScrollViewer MaxHeight="240">
-                      <ItemsControl ItemsSource="{Binding RecentFills}">
+                      <ItemsControl ItemsSource="{Binding TradeBlotterVM.RecentFills}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate x:DataType="vm:TradeFillViewModel">
                             <Border Classes="TdCardTight" Margin="0,0,0,6">
@@ -607,7 +607,7 @@
                       </ItemsControl>
                     </ScrollViewer>
                     <TextBlock Text="No fills yet. Execution tape will appear here after the first order."
-                               Foreground="{DynamicResource TextSoft}" IsVisible="{Binding ShowRecentFillsPlaceholder}" />
+                               Foreground="{DynamicResource TextSoft}" IsVisible="{Binding TradeBlotterVM.ShowRecentFillsPlaceholder}" />
                   </StackPanel>
                 </TabItem>
 
@@ -622,7 +622,7 @@
                       <TextBlock Grid.Column="5" Classes="TdLabel" Text="STATUS" HorizontalAlignment="Right" />
                     </Grid>
                     <ScrollViewer MaxHeight="240">
-                      <ItemsControl ItemsSource="{Binding SignalRows}">
+                      <ItemsControl ItemsSource="{Binding TradeBlotterVM.SignalRows}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate x:DataType="vm:SignalRowViewModel">
                             <Border Classes="TdCardTight" Margin="0,0,0,6">
@@ -640,7 +640,7 @@
                       </ItemsControl>
                     </ScrollViewer>
                     <TextBlock Text="Signals are waiting for stronger market structure before activating."
-                               Foreground="{DynamicResource TextSoft}" IsVisible="{Binding ShowSignalRowsPlaceholder}" />
+                               Foreground="{DynamicResource TextSoft}" IsVisible="{Binding TradeBlotterVM.ShowSignalRowsPlaceholder}" />
                   </StackPanel>
                 </TabItem>
               </TabControl>
@@ -656,13 +656,13 @@
           <StackPanel>
 
             <!-- Exchange selector tabs -->
-            <ItemsControl ItemsSource="{Binding TradingVenues}">
+            <ItemsControl ItemsSource="{Binding CexRightRailVM.TradingVenues}">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate>
               </ItemsControl.ItemsPanel>
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:TradingVenueQuoteViewModel">
-                  <Button Command="{Binding $parent[ItemsControl].DataContext.SelectTradingVenueQuoteCommand}"
+                  <Button Command="{Binding $parent[ItemsControl].DataContext.CexRightRailVM.SelectTradingVenueQuoteCommand}"
                           CommandParameter="{Binding Exchange}"
                           Background="{Binding TabBackground, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding TabBorderBrush, Converter={StaticResource StringToBrush}}"
                           BorderThickness="0,0,0,2" CornerRadius="0" Padding="4,6" HorizontalAlignment="Stretch">
@@ -681,16 +681,16 @@
               <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                 <Ellipse Width="6" Height="6" Fill="{DynamicResource Positive}" VerticalAlignment="Center" />
                 <TextBlock Text="{Binding SelectedSpotExchange}" Foreground="{DynamicResource TextPrimary}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
-                <TextBlock Text="{Binding SelectedMarket.Symbol}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding MarketFeedVM.SelectedMarket.Symbol}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
               </StackPanel>
               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
                 <StackPanel Orientation="Horizontal" Spacing="4">
                   <TextBlock Text="24H Vol" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
-                  <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.Volume24hLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                  <TextBlock Classes="TdNum" Text="{Binding MarketFeedVM.SelectedMarket.Volume24hLabel}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="4">
                   <TextBlock Text="Fee" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
-                  <TextBlock Classes="TdNum" Text="{Binding ExchangeFeeLabel}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                  <TextBlock Classes="TdNum" Text="{Binding CexRightRailVM.ExchangeFeeLabel}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                 </StackPanel>
               </StackPanel>
             </Grid>
@@ -702,54 +702,54 @@
               <StackPanel Grid.Column="0" Margin="10,8" Spacing="5">
                 <TextBlock Classes="TdLabel" Text="POSITION" />
                 <StackPanel Orientation="Horizontal" Spacing="5">
-                  <TextBlock Text="{Binding SelectedMarket.Symbol}" Foreground="{DynamicResource TextSecondary}" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
-                  <Border Background="{Binding PositionSideBackground, Converter={StaticResource StringToBrush}}" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding PositionSideLabel}" Foreground="{Binding PositionSideBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" />
+                  <TextBlock Text="{Binding MarketFeedVM.SelectedMarket.Symbol}" Foreground="{DynamicResource TextSecondary}" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
+                  <Border Background="{Binding CexRightRailVM.PositionSideBackground, Converter={StaticResource StringToBrush}}" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding CexRightRailVM.PositionSideLabel}" Foreground="{Binding CexRightRailVM.PositionSideBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" />
                   </Border>
-                  <TextBlock Text="{Binding ManualLeverageLabel}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" IsVisible="{Binding IsManualFuturesMode}" />
+                  <TextBlock Text="{Binding CexRightRailVM.ManualLeverageLabel}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" IsVisible="{Binding IsManualFuturesMode}" />
                 </StackPanel>
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
                   <StackPanel Grid.Column="0" Spacing="1">
                     <TextBlock Text="Entry" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-                    <TextBlock Classes="TdNum" Text="{Binding EntryPriceLabel}" Foreground="{DynamicResource TextMuted}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" />
+                    <TextBlock Classes="TdNum" Text="{Binding CexRightRailVM.EntryPriceLabel}" Foreground="{DynamicResource TextMuted}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" />
                   </StackPanel>
                   <StackPanel Grid.Column="1" Spacing="1">
                     <TextBlock Text="uPnL" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-                    <TextBlock Classes="TdNum" Text="{Binding ExchangeUnrealizedPnlLabel}" Foreground="{Binding SessionPnlBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
+                    <TextBlock Classes="TdNum" Text="{Binding CexRightRailVM.ExchangeUnrealizedPnlLabel}" Foreground="{Binding SessionPnlBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
                   </StackPanel>
                 </Grid>
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
-                  <Button Grid.Column="0" Content="REVERSE" Classes="TdSeg mini" Command="{Binding ReversePositionCommand}" IsEnabled="{Binding CanExecuteCexReverse}" ToolTip.Tip="{Binding CexReverseBlockedReason}" />
-                  <Button Grid.Column="1" Content="CLOSE" Classes="TdDanger" FontSize="{DynamicResource FsMicro}" Padding="0,4" Command="{Binding ClosePositionCommand}" IsEnabled="{Binding CanExecuteCexClose}" ToolTip.Tip="{Binding CexCloseBlockedReason}" />
+                  <Button Grid.Column="0" Content="REVERSE" Classes="TdSeg mini" Command="{Binding CexRightRailVM.ReversePositionCommand}" IsEnabled="{Binding CexRightRailVM.CanExecuteCexReverse}" ToolTip.Tip="{Binding CexRightRailVM.CexReverseBlockedReason}" />
+                  <Button Grid.Column="1" Content="CLOSE" Classes="TdDanger" FontSize="{DynamicResource FsMicro}" Padding="0,4" Command="{Binding CexRightRailVM.ClosePositionCommand}" IsEnabled="{Binding CexRightRailVM.CanExecuteCexClose}" ToolTip.Tip="{Binding CexRightRailVM.CexCloseBlockedReason}" />
                 </Grid>
               </StackPanel>
               <Border Grid.Column="1" Background="{DynamicResource Surface3}" />
               <!-- AI signal -->
-              <StackPanel Grid.Column="2" Margin="10,8" Spacing="5" Background="{Binding SelectedMarket.AiSignalCardBackground, Converter={StaticResource StringToBrush}}">
+              <StackPanel Grid.Column="2" Margin="10,8" Spacing="5" Background="{Binding MarketFeedVM.SelectedMarket.AiSignalCardBackground, Converter={StaticResource StringToBrush}}">
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock Classes="TdLabel" Text="AI SIGNAL" VerticalAlignment="Center" />
                   <Border Grid.Column="1" Background="{DynamicResource Surface2}" CornerRadius="4" Padding="6,1">
-                    <TextBlock Text="{Binding SelectedMarket.AiSignalLabel}" Foreground="{Binding SelectedMarket.AiSignalForeground, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" />
+                    <TextBlock Text="{Binding MarketFeedVM.SelectedMarket.AiSignalLabel}" Foreground="{Binding MarketFeedVM.SelectedMarket.AiSignalForeground, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" />
                   </Border>
                 </Grid>
-                <TextBlock Text="{Binding SelectedMarket.AiSignalDetail}" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" FontSize="{DynamicResource FsMicro}" LineHeight="14" />
+                <TextBlock Text="{Binding MarketFeedVM.SelectedMarket.AiSignalDetail}" Foreground="{DynamicResource TextSoft}" TextWrapping="Wrap" FontSize="{DynamicResource FsMicro}" LineHeight="14" />
                 <Grid ColumnDefinitions="*,*,*" ColumnSpacing="3">
                   <Border Grid.Column="0" Background="{DynamicResource Surface1}" CornerRadius="4" Padding="4,2">
                     <StackPanel Spacing="1" HorizontalAlignment="Center">
                       <TextBlock Text="ENTRY" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
-                      <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.MidPriceLabel}" Foreground="{DynamicResource TextSecondary}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
+                      <TextBlock Classes="TdNum" Text="{Binding MarketFeedVM.SelectedMarket.MidPriceLabel}" Foreground="{DynamicResource TextSecondary}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
                     </StackPanel>
                   </Border>
                   <Border Grid.Column="1" Background="{DynamicResource PositiveTint}" CornerRadius="4" Padding="4,2">
                     <StackPanel Spacing="1" HorizontalAlignment="Center">
                       <TextBlock Text="TP" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
-                      <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.High24hLabel}" Foreground="{DynamicResource Positive}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
+                      <TextBlock Classes="TdNum" Text="{Binding MarketFeedVM.SelectedMarket.High24hLabel}" Foreground="{DynamicResource Positive}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
                     </StackPanel>
                   </Border>
                   <Border Grid.Column="2" Background="{DynamicResource NegativeFill}" CornerRadius="4" Padding="4,2">
                     <StackPanel Spacing="1" HorizontalAlignment="Center">
                       <TextBlock Text="SL" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
-                      <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.Low24hLabel}" Foreground="{DynamicResource Negative}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
+                      <TextBlock Classes="TdNum" Text="{Binding MarketFeedVM.SelectedMarket.Low24hLabel}" Foreground="{DynamicResource Negative}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
                     </StackPanel>
                   </Border>
                 </Grid>
@@ -762,9 +762,9 @@
               <TextBlock Classes="TdLabel" Text="ORDER BOOK" VerticalAlignment="Center" />
               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                 <TextBlock Text="Depth" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
-                <Button Content="0.01" Classes="TdSeg mini" Command="{Binding SelectObDepthCommand}" CommandParameter="0.01" Classes.active="{Binding SelectedObDepth, Converter={StaticResource StrEq}, ConverterParameter=0.01}" />
-                <Button Content="0.1" Classes="TdSeg mini" Command="{Binding SelectObDepthCommand}" CommandParameter="0.1" Classes.active="{Binding SelectedObDepth, Converter={StaticResource StrEq}, ConverterParameter=0.1}" />
-                <Button Content="1" Classes="TdSeg mini" Command="{Binding SelectObDepthCommand}" CommandParameter="1" Classes.active="{Binding SelectedObDepth, Converter={StaticResource StrEq}, ConverterParameter=1}" />
+                <Button Content="0.01" Classes="TdSeg mini" Command="{Binding CexRightRailVM.SelectObDepthCommand}" CommandParameter="0.01" Classes.active="{Binding CexRightRailVM.SelectedObDepth, Converter={StaticResource StrEq}, ConverterParameter=0.01}" />
+                <Button Content="0.1" Classes="TdSeg mini" Command="{Binding CexRightRailVM.SelectObDepthCommand}" CommandParameter="0.1" Classes.active="{Binding CexRightRailVM.SelectedObDepth, Converter={StaticResource StrEq}, ConverterParameter=0.1}" />
+                <Button Content="1" Classes="TdSeg mini" Command="{Binding CexRightRailVM.SelectObDepthCommand}" CommandParameter="1" Classes.active="{Binding CexRightRailVM.SelectedObDepth, Converter={StaticResource StrEq}, ConverterParameter=1}" />
               </StackPanel>
             </Grid>
 
@@ -778,7 +778,7 @@
 
             <!-- Asks -->
             <ScrollViewer MaxHeight="190" VerticalScrollBarVisibility="Auto" Margin="0,0,0,2">
-              <ItemsControl ItemsSource="{Binding SelectedMarket.AskLevels}">
+              <ItemsControl ItemsSource="{Binding MarketFeedVM.SelectedMarket.AskLevels}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
                     <Grid Height="16" Margin="12,0">
@@ -799,19 +799,19 @@
             <Border Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1" Padding="12,6">
               <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                  <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.MidPriceLabel}" Foreground="{DynamicResource Accent}" FontWeight="Bold" FontSize="{DynamicResource FsTitle}" />
-                  <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.ChangePercentLabel}" Foreground="{Binding SelectedMarket.ChangeBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
+                  <TextBlock Classes="TdNum" Text="{Binding MarketFeedVM.SelectedMarket.MidPriceLabel}" Foreground="{DynamicResource Accent}" FontWeight="Bold" FontSize="{DynamicResource FsTitle}" />
+                  <TextBlock Classes="TdNum" Text="{Binding MarketFeedVM.SelectedMarket.ChangePercentLabel}" Foreground="{Binding MarketFeedVM.SelectedMarket.ChangeBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Spacing="1" HorizontalAlignment="Right">
                   <TextBlock Text="Spread" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" />
-                  <TextBlock Classes="TdNum" Text="{Binding SelectedMarket.SpreadPercentLabel}" Foreground="{DynamicResource Warning}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" HorizontalAlignment="Right" />
+                  <TextBlock Classes="TdNum" Text="{Binding MarketFeedVM.SelectedMarket.SpreadPercentLabel}" Foreground="{DynamicResource Warning}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" HorizontalAlignment="Right" />
                 </StackPanel>
               </Grid>
             </Border>
 
             <!-- Bids -->
             <ScrollViewer MaxHeight="190" VerticalScrollBarVisibility="Auto" Margin="0,2,0,0">
-              <ItemsControl ItemsSource="{Binding SelectedMarket.BidLevels}">
+              <ItemsControl ItemsSource="{Binding MarketFeedVM.SelectedMarket.BidLevels}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:OrderBookLevelViewModel">
                     <Grid Height="16" Margin="12,0">
@@ -843,7 +843,7 @@
               <StackPanel Grid.Column="0" Margin="10,8" Spacing="5">
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock Classes="TdLabel" Text="RISK" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" Text="{Binding RiskModeLabel}" Foreground="{DynamicResource Warning}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" />
+                  <TextBlock Grid.Column="1" Text="{Binding CexRightRailVM.RiskModeLabel}" Foreground="{DynamicResource Warning}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" />
                 </Grid>
                 <Border Height="6" Background="{DynamicResource Surface3}" CornerRadius="3">
                   <Border Background="{DynamicResource Warning}" CornerRadius="3" HorizontalAlignment="Left" Width="{Binding WalletVM.GlobalPositionSizingPercent}" />

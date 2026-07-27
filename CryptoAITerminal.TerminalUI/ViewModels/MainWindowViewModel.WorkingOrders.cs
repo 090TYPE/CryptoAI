@@ -57,10 +57,10 @@ public partial class MainWindowViewModel
             AdvancedTrailingVM.OnPriceTick(lastPriceActive, candleSnap);
         }
 
-        if (WorkingOrders.Count == 0)
+        if (TradeBlotterVM.WorkingOrders.Count == 0)
             return;
 
-        var candidates = WorkingOrders.Where(order => !order.IsExchangeManaged).ToList();
+        var candidates = TradeBlotterVM.WorkingOrders.Where(order => !order.IsExchangeManaged).ToList();
         if (candidates.Count == 0)
             return;
 
@@ -179,7 +179,7 @@ public partial class MainWindowViewModel
 
     private async Task ExecuteWorkingOrderAsync(WorkingOrderViewModel order)
     {
-        if (!WorkingOrders.Contains(order))
+        if (!TradeBlotterVM.WorkingOrders.Contains(order))
         {
             return;
         }
@@ -259,7 +259,7 @@ public partial class MainWindowViewModel
         }
         finally
         {
-            if (consumed && WorkingOrders.Remove(order))
+            if (consumed && TradeBlotterVM.WorkingOrders.Remove(order))
             {
                 this.RaisePropertyChanged(nameof(WorkingOrdersCountLabel));
                 PersistSoftwareWorkingOrders();

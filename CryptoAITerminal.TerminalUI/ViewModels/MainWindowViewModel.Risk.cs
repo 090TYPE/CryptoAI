@@ -267,7 +267,7 @@ public partial class MainWindowViewModel
             return risk > 0 && reward > 0 ? $"1 : {reward / risk:0.0}" : "n/a";
         }
     }
-    public string AiValidityLabel => SelectedTradeTimeframe switch
+    public string AiValidityLabel => ChartPanelVM.SelectedTradeTimeframe switch
     {
         "1M" => "15m",
         "5M" => "45m",
@@ -290,7 +290,7 @@ public partial class MainWindowViewModel
     public string AiWarningTertiary => TradeNotional <= 0
         ? "No order is armed yet. Size the ticket first to evaluate the setup properly."
         : $"Current ticket consumes {PortfolioExposureLabel} of available balance with ~{EstimatedTradingFeeLabel} in fees.";
-    public string ChartInteractionHint => SelectedChartTool switch
+    public string ChartInteractionHint => ChartPanelVM.SelectedChartTool switch
     {
         "Trend" => "Trend line: click first point, then second point on the chart.",
         "Horizontal" => "Horizontal line: click a price level on the chart.",
@@ -322,10 +322,10 @@ public partial class MainWindowViewModel
             var lastCandle = TradingCandles.LastOrDefault();
             if (lastCandle is null)
             {
-                return $"{SelectedMarket.DisplaySymbol} | {SelectedTradeTimeframe}";
+                return $"{SelectedMarket.DisplaySymbol} | {ChartPanelVM.SelectedTradeTimeframe}";
             }
 
-            return $"{SelectedMarket.DisplaySymbol} {SelectedTradeTimeframe}   O: {lastCandle.Open:N2}   H: {lastCandle.High:N2}   L: {lastCandle.Low:N2}   C: {lastCandle.Close:N2}   V: {lastCandle.Volume:N2}";
+            return $"{SelectedMarket.DisplaySymbol} {ChartPanelVM.SelectedTradeTimeframe}   O: {lastCandle.Open:N2}   H: {lastCandle.High:N2}   L: {lastCandle.Low:N2}   C: {lastCandle.Close:N2}   V: {lastCandle.Volume:N2}";
         }
     }
     public string ChartRangeLabel => IsDexTradingMode
@@ -336,7 +336,7 @@ public partial class MainWindowViewModel
             "1W" => "Range: last week",
             _ => $"Range: {DexTradingVM.SelectedChartRange}"
         }
-        : SelectedTradeTimeframe switch
+        : ChartPanelVM.SelectedTradeTimeframe switch
         {
             "1M" => "Range: last minute",
             "5M" => "Range: last 5 minutes",
@@ -347,7 +347,7 @@ public partial class MainWindowViewModel
             "1W" => "Range: last week",
             "1MN" => "Range: last month",
             "ALL" => "Range: full Binance history",
-            _ => $"Range: {SelectedTradeTimeframe}"
+            _ => $"Range: {ChartPanelVM.SelectedTradeTimeframe}"
         };
     public string Timeframe1MBackground => GetTimeframeBackground("1M");
     public string Timeframe5MBackground => GetTimeframeBackground("5M");
@@ -355,18 +355,12 @@ public partial class MainWindowViewModel
     public string Timeframe1HBackground => GetTimeframeBackground("1H");
     public string Timeframe4HBackground => GetTimeframeBackground("4H");
     public string Timeframe1DBackground => GetTimeframeBackground("1D");
-    public string Timeframe1WBackground => GetTimeframeBackground("1W");
-    public string Timeframe1MNBackground => GetTimeframeBackground("1MN");
-    public string TimeframeAllBackground => GetTimeframeBackground("ALL");
     public string Timeframe1MForeground => GetTimeframeForeground("1M");
     public string Timeframe5MForeground => GetTimeframeForeground("5M");
     public string Timeframe15MForeground => GetTimeframeForeground("15M");
     public string Timeframe1HForeground => GetTimeframeForeground("1H");
     public string Timeframe4HForeground => GetTimeframeForeground("4H");
     public string Timeframe1DForeground => GetTimeframeForeground("1D");
-    public string Timeframe1WForeground => GetTimeframeForeground("1W");
-    public string Timeframe1MNForeground => GetTimeframeForeground("1MN");
-    public string TimeframeAllForeground => GetTimeframeForeground("ALL");
     public string ChartCursorBackground => GetChartToolBackground("Cursor");
     public string ChartTrendBackground => GetChartToolBackground("Trend");
     public string ChartHorizontalBackground => GetChartToolBackground("Horizontal");

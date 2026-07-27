@@ -4,32 +4,32 @@
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.PriceChartWidget"
              x:DataType="vm:MainWindowViewModel"
-             x:CompileBindings="False">
+             x:CompileBindings="True">
   <Grid RowDefinitions="Auto,*,Auto" RowSpacing="10">
 
     <!-- Symbol + timeframe toolbar -->
     <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
       <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-        <TextBlock Text="{Binding SelectedMarket.DisplaySymbol}" Foreground="{DynamicResource TextPrimary}"
+        <TextBlock Text="{Binding MarketFeedVM.SelectedMarket.DisplaySymbol}" Foreground="{DynamicResource TextPrimary}"
                    FontWeight="Bold" FontSize="{DynamicResource FsSubhead}" />
-        <TextBlock Classes="Mono" Text="{Binding SelectedMarket.LastPrice, StringFormat='{}{0:N2}'}"
+        <TextBlock Classes="Mono" Text="{Binding MarketFeedVM.SelectedMarket.LastPrice, StringFormat='{}{0:N2}'}"
                    Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsSubhead}" FontWeight="Bold" VerticalAlignment="Center" />
-        <TextBlock Text="{Binding SelectedMarket.ChangePercentLabel}"
-                   Foreground="{Binding SelectedMarket.ChangeBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsSmall}"
+        <TextBlock Text="{Binding MarketFeedVM.SelectedMarket.ChangePercentLabel}"
+                   Foreground="{Binding MarketFeedVM.SelectedMarket.ChangeBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsSmall}"
                    FontWeight="SemiBold" VerticalAlignment="Center" />
       </StackPanel>
       <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
-        <Button Classes="TfButton" Content="1m"  Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1M"
+        <Button Classes="TfButton" Content="1m"  Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="1M"
                 Background="{Binding Timeframe1MBackground, Converter={StaticResource StringToBrush}}"  Foreground="{Binding Timeframe1MForeground, Converter={StaticResource StringToBrush}}" />
-        <Button Classes="TfButton" Content="5m"  Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="5M"
+        <Button Classes="TfButton" Content="5m"  Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="5M"
                 Background="{Binding Timeframe5MBackground, Converter={StaticResource StringToBrush}}"  Foreground="{Binding Timeframe5MForeground, Converter={StaticResource StringToBrush}}" />
-        <Button Classes="TfButton" Content="15m" Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="15M"
+        <Button Classes="TfButton" Content="15m" Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="15M"
                 Background="{Binding Timeframe15MBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding Timeframe15MForeground, Converter={StaticResource StringToBrush}}" />
-        <Button Classes="TfButton" Content="1H"  Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1H"
+        <Button Classes="TfButton" Content="1H"  Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="1H"
                 Background="{Binding Timeframe1HBackground, Converter={StaticResource StringToBrush}}"  Foreground="{Binding Timeframe1HForeground, Converter={StaticResource StringToBrush}}" />
-        <Button Classes="TfButton" Content="4H"  Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="4H"
+        <Button Classes="TfButton" Content="4H"  Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="4H"
                 Background="{Binding Timeframe4HBackground, Converter={StaticResource StringToBrush}}"  Foreground="{Binding Timeframe4HForeground, Converter={StaticResource StringToBrush}}" />
-        <Button Classes="TfButton" Content="1D"  Command="{Binding SelectTradeTimeframeCommand}" CommandParameter="1D"
+        <Button Classes="TfButton" Content="1D"  Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="1D"
                 Background="{Binding Timeframe1DBackground, Converter={StaticResource StringToBrush}}"  Foreground="{Binding Timeframe1DForeground, Converter={StaticResource StringToBrush}}" />
       </StackPanel>
     </Grid>
@@ -38,8 +38,8 @@
     <Border Grid.Row="1" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1"
             CornerRadius="10" Padding="6">
       <ctrl:CexPriceChart HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                          Points="{Binding SelectedMarket.ChartPoints}"
-                          IsPositiveTrend="{Binding SelectedMarket.IsPositiveTrend}" />
+                          Points="{Binding MarketFeedVM.SelectedMarket.ChartPoints}"
+                          IsPositiveTrend="{Binding MarketFeedVM.SelectedMarket.IsPositiveTrend}" />
     </Border>
 
     <!-- Metric chips -->
@@ -48,28 +48,28 @@
         <StackPanel Spacing="1">
           <TextBlock Classes="StatLabel" Text="24H HIGH" />
           <TextBlock Classes="Mono" FontSize="{DynamicResource FsSmall}" FontWeight="SemiBold" Foreground="{DynamicResource Positive}"
-                     Text="{Binding ChartHighLabel}" />
+                     Text="{Binding ChartPanelVM.ChartHighLabel}" />
         </StackPanel>
       </Border>
       <Border Classes="StatCell" Grid.Column="1" Padding="10,6">
         <StackPanel Spacing="1">
           <TextBlock Classes="StatLabel" Text="24H LOW" />
           <TextBlock Classes="Mono" FontSize="{DynamicResource FsSmall}" FontWeight="SemiBold" Foreground="{DynamicResource Negative}"
-                     Text="{Binding ChartLowLabel}" />
+                     Text="{Binding ChartPanelVM.ChartLowLabel}" />
         </StackPanel>
       </Border>
       <Border Classes="StatCell" Grid.Column="2" Padding="10,6">
         <StackPanel Spacing="1">
           <TextBlock Classes="StatLabel" Text="VOLUME" />
           <TextBlock Classes="Mono" FontSize="{DynamicResource FsSmall}" FontWeight="SemiBold" Foreground="{DynamicResource AccentBlue}"
-                     Text="{Binding ChartVolumeLabel}" />
+                     Text="{Binding ChartPanelVM.ChartVolumeLabel}" />
         </StackPanel>
       </Border>
       <Border Classes="StatCell" Grid.Column="3" Padding="10,6">
         <StackPanel Spacing="1">
           <TextBlock Classes="StatLabel" Text="LAST TICK" />
           <TextBlock Classes="Mono" FontSize="{DynamicResource FsSmall}" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"
-                     Text="{Binding SelectedMarket.UpdatedLabel}" />
+                     Text="{Binding MarketFeedVM.SelectedMarket.UpdatedLabel}" />
         </StackPanel>
       </Border>
     </Grid>

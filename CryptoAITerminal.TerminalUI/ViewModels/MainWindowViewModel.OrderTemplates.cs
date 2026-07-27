@@ -123,7 +123,7 @@ public partial class MainWindowViewModel
             _ => ("1M", 6, 7.5m, 0.10m, 18m, 30m)
         };
 
-        SelectedTradeTimeframe = timeframe;
+        ChartPanelVM.SelectedTradeTimeframe = timeframe;
         SelectedMarket?.ApplyTimeframe(timeframe);
         _focusLatestCandlesOnNextRefresh = true;
         RaiseTimeframeStateChanged();
@@ -199,7 +199,7 @@ public partial class MainWindowViewModel
         var targetSymbol = SelectedMarket.Symbol;
         var targetMarket = SelectedMarket;
         var useFutures = IsManualFuturesMode;
-        var requestedTimeframe = SelectedTradeTimeframe;
+        var requestedTimeframe = ChartPanelVM.SelectedTradeTimeframe;
         var candleLimit = GetCandleLimit(requestedTimeframe);
 
         await _candleRefreshLock.WaitAsync();
@@ -223,7 +223,7 @@ public partial class MainWindowViewModel
                     !string.Equals(SelectedMarket.Symbol, targetSymbol, StringComparison.OrdinalIgnoreCase) ||
                     !ReferenceEquals(SelectedMarket, targetMarket) ||
                     IsManualFuturesMode != useFutures ||
-                    !string.Equals(SelectedTradeTimeframe, requestedTimeframe, StringComparison.OrdinalIgnoreCase))
+                    !string.Equals(ChartPanelVM.SelectedTradeTimeframe, requestedTimeframe, StringComparison.OrdinalIgnoreCase))
                 {
                     return;
                 }
@@ -251,7 +251,7 @@ public partial class MainWindowViewModel
 
                 if (_focusLatestCandlesOnNextRefresh)
                 {
-                    ChartResetViewVersion++;
+                    ChartPanelVM.ChartResetViewVersion++;
                     _focusLatestCandlesOnNextRefresh = false;
                 }
 

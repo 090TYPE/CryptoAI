@@ -73,7 +73,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     private decimal _positionQuantity;
     private decimal _averageEntryPrice;
     private decimal _realizedPnl;
-    private string _selectedTradeTimeframe = "1M";
     private string _tradeIdeaTitle = "Waiting for live market context";
     private string _tradeIdeaSummary = "Connect to a symbol to see a suggested entry zone, stop and target.";
     private string _suggestedEntryLabel = "--";
@@ -83,12 +82,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     private bool _isLadderCenterLocked = true;
     private int _ladderManualOffsetTicks;
     private TradingVenueMode _selectedTradingVenue = TradingVenueMode.Cex;
-    private string _selectedChartTool = "Cursor";
     private ChartToolPhase _chartToolPhase = ChartToolPhase.None;
     private bool _focusLatestCandlesOnNextRefresh = true;
-    private int _selectedTradingBottomTabIndex;
-    private int _chartClearDrawingsVersion;
-    private int _chartResetViewVersion;
     private bool _showChartVwap          = true;
     private bool _showChartVolumeProfile = true;
     private decimal _selectedLadderPrice;
@@ -142,6 +137,44 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         IReleaseNotesService? releaseNotes = null,
         WhatsNewGate? whatsNewGate = null)
     {
+        // The blotter only stores rows, so it can be built before anything else the shell needs.
+        TradeBlotterVM = new TradingDesk.TradeBlotterViewModel();
+
+        // The chart panel owns the toolbar state; everything a toolbar button used to trigger
+        // beyond the chart stays here and is reattached through the panel's events. The metric
+        // strip and the candle source are read through delegates because they derive from shell
+        // state (market data, DEX desk) that does not exist yet this early in the constructor.
+        ChartPanelVM = new TradingDesk.ChartPanelViewModel(
+            () => CurrentTradePrice,
+            () => SelectedTradingSymbol,
+            () => ActiveTradingCandles,
+            () => SpreadLabel,
+            () => ChartHighLabel,
+            () => ChartLowLabel,
+            () => ChartVolumeLabel,
+            AddLog);
+        ChartPanelVM.TimeframeChanged += OnChartPanelTimeframeChanged;
+        ChartPanelVM.ChartToolChanged += OnChartPanelChartToolChanged;
+        ChartPanelVM.DrawingsCleared += OnChartPanelDrawingsCleared;
+        ChartPanelVM.AlertArmRequested += OnChartPanelAlertArmRequested;
+
+        // The right rail owns the venue tabs and the depth toggle; the position card and the two
+        // execution guards are read through, because account state and the guard chain belong to
+        // the shell. CLOSE / REVERSE are attached later — they do not exist yet.
+        CexRightRailVM = new TradingDesk.CexRightRailViewModel(
+            TradingVenueOrder,
+            "Binance",
+            _selectedSpotExchange,
+            () => PositionQuantity,
+            () => ManualFuturesLeverage,
+            () => AverageEntryPrice,
+            () => _currentFuturesExchangeUnrealizedPnl,
+            GetCexCloseBlockedReason,
+            GetCexReverseBlockedReason,
+            () => RiskModeLabel);
+        CexRightRailVM.VenueQuoteSelected += OnRightRailVenueQuoteSelected;
+        CexRightRailVM.TapeRefreshRequested += () => _ = RefreshTapeAsync();
+
         // The market board owns its rows, filters and the active symbol; the shell keeps the
         // orchestration that a symbol change triggers (see OnMarketFeedSelectedMarketChanged).
         MarketFeedVM = new MarketFeedOwnerViewModel(DefaultSymbols);
@@ -1278,6 +1311,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         CancelAllOrdersCommand = ReactiveCommand.Create(CancelAllOrders, outputScheduler: App.UiScheduler);
         ClosePositionCommand = ReactiveCommand.CreateFromTask(async () => { await ExecuteClosePosition(); }, outputScheduler: App.UiScheduler);
         ReversePositionCommand = ReactiveCommand.CreateFromTask(ExecuteReversePosition, outputScheduler: App.UiScheduler);
+        CexRightRailVM.AttachCommands(ClosePositionCommand, ReversePositionCommand);
         OpenWalletTabCommand = ReactiveCommand.Create(() => { SelectMainTab("portfolio"); }, outputScheduler: App.UiScheduler);
         SelectMainTabCommand = ReactiveCommand.Create<string>(SelectMainTab, outputScheduler: App.UiScheduler);
         StartDemoCommand = ReactiveCommand.Create(StartDemoExploring, outputScheduler: App.UiScheduler);
@@ -1287,7 +1321,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         CloseWhatsNewCommand = ReactiveCommand.Create(CloseWhatsNew, outputScheduler: App.UiScheduler);
         SelectOrderSideCommand = ReactiveCommand.Create<string>(SelectOrderSide, outputScheduler: App.UiScheduler);
         PlacePrimaryOrderCommand = ReactiveCommand.CreateFromTask(PlacePrimaryOrderAsync, outputScheduler: App.UiScheduler);
-        SelectTradeTimeframeCommand = ReactiveCommand.Create<string>(SelectTradeTimeframe, outputScheduler: App.UiScheduler);
         SelectLimitPriceCommand = ReactiveCommand.Create<decimal>(SelectLimitPrice, outputScheduler: App.UiScheduler);
         SelectBidPriceCommand = ReactiveCommand.Create<decimal>(SelectBidPrice, outputScheduler: App.UiScheduler);
         SelectAskPriceCommand = ReactiveCommand.Create<decimal>(SelectAskPrice, outputScheduler: App.UiScheduler);
@@ -1297,9 +1330,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         ApplyAtrPresetCommand = ReactiveCommand.Create(ApplyAtrPreset, outputScheduler: App.UiScheduler);
         ApplyRiskRewardPresetCommand = ReactiveCommand.Create(ApplyRiskRewardPreset, outputScheduler: App.UiScheduler);
         ApplyScalpPresetCommand = ReactiveCommand.Create<string>(ApplyScalpPreset, outputScheduler: App.UiScheduler);
-        SelectChartToolCommand = ReactiveCommand.Create<string>(SelectChartTool, outputScheduler: App.UiScheduler);
-        ClearChartDrawingsCommand = ReactiveCommand.Create(ClearChartDrawings, outputScheduler: App.UiScheduler);
-        ResetChartViewCommand = ReactiveCommand.Create(ResetChartView, outputScheduler: App.UiScheduler);
         ToggleVwapCommand = ReactiveCommand.Create(ToggleVwap, outputScheduler: App.UiScheduler);
         ToggleVolumeProfileCommand = ReactiveCommand.Create(ToggleVolumeProfile, outputScheduler: App.UiScheduler);
         ToggleLadderCenterModeCommand = ReactiveCommand.Create(ToggleLadderCenterMode, outputScheduler: App.UiScheduler);
@@ -1399,13 +1429,29 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     /// </summary>
     public MarketFeedOwnerViewModel MarketFeedVM { get; }
 
+    /// <summary>
+    /// The desk's result surfaces: trade tape and the orders / positions / fills / signals blotter.
+    /// It only stores the rows — the shell still writes them and still owns every count label and
+    /// guard derived from them.
+    /// </summary>
+    public TradingDesk.TradeBlotterViewModel TradeBlotterVM { get; }
+
+    /// <summary>
+    /// The desk's chart panel: metric strip, timeframe / chart-type / zoom / alert / fullscreen
+    /// toolbar, drawing tools and indicator toggles. It owns that state; the shell keeps the
+    /// orchestration each control triggers (see the <c>OnChartPanel…</c> handlers).
+    /// </summary>
+    public TradingDesk.ChartPanelViewModel ChartPanelVM { get; }
+
+    /// <summary>
+    /// The desk's right rail: venue tabs, exchange info strip, position card with REVERSE / CLOSE,
+    /// the order-book depth toggle and the risk badge.
+    /// </summary>
+    public TradingDesk.CexRightRailViewModel CexRightRailVM { get; }
+
     /// <summary>Read-through alias for <see cref="MarketFeedOwnerViewModel.Markets"/>.</summary>
     public ObservableCollection<CexMarketItemViewModel> Markets => MarketFeedVM.Markets;
     public ObservableCollection<TradeLadderLevelViewModel> LadderLevels { get; } = [];
-    public ObservableCollection<WorkingOrderViewModel> WorkingOrders { get; } = [];
-    public ObservableCollection<TradeFillViewModel> RecentFills { get; } = [];
-    public ObservableCollection<PositionRowViewModel> PositionRows { get; } = [];
-    public ObservableCollection<SignalRowViewModel> SignalRows { get; } = [];
     public ObservableCollection<DexOhlcvPoint> TradingCandles { get; } = [];
     public ObservableCollection<AiAssistantMessageViewModel> AiAssistantMessages { get; } = [];
     public ObservableCollection<AiAssistantQuickPromptViewModel> AiAssistantQuickPrompts { get; } = [];
@@ -1435,12 +1481,13 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(SelectedMarket));
         this.RaisePropertyChanged(nameof(SelectedTradingSymbol));
         this.RaisePropertyChanged(nameof(SelectedMarketTitle));
+        ChartPanelVM.RaiseMarketStateChanged();
         _ = RefreshSelectedOrderBookAsync();
         OnTradingSymbolChanged();
 
         if (resolvedMarket is not null)
         {
-            resolvedMarket.ApplyTimeframe(SelectedTradeTimeframe);
+            resolvedMarket.ApplyTimeframe(ChartPanelVM.SelectedTradeTimeframe);
             CurrentMarketData = new MarketData
             {
                 Symbol = resolvedMarket.Symbol,
@@ -1449,6 +1496,11 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                 BestAsk = resolvedMarket.BestAsk,
                 Timestamp = resolvedMarket.LastUpdated == default ? DateTime.UtcNow : resolvedMarket.LastUpdated.ToUniversalTime()
             };
+
+            // CurrentMarketData now carries the new symbol's price, so the ticket can be reseeded
+            // against it. Without this the limit / TP / SL fields keep the previous symbol's
+            // numbers — a 65 000 limit left sitting on ETHUSDT is a buy that fills instantly.
+            ReseedTicketForSymbolChange();
         }
 
         _focusLatestCandlesOnNextRefresh = true;
@@ -1517,7 +1569,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
             this.RaiseAndSetIfChanged(ref _manualFuturesLeverage, normalized);
             this.RaisePropertyChanged(nameof(CexMarketModeSummary));
-            this.RaisePropertyChanged(nameof(ManualLeverageLabel));
+            CexRightRailVM.RaiseLeverageChanged();
             // Force re-apply on the next order: Bybit/OKX don't re-send leverage per order,
             // so without this the exchange keeps the stale leverage while the UI shows the new one.
             _manualFuturesSetupDone.Clear();
@@ -1674,11 +1726,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             ? FuturesMarginMode.Isolated
             : FuturesMarginMode.Cross;
     public IReadOnlyList<DexOhlcvPoint> ActiveTradingCandles => IsDexTradingMode ? DexTradingVM.ChartCandles : TradingCandles;
-    public int SelectedTradingBottomTabIndex
-    {
-        get => _selectedTradingBottomTabIndex;
-        set => this.RaiseAndSetIfChanged(ref _selectedTradingBottomTabIndex, value);
-    }
 
     public string SelectedOrderSide
     {
@@ -1735,7 +1782,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> CloseWhatsNewCommand { get; }
     public ReactiveCommand<string, Unit> SelectOrderSideCommand { get; }
     public ReactiveCommand<Unit, Unit> PlacePrimaryOrderCommand { get; }
-    public ReactiveCommand<string, Unit> SelectTradeTimeframeCommand { get; }
     public ReactiveCommand<decimal, Unit> SelectLimitPriceCommand { get; }
     public ReactiveCommand<decimal, Unit> SelectBidPriceCommand { get; }
     public ReactiveCommand<decimal, Unit> SelectAskPriceCommand { get; }
@@ -1745,9 +1791,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> ApplyAtrPresetCommand { get; }
     public ReactiveCommand<Unit, Unit> ApplyRiskRewardPresetCommand { get; }
     public ReactiveCommand<string, Unit> ApplyScalpPresetCommand { get; }
-    public ReactiveCommand<string, Unit> SelectChartToolCommand { get; }
-    public ReactiveCommand<Unit, Unit> ClearChartDrawingsCommand { get; }
-    public ReactiveCommand<Unit, Unit> ResetChartViewCommand { get; }
     public ReactiveCommand<Unit, Unit> ToggleVwapCommand { get; }
     public ReactiveCommand<Unit, Unit> ToggleVolumeProfileCommand { get; }
     public ReactiveCommand<Unit, Unit> ToggleLadderCenterModeCommand { get; }
@@ -1910,34 +1953,10 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
     }
 
-    public string SelectedTradeTimeframe
-    {
-        get => _selectedTradeTimeframe;
-        set => this.RaiseAndSetIfChanged(ref _selectedTradeTimeframe, value);
-    }
-
-    public string SelectedChartTool
-    {
-        get => _selectedChartTool;
-        set => this.RaiseAndSetIfChanged(ref _selectedChartTool, value);
-    }
-
     public ChartToolPhase SelectedChartToolPhase
     {
         get => _chartToolPhase;
         set => this.RaiseAndSetIfChanged(ref _chartToolPhase, value);
-    }
-
-    public int ChartClearDrawingsVersion
-    {
-        get => _chartClearDrawingsVersion;
-        set => this.RaiseAndSetIfChanged(ref _chartClearDrawingsVersion, value);
-    }
-
-    public int ChartResetViewVersion
-    {
-        get => _chartResetViewVersion;
-        set => this.RaiseAndSetIfChanged(ref _chartResetViewVersion, value);
     }
 
     public bool ShowChartVwap
@@ -2001,12 +2020,10 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             ? $"SHORT {Math.Abs(PositionQuantity):0.0000} {BaseAssetSymbol}"
             : "FLAT";
     public bool HasOpenManualPosition => PositionQuantity != 0;
-    public string EntryPriceLabel => AverageEntryPrice > 0 ? $"{AverageEntryPrice:N2}" : "--";
     public decimal UnrealizedPnl => PositionQuantity != 0 && AverageEntryPrice > 0
         ? (EffectivePositionMarkPrice - AverageEntryPrice) * PositionQuantity
         : 0m;
     public string UnrealizedPnlLabel => $"{UnrealizedPnl:+0.00;-0.00;0.00} USDT";
-    public string ExchangeUnrealizedPnlLabel => $"{_currentFuturesExchangeUnrealizedPnl:+0.00;-0.00;0.00} USDT";
     public string CurrentFuturesMarkPriceLabel => _currentFuturesMarkPrice > 0 ? $"{_currentFuturesMarkPrice:N2}" : "--";
     public string CurrentFuturesLiquidationLabel => _currentFuturesLiquidationPrice > 0 ? $"{_currentFuturesLiquidationPrice:N2}" : "--";
     public string CurrentFuturesMarginModeLabel => IsManualFuturesMode ? ManualFuturesMarginMode.ToUpperInvariant() : "--";
@@ -3340,10 +3357,10 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             .Where(trade => trade.TimestampUtc.ToLocalTime().Date == DateTime.Now.Date)
             .Sum(trade => trade.RealizedPnl - trade.Fee);
 
-        RecentFills.Clear();
+        TradeBlotterVM.RecentFills.Clear();
         foreach (var trade in orderedTrades.Take(12).OrderBy(trade => trade.TimestampUtc))
         {
-            RecentFills.Insert(0, new TradeFillViewModel(
+            TradeBlotterVM.RecentFills.Insert(0, new TradeFillViewModel(
                 trade.Symbol,
                 trade.Side == CryptoAITerminal.Core.Enums.OrderSide.Buy ? OrderSide.Buy : OrderSide.Sell,
                 trade.Price,
@@ -3353,13 +3370,13 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
         this.RaisePropertyChanged(nameof(RecentFillsCountLabel));
         this.RaisePropertyChanged(nameof(HasRecentFills));
-        this.RaisePropertyChanged(nameof(ShowRecentFillsPlaceholder));
+        TradeBlotterVM.RaiseRecentFillsChanged();
         RaisePositionStateChanged();
     }
 
     private void RemoveExchangeManagedOrdersForSymbolLocally(string symbol)
     {
-        var staleOrders = WorkingOrders
+        var staleOrders = TradeBlotterVM.WorkingOrders
             .Where(order => order.IsExchangeManaged &&
                             string.Equals(order.Symbol, symbol, StringComparison.OrdinalIgnoreCase) &&
                             order.Kind is WorkingOrderKind.LimitBuy or WorkingOrderKind.LimitSell or WorkingOrderKind.TakeProfit or WorkingOrderKind.StopLoss)
@@ -3372,7 +3389,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
         foreach (var order in staleOrders)
         {
-            WorkingOrders.Remove(order);
+            TradeBlotterVM.WorkingOrders.Remove(order);
         }
 
         RaiseWorkingOrdersCollectionChanged();
@@ -3417,19 +3434,19 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             .Cast<WorkingOrderViewModel>()
             .ToList();
 
-        var staleOrders = WorkingOrders
+        var staleOrders = TradeBlotterVM.WorkingOrders
             .Where(order => order.IsExchangeManaged && string.Equals(order.Symbol, symbol, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         foreach (var stale in staleOrders)
         {
-            WorkingOrders.Remove(stale);
+            TradeBlotterVM.WorkingOrders.Remove(stale);
         }
 
         foreach (var synced in syncedOrders)
         {
             synced.AttachCancel(() => CancelSingleOrder(synced));
-            WorkingOrders.Add(synced);
+            TradeBlotterVM.WorkingOrders.Add(synced);
         }
 
         RaiseWorkingOrdersCollectionChanged();
@@ -3493,7 +3510,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                 return;
             }
 
-            var existingProtection = WorkingOrders
+            var existingProtection = TradeBlotterVM.WorkingOrders
                 .Where(order => order.IsExchangeManaged &&
                                 order.Kind == kind &&
                                 string.Equals(order.Symbol, openPosition.Symbol, StringComparison.OrdinalIgnoreCase))
@@ -3532,7 +3549,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
             var order = WorkingOrderViewModel.CreateExchangeProtection(kind, openPosition.Symbol, result.Quantity, triggerPrice, result.Id, result.FilledQuantity, result.Status.ToString(), result.CreatedAt.ToLocalTime(), result.ReduceOnly, result.ExchangeType);
             order.AttachCancel(() => CancelSingleOrder(order));
-            WorkingOrders.Add(order);
+            TradeBlotterVM.WorkingOrders.Add(order);
             RaiseWorkingOrdersCollectionChanged();
             AddLog($"{order.KindLabel} sent to {SelectedFuturesExchange} futures at {triggerPrice:N2}.");
         }
@@ -3575,7 +3592,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
             var symbol = openPosition?.Symbol ?? SelectedTradingSymbol;
             var sideKind = side == CryptoAITerminal.Core.Enums.OrderSide.Buy ? WorkingOrderKind.LimitBuy : WorkingOrderKind.LimitSell;
-            var existingLimits = WorkingOrders
+            var existingLimits = TradeBlotterVM.WorkingOrders
                 .Where(order => order.IsExchangeManaged &&
                                 order.Kind == sideKind &&
                                 string.Equals(order.Symbol, symbol, StringComparison.OrdinalIgnoreCase))
@@ -3637,7 +3654,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             var orderSide = side == CryptoAITerminal.Core.Enums.OrderSide.Buy ? OrderSide.Buy : OrderSide.Sell;
             var order = WorkingOrderViewModel.CreateExchangeLimit(orderSide, symbol, quantity, limitPrice, SelectedTimeInForce, result.Id, result.FilledQuantity, result.Status.ToString(), result.CreatedAt.ToLocalTime(), result.ReduceOnly, result.ExchangeType);
             order.AttachCancel(() => CancelSingleOrder(order));
-            WorkingOrders.Add(order);
+            TradeBlotterVM.WorkingOrders.Add(order);
             RaiseWorkingOrdersCollectionChanged();
             AddLog($"{(reduceOnly ? "Reduce-only " : string.Empty)}{side.ToString().ToUpperInvariant()} LIMIT sent to {SelectedFuturesExchange} futures at {limitPrice:N2}.");
         }
@@ -3889,7 +3906,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        if (!WorkingOrders.Remove(order))
+        if (!TradeBlotterVM.WorkingOrders.Remove(order))
         {
             return;
         }
@@ -3908,7 +3925,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private async Task CancelExchangeManagedProtectionOrdersAsync(bool suppressLog = true)
     {
-        var protectionOrders = WorkingOrders
+        var protectionOrders = TradeBlotterVM.WorkingOrders
             .Where(order => order.IsExchangeManaged && order.Kind is WorkingOrderKind.TakeProfit or WorkingOrderKind.StopLoss)
             .ToList();
 
@@ -4139,7 +4156,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
         var order = WorkingOrderViewModel.CreateLimit(OrderSide.Buy, SelectedTradingSymbol, TradeQuantity, LimitPrice, SelectedTimeInForce, SelectedSpotExchange);
         order.AttachCancel(() => CancelSingleOrder(order));
-        WorkingOrders.Add(order);
+        TradeBlotterVM.WorkingOrders.Add(order);
         RaiseWorkingOrdersCollectionChanged();
         PersistSoftwareWorkingOrders();
         AddLog($"BUY LIMIT armed at {LimitPrice:N2} for {TradeQuantity:0.0000} {BaseAssetSymbol} on {SelectedSpotExchange}.");
@@ -4162,7 +4179,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
         var order = WorkingOrderViewModel.CreateLimit(OrderSide.Sell, SelectedTradingSymbol, Math.Min(TradeQuantity, Math.Max(PositionQuantity, TradeQuantity)), LimitPrice, SelectedTimeInForce, SelectedSpotExchange);
         order.AttachCancel(() => CancelSingleOrder(order));
-        WorkingOrders.Add(order);
+        TradeBlotterVM.WorkingOrders.Add(order);
         RaiseWorkingOrdersCollectionChanged();
         PersistSoftwareWorkingOrders();
         AddLog($"SELL LIMIT armed at {LimitPrice:N2} for {order.Quantity:0.0000} {BaseAssetSymbol} on {SelectedSpotExchange}.");
@@ -4185,7 +4202,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
         var order = WorkingOrderViewModel.CreateProtection(WorkingOrderKind.TakeProfit, SelectedTradingSymbol, Math.Abs(PositionQuantity), TakeProfitPrice, SelectedSpotExchange);
         order.AttachCancel(() => CancelSingleOrder(order));
-        WorkingOrders.Add(order);
+        TradeBlotterVM.WorkingOrders.Add(order);
         RaiseWorkingOrdersCollectionChanged();
         PersistSoftwareWorkingOrders();
         AddLog($"Take-profit armed at {TakeProfitPrice:N2} on {SelectedSpotExchange}.");
@@ -4208,7 +4225,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
         var order = WorkingOrderViewModel.CreateProtection(WorkingOrderKind.StopLoss, SelectedTradingSymbol, Math.Abs(PositionQuantity), StopLossPrice, SelectedSpotExchange);
         order.AttachCancel(() => CancelSingleOrder(order));
-        WorkingOrders.Add(order);
+        TradeBlotterVM.WorkingOrders.Add(order);
         RaiseWorkingOrdersCollectionChanged();
         PersistSoftwareWorkingOrders();
         AddLog($"Stop-loss armed at {StopLossPrice:N2} on {SelectedSpotExchange}.");
@@ -4227,7 +4244,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private async Task CancelAllOrdersAsync()
     {
-        var orders = WorkingOrders.ToList();
+        var orders = TradeBlotterVM.WorkingOrders.ToList();
         if (orders.Count == 0)
         {
             AddLog("No working orders to cancel.");
@@ -4436,12 +4453,10 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return;
         }
 
+        // The only caller is the trading desk's SYMBOL strip, so this just retargets the desk.
+        // It used to also force the shell section to "markets" without moving SelectedTabIndex,
+        // which left the sidebar and the page title on Markets while the desk stayed on screen.
         SelectedMarket = market;
-        if (!string.Equals(_selectedShellSection, "markets", StringComparison.OrdinalIgnoreCase))
-        {
-            _selectedShellSection = "markets";
-            RaiseShellNavigationStateChanged();
-        }
     }
 
     private void OpenMarketInTrading(CexMarketItemViewModel? market)
@@ -4586,6 +4601,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             this.RaisePropertyChanged(nameof(GlobalPositionSizingLabel));
             this.RaisePropertyChanged(nameof(GlobalPositionSizingSummary));
             this.RaisePropertyChanged(nameof(RiskModeLabel));
+            CexRightRailVM.RaiseRiskModeChanged();
             this.RaisePropertyChanged(nameof(RiskModeBrush));
             this.RaisePropertyChanged(nameof(AiWarningTertiary));
         }
@@ -4623,6 +4639,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             this.RaisePropertyChanged(nameof(GlobalRiskCapLabel));
             this.RaisePropertyChanged(nameof(GlobalRiskSummary));
             this.RaisePropertyChanged(nameof(RiskModeLabel));
+            CexRightRailVM.RaiseRiskModeChanged();
             this.RaisePropertyChanged(nameof(RiskModeBrush));
             this.RaisePropertyChanged(nameof(RiskModeSummaryLabel));
             this.RaisePropertyChanged(nameof(AiConfidencePercent));
@@ -4744,7 +4761,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     {
         try
         {
-            var snapshot = WorkingOrders
+            var snapshot = TradeBlotterVM.WorkingOrders
                 .Where(order => !order.IsExchangeManaged)
                 .Select(order => new PersistedWorkingOrder
                 {
@@ -4802,7 +4819,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                 string.IsNullOrWhiteSpace(persisted.ExecutionExchange) ? SelectedSpotExchange : persisted.ExecutionExchange,
                 persisted.CreatedAtLocal == default ? DateTime.Now : persisted.CreatedAtLocal);
             order.AttachCancel(() => CancelSingleOrder(order));
-            WorkingOrders.Add(order);
+            TradeBlotterVM.WorkingOrders.Add(order);
             restored++;
         }
 
@@ -4936,19 +4953,16 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         RaiseTradingStateChanged();
     }
 
-    private void SelectTradeTimeframe(string timeframe)
+    /// <summary>
+    /// Runs after the chart panel has switched the timeframe. Verbatim the tail of the old
+    /// SelectTradeTimeframe: re-point the market, focus the newest candle, refresh chips, reload.
+    /// </summary>
+    private void OnChartPanelTimeframeChanged(string timeframe)
     {
-        if (string.IsNullOrWhiteSpace(timeframe))
-        {
-            return;
-        }
-
-        SelectedTradeTimeframe = timeframe;
         SelectedMarket?.ApplyTimeframe(timeframe);
         _focusLatestCandlesOnNextRefresh = true;
         RaiseTimeframeStateChanged();
         _ = RefreshSelectedCandlesAsync();
-        AddLog($"Trading timeframe focus switched to {timeframe}.");
     }
 
     private void SelectTradingVenue(string venue)
@@ -5019,30 +5033,30 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                bestBid.Quantity > 0 && bestAsk.Quantity > 0;
     }
 
-    private void SelectChartTool(string tool)
+    /// <summary>
+    /// Runs after the chart panel has switched the drawing tool. The multi-click phase is shell
+    /// state (<see cref="ChartInteractionHint"/> reads it), so resetting it stays here.
+    /// </summary>
+    private void OnChartPanelChartToolChanged()
     {
-        if (string.IsNullOrWhiteSpace(tool))
-        {
-            return;
-        }
-
-        SelectedChartTool = tool;
         SelectedChartToolPhase = ChartToolPhase.None;
         RaiseTimeframeStateChanged();
-        AddLog($"Chart tool switched to {tool}.");
     }
 
-    private void ClearChartDrawings()
-    {
-        ChartClearDrawingsVersion++;
-        SelectedChartToolPhase = ChartToolPhase.None;
-        AddLog("Chart drawings cleared.");
-    }
+    /// <summary>Runs after the chart panel has bumped its clear-drawings version.</summary>
+    private void OnChartPanelDrawingsCleared() => SelectedChartToolPhase = ChartToolPhase.None;
 
-    private void ResetChartView()
+    /// <summary>
+    /// Runs when the chart panel's alert button is confirmed with a valid price. Verbatim the
+    /// body of the old ToggleOrArmChartAlert — the alerts desk is the shell's, not the panel's.
+    /// </summary>
+    private void OnChartPanelAlertArmRequested(decimal price)
     {
-        ChartResetViewVersion++;
-        AddLog("Chart view reset.");
+        AlertsVM.NewAlertSymbol = SelectedTradingSymbol;
+        AlertsVM.NewAlertThreshold = price;
+        AlertsVM.SelectedCondition = price >= CurrentTradePrice ? "PriceAbove" : "PriceBelow";
+        AlertsVM.AddAlertCommand.Execute().Subscribe();
+        AddLog($"Price alert armed: {SelectedTradingSymbol} @ {price}");
     }
 
     private void ToggleVwap()
@@ -5194,6 +5208,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(AiWarningPrimary));
         this.RaisePropertyChanged(nameof(AiWarningSecondary));
         this.RaisePropertyChanged(nameof(AiWarningTertiary));
+        // The chart panel mirrors the metric strip and the candle source, so it follows the same
+        // notification the shell just gave itself for those properties.
+        ChartPanelVM.RaiseMarketStateChanged();
         RaiseAiContextSelectionStateChanged();
         RefreshPositionRows();
         UpdateTradeIdea();
@@ -5220,6 +5237,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(IsSpotPrivateApiReady));
         this.RaisePropertyChanged(nameof(SpotPrivateApiStatusLabel));
         this.RaisePropertyChanged(nameof(SpotPrivateApiStatusBrush));
+        ChartPanelVM.RaiseMarketStateChanged();
     }
 
     private string GetCexExecutionGuardReason(string routeLabel)
@@ -5433,8 +5451,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(CanExecuteCexSellLimit));
         this.RaisePropertyChanged(nameof(CanExecuteCexTakeProfit));
         this.RaisePropertyChanged(nameof(CanExecuteCexStopLoss));
-        this.RaisePropertyChanged(nameof(CanExecuteCexClose));
-        this.RaisePropertyChanged(nameof(CanExecuteCexReverse));
+        CexRightRailVM.RaiseActionGuardChanged();
         this.RaisePropertyChanged(nameof(CanPlacePrimaryOrder));
         this.RaisePropertyChanged(nameof(GuardPassLabel));
         this.RaisePropertyChanged(nameof(CexMarketBuyBlockedReason));
@@ -5443,8 +5460,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(CexSellLimitBlockedReason));
         this.RaisePropertyChanged(nameof(CexTakeProfitBlockedReason));
         this.RaisePropertyChanged(nameof(CexStopLossBlockedReason));
-        this.RaisePropertyChanged(nameof(CexCloseBlockedReason));
-        this.RaisePropertyChanged(nameof(CexReverseBlockedReason));
         this.RaisePropertyChanged(nameof(PrimaryOrderBlockedReason));
         this.RaisePropertyChanged(nameof(TradingGuardStatusLabel));
         this.RaisePropertyChanged(nameof(TradingGuardStatusBrush));
@@ -5457,13 +5472,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         RaiseCexActionStateChanged();
         this.RaisePropertyChanged(nameof(HasOpenManualPosition));
         this.RaisePropertyChanged(nameof(PositionStatusLabel));
-        this.RaisePropertyChanged(nameof(PositionSideLabel));
-        this.RaisePropertyChanged(nameof(PositionSideBrush));
-        this.RaisePropertyChanged(nameof(PositionSideBackground));
-        this.RaisePropertyChanged(nameof(EntryPriceLabel));
+        CexRightRailVM.RaisePositionCardChanged();
         this.RaisePropertyChanged(nameof(UnrealizedPnl));
         this.RaisePropertyChanged(nameof(UnrealizedPnlLabel));
-        this.RaisePropertyChanged(nameof(ExchangeUnrealizedPnlLabel));
         this.RaisePropertyChanged(nameof(FlatStatusLabel));
         this.RaisePropertyChanged(nameof(EntryCompactLabel));
         this.RaisePropertyChanged(nameof(PnlCompactLabel));
@@ -5907,18 +5918,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(Timeframe1HBackground));
         this.RaisePropertyChanged(nameof(Timeframe4HBackground));
         this.RaisePropertyChanged(nameof(Timeframe1DBackground));
-        this.RaisePropertyChanged(nameof(Timeframe1WBackground));
-        this.RaisePropertyChanged(nameof(Timeframe1MNBackground));
-        this.RaisePropertyChanged(nameof(TimeframeAllBackground));
         this.RaisePropertyChanged(nameof(Timeframe1MForeground));
         this.RaisePropertyChanged(nameof(Timeframe5MForeground));
         this.RaisePropertyChanged(nameof(Timeframe15MForeground));
         this.RaisePropertyChanged(nameof(Timeframe1HForeground));
         this.RaisePropertyChanged(nameof(Timeframe4HForeground));
         this.RaisePropertyChanged(nameof(Timeframe1DForeground));
-        this.RaisePropertyChanged(nameof(Timeframe1WForeground));
-        this.RaisePropertyChanged(nameof(Timeframe1MNForeground));
-        this.RaisePropertyChanged(nameof(TimeframeAllForeground));
         this.RaisePropertyChanged(nameof(ChartCursorBackground));
         this.RaisePropertyChanged(nameof(ChartTrendBackground));
         this.RaisePropertyChanged(nameof(ChartHorizontalBackground));
@@ -5934,16 +5939,16 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     }
 
     private string GetTimeframeBackground(string timeframe) =>
-        string.Equals(SelectedTradeTimeframe, timeframe, StringComparison.OrdinalIgnoreCase) ? "#17373B" : "#0F1721";
+        string.Equals(ChartPanelVM.SelectedTradeTimeframe, timeframe, StringComparison.OrdinalIgnoreCase) ? "#17373B" : "#0F1721";
 
     private string GetTimeframeForeground(string timeframe) =>
-        string.Equals(SelectedTradeTimeframe, timeframe, StringComparison.OrdinalIgnoreCase) ? "#F4F7FB" : "#8FA3B8";
+        string.Equals(ChartPanelVM.SelectedTradeTimeframe, timeframe, StringComparison.OrdinalIgnoreCase) ? "#F4F7FB" : "#8FA3B8";
 
     private string GetChartToolBackground(string tool) =>
-        string.Equals(SelectedChartTool, tool, StringComparison.OrdinalIgnoreCase) ? "#17373B" : "#0F1721";
+        string.Equals(ChartPanelVM.SelectedChartTool, tool, StringComparison.OrdinalIgnoreCase) ? "#17373B" : "#0F1721";
 
     private string GetChartToolForeground(string tool) =>
-        string.Equals(SelectedChartTool, tool, StringComparison.OrdinalIgnoreCase) ? "#F4F7FB" : "#8FA3B8";
+        string.Equals(ChartPanelVM.SelectedChartTool, tool, StringComparison.OrdinalIgnoreCase) ? "#F4F7FB" : "#8FA3B8";
 
     private static string NormalizeScalpPreset(string? preset) =>
         preset?.Trim().ToUpperInvariant() switch
@@ -7134,6 +7139,23 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         return Math.Round(price / step, MidpointRounding.AwayFromZero) * step;
     }
 
+    /// <summary>
+    /// Drops the ticket prices belonging to the symbol we just left and reseeds them from the new
+    /// one. <see cref="SeedTicketDefaults"/> is a first-run-only seed, so it needs the reset first.
+    /// </summary>
+    private void ReseedTicketForSymbolChange()
+    {
+        if (CurrentTradePrice <= 0)
+        {
+            return;
+        }
+
+        LimitPrice = 0m;
+        TakeProfitPrice = 0m;
+        StopLossPrice = 0m;
+        SeedTicketDefaults();
+    }
+
     private void SeedTicketDefaults()
     {
         if (CurrentTradePrice <= 0 || LimitPrice > 0 || TakeProfitPrice > 0 || StopLossPrice > 0)
@@ -7148,10 +7170,10 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private void RemoveProtectionOrders()
     {
-        var staleOrders = WorkingOrders.Where(order => order.Kind is WorkingOrderKind.TakeProfit or WorkingOrderKind.StopLoss).ToList();
+        var staleOrders = TradeBlotterVM.WorkingOrders.Where(order => order.Kind is WorkingOrderKind.TakeProfit or WorkingOrderKind.StopLoss).ToList();
         foreach (var order in staleOrders)
         {
-            WorkingOrders.Remove(order);
+            TradeBlotterVM.WorkingOrders.Remove(order);
         }
 
         if (staleOrders.Count > 0)
@@ -7162,31 +7184,31 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private void AddFill(OrderSide side, decimal price, decimal quantity, string status)
     {
-        RecentFills.Insert(0, new TradeFillViewModel(SelectedTradingSymbol, side, price, quantity, status));
-        while (RecentFills.Count > 24)
+        TradeBlotterVM.RecentFills.Insert(0, new TradeFillViewModel(SelectedTradingSymbol, side, price, quantity, status));
+        while (TradeBlotterVM.RecentFills.Count > 24)
         {
-            RecentFills.RemoveAt(RecentFills.Count - 1);
+            TradeBlotterVM.RecentFills.RemoveAt(TradeBlotterVM.RecentFills.Count - 1);
         }
 
         this.RaisePropertyChanged(nameof(RecentFillsCountLabel));
         this.RaisePropertyChanged(nameof(HasRecentFills));
-        this.RaisePropertyChanged(nameof(ShowRecentFillsPlaceholder));
+        TradeBlotterVM.RaiseRecentFillsChanged();
         this.RaisePropertyChanged(nameof(AnalyticsExecutionSummary));
     }
 
     private void RefreshPositionRows()
     {
-        PositionRows.Clear();
+        TradeBlotterVM.PositionRows.Clear();
         if (PositionQuantity == 0)
         {
             this.RaisePropertyChanged(nameof(PositionsCountLabel));
             this.RaisePropertyChanged(nameof(HasPositionRows));
-            this.RaisePropertyChanged(nameof(ShowPositionRowsPlaceholder));
+            TradeBlotterVM.RaisePositionRowsChanged();
             this.RaisePropertyChanged(nameof(AnalyticsExecutionSummary));
             return;
         }
 
-        PositionRows.Add(new PositionRowViewModel(
+        TradeBlotterVM.PositionRows.Add(new PositionRowViewModel(
             SelectedTradingSymbol,
             PositionQuantity,
             AverageEntryPrice,
@@ -7195,23 +7217,23 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             RealizedPnl));
         this.RaisePropertyChanged(nameof(PositionsCountLabel));
         this.RaisePropertyChanged(nameof(HasPositionRows));
-        this.RaisePropertyChanged(nameof(ShowPositionRowsPlaceholder));
+        TradeBlotterVM.RaisePositionRowsChanged();
         this.RaisePropertyChanged(nameof(AnalyticsExecutionSummary));
     }
 
     private void RefreshSignalRows()
     {
-        SignalRows.Clear();
+        TradeBlotterVM.SignalRows.Clear();
         if (SelectedMarket is null || CurrentTradePrice <= 0)
         {
             this.RaisePropertyChanged(nameof(SignalsCountLabel));
             this.RaisePropertyChanged(nameof(HasSignalRows));
-            this.RaisePropertyChanged(nameof(ShowSignalRowsPlaceholder));
+            TradeBlotterVM.RaiseSignalRowsChanged();
             this.RaisePropertyChanged(nameof(AnalyticsExecutionSummary));
             return;
         }
 
-        SignalRows.Add(new SignalRowViewModel(
+        TradeBlotterVM.SignalRows.Add(new SignalRowViewModel(
             SelectedTradingSymbol,
             TradeIdeaTitle,
             SuggestedEntryLabel,
@@ -7221,7 +7243,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
         this.RaisePropertyChanged(nameof(SignalsCountLabel));
         this.RaisePropertyChanged(nameof(HasSignalRows));
-        this.RaisePropertyChanged(nameof(ShowSignalRowsPlaceholder));
+        TradeBlotterVM.RaiseSignalRowsChanged();
         this.RaisePropertyChanged(nameof(AnalyticsExecutionSummary));
     }
 
@@ -7229,7 +7251,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     {
         this.RaisePropertyChanged(nameof(WorkingOrdersCountLabel));
         this.RaisePropertyChanged(nameof(HasWorkingOrders));
-        this.RaisePropertyChanged(nameof(ShowWorkingOrdersPlaceholder));
+        TradeBlotterVM.RaiseWorkingOrdersChanged();
         this.RaisePropertyChanged(nameof(AnalyticsExecutionSummary));
     }
 
