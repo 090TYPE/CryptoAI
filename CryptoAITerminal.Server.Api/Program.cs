@@ -50,6 +50,10 @@ builder.Services.AddSingleton<SharedResponseCache>();
 var aiPolicy = AiPolicyOptions.FromConfig(k => builder.Configuration[k]);
 builder.Services.AddSingleton(aiPolicy);
 builder.Services.AddSingleton(new AiBudget(aiPolicy.DailyTokenCapPerLicense));
+builder.Services.AddSingleton<AiBudgetRepository>();
+// Makes the daily cap survive a restart. Without it the counter reset on every deploy, so the
+// ceiling only held between restarts.
+builder.Services.AddHostedService<AiBudgetFlusher>();
 
 // Deployment role. "edge" is the internet-facing node behind Caddy; "core" is the isolated node
 // with no public IP. Only core may hold CRYPTOAI_KEK_B64: TradingService decrypts every user's
@@ -355,6 +359,29 @@ static async Task<string?> ReadBoundedBodyAsync(HttpContext ctx, int maxChars)
     return sb.ToString();
 }
 
+/// <summary>
+/// The daily token allowance this request's licence is entitled to.
+///
+/// The licence has always carried an Edition and nothing read it, so a Lite licence and a Pro
+/// licence were served identically — the price list described a difference the server did not
+/// implement. This is where that stops being true.
+/// </summary>
+static async Task<long> DailyCapAsync(HttpContext ctx, AiBudget budget, SettingsStore settings)
+{
+    var edition = (ctx.Items[LicenseCtx.Check] as LicenseCheckResult)?.Payload?.Edition;
+
+    if (!string.IsNullOrWhiteSpace(edition))
+    {
+        var configured = await settings.GetLongAsync(SettingKeys.PlanDailyTokens(edition), 0, ctx.RequestAborted);
+        if (configured > 0) return configured;
+        if (SettingKeys.DefaultPlanDailyTokens.TryGetValue(edition, out var shipped)) return shipped;
+    }
+
+    // Unrecognised or absent tier. Generous by design — an unknown edition means a plan was added
+    // and never configured, and the customer should not be the one who discovers that.
+    return await settings.GetLongAsync(SettingKeys.PlanDefaultDailyTokens, budget.DailyCap, ctx.RequestAborted);
+}
+
 static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiProxy ai,
     AiPolicyOptions policy, AiBudget budget, SettingsStore settings)
 {
@@ -365,8 +392,9 @@ static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiPr
         return Results.Json(new { error = "ai_disabled" }, statusCode: 503);
 
     var license = LicenseKey(ctx);
-    if (!budget.HasHeadroom(license))
-        return Results.Json(new { error = "ai_daily_budget_exhausted", cap = budget.DailyCap }, statusCode: 429);
+    var dailyCap = await DailyCapAsync(ctx, budget, settings);
+    if (!budget.HasHeadroom(license, dailyCap))
+        return Results.Json(new { error = "ai_daily_budget_exhausted", cap = dailyCap }, statusCode: 429);
 
     var raw = await ReadBoundedBodyAsync(ctx, policy.MaxRequestBytes);
     if (raw is null)
@@ -409,14 +437,19 @@ app.MapPost("/api/ai/openai", (HttpContext ctx, AiProxy ai, AiPolicyOptions poli
     ForwardAiAsync(ctx, AiVendor.OpenAi, ai, policy, budget, settings));
 
 // So the terminal can show remaining allowance instead of discovering the cap via a 429.
-app.MapGet("/api/ai/budget", (HttpContext ctx, AiBudget budget) =>
+app.MapGet("/api/ai/budget", async (HttpContext ctx, AiBudget budget, SettingsStore settings) =>
 {
     var license = LicenseKey(ctx);
+    var dailyCap = await DailyCapAsync(ctx, budget, settings);
     return Results.Ok(new
     {
         used = budget.Used(license),
-        remaining = budget.Remaining(license),
-        cap = budget.DailyCap,
+        remaining = budget.Remaining(license, dailyCap),
+        cap = dailyCap,
+        // The tier the allowance came from, so the terminal can say "Pro: 12k of 70k" rather than
+        // showing a bare number the customer has no way to interpret.
+        edition = (ctx.Items[LicenseCtx.Check] as LicenseCheckResult)?.Payload?.Edition,
+        resetsUtc = DateTime.UtcNow.Date.AddDays(1),
     });
 });
 
