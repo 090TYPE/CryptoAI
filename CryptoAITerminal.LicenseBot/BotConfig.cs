@@ -3,11 +3,20 @@ using Microsoft.Extensions.Configuration;
 namespace CryptoAITerminal.LicenseBot;
 
 /// <summary>
-/// Plan offered for sale. <paramref name="Stars"/> is the Telegram Stars price,
-/// <paramref name="RubPrice"/> is the fiat price charged via crypto (customer pays
-/// the crypto equivalent). Days=0 → perpetual.
+/// Plan offered for sale.
+///
+/// Priced in dollars because the cost side is in dollars: the AI spend behind every tier is billed
+/// per token by the vendor. Pricing in roubles meant the margin moved with the exchange rate on
+/// its own, and at 120 ₽/$ the cheapest tier stopped covering its own allowance.
+///
+/// <paramref name="UsdPrice"/> is the number on the price list; the rouble figure shown next to it
+/// is derived from <see cref="BotConfig.UsdRubRate"/> at display time, so a rate change does not
+/// need a redeploy and cannot leave the two prices contradicting each other.
+///
+/// Telegram Stars are gone. They paid out roughly a third of what the same tier fetched in crypto,
+/// so the same product had two prices that differed by 3x depending on which button was pressed.
 /// </summary>
-public sealed record Plan(string Code, string Title, string Description, int Stars, decimal RubPrice, int Days, string Edition);
+public sealed record Plan(string Code, string Title, string Description, decimal UsdPrice, int Days, string Edition);
 
 public sealed class BotConfig
 {
@@ -26,13 +35,32 @@ public sealed class BotConfig
     public string CryptoFiat { get; init; } = "RUB";            // fiat the price is quoted in
     public bool CryptoEnabled => !string.IsNullOrWhiteSpace(CryptoPayToken);
 
+    /// <summary>
+    /// Rate used to show a rouble price next to the dollar one. Overridable via USD_RUB_RATE so a
+    /// move in the exchange rate is a config change, not a release.
+    /// </summary>
+    public decimal UsdRubRate { get; init; } = 80m;
+
+    /// <summary>
+    /// Weekly tiers. Price and AI allowance both scale 1 : 2 : 3, which is the whole explanation a
+    /// customer needs for what separates them. The daily token allowances behind these live on the
+    /// server (SettingKeys.DefaultPlanDailyTokens) and must stay in step: 35k / 70k / 105k.
+    ///
+    /// No perpetual plan. A lifetime licence bought by an active trader paid for itself in about
+    /// thirteen months of AI spend and cost money every month after that, with no way to stop.
+    /// </summary>
     public static readonly IReadOnlyList<Plan> DefaultPlans =
     [
-        //                code          title              description                                  stars   ₽       days  edition
-        new("lite_month",  "Lite · 1 month",  "Core terminal, 1 exchange, paper + live.",  250,    990m,   30,  "Lite"),
-        new("pro_month",   "Pro · 1 month",   "All exchanges, DEX sniper, AI verdicts.",   600,    2000m,  30,  "Pro"),
-        new("pro_year",    "Pro · 1 year",    "Pro, best value — 12 months.",              5000,   18000m, 365, "Pro"),
-        new("pro_life",    "Pro · lifetime",  "Pay once, perpetual Pro license.",          12000,  40000m, 0,   "Pro"),
+        //             code           title           description                                                          $    дней  edition
+        new("lite_week", "Lite · неделя", "Терминал, одна биржа, бумажная и живая торговля, базовые AI-вердикты.",  5m,   7, "Lite"),
+        new("pro_week",  "Pro · неделя",  "Все биржи, DEX-снайпер, AI Signal Desk, ранжирование рынка, агент в бумажном режиме.", 10m,  7, "Pro"),
+        new("max_week",  "Max · неделя",  "Всё из Pro плюс агент в боевом режиме, приоритет и ежедневное портфельное ревью.",     15m,  7, "Max"),
+
+        // Monthly, at a 17% discount against four weeks. The weekly tier is the way in; this is
+        // what keeps someone from having to remember to pay 52 times a year.
+        new("lite_month", "Lite · месяц", "То же, что Lite, выгоднее на 17%.", 18m, 30, "Lite"),
+        new("pro_month",  "Pro · месяц",  "То же, что Pro, выгоднее на 17%.",  36m, 30, "Pro"),
+        new("max_month",  "Max · месяц",  "То же, что Max, выгоднее на 17%.",  54m, 30, "Max"),
     ];
 
     public bool IsAdmin(long userId) => Array.IndexOf(AdminIds, userId) >= 0;
@@ -78,7 +106,12 @@ public sealed class BotConfig
             CryptoPayToken   = Env("CRYPTOPAY_TOKEN") ?? cfg["CryptoPayToken"] ?? "",
             CryptoPayAssets  = Env("CRYPTOPAY_ASSETS") ?? cfg["CryptoPayAssets"] ?? "USDT,TON",
             CryptoPayApiBase = Env("CRYPTOPAY_API_BASE") ?? cfg["CryptoPayApiBase"] ?? "https://pay.crypt.bot/api/",
-            CryptoFiat       = Env("CRYPTO_FIAT") ?? cfg["CryptoFiat"] ?? "RUB",
+            // USD, not RUB: the invoice is quoted in the currency the price list is written in, so
+            // the amount charged cannot drift from the advertised price when the rate moves.
+            CryptoFiat       = Env("CRYPTO_FIAT") ?? cfg["CryptoFiat"] ?? "USD",
+            UsdRubRate       = decimal.TryParse(Env("USD_RUB_RATE") ?? cfg["UsdRubRate"],
+                                   System.Globalization.NumberStyles.Float,
+                                   System.Globalization.CultureInfo.InvariantCulture, out var rate) && rate > 0 ? rate : 80m,
         };
     }
 

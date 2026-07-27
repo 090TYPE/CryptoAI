@@ -81,21 +81,21 @@ public sealed class UpdateHandler
             case "/start":
             case "/help":
                 await Reply(msg.Chat.Id,
-                    "*Crypto AI Terminal — License Bot*\n" +
-                    "Buy a license and get your activation key instantly. Keys are *bound to your PC*.\n\n" +
-                    "*How to buy — 4 steps:*\n" +
-                    "1️⃣ Open the terminal → *Settings → License* → copy your *Machine ID* (16 characters).\n" +
-                    "2️⃣ Send that Machine ID to me here (just paste it as a message).\n" +
-                    "3️⃣ Use /buy → pick a plan → pay with *Telegram Stars* or *crypto*.\n" +
-                    "4️⃣ I send your key → paste it in the terminal (*Settings → License* or *Portfolio*) → *Activate*.\n\n" +
-                    "*Commands:*\n" +
-                    "/buy — plans & purchase\n" +
-                    "/mykeys — your purchased keys\n" +
-                    "/mymachine — your saved Machine ID\n" +
-                    "/bind `<MachineID>` — set/update your Machine ID\n" +
-                    "/help — this message\n\n" +
-                    "ℹ️ Where is the Machine ID? In the terminal: *Settings → License* (or the activation window). " +
-                    "Without a key you can still use *Demo (paper) mode* after a 14-day trial.", ct);
+                    "*CryptoAI Terminal — бот лицензий*\n" +
+                    "Покупка подписки и мгновенная выдача ключа. Ключ *привязывается к вашему компьютеру*.\n\n" +
+                    "*Как купить — 4 шага:*\n" +
+                    "1️⃣ Откройте терминал → *Настройки → Лицензия* → скопируйте *Machine ID* (16 символов).\n" +
+                    "2️⃣ Пришлите этот Machine ID сюда обычным сообщением.\n" +
+                    "3️⃣ Команда /buy → выберите тариф → оплата криптовалютой.\n" +
+                    "4️⃣ Я пришлю ключ → вставьте его в терминале (*Настройки → Лицензия*) → *Активировать*.\n\n" +
+                    "*Команды:*\n" +
+                    "/buy — тарифы и покупка\n" +
+                    "/mykeys — ваши ключи\n" +
+                    "/mymachine — сохранённый Machine ID\n" +
+                    "/bind `<MachineID>` — задать или сменить Machine ID\n" +
+                    "/help — это сообщение\n\n" +
+                    "ℹ️ Где взять Machine ID: в терминале, *Настройки → Лицензия* (или окно активации). " +
+                    "Без ключа после 14 дней пробного периода остаётся *бумажный режим*.", ct);
                 break;
 
             case "/buy":
@@ -109,8 +109,8 @@ public sealed class UpdateHandler
             case "/mymachine":
                 var mid = _store.GetCustomerMachine(from?.Id ?? 0);
                 await Reply(msg.Chat.Id, mid is null
-                    ? "No Machine ID on file yet.\nOpen the terminal → *Settings → License*, copy the 16-character *Machine ID*, and paste it here."
-                    : $"Your bound Machine ID: `{mid}`\nUse /bind to change it.", ct);
+                    ? "Machine ID пока не сохранён.\nОткройте терминал → *Настройки → Лицензия*, скопируйте 16-значный *Machine ID* и пришлите его сюда."
+                    : $"Ваш Machine ID: `{mid}`\nСменить — командой /bind.", ct);
                 break;
 
             case "/bind":
@@ -118,13 +118,13 @@ public sealed class UpdateHandler
                 if (arg.Length == 2 && MachineIdRegex.IsMatch(arg[1].Trim()) && from is not null)
                     await OnMachineIdReceived(msg.Chat.Id, from, arg[1].Trim().ToUpperInvariant(), ct);
                 else
-                    await Reply(msg.Chat.Id, "Usage: `/bind <MachineID>` — the 16-character ID from the terminal's Activate dialog.", ct);
+                    await Reply(msg.Chat.Id, "Формат: `/bind <MachineID>` — 16 символов из окна активации терминала.", ct);
                 break;
 
-            // ── Admin ──
+            // ── Админские ──
             case "/stats" when _cfg.IsAdmin(from?.Id ?? 0):
-                var (cust, paid, stars) = _store.Stats();
-                await Reply(msg.Chat.Id, $"*Stats*\nCustomers: {cust}\nPaid orders: {paid}\nStars collected: {stars} ⭐", ct);
+                var (cust, paid, collected) = _store.Stats();
+                await Reply(msg.Chat.Id, $"*Статистика*\nКлиентов: {cust}\nОплаченных заказов: {paid}\nСобрано: {collected}", ct);
                 break;
 
             case "/recent" when _cfg.IsAdmin(from?.Id ?? 0):
@@ -137,7 +137,7 @@ public sealed class UpdateHandler
 
             default:
                 if (cmd.StartsWith('/'))
-                    await Reply(msg.Chat.Id, "Unknown command. Try /buy or /help.", ct);
+                    await Reply(msg.Chat.Id, "Не знаю такой команды. Попробуйте /buy или /help.", ct);
                 break;
         }
     }
@@ -145,23 +145,25 @@ public sealed class UpdateHandler
     private async Task ShowPlans(ChatId chat, CancellationToken ct)
     {
         var cryptoOn = _crypto?.IsConfigured == true;
-        var rows = _cfg.Plans.Select(p =>
+        if (!cryptoOn)
         {
-            var row = new List<InlineKeyboardButton>
-            {
-                InlineKeyboardButton.WithCallbackData($"{p.Title} — {p.Stars} ⭐", $"buy:{p.Code}")
-            };
-            if (cryptoOn)
-                row.Add(InlineKeyboardButton.WithCallbackData($"{p.RubPrice:0} {_cfg.CryptoFiat} · crypto", $"cpay:{p.Code}"));
-            return row.ToArray();
-        });
-        var kb = new InlineKeyboardMarkup(rows);
+            // Said plainly rather than shown as an empty plan list. Without a payment channel the
+            // bot cannot sell anything, and a customer staring at buttons that do nothing is worse
+            // than one who is told to come back.
+            await Reply(chat, "Оплата сейчас недоступна — приём платежей не настроен. Напишите администратору.", ct);
+            return;
+        }
 
-        var sb = new StringBuilder("*Choose a plan*\n\n");
+        var kb = new InlineKeyboardMarkup(_cfg.Plans.Select(p => new[]
+        {
+            InlineKeyboardButton.WithCallbackData($"{p.Title} — ${p.UsdPrice:0.##}", $"cpay:{p.Code}")
+        }));
+
+        var sb = new StringBuilder("*Выберите тариф*\n\n");
         foreach (var p in _cfg.Plans)
-            sb.Append($"• *{p.Title}* — {p.Stars} ⭐"
-                + (cryptoOn ? $" / {p.RubPrice:0} {_cfg.CryptoFiat} crypto" : "")
-                + $"\n  {p.Description}\n");
+            sb.Append($"• *{p.Title}* — ${p.UsdPrice:0.##} (≈ {p.UsdPrice * _cfg.UsdRubRate:0} ₽)\n  {p.Description}\n");
+
+        sb.Append("\nОплата криптовалютой (USDT, TON). Ключ приходит сразу после подтверждения платежа.");
 
         await _bot.SendMessage(chat, sb.ToString(), parseMode: ParseMode.Markdown,
             replyMarkup: kb, cancellationToken: ct);
@@ -172,7 +174,7 @@ public sealed class UpdateHandler
         var orders = _store.GetOrders(telegramId).Where(o => o.Status == "paid").ToList();
         if (orders.Count == 0)
         {
-            await Reply(chat, "You have no keys yet. Use /buy to purchase one.", ct);
+            await Reply(chat, "Ключей пока нет. Купить — команда /buy.", ct);
             return;
         }
 
@@ -188,7 +190,7 @@ public sealed class UpdateHandler
     private async Task ShowRecent(ChatId chat, CancellationToken ct)
     {
         var orders = _store.RecentOrders(15);
-        if (orders.Count == 0) { await Reply(chat, "No orders yet.", ct); return; }
+        if (orders.Count == 0) { await Reply(chat, "Заказов пока нет.", ct); return; }
         var sb = new StringBuilder("*Recent orders*\n");
         foreach (var o in orders)
             sb.Append($"#{o.Id} tg:{o.TelegramId} {o.Edition} {o.Stars}⭐ {o.Status} {o.CreatedUtc:MM-dd HH:mm}\n");
@@ -217,7 +219,7 @@ public sealed class UpdateHandler
         _store.AddOrder(new OrderRow(0, msg.From!.Id, "admin", edition, 0, "MANUAL", null, key,
             expires, machine, "paid", DateTime.UtcNow));
 
-        var bound = machine is null ? "unbound" : $"bound to `{machine}`";
+        var bound = machine is null ? "без привязки" : $"привязан к `{machine}`";
         await _bot.SendMessage(msg.Chat.Id,
             $"Issued *{edition}* for *{name}* ({bound}):\n`{key}`", parseMode: ParseMode.Markdown, cancellationToken: ct);
     }
@@ -228,25 +230,26 @@ public sealed class UpdateHandler
     {
         var data = cq.Data ?? "";
 
-        if (data.StartsWith("buy:", StringComparison.Ordinal) && cq.Message is { } m)
+        // "buy:" is still accepted: it is what the Stars buttons used, and a customer can have an
+        // old message with those buttons sitting in their chat history. Routing it to the crypto
+        // flow is better than answering "unknown action" to someone trying to pay us.
+        if ((data.StartsWith("cpay:", StringComparison.Ordinal) || data.StartsWith("buy:", StringComparison.Ordinal))
+            && cq.Message is { } cm)
         {
-            var code = data["buy:".Length..];
-            var plan = _cfg.FindPlan(code);
-            if (plan is null) { await _bot.AnswerCallbackQuery(cq.Id, "Plan not available.", cancellationToken: ct); return; }
+            var code = data[(data.IndexOf(':') + 1)..];
             await _bot.AnswerCallbackQuery(cq.Id, cancellationToken: ct);
 
-            if (RequireMachineId(m.Chat.Id, cq.From.Id, "stars", code, out _))
-                await Reply(m.Chat.Id, "First, send me your *Machine ID*.\nFind it in the terminal: *Settings → License* (16 characters). Paste it here and I'll show the invoice.", ct);
-            else
-                await SendStarsInvoice(m.Chat.Id, plan, ct);
-        }
-        else if (data.StartsWith("cpay:", StringComparison.Ordinal) && cq.Message is { } cm)
-        {
-            var code = data["cpay:".Length..];
-            await _bot.AnswerCallbackQuery(cq.Id, cancellationToken: ct);
+            if (_cfg.FindPlan(code) is null)
+            {
+                // The old tiers are gone, so a button from a stale message names a plan that no
+                // longer exists. Show the current list instead of failing silently.
+                await Reply(cm.Chat.Id, "Этот тариф больше не продаётся — вот актуальные:", ct);
+                await ShowPlans(cm.Chat.Id, ct);
+                return;
+            }
 
             if (RequireMachineId(cm.Chat.Id, cq.From.Id, "crypto", code, out _))
-                await Reply(cm.Chat.Id, "First, send me your *Machine ID*.\nFind it in the terminal: *Settings → License* (16 characters). Paste it here and I'll create the crypto invoice.", ct);
+                await Reply(cm.Chat.Id, "Сначала пришлите ваш *Machine ID*.\nОн в терминале: *Настройки → Лицензия*, 16 символов. Пришлите его сюда, и я выставлю счёт.", ct);
             else
                 await StartCryptoInvoice(cm.Chat.Id, cq.From.Id, FullName(cq.From), code, ct);
         }
@@ -267,73 +270,57 @@ public sealed class UpdateHandler
     private async Task OnMachineIdReceived(ChatId chat, User from, string machineId, CancellationToken ct)
     {
         _store.SetCustomerMachine(from.Id, machineId);
-        await Reply(chat, $"✅ Machine ID saved: `{machineId}`\nKeys you buy will be bound to this computer.", ct);
+        await Reply(chat, $"✅ Machine ID сохранён: `{machineId}`\nКупленные ключи будут привязаны к этому компьютеру.", ct);
 
-        // Resume a pending purchase, if any.
+        // Возобновляем отложенную покупку, если она была.
         if (_awaitingMachine.TryRemove(from.Id, out var pending))
         {
-            var sep = pending.IndexOf(':');
-            var method = pending[..sep];
-            var code = pending[(sep + 1)..];
-            var plan = _cfg.FindPlan(code);
-            if (plan is null) return;
-
-            if (method == "stars")
-                await SendStarsInvoice(chat, plan, ct);
-            else
-                await StartCryptoInvoice(chat, from.Id, FullName(from), code, ct);
+            var code = pending[(pending.IndexOf(':') + 1)..];
+            if (_cfg.FindPlan(code) is null) return;
+            await StartCryptoInvoice(chat, from.Id, FullName(from), code, ct);
         }
     }
 
-    private Task SendStarsInvoice(ChatId chat, Plan plan, CancellationToken ct) =>
-        _bot.SendInvoice(
-            chatId: chat,
-            title: plan.Title,
-            description: plan.Description,
-            payload: $"plan:{plan.Code}",
-            currency: _cfg.Currency,                       // "XTR" — Telegram Stars
-            prices: new[] { new LabeledPrice(plan.Title, plan.Stars) },
-            providerToken: _cfg.ProviderToken,             // empty for Stars
-            cancellationToken: ct);
-
-    // ── Crypto payment (Crypto Pay API) ──────────────────────────────────────
+    // ── Оплата криптовалютой (Crypto Pay API) ────────────────────────────────
 
     private async Task StartCryptoInvoice(ChatId chat, long telegramId, string name, string code, CancellationToken ct)
     {
         var plan = _cfg.FindPlan(code);
-        if (plan is null) { await Reply(chat, "Plan not available.", ct); return; }
+        if (plan is null) { await Reply(chat, "Такого тарифа нет.", ct); return; }
 
         if (_crypto?.IsConfigured != true)
         {
-            await Reply(chat, "Crypto payment is not configured. Use the Stars option or contact support.", ct);
+            await Reply(chat, "Приём платежей не настроен. Напишите администратору.", ct);
             return;
         }
 
         CryptoInvoice? inv;
         try
         {
+            // Invoiced in the currency the price list is written in, so the amount charged cannot
+            // drift away from the advertised price when the exchange rate moves.
             inv = await _crypto.CreateFiatInvoiceAsync(
-                plan.RubPrice, _cfg.CryptoFiat,
-                $"Crypto AI Terminal — {plan.Title}",
+                plan.UsdPrice, _cfg.CryptoFiat,
+                $"CryptoAI Terminal — {plan.Title}",
                 payload: $"plan:{plan.Code}", ct: ct);
         }
         catch (Exception ex)
         {
-            await Reply(chat, $"Could not create the invoice: {ex.Message}", ct);
+            await Reply(chat, $"Не получилось выставить счёт: {ex.Message}", ct);
             return;
         }
-        if (inv is null) { await Reply(chat, "Could not create the invoice. Try again later.", ct); return; }
+        if (inv is null) { await Reply(chat, "Не получилось выставить счёт. Попробуйте позже.", ct); return; }
 
         // Pending order keyed to the invoice id (kept in charge_id) for reconciliation.
         var orderId = _store.AddOrder(new OrderRow(
             0, telegramId, plan.Code, plan.Edition, 0, _cfg.CryptoFiat, inv.InvoiceId.ToString(), "",
             plan.Days > 0 ? DateTime.UtcNow.AddDays(plan.Days) : null, null, "pending", DateTime.UtcNow));
 
-        var kb = new InlineKeyboardMarkup(InlineKeyboardButton.WithUrl($"Pay {plan.RubPrice:0} {_cfg.CryptoFiat} in crypto", inv.PayUrl));
+        var kb = new InlineKeyboardMarkup(InlineKeyboardButton.WithUrl($"Оплатить ${plan.UsdPrice:0.##}", inv.PayUrl));
         await _bot.SendMessage(chat,
-            $"*{plan.Title}* — {plan.RubPrice:0} {_cfg.CryptoFiat}\n\n" +
-            "Tap below to pay the crypto equivalent (USDT/TON/…). " +
-            "Your key arrives here automatically once payment is confirmed.",
+            $"*{plan.Title}* — ${plan.UsdPrice:0.##} (≈ {plan.UsdPrice * _cfg.UsdRubRate:0} ₽)\n\n" +
+            "Нажмите кнопку и оплатите эквивалент в USDT или TON. " +
+            "Ключ придёт сюда автоматически, как только платёж подтвердится.",
             parseMode: ParseMode.Markdown, replyMarkup: kb, cancellationToken: ct);
 
         _ = PollCryptoInvoice(chat, telegramId, name, plan, orderId, inv.InvoiceId);
@@ -365,7 +352,7 @@ public sealed class UpdateHandler
                     await _bot.SendMessage(chat,
                         $"✅ *Crypto payment confirmed — thank you!*\n\n" +
                         $"*{plan.Edition}* license · expires {exp}{bound}\n\n" +
-                        "Your activation key (tap to copy):\n" +
+                        "Ваш ключ активации (нажмите, чтобы скопировать):\n" +
                         $"`{key}`\n\nOpen the terminal → *Activate* → paste the key.",
                         parseMode: ParseMode.Markdown, cancellationToken: _appCt);
                     return;
@@ -388,7 +375,7 @@ public sealed class UpdateHandler
         var plan = _cfg.FindPlan(code);
 
         if (plan is null)
-            await _bot.AnswerPreCheckoutQuery(q.Id, "This plan is no longer available.", cancellationToken: ct);
+            await _bot.AnswerPreCheckoutQuery(q.Id, "Этот тариф больше не продаётся.", cancellationToken: ct);
         else
             await _bot.AnswerPreCheckoutQuery(q.Id, errorMessage: null, cancellationToken: ct); // approve
     }
@@ -402,7 +389,7 @@ public sealed class UpdateHandler
         var plan = _cfg.FindPlan(code);
         if (plan is null)
         {
-            await Reply(msg.Chat.Id, "Payment received, but the plan was not found. Contact support.", ct);
+            await Reply(msg.Chat.Id, "Платёж получен, но тариф не найден. Напишите администратору.", ct);
             return;
         }
 
@@ -422,9 +409,9 @@ public sealed class UpdateHandler
         await _bot.SendMessage(msg.Chat.Id,
             $"✅ *Payment received — thank you!*\n\n" +
             $"*{plan.Edition}* license · expires {exp}{bound}\n\n" +
-            "Your activation key (tap to copy):\n" +
+            "Ваш ключ активации (нажмите, чтобы скопировать):\n" +
             $"`{key}`\n\n" +
-            "Open the terminal → *Activate* → paste the key.",
+            "Откройте терминал → *Активировать* → вставьте ключ.",
             parseMode: ParseMode.Markdown, cancellationToken: ct);
     }
 
