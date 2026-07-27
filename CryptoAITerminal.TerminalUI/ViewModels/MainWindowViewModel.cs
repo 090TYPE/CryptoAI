@@ -1,4 +1,4 @@
-using Avalonia.Layout;
+﻿using Avalonia.Layout;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
@@ -63,10 +63,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private int _selectedTabIndex;
     private MarketData? _currentMarketData;
-    private decimal _tradeQuantity = 0.001m;
-    private decimal _limitPrice;
-    private decimal _takeProfitPrice;
-    private decimal _stopLossPrice;
     private string _selectedTimeInForce = "DAY";
     private string _logMessages = string.Empty;
     private decimal _availableBalanceUsdt = 10000m;
@@ -87,15 +83,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     private decimal _priceStep = 0.50m;
     private bool _pendingGlobalCexSizingApply = true;
     private string _selectedShellSection = "dashboard";
-    private string _selectedOrderSide = "BUY";
-    private string _selectedOrderType = "Limit";
-    private decimal _slippageTolerancePercent = 0.50m;
-    private string _selectedCexMarketMode = "Spot";
     private string _selectedFuturesExchange = "Binance";
     private IReadOnlyDictionary<string, IExchangeGateway>? _futuresGatewaysMap;
-    private int _manualFuturesLeverage = 3;
-    private string _manualFuturesMarginMode = "Cross";
-    private string _selectedTradingProfile = "Swing";
     private string _selectedScalpPreset = "Standard";
     private decimal _currentFuturesLiquidationPrice;
     private decimal _currentFuturesMarkPrice;
@@ -137,6 +126,26 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         // The blotter only stores rows, so it can be built before anything else the shell needs.
         TradeBlotterVM = new TradingDesk.TradeBlotterViewModel();
 
+        // The ticket owns side / type / mode / profile / prices / size / leverage and everything
+        // derived from them. The execution path stays here, so the four blocked reasons the PLACE
+        // ORDER button needs are read through delegates — the guard chain reads gateways, the risk
+        // manager and the wallet, none of which exist yet this early in the constructor. Every
+        // setter tail it used to run is reattached below through its events.
+        OrderTicketVM = new TradingDesk.OrderTicketViewModel(
+            () => CurrentTradePrice,
+            () => BaseAssetSymbol,
+            () => CexMarketBuyBlockedReason,
+            () => CexMarketSellBlockedReason,
+            () => CexBuyLimitBlockedReason,
+            () => CexSellLimitBlockedReason);
+        OrderTicketVM.TicketStateChanged += OnOrderTicketStateChanged;
+        OrderTicketVM.TradeQuantityChanged += OnOrderTicketQuantityChanged;
+        OrderTicketVM.MarketModeChanged += OnOrderTicketMarketModeChanged;
+        OrderTicketVM.LeverageChanged += OnOrderTicketLeverageChanged;
+        OrderTicketVM.MarginModeChanged += OnOrderTicketMarginModeChanged;
+        OrderTicketVM.TradingProfileChanged += OnOrderTicketTradingProfileChanged;
+        OrderTicketVM.OrderSideSelected += OnOrderTicketOrderSideSelected;
+
         // The chart panel owns the toolbar state; everything a toolbar button used to trigger
         // beyond the chart stays here and is reattached through the panel's events. The metric
         // strip and the candle source are read through delegates because they derive from shell
@@ -162,7 +171,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             "Binance",
             _selectedSpotExchange,
             () => PositionQuantity,
-            () => ManualFuturesLeverage,
+            () => OrderTicketVM.ManualFuturesLeverage,
             () => AverageEntryPrice,
             () => _currentFuturesExchangeUnrealizedPnl,
             GetCexCloseBlockedReason,
@@ -1102,9 +1111,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             }
 
             AddLog($"[TG] Accepted: {sig.Side} {sig.Symbol} @ {sig.Price:N2}");
-            SelectedOrderSide = sig.Side;
-            var qty = sig.Quantity > 0 ? sig.Quantity : TradeQuantity;
-            if (sig.Quantity > 0) TradeQuantity = sig.Quantity;
+            OrderTicketVM.SelectedOrderSide = sig.Side;
+            var qty = sig.Quantity > 0 ? sig.Quantity : OrderTicketVM.TradeQuantity;
+            if (sig.Quantity > 0) OrderTicketVM.TradeQuantity = sig.Quantity;
             try
             {
                 // No forced reduceOnly: a SELL signal is an entry (open short on futures /
@@ -1165,9 +1174,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         {
             // Keep StopLossPrice display in sync so it shows in the ticket
             if (Dispatcher.UIThread.CheckAccess())
-                StopLossPrice = newStop;
+                OrderTicketVM.StopLossPrice = newStop;
             else
-                Dispatcher.UIThread.Post(() => StopLossPrice = newStop);
+                Dispatcher.UIThread.Post(() => OrderTicketVM.StopLossPrice = newStop);
         };
 
         AdvancedTrailingVM.StopTriggered += triggerPrice =>
@@ -1212,7 +1221,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                 if (SelectedMarket is not null &&
                     string.Equals(SelectedMarket.Symbol, data.Symbol, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (!IsManualFuturesMode)
+                    if (!OrderTicketVM.IsManualFuturesMode)
                     {
                         CurrentMarketData = data;
                         ScheduleWorkingOrdersEvaluation();
@@ -1235,7 +1244,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
         _futuresMarketDataSubscription = _futuresGateway.MarketDataStream.Subscribe(data =>
         {
-            if (!IsManualFuturesMode)
+            if (!OrderTicketVM.IsManualFuturesMode)
             {
                 return;
             }
@@ -1254,7 +1263,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         {
             Dispatcher.UIThread.Post(() =>
             {
-                if (!IsManualFuturesMode)
+                if (!OrderTicketVM.IsManualFuturesMode)
                 {
                     return;
                 }
@@ -1273,7 +1282,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         {
             Dispatcher.UIThread.Post(() =>
             {
-                if (!IsManualFuturesMode ||
+                if (!OrderTicketVM.IsManualFuturesMode ||
                     !string.Equals(order.Symbol, SelectedTradingSymbol, StringComparison.OrdinalIgnoreCase))
                 {
                     return;
@@ -1287,7 +1296,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         {
             Dispatcher.UIThread.Post(() =>
             {
-                if (!IsManualFuturesMode ||
+                if (!OrderTicketVM.IsManualFuturesMode ||
                     !string.Equals(trade.Symbol, SelectedTradingSymbol, StringComparison.OrdinalIgnoreCase))
                 {
                     return;
@@ -1315,8 +1324,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         InstallUpdateCommand = ReactiveCommand.Create(StartUpdateDownload, outputScheduler: App.UiScheduler);
         DismissUpdateCommand = ReactiveCommand.Create(DismissUpdateBanner, outputScheduler: App.UiScheduler);
         CloseWhatsNewCommand = ReactiveCommand.Create(CloseWhatsNew, outputScheduler: App.UiScheduler);
-        SelectOrderSideCommand = ReactiveCommand.Create<string>(SelectOrderSide, outputScheduler: App.UiScheduler);
         PlacePrimaryOrderCommand = ReactiveCommand.CreateFromTask(PlacePrimaryOrderAsync, outputScheduler: App.UiScheduler);
+        OrderTicketVM.AttachCommands(PlacePrimaryOrderCommand);
         SelectLimitPriceCommand = ReactiveCommand.Create<decimal>(SelectLimitPrice, outputScheduler: App.UiScheduler);
         SelectBidPriceCommand = ReactiveCommand.Create<decimal>(SelectBidPrice, outputScheduler: App.UiScheduler);
         SelectAskPriceCommand = ReactiveCommand.Create<decimal>(SelectAskPrice, outputScheduler: App.UiScheduler);
@@ -1443,6 +1452,14 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     /// </summary>
     public TradingDesk.CexRightRailViewModel CexRightRailVM { get; }
 
+    /// <summary>
+    /// The desk's order ticket: side, order type, market mode, trading profile, prices, size,
+    /// slippage, futures leverage / margin mode and every label derived from them. It owns that
+    /// state; the shell keeps the execution path and does, in the <c>OnOrderTicket…</c> handlers,
+    /// exactly what each of those setters used to do after writing its value.
+    /// </summary>
+    public TradingDesk.OrderTicketViewModel OrderTicketVM { get; }
+
     /// <summary>Read-through alias for <see cref="MarketFeedOwnerViewModel.Markets"/>.</summary>
     public ObservableCollection<CexMarketItemViewModel> Markets => MarketFeedVM.Markets;
     public ObservableCollection<TradeLadderLevelViewModel> LadderLevels { get; } = [];
@@ -1499,7 +1516,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
         _focusLatestCandlesOnNextRefresh = true;
         _ = RefreshSelectedCandlesAsync();
-        if (resolvedMarket is not null && IsManualFuturesMode)
+        if (resolvedMarket is not null && OrderTicketVM.IsManualFuturesMode)
         {
             _ = RefreshManualAccountStateAsync();
         }
@@ -1531,88 +1548,75 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     }
     public IReadOnlyList<string> AvailableFuturesMarginModes { get; } = ["Cross", "Isolated"];
     public IReadOnlyList<string> TradingProfileOptions { get; } = ["Swing", "Scalp", "Aggro"];
-    public string SelectedCexMarketMode
+    /// <summary>
+    /// Runs after the ticket has switched spot ↔ futures. Verbatim the tail of the old
+    /// SelectedCexMarketMode setter.
+    /// </summary>
+    private void OnOrderTicketMarketModeChanged()
     {
-        get => _selectedCexMarketMode;
-        set
-        {
-            var normalized = string.Equals(value, "Futures", StringComparison.OrdinalIgnoreCase) ? "Futures" : "Spot";
-            if (string.Equals(_selectedCexMarketMode, normalized, StringComparison.Ordinal))
-            {
-                return;
-            }
+        EnsureSelectedMarketDisplaySnapshot();
+        RaiseTradingModeStateChanged();
+        RaiseTradingStateChanged();
+        SchedulePassiveManualModeSync();
+    }
 
-            this.RaiseAndSetIfChanged(ref _selectedCexMarketMode, normalized);
-            EnsureSelectedMarketDisplaySnapshot();
-            RaiseTradingModeStateChanged();
-            RaiseTradingStateChanged();
-            SchedulePassiveManualModeSync();
+    /// <summary>Verbatim the tail of the old ManualFuturesLeverage setter.</summary>
+    private void OnOrderTicketLeverageChanged()
+    {
+        this.RaisePropertyChanged(nameof(CexMarketModeSummary));
+        CexRightRailVM.RaiseLeverageChanged();
+        // Force re-apply on the next order: Bybit/OKX don't re-send leverage per order,
+        // so without this the exchange keeps the stale leverage while the UI shows the new one.
+        _manualFuturesSetupDone.Clear();
+    }
+
+    /// <summary>Verbatim the tail of the old ManualFuturesMarginMode setter.</summary>
+    private void OnOrderTicketMarginModeChanged()
+    {
+        this.RaisePropertyChanged(nameof(CexMarketModeSummary));
+        this.RaisePropertyChanged(nameof(CurrentFuturesMarginModeLabel));
+        // Re-apply margin mode (and leverage) on the next order — see leverage setter.
+        _manualFuturesSetupDone.Clear();
+    }
+
+    /// <summary>
+    /// Verbatim the tail of the old SelectedTradingProfile setter; <paramref name="normalized"/> is
+    /// the value the ticket has just written.
+    /// </summary>
+    private void OnOrderTicketTradingProfileChanged(string normalized)
+    {
+        this.RaisePropertyChanged(nameof(IsScalpProfile));
+        this.RaisePropertyChanged(nameof(TradingProfileSummary));
+        this.RaisePropertyChanged(nameof(ScalpPresetTargetLabel));
+
+        if (string.Equals(normalized, "Scalp", StringComparison.Ordinal))
+        {
+            ApplyScalpPreset(_selectedScalpPreset);
         }
     }
-    public int ManualFuturesLeverage
+
+    /// <summary>
+    /// Verbatim the tail of the old SelectedOrderSide / SelectedOrderType / SlippageTolerancePercent
+    /// / LimitPrice / TakeProfitPrice / StopLossPrice setters.
+    /// </summary>
+    private void OnOrderTicketStateChanged() => RaiseOrderTicketStateChanged();
+
+    /// <summary>
+    /// Verbatim the tail of the old TradeQuantity setter — size moves exposure, so it fanned out
+    /// over the whole trading state, not only the ticket.
+    /// </summary>
+    private void OnOrderTicketQuantityChanged() => RaiseTradingStateChanged();
+
+    /// <summary>
+    /// Runs when the ticket's BUY / SELL segmented button is pressed, after the side is written.
+    /// Verbatim the rest of the old SelectOrderSide command handler.
+    /// </summary>
+    private void OnOrderTicketOrderSideSelected(string normalized)
     {
-        get => _manualFuturesLeverage;
-        set
-        {
-            var normalized = Math.Max(1, value);
-            if (_manualFuturesLeverage == normalized)
-            {
-                return;
-            }
-
-            this.RaiseAndSetIfChanged(ref _manualFuturesLeverage, normalized);
-            this.RaisePropertyChanged(nameof(CexMarketModeSummary));
-            CexRightRailVM.RaiseLeverageChanged();
-            // Force re-apply on the next order: Bybit/OKX don't re-send leverage per order,
-            // so without this the exchange keeps the stale leverage while the UI shows the new one.
-            _manualFuturesSetupDone.Clear();
-        }
+        _preferredBookSide = normalized;
+        RaiseTradingStateChanged();
     }
-    public string ManualFuturesMarginMode
-    {
-        get => _manualFuturesMarginMode;
-        set
-        {
-            var normalized = string.Equals(value, "Isolated", StringComparison.OrdinalIgnoreCase) ? "Isolated" : "Cross";
-            if (string.Equals(_manualFuturesMarginMode, normalized, StringComparison.Ordinal))
-            {
-                return;
-            }
 
-            this.RaiseAndSetIfChanged(ref _manualFuturesMarginMode, normalized);
-            this.RaisePropertyChanged(nameof(CexMarketModeSummary));
-            this.RaisePropertyChanged(nameof(CurrentFuturesMarginModeLabel));
-            // Re-apply margin mode (and leverage) on the next order — see leverage setter.
-            _manualFuturesSetupDone.Clear();
-        }
-    }
-    public string SelectedTradingProfile
-    {
-        get => _selectedTradingProfile;
-        set
-        {
-            var normalized = value?.Trim() switch
-            {
-                var v when string.Equals(v, "Scalp", StringComparison.OrdinalIgnoreCase) => "Scalp",
-                var v when string.Equals(v, "Aggro", StringComparison.OrdinalIgnoreCase) => "Aggro",
-                _ => "Swing",
-            };
-            if (string.Equals(_selectedTradingProfile, normalized, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            this.RaiseAndSetIfChanged(ref _selectedTradingProfile, normalized);
-            this.RaisePropertyChanged(nameof(IsScalpProfile));
-            this.RaisePropertyChanged(nameof(TradingProfileSummary));
-            this.RaisePropertyChanged(nameof(ScalpPresetTargetLabel));
-
-            if (string.Equals(normalized, "Scalp", StringComparison.Ordinal))
-            {
-                ApplyScalpPreset(_selectedScalpPreset);
-            }
-        }
-    }
     public string SelectedScalpPreset
     {
         get => _selectedScalpPreset;
@@ -1629,9 +1633,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             this.RaisePropertyChanged(nameof(ScalpPresetTargetLabel));
         }
     }
-    public bool IsManualFuturesMode => string.Equals(SelectedCexMarketMode, "Futures", StringComparison.OrdinalIgnoreCase);
-
-
     public string SelectedFuturesExchange
     {
         get => _selectedFuturesExchange;
@@ -1684,7 +1685,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         ResolveGateway(_spotGatewaysMap, _selectedSpotExchange, _gateway);
 
     /// <summary>True only in spot CEX trading mode — controls the spot exchange picker's visibility.</summary>
-    public bool IsManualSpotMode => IsCexTradingMode && !IsManualFuturesMode;
+    public bool IsManualSpotMode => IsCexTradingMode && !OrderTicketVM.IsManualFuturesMode;
 
     public bool IsSpotPrivateApiReady => ActiveSpotGateway.HasPrivateApiCredentials;
     public string SpotPrivateApiStatusLabel => IsSpotPrivateApiReady
@@ -1692,7 +1693,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         : $"{SelectedSpotExchange}: API keys missing";
     public string SpotPrivateApiStatusBrush => IsSpotPrivateApiReady ? "#3DDC84" : "#F4B860";
 
-    public bool IsScalpProfile => string.Equals(SelectedTradingProfile, "Scalp", StringComparison.OrdinalIgnoreCase);
+    public bool IsScalpProfile => string.Equals(OrderTicketVM.SelectedTradingProfile, "Scalp", StringComparison.OrdinalIgnoreCase);
     public bool IsCexTradingMode => SelectedTradingVenue == TradingVenueMode.Cex;
     public bool IsDexTradingMode => SelectedTradingVenue == TradingVenueMode.Dex;
     public string CexVenueBackground => IsCexTradingMode ? "#17373B" : "#0F1721";
@@ -1703,50 +1704,20 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public string ActiveTradingTitle => IsDexTradingMode ? DexTradingVM.SelectedTokenTitle : SelectedMarketTitle;
     public string TradingTerminalSummary => IsDexTradingMode
         ? "DEX desk with shared wallet, chart and supported quote routing."
-        : IsManualFuturesMode
+        : OrderTicketVM.IsManualFuturesMode
             ? $"CEX desk for {SelectedFuturesExchange} USD-M futures with two-way manual execution."
             : "CEX desk for Binance spot USDT pairs.";
-    public string CexMarketModeSummary => IsManualFuturesMode ? $"{SelectedFuturesExchange} USD-M futures x{ManualFuturesLeverage} · {ManualFuturesMarginMode}" : "Binance spot market";
+    public string CexMarketModeSummary => OrderTicketVM.IsManualFuturesMode ? $"{SelectedFuturesExchange} USD-M futures x{OrderTicketVM.ManualFuturesLeverage} · {OrderTicketVM.ManualFuturesMarginMode}" : "Binance spot market";
     public string TradingProfileSummary => IsScalpProfile
         ? $"Scalp {SelectedScalpPreset} · {GetScalpPresetSummary(SelectedScalpPreset)}"
-        : string.Equals(SelectedTradingProfile, "Aggro", StringComparison.OrdinalIgnoreCase)
+        : string.Equals(OrderTicketVM.SelectedTradingProfile, "Aggro", StringComparison.OrdinalIgnoreCase)
             ? "Aggressive manual profile · wider size, faster entries"
             : "Swing manual profile · trend-following holds";
     public FuturesMarginMode SelectedManualFuturesMarginModeEnum =>
-        string.Equals(ManualFuturesMarginMode, "Isolated", StringComparison.OrdinalIgnoreCase)
+        string.Equals(OrderTicketVM.ManualFuturesMarginMode, "Isolated", StringComparison.OrdinalIgnoreCase)
             ? FuturesMarginMode.Isolated
             : FuturesMarginMode.Cross;
     public IReadOnlyList<DexOhlcvPoint> ActiveTradingCandles => IsDexTradingMode ? DexTradingVM.ChartCandles : TradingCandles;
-
-    public string SelectedOrderSide
-    {
-        get => _selectedOrderSide;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _selectedOrderSide, value);
-            RaiseOrderTicketStateChanged();
-        }
-    }
-
-    public string SelectedOrderType
-    {
-        get => _selectedOrderType;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _selectedOrderType, value);
-            RaiseOrderTicketStateChanged();
-        }
-    }
-
-    public decimal SlippageTolerancePercent
-    {
-        get => _slippageTolerancePercent;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _slippageTolerancePercent, value);
-            RaiseOrderTicketStateChanged();
-        }
-    }
 
     /// <summary>Read-through alias for <see cref="MarketFeedOwnerViewModel.IsMarketLoading"/>.</summary>
     public bool IsMarketLoading
@@ -1771,7 +1742,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> InstallUpdateCommand { get; }
     public ReactiveCommand<Unit, Unit> DismissUpdateCommand { get; }
     public ReactiveCommand<Unit, Unit> CloseWhatsNewCommand { get; }
-    public ReactiveCommand<string, Unit> SelectOrderSideCommand { get; }
     public ReactiveCommand<Unit, Unit> PlacePrimaryOrderCommand { get; }
     public ReactiveCommand<decimal, Unit> SelectLimitPriceCommand { get; }
     public ReactiveCommand<decimal, Unit> SelectBidPriceCommand { get; }
@@ -1823,46 +1793,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     // ── Wall mode command (implemented in Task 7) ────────────────────────────
     public ReactiveCommand<string, Unit> SetWallModeCommand { get; }
-
-    public decimal TradeQuantity
-    {
-        get => _tradeQuantity;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _tradeQuantity, value);
-            RaiseTradingStateChanged();
-        }
-    }
-
-    public decimal LimitPrice
-    {
-        get => _limitPrice;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _limitPrice, value);
-            RaiseOrderTicketStateChanged();
-        }
-    }
-
-    public decimal TakeProfitPrice
-    {
-        get => _takeProfitPrice;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _takeProfitPrice, value);
-            RaiseOrderTicketStateChanged();
-        }
-    }
-
-    public decimal StopLossPrice
-    {
-        get => _stopLossPrice;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _stopLossPrice, value);
-            RaiseOrderTicketStateChanged();
-        }
-    }
 
     public decimal PriceStep
     {
@@ -1963,7 +1893,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public string RiskModeSummaryLabel => WalletVM.GlobalPaperOnlyMode ? "Execution guard on" : "Live routing enabled";
     public string ConnectionStateLabel => IsMarketLoading ? "Connecting" : "Connected";
     public string ConnectionStateDetailLabel => SelectedMarket?.DisplaySymbol ?? "Binance Stream";
-    public decimal EffectivePositionMarkPrice => IsManualFuturesMode && _currentFuturesMarkPrice > 0 ? _currentFuturesMarkPrice : CurrentTradePrice;
+    public decimal EffectivePositionMarkPrice => OrderTicketVM.IsManualFuturesMode && _currentFuturesMarkPrice > 0 ? _currentFuturesMarkPrice : CurrentTradePrice;
     public decimal CurrentOpenExposureUsdt => Math.Abs(PositionQuantity) * EffectivePositionMarkPrice;
     public string CurrentOpenExposureLabel => $"{CurrentOpenExposureUsdt:0.##} USDT";
     public string CurrentDailyLossLabel => $"{Math.Max(0m, -RealizedPnl):0.##} USDT";
@@ -1975,8 +1905,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         : LatestTradingCandle?.Close > 0
             ? LatestTradingCandle.Close
             : SelectedMarket?.LastPrice ?? 0m;
-    public decimal TradeNotional => TradeQuantity * CurrentTradePrice;
-    public string TradeNotionalLabel => TradeNotional <= 0 ? "--" : $"~ {TradeNotional:N2} USDT";
     public string PositionStatusLabel => PositionQuantity > 0
         ? $"LONG {PositionQuantity:0.0000} {BaseAssetSymbol}"
         : PositionQuantity < 0
@@ -1989,8 +1917,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public string UnrealizedPnlLabel => $"{UnrealizedPnl:+0.00;-0.00;0.00} USDT";
     public string CurrentFuturesMarkPriceLabel => _currentFuturesMarkPrice > 0 ? $"{_currentFuturesMarkPrice:N2}" : "--";
     public string CurrentFuturesLiquidationLabel => _currentFuturesLiquidationPrice > 0 ? $"{_currentFuturesLiquidationPrice:N2}" : "--";
-    public string CurrentFuturesMarginModeLabel => IsManualFuturesMode ? ManualFuturesMarginMode.ToUpperInvariant() : "--";
-    public string CurrentFuturesLeverageLabel => IsManualFuturesMode ? $"{ManualFuturesLeverage}x" : "--";
+    public string CurrentFuturesMarginModeLabel => OrderTicketVM.IsManualFuturesMode ? OrderTicketVM.ManualFuturesMarginMode.ToUpperInvariant() : "--";
+    public string CurrentFuturesLeverageLabel => OrderTicketVM.IsManualFuturesMode ? $"{OrderTicketVM.ManualFuturesLeverage}x" : "--";
     public bool IsFuturesPrivateApiReady => ActiveFuturesGateway.HasPrivateApiCredentials;
     public string FuturesPrivateApiStatusLabel => IsFuturesPrivateApiReady ? "Private API Ready" : "Private API Missing";
     public string FuturesPrivateApiStatusBrush => IsFuturesPrivateApiReady ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
@@ -2537,7 +2465,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public string RiskRuntimeStatusBrush => WalletVM.GlobalPaperOnlyMode ? SemanticColor.Keys.Warning : SemanticColor.Keys.Positive;
     public string RiskRuntimeSummary => $"{WalletVM.GlobalRiskCapLabel} | {WalletVM.GlobalRiskSummary}";
     public string RiskSniperGuardSummary => $"Open slots {SniperVM.OpenPositionCount}/{SniperVM.MaxSimultaneousPositions} | Session buys left {SniperVM.RemainingSessionBuys} | Consecutive live losses {SniperVM.ConsecutiveLiveLossCount}";
-    public string RiskCexExposureSummary => $"Ticket {TradeNotional:N2} USDT | Exposure {PortfolioExposureLabel} | Equity {AccountEquityLabel}";
+    public string RiskCexExposureSummary => $"Ticket {OrderTicketVM.TradeNotional:N2} USDT | Exposure {PortfolioExposureLabel} | Equity {AccountEquityLabel}";
 
     // ── private services ──────────────────────────────────────────────────────
     private readonly TelegramNotificationService _telegram = null!;
@@ -2943,7 +2871,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         AddLog($"Opened token {symbol ?? address} on the DEX desk from a notification.");
     }
 
-    private IExchangeGateway ActiveCexGateway => IsManualFuturesMode ? ActiveFuturesGateway : ActiveSpotGateway;
+    private IExchangeGateway ActiveCexGateway => OrderTicketVM.IsManualFuturesMode ? ActiveFuturesGateway : ActiveSpotGateway;
     private string AiCustomPresetsStoragePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "CryptoAITerminal",
@@ -3050,7 +2978,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
 
         if (dataToApply is null ||
-            !IsManualFuturesMode ||
+            !OrderTicketVM.IsManualFuturesMode ||
             SelectedMarket is null ||
             !string.Equals(SelectedMarket.Symbol, dataToApply.Symbol, StringComparison.OrdinalIgnoreCase))
         {
@@ -3176,7 +3104,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private async Task RefreshManualAccountStateAsync()
     {
-        if (IsManualFuturesMode && !ActiveFuturesGateway.HasPrivateApiCredentials)
+        if (OrderTicketVM.IsManualFuturesMode && !ActiveFuturesGateway.HasPrivateApiCredentials)
         {
             PositionQuantity = 0m;
             AverageEntryPrice = 0m;
@@ -3193,10 +3121,10 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
         catch (Exception ex)
         {
-            AddLog($"Balance refresh failed for {SelectedCexMarketMode}: {ex.Message}");
+            AddLog($"Balance refresh failed for {OrderTicketVM.SelectedCexMarketMode}: {ex.Message}");
         }
 
-        if (!IsManualFuturesMode)
+        if (!OrderTicketVM.IsManualFuturesMode)
         {
             _currentFuturesLiquidationPrice = 0m;
             _currentFuturesMarkPrice = 0m;
@@ -3229,8 +3157,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                 _currentFuturesLiquidationPrice = position.LiquidationPrice;
                 _currentFuturesMarkPrice = position.MarkPrice;
                 _currentFuturesExchangeUnrealizedPnl = position.UnrealizedPnl;
-                ManualFuturesLeverage = Math.Max(1, position.Leverage);
-                ManualFuturesMarginMode = position.MarginMode == FuturesMarginMode.Isolated ? "Isolated" : "Cross";
+                OrderTicketVM.ManualFuturesLeverage = Math.Max(1, position.Leverage);
+                OrderTicketVM.ManualFuturesMarginMode = position.MarginMode == FuturesMarginMode.Isolated ? "Isolated" : "Cross";
             }
 
             await SyncExchangeManagedOrdersAsync(SelectedTradingSymbol);
@@ -3267,7 +3195,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private async Task SyncExchangeRecentTradesAsync(string symbol)
     {
-        if (!IsManualFuturesMode || !ActiveFuturesGateway.HasPrivateApiCredentials)
+        if (!OrderTicketVM.IsManualFuturesMode || !ActiveFuturesGateway.HasPrivateApiCredentials)
         {
             return;
         }
@@ -3344,7 +3272,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private async Task SyncExchangeManagedOrdersAsync(string symbol)
     {
-        if (!IsManualFuturesMode)
+        if (!OrderTicketVM.IsManualFuturesMode)
         {
             return;
         }
@@ -3498,7 +3426,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         try
         {
             var openPosition = await GetSelectedFuturesPositionAsync();
-            var requestedQuantity = Math.Max(TradeQuantity, 0m);
+            var requestedQuantity = Math.Max(OrderTicketVM.TradeQuantity, 0m);
             if (requestedQuantity <= 0)
             {
                 AddLog($"Set a positive quantity before placing a {SelectedFuturesExchange} futures limit order.");
@@ -3559,7 +3487,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                     Quantity = quantity,
                     Price = limitPrice,
                     MarketType = TradingMarketType.FuturesUsdM,
-                    Leverage = ManualFuturesLeverage,
+                    Leverage = OrderTicketVM.ManualFuturesLeverage,
                     MarginMode = SelectedManualFuturesMarginModeEnum,
                     PositionSide = positionSide
                 };
@@ -3579,7 +3507,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                 Quantity = quantity,
                 Price = limitPrice,
                 MarketType = TradingMarketType.FuturesUsdM,
-                Leverage = ManualFuturesLeverage,
+                Leverage = OrderTicketVM.ManualFuturesLeverage,
                 MarginMode = SelectedManualFuturesMarginModeEnum,
                 ReduceOnly = reduceOnly,
                 PositionSide = positionSide
@@ -3695,7 +3623,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         if (string.IsNullOrWhiteSpace(symbol)) return;
         if (_manualFuturesSetupDone.Contains(symbol)) return;
 
-        try { await ActiveFuturesGateway.SetLeverageAsync(symbol, ManualFuturesLeverage); }
+        try { await ActiveFuturesGateway.SetLeverageAsync(symbol, OrderTicketVM.ManualFuturesLeverage); }
         catch (Exception ex) { AddLog($"SetLeverage warning [{symbol}]: {ex.Message}"); }
 
         try { await ActiveFuturesGateway.SetMarginModeAsync(symbol, SelectedManualFuturesMarginModeEnum); }
@@ -3731,7 +3659,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private async Task<Order> PlaceCexMarketOrderAsync(CryptoAITerminal.Core.Enums.OrderSide side, decimal quantity, bool reduceOnly = false)
     {
-        if (IsManualFuturesMode)
+        if (OrderTicketVM.IsManualFuturesMode)
         {
             await EnsureManualFuturesSetupAsync(SelectedTradingSymbol);
 
@@ -3760,7 +3688,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                     Side: side,
                     Quantity: Math.Abs(futuresQuantity),
                     ReduceOnly: reduceOnly,
-                    Leverage: ManualFuturesLeverage,
+                    Leverage: OrderTicketVM.ManualFuturesLeverage,
                     MarginMode: SelectedManualFuturesMarginModeEnum,
                     PositionSide: positionSide,
                     ClientOrderId: Guid.NewGuid().ToString("N"));
@@ -3799,7 +3727,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                 Type = OrderType.Market,
                 Quantity = futuresQuantity,
                 MarketType = TradingMarketType.FuturesUsdM,
-                Leverage = ManualFuturesLeverage,
+                Leverage = OrderTicketVM.ManualFuturesLeverage,
                 MarginMode = SelectedManualFuturesMarginModeEnum,
                 ReduceOnly = reduceOnly,
                 PositionSide = positionSide
@@ -3871,7 +3799,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private async Task SyncManualExecutionStateAsync(CryptoAITerminal.Core.Enums.OrderSide side, decimal executionPrice, decimal quantity)
     {
-        if (IsManualFuturesMode)
+        if (OrderTicketVM.IsManualFuturesMode)
         {
             await RefreshManualAccountStateAsync();
             return;
@@ -3955,9 +3883,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return false;
         }
 
-        if (IsManualFuturesMode && PositionQuantity < 0)
+        if (OrderTicketVM.IsManualFuturesMode && PositionQuantity < 0)
         {
-            var quantityToBuy = Math.Min(TradeQuantity, Math.Abs(PositionQuantity));
+            var quantityToBuy = Math.Min(OrderTicketVM.TradeQuantity, Math.Abs(PositionQuantity));
             if (quantityToBuy <= 0)
             {
                 AddLog("No open manual futures short position to buy back.");
@@ -3971,33 +3899,33 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return true;
         }
 
-        if (!WalletVM.TryApproveUsdRisk(TradeNotional, CurrentOpenExposureUsdt, RealizedPnl, out var riskReason))
+        if (!WalletVM.TryApproveUsdRisk(OrderTicketVM.TradeNotional, CurrentOpenExposureUsdt, RealizedPnl, out var riskReason))
         {
             AddLog(riskReason);
             return false;
         }
 
-        AddLog($"Executing market buy of {TradeQuantity} {symbol}...");
+        AddLog($"Executing market buy of {OrderTicketVM.TradeQuantity} {symbol}...");
 
         // PositionSide для risk-check (фактическая корректировка hedge/one-way происходит в PlaceCexMarketOrderAsync).
-        var entrySide = IsManualFuturesMode
+        var entrySide = OrderTicketVM.IsManualFuturesMode
             ? ManualEntryPositionSide(symbol, CryptoAITerminal.Core.Enums.OrderSide.Buy)
             : FuturesPositionSide.Both;
         var order = new Order
         {
             Symbol = symbol,
             Side = OrderSide.Buy,
-            Quantity = TradeQuantity,
+            Quantity = OrderTicketVM.TradeQuantity,
             Type = OrderType.Market,
-            MarketType = IsManualFuturesMode ? TradingMarketType.FuturesUsdM : TradingMarketType.Spot,
-            Leverage = IsManualFuturesMode ? ManualFuturesLeverage : null,
-            MarginMode = IsManualFuturesMode ? SelectedManualFuturesMarginModeEnum : FuturesMarginMode.Cross,
+            MarketType = OrderTicketVM.IsManualFuturesMode ? TradingMarketType.FuturesUsdM : TradingMarketType.Spot,
+            Leverage = OrderTicketVM.IsManualFuturesMode ? OrderTicketVM.ManualFuturesLeverage : null,
+            MarginMode = OrderTicketVM.IsManualFuturesMode ? SelectedManualFuturesMarginModeEnum : FuturesMarginMode.Cross,
             PositionSide = entrySide
         };
 
         if (_riskManager.CanPlaceOrder(order, CurrentTradePrice, AvailableBalanceUsdt, CurrentOpenExposureUsdt))
         {
-            var result = await PlaceCexMarketOrderAsync(CryptoAITerminal.Core.Enums.OrderSide.Buy, TradeQuantity);
+            var result = await PlaceCexMarketOrderAsync(CryptoAITerminal.Core.Enums.OrderSide.Buy, OrderTicketVM.TradeQuantity);
             await SyncManualExecutionStateAsync(CryptoAITerminal.Core.Enums.OrderSide.Buy, result.Price > 0 ? result.Price : CurrentTradePrice, result.Quantity);
             AddLog($"Buy order placed: {result.Id} - {result.Status}");
             return true;
@@ -4016,9 +3944,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return false;
         }
 
-        if (IsManualFuturesMode && PositionQuantity > 0)
+        if (OrderTicketVM.IsManualFuturesMode && PositionQuantity > 0)
         {
-            var reduceQuantity = Math.Min(TradeQuantity, PositionQuantity);
+            var reduceQuantity = Math.Min(OrderTicketVM.TradeQuantity, PositionQuantity);
             AddLog($"Executing reduce-only market sell of {reduceQuantity} {symbol} to close long exposure...");
             var reduceResult = await PlaceCexMarketOrderAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, reduceQuantity, reduceOnly: true);
             await SyncManualExecutionStateAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, reduceResult.Price > 0 ? reduceResult.Price : CurrentTradePrice, reduceResult.Quantity);
@@ -4026,28 +3954,28 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return true;
         }
 
-        if (!IsManualFuturesMode && PositionQuantity <= 0)
+        if (!OrderTicketVM.IsManualFuturesMode && PositionQuantity <= 0)
         {
             AddLog("No open spot position to sell.");
             return false;
         }
 
-        if (IsManualFuturesMode && !WalletVM.TryApproveUsdRisk(TradeNotional, CurrentOpenExposureUsdt, RealizedPnl, out var riskReason))
+        if (OrderTicketVM.IsManualFuturesMode && !WalletVM.TryApproveUsdRisk(OrderTicketVM.TradeNotional, CurrentOpenExposureUsdt, RealizedPnl, out var riskReason))
         {
             AddLog(riskReason);
             return false;
         }
 
-        if (IsManualFuturesMode)
+        if (OrderTicketVM.IsManualFuturesMode)
         {
             var shortOrder = new Order
             {
                 Symbol = symbol,
                 Side = OrderSide.Sell,
                 Type = OrderType.Market,
-                Quantity = TradeQuantity,
+                Quantity = OrderTicketVM.TradeQuantity,
                 MarketType = TradingMarketType.FuturesUsdM,
-                Leverage = ManualFuturesLeverage,
+                Leverage = OrderTicketVM.ManualFuturesLeverage,
                 MarginMode = SelectedManualFuturesMarginModeEnum,
                 PositionSide = ManualEntryPositionSide(symbol, CryptoAITerminal.Core.Enums.OrderSide.Sell)
             };
@@ -4059,7 +3987,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             }
         }
 
-        var quantityToSell = IsManualFuturesMode ? TradeQuantity : Math.Min(TradeQuantity, PositionQuantity);
+        var quantityToSell = OrderTicketVM.IsManualFuturesMode ? OrderTicketVM.TradeQuantity : Math.Min(OrderTicketVM.TradeQuantity, PositionQuantity);
         AddLog($"Executing market sell of {quantityToSell} {symbol}...");
         var result = await PlaceCexMarketOrderAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, quantityToSell, reduceOnly: false);
         await SyncManualExecutionStateAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, result.Price > 0 ? result.Price : CurrentTradePrice, result.Quantity);
@@ -4069,100 +3997,100 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private bool PlaceBuyLimit()
     {
-        if (LimitPrice <= 0 || TradeQuantity <= 0)
+        if (OrderTicketVM.LimitPrice <= 0 || OrderTicketVM.TradeQuantity <= 0)
         {
             AddLog("Set a valid limit price and quantity first.");
             return false;
         }
 
-        if (IsManualFuturesMode)
+        if (OrderTicketVM.IsManualFuturesMode)
         {
-            _ = PlaceExchangeLimitAsync(CryptoAITerminal.Core.Enums.OrderSide.Buy, LimitPrice);
+            _ = PlaceExchangeLimitAsync(CryptoAITerminal.Core.Enums.OrderSide.Buy, OrderTicketVM.LimitPrice);
             return true;
         }
 
-        var requestedSpend = TradeQuantity * LimitPrice;
+        var requestedSpend = OrderTicketVM.TradeQuantity * OrderTicketVM.LimitPrice;
         if (!WalletVM.TryApproveUsdRisk(requestedSpend, CurrentOpenExposureUsdt, RealizedPnl, out var riskReason))
         {
             AddLog(riskReason);
             return false;
         }
 
-        var order = WorkingOrderViewModel.CreateLimit(OrderSide.Buy, SelectedTradingSymbol, TradeQuantity, LimitPrice, SelectedTimeInForce, SelectedSpotExchange);
+        var order = WorkingOrderViewModel.CreateLimit(OrderSide.Buy, SelectedTradingSymbol, OrderTicketVM.TradeQuantity, OrderTicketVM.LimitPrice, SelectedTimeInForce, SelectedSpotExchange);
         order.AttachCancel(() => CancelSingleOrder(order));
         TradeBlotterVM.WorkingOrders.Add(order);
         RaiseWorkingOrdersCollectionChanged();
         PersistSoftwareWorkingOrders();
-        AddLog($"BUY LIMIT armed at {LimitPrice:N2} for {TradeQuantity:0.0000} {BaseAssetSymbol} on {SelectedSpotExchange}.");
+        AddLog($"BUY LIMIT armed at {OrderTicketVM.LimitPrice:N2} for {OrderTicketVM.TradeQuantity:0.0000} {BaseAssetSymbol} on {SelectedSpotExchange}.");
         return true;
     }
 
     private bool PlaceSellLimit()
     {
-        if (LimitPrice <= 0 || TradeQuantity <= 0)
+        if (OrderTicketVM.LimitPrice <= 0 || OrderTicketVM.TradeQuantity <= 0)
         {
             AddLog("Set a valid limit price and quantity first.");
             return false;
         }
 
-        if (IsManualFuturesMode)
+        if (OrderTicketVM.IsManualFuturesMode)
         {
-            _ = PlaceExchangeLimitAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, LimitPrice);
+            _ = PlaceExchangeLimitAsync(CryptoAITerminal.Core.Enums.OrderSide.Sell, OrderTicketVM.LimitPrice);
             return true;
         }
 
-        var order = WorkingOrderViewModel.CreateLimit(OrderSide.Sell, SelectedTradingSymbol, Math.Min(TradeQuantity, Math.Max(PositionQuantity, TradeQuantity)), LimitPrice, SelectedTimeInForce, SelectedSpotExchange);
+        var order = WorkingOrderViewModel.CreateLimit(OrderSide.Sell, SelectedTradingSymbol, Math.Min(OrderTicketVM.TradeQuantity, Math.Max(PositionQuantity, OrderTicketVM.TradeQuantity)), OrderTicketVM.LimitPrice, SelectedTimeInForce, SelectedSpotExchange);
         order.AttachCancel(() => CancelSingleOrder(order));
         TradeBlotterVM.WorkingOrders.Add(order);
         RaiseWorkingOrdersCollectionChanged();
         PersistSoftwareWorkingOrders();
-        AddLog($"SELL LIMIT armed at {LimitPrice:N2} for {order.Quantity:0.0000} {BaseAssetSymbol} on {SelectedSpotExchange}.");
+        AddLog($"SELL LIMIT armed at {OrderTicketVM.LimitPrice:N2} for {order.Quantity:0.0000} {BaseAssetSymbol} on {SelectedSpotExchange}.");
         return true;
     }
 
     private bool ArmTakeProfit()
     {
-        if (TakeProfitPrice <= 0 || PositionQuantity == 0)
+        if (OrderTicketVM.TakeProfitPrice <= 0 || PositionQuantity == 0)
         {
             AddLog("Take-profit requires an open position and a valid trigger.");
             return false;
         }
 
-        if (IsManualFuturesMode)
+        if (OrderTicketVM.IsManualFuturesMode)
         {
-            _ = ArmExchangeProtectionAsync(WorkingOrderKind.TakeProfit, TakeProfitPrice);
+            _ = ArmExchangeProtectionAsync(WorkingOrderKind.TakeProfit, OrderTicketVM.TakeProfitPrice);
             return true;
         }
 
-        var order = WorkingOrderViewModel.CreateProtection(WorkingOrderKind.TakeProfit, SelectedTradingSymbol, Math.Abs(PositionQuantity), TakeProfitPrice, SelectedSpotExchange);
+        var order = WorkingOrderViewModel.CreateProtection(WorkingOrderKind.TakeProfit, SelectedTradingSymbol, Math.Abs(PositionQuantity), OrderTicketVM.TakeProfitPrice, SelectedSpotExchange);
         order.AttachCancel(() => CancelSingleOrder(order));
         TradeBlotterVM.WorkingOrders.Add(order);
         RaiseWorkingOrdersCollectionChanged();
         PersistSoftwareWorkingOrders();
-        AddLog($"Take-profit armed at {TakeProfitPrice:N2} on {SelectedSpotExchange}.");
+        AddLog($"Take-profit armed at {OrderTicketVM.TakeProfitPrice:N2} on {SelectedSpotExchange}.");
         return true;
     }
 
     private bool ArmStopLoss()
     {
-        if (StopLossPrice <= 0 || PositionQuantity == 0)
+        if (OrderTicketVM.StopLossPrice <= 0 || PositionQuantity == 0)
         {
             AddLog("Stop-loss requires an open position and a valid trigger.");
             return false;
         }
 
-        if (IsManualFuturesMode)
+        if (OrderTicketVM.IsManualFuturesMode)
         {
-            _ = ArmExchangeProtectionAsync(WorkingOrderKind.StopLoss, StopLossPrice);
+            _ = ArmExchangeProtectionAsync(WorkingOrderKind.StopLoss, OrderTicketVM.StopLossPrice);
             return true;
         }
 
-        var order = WorkingOrderViewModel.CreateProtection(WorkingOrderKind.StopLoss, SelectedTradingSymbol, Math.Abs(PositionQuantity), StopLossPrice, SelectedSpotExchange);
+        var order = WorkingOrderViewModel.CreateProtection(WorkingOrderKind.StopLoss, SelectedTradingSymbol, Math.Abs(PositionQuantity), OrderTicketVM.StopLossPrice, SelectedSpotExchange);
         order.AttachCancel(() => CancelSingleOrder(order));
         TradeBlotterVM.WorkingOrders.Add(order);
         RaiseWorkingOrdersCollectionChanged();
         PersistSoftwareWorkingOrders();
-        AddLog($"Stop-loss armed at {StopLossPrice:N2} on {SelectedSpotExchange}.");
+        AddLog($"Stop-loss armed at {OrderTicketVM.StopLossPrice:N2} on {SelectedSpotExchange}.");
         return true;
     }
 
@@ -4210,7 +4138,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         var closeSize = Math.Abs(PositionQuantity);
         var closeSide = PositionQuantity > 0 ? CryptoAITerminal.Core.Enums.OrderSide.Sell : CryptoAITerminal.Core.Enums.OrderSide.Buy;
         AddLog($"Closing position: {closeSize:0.0000} {BaseAssetSymbol} via {closeSide.ToString().ToUpperInvariant()} market.");
-        var result = await PlaceCexMarketOrderAsync(closeSide, closeSize, reduceOnly: IsManualFuturesMode);
+        var result = await PlaceCexMarketOrderAsync(closeSide, closeSize, reduceOnly: OrderTicketVM.IsManualFuturesMode);
         await SyncManualExecutionStateAsync(closeSide, result.Price > 0 ? result.Price : CurrentTradePrice, result.Quantity);
         AddLog($"Position closed at {(result.Price > 0 ? result.Price : CurrentTradePrice):N2}.");
         return true;
@@ -4220,7 +4148,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     {
         // Reverse only makes sense on futures (spot can't hold a short); guard here too
         // in case this is invoked outside the button (e.g. agent actions).
-        if (!IsManualFuturesMode)
+        if (!OrderTicketVM.IsManualFuturesMode)
         {
             AddLog("Reverse is available in futures mode only.");
             return;
@@ -4232,7 +4160,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        if (TradeQuantity <= 0)
+        if (OrderTicketVM.TradeQuantity <= 0)
         {
             AddLog("Set a positive quantity before reversing.");
             return;
@@ -4249,24 +4177,24 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         var openSide = PositionQuantity > 0 ? CryptoAITerminal.Core.Enums.OrderSide.Sell : CryptoAITerminal.Core.Enums.OrderSide.Buy;
 
         AddLog($"Reversing position: first closing {closeSize:0.0000} {BaseAssetSymbol}.");
-        var closeResult = await PlaceCexMarketOrderAsync(closeSide, closeSize, reduceOnly: IsManualFuturesMode);
+        var closeResult = await PlaceCexMarketOrderAsync(closeSide, closeSize, reduceOnly: OrderTicketVM.IsManualFuturesMode);
         await SyncManualExecutionStateAsync(closeSide, closeResult.Price > 0 ? closeResult.Price : CurrentTradePrice, closeResult.Quantity);
 
-        if (IsManualFuturesMode)
+        if (OrderTicketVM.IsManualFuturesMode)
         {
             var openOrder = new Order
             {
                 Symbol = SelectedTradingSymbol,
                 Side = openSide,
                 Type = OrderType.Market,
-                Quantity = TradeQuantity,
+                Quantity = OrderTicketVM.TradeQuantity,
                 MarketType = TradingMarketType.FuturesUsdM,
-                Leverage = ManualFuturesLeverage,
+                Leverage = OrderTicketVM.ManualFuturesLeverage,
                 MarginMode = SelectedManualFuturesMarginModeEnum,
                 PositionSide = openSide == CryptoAITerminal.Core.Enums.OrderSide.Buy ? FuturesPositionSide.Long : FuturesPositionSide.Short
             };
 
-            if (!WalletVM.TryApproveUsdRisk(TradeNotional, CurrentOpenExposureUsdt, RealizedPnl, out var reverseRiskReason))
+            if (!WalletVM.TryApproveUsdRisk(OrderTicketVM.TradeNotional, CurrentOpenExposureUsdt, RealizedPnl, out var reverseRiskReason))
             {
                 AddLog(reverseRiskReason);
                 return;
@@ -4279,8 +4207,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             }
         }
 
-        AddLog($"Opening fresh {(openSide == CryptoAITerminal.Core.Enums.OrderSide.Buy ? "long" : "short")} after reverse: {TradeQuantity:0.0000} {BaseAssetSymbol}.");
-        var openResult = await PlaceCexMarketOrderAsync(openSide, TradeQuantity);
+        AddLog($"Opening fresh {(openSide == CryptoAITerminal.Core.Enums.OrderSide.Buy ? "long" : "short")} after reverse: {OrderTicketVM.TradeQuantity:0.0000} {BaseAssetSymbol}.");
+        var openResult = await PlaceCexMarketOrderAsync(openSide, OrderTicketVM.TradeQuantity);
         await SyncManualExecutionStateAsync(openSide, openResult.Price > 0 ? openResult.Price : CurrentTradePrice, openResult.Quantity);
         AddLog($"Reverse completed at {(openResult.Price > 0 ? openResult.Price : CurrentTradePrice):N2}.");
     }
@@ -4293,7 +4221,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
 
         _selectedLadderPrice = price;
-        LimitPrice = price;
+        OrderTicketVM.LimitPrice = price;
         UpdateSelectedPriceHighlights();
         AddLog($"Limit price synced from order book: {price:N2}.");
     }
@@ -4301,7 +4229,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     private void SelectBidPrice(decimal price)
     {
         _preferredBookSide = "BUY";
-        SelectedOrderSide = "BUY";
+        OrderTicketVM.SelectedOrderSide = "BUY";
         SelectLimitPrice(price);
         RaiseTradingStateChanged();
         AddLog($"Bid level selected: preparing BUY bias at {price:N2}.");
@@ -4310,18 +4238,10 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     private void SelectAskPrice(decimal price)
     {
         _preferredBookSide = "SELL";
-        SelectedOrderSide = "SELL";
+        OrderTicketVM.SelectedOrderSide = "SELL";
         SelectLimitPrice(price);
         RaiseTradingStateChanged();
         AddLog($"Ask level selected: preparing SELL bias at {price:N2}.");
-    }
-
-    private void SelectOrderSide(string? side)
-    {
-        var normalized = string.Equals(side, "SELL", StringComparison.OrdinalIgnoreCase) ? "SELL" : "BUY";
-        _preferredBookSide = normalized;
-        SelectedOrderSide = normalized;
-        RaiseTradingStateChanged();
     }
 
     private void SelectMainTab(string? indexRaw)
@@ -4521,7 +4441,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
 
         var ratio = WalletVM.GlobalPositionSizingPercent / 100m;
-        TradeQuantity = Math.Round((AvailableBalanceUsdt * ratio) / CurrentTradePrice, 4, MidpointRounding.AwayFromZero);
+        OrderTicketVM.TradeQuantity = Math.Round((AvailableBalanceUsdt * ratio) / CurrentTradePrice, 4, MidpointRounding.AwayFromZero);
         _pendingGlobalCexSizingApply = false;
         AddLog($"Global CEX order size synced to {WalletVM.GlobalPositionSizingPercent:0}% of available USDT.");
     }
@@ -4634,8 +4554,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private async Task PlacePrimaryOrderAsync()
     {
-        var isSell = string.Equals(SelectedOrderSide, "SELL", StringComparison.OrdinalIgnoreCase);
-        if (string.Equals(SelectedOrderType, "Market", StringComparison.OrdinalIgnoreCase))
+        var isSell = string.Equals(OrderTicketVM.SelectedOrderSide, "SELL", StringComparison.OrdinalIgnoreCase);
+        if (string.Equals(OrderTicketVM.SelectedOrderType, "Market", StringComparison.OrdinalIgnoreCase))
         {
             if (isSell)
             {
@@ -4662,13 +4582,13 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     private void ShiftLimitPrice(decimal delta)
     {
         var step = PriceStep > 0 ? PriceStep : 0.01m;
-        if (LimitPrice <= 0)
+        if (OrderTicketVM.LimitPrice <= 0)
         {
-            LimitPrice = CurrentTradePrice > 0 ? CurrentTradePrice : step;
+            OrderTicketVM.LimitPrice = CurrentTradePrice > 0 ? CurrentTradePrice : step;
         }
 
-        LimitPrice = Math.Max(0m, LimitPrice + (delta < 0 ? -step : step));
-        _selectedLadderPrice = LimitPrice;
+        OrderTicketVM.LimitPrice = Math.Max(0m, OrderTicketVM.LimitPrice + (delta < 0 ? -step : step));
+        _selectedLadderPrice = OrderTicketVM.LimitPrice;
         UpdateSelectedPriceHighlights();
     }
 
@@ -4820,7 +4740,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             {
                 AverageEntryPrice = 0m;
                 RemoveProtectionOrders();
-                if (IsManualFuturesMode)
+                if (OrderTicketVM.IsManualFuturesMode)
                 {
                     _ = CancelExchangeManagedProtectionOrdersAsync();
                 }
@@ -4861,7 +4781,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             {
                 AverageEntryPrice = 0m;
                 RemoveProtectionOrders();
-                if (IsManualFuturesMode)
+                if (OrderTicketVM.IsManualFuturesMode)
                 {
                     _ = CancelExchangeManagedProtectionOrdersAsync();
                 }
@@ -4916,7 +4836,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private bool ShouldUseSpotDisplayFallback(MarketData spotData)
     {
-        if (!IsManualFuturesMode || SelectedMarket is null)
+        if (!OrderTicketVM.IsManualFuturesMode || SelectedMarket is null)
         {
             return false;
         }
@@ -5042,7 +4962,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         RaiseCexActionStateChanged();
         this.RaisePropertyChanged(nameof(IsCexTradingMode));
         this.RaisePropertyChanged(nameof(IsDexTradingMode));
-        this.RaisePropertyChanged(nameof(IsManualFuturesMode));
+        OrderTicketVM.RaiseMarketModeChanged();
         this.RaisePropertyChanged(nameof(CexMarketModeSummary));
         this.RaisePropertyChanged(nameof(CexVenueBackground));
         this.RaisePropertyChanged(nameof(DexVenueBackground));
@@ -5054,9 +4974,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(ActiveTradingCandles));
         this.RaisePropertyChanged(nameof(BaseAssetSymbol));
         this.RaisePropertyChanged(nameof(CurrentTradePrice));
-        this.RaisePropertyChanged(nameof(TradeNotional));
+        OrderTicketVM.RaiseTradeNotionalChanged();
         this.RaisePropertyChanged(nameof(TradingChartHeader));
-        this.RaisePropertyChanged(nameof(TradeNotionalLabel));
         this.RaisePropertyChanged(nameof(BidDepthTotal));
         this.RaisePropertyChanged(nameof(AskDepthTotal));
         this.RaisePropertyChanged(nameof(BidDepthLabel));
@@ -5082,13 +5001,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(CurrentOpenExposureUsdt));
         this.RaisePropertyChanged(nameof(CurrentOpenExposureLabel));
         this.RaisePropertyChanged(nameof(CurrentDailyLossLabel));
-        this.RaisePropertyChanged(nameof(PrimaryOrderButtonText));
-        this.RaisePropertyChanged(nameof(PrimaryOrderButtonHint));
-        this.RaisePropertyChanged(nameof(EstimatedTradingFee));
-        this.RaisePropertyChanged(nameof(EstimatedTradingFeeLabel));
-        this.RaisePropertyChanged(nameof(EstimatedNetworkFeeUsdt));
-        this.RaisePropertyChanged(nameof(EstimatedNetworkFeeLabel));
-        this.RaisePropertyChanged(nameof(EstimatedTotalCostLabel));
+        OrderTicketVM.RaisePrimaryOrderCostChanged();
         this.RaisePropertyChanged(nameof(AccountEquityUsdt));
         this.RaisePropertyChanged(nameof(AccountEquityLabel));
         this.RaisePropertyChanged(nameof(SessionPnlLabel));
@@ -5130,7 +5043,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     private void RaiseTradingModeStateChanged()
     {
         RaiseCexActionStateChanged();
-        this.RaisePropertyChanged(nameof(IsManualFuturesMode));
+        OrderTicketVM.RaiseMarketModeChanged();
         this.RaisePropertyChanged(nameof(TradingTerminalSummary));
         this.RaisePropertyChanged(nameof(CexMarketModeSummary));
         this.RaisePropertyChanged(nameof(CurrentTradePrice));
@@ -5156,12 +5069,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return executionReason;
         }
 
-        if (IsManualFuturesMode && !IsFuturesPrivateApiReady)
+        if (OrderTicketVM.IsManualFuturesMode && !IsFuturesPrivateApiReady)
         {
             return "Binance futures private API credentials are required for this live action.";
         }
 
-        if (!IsManualFuturesMode && !IsSpotPrivateApiReady)
+        if (!OrderTicketVM.IsManualFuturesMode && !IsSpotPrivateApiReady)
         {
             return $"Add API keys for {SelectedSpotExchange} in Settings to place spot orders.";
         }
@@ -5176,7 +5089,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private string GetCexMarketBuyBlockedReason()
     {
-        if (TradeQuantity <= 0m)
+        if (OrderTicketVM.TradeQuantity <= 0m)
         {
             return "Set trade size above zero.";
         }
@@ -5187,8 +5100,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return guardReason;
         }
 
-        if (IsManualFuturesMode &&
-            !WalletVM.TryApproveUsdRisk(TradeNotional, CurrentOpenExposureUsdt, RealizedPnl, out var riskReason))
+        if (OrderTicketVM.IsManualFuturesMode &&
+            !WalletVM.TryApproveUsdRisk(OrderTicketVM.TradeNotional, CurrentOpenExposureUsdt, RealizedPnl, out var riskReason))
         {
             return riskReason;
         }
@@ -5198,12 +5111,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private string GetCexMarketSellBlockedReason()
     {
-        if (TradeQuantity <= 0m)
+        if (OrderTicketVM.TradeQuantity <= 0m)
         {
             return "Set trade size above zero.";
         }
 
-        if (!IsManualFuturesMode && PositionQuantity <= 0m)
+        if (!OrderTicketVM.IsManualFuturesMode && PositionQuantity <= 0m)
         {
             return "There is no open spot position to sell.";
         }
@@ -5214,8 +5127,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return guardReason;
         }
 
-        if (IsManualFuturesMode &&
-            !WalletVM.TryApproveUsdRisk(TradeNotional, CurrentOpenExposureUsdt, RealizedPnl, out var riskReason))
+        if (OrderTicketVM.IsManualFuturesMode &&
+            !WalletVM.TryApproveUsdRisk(OrderTicketVM.TradeNotional, CurrentOpenExposureUsdt, RealizedPnl, out var riskReason))
         {
             return riskReason;
         }
@@ -5225,12 +5138,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
     private string GetCexBuyLimitBlockedReason()
     {
-        if (TradeQuantity <= 0m)
+        if (OrderTicketVM.TradeQuantity <= 0m)
         {
             return "Set trade size above zero.";
         }
 
-        if (LimitPrice <= 0m)
+        if (OrderTicketVM.LimitPrice <= 0m)
         {
             return "Set a limit price above zero.";
         }
@@ -5241,24 +5154,24 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return guardReason;
         }
 
-        return WalletVM.TryApproveUsdRisk(TradeQuantity * LimitPrice, CurrentOpenExposureUsdt, RealizedPnl, out var riskReason)
+        return WalletVM.TryApproveUsdRisk(OrderTicketVM.TradeQuantity * OrderTicketVM.LimitPrice, CurrentOpenExposureUsdt, RealizedPnl, out var riskReason)
             ? string.Empty
             : riskReason;
     }
 
     private string GetCexSellLimitBlockedReason()
     {
-        if (TradeQuantity <= 0m)
+        if (OrderTicketVM.TradeQuantity <= 0m)
         {
             return "Set trade size above zero.";
         }
 
-        if (LimitPrice <= 0m)
+        if (OrderTicketVM.LimitPrice <= 0m)
         {
             return "Set a limit price above zero.";
         }
 
-        if (!IsManualFuturesMode && PositionQuantity <= 0m)
+        if (!OrderTicketVM.IsManualFuturesMode && PositionQuantity <= 0m)
         {
             return "There is no open spot position to sell.";
         }
@@ -5273,7 +5186,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return "Open a position before arming take-profit.";
         }
 
-        if (TakeProfitPrice <= 0m)
+        if (OrderTicketVM.TakeProfitPrice <= 0m)
         {
             return "Set a take-profit price above zero.";
         }
@@ -5288,7 +5201,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return "Open a position before arming stop-loss.";
         }
 
-        if (StopLossPrice <= 0m)
+        if (OrderTicketVM.StopLossPrice <= 0m)
         {
             return "Set a stop-loss price above zero.";
         }
@@ -5310,12 +5223,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     {
         // Reverse = close, then open the OPPOSITE side. Spot cannot hold a short, so the
         // open leg would fire a second erroneous sell of an asset no longer held.
-        if (!IsManualFuturesMode)
+        if (!OrderTicketVM.IsManualFuturesMode)
         {
             return "Reverse is available in futures mode only.";
         }
 
-        if (TradeQuantity <= 0m)
+        if (OrderTicketVM.TradeQuantity <= 0m)
         {
             return "Set trade size above zero.";
         }
@@ -5331,24 +5244,13 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return guardReason;
         }
 
-        if (IsManualFuturesMode &&
-            !WalletVM.TryApproveUsdRisk(TradeNotional, CurrentOpenExposureUsdt, RealizedPnl, out var riskReason))
+        if (OrderTicketVM.IsManualFuturesMode &&
+            !WalletVM.TryApproveUsdRisk(OrderTicketVM.TradeNotional, CurrentOpenExposureUsdt, RealizedPnl, out var riskReason))
         {
             return riskReason;
         }
 
         return string.Empty;
-    }
-
-    private string GetPrimaryOrderBlockedReason()
-    {
-        var isSell = string.Equals(SelectedOrderSide, "SELL", StringComparison.OrdinalIgnoreCase);
-        if (string.Equals(SelectedOrderType, "Market", StringComparison.OrdinalIgnoreCase))
-        {
-            return isSell ? CexMarketSellBlockedReason : CexMarketBuyBlockedReason;
-        }
-
-        return isSell ? CexSellLimitBlockedReason : CexBuyLimitBlockedReason;
     }
 
     private void RaiseCexActionStateChanged()
@@ -5360,7 +5262,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(CanExecuteCexTakeProfit));
         this.RaisePropertyChanged(nameof(CanExecuteCexStopLoss));
         CexRightRailVM.RaiseActionGuardChanged();
-        this.RaisePropertyChanged(nameof(CanPlacePrimaryOrder));
+        OrderTicketVM.RaisePrimaryOrderGuardChanged();
         this.RaisePropertyChanged(nameof(GuardPassLabel));
         this.RaisePropertyChanged(nameof(CexMarketBuyBlockedReason));
         this.RaisePropertyChanged(nameof(CexMarketSellBlockedReason));
@@ -5368,7 +5270,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(CexSellLimitBlockedReason));
         this.RaisePropertyChanged(nameof(CexTakeProfitBlockedReason));
         this.RaisePropertyChanged(nameof(CexStopLossBlockedReason));
-        this.RaisePropertyChanged(nameof(PrimaryOrderBlockedReason));
         this.RaisePropertyChanged(nameof(TradingGuardStatusLabel));
         this.RaisePropertyChanged(nameof(TradingGuardStatusBrush));
         this.RaisePropertyChanged(nameof(TradingGuardSummary));
@@ -5666,18 +5567,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     private void RaiseOrderTicketStateChanged()
     {
         RaiseCexActionStateChanged();
-        this.RaisePropertyChanged(nameof(IsLimitOrderType));
-        this.RaisePropertyChanged(nameof(BuySideBackground));
-        this.RaisePropertyChanged(nameof(SellSideBackground));
-        this.RaisePropertyChanged(nameof(BuySideForeground));
-        this.RaisePropertyChanged(nameof(SellSideForeground));
-        this.RaisePropertyChanged(nameof(PrimaryOrderButtonText));
-        this.RaisePropertyChanged(nameof(PrimaryOrderButtonHint));
-        this.RaisePropertyChanged(nameof(EstimatedTradingFee));
-        this.RaisePropertyChanged(nameof(EstimatedTradingFeeLabel));
-        this.RaisePropertyChanged(nameof(EstimatedNetworkFeeUsdt));
-        this.RaisePropertyChanged(nameof(EstimatedNetworkFeeLabel));
-        this.RaisePropertyChanged(nameof(EstimatedTotalCostLabel));
+        OrderTicketVM.RaiseSideAndTypeChanged();
+        OrderTicketVM.RaisePrimaryOrderCostChanged();
         this.RaisePropertyChanged(nameof(StrategyEntryPrice));
         this.RaisePropertyChanged(nameof(StrategyStopPrice));
         this.RaisePropertyChanged(nameof(StrategyTargetPrice));
@@ -5774,16 +5665,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         "logout" => new(7, true, "Logout", "Safely ends the session and returns the terminal to idle state.", "Switches to paper mode, stops the bot, disarms the sniper and disconnects the wallet session."),
         _ => new(0, false, "Dashboard", string.Empty, string.Empty)
     };
-
-    private string GetOrderSideBackground(string side) =>
-        string.Equals(SelectedOrderSide, side, StringComparison.OrdinalIgnoreCase)
-            ? side == "SELL" ? "#402125" : "#16372F"
-            : "#101821";
-
-    private string GetOrderSideForeground(string side) =>
-        string.Equals(SelectedOrderSide, side, StringComparison.OrdinalIgnoreCase)
-            ? side == "SELL" ? "#FF857B" : "#42F5B1"
-            : "#8FA3B8";
 
     private static ActivityFeedRowViewModel CreateActivityRow(string timestamp, string message)
     {
@@ -6667,7 +6548,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
         else
         {
-            plan.AppendLine(_localization.IsRussian ? $"Смещение: {AiOutlookLabel} | Направление: {SelectedOrderSide} | Уверенность: {AiConfidenceLabel}" : $"Bias: {AiOutlookLabel} | Direction: {SelectedOrderSide} | Confidence: {AiConfidenceLabel}");
+            plan.AppendLine(_localization.IsRussian ? $"Смещение: {AiOutlookLabel} | Направление: {OrderTicketVM.SelectedOrderSide} | Уверенность: {AiConfidenceLabel}" : $"Bias: {AiOutlookLabel} | Direction: {OrderTicketVM.SelectedOrderSide} | Confidence: {AiConfidenceLabel}");
             plan.AppendLine(_localization.IsRussian ? $"Зона входа: {AiEntryRangeLabel}" : $"Entry band: {AiEntryRangeLabel}");
             plan.AppendLine(_localization.IsRussian ? $"Инвалидация: {AiStopLossDisplay}" : $"Invalidation: {AiStopLossDisplay}");
             plan.AppendLine(_localization.IsRussian ? $"Цель 1: {AiTakeProfitOneDisplay} | Цель 2: {AiTakeProfitTwoDisplay}" : $"Target 1: {AiTakeProfitOneDisplay} | Target 2: {AiTakeProfitTwoDisplay}");
@@ -6686,7 +6567,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         {
             plan.AppendLine(_localization.IsRussian ? $"Sniper заметка: {SniperVM.PresetSummary} | Открыто {SniperVM.OpenPositionCount}/{SniperVM.MaxSimultaneousPositions}" : $"Sniper note: {SniperVM.PresetSummary} | Open {SniperVM.OpenPositionCount}/{SniperVM.MaxSimultaneousPositions}");
         }
-        plan.AppendLine(_localization.IsRussian ? $"Главный блокер: {(CanPlacePrimaryOrder ? "нет" : PrimaryOrderBlockedReason)}" : $"Primary blocker: {(CanPlacePrimaryOrder ? "none" : PrimaryOrderBlockedReason)}");
+        plan.AppendLine(_localization.IsRussian ? $"Главный блокер: {(OrderTicketVM.CanPlacePrimaryOrder ? "нет" : OrderTicketVM.PrimaryOrderBlockedReason)}" : $"Primary blocker: {(OrderTicketVM.CanPlacePrimaryOrder ? "none" : OrderTicketVM.PrimaryOrderBlockedReason)}");
 
         AddAiAssistantMessage(false, TranslateUi("Trade Plan"), plan.ToString().Trim(), $"{DateTime.Now:HH:mm:ss} · {TranslateUi("structured plan")}");
         AiAssistantStatusLabel = TranslateUi("TRADE PLAN READY");
@@ -6744,9 +6625,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
 
         body.AppendLine();
-        body.AppendLine(CanPlacePrimaryOrder
+        body.AppendLine(OrderTicketVM.CanPlacePrimaryOrder
             ? (_localization.IsRussian ? "Исполнение сейчас достаточно чистое, чтобы действовать при подтверждении входа." : "Execution is currently clear enough to act if the entry confirms.")
-            : (_localization.IsRussian ? $"Исполнение всё ещё заблокировано: {PrimaryOrderBlockedReason}" : $"Execution is still gated: {PrimaryOrderBlockedReason}"));
+            : (_localization.IsRussian ? $"Исполнение всё ещё заблокировано: {OrderTicketVM.PrimaryOrderBlockedReason}" : $"Execution is still gated: {OrderTicketVM.PrimaryOrderBlockedReason}"));
 
         return body.ToString().Trim();
     }
@@ -6795,9 +6676,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             lines.Add(_localization.IsRussian
                 ? $"Риск-ограничение: {WalletVM.GlobalRiskCapLabel}. {WalletVM.GlobalRiskSummary}. Нагрузка заявки: {PortfolioExposureLabel}."
                 : $"Risk gate: {WalletVM.GlobalRiskCapLabel}. {WalletVM.GlobalRiskSummary}. Ticket load {PortfolioExposureLabel}.");
-            lines.Add(TradeNotional <= 0m
+            lines.Add(OrderTicketVM.TradeNotional <= 0m
                 ? (_localization.IsRussian ? "Живая заявка ещё не взведена, поэтому риск пока теоретический, пока не зафиксированы размер и цена." : "No live ticket is armed yet, so risk is still theoretical until size and price are locked in.")
-                : (_localization.IsRussian ? $"Текущий номинал заявки: {TradeNotional:N2} USDT, ожидаемые комиссии: {EstimatedTradingFeeLabel}, сеть: {EstimatedNetworkFeeLabel}." : $"Current ticket notional is {TradeNotional:N2} USDT with est. fees {EstimatedTradingFeeLabel} and network {EstimatedNetworkFeeLabel}."));
+                : (_localization.IsRussian ? $"Текущий номинал заявки: {OrderTicketVM.TradeNotional:N2} USDT, ожидаемые комиссии: {OrderTicketVM.EstimatedTradingFeeLabel}, сеть: {OrderTicketVM.EstimatedNetworkFeeLabel}." : $"Current ticket notional is {OrderTicketVM.TradeNotional:N2} USDT with est. fees {OrderTicketVM.EstimatedTradingFeeLabel} and network {OrderTicketVM.EstimatedNetworkFeeLabel}."));
         }
 
         if (wantsDex && AiIncludeDexContext)
@@ -6828,9 +6709,9 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
         if (wantsNext || (!wantsRisk && !wantsDex && !wantsSniper && !wantsVisual))
         {
-            var nextAction = CanPlacePrimaryOrder
-                ? (_localization.IsRussian ? $"Чистое следующее действие: сохраняйте смещение {SelectedOrderSide}, следите за зоной входа и входите только если лента удерживается внутри запланированной зоны." : $"Clean next step: keep {SelectedOrderSide} bias, watch the entry band, and only trigger once the tape stays inside the planned zone.")
-                : (_localization.IsRussian ? $"Чистое следующее действие: сначала уберите блокер. Сейчас терминал останавливает исполнение по причине: {PrimaryOrderBlockedReason}" : $"Clean next step: remove the blocker first. Right now the terminal is stopping execution because: {PrimaryOrderBlockedReason}");
+            var nextAction = OrderTicketVM.CanPlacePrimaryOrder
+                ? (_localization.IsRussian ? $"Чистое следующее действие: сохраняйте смещение {OrderTicketVM.SelectedOrderSide}, следите за зоной входа и входите только если лента удерживается внутри запланированной зоны." : $"Clean next step: keep {OrderTicketVM.SelectedOrderSide} bias, watch the entry band, and only trigger once the tape stays inside the planned zone.")
+                : (_localization.IsRussian ? $"Чистое следующее действие: сначала уберите блокер. Сейчас терминал останавливает исполнение по причине: {OrderTicketVM.PrimaryOrderBlockedReason}" : $"Clean next step: remove the blocker first. Right now the terminal is stopping execution because: {OrderTicketVM.PrimaryOrderBlockedReason}");
             lines.Add(nextAction);
             lines.Add(_localization.IsRussian
                 ? $"Режим исполнения: {WalletVM.GlobalExecutionModeLabel}. {WalletVM.GlobalExecutionSummary}"
@@ -7021,22 +6902,22 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        LimitPrice = 0m;
-        TakeProfitPrice = 0m;
-        StopLossPrice = 0m;
+        OrderTicketVM.LimitPrice = 0m;
+        OrderTicketVM.TakeProfitPrice = 0m;
+        OrderTicketVM.StopLossPrice = 0m;
         SeedTicketDefaults();
     }
 
     private void SeedTicketDefaults()
     {
-        if (CurrentTradePrice <= 0 || LimitPrice > 0 || TakeProfitPrice > 0 || StopLossPrice > 0)
+        if (CurrentTradePrice <= 0 || OrderTicketVM.LimitPrice > 0 || OrderTicketVM.TakeProfitPrice > 0 || OrderTicketVM.StopLossPrice > 0)
         {
             return;
         }
 
-        LimitPrice = CurrentTradePrice;
-        TakeProfitPrice = CurrentTradePrice * 1.012m;
-        StopLossPrice = CurrentTradePrice * 0.992m;
+        OrderTicketVM.LimitPrice = CurrentTradePrice;
+        OrderTicketVM.TakeProfitPrice = CurrentTradePrice * 1.012m;
+        OrderTicketVM.StopLossPrice = CurrentTradePrice * 0.992m;
     }
 
     private void RemoveProtectionOrders()

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using CryptoAITerminal.TerminalUI.Services.AppActions;
@@ -41,15 +41,15 @@ public partial class MainWindowViewModel
         return AppActionResult.Ok($"Trading symbol set to {SelectedTradingSymbol}");
     }
 
-    internal void SetTicketSideFromAgent(bool isBuy) => SelectedOrderSide = isBuy ? "BUY" : "SELL";
+    internal void SetTicketSideFromAgent(bool isBuy) => OrderTicketVM.SelectedOrderSide = isBuy ? "BUY" : "SELL";
 
     internal void SelectOrderTypeFromAgent(string type) =>
-        SelectedOrderType = string.Equals(type, "limit", StringComparison.OrdinalIgnoreCase) ? "Limit" : "Market";
+        OrderTicketVM.SelectedOrderType = string.Equals(type, "limit", StringComparison.OrdinalIgnoreCase) ? "Limit" : "Market";
 
     internal void SelectMarketModeFromAgent(string mode) =>
-        SelectedCexMarketMode = string.Equals(mode, "futures", StringComparison.OrdinalIgnoreCase) ? "Futures" : "Spot";
+        OrderTicketVM.SelectedCexMarketMode = string.Equals(mode, "futures", StringComparison.OrdinalIgnoreCase) ? "Futures" : "Spot";
 
-    internal void SetQuantityFromAgent(decimal quantity) => TradeQuantity = quantity;
+    internal void SetQuantityFromAgent(decimal quantity) => OrderTicketVM.TradeQuantity = quantity;
 
     internal AppActionResult SetTradeUsdFromAgent(decimal usd)
     {
@@ -64,33 +64,33 @@ public partial class MainWindowViewModel
             return AppActionResult.Fail("no current price available to size the order");
         }
 
-        TradeQuantity = Math.Round(usd / px, 6);
-        return AppActionResult.Ok($"Sized {TradeQuantity} {BaseAssetSymbol} (~{usd:N2} USDT @ {px:N2})");
+        OrderTicketVM.TradeQuantity = Math.Round(usd / px, 6);
+        return AppActionResult.Ok($"Sized {OrderTicketVM.TradeQuantity} {BaseAssetSymbol} (~{usd:N2} USDT @ {px:N2})");
     }
 
-    internal void SetLeverageFromAgent(int leverage) => ManualFuturesLeverage = leverage;
+    internal void SetLeverageFromAgent(int leverage) => OrderTicketVM.ManualFuturesLeverage = leverage;
 
-    internal void SetLimitPriceFromAgent(decimal price) => LimitPrice = price;
+    internal void SetLimitPriceFromAgent(decimal price) => OrderTicketVM.LimitPrice = price;
 
-    internal void SetTakeProfitFromAgent(decimal price) => TakeProfitPrice = price;
+    internal void SetTakeProfitFromAgent(decimal price) => OrderTicketVM.TakeProfitPrice = price;
 
-    internal void SetStopLossFromAgent(decimal price) => StopLossPrice = price;
+    internal void SetStopLossFromAgent(decimal price) => OrderTicketVM.StopLossPrice = price;
 
     internal AppActionResult ArmLimitFromAgent(bool isBuy)
     {
-        if (LimitPrice <= 0m)
+        if (OrderTicketVM.LimitPrice <= 0m)
         {
             return AppActionResult.Fail("set a limit price first");
         }
 
-        if (TradeQuantity <= 0m)
+        if (OrderTicketVM.TradeQuantity <= 0m)
         {
             return AppActionResult.Fail("set a quantity first");
         }
 
         var ok = isBuy ? PlaceBuyLimit() : PlaceSellLimit();
         return ok
-            ? AppActionResult.Ok($"{(isBuy ? "BUY" : "SELL")} LIMIT armed at {LimitPrice:N2} for {TradeQuantity} {BaseAssetSymbol}")
+            ? AppActionResult.Ok($"{(isBuy ? "BUY" : "SELL")} LIMIT armed at {OrderTicketVM.LimitPrice:N2} for {OrderTicketVM.TradeQuantity} {BaseAssetSymbol}")
             : AppActionResult.Fail("limit rejected — see the log");
     }
 
@@ -101,13 +101,13 @@ public partial class MainWindowViewModel
             return AppActionResult.Fail("no open position to protect");
         }
 
-        if (TakeProfitPrice <= 0m)
+        if (OrderTicketVM.TakeProfitPrice <= 0m)
         {
             return AppActionResult.Fail("set a take-profit price first");
         }
 
         return ArmTakeProfit()
-            ? AppActionResult.Ok($"Take-profit armed at {TakeProfitPrice:N2}")
+            ? AppActionResult.Ok($"Take-profit armed at {OrderTicketVM.TakeProfitPrice:N2}")
             : AppActionResult.Fail("take-profit rejected — see the log");
     }
 
@@ -118,26 +118,26 @@ public partial class MainWindowViewModel
             return AppActionResult.Fail("no open position to protect");
         }
 
-        if (StopLossPrice <= 0m)
+        if (OrderTicketVM.StopLossPrice <= 0m)
         {
             return AppActionResult.Fail("set a stop-loss price first");
         }
 
         return ArmStopLoss()
-            ? AppActionResult.Ok($"Stop-loss armed at {StopLossPrice:N2}")
+            ? AppActionResult.Ok($"Stop-loss armed at {OrderTicketVM.StopLossPrice:N2}")
             : AppActionResult.Fail("stop-loss rejected — see the log");
     }
 
     internal async Task<AppActionResult> PlaceMarketFromAgent(bool isBuy)
     {
-        if (TradeQuantity <= 0m)
+        if (OrderTicketVM.TradeQuantity <= 0m)
         {
             return AppActionResult.Fail("set a quantity first");
         }
 
         var ok = isBuy ? await ExecuteBuyMarket() : await ExecuteSellMarket();
         return ok
-            ? AppActionResult.Ok($"Market {(isBuy ? "BUY" : "SELL")} placed for {TradeQuantity} {BaseAssetSymbol}")
+            ? AppActionResult.Ok($"Market {(isBuy ? "BUY" : "SELL")} placed for {OrderTicketVM.TradeQuantity} {BaseAssetSymbol}")
             : AppActionResult.Fail("order was blocked by a risk/wallet/execution guard — see the log");
     }
 
@@ -180,9 +180,9 @@ public partial class MainWindowViewModel
 
         var isSell = string.Equals(side, "sell", StringComparison.OrdinalIgnoreCase)
             || string.Equals(side, "short", StringComparison.OrdinalIgnoreCase);
-        SelectedOrderSide = isSell ? "SELL" : "BUY";
+        OrderTicketVM.SelectedOrderSide = isSell ? "SELL" : "BUY";
         SelectMainTab("trading");
-        return AppActionResult.Ok($"Applied {SelectedOrderSide} signal for {SelectedTradingSymbol} to the ticket");
+        return AppActionResult.Ok($"Applied {OrderTicketVM.SelectedOrderSide} signal for {SelectedTradingSymbol} to the ticket");
     }
 
     internal AppActionResult AddPriceAlertFromAgent(string symbol, decimal price, bool above)

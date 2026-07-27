@@ -1,4 +1,4 @@
-using Avalonia.Media.Imaging;
+﻿using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using CryptoAITerminal.Core.Enums;
@@ -42,37 +42,37 @@ public partial class MainWindowViewModel
     private void ApplyOrderTemplate(Services.OrderTemplate t)
     {
         // Side + type
-        SelectedOrderSide = t.Side;
-        SelectedOrderType = t.OrderType;
+        OrderTicketVM.SelectedOrderSide = t.Side;
+        OrderTicketVM.SelectedOrderType = t.OrderType;
 
         // Quantity
-        TradeQuantity = t.Quantity;
+        OrderTicketVM.TradeQuantity = t.Quantity;
 
         // Limit price offset from current market
-        var refPrice = CurrentTradePrice > 0 ? CurrentTradePrice : LimitPrice;
+        var refPrice = CurrentTradePrice > 0 ? CurrentTradePrice : OrderTicketVM.LimitPrice;
         if (refPrice > 0 && t.LimitOffsetPct != 0m)
-            LimitPrice = Math.Max(0m, refPrice * (1m + t.LimitOffsetPct / 100m));
+            OrderTicketVM.LimitPrice = Math.Max(0m, refPrice * (1m + t.LimitOffsetPct / 100m));
         else if (refPrice > 0)
-            LimitPrice = refPrice;
+            OrderTicketVM.LimitPrice = refPrice;
 
         // TP / SL computed from the resolved limit price
-        var entry = LimitPrice > 0 ? LimitPrice : refPrice;
+        var entry = OrderTicketVM.LimitPrice > 0 ? OrderTicketVM.LimitPrice : refPrice;
         if (entry > 0)
         {
             if (t.Side == "BUY")
             {
-                TakeProfitPrice = entry * (1m + t.TakeProfitPct / 100m);
-                StopLossPrice   = entry * (1m - t.StopLossPct   / 100m);
+                OrderTicketVM.TakeProfitPrice = entry * (1m + t.TakeProfitPct / 100m);
+                OrderTicketVM.StopLossPrice   = entry * (1m - t.StopLossPct   / 100m);
             }
             else
             {
-                TakeProfitPrice = entry * (1m - t.TakeProfitPct / 100m);
-                StopLossPrice   = entry * (1m + t.StopLossPct   / 100m);
+                OrderTicketVM.TakeProfitPrice = entry * (1m - t.TakeProfitPct / 100m);
+                OrderTicketVM.StopLossPrice   = entry * (1m + t.StopLossPct   / 100m);
             }
         }
 
         AddLog($"[Template] '{t.Name}' (Shift+{t.Slot}) applied — {t.Side} {t.Symbol}  " +
-               $"Lmt {LimitPrice:N2}  TP {TakeProfitPrice:N2}  SL {StopLossPrice:N2}");
+               $"Lmt {OrderTicketVM.LimitPrice:N2}  TP {OrderTicketVM.TakeProfitPrice:N2}  SL {OrderTicketVM.StopLossPrice:N2}");
         ShowToast($"Template '{t.Name}' applied  (Shift+{t.Slot})");
     }
 
@@ -84,25 +84,25 @@ public partial class MainWindowViewModel
         }
 
         var atrProxy = Math.Max(SpreadValue * 3m, CurrentTradePrice * 0.004m);
-        StopLossPrice = Math.Max(0m, LimitPrice - atrProxy);
-        TakeProfitPrice = LimitPrice + (atrProxy * 2m);
-        AddLog($"ATR preset applied. Stop {StopLossPrice:N2}, target {TakeProfitPrice:N2}.");
+        OrderTicketVM.StopLossPrice = Math.Max(0m, OrderTicketVM.LimitPrice - atrProxy);
+        OrderTicketVM.TakeProfitPrice = OrderTicketVM.LimitPrice + (atrProxy * 2m);
+        AddLog($"ATR preset applied. Stop {OrderTicketVM.StopLossPrice:N2}, target {OrderTicketVM.TakeProfitPrice:N2}.");
     }
 
     private void ApplyRiskRewardPreset()
     {
-        if (LimitPrice <= 0)
+        if (OrderTicketVM.LimitPrice <= 0)
         {
             return;
         }
 
-        var stopDistance = StopLossPrice > 0 && StopLossPrice < LimitPrice
-            ? LimitPrice - StopLossPrice
-            : Math.Max(SpreadValue * 4m, LimitPrice * 0.003m);
+        var stopDistance = OrderTicketVM.StopLossPrice > 0 && OrderTicketVM.StopLossPrice < OrderTicketVM.LimitPrice
+            ? OrderTicketVM.LimitPrice - OrderTicketVM.StopLossPrice
+            : Math.Max(SpreadValue * 4m, OrderTicketVM.LimitPrice * 0.003m);
 
-        StopLossPrice = LimitPrice - stopDistance;
-        TakeProfitPrice = LimitPrice + (stopDistance * 2m);
-        AddLog($"2R preset applied. Stop {StopLossPrice:N2}, target {TakeProfitPrice:N2}.");
+        OrderTicketVM.StopLossPrice = OrderTicketVM.LimitPrice - stopDistance;
+        OrderTicketVM.TakeProfitPrice = OrderTicketVM.LimitPrice + (stopDistance * 2m);
+        AddLog($"2R preset applied. Stop {OrderTicketVM.StopLossPrice:N2}, target {OrderTicketVM.TakeProfitPrice:N2}.");
     }
 
     private void ApplyScalpPreset(string? preset)
@@ -110,9 +110,11 @@ public partial class MainWindowViewModel
         var normalizedPreset = NormalizeScalpPreset(preset);
         SelectedScalpPreset = normalizedPreset;
 
-        if (!string.Equals(_selectedTradingProfile, "Scalp", StringComparison.Ordinal))
+        if (!string.Equals(OrderTicketVM.SelectedTradingProfile, "Scalp", StringComparison.Ordinal))
         {
-            this.RaiseAndSetIfChanged(ref _selectedTradingProfile, "Scalp");
+            // Deliberately not the ticket's setter: its tail is this very method, so going through
+            // it would re-enter the preset. Same silent field write the shell used to do.
+            OrderTicketVM.SetTradingProfileWithoutOrchestration("Scalp");
             this.RaisePropertyChanged(nameof(IsScalpProfile));
         }
 
@@ -129,14 +131,14 @@ public partial class MainWindowViewModel
         RaiseTimeframeStateChanged();
         _ = RefreshSelectedCandlesAsync();
 
-        if (IsManualFuturesMode)
+        if (OrderTicketVM.IsManualFuturesMode)
         {
-            ManualFuturesLeverage = leverage;
+            OrderTicketVM.ManualFuturesLeverage = leverage;
         }
 
         WalletVM.GlobalPositionSizingPercent = sizingPercent;
-        SlippageTolerancePercent = slippagePercent;
-        SelectedOrderType = "Market";
+        OrderTicketVM.SlippageTolerancePercent = slippagePercent;
+        OrderTicketVM.SelectedOrderType = "Market";
         ApplyScalpProtectionPreset(stopBps, takeProfitBps);
         this.RaisePropertyChanged(nameof(TradingProfileSummary));
         this.RaisePropertyChanged(nameof(ScalpPresetTargetLabel));
@@ -145,7 +147,7 @@ public partial class MainWindowViewModel
 
     private void ApplyScalpProtectionPreset(decimal stopBps, decimal takeProfitBps)
     {
-        var referencePrice = LimitPrice > 0 ? LimitPrice : CurrentTradePrice;
+        var referencePrice = OrderTicketVM.LimitPrice > 0 ? OrderTicketVM.LimitPrice : CurrentTradePrice;
         if (referencePrice <= 0)
         {
             return;
@@ -153,17 +155,17 @@ public partial class MainWindowViewModel
 
         var stopRatio = stopBps / 10000m;
         var takeProfitRatio = takeProfitBps / 10000m;
-        var isSellBias = string.Equals(SelectedOrderSide, "SELL", StringComparison.OrdinalIgnoreCase);
+        var isSellBias = string.Equals(OrderTicketVM.SelectedOrderSide, "SELL", StringComparison.OrdinalIgnoreCase);
 
-        if (IsManualFuturesMode && isSellBias)
+        if (OrderTicketVM.IsManualFuturesMode && isSellBias)
         {
-            TakeProfitPrice = referencePrice * (1m - takeProfitRatio);
-            StopLossPrice = referencePrice * (1m + stopRatio);
+            OrderTicketVM.TakeProfitPrice = referencePrice * (1m - takeProfitRatio);
+            OrderTicketVM.StopLossPrice = referencePrice * (1m + stopRatio);
             return;
         }
 
-        TakeProfitPrice = referencePrice * (1m + takeProfitRatio);
-        StopLossPrice = referencePrice * (1m - stopRatio);
+        OrderTicketVM.TakeProfitPrice = referencePrice * (1m + takeProfitRatio);
+        OrderTicketVM.StopLossPrice = referencePrice * (1m - stopRatio);
     }
 
     private async Task RefreshAllOrderBooksAsync()
@@ -183,7 +185,7 @@ public partial class MainWindowViewModel
 
         var targetMarket = SelectedMarket;
         await RefreshOrderBookAsync(targetMarket);
-        if (IsManualFuturesMode)
+        if (OrderTicketVM.IsManualFuturesMode)
         {
             await RefreshManualAccountStateAsync();
         }
@@ -198,7 +200,7 @@ public partial class MainWindowViewModel
 
         var targetSymbol = SelectedMarket.Symbol;
         var targetMarket = SelectedMarket;
-        var useFutures = IsManualFuturesMode;
+        var useFutures = OrderTicketVM.IsManualFuturesMode;
         var requestedTimeframe = ChartPanelVM.SelectedTradeTimeframe;
         var candleLimit = GetCandleLimit(requestedTimeframe);
 
@@ -222,7 +224,7 @@ public partial class MainWindowViewModel
                 if (SelectedMarket is null ||
                     !string.Equals(SelectedMarket.Symbol, targetSymbol, StringComparison.OrdinalIgnoreCase) ||
                     !ReferenceEquals(SelectedMarket, targetMarket) ||
-                    IsManualFuturesMode != useFutures ||
+                    OrderTicketVM.IsManualFuturesMode != useFutures ||
                     !string.Equals(ChartPanelVM.SelectedTradeTimeframe, requestedTimeframe, StringComparison.OrdinalIgnoreCase))
                 {
                     return;
@@ -271,7 +273,7 @@ public partial class MainWindowViewModel
 
     private async Task RefreshOrderBookAsync(CexMarketItemViewModel market)
     {
-        var useFutures = IsManualFuturesMode;
+        var useFutures = OrderTicketVM.IsManualFuturesMode;
         var spotGateway = ActiveSpotGateway;
         var gateway = useFutures ? ActiveFuturesGateway : spotGateway;
 
@@ -296,7 +298,7 @@ public partial class MainWindowViewModel
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                if (IsManualFuturesMode != useFutures)
+                if (OrderTicketVM.IsManualFuturesMode != useFutures)
                 {
                     return;
                 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -30,18 +30,8 @@ public partial class MainWindowViewModel
     private bool _isTapeRefreshRunning;
     private readonly Services.MarketTapeService _marketTape = new();
 
-    public ReactiveCommand<string, Unit> SelectOrderTypeCommand { get; private set; } = null!;
-    public ReactiveCommand<string, Unit> SelectMarketModeCommand { get; private set; } = null!;
-    public ReactiveCommand<string, Unit> SelectTradingProfileCommand { get; private set; } = null!;
-    public ReactiveCommand<string, Unit> SelectMarginModeCommand { get; private set; } = null!;
-
     private void InitializeTradingDesk()
     {
-        SelectOrderTypeCommand = ReactiveCommand.Create<string>(v => { if (!string.IsNullOrWhiteSpace(v)) SelectedOrderType = v; }, outputScheduler: App.UiScheduler);
-        SelectMarketModeCommand = ReactiveCommand.Create<string>(v => { if (!string.IsNullOrWhiteSpace(v)) SelectedCexMarketMode = v; }, outputScheduler: App.UiScheduler);
-        SelectTradingProfileCommand = ReactiveCommand.Create<string>(v => { if (!string.IsNullOrWhiteSpace(v)) SelectedTradingProfile = v; }, outputScheduler: App.UiScheduler);
-        SelectMarginModeCommand = ReactiveCommand.Create<string>(v => { if (!string.IsNullOrWhiteSpace(v)) ManualFuturesMarginMode = v; }, outputScheduler: App.UiScheduler);
-
         _venueQuoteTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
         _venueQuoteTimer.Tick += (_, _) => _ = RefreshVenueQuotesAsync();
         _venueQuoteTimer.Start();
@@ -225,7 +215,7 @@ public partial class MainWindowViewModel
     }
 
     /// <summary>Compact execution-guard badge for the ticket (mockup shows PASS/BLOCK).</summary>
-    public string GuardPassLabel => CanPlacePrimaryOrder ? "PASS" : "BLOCK";
+    public string GuardPassLabel => OrderTicketVM.CanPlacePrimaryOrder ? "PASS" : "BLOCK";
 
     private void StopTradingDeskTimers()
     {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -48,7 +48,7 @@ public sealed class MainWindowAppActionContext : IAppActionContext
     public string CurrentSymbol => _vm.SelectedTradingSymbol;
 
     public Task<decimal> GetTicketNotionalUsdAsync(CancellationToken ct)
-        => Task.FromResult(OnUi(() => _vm.TradeNotional));
+        => Task.FromResult(OnUi(() => _vm.OrderTicketVM.TradeNotional));
 
     // ── Navigation + reads ──────────────────────────────────────────────────
     public IReadOnlyList<string> KnownSections => _vm.KnownSectionKeys;
@@ -105,13 +105,13 @@ public sealed class MainWindowAppActionContext : IAppActionContext
     public AppActionResult SetOrderType(string type)
     {
         OnUi(() => _vm.SelectOrderTypeFromAgent(type));
-        return AppActionResult.Ok($"Order type set to {_vm.SelectedOrderType}");
+        return AppActionResult.Ok($"Order type set to {_vm.OrderTicketVM.SelectedOrderType}");
     }
 
     public AppActionResult SetMarketMode(string mode)
     {
         OnUi(() => _vm.SelectMarketModeFromAgent(mode));
-        return AppActionResult.Ok($"Market mode set to {_vm.SelectedCexMarketMode}");
+        return AppActionResult.Ok($"Market mode set to {_vm.OrderTicketVM.SelectedCexMarketMode}");
     }
 
     public AppActionResult SetQuantity(decimal quantity)
@@ -135,7 +135,7 @@ public sealed class MainWindowAppActionContext : IAppActionContext
         }
 
         OnUi(() => _vm.SetLeverageFromAgent(leverage));
-        return AppActionResult.Ok($"Leverage set to {_vm.ManualFuturesLeverage}x");
+        return AppActionResult.Ok($"Leverage set to {_vm.OrderTicketVM.ManualFuturesLeverage}x");
     }
 
     public AppActionResult SetLimitPrice(decimal price)

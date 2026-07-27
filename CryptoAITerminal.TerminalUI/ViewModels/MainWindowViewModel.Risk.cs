@@ -1,4 +1,4 @@
-using Avalonia.Media.Imaging;
+﻿using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using CryptoAITerminal.Core.Enums;
@@ -202,23 +202,7 @@ public partial class MainWindowViewModel
     public string HelpQuickStartSummary => "Use Markets to pick a symbol, Trading for manual execution, Sniper for DEX monitoring, and Logs for the full runtime trail.";
     public string HelpSafetySummary => "Keep live mode disabled until wallet, quote asset, sizing, and futures credentials are fully verified.";
     public string LogoutStatusLabel => $"{WalletVM.GlobalExecutionModeLabel} | Bot {(AIBotVM.IsRunning ? "running" : "stopped")} | Sniper {(SniperVM.IsArmed ? "armed" : "idle")}";
-    public bool IsLimitOrderType => string.Equals(SelectedOrderType, "Limit", StringComparison.OrdinalIgnoreCase);
-    public string BuySideBackground => GetOrderSideBackground("BUY");
-    public string SellSideBackground => GetOrderSideBackground("SELL");
-    public string BuySideForeground => GetOrderSideForeground("BUY");
-    public string SellSideForeground => GetOrderSideForeground("SELL");
-    public string PrimaryOrderButtonText => SelectedOrderSide == "SELL"
-        ? IsLimitOrderType ? "PLACE SELL ORDER" : "SELL MARKET"
-        : IsLimitOrderType ? "PLACE BUY ORDER" : "BUY MARKET";
-    public string PrimaryOrderButtonHint => TradeNotional <= 0
-        ? "Set price and quantity to prepare the ticket."
-        : $"{TradeQuantity:0.0000} {BaseAssetSymbol} for {TradeNotional:N2} USDT";
-    public decimal EstimatedTradingFee => TradeNotional <= 0 ? 0m : TradeNotional * 0.001m;
-    public string EstimatedTradingFeeLabel => $"{EstimatedTradingFee:N2} USDT";
-    public decimal EstimatedNetworkFeeUsdt => TradeNotional <= 0 ? 0m : Math.Max(0.20m, TradeNotional * 0.00015m);
-    public string EstimatedNetworkFeeLabel => $"{EstimatedNetworkFeeUsdt:N2} USDT";
-    public string EstimatedTotalCostLabel => $"{TradeNotional + EstimatedTradingFee + EstimatedNetworkFeeUsdt:N2} USDT";
-    public decimal AccountEquityUsdt => IsManualFuturesMode
+    public decimal AccountEquityUsdt => OrderTicketVM.IsManualFuturesMode
         ? AvailableBalanceUsdt + UnrealizedPnl
         : AvailableBalanceUsdt + (PositionQuantity * CurrentTradePrice);
     public string AccountEquityLabel => $"{AccountEquityUsdt:N2} USDT";
@@ -226,15 +210,15 @@ public partial class MainWindowViewModel
     public string SessionPnlBrush => (UnrealizedPnl + RealizedPnl) >= 0 ? SemanticColor.Keys.Positive : SemanticColor.Keys.Negative;
     public decimal SessionPnlPercent => AccountEquityUsdt <= 0 ? 0m : ((UnrealizedPnl + RealizedPnl) / AccountEquityUsdt) * 100m;
     public string SessionPnlPercentLabel => $"{SessionPnlPercent:+0.##;-0.##;0.##}%";
-    public decimal StrategyEntryPrice => LimitPrice > 0 ? LimitPrice : CurrentTradePrice;
-    public decimal StrategyStopPrice => StopLossPrice > 0
-        ? StopLossPrice
+    public decimal StrategyEntryPrice => OrderTicketVM.LimitPrice > 0 ? OrderTicketVM.LimitPrice : CurrentTradePrice;
+    public decimal StrategyStopPrice => OrderTicketVM.StopLossPrice > 0
+        ? OrderTicketVM.StopLossPrice
         : StrategyEntryPrice > 0 ? StrategyEntryPrice * 0.992m : 0m;
-    public decimal StrategyTargetPrice => TakeProfitPrice > 0
-        ? TakeProfitPrice
+    public decimal StrategyTargetPrice => OrderTicketVM.TakeProfitPrice > 0
+        ? OrderTicketVM.TakeProfitPrice
         : StrategyEntryPrice > 0 ? StrategyEntryPrice * 1.014m : 0m;
-    public decimal StrategyTargetTwoPrice => TakeProfitPrice > 0 && StrategyEntryPrice > 0
-        ? StrategyEntryPrice + ((TakeProfitPrice - StrategyEntryPrice) * 1.65m)
+    public decimal StrategyTargetTwoPrice => OrderTicketVM.TakeProfitPrice > 0 && StrategyEntryPrice > 0
+        ? StrategyEntryPrice + ((OrderTicketVM.TakeProfitPrice - StrategyEntryPrice) * 1.65m)
         : StrategyEntryPrice > 0 ? StrategyEntryPrice * 1.022m : 0m;
     public string AiConfidenceLabel => $"{AiConfidencePercent:0}%";
     public decimal AiConfidencePercent
@@ -278,18 +262,18 @@ public partial class MainWindowViewModel
         "1W" => "1w",
         _ => "Open"
     };
-    public string AiPositionSizeLabel => $"{TradeQuantity:0.0000} {BaseAssetSymbol} ({PortfolioExposureLabel})";
-    public string AiDirectionLabel => SelectedOrderSide;
-    public string AiDirectionBrush => SelectedOrderSide == "SELL" ? "#FF6B6B" : "#21E6C1";
+    public string AiPositionSizeLabel => $"{OrderTicketVM.TradeQuantity:0.0000} {BaseAssetSymbol} ({PortfolioExposureLabel})";
+    public string AiDirectionLabel => OrderTicketVM.SelectedOrderSide;
+    public string AiDirectionBrush => OrderTicketVM.SelectedOrderSide == "SELL" ? "#FF6B6B" : "#21E6C1";
     public string AiWarningPrimary => WalletVM.GlobalPaperOnlyMode
         ? "Execution guard is in paper-only mode. Signals stay actionable, but live routing remains blocked."
         : "Live routing is enabled. Double-check ticket size, stop and target before sending the order.";
     public string AiWarningSecondary => SpreadPercent > 0.04m
         ? $"Spread is elevated at {SpreadPercentLabel}. Consider smaller size or a deeper limit entry."
         : $"Open exposure is {CurrentOpenExposureLabel} with daily loss used at {CurrentDailyLossLabel}.";
-    public string AiWarningTertiary => TradeNotional <= 0
+    public string AiWarningTertiary => OrderTicketVM.TradeNotional <= 0
         ? "No order is armed yet. Size the ticket first to evaluate the setup properly."
-        : $"Current ticket consumes {PortfolioExposureLabel} of available balance with ~{EstimatedTradingFeeLabel} in fees.";
+        : $"Current ticket consumes {PortfolioExposureLabel} of available balance with ~{OrderTicketVM.EstimatedTradingFeeLabel} in fees.";
     public string TradingChartHeader
     {
         get
@@ -652,15 +636,15 @@ public partial class MainWindowViewModel
     /// <summary>Apply an AI-assistant setup to the live CEX order ticket.</summary>
     private void ApplyCexTradeSetup(TradeSetup setup)
     {
-        SelectedOrderSide = setup.Bias == "LONG" ? "BUY" : "SELL";
-        SelectedOrderType = "Limit";
-        LimitPrice = setup.Entry;
-        TakeProfitPrice = setup.TakeProfit;
-        StopLossPrice = setup.StopLoss;
+        OrderTicketVM.SelectedOrderSide = setup.Bias == "LONG" ? "BUY" : "SELL";
+        OrderTicketVM.SelectedOrderType = "Limit";
+        OrderTicketVM.LimitPrice = setup.Entry;
+        OrderTicketVM.TakeProfitPrice = setup.TakeProfit;
+        OrderTicketVM.StopLossPrice = setup.StopLoss;
         WalletVM.GlobalPositionSizingPercent = setup.SizePercent;
-        if (IsManualFuturesMode)
+        if (OrderTicketVM.IsManualFuturesMode)
         {
-            ManualFuturesLeverage = setup.Leverage;
+            OrderTicketVM.ManualFuturesLeverage = setup.Leverage;
         }
 
         AddLog($"AI assistant applied {setup.Bias} setup — entry {setup.Entry}, TP {setup.TakeProfit}, SL {setup.StopLoss}, {setup.Leverage}x.");

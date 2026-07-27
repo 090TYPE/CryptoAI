@@ -1,4 +1,4 @@
-using Avalonia.Media.Imaging;
+﻿using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using CryptoAITerminal.Core.Enums;
@@ -65,17 +65,17 @@ public partial class MainWindowViewModel
         string.IsNullOrWhiteSpace(key)
             ? "not set"
             : key[..Math.Min(4, key.Length)] + new string('●', Math.Min(12, key.Length - 4));
-    public decimal CurrentFuturesEstimatedMargin => IsManualFuturesMode && ManualFuturesLeverage > 0
-        ? Math.Abs(PositionQuantity * AverageEntryPrice) / ManualFuturesLeverage
+    public decimal CurrentFuturesEstimatedMargin => OrderTicketVM.IsManualFuturesMode && OrderTicketVM.ManualFuturesLeverage > 0
+        ? Math.Abs(PositionQuantity * AverageEntryPrice) / OrderTicketVM.ManualFuturesLeverage
         : 0m;
     public string CurrentFuturesEstimatedMarginLabel => CurrentFuturesEstimatedMargin > 0 ? $"{CurrentFuturesEstimatedMargin:N2} USDT" : "--";
     public decimal CurrentFuturesRoePercent => CurrentFuturesEstimatedMargin <= 0 ? 0m : (UnrealizedPnl / CurrentFuturesEstimatedMargin) * 100m;
     public string CurrentFuturesRoeLabel => $"{CurrentFuturesRoePercent:+0.##;-0.##;0.##}%";
     public string RealizedPnlLabel => $"{RealizedPnl:+0.00;-0.00;0.00} USDT";
     public string ScalpPresetTargetLabel => GetScalpPresetSummary(SelectedScalpPreset);
-    public string PortfolioExposureLabel => TradeNotional <= 0 || AvailableBalanceUsdt <= 0
+    public string PortfolioExposureLabel => OrderTicketVM.TradeNotional <= 0 || AvailableBalanceUsdt <= 0
         ? "0%"
-        : $"{Math.Min(100m, TradeNotional / AvailableBalanceUsdt * 100m):N1}%";
+        : $"{Math.Min(100m, OrderTicketVM.TradeNotional / AvailableBalanceUsdt * 100m):N1}%";
     public decimal BidDepthTotal => SelectedMarket?.BidLevels.Sum(level => level.Quantity) ?? 0m;
     public decimal AskDepthTotal => SelectedMarket?.AskLevels.Sum(level => level.Quantity) ?? 0m;
     public string BidDepthLabel => $"{BidDepthTotal:N4}";
@@ -94,8 +94,8 @@ public partial class MainWindowViewModel
     public string LadderModeLabel => _isLadderCenterLocked ? "LOCK CENTER" : "FREE SCROLL";
     public string LadderModeBrush => _isLadderCenterLocked ? "#21E6C1" : "#F4B860";
     public string LadderOffsetLabel => _isLadderCenterLocked || _ladderManualOffsetTicks == 0 ? "Offset 0" : $"Offset {_ladderManualOffsetTicks:+#;-#;0}";
-    public string TakeProfitLabel => TakeProfitPrice > 0 ? $"{TakeProfitPrice:N2}" : "--";
-    public string StopLossLabel => StopLossPrice > 0 ? $"{StopLossPrice:N2}" : "--";
+    public string TakeProfitLabel => OrderTicketVM.TakeProfitPrice > 0 ? $"{OrderTicketVM.TakeProfitPrice:N2}" : "--";
+    public string StopLossLabel => OrderTicketVM.StopLossPrice > 0 ? $"{OrderTicketVM.StopLossPrice:N2}" : "--";
     public string WorkingOrdersCountLabel => TradeBlotterVM.WorkingOrders.Count.ToString();
     public string RecentFillsCountLabel => TradeBlotterVM.RecentFills.Count.ToString();
     public string PositionsCountLabel => TradeBlotterVM.PositionRows.Count.ToString();
@@ -113,20 +113,18 @@ public partial class MainWindowViewModel
     public bool CanExecuteCexSellLimit => string.IsNullOrWhiteSpace(CexSellLimitBlockedReason);
     public bool CanExecuteCexTakeProfit => string.IsNullOrWhiteSpace(CexTakeProfitBlockedReason);
     public bool CanExecuteCexStopLoss => string.IsNullOrWhiteSpace(CexStopLossBlockedReason);
-    public bool CanPlacePrimaryOrder => string.IsNullOrWhiteSpace(PrimaryOrderBlockedReason);
     public string CexMarketBuyBlockedReason => GetCexMarketBuyBlockedReason();
     public string CexMarketSellBlockedReason => GetCexMarketSellBlockedReason();
     public string CexBuyLimitBlockedReason => GetCexBuyLimitBlockedReason();
     public string CexSellLimitBlockedReason => GetCexSellLimitBlockedReason();
     public string CexTakeProfitBlockedReason => GetCexTakeProfitBlockedReason();
     public string CexStopLossBlockedReason => GetCexStopLossBlockedReason();
-    public string PrimaryOrderBlockedReason => GetPrimaryOrderBlockedReason();
-    public string TradingGuardStatusLabel => CanPlacePrimaryOrder ? "ORDER PATH READY" : "EXECUTION BLOCKED";
-    public string TradingGuardStatusBrush => CanPlacePrimaryOrder ? SemanticColor.Keys.Accent : SemanticColor.Keys.Warning;
-    public string TradingGuardSummary => CanPlacePrimaryOrder
-        ? $"{SelectedOrderType} {SelectedOrderSide} ticket is armed for {SelectedTradingSymbol}. Guard mode: {WalletVM.GlobalExecutionModeLabel}."
-        : PrimaryOrderBlockedReason;
-    public string TradingGuardDetail => IsManualFuturesMode
+    public string TradingGuardStatusLabel => OrderTicketVM.CanPlacePrimaryOrder ? "ORDER PATH READY" : "EXECUTION BLOCKED";
+    public string TradingGuardStatusBrush => OrderTicketVM.CanPlacePrimaryOrder ? SemanticColor.Keys.Accent : SemanticColor.Keys.Warning;
+    public string TradingGuardSummary => OrderTicketVM.CanPlacePrimaryOrder
+        ? $"{OrderTicketVM.SelectedOrderType} {OrderTicketVM.SelectedOrderSide} ticket is armed for {SelectedTradingSymbol}. Guard mode: {WalletVM.GlobalExecutionModeLabel}."
+        : OrderTicketVM.PrimaryOrderBlockedReason;
+    public string TradingGuardDetail => OrderTicketVM.IsManualFuturesMode
         ? $"{FuturesPrivateApiStatusLabel} | {WalletVM.RouteReadinessSummary}"
         : $"{WalletVM.RouteReadinessSummary} | {WalletVM.GlobalRiskSummary}";
     public string FeedStatusLabel => IsMarketLoading ? "CONNECTING" : "LIVE DATA";

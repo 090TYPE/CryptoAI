@@ -115,11 +115,11 @@
             <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="9" ClipToBounds="True">
               <Grid ColumnDefinitions="*,*">
                 <Button Grid.Column="0" Content="BUY / LONG" Classes="TdSide buy" TabIndex="1"
-                        Classes.active="{Binding SelectedOrderSide, Converter={StaticResource StrEq}, ConverterParameter=BUY}"
-                        Command="{Binding SelectOrderSideCommand}" CommandParameter="BUY" />
+                        Classes.active="{Binding OrderTicketVM.SelectedOrderSide, Converter={StaticResource StrEq}, ConverterParameter=BUY}"
+                        Command="{Binding OrderTicketVM.SelectOrderSideCommand}" CommandParameter="BUY" />
                 <Button Grid.Column="1" Content="SELL / SHORT" Classes="TdSide sell" TabIndex="2"
-                        Classes.active="{Binding SelectedOrderSide, Converter={StaticResource StrEq}, ConverterParameter=SELL}"
-                        Command="{Binding SelectOrderSideCommand}" CommandParameter="SELL" />
+                        Classes.active="{Binding OrderTicketVM.SelectedOrderSide, Converter={StaticResource StrEq}, ConverterParameter=SELL}"
+                        Command="{Binding OrderTicketVM.SelectOrderSideCommand}" CommandParameter="SELL" />
               </Grid>
             </Border>
 
@@ -149,33 +149,33 @@
               <StackPanel Grid.Column="0" Spacing="5">
                 <TextBlock Classes="TdLabel" Text="ORDER TYPE" />
                 <StackPanel Spacing="3">
-                  <Button Content="MARKET" Classes="TdSeg left" TabIndex="3" Command="{Binding SelectOrderTypeCommand}" CommandParameter="Market"
-                          Classes.active="{Binding SelectedOrderType, Converter={StaticResource StrEq}, ConverterParameter=Market}" />
-                  <Button Content="LIMIT" Classes="TdSeg left" TabIndex="4" Command="{Binding SelectOrderTypeCommand}" CommandParameter="Limit"
-                          Classes.active="{Binding SelectedOrderType, Converter={StaticResource StrEq}, ConverterParameter=Limit}" />
-                  <Button Content="STOP" Classes="TdSeg left" TabIndex="5" Command="{Binding SelectOrderTypeCommand}" CommandParameter="Stop"
-                          Classes.active="{Binding SelectedOrderType, Converter={StaticResource StrEq}, ConverterParameter=Stop}" />
+                  <Button Content="MARKET" Classes="TdSeg left" TabIndex="3" Command="{Binding OrderTicketVM.SelectOrderTypeCommand}" CommandParameter="Market"
+                          Classes.active="{Binding OrderTicketVM.SelectedOrderType, Converter={StaticResource StrEq}, ConverterParameter=Market}" />
+                  <Button Content="LIMIT" Classes="TdSeg left" TabIndex="4" Command="{Binding OrderTicketVM.SelectOrderTypeCommand}" CommandParameter="Limit"
+                          Classes.active="{Binding OrderTicketVM.SelectedOrderType, Converter={StaticResource StrEq}, ConverterParameter=Limit}" />
+                  <Button Content="STOP" Classes="TdSeg left" TabIndex="5" Command="{Binding OrderTicketVM.SelectOrderTypeCommand}" CommandParameter="Stop"
+                          Classes.active="{Binding OrderTicketVM.SelectedOrderType, Converter={StaticResource StrEq}, ConverterParameter=Stop}" />
                 </StackPanel>
               </StackPanel>
               <StackPanel Grid.Column="1" Spacing="5">
                 <TextBlock Classes="TdLabel" Text="MARKET MODE" />
                 <StackPanel Spacing="3">
-                  <Button Content="FUTURES" Classes="TdSeg left amber" Command="{Binding SelectMarketModeCommand}" CommandParameter="Futures"
-                          Classes.active="{Binding SelectedCexMarketMode, Converter={StaticResource StrEq}, ConverterParameter=Futures}" />
-                  <Button Content="SPOT" Classes="TdSeg left" Command="{Binding SelectMarketModeCommand}" CommandParameter="Spot"
-                          Classes.active="{Binding SelectedCexMarketMode, Converter={StaticResource StrEq}, ConverterParameter=Spot}" />
+                  <Button Content="FUTURES" Classes="TdSeg left amber" Command="{Binding OrderTicketVM.SelectMarketModeCommand}" CommandParameter="Futures"
+                          Classes.active="{Binding OrderTicketVM.SelectedCexMarketMode, Converter={StaticResource StrEq}, ConverterParameter=Futures}" />
+                  <Button Content="SPOT" Classes="TdSeg left" Command="{Binding OrderTicketVM.SelectMarketModeCommand}" CommandParameter="Spot"
+                          Classes.active="{Binding OrderTicketVM.SelectedCexMarketMode, Converter={StaticResource StrEq}, ConverterParameter=Spot}" />
                 </StackPanel>
               </StackPanel>
             </Grid>
 
             <!-- Leverage / margin (futures) — carded -->
-            <Border Classes="TdCard" IsVisible="{Binding IsManualFuturesMode}">
+            <Border Classes="TdCard" IsVisible="{Binding OrderTicketVM.IsManualFuturesMode}">
               <StackPanel Spacing="8">
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock Classes="TdLabel" Text="LEVERAGE" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding ManualFuturesLeverage, StringFormat={}{0}×}" Foreground="{DynamicResource Warning}" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" />
+                  <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding OrderTicketVM.ManualFuturesLeverage, StringFormat={}{0}×}" Foreground="{DynamicResource Warning}" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" />
                 </Grid>
-                <Slider Minimum="1" Maximum="125" Value="{Binding ManualFuturesLeverage}" Classes="TradeSlider" />
+                <Slider Minimum="1" Maximum="125" Value="{Binding OrderTicketVM.ManualFuturesLeverage}" Classes="TradeSlider" />
                 <Grid ColumnDefinitions="*,*,*,*">
                   <TextBlock Grid.Column="0" Text="1×" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
                   <TextBlock Grid.Column="1" Text="25×" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Center" />
@@ -183,19 +183,19 @@
                   <TextBlock Grid.Column="3" Text="125×" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" HorizontalAlignment="Right" />
                 </Grid>
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="5">
-                  <Button Grid.Column="0" Content="CROSS" Classes="TdSeg fill amber" Command="{Binding SelectMarginModeCommand}" CommandParameter="Cross"
-                          Classes.active="{Binding ManualFuturesMarginMode, Converter={StaticResource StrEq}, ConverterParameter=Cross}" />
-                  <Button Grid.Column="1" Content="ISOLATED" Classes="TdSeg fill amber" Command="{Binding SelectMarginModeCommand}" CommandParameter="Isolated"
-                          Classes.active="{Binding ManualFuturesMarginMode, Converter={StaticResource StrEq}, ConverterParameter=Isolated}" />
+                  <Button Grid.Column="0" Content="CROSS" Classes="TdSeg fill amber" Command="{Binding OrderTicketVM.SelectMarginModeCommand}" CommandParameter="Cross"
+                          Classes.active="{Binding OrderTicketVM.ManualFuturesMarginMode, Converter={StaticResource StrEq}, ConverterParameter=Cross}" />
+                  <Button Grid.Column="1" Content="ISOLATED" Classes="TdSeg fill amber" Command="{Binding OrderTicketVM.SelectMarginModeCommand}" CommandParameter="Isolated"
+                          Classes.active="{Binding OrderTicketVM.ManualFuturesMarginMode, Converter={StaticResource StrEq}, ConverterParameter=Isolated}" />
                 </Grid>
               </StackPanel>
             </Border>
 
             <!-- Limit price (centered display field, no steppers) -->
-            <StackPanel Spacing="5" IsVisible="{Binding IsLimitOrderType}">
+            <StackPanel Spacing="5" IsVisible="{Binding OrderTicketVM.IsLimitOrderType}">
               <TextBlock Classes="TdLabel" Text="LIMIT PRICE (USDT)" />
               <Border Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStrokeBright}" BorderThickness="1" CornerRadius="8" Padding="10,10">
-                <TextBox Classes="TdInput" Text="{Binding LimitPrice, Converter={StaticResource DecField}}" Foreground="{DynamicResource AccentBlue}" FontSize="{DynamicResource FsTitle}" FontWeight="ExtraBold"
+                <TextBox Classes="TdInput" Text="{Binding OrderTicketVM.LimitPrice, Converter={StaticResource DecField}}" Foreground="{DynamicResource AccentBlue}" FontSize="{DynamicResource FsTitle}" FontWeight="ExtraBold"
                          TabIndex="6" AutomationProperties.Name="Limit price"
                          TextAlignment="Center" HorizontalAlignment="Stretch" VerticalContentAlignment="Center" />
               </Border>
@@ -208,7 +208,7 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
                   <TextBlock Classes="TdNum" Text="{Binding WalletVM.GlobalPositionSizingPercent, StringFormat={}{0:0}%}" Foreground="{DynamicResource TextPrimary}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
                   <TextBlock Text="·" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" />
-                  <TextBlock Classes="TdNum" Text="{Binding TradeNotionalLabel}" Foreground="{DynamicResource TextPrimary}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
+                  <TextBlock Classes="TdNum" Text="{Binding OrderTicketVM.TradeNotionalLabel}" Foreground="{DynamicResource TextPrimary}" FontWeight="Bold" FontSize="{DynamicResource FsCaption}" />
                 </StackPanel>
               </Grid>
               <Slider Minimum="5" Maximum="100" Value="{Binding WalletVM.GlobalPositionSizingPercent}" Classes="TradeSlider"
@@ -226,14 +226,14 @@
               <StackPanel Grid.Column="0" Spacing="5">
                 <TextBlock Classes="TdLabel" Text="TAKE PROFIT" />
                 <Border Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="8" Padding="10,6">
-                  <TextBox Classes="TdInput" Text="{Binding TakeProfitPrice, Converter={StaticResource DecField}}" Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsSmall}" FontWeight="Bold" PlaceholderText="—" VerticalContentAlignment="Center"
+                  <TextBox Classes="TdInput" Text="{Binding OrderTicketVM.TakeProfitPrice, Converter={StaticResource DecField}}" Foreground="{DynamicResource Positive}" FontSize="{DynamicResource FsSmall}" FontWeight="Bold" PlaceholderText="—" VerticalContentAlignment="Center"
                            TabIndex="8" AutomationProperties.Name="Take profit price" />
                 </Border>
               </StackPanel>
               <StackPanel Grid.Column="1" Spacing="5">
                 <TextBlock Classes="TdLabel" Text="STOP LOSS" />
                 <Border Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="8" Padding="10,6">
-                  <TextBox Classes="TdInput" Text="{Binding StopLossPrice, Converter={StaticResource DecField}}" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsSmall}" FontWeight="Bold" PlaceholderText="—" VerticalContentAlignment="Center"
+                  <TextBox Classes="TdInput" Text="{Binding OrderTicketVM.StopLossPrice, Converter={StaticResource DecField}}" Foreground="{DynamicResource Negative}" FontSize="{DynamicResource FsSmall}" FontWeight="Bold" PlaceholderText="—" VerticalContentAlignment="Center"
                            TabIndex="9" AutomationProperties.Name="Stop loss price" />
                 </Border>
               </StackPanel>
@@ -243,12 +243,12 @@
             <StackPanel Spacing="5">
               <TextBlock Classes="TdLabel" Text="TRADING PROFILE" />
               <Grid ColumnDefinitions="*,*,*" ColumnSpacing="4">
-                <Button Grid.Column="0" Content="SWING" Classes="TdSeg fill" Command="{Binding SelectTradingProfileCommand}" CommandParameter="Swing"
-                        Classes.active="{Binding SelectedTradingProfile, Converter={StaticResource StrEq}, ConverterParameter=Swing}" />
-                <Button Grid.Column="1" Content="SCALP" Classes="TdSeg fill" Command="{Binding SelectTradingProfileCommand}" CommandParameter="Scalp"
-                        Classes.active="{Binding SelectedTradingProfile, Converter={StaticResource StrEq}, ConverterParameter=Scalp}" />
-                <Button Grid.Column="2" Content="AGGRO" Classes="TdSeg fill" Command="{Binding SelectTradingProfileCommand}" CommandParameter="Aggro"
-                        Classes.active="{Binding SelectedTradingProfile, Converter={StaticResource StrEq}, ConverterParameter=Aggro}" />
+                <Button Grid.Column="0" Content="SWING" Classes="TdSeg fill" Command="{Binding OrderTicketVM.SelectTradingProfileCommand}" CommandParameter="Swing"
+                        Classes.active="{Binding OrderTicketVM.SelectedTradingProfile, Converter={StaticResource StrEq}, ConverterParameter=Swing}" />
+                <Button Grid.Column="1" Content="SCALP" Classes="TdSeg fill" Command="{Binding OrderTicketVM.SelectTradingProfileCommand}" CommandParameter="Scalp"
+                        Classes.active="{Binding OrderTicketVM.SelectedTradingProfile, Converter={StaticResource StrEq}, ConverterParameter=Scalp}" />
+                <Button Grid.Column="2" Content="AGGRO" Classes="TdSeg fill" Command="{Binding OrderTicketVM.SelectTradingProfileCommand}" CommandParameter="Aggro"
+                        Classes.active="{Binding OrderTicketVM.SelectedTradingProfile, Converter={StaticResource StrEq}, ConverterParameter=Aggro}" />
               </Grid>
             </StackPanel>
 
@@ -258,26 +258,26 @@
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock Classes="TdLabel" Text="SLIPPAGE" VerticalAlignment="Center" />
                   <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBox Classes="TdInput" Text="{Binding SlippageTolerancePercent, Converter={StaticResource DecField}}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" TextAlignment="Right" MinWidth="28" VerticalContentAlignment="Center" />
+                    <TextBox Classes="TdInput" Text="{Binding OrderTicketVM.SlippageTolerancePercent, Converter={StaticResource DecField}}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" TextAlignment="Right" MinWidth="28" VerticalContentAlignment="Center" />
                     <TextBlock Text="%" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" VerticalAlignment="Center" />
                   </StackPanel>
                 </Grid>
                 <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="4">
                   <TextBlock Grid.Row="0" Text="Trading fee (0.10%)" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-                  <TextBlock Grid.Row="0" Grid.Column="1" Classes="TdNum" Text="{Binding EstimatedTradingFeeLabel}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" />
+                  <TextBlock Grid.Row="0" Grid.Column="1" Classes="TdNum" Text="{Binding OrderTicketVM.EstimatedTradingFeeLabel}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" />
                   <TextBlock Grid.Row="1" Text="Network / gas" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" />
-                  <TextBlock Grid.Row="1" Grid.Column="1" Classes="TdNum" Text="{Binding EstimatedNetworkFeeLabel}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" />
+                  <TextBlock Grid.Row="1" Grid.Column="1" Classes="TdNum" Text="{Binding OrderTicketVM.EstimatedNetworkFeeLabel}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" />
                   <Border Grid.Row="2" Grid.ColumnSpan="2" Height="1" Background="{DynamicResource Surface3}" Margin="0,2" />
                 </Grid>
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBlock Text="Total est." Foreground="{DynamicResource TextMuted}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" />
-                  <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding EstimatedTotalCostLabel}" Foreground="{DynamicResource TextSecondary}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" />
+                  <TextBlock Grid.Column="1" Classes="TdNum" Text="{Binding OrderTicketVM.EstimatedTotalCostLabel}" Foreground="{DynamicResource TextSecondary}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" />
                 </Grid>
               </StackPanel>
             </Border>
 
             <!-- Futures telemetry -->
-            <Border Classes="TdCard" IsVisible="{Binding IsManualFuturesMode}">
+            <Border Classes="TdCard" IsVisible="{Binding OrderTicketVM.IsManualFuturesMode}">
               <StackPanel Spacing="8">
                 <TextBlock Classes="TdLabel" Text="FUTURES TELEMETRY" />
                 <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="8">
@@ -322,7 +322,7 @@
                   <Border Background="{DynamicResource Surface1}" BorderBrush="#0e2218" BorderThickness="1" CornerRadius="5" Padding="8,2" Margin="0,0,4,4">
                     <StackPanel Orientation="Horizontal" Spacing="5">
                       <TextBlock Text="Slippage" Foreground="#4a7060" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" VerticalAlignment="Center" />
-                      <TextBlock Classes="TdNum" Text="{Binding SlippageTolerancePercent, StringFormat={}{0:0.##}%}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
+                      <TextBlock Classes="TdNum" Text="{Binding OrderTicketVM.SlippageTolerancePercent, StringFormat={}{0:0.##}%}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
                     </StackPanel>
                   </Border>
                   <Border Background="{DynamicResource Surface1}" BorderBrush="#0e2218" BorderThickness="1" CornerRadius="5" Padding="8,2" Margin="0,0,4,4">
@@ -332,7 +332,7 @@
                     </StackPanel>
                   </Border>
                 </WrapPanel>
-                <TextBlock Text="{Binding PrimaryOrderBlockedReason}" IsVisible="{Binding !CanPlacePrimaryOrder}"
+                <TextBlock Text="{Binding OrderTicketVM.PrimaryOrderBlockedReason}" IsVisible="{Binding !OrderTicketVM.CanPlacePrimaryOrder}"
                            Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap" />
               </StackPanel>
             </Border>
@@ -340,12 +340,12 @@
             <!-- Place order -->
             <Button Command="{Binding PlacePrimaryOrderCommand}" Classes="TdPrimary" Height="52" TabIndex="10"
                     AutomationProperties.Name="Place order"
-                    IsEnabled="{Binding CanPlacePrimaryOrder}" ToolTip.Tip="{Binding PrimaryOrderBlockedReason}">
+                    IsEnabled="{Binding OrderTicketVM.CanPlacePrimaryOrder}" ToolTip.Tip="{Binding OrderTicketVM.PrimaryOrderBlockedReason}">
               <!-- no local Foreground: the captions inherit it from the button so the
                    disabled setter can lighten them, otherwise they vanish on the dark fill -->
               <StackPanel Spacing="2">
-                <TextBlock Text="{Binding PrimaryOrderButtonText}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" HorizontalAlignment="Center" />
-                <TextBlock Text="{Binding PrimaryOrderButtonHint}" FontSize="{DynamicResource FsMicro}" Opacity="0.7" HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding OrderTicketVM.PrimaryOrderButtonText}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding OrderTicketVM.PrimaryOrderButtonHint}" FontSize="{DynamicResource FsMicro}" Opacity="0.7" HorizontalAlignment="Center" />
               </StackPanel>
             </Button>
           </StackPanel>
@@ -721,7 +721,7 @@
                   <Border Background="{Binding CexRightRailVM.PositionSideBackground, Converter={StaticResource StringToBrush}}" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
                     <TextBlock Text="{Binding CexRightRailVM.PositionSideLabel}" Foreground="{Binding CexRightRailVM.PositionSideBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsMicro}" />
                   </Border>
-                  <TextBlock Text="{Binding CexRightRailVM.ManualLeverageLabel}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" IsVisible="{Binding IsManualFuturesMode}" />
+                  <TextBlock Text="{Binding CexRightRailVM.ManualLeverageLabel}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" IsVisible="{Binding OrderTicketVM.IsManualFuturesMode}" />
                 </StackPanel>
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
                   <StackPanel Grid.Column="0" Spacing="1">

@@ -1,4 +1,4 @@
-using Avalonia.Media.Imaging;
+﻿using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using CryptoAITerminal.Core.Enums;
@@ -114,7 +114,7 @@ public partial class MainWindowViewModel
         if (order.Kind == WorkingOrderKind.LimitBuy)
             return 0m;
 
-        if (string.Equals(order.Symbol, SelectedTradingSymbol, StringComparison.OrdinalIgnoreCase) && !IsManualFuturesMode)
+        if (string.Equals(order.Symbol, SelectedTradingSymbol, StringComparison.OrdinalIgnoreCase) && !OrderTicketVM.IsManualFuturesMode)
             return PositionQuantity;
 
         return await GetCachedSpotBaseBalanceAsync(order.ExecutionExchange, order.Symbol);
@@ -190,7 +190,7 @@ public partial class MainWindowViewModel
         var consumed = false;
 
         // Only the active spot symbol drives the single-symbol desk position/PnL state.
-        var isActiveSpot = string.Equals(order.Symbol, SelectedTradingSymbol, StringComparison.OrdinalIgnoreCase) && !IsManualFuturesMode;
+        var isActiveSpot = string.Equals(order.Symbol, SelectedTradingSymbol, StringComparison.OrdinalIgnoreCase) && !OrderTicketVM.IsManualFuturesMode;
 
         try
         {
