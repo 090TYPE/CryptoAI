@@ -51,6 +51,7 @@ var aiPolicy = AiPolicyOptions.FromConfig(k => builder.Configuration[k]);
 builder.Services.AddSingleton(aiPolicy);
 builder.Services.AddSingleton(new AiBudget(aiPolicy.DailyTokenCapPerLicense));
 builder.Services.AddSingleton<AiBudgetRepository>();
+builder.Services.AddSingleton<AiUsageRepository>();
 // Makes the daily cap survive a restart. Without it the counter reset on every deploy, so the
 // ceiling only held between restarts.
 builder.Services.AddHostedService<AiBudgetFlusher>();
@@ -383,7 +384,7 @@ static async Task<long> DailyCapAsync(HttpContext ctx, AiBudget budget, Settings
 }
 
 static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiProxy ai,
-    AiPolicyOptions policy, AiBudget budget, SettingsStore settings)
+    AiPolicyOptions policy, AiBudget budget, SettingsStore settings, AiUsageRepository usage)
 {
     // Master switch, checked before anything is read or charged. Terminals already treat a refusal
     // here as "fall back to the deterministic path", so flipping this degrades the product rather
@@ -423,18 +424,22 @@ static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiPr
 
     if (result is null) return Results.Json(new { error = "ai_key_not_configured" }, statusCode: 503);
 
-    budget.Charge(license, AiRequestPolicy.CountUsage(result.Value.Body, vendor));
+    var (inputTokens, outputTokens) = AiRequestPolicy.SplitUsage(result.Value.Body, vendor);
+    budget.Charge(license, inputTokens + outputTokens);
+    await usage.LogAsync(license, AiFeatures.IsWellFormed(feature) ? feature : null,
+        gated.Model, vendor.ToString(), inputTokens, outputTokens, ctx.RequestAborted);
+
     // What actually ran, so the terminal can label the result with the truth instead of with what
     // it asked for — and so an operator can confirm from the client side that a switch took effect.
     if (gated.Model is { } used) ctx.Response.Headers["X-AI-Model"] = used;
     return Results.Content(result.Value.Body, "application/json", Encoding.UTF8, result.Value.Status);
 }
 
-app.MapPost("/api/ai/message", (HttpContext ctx, AiProxy ai, AiPolicyOptions policy, AiBudget budget, SettingsStore settings) =>
-    ForwardAiAsync(ctx, AiVendor.Anthropic, ai, policy, budget, settings));
+app.MapPost("/api/ai/message", (HttpContext ctx, AiProxy ai, AiPolicyOptions policy, AiBudget budget, SettingsStore settings, AiUsageRepository usage) =>
+    ForwardAiAsync(ctx, AiVendor.Anthropic, ai, policy, budget, settings, usage));
 
-app.MapPost("/api/ai/openai", (HttpContext ctx, AiProxy ai, AiPolicyOptions policy, AiBudget budget, SettingsStore settings) =>
-    ForwardAiAsync(ctx, AiVendor.OpenAi, ai, policy, budget, settings));
+app.MapPost("/api/ai/openai", (HttpContext ctx, AiProxy ai, AiPolicyOptions policy, AiBudget budget, SettingsStore settings, AiUsageRepository usage) =>
+    ForwardAiAsync(ctx, AiVendor.OpenAi, ai, policy, budget, settings, usage));
 
 // So the terminal can show remaining allowance instead of discovering the cap via a 429.
 app.MapGet("/api/ai/budget", async (HttpContext ctx, AiBudget budget, SettingsStore settings) =>
@@ -789,6 +794,18 @@ app.MapDelete("/api/admin/settings/{key}", async (string key, SettingsStore sett
 
 app.MapGet("/api/admin/settings/history", async (string? key, int? limit, SettingsStore settings, CancellationToken ct) =>
     Results.Ok(await settings.HistoryAsync(key, limit ?? 100, ct)));
+
+// Spend by feature — the report that turns cost estimates into facts.
+app.MapGet("/api/admin/usage", async (int? days, AiUsageRepository usage, CancellationToken ct) =>
+{
+    try { return Results.Ok(await usage.ByFeatureAsync(days ?? 7, ct)); }
+    catch (Exception ex) when (ex is System.Data.Common.DbException or TimeoutException or InvalidOperationException)
+    {
+        // Migration 023 not applied, or the database is down. Same reasoning as the settings
+        // listing: an admin screen should show a state, not answer 500.
+        return Results.Ok(Array.Empty<FeatureUsage>());
+    }
+});
 
 // The feature catalogue with what each one currently resolves to, so the panel can render the
 // list without knowing the ids itself and an operator can see the effective model at a glance.

@@ -139,6 +139,14 @@ public static class AdminUi
   </section>
 
   <section>
+    <h2>Расход за 7 дней</h2>
+    <div class="body">
+      <p class="note">Считается по фактическим данным вендора. Цена — по тарифу Sonnet 4.6 ($3 за миллион входных, $15 за миллион выходных); для дешёвой модели фактическая сумма будет втрое ниже.</p>
+      <table id="usage"></table>
+    </div>
+  </section>
+
+  <section>
     <h2>Состояние сборщиков</h2>
     <div class="body"><table id="collectors"></table></div>
   </section>
@@ -251,7 +259,7 @@ async function loadAll() {
     document.getElementById('killBtn').className = killOn ? 'danger' : 'primary';
     document.getElementById('killBtn').textContent = killOn ? 'Остановить все вызовы' : 'Включить обратно';
 
-    await Promise.all([loadFeatures(), loadKeys(), loadCollectors(), loadHistory()]);
+    await Promise.all([loadFeatures(), loadUsage(), loadKeys(), loadCollectors(), loadHistory()]);
   } catch (e) {
     conn.className = 'pill off'; conn.textContent = 'ошибка';
     toast(e.message, true);
@@ -344,6 +352,29 @@ async function bulkFeatures(model) {
     for (const f of rows) await putOrDelete('ai.feature.' + f.id + '.model', model);
     toast('готово'); loadAll();
   } catch (e) { toast(e.message, true); }
+}
+
+async function loadUsage() {
+  const el = document.getElementById('usage');
+  try {
+    const rows = await api('/api/admin/usage?days=7');
+    if (!rows.length) { el.innerHTML = '<tr><td class="desc">Данных пока нет — учёт начинается с первого вызова после применения миграции 023.</td></tr>'; return; }
+    // Output is priced five times input on every model here, so a total-token column would rank
+    // the list wrong. Sort and show money instead.
+    const cost = r => (r.inputTokens * 3 + r.outputTokens * 15) / 1e6;
+    const total = rows.reduce((s, r) => s + cost(r), 0);
+    el.innerHTML =
+      '<tr><th>Функция</th><th>Модель</th><th class="num">Вызовов</th><th class="num">Вход</th><th class="num">Выход</th><th class="num">≈ $</th></tr>' +
+      rows.map(r => `<tr>
+        <td class="k">${esc(r.feature || 'серверные задачи')}</td>
+        <td class="desc" style="font-family:var(--mono)">${esc(r.model || '')}</td>
+        <td style="text-align:right">${r.calls}</td>
+        <td style="text-align:right">${(r.inputTokens / 1000).toFixed(1)}k</td>
+        <td style="text-align:right">${(r.outputTokens / 1000).toFixed(1)}k</td>
+        <td style="text-align:right">${cost(r).toFixed(2)}</td></tr>`).join('') +
+      `<tr><td colspan="5" style="text-align:right;font-weight:600">Итого за 7 дней</td>
+           <td style="text-align:right;font-weight:600">${total.toFixed(2)}</td></tr>`;
+  } catch (e) { el.innerHTML = `<tr><td class="err">${esc(e.message)}</td></tr>`; }
 }
 
 async function loadKeys() {

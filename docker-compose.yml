@@ -39,6 +39,7 @@ services:
       - ./db/020_aggregate_policies.sql:/docker-entrypoint-initdb.d/020_aggregate_policies.sql:ro
       - ./db/021_server_settings.sql:/docker-entrypoint-initdb.d/021_server_settings.sql:ro
       - ./db/022_ai_budget.sql:/docker-entrypoint-initdb.d/022_ai_budget.sql:ro
+      - ./db/023_ai_usage.sql:/docker-entrypoint-initdb.d/023_ai_usage.sql:ro
     ports:
       # Bound to loopback, not 0.0.0.0: the host admin console still connects, but on a public IP
       # this was Postgres exposed to the internet with the .env.example password.

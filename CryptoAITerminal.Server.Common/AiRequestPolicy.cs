@@ -183,23 +183,34 @@ public static class AiRequestPolicy
     /// </summary>
     public static long CountUsage(string responseJson, AiVendor vendor)
     {
+        var (input, output) = SplitUsage(responseJson, vendor);
+        return input + output;
+    }
+
+    /// <summary>
+    /// Input and output tokens separately. The budget only needs the sum, but they are priced
+    /// differently — output costs five times input on every model here — so a spend report built
+    /// on the total alone cannot say what anything actually cost.
+    /// </summary>
+    public static (long Input, long Output) SplitUsage(string responseJson, AiVendor vendor)
+    {
         try
         {
             using var doc = JsonDocument.Parse(responseJson);
-            if (!doc.RootElement.TryGetProperty("usage", out var usage)) return 0;
+            if (!doc.RootElement.TryGetProperty("usage", out var usage)) return (0, 0);
 
             var (inName, outName) = vendor == AiVendor.Anthropic
                 ? ("input_tokens", "output_tokens")
                 : ("prompt_tokens", "completion_tokens");
 
-            long total = 0;
-            if (usage.TryGetProperty(inName, out var i) && i.TryGetInt64(out var iv)) total += iv;
-            if (usage.TryGetProperty(outName, out var o) && o.TryGetInt64(out var ov)) total += ov;
-            return total;
+            long input = 0, output = 0;
+            if (usage.TryGetProperty(inName, out var i) && i.TryGetInt64(out var iv)) input = iv;
+            if (usage.TryGetProperty(outName, out var o) && o.TryGetInt64(out var ov)) output = ov;
+            return (input, output);
         }
         catch (JsonException)
         {
-            return 0;
+            return (0, 0);
         }
     }
 }
