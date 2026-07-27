@@ -47,6 +47,8 @@ public sealed class CandleSourceChain
         string? lastError = null;
         var failed = false;
         var tried = new List<string>();
+        var declined = new List<string>();
+        var unkeyed = new List<string>();
 
         foreach (var source in _sources)
         {
@@ -56,7 +58,7 @@ public sealed class CandleSourceChain
             if (source.RequiredKey is { } needed)
             {
                 key = await _keys.GetAsync(needed, ct).ConfigureAwait(false);
-                if (string.IsNullOrWhiteSpace(key)) continue;
+                if (string.IsNullOrWhiteSpace(key)) { unkeyed.Add(source.Name); continue; }
             }
 
             try
@@ -66,7 +68,7 @@ public sealed class CandleSourceChain
                 // null means the source declined and made no call, so it must not be reported as
                 // tried: reading "tried: geckoterminal" in a log while it never left the process is
                 // exactly the wrong thing to believe when diagnosing a token that yields nothing.
-                if (rows is null) continue;
+                if (rows is null) { declined.Add(source.Name); continue; }
 
                 tried.Add(source.Name);
                 if (rows.Count > 0) return new CandleFetch(rows, source.Name, lastError, failed);
@@ -83,9 +85,20 @@ public sealed class CandleSourceChain
         // Always explain an empty result. Previously a run where every source returned an empty list
         // without throwing produced no message at all, so "nothing to collect" was indistinguishable
         // from "the worker never got here".
-        lastError ??= tried.Count == 0
-            ? "no candle source is configured — every keyed source is missing its provider_keys entry"
-            : $"no data from any source (tried: {string.Join(", ", tried)})";
+        //
+        // The three empty cases are NOT interchangeable, and collapsing them cost real debugging time.
+        // A source that declined made no call — it is not applicable to this request, most often
+        // because the pool address has not been resolved yet. That happens to EVERY token on its
+        // first poll by design (see the fresh-token branch in TrackedTokenRepository.ClaimDueAsync),
+        // and it resolves itself a minute later. Reporting it as "no provider key" sends whoever
+        // reads the log hunting for a key that was never the problem.
+        lastError ??= tried.Count > 0
+            ? $"no data from any source (tried: {string.Join(", ", tried)})"
+            : declined.Count > 0
+                ? $"no source could serve this token yet — {string.Join(", ", declined)} declined " +
+                  "(usually a pool address not resolved yet; normal on a just-added token)" +
+                  (unkeyed.Count > 0 ? $"; unconfigured: {string.Join(", ", unkeyed)}" : "")
+                : "no candle source is configured — every keyed source is missing its provider_keys entry";
 
         return new CandleFetch([], null, lastError, failed);
     }
