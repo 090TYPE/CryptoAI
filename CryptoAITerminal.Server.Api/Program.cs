@@ -21,6 +21,9 @@ builder.Services.AddSingleton<FavoritesRepository>();
 builder.Services.AddSingleton<CandleRepository>();
 builder.Services.AddSingleton<ApiReadRepository>();
 builder.Services.AddSingleton<ProviderKeyStore>();
+// Singleton on purpose: the whole point is one shared snapshot with one refresh per TTL. Scoped
+// would give every request its own cache and turn the design into a query per call.
+builder.Services.AddSingleton<SettingsStore>();
 builder.Services.AddSingleton(sp => new AiProxy(
     new HttpClient { Timeout = TimeSpan.FromSeconds(120) },
     sp.GetRequiredService<ProviderKeyStore>(),
@@ -670,6 +673,48 @@ app.MapPut("/api/keys/{provider}", async (string provider, KeyUpdate body, Provi
     return Results.Ok(new { provider, body.Enabled });
 });
 
+// ── Admin: runtime settings ───────────────────────────────────────────────────
+// Under /api/admin, so the X-Admin gate above already covers these and an unset ADMIN_TOKEN
+// denies outright. Every value here is read on the hot path through SettingsStore, so a PUT is
+// live on the next request rather than at the next deploy.
+app.MapGet("/api/admin/settings", async (SettingsStore settings, CancellationToken ct) =>
+{
+    var all = await settings.ListAsync(ct);
+    return Results.Ok(new
+    {
+        // Surfaced so the admin screen can say "migration 021 not applied" instead of showing an
+        // empty list that looks like "nothing configured".
+        migrated = !settings.TableMissing,
+        ttlSeconds = (int)SettingsStore.Ttl.TotalSeconds,
+        settings = all
+    });
+});
+
+app.MapPut("/api/admin/settings/{key}", async (string key, SettingUpdate body, SettingsStore settings, HttpContext ctx, CancellationToken ct) =>
+{
+    if (body?.Value is null)
+        return Results.BadRequest(new { error = "value is required" });
+
+    await settings.SetAsync(key, body.Value, body.By ?? ActorOf(ctx), ct);
+    return Results.Ok(new { key, body.Value });
+});
+
+// Removing a setting is how you revert to the in-code default, so a 404 here means "there was
+// nothing to revert" rather than an error the caller has to handle.
+app.MapDelete("/api/admin/settings/{key}", async (string key, SettingsStore settings, HttpContext ctx, CancellationToken ct) =>
+{
+    var removed = await settings.DeleteAsync(key, ActorOf(ctx), ct);
+    return removed ? Results.Ok(new { key, reverted = true }) : Results.NotFound(new { key });
+});
+
+app.MapGet("/api/admin/settings/history", async (string? key, int? limit, SettingsStore settings, CancellationToken ct) =>
+    Results.Ok(await settings.HistoryAsync(key, limit ?? 100, ct)));
+
+// Who made the change, for the audit trail. There is no per-admin identity yet — everyone shares
+// ADMIN_TOKEN — so the address is the most specific thing available and is better than null.
+static string ActorOf(HttpContext ctx) =>
+    ctx.Connection.RemoteIpAddress?.ToString() ?? "admin";
+
 // ── Manual trading (place / cancel / positions) ───────────────────────────────
 // Not mapped on an edge node: server-side execution needs the custodial master key, which an
 // internet-facing process must not hold. See CRYPTOAI_ROLE above.
@@ -686,6 +731,7 @@ static class LicenseCtx
 }
 
 record KeyUpdate(string ApiKey, bool Enabled, string? Note);
+record SettingUpdate(string Value, string? By);
 record SecretInput(string? Kind, string? Label, string ExchangeOrChain, string Secret, string? Permissions);
 record WithdrawalRequest(string Asset, decimal Amount, string ToAddress, string? Code);
 record TwoFaCode(string Code);
