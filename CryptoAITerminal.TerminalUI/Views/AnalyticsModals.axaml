@@ -1,7 +1,10 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ad="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels.AnalyticsDesk"
+             xmlns:bd="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels.BotsDesk"
              x:Class="CryptoAITerminal.TerminalUI.Views.AnalyticsModals"
-             x:CompileBindings="False"
+             x:DataType="ad:AnalyticsDeskViewModel"
+             x:CompileBindings="True"
              FontFamily="{StaticResource FontDisplay}">
   <Panel>
     <Grid IsVisible="{Binding ModalPanel}" Background="{DynamicResource ModalScrim}" ZIndex="92">
@@ -24,7 +27,7 @@
             <StackPanel>
               <ItemsControl ItemsSource="{Binding PanelRows}">
                 <ItemsControl.ItemTemplate>
-                  <DataTemplate>
+                  <DataTemplate x:DataType="bd:KvRow">
                     <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Padding="0,8">
                       <Grid ColumnDefinitions="*,Auto">
                         <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />

@@ -94,7 +94,6 @@ public partial class MainWindowViewModel
     public string LadderModeLabel => _isLadderCenterLocked ? "LOCK CENTER" : "FREE SCROLL";
     public string LadderModeBrush => _isLadderCenterLocked ? "#21E6C1" : "#F4B860";
     public string LadderOffsetLabel => _isLadderCenterLocked || _ladderManualOffsetTicks == 0 ? "Offset 0" : $"Offset {_ladderManualOffsetTicks:+#;-#;0}";
-    public string LimitPriceLabel => LimitPrice > 0 ? $"{LimitPrice:N2}" : "--";
     public string TakeProfitLabel => TakeProfitPrice > 0 ? $"{TakeProfitPrice:N2}" : "--";
     public string StopLossLabel => StopLossPrice > 0 ? $"{StopLossPrice:N2}" : "--";
     public string WorkingOrdersCountLabel => TradeBlotterVM.WorkingOrders.Count.ToString();

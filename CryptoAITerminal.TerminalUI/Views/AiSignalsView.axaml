@@ -3,8 +3,7 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              x:Class="CryptoAITerminal.TerminalUI.Views.AiSignalsView"
              x:DataType="vm:AiSignalDeskViewModel"
-             x:CompileBindings="False"
-             DataContext="{Binding AiSignalDeskVM}"
+             x:CompileBindings="True"
              FontFamily="{StaticResource FontDisplay}"
              FontSize="{DynamicResource FsBody}"
              Foreground="{DynamicResource TextSecondary}">
@@ -45,7 +44,12 @@
     </Style>
   </UserControl.Styles>
 
-  <Grid RowDefinitions="54,*" Background="{DynamicResource Surface0}">
+  <!-- The whole desk runs on AiSignalDeskVM, but x:DataType cannot sit on the node that switches
+       DataContext: it would also retype that node's own DataContext binding, which has to resolve
+       against MainWindowViewModel. Hence the root declares the shell type (it carries no other
+       binding) and the desk type is declared here, on its single child. -->
+  <Grid RowDefinitions="54,*" Background="{DynamicResource Surface0}"
+        x:DataType="vm:AiSignalDeskViewModel">
 
     <!-- ════════ HEADER ════════ -->
     <Border Grid.Row="0" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Padding="14,0">
@@ -184,7 +188,7 @@
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:AiSignalCardViewModel">
                 <Button Classes="Flat" HorizontalAlignment="Stretch" Margin="0,0,0,4"
-                        Command="{Binding Command}" CommandParameter="{Binding .}">
+                        Command="{Binding Command}" CommandParameter="{Binding}">
                   <Border Background="{Binding CardBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding CardBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1"
                           CornerRadius="10" Padding="10,8">
                     <StackPanel Spacing="7">
@@ -209,8 +213,11 @@
                       <!-- confidence bar -->
                       <Grid Height="2" Background="{DynamicResource Surface2}">
                         <Grid.ColumnDefinitions>
-                          <ColumnDefinition Width="{Binding ConfW, Converter={StaticResource StarRatioConverter}}" />
-                          <ColumnDefinition Width="{Binding ConfW, Converter={StaticResource StarRatioConverter}, ConverterParameter=rest}" />
+                          <!-- ColumnDefinition is not a StyledElement and so carries no DataContext of
+                               its own; a compiled binding on it has nothing to resolve against. Only
+                               these two bindings drop to reflection — the bar fill below stays compiled. -->
+                          <ColumnDefinition Width="{ReflectionBinding ConfW, Converter={StaticResource StarRatioConverter}}" />
+                          <ColumnDefinition Width="{ReflectionBinding ConfW, Converter={StaticResource StarRatioConverter}, ConverterParameter=rest}" />
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0" Background="{Binding DirColor, Converter={StaticResource StringToBrush}}" Opacity="0.8" />
                       </Grid>
@@ -355,8 +362,9 @@
                                      FontFamily="{StaticResource FontMono}" MinWidth="22" />
                           <Grid Height="3" Width="30" Background="{DynamicResource Surface2}" VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
-                              <ColumnDefinition Width="{Binding Bar, Converter={StaticResource StarRatioConverter}}" />
-                              <ColumnDefinition Width="{Binding Bar, Converter={StaticResource StarRatioConverter}, ConverterParameter=rest}" />
+                              <!-- Reflection: ColumnDefinition has no DataContext for a compiled binding. -->
+                              <ColumnDefinition Width="{ReflectionBinding Bar, Converter={StaticResource StarRatioConverter}}" />
+                              <ColumnDefinition Width="{ReflectionBinding Bar, Converter={StaticResource StarRatioConverter}, ConverterParameter=rest}" />
                             </Grid.ColumnDefinitions>
                             <Border Grid.Column="0" Background="{Binding BiasColor, Converter={StaticResource StringToBrush}}" Opacity="0.85" CornerRadius="2" />
                           </Grid>
@@ -509,8 +517,9 @@
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="8">
                   <Grid Height="5" Background="{DynamicResource Surface2}">
                     <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="{Binding SelConfW, Converter={StaticResource StarRatioConverter}}" />
-                      <ColumnDefinition Width="{Binding SelConfW, Converter={StaticResource StarRatioConverter}, ConverterParameter=rest}" />
+                      <!-- Reflection: ColumnDefinition has no DataContext for a compiled binding. -->
+                      <ColumnDefinition Width="{ReflectionBinding SelConfW, Converter={StaticResource StarRatioConverter}}" />
+                      <ColumnDefinition Width="{ReflectionBinding SelConfW, Converter={StaticResource StarRatioConverter}, ConverterParameter=rest}" />
                     </Grid.ColumnDefinitions>
                     <Border Grid.Column="0" Background="{Binding SelDirColor, Converter={StaticResource StringToBrush}}" Opacity="0.85" CornerRadius="3" />
                   </Grid>
@@ -865,7 +874,9 @@
                            Background="Transparent" BorderThickness="0" Padding="0" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextSecondary}"
                            VerticalAlignment="Center" VerticalContentAlignment="Center">
                     <TextBox.KeyBindings>
-                      <KeyBinding Gesture="Enter" Command="{Binding SendChatCommand}" />
+                      <!-- KeyBinding is not a StyledElement either: same reason as ColumnDefinition,
+                           this one binding stays on reflection so Enter keeps sending. -->
+                      <KeyBinding Gesture="Enter" Command="{ReflectionBinding SendChatCommand}" />
                     </TextBox.KeyBindings>
                   </TextBox>
                   <Button Grid.Column="1" Width="28" Height="28" CornerRadius="6" Padding="0"

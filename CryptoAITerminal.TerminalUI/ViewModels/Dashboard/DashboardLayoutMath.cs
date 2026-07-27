@@ -13,12 +13,14 @@ public static class DashboardLayoutMath
     /// <summary>The built-in default arrangement (mirrors the classic dashboard, top to bottom).</summary>
     public static IReadOnlyList<WidgetPlacement> DefaultLayout() => new[]
     {
-        new WidgetPlacement("price-stats",    0, 0, 12, 1),
-        new WidgetPlacement("tracked-coins",  0, 1,  4, 4),
-        new WidgetPlacement("price-chart",    4, 1,  8, 3),
-        new WidgetPlacement("liq-heatmap",    4, 4,  4, 2),
-        new WidgetPlacement("order-book",     8, 4,  4, 2),
-        new WidgetPlacement("sentiment",      0, 6, 12, 2),
+        // price-stats gets two rows here for the same reason the catalog gives it DefaultRowSpan 2:
+        // its eight stat cells do not fit in one, and at one row the labels are clipped mid-line.
+        new WidgetPlacement("price-stats",    0, 0, 12, 2),
+        new WidgetPlacement("tracked-coins",  0, 2,  4, 4),
+        new WidgetPlacement("price-chart",    4, 2,  8, 3),
+        new WidgetPlacement("liq-heatmap",    4, 5,  4, 2),
+        new WidgetPlacement("order-book",     8, 5,  4, 2),
+        new WidgetPlacement("sentiment",      0, 7, 12, 2),
     };
 
     /// <summary>True if any two placements share a cell.</summary>

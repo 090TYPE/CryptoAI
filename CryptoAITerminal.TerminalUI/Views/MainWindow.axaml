@@ -506,7 +506,7 @@
 
       <TabItem Header="Markets">
         <ScrollViewer Classes="PageScroll">
-        <views:MarketsView />
+        <views:MarketsView DataContext="{Binding MarketFeedVM}" />
         </ScrollViewer>
       </TabItem>
 
@@ -524,7 +524,7 @@
         </ScrollViewer>
       </TabItem>
       <TabItem Header="AI Signals">
-        <views:AiSignalsView />
+        <views:AiSignalsView DataContext="{Binding AiSignalDeskVM}" />
       </TabItem>
 <TabItem>
         <TabItem.Header>

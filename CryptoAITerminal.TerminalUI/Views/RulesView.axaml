@@ -2,8 +2,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:CryptoAITerminal.TerminalUI.Converters"
              xmlns:views="clr-namespace:CryptoAITerminal.TerminalUI.Views"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:rd="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels.RulesDesk"
+             xmlns:bd="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels.BotsDesk"
              x:Class="CryptoAITerminal.TerminalUI.Views.RulesView"
-             x:CompileBindings="False"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="True"
              FontFamily="{StaticResource FontDisplay}">
 
   <UserControl.Resources>
@@ -19,8 +23,11 @@
   <!-- No fixed 760px floor: on a 1280x720 screen it forced an outer scroll over the desk's own
        scrollers and pushed the bottom of the page past the edge. -->
   <Border IsVisible="{Binding IsRulesSectionVisible}" MinHeight="460">
+    <!-- x:DataType goes on the CHILD, not on this Grid: a node carrying x:DataType also types its
+         own DataContext binding, and {Binding RulesDesk} has to resolve against MainWindowViewModel.
+         RulesModals (below) declares the desk type in its own file. -->
     <Grid DataContext="{Binding RulesDesk}" Background="{DynamicResource AppBg}" ClipToBounds="True">
-      <DockPanel LastChildFill="True">
+      <DockPanel LastChildFill="True" x:DataType="rd:RulesDeskViewModel">
 
         <!-- ───────── header ───────── -->
         <Border DockPanel.Dock="Top" Height="54" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Padding="14,0">
@@ -91,7 +98,7 @@
               <ItemsControl ItemsSource="{Binding Ticker}" VerticalAlignment="Center">
                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="24" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
-                  <DataTemplate>
+                  <DataTemplate x:DataType="bd:TickerItem">
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                       <TextBlock Text="{Binding Tag}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                       <TextBlock Text="{Binding Text}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />
@@ -135,7 +142,7 @@
               <ItemsControl ItemsSource="{Binding Examples}">
                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
-                  <DataTemplate>
+                  <DataTemplate x:DataType="rd:ExampleChip">
                     <Button Classes="FlatChrome" Command="{Binding Command}" Margin="0,0,6,0" Padding="8,4" CornerRadius="5" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="{Binding Label}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" />
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -165,7 +172,7 @@
                       <ItemsControl ItemsSource="{Binding Filters}">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="rd:FilterChip">
                             <Button Classes="FlatChrome" Command="{Binding Command}" Height="20" Padding="8,0" CornerRadius="4" BorderThickness="0" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -184,7 +191,7 @@
                       <ItemsControl ItemsSource="{Binding LogFilters}" HorizontalAlignment="Right">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="bd:LogFilter">
                             <Button Classes="FlatChrome" Command="{Binding Command}" Height="20" Padding="6,0" CornerRadius="4" BorderThickness="1" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" />
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -195,7 +202,7 @@
                       <StackPanel>
                         <ItemsControl ItemsSource="{Binding LogRows}">
                           <ItemsControl.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="bd:LogRow">
                               <StackPanel Orientation="Horizontal" Spacing="11">
                                 <TextBlock Text="{Binding Time}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}" />
                                 <TextBlock Text="{Binding Level}" Width="40" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
@@ -215,7 +222,7 @@
                   <StackPanel>
                     <ItemsControl ItemsSource="{Binding VisibleRules}">
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="rd:RuleViewModel">
                           <Button Classes="FlatChrome" Command="{Binding EditCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="12,10" BorderThickness="2,0,0,0"
                                   Background="{Binding RowBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding SelBorder, Converter={StaticResource StringToBrush}}">
                             <StackPanel Spacing="5">
@@ -228,7 +235,7 @@
                                 <ItemsControl ItemsSource="{Binding Actions}" HorizontalAlignment="Right">
                                   <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                   <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
+                                    <DataTemplate x:DataType="rd:RuleActionButton">
                                       <Button Classes="FlatChrome" Command="{Binding Command}" ToolTip.Tip="{Binding Title}" Height="22" Padding="8,0" CornerRadius="5" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="{Binding Label}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                                     </DataTemplate>
                                   </ItemsControl.ItemTemplate>
@@ -255,7 +262,7 @@
                       <ItemsControl ItemsSource="{Binding Presets}" MaxWidth="720" HorizontalAlignment="Center">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="rd:PresetCard">
                             <Button Classes="FlatChrome" Command="{Binding Command}" Margin="4" Padding="12" CornerRadius="10" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" HorizontalContentAlignment="Stretch">
                               <StackPanel Spacing="6">
                                 <Grid ColumnDefinitions="*,Auto">
@@ -324,7 +331,7 @@
                       <ItemsControl ItemsSource="{Binding Conditions}" Margin="0,8,0,0">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="6" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="rd:CondEditVM">
                             <Border Padding="10" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="8" Background="{DynamicResource Surface0}">
                               <StackPanel Spacing="8">
                                 <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
@@ -370,7 +377,7 @@
                       <ItemsControl ItemsSource="{Binding Actions}" Margin="0,8,0,0">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="6" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="rd:ActEditVM">
                             <Border Padding="10" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="8" Background="{DynamicResource Surface0}">
                               <StackPanel Spacing="8">
                                 <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
@@ -397,8 +404,12 @@
                                   <ItemsControl ItemsSource="{Binding Channels}">
                                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="5" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
+                                      <!-- ActEditVM.Channels is an ObservableCollection of object and is never populated
+                                           (HasChannels is hard-coded false), so there is no element type to declare
+                                           here. These five bindings stay reflection-based until a channel-chip type
+                                           exists; the rest of the file is compiled. -->
                                       <DataTemplate>
-                                        <Button Classes="FlatChrome" Command="{Binding ToggleCommand}" Height="21" Padding="8,0" CornerRadius="5" BorderThickness="1" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                                        <Button Classes="FlatChrome" Command="{ReflectionBinding ToggleCommand}" Height="21" Padding="8,0" CornerRadius="5" BorderThickness="1" Background="{ReflectionBinding Bg, Converter={StaticResource StringToBrush}}" BorderBrush="{ReflectionBinding Border, Converter={StaticResource StringToBrush}}" Content="{ReflectionBinding Label}" Foreground="{ReflectionBinding Fg, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                                       </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                   </ItemsControl>

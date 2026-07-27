@@ -21,6 +21,23 @@ public class DashboardLayoutMathTests
         Assert.False(DashboardLayoutMath.HasOverlap(layout));
     }
 
+    /// <summary>
+    /// The catalog's DefaultColSpan/DefaultRowSpan are what a widget gets when added by hand, and
+    /// the built-in layout is what Reset restores. They drifted apart once — price-stats asked for
+    /// two rows in the catalog and got one here, which clipped the OVERVIEW labels mid-line for
+    /// anyone who pressed Reset. Both sources describe the same intent, so keep them equal.
+    /// </summary>
+    [Fact]
+    public void DefaultLayout_spans_match_the_catalog_defaults()
+    {
+        foreach (var placement in DashboardLayoutMath.DefaultLayout())
+        {
+            var entry = Assert.Single(WidgetCatalog.All, c => c.Key == placement.Key);
+            Assert.Equal(entry.DefaultColSpan, placement.ColSpan);
+            Assert.Equal(entry.DefaultRowSpan, placement.RowSpan);
+        }
+    }
+
     [Theory]
     [InlineData(0, 1, 0, 2, 1)]
     [InlineData(0, 99, 99, 12, 99)]

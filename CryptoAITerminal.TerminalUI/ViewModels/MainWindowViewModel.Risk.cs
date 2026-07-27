@@ -290,15 +290,6 @@ public partial class MainWindowViewModel
     public string AiWarningTertiary => TradeNotional <= 0
         ? "No order is armed yet. Size the ticket first to evaluate the setup properly."
         : $"Current ticket consumes {PortfolioExposureLabel} of available balance with ~{EstimatedTradingFeeLabel} in fees.";
-    public string ChartInteractionHint => ChartPanelVM.SelectedChartTool switch
-    {
-        "Trend" => "Trend line: click first point, then second point on the chart.",
-        "Horizontal" => "Horizontal line: click a price level on the chart.",
-        "Rectangle" => SelectedChartToolPhase == ChartToolPhase.SecondPoint ? "Rectangle: choose opposite corner." : "Rectangle: click first corner, then opposite corner.",
-        "Channel" => SelectedChartToolPhase == ChartToolPhase.ThirdPoint ? "Channel: choose channel width with third click." : SelectedChartToolPhase == ChartToolPhase.SecondPoint ? "Channel: choose second point for the base line." : "Channel: click first point, second point, then width.",
-        "Erase" => "Erase mode: click a drawing to remove only that one.",
-        _ => "Cursor mode: mouse wheel zooms, drag moves history, hover shows time and price."
-    };
     public string TradingChartHeader
     {
         get
@@ -328,52 +319,6 @@ public partial class MainWindowViewModel
             return $"{SelectedMarket.DisplaySymbol} {ChartPanelVM.SelectedTradeTimeframe}   O: {lastCandle.Open:N2}   H: {lastCandle.High:N2}   L: {lastCandle.Low:N2}   C: {lastCandle.Close:N2}   V: {lastCandle.Volume:N2}";
         }
     }
-    public string ChartRangeLabel => IsDexTradingMode
-        ? DexTradingVM.SelectedChartRange switch
-        {
-            "15M" => "Range: last 15 minutes",
-            "1D" => "Range: last day",
-            "1W" => "Range: last week",
-            _ => $"Range: {DexTradingVM.SelectedChartRange}"
-        }
-        : ChartPanelVM.SelectedTradeTimeframe switch
-        {
-            "1M" => "Range: last minute",
-            "5M" => "Range: last 5 minutes",
-            "15M" => "Range: last 15 minutes",
-            "1H" => "Range: last hour",
-            "4H" => "Range: last 4 hours",
-            "1D" => "Range: last day",
-            "1W" => "Range: last week",
-            "1MN" => "Range: last month",
-            "ALL" => "Range: full Binance history",
-            _ => $"Range: {ChartPanelVM.SelectedTradeTimeframe}"
-        };
-    public string Timeframe1MBackground => GetTimeframeBackground("1M");
-    public string Timeframe5MBackground => GetTimeframeBackground("5M");
-    public string Timeframe15MBackground => GetTimeframeBackground("15M");
-    public string Timeframe1HBackground => GetTimeframeBackground("1H");
-    public string Timeframe4HBackground => GetTimeframeBackground("4H");
-    public string Timeframe1DBackground => GetTimeframeBackground("1D");
-    public string Timeframe1MForeground => GetTimeframeForeground("1M");
-    public string Timeframe5MForeground => GetTimeframeForeground("5M");
-    public string Timeframe15MForeground => GetTimeframeForeground("15M");
-    public string Timeframe1HForeground => GetTimeframeForeground("1H");
-    public string Timeframe4HForeground => GetTimeframeForeground("4H");
-    public string Timeframe1DForeground => GetTimeframeForeground("1D");
-    public string ChartCursorBackground => GetChartToolBackground("Cursor");
-    public string ChartTrendBackground => GetChartToolBackground("Trend");
-    public string ChartHorizontalBackground => GetChartToolBackground("Horizontal");
-    public string ChartCursorForeground => GetChartToolForeground("Cursor");
-    public string ChartTrendForeground => GetChartToolForeground("Trend");
-    public string ChartHorizontalForeground => GetChartToolForeground("Horizontal");
-    public string ChartRectangleBackground => GetChartToolBackground("Rectangle");
-    public string ChartChannelBackground => GetChartToolBackground("Channel");
-    public string ChartEraseBackground => GetChartToolBackground("Erase");
-    public string ChartRectangleForeground => GetChartToolForeground("Rectangle");
-    public string ChartChannelForeground => GetChartToolForeground("Channel");
-    public string ChartEraseForeground => GetChartToolForeground("Erase");
-
     public string TradeIdeaTitle
     {
         get => _tradeIdeaTitle;
@@ -590,7 +535,6 @@ public partial class MainWindowViewModel
     public string AiAssistantScopeLabel => $"{AiContextVenueLabel} · {WalletVM.GlobalExecutionModeLabel}";
     public string AiAssistantModeSummary => $"{EffectiveAiTradingSummary} {Environment.NewLine}{WalletVM.GlobalExecutionSummary}";
     public string AiEngineAvailabilityLabel => TranslateUi("GPT SLOT RESERVED");
-    public string AiEngineAvailabilityBrush => "#F4B860";
     public string AiEngineAvailabilitySummary => TranslateUi("This desk is fully functional in local mode. External multimodal model wiring is intentionally left disconnected for now.");
     public string AiAttachmentStatusLabel => TranslateUi("Local visuals ready");
     public string AiAttachmentStatusSummary => TranslateUi("Image viewing works in this panel now. User-upload image analysis will be enabled once the GPT bridge is connected.");

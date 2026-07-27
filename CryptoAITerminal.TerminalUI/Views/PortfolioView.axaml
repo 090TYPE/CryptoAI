@@ -1308,9 +1308,10 @@
                   <ScrollViewer MaxHeight="150">
                     <ItemsControl ItemsSource="{Binding SolanaDiagnosticSteps}">
                       <ItemsControl.ItemTemplate>
-                        <!-- Items are plain strings, so there is no view-model type to declare here. -->
-                        <DataTemplate x:CompileBindings="False">
-                          <TextBlock Text="{Binding .}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontFamily="{StaticResource FontMono}" TextWrapping="Wrap" Margin="0,0,0,2" />
+                        <!-- Items are plain strings: the element type is x:String and the empty path
+                             binds the item itself, so this template compiles like the rest. -->
+                        <DataTemplate x:DataType="x:String">
+                          <TextBlock Text="{Binding}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontFamily="{StaticResource FontMono}" TextWrapping="Wrap" Margin="0,0,0,2" />
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -1329,9 +1330,10 @@
                   <ScrollViewer MaxHeight="150">
                     <ItemsControl ItemsSource="{Binding TronDiagnosticSteps}">
                       <ItemsControl.ItemTemplate>
-                        <!-- Items are plain strings, so there is no view-model type to declare here. -->
-                        <DataTemplate x:CompileBindings="False">
-                          <TextBlock Text="{Binding .}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontFamily="{StaticResource FontMono}" TextWrapping="Wrap" Margin="0,0,0,2" />
+                        <!-- Items are plain strings: the element type is x:String and the empty path
+                             binds the item itself, so this template compiles like the rest. -->
+                        <DataTemplate x:DataType="x:String">
+                          <TextBlock Text="{Binding}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" FontFamily="{StaticResource FontMono}" TextWrapping="Wrap" Margin="0,0,0,2" />
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
                     </ItemsControl>

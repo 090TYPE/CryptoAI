@@ -437,6 +437,10 @@
                   <Button Content="BB" Classes="TdSeg mini" Command="{Binding ChartPanelVM.ToggleChartIndicatorCommand}" CommandParameter="BB" Classes.active="{Binding ChartPanelVM.ShowBollinger}" />
                   <Button Content="RSI" Classes="TdSeg mini" Command="{Binding ChartPanelVM.ToggleChartIndicatorCommand}" CommandParameter="RSI" Classes.active="{Binding ChartPanelVM.ShowRsi}" />
                   <Button Content="WALLS" Classes="TdSeg mini" Command="{Binding ChartPanelVM.ToggleChartIndicatorCommand}" CommandParameter="WALLS" Classes.active="{Binding ChartPanelVM.ShowWalls}" />
+                  <Button Content="VWAP" Classes="TdSeg mini" Command="{Binding ChartPanelVM.ToggleChartIndicatorCommand}" CommandParameter="VWAP" Classes.active="{Binding ChartPanelVM.ShowVwap}"
+                          ToolTip.Tip="VWAP with ±1σ / ±2σ bands" />
+                  <Button Content="VP" Classes="TdSeg mini" Command="{Binding ChartPanelVM.ToggleChartIndicatorCommand}" CommandParameter="VP" Classes.active="{Binding ChartPanelVM.ShowVolumeProfile}"
+                          ToolTip.Tip="Volume profile with point of control" />
                 </StackPanel>
               </Grid>
 
@@ -450,6 +454,8 @@
                                           ShowBollinger="{Binding ChartPanelVM.ShowBollinger}"
                                           ShowRsi="{Binding ChartPanelVM.ShowRsi}"
                                           ShowWalls="{Binding ChartPanelVM.ShowWalls}"
+                                          ShowVwap="{Binding ChartPanelVM.ShowVwap}"
+                                          ShowVolumeProfile="{Binding ChartPanelVM.ShowVolumeProfile}"
                                           ToolMode="{Binding ChartPanelVM.SelectedChartTool}"
                                           PersistenceKey="{Binding ChartPanelVM.SelectedTradingSymbol}"
                                           ClearDrawingsVersion="{Binding ChartPanelVM.ChartClearDrawingsVersion}"
@@ -458,6 +464,15 @@
                                           ZoomOutVersion="{Binding ChartPanelVM.ChartZoomOutVersion}"
                                           Walls="{Binding MarketFeedVM.SelectedMarket.LargeWalls}" />
               </Border>
+
+              <!-- Caption under the chart: OHLC of the latest bar, and what the active tool expects next -->
+              <Grid ColumnDefinitions="Auto,*,Auto">
+                <TextBlock Grid.Column="0" Classes="TdNum" Text="{Binding TradingChartHeader}"
+                           Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsMicro}" />
+                <TextBlock Grid.Column="2" Text="{Binding ChartPanelVM.ChartInteractionHint}"
+                           Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}"
+                           HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" />
+              </Grid>
 
               <!-- Trade tape -->
               <Border Classes="TdMid">

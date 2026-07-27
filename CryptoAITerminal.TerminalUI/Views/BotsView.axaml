@@ -2,8 +2,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:CryptoAITerminal.TerminalUI.Converters"
              xmlns:views="clr-namespace:CryptoAITerminal.TerminalUI.Views"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:bd="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels.BotsDesk"
              x:Class="CryptoAITerminal.TerminalUI.Views.BotsView"
-             x:CompileBindings="False"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="True"
              FontFamily="{StaticResource FontDisplay}">
 
   <UserControl.Resources>
@@ -39,10 +42,14 @@
   <!-- Gate on the section. No fixed 760px floor: on a 1280x720 screen it forced an outer scroll
        on top of the desk's own scrollers and pushed the footer past the bottom edge. -->
   <Border IsVisible="{Binding IsBotsSectionVisible}" MinHeight="460">
+    <!-- This Grid switches the context to the desk, so x:DataType cannot sit on it: that would also
+         retype its own {Binding BotsDesk}, which has to resolve against MainWindowViewModel. The desk
+         type is therefore declared on the child that owns the whole desk subtree. BotsModals is the
+         Grid's other child and declares the same type as its own root x:DataType. -->
     <Grid DataContext="{Binding BotsDesk}" Background="{DynamicResource AppBg}" ClipToBounds="True">
 
       <!-- ═══════════════ MAIN LAYER (header · body · footer) ═══════════════ -->
-      <DockPanel LastChildFill="True">
+      <DockPanel LastChildFill="True" x:DataType="bd:BotsDeskViewModel">
 
         <!-- ───────── header (54) ───────── -->
         <Border DockPanel.Dock="Top" Height="54" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Padding="14,0">
@@ -136,7 +143,7 @@
                   <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="24" /></ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
-                  <DataTemplate>
+                  <DataTemplate x:DataType="bd:TickerItem">
                     <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                       <TextBlock Text="{Binding Tag}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                       <TextBlock Text="{Binding Text}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />
@@ -189,7 +196,7 @@
                       <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
-                      <DataTemplate>
+                      <DataTemplate x:DataType="x:String">
                         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,16,0">
                           <Ellipse Width="4" Height="4" Fill="{DynamicResource Accent}" />
                           <TextBlock Text="{Binding}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
@@ -229,7 +236,7 @@
                 <ItemsControl ItemsSource="{Binding TypeChips}">
                   <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                   <ItemsControl.ItemTemplate>
-                    <DataTemplate>
+                    <DataTemplate x:DataType="bd:TypeChip">
                       <Button Classes="FlatChrome" Command="{Binding Command}" Height="22" Padding="8,0" CornerRadius="5" BorderThickness="0"
                               Background="{Binding Bg, Converter={StaticResource StringToBrush}}">
                         <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
@@ -261,7 +268,7 @@
                 <ItemsControl ItemsSource="{Binding BulkActions}">
                   <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="9" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                   <ItemsControl.ItemTemplate>
-                    <DataTemplate>
+                    <DataTemplate x:DataType="bd:BulkAction">
                       <Button Classes="FlatChrome" Command="{Binding Command}" Height="22" Padding="8,0" CornerRadius="5" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1"
                               Content="{Binding Label}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                     </DataTemplate>
@@ -307,7 +314,7 @@
                     <StackPanel>
                       <ItemsControl ItemsSource="{Binding VisibleBots}">
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="bd:BotRowViewModel">
                             <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Background="{Binding RowBg, Converter={StaticResource StringToBrush}}">
                               <StackPanel>
 
@@ -386,7 +393,7 @@
                                         <ItemsControl ItemsSource="{Binding Actions}">
                                           <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                           <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
+                                            <DataTemplate x:DataType="bd:RowAction">
                                               <Button Classes="FlatChrome" Command="{Binding Command}" ToolTip.Tip="{Binding Title}" Width="24" Height="24" Padding="0" CornerRadius="5"
                                                       Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1"
                                                       Content="{Binding Icon}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" />
@@ -404,7 +411,7 @@
                                           Width="218" Padding="4" CornerRadius="8" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" ZIndex="40" BoxShadow="0 18 40 0 #B3000000">
                                     <ItemsControl ItemsSource="{Binding MenuItems}">
                                       <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
+                                        <DataTemplate x:DataType="bd:RowMenuItem">
                                           <Button Classes="FlatChrome" Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="Transparent" BorderThickness="0" Padding="8,6" CornerRadius="5">
                                             <Grid ColumnDefinitions="*,Auto">
                                               <TextBlock Grid.Column="0" Text="{Binding Label}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsCaption}" />
@@ -426,7 +433,7 @@
                                         <ItemsControl Grid.Column="0" ItemsSource="{Binding Desk.DetailTabs}">
                                           <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                           <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
+                                            <DataTemplate x:DataType="bd:DetailTab">
                                               <Button Classes="FlatChrome" Command="{Binding Command}" Height="24" Padding="10,0" CornerRadius="5" BorderThickness="1"
                                                       Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}"
                                                       Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
@@ -438,7 +445,7 @@
 
                                       <ContentControl Content="{Binding Desk}">
                                         <ContentControl.ContentTemplate>
-                                          <DataTemplate>
+                                          <DataTemplate x:DataType="bd:BotsDeskViewModel">
                                             <Panel>
                                               <!-- OVERVIEW -->
                                               <Grid IsVisible="{Binding IsOverview}" ColumnDefinitions="1.15*,8,0.85*">
@@ -448,7 +455,7 @@
                                                     <ItemsControl ItemsSource="{Binding DetailStats}">
                                                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                                       <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
+                                                        <DataTemplate x:DataType="bd:StatCell">
                                                           <StackPanel Spacing="3" Margin="0,0,10,12">
                                                             <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                                                             <TextBlock Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsBody}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
@@ -464,7 +471,7 @@
                                                         </Grid>
                                                         <ItemsControl ItemsSource="{Binding DetailLevels}">
                                                           <ItemsControl.ItemTemplate>
-                                                            <DataTemplate>
+                                                            <DataTemplate x:DataType="bd:GridLevel">
                                                               <Grid ColumnDefinitions="66,8,*,8,66" Margin="0,1.5">
                                                                 <TextBlock Grid.Column="0" Text="{Binding Price}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" TextAlignment="Right" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                                                                 <Border Grid.Column="2" Height="11" CornerRadius="3" Background="{DynamicResource Surface2}" ClipToBounds="True">
@@ -495,7 +502,7 @@
                                                       <ItemsControl ItemsSource="{Binding DetailPosition}">
                                                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                                         <ItemsControl.ItemTemplate>
-                                                          <DataTemplate>
+                                                          <DataTemplate x:DataType="bd:KvRow">
                                                             <StackPanel Spacing="3" Margin="0,0,10,10">
                                                               <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                                                               <TextBlock Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsSmall}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
@@ -532,7 +539,7 @@
                                                   <ItemsControl ItemsSource="{Binding DetailParams}">
                                                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                                     <ItemsControl.ItemTemplate>
-                                                      <DataTemplate>
+                                                      <DataTemplate x:DataType="bd:ParamRowViewModel">
                                                         <StackPanel Spacing="4" Margin="0,0,14,12">
                                                           <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
                                                           <ComboBox IsVisible="{Binding IsSelect}" ItemsSource="{Binding Options}" SelectedItem="{Binding Value, Mode=TwoWay}"
@@ -557,7 +564,7 @@
                                                       </Grid>
                                                       <ItemsControl ItemsSource="{Binding Coins}">
                                                         <ItemsControl.ItemTemplate>
-                                                          <DataTemplate>
+                                                          <DataTemplate x:DataType="bd:CoinRowViewModel">
                                                             <Grid ColumnDefinitions="116,88,116,*,30" Height="30">
                                                               <TextBlock Grid.Column="0" Text="{Binding Symbol}" FontSize="{DynamicResource FsCaption}" FontWeight="Medium" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
                                                               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
@@ -606,7 +613,7 @@
                                                     </Grid>
                                                     <ItemsControl ItemsSource="{Binding Tpsl}">
                                                       <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
+                                                        <DataTemplate x:DataType="bd:TpSlRowViewModel">
                                                           <Grid ColumnDefinitions="Auto,146,92,*" ColumnSpacing="10" Margin="0,1.5" Background="{Binding RowBg, Converter={StaticResource StringToBrush}}">
                                                             <Button Classes="FlatChrome" Grid.Column="0" Command="{Binding ToggleCommand}" Width="13" Height="13" Padding="0" CornerRadius="3" BorderThickness="1"
                                                                     Background="{Binding BoxBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding BoxBorder, Converter={StaticResource StringToBrush}}"
@@ -636,7 +643,7 @@
                                                     <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Margin="0,12,0,0" Padding="0,10,0,0">
                                                       <ItemsControl ItemsSource="{Binding TpPreview}">
                                                         <ItemsControl.ItemTemplate>
-                                                          <DataTemplate>
+                                                          <DataTemplate x:DataType="bd:KvRow">
                                                             <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
                                                               <TextBlock Grid.Column="0" Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                                                               <TextBlock Grid.Column="1" Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
@@ -666,7 +673,7 @@
                                                   </Border>
                                                   <ItemsControl ItemsSource="{Binding DetailTrades}">
                                                     <ItemsControl.ItemTemplate>
-                                                      <DataTemplate>
+                                                      <DataTemplate x:DataType="bd:TradeRow">
                                                         <Border Height="28" Padding="12,0" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0">
                                                           <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                             <TextBlock Width="74" Text="{Binding Time}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}" />
@@ -701,7 +708,7 @@
                                                       <ItemsControl Grid.Column="0" ItemsSource="{Binding DetailLogFilters}">
                                                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="6" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                                         <ItemsControl.ItemTemplate>
-                                                          <DataTemplate>
+                                                          <DataTemplate x:DataType="bd:LogFilter">
                                                             <Button Classes="FlatChrome" Command="{Binding Command}" Height="21" Padding="8,0" CornerRadius="4" BorderThickness="1"
                                                                     Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}"
                                                                     Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" />
@@ -714,7 +721,7 @@
                                                   <ScrollViewer MaxHeight="196" VerticalScrollBarVisibility="Auto">
                                                     <ItemsControl ItemsSource="{Binding DetailLogs}" Padding="10,8">
                                                       <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
+                                                        <DataTemplate x:DataType="bd:LogRow">
                                                           <StackPanel Orientation="Horizontal" Spacing="11">
                                                             <TextBlock Text="{Binding Time}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}" />
                                                             <TextBlock Text="{Binding Level}" Width="42" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
@@ -755,7 +762,7 @@
                                                     <TextBlock Text="GATES &amp; GUARDS" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Margin="0,0,0,10" />
                                                     <ItemsControl ItemsSource="{Binding GuardsRisk}">
                                                       <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
+                                                        <DataTemplate x:DataType="bd:GuardToggle">
                                                           <Button Classes="FlatChrome" Command="{Binding Command}" Background="Transparent" BorderThickness="0" Padding="8,6" CornerRadius="6" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch">
                                                             <Grid ColumnDefinitions="*,Auto">
                                                               <StackPanel Grid.Column="0" Spacing="2">
@@ -801,7 +808,7 @@
                         <ItemsControl ItemsSource="{Binding Templates}" MaxWidth="1080" HorizontalAlignment="Center">
                           <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                           <ItemsControl.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="bd:TemplateCard">
                               <Button Classes="FlatChrome" Command="{Binding QuickCreate}" Margin="4" Padding="12" CornerRadius="10" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" HorizontalContentAlignment="Stretch">
                                 <StackPanel Spacing="7">
                                   <Grid ColumnDefinitions="*,Auto">
@@ -888,7 +895,7 @@
                           <TextBlock Text="{Binding RiskRationale}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="{DynamicResource TextNote}" TextWrapping="Wrap" />
                           <ItemsControl ItemsSource="{Binding RiskReasons}" Margin="0,8,0,0">
                             <ItemsControl.ItemTemplate>
-                              <DataTemplate>
+                              <DataTemplate x:DataType="x:String">
                                 <StackPanel Orientation="Horizontal" Spacing="7" Margin="0,0,0,4">
                                   <TextBlock Text="•" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsMicro}" />
                                   <TextBlock Text="{Binding}" FontSize="{DynamicResource FsMicro}" LineHeight="15" Foreground="{DynamicResource TextDim}" TextWrapping="Wrap" />
@@ -922,7 +929,7 @@
                           <TextBlock Text="{Binding CorrSummary}" FontSize="{DynamicResource FsCaption}" LineHeight="17" Foreground="{DynamicResource TextNote}" TextWrapping="Wrap" />
                           <ItemsControl ItemsSource="{Binding CorrBullets}" Margin="0,8,0,0">
                             <ItemsControl.ItemTemplate>
-                              <DataTemplate>
+                              <DataTemplate x:DataType="x:String">
                                 <StackPanel Orientation="Horizontal" Spacing="7" Margin="0,0,0,4">
                                   <TextBlock Text="•" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" />
                                   <TextBlock Text="{Binding}" FontSize="{DynamicResource FsMicro}" LineHeight="15" Foreground="{DynamicResource TextDim}" TextWrapping="Wrap" />
@@ -990,7 +997,7 @@
                         <ItemsControl ItemsSource="{Binding CopilotMsgs}">
                           <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="9" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                           <ItemsControl.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="bd:CopilotMsg">
                               <StackPanel Spacing="3" HorizontalAlignment="{Binding Align}">
                                 <TextBlock Text="{Binding Role}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{Binding RoleColor, Converter={StaticResource StringToBrush}}" />
                                 <Border MaxWidth="244" Padding="8,6" CornerRadius="7" Background="{Binding Bg, Converter={StaticResource StringToBrush}}">
@@ -1005,7 +1012,7 @@
                     <ItemsControl ItemsSource="{Binding CopilotChips}" Margin="0,8,0,0">
                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="bd:CopilotChip">
                           <Button Classes="FlatChrome" Command="{Binding Command}" Margin="0,0,4,4" Padding="8,4" CornerRadius="5" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" Content="{Binding Label}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" />
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
@@ -1043,7 +1050,7 @@
                     <ItemsControl ItemsSource="{Binding AgentCaps}" Margin="0,8,0,0">
                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="bd:AgentCap">
                           <StackPanel Spacing="4" Margin="0,0,6,0">
                             <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" FontWeight="Bold" />
                             <TextBox Text="{Binding Value, Mode=TwoWay}" Height="26" Padding="6,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" />
@@ -1065,7 +1072,7 @@
                       <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <ItemsControl ItemsSource="{Binding AgentLog}">
                           <ItemsControl.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="bd:LogRow">
                               <StackPanel Orientation="Horizontal" Spacing="9">
                                 <TextBlock Text="{Binding Time}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                                 <TextBlock Text="{Binding Msg}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" TextWrapping="Wrap" />

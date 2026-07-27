@@ -130,12 +130,13 @@
                       </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.Styles>
-                      <!-- Setters bind against the ContentPresenter's item (HeatBand), not this
-                           view's DataContext, and a Style carries no x:DataType — so compiled
-                           bindings would resolve Y against LiquidationHeatmapViewModel and fail.
-                           Reflection binding here keeps the per-item positioning working. -->
-                      <Style Selector="ContentPresenter" x:CompileBindings="False">
-                        <Setter Property="Canvas.Top" Value="{Binding Y}" />
+                      <!-- The setter binds against the ContentPresenter's item (HeatBand), not
+                           this view's DataContext, and a Style carries no x:DataType — so a
+                           compiled binding would resolve Y against LiquidationHeatmapViewModel
+                           and fail. Reflection binding on this one setter keeps the per-item
+                           positioning working without opting the file out. -->
+                      <Style Selector="ContentPresenter">
+                        <Setter Property="Canvas.Top" Value="{ReflectionBinding Y}" />
                         <Setter Property="Canvas.Left" Value="0" />
                       </Style>
                     </ItemsControl.Styles>

@@ -44,6 +44,11 @@ public sealed class ChartPanelViewModel : ReactiveObject
     private bool _showRsi;
     private bool _showWalls = true;
 
+    // Both default on, matching CexCandlestickChart's own defaults — the overlays were always
+    // drawn, there was just no button to turn them off.
+    private bool _showVwap = true;
+    private bool _showVolumeProfile = true;
+
     private int _chartZoomInVersion;
     private int _chartZoomOutVersion;
     private int _chartZoomPercent = 80;
@@ -100,12 +105,6 @@ public sealed class ChartPanelViewModel : ReactiveObject
     /// phase and re-raises its toolbar chips from the handler.
     /// </summary>
     public event Action? ChartToolChanged;
-
-    /// <summary>
-    /// Raised after <see cref="ChartClearDrawingsVersion"/> has been bumped, so the shell can reset
-    /// the drawing phase the same way it always did.
-    /// </summary>
-    public event Action? DrawingsCleared;
 
     /// <summary>
     /// Raised when the alert button is pressed a second time with a valid price. The shell owns the
@@ -215,6 +214,18 @@ public sealed class ChartPanelViewModel : ReactiveObject
         private set => this.RaiseAndSetIfChanged(ref _showWalls, value);
     }
 
+    public bool ShowVwap
+    {
+        get => _showVwap;
+        private set => this.RaiseAndSetIfChanged(ref _showVwap, value);
+    }
+
+    public bool ShowVolumeProfile
+    {
+        get => _showVolumeProfile;
+        private set => this.RaiseAndSetIfChanged(ref _showVolumeProfile, value);
+    }
+
     private void SelectChartType(string type)
     {
         if (string.IsNullOrWhiteSpace(type)) return;
@@ -230,6 +241,14 @@ public sealed class ChartPanelViewModel : ReactiveObject
             case "BB": ShowBollinger = !ShowBollinger; break;
             case "RSI": ShowRsi = !ShowRsi; break;
             case "WALLS": ShowWalls = !ShowWalls; break;
+            case "VWAP":
+                ShowVwap = !ShowVwap;
+                _log($"VWAP overlay {(ShowVwap ? "enabled" : "disabled")}.");
+                break;
+            case "VP":
+                ShowVolumeProfile = !ShowVolumeProfile;
+                _log($"Volume Profile {(ShowVolumeProfile ? "enabled" : "disabled")}.");
+                break;
         }
     }
 
@@ -315,8 +334,27 @@ public sealed class ChartPanelViewModel : ReactiveObject
     public string SelectedChartTool
     {
         get => _selectedChartTool;
-        set => this.RaiseAndSetIfChanged(ref _selectedChartTool, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _selectedChartTool, value);
+            this.RaisePropertyChanged(nameof(ChartInteractionHint));
+        }
     }
+
+    /// <summary>
+    /// What the active drawing tool expects the operator to do next. Shown under the chart, which
+    /// is the only guidance the drawing tools have — clicking TREND or CHANNEL otherwise gives no
+    /// hint that more than one click is needed.
+    /// </summary>
+    public string ChartInteractionHint => _selectedChartTool switch
+    {
+        "Trend" => "Trend line: click first point, then second point on the chart.",
+        "Horizontal" => "Horizontal line: click a price level on the chart.",
+        "Rectangle" => "Rectangle: click first corner, then opposite corner.",
+        "Channel" => "Channel: click first point, second point, then width.",
+        "Erase" => "Erase mode: click a drawing to remove only that one.",
+        _ => "Cursor mode: mouse wheel zooms, drag moves history, hover shows time and price."
+    };
 
     /// <summary>Bumped to tell <c>CexCandlestickChart</c> to drop every saved drawing.</summary>
     public int ChartClearDrawingsVersion
@@ -347,7 +385,6 @@ public sealed class ChartPanelViewModel : ReactiveObject
     private void ClearChartDrawings()
     {
         ChartClearDrawingsVersion++;
-        DrawingsCleared?.Invoke();
         _log("Chart drawings cleared.");
     }
 

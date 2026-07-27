@@ -82,10 +82,7 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     private bool _isLadderCenterLocked = true;
     private int _ladderManualOffsetTicks;
     private TradingVenueMode _selectedTradingVenue = TradingVenueMode.Cex;
-    private ChartToolPhase _chartToolPhase = ChartToolPhase.None;
     private bool _focusLatestCandlesOnNextRefresh = true;
-    private bool _showChartVwap          = true;
-    private bool _showChartVolumeProfile = true;
     private decimal _selectedLadderPrice;
     private decimal _priceStep = 0.50m;
     private bool _pendingGlobalCexSizingApply = true;
@@ -155,7 +152,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             AddLog);
         ChartPanelVM.TimeframeChanged += OnChartPanelTimeframeChanged;
         ChartPanelVM.ChartToolChanged += OnChartPanelChartToolChanged;
-        ChartPanelVM.DrawingsCleared += OnChartPanelDrawingsCleared;
         ChartPanelVM.AlertArmRequested += OnChartPanelAlertArmRequested;
 
         // The right rail owns the venue tabs and the depth toggle; the position card and the two
@@ -1330,8 +1326,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         ApplyAtrPresetCommand = ReactiveCommand.Create(ApplyAtrPreset, outputScheduler: App.UiScheduler);
         ApplyRiskRewardPresetCommand = ReactiveCommand.Create(ApplyRiskRewardPreset, outputScheduler: App.UiScheduler);
         ApplyScalpPresetCommand = ReactiveCommand.Create<string>(ApplyScalpPreset, outputScheduler: App.UiScheduler);
-        ToggleVwapCommand = ReactiveCommand.Create(ToggleVwap, outputScheduler: App.UiScheduler);
-        ToggleVolumeProfileCommand = ReactiveCommand.Create(ToggleVolumeProfile, outputScheduler: App.UiScheduler);
         ToggleLadderCenterModeCommand = ReactiveCommand.Create(ToggleLadderCenterMode, outputScheduler: App.UiScheduler);
         SelectTradingVenueCommand = ReactiveCommand.Create<string>(SelectTradingVenue, outputScheduler: App.UiScheduler);
         FocusMarketCommand = ReactiveCommand.Create<CexMarketItemViewModel>(FocusMarket, outputScheduler: App.UiScheduler);
@@ -1535,7 +1529,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         get => _selectedTradingVenue;
         set => this.RaiseAndSetIfChanged(ref _selectedTradingVenue, value);
     }
-    public IReadOnlyList<string> AvailableCexMarketModes { get; } = ["Spot", "Futures"];
     public IReadOnlyList<string> AvailableFuturesMarginModes { get; } = ["Cross", "Isolated"];
     public IReadOnlyList<string> TradingProfileOptions { get; } = ["Swing", "Scalp", "Aggro"];
     public string SelectedCexMarketMode
@@ -1638,7 +1631,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     }
     public bool IsManualFuturesMode => string.Equals(SelectedCexMarketMode, "Futures", StringComparison.OrdinalIgnoreCase);
 
-    public IReadOnlyList<string> FuturesExchangeOptions { get; } = ["Binance", "Bybit", "OKX", "KuCoin"];
 
     public string SelectedFuturesExchange
     {
@@ -1671,7 +1663,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         IReadOnlyDictionary<string, Core.Interfaces.IExchangeGateway> map, string key, Core.Interfaces.IExchangeGateway fallback)
         => !string.IsNullOrWhiteSpace(key) && map.TryGetValue(key, out var gw) ? gw : fallback;
 
-    public IReadOnlyList<string> SpotExchangeOptions { get; } = ["Binance", "Bybit", "OKX", "KuCoin"];
 
     public string SelectedSpotExchange
     {
@@ -1791,8 +1782,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> ApplyAtrPresetCommand { get; }
     public ReactiveCommand<Unit, Unit> ApplyRiskRewardPresetCommand { get; }
     public ReactiveCommand<string, Unit> ApplyScalpPresetCommand { get; }
-    public ReactiveCommand<Unit, Unit> ToggleVwapCommand { get; }
-    public ReactiveCommand<Unit, Unit> ToggleVolumeProfileCommand { get; }
     public ReactiveCommand<Unit, Unit> ToggleLadderCenterModeCommand { get; }
     public ReactiveCommand<string, Unit> SelectTradingVenueCommand { get; }
     public ReactiveCommand<CexMarketItemViewModel, Unit> FocusMarketCommand { get; }
@@ -1891,8 +1880,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         }
     }
 
-    public ObservableCollection<string> TimeInForceOptions { get; } = ["DAY", "GTC", "IOC"];
-    public ObservableCollection<string> AvailableTradeTimeframes { get; } = ["1M", "5M", "15M", "1H", "4H", "1D", "1W", "1MN", "ALL"];
     public ObservableCollection<string> AiPromptTradeStyleOptions { get; } = [];
     public ObservableCollection<string> AiPromptHorizonOptions { get; } = [];
     public ObservableCollection<string> AiPromptRiskProfileOptions { get; } = [];
@@ -1952,30 +1939,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
             this.RaisePropertyChanged(nameof(RealizedPnlLabel));
         }
     }
-
-    public ChartToolPhase SelectedChartToolPhase
-    {
-        get => _chartToolPhase;
-        set => this.RaiseAndSetIfChanged(ref _chartToolPhase, value);
-    }
-
-    public bool ShowChartVwap
-    {
-        get => _showChartVwap;
-        set => this.RaiseAndSetIfChanged(ref _showChartVwap, value);
-    }
-
-    public bool ShowChartVolumeProfile
-    {
-        get => _showChartVolumeProfile;
-        set => this.RaiseAndSetIfChanged(ref _showChartVolumeProfile, value);
-    }
-
-    public string ChartVwapBackground         => _showChartVwap          ? "#17373B" : "#0F1721";
-    public string ChartVwapForeground         => _showChartVwap          ? "#FBBF24" : "#8FA3B8";
-    public string ChartVolumeProfileBackground => _showChartVolumeProfile ? "#21173B" : "#0F1721";
-    public string ChartVolumeProfileForeground => _showChartVolumeProfile ? "#A855F7" : "#8FA3B8";
-
 
     public string AvailableBalanceLabel => $"{AvailableBalanceUsdt:N2} USDT";
     public string GlobalPositionSizingLabel => WalletVM.GlobalPositionSizingLabel;
@@ -2473,13 +2436,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         _                                        => "—",
     };
 
-    public Avalonia.Media.IBrush BinanceCredentialSourceBadgeBrush => _binanceCredSource switch
-    {
-        CredentialsService.CredentialSource.Env  => new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#21C67B")),
-        CredentialsService.CredentialSource.File => new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#3D8BCD")),
-        _                                        => new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#3A4F63")),
-    };
-
     public bool IsBinanceCredSourceEnv => _binanceCredSource == CredentialsService.CredentialSource.Env;
 
     public string BybitApiKeyMask => MaskKey(_loadedBybitKey);
@@ -2491,30 +2447,15 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         _                                        => "—",
     };
 
-    public Avalonia.Media.IBrush BybitCredentialSourceBadgeBrush => _bybitCredSource switch
-    {
-        CredentialsService.CredentialSource.Env  => new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#21C67B")),
-        CredentialsService.CredentialSource.File => new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#3D8BCD")),
-        _                                        => new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#3A4F63")),
-    };
-
     public bool IsBybitCredSourceEnv => _bybitCredSource == CredentialsService.CredentialSource.Env;
 
     public string OkxApiKeyMask => MaskKey(_loadedOkxKey);
     public string OkxApiStatus  => _loadedOkxKey.Length > 0 ? "Key loaded ✓" : "No key — read-only";
-    public string OkxPassphraseStatus => "";  // kept for XAML compat, not used in new UI
     public string OkxCredentialSourceLabel => _okxCredSource switch
     {
         CredentialsService.CredentialSource.Env  => "ENV",
         CredentialsService.CredentialSource.File => "FILE",
         _                                        => "—",
-    };
-
-    public Avalonia.Media.IBrush OkxCredentialSourceBadgeBrush => _okxCredSource switch
-    {
-        CredentialsService.CredentialSource.Env  => new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#21C67B")),
-        CredentialsService.CredentialSource.File => new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#3D8BCD")),
-        _                                        => new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#3A4F63")),
     };
 
     public bool IsOkxCredSourceEnv => _okxCredSource == CredentialsService.CredentialSource.Env;
@@ -2526,13 +2467,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         CredentialsService.CredentialSource.Env  => "ENV",
         CredentialsService.CredentialSource.File => "FILE",
         _                                        => "—",
-    };
-
-    public Avalonia.Media.IBrush KucoinCredentialSourceBadgeBrush => _kucoinCredSource switch
-    {
-        CredentialsService.CredentialSource.Env  => new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#21C67B")),
-        CredentialsService.CredentialSource.File => new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#3D8BCD")),
-        _                                        => new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#3A4F63")),
     };
 
     public bool IsKucoinCredSourceEnv => _kucoinCredSource == CredentialsService.CredentialSource.Env;
@@ -5033,18 +4967,8 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                bestBid.Quantity > 0 && bestAsk.Quantity > 0;
     }
 
-    /// <summary>
-    /// Runs after the chart panel has switched the drawing tool. The multi-click phase is shell
-    /// state (<see cref="ChartInteractionHint"/> reads it), so resetting it stays here.
-    /// </summary>
-    private void OnChartPanelChartToolChanged()
-    {
-        SelectedChartToolPhase = ChartToolPhase.None;
-        RaiseTimeframeStateChanged();
-    }
-
-    /// <summary>Runs after the chart panel has bumped its clear-drawings version.</summary>
-    private void OnChartPanelDrawingsCleared() => SelectedChartToolPhase = ChartToolPhase.None;
+    /// <summary>Runs after the chart panel has switched the drawing tool, to restyle the chips.</summary>
+    private void OnChartPanelChartToolChanged() => RaiseTimeframeStateChanged();
 
     /// <summary>
     /// Runs when the chart panel's alert button is confirmed with a valid price. Verbatim the
@@ -5057,22 +4981,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         AlertsVM.SelectedCondition = price >= CurrentTradePrice ? "PriceAbove" : "PriceBelow";
         AlertsVM.AddAlertCommand.Execute().Subscribe();
         AddLog($"Price alert armed: {SelectedTradingSymbol} @ {price}");
-    }
-
-    private void ToggleVwap()
-    {
-        ShowChartVwap = !ShowChartVwap;
-        this.RaisePropertyChanged(nameof(ChartVwapBackground));
-        this.RaisePropertyChanged(nameof(ChartVwapForeground));
-        AddLog($"VWAP overlay {(ShowChartVwap ? "enabled" : "disabled")}.");
-    }
-
-    private void ToggleVolumeProfile()
-    {
-        ShowChartVolumeProfile = !ShowChartVolumeProfile;
-        this.RaisePropertyChanged(nameof(ChartVolumeProfileBackground));
-        this.RaisePropertyChanged(nameof(ChartVolumeProfileForeground));
-        AddLog($"Volume Profile {(ShowChartVolumeProfile ? "enabled" : "disabled")}.");
     }
 
     private static readonly TimeSpan TradingStateRefreshWindow = TimeSpan.FromMilliseconds(400);
@@ -5907,48 +5815,11 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         return new ActivityFeedRowViewModel(timestamp, message, status, brush);
     }
 
-    private void RaiseTimeframeStateChanged()
-    {
-        this.RaisePropertyChanged(nameof(TradingChartHeader));
-        this.RaisePropertyChanged(nameof(ChartRangeLabel));
-        this.RaisePropertyChanged(nameof(ChartInteractionHint));
-        this.RaisePropertyChanged(nameof(Timeframe1MBackground));
-        this.RaisePropertyChanged(nameof(Timeframe5MBackground));
-        this.RaisePropertyChanged(nameof(Timeframe15MBackground));
-        this.RaisePropertyChanged(nameof(Timeframe1HBackground));
-        this.RaisePropertyChanged(nameof(Timeframe4HBackground));
-        this.RaisePropertyChanged(nameof(Timeframe1DBackground));
-        this.RaisePropertyChanged(nameof(Timeframe1MForeground));
-        this.RaisePropertyChanged(nameof(Timeframe5MForeground));
-        this.RaisePropertyChanged(nameof(Timeframe15MForeground));
-        this.RaisePropertyChanged(nameof(Timeframe1HForeground));
-        this.RaisePropertyChanged(nameof(Timeframe4HForeground));
-        this.RaisePropertyChanged(nameof(Timeframe1DForeground));
-        this.RaisePropertyChanged(nameof(ChartCursorBackground));
-        this.RaisePropertyChanged(nameof(ChartTrendBackground));
-        this.RaisePropertyChanged(nameof(ChartHorizontalBackground));
-        this.RaisePropertyChanged(nameof(ChartRectangleBackground));
-        this.RaisePropertyChanged(nameof(ChartChannelBackground));
-        this.RaisePropertyChanged(nameof(ChartEraseBackground));
-        this.RaisePropertyChanged(nameof(ChartCursorForeground));
-        this.RaisePropertyChanged(nameof(ChartTrendForeground));
-        this.RaisePropertyChanged(nameof(ChartHorizontalForeground));
-        this.RaisePropertyChanged(nameof(ChartRectangleForeground));
-        this.RaisePropertyChanged(nameof(ChartChannelForeground));
-        this.RaisePropertyChanged(nameof(ChartEraseForeground));
-    }
-
-    private string GetTimeframeBackground(string timeframe) =>
-        string.Equals(ChartPanelVM.SelectedTradeTimeframe, timeframe, StringComparison.OrdinalIgnoreCase) ? "#17373B" : "#0F1721";
-
-    private string GetTimeframeForeground(string timeframe) =>
-        string.Equals(ChartPanelVM.SelectedTradeTimeframe, timeframe, StringComparison.OrdinalIgnoreCase) ? "#F4F7FB" : "#8FA3B8";
-
-    private string GetChartToolBackground(string tool) =>
-        string.Equals(ChartPanelVM.SelectedChartTool, tool, StringComparison.OrdinalIgnoreCase) ? "#17373B" : "#0F1721";
-
-    private string GetChartToolForeground(string tool) =>
-        string.Equals(ChartPanelVM.SelectedChartTool, tool, StringComparison.OrdinalIgnoreCase) ? "#F4F7FB" : "#8FA3B8";
+    /// <summary>
+    /// The chart's own chips style themselves from <c>ChartPanelVM</c> through
+    /// <c>Classes.active</c>, so the only thing left to re-raise here is the OHLC caption.
+    /// </summary>
+    private void RaiseTimeframeStateChanged() => this.RaisePropertyChanged(nameof(TradingChartHeader));
 
     private static string NormalizeScalpPreset(string? preset) =>
         preset?.Trim().ToUpperInvariant() switch
@@ -7420,13 +7291,6 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         _candleRefreshLock.Dispose();
     }
 
-    public enum ChartToolPhase
-    {
-        None,
-        SecondPoint,
-        ThirdPoint
-    }
-
     private void OnDexTradingPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(DexTradingViewModel.SelectedToken)
@@ -7494,24 +7358,10 @@ public sealed class TradeLadderLevelViewModel : ReactiveObject
     public decimal CurrentPrice { get; }
     public decimal EntryPrice { get; }
     public string PriceLabel => Price > 0 ? $"{Price:N2}" : string.Empty;
-    public string BidLabel => BidQuantity > 0 ? $"{BidQuantity:N0}" : string.Empty;
-    public string AskLabel => AskQuantity > 0 ? $"{AskQuantity:N0}" : string.Empty;
-    public string MarkerLabel => IsBestAsk ? "ASK" : IsBestBid ? "BID" : string.Empty;
-    public double BidBarOpacity => 0.18d + (Math.Max(0d, Math.Min(1d, (double)(BidQuantity / MaxBidQuantity))) * 0.82d);
-    public double AskBarOpacity => 0.18d + (Math.Max(0d, Math.Min(1d, (double)(AskQuantity / MaxAskQuantity))) * 0.82d);
     public bool IsCurrentPriceLevel => CurrentPrice > 0 && Math.Abs(Price - CurrentPrice) < 0.005m;
     public bool IsEntryPriceLevel => EntryPrice > 0 && Math.Abs(Price - EntryPrice) < 0.005m;
-    public string FlatCellText => IsCurrentPriceLevel ? "■" : string.Empty;
-    public string EntryCellText => IsEntryPriceLevel ? "■" : string.Empty;
-    public string FlatCellBrush => IsCurrentPriceLevel ? "#E5E7EB" : "#8FA3B8";
-    public string EntryCellBrush => IsEntryPriceLevel ? "#F4B860" : "#8FA3B8";
-    public string BidBarBackground => BidQuantity > 0 ? "#284766" : "Transparent";
-    public string AskBarBackground => AskQuantity > 0 ? "#5A2834" : "Transparent";
     public string PriceCellBackground => IsCurrentPriceLevel ? "#1B3652" : "#111A24";
-    public string PriceAxisLeftBrush => IsBestBid ? "#3DDC84" : "#203244";
-    public string PriceAxisRightBrush => IsBestAsk ? "#FF6B6B" : "#3A2630";
     public string CurrentPriceLabel => IsCurrentPriceLevel ? "LAST" : string.Empty;
-    public string CurrentPriceBrush => IsCurrentPriceLevel ? "#6FDBFF" : "#8FA3B8";
     public bool IsSelected
     {
         get => _isSelected;
@@ -7604,7 +7454,6 @@ public sealed class WorkingOrderViewModel
     };
     public string TriggerLabel => $"{TriggerPrice:N2}";
     public string QuantityLabel => $"{Quantity:0.0000}";
-    public string FilledLabel => $"{FilledQuantity:0.0000}";
     public string AgeLabel => $"{Math.Max(0, (int)(DateTime.Now - CreatedAtLocal).TotalMinutes)}m";
     public string CreatedLabel => CreatedAtLocal.ToString("HH:mm:ss");
     public string StatusLabel => string.IsNullOrWhiteSpace(ExplicitStatusLabel) ? (IsExchangeManaged ? "Live" : "New") : ExplicitStatusLabel;
@@ -7825,12 +7674,6 @@ public sealed class AiAssistantMessageViewModel
     public string Title { get; }
     public string Body { get; }
     public string Meta { get; }
-    public int ColumnIndex => IsUser ? 1 : 0;
-    public HorizontalAlignment BubbleAlignment => IsUser ? HorizontalAlignment.Right : HorizontalAlignment.Left;
-    public string BubbleBackground => IsUser ? "#123A36" : "#0F1822";
-    public string BubbleBorderBrush => IsUser ? "#21E6C1" : "#243749";
-    public string TitleBrush => IsUser ? "#D7FFF6" : "#F4F7FB";
-    public string MetaBrush => IsUser ? "#8BF0DD" : "#8FA3B8";
 }
 public sealed class SignalRowViewModel
 {

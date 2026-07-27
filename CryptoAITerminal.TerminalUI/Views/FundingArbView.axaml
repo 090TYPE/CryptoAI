@@ -138,13 +138,14 @@
                             <Grid ColumnDefinitions="60,*,80,80,70,60,Auto" ColumnSpacing="8">
                               <!-- Exchange badge. An inline SolidColorBrush is not a StyledElement and so
                                    carries no DataContext of its own; a compiled binding on it has nothing to
-                                   resolve against, hence the local opt-out. The tinted fill needs the brush's
-                                   own Opacity — putting Opacity on the Border would fade the label too. -->
+                                   resolve against, so that ONE binding stays a reflection binding (it
+                                   resolves through the XAML anchor at runtime, as it did before). The tinted
+                                   fill needs the brush's own Opacity — putting Opacity on the Border would
+                                   fade the label too. -->
                               <Border Grid.Column="0" CornerRadius="4" Padding="4,2"
-                                      HorizontalAlignment="Left" VerticalAlignment="Center"
-                                      x:CompileBindings="False">
+                                      HorizontalAlignment="Left" VerticalAlignment="Center">
                                 <Border.Background>
-                                  <SolidColorBrush Color="{Binding ExchangeBadgeColor}" Opacity="0.18" />
+                                  <SolidColorBrush Color="{ReflectionBinding ExchangeBadgeColor}" Opacity="0.18" />
                                 </Border.Background>
                                 <TextBlock Text="{Binding Exchange}"
                                            FontSize="{DynamicResource FsMicro}" FontWeight="Bold"

@@ -1,8 +1,12 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:CryptoAITerminal.TerminalUI.Converters"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             xmlns:sd="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels.SettingsDesk"
+             xmlns:bd="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels.BotsDesk"
              x:Class="CryptoAITerminal.TerminalUI.Views.SettingsView"
-             x:CompileBindings="False"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="True"
              FontFamily="{StaticResource FontDisplay}">
 
   <UserControl.Styles>
@@ -21,8 +25,11 @@
   <!-- No fixed 760px floor: on a 1280x720 screen it forced an outer scroll over the desk's own
        scrollers and pushed the pinned footer past the bottom edge. -->
   <Border IsVisible="{Binding IsSettingsSectionVisible}" MinHeight="460">
+    <!-- x:DataType cannot sit on this Grid: it would also retype the Grid's own
+         {Binding SettingsDesk}, which has to resolve against MainWindowViewModel. The desk type
+         is therefore declared on the Grid's three children (DockPanel, modal, toast). -->
     <Grid DataContext="{Binding SettingsDesk}" Background="{DynamicResource AppBg}" ClipToBounds="True">
-      <DockPanel LastChildFill="True">
+      <DockPanel LastChildFill="True" x:DataType="sd:SettingsDeskViewModel">
 
         <!-- ═══ header ═══ -->
         <Border DockPanel.Dock="Top" Height="54" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Padding="14,0">
@@ -121,12 +128,12 @@
               <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding NavGroups}" Margin="6">
                   <ItemsControl.ItemTemplate>
-                    <DataTemplate>
+                    <DataTemplate x:DataType="sd:NavGroup">
                       <StackPanel Margin="0,0,0,8">
                         <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" Padding="6,6,6,4" />
                         <ItemsControl ItemsSource="{Binding Items}">
                           <ItemsControl.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="sd:NavItem">
                               <Button Classes="FlatChrome" Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderThickness="0" CornerRadius="6" Padding="8,6" Margin="0,1">
                                 <Grid ColumnDefinitions="2,8,*,Auto">
                                   <Border Grid.Column="0" Width="2" Height="14" CornerRadius="1" Background="{Binding Mark, Converter={StaticResource StringToBrush}}" />
@@ -164,7 +171,7 @@
                     <ItemsControl ItemsSource="{Binding Providers}" Margin="0,12,0,0">
                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="sd:ProviderCard">
                           <Button Classes="FlatChrome" Command="{Binding Command}" Margin="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="9" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Padding="12">
                             <StackPanel>
                               <Grid ColumnDefinitions="Auto,8,Auto,*,Auto" Margin="0,0,0,4">
@@ -236,7 +243,7 @@
                     <ItemsControl ItemsSource="{Binding Features}">
                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="bd:GuardToggle">
                           <Button Classes="FlatChrome" Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" BorderThickness="0" CornerRadius="6" Background="Transparent" Padding="8,8">
                             <Grid ColumnDefinitions="*,12,Auto">
                               <StackPanel Grid.Column="0" Spacing="2">
@@ -305,7 +312,7 @@
                     </StackPanel>
                     <ItemsControl ItemsSource="{Binding Profiles}" Margin="0,10,0,0">
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="sd:ProfileCard">
                           <Border BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="7" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Padding="8,8" Margin="0,0,0,2">
                             <Grid ColumnDefinitions="*,Auto,9,Auto,5,Auto,5,Auto">
                               <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
@@ -338,10 +345,12 @@
                         <TextBlock Text="How to create keys" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" Foreground="#f0b90b" Margin="0,0,0,2" />
                         <ItemsControl ItemsSource="{Binding HelpSteps}">
                           <ItemsControl.ItemTemplate>
+                            <!-- HelpSteps is (string n, string text)[]: a ValueTuple cannot be named in
+                                 x:DataType, so these two rows stay reflection-bound. -->
                             <DataTemplate>
                               <Grid ColumnDefinitions="Auto,8,*" Margin="0,0,0,2">
-                                <TextBlock Grid.Column="0" Text="{Binding Item1}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="#f0b90b" />
-                                <TextBlock Grid.Column="2" Text="{Binding Item2}" TextWrapping="Wrap" FontSize="{DynamicResource FsCaption}" LineHeight="16" Foreground="{DynamicResource TextNote}" />
+                                <TextBlock Grid.Column="0" Text="{ReflectionBinding Item1}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="#f0b90b" />
+                                <TextBlock Grid.Column="2" Text="{ReflectionBinding Item2}" TextWrapping="Wrap" FontSize="{DynamicResource FsCaption}" LineHeight="16" Foreground="{DynamicResource TextNote}" />
                               </Grid>
                             </DataTemplate>
                           </ItemsControl.ItemTemplate>
@@ -353,7 +362,7 @@
                       <ItemsControl ItemsSource="{Binding ExTabs}">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="sd:ExTabVM">
                             <Button Classes="FlatChrome" Command="{Binding Command}" Height="30" BorderThickness="0" CornerRadius="6" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Margin="1,0" HorizontalAlignment="Stretch">
                               <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
                                 <Border Width="6" Height="6" CornerRadius="3" Background="{Binding Dot, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
@@ -386,7 +395,7 @@
                         <ItemsControl ItemsSource="{Binding ExFields}">
                           <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                           <ItemsControl.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="sd:SetField">
                               <StackPanel Spacing="5" Margin="4">
                                 <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
                                 <Border Height="30" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="6" Background="{DynamicResource Surface0}" Padding="8,0">
@@ -401,7 +410,7 @@
                           <ItemsControl ItemsSource="{Binding Perms}">
                             <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="5" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
-                              <DataTemplate>
+                              <DataTemplate x:DataType="sd:PermToggle">
                                 <Button Classes="FlatChrome" Command="{Binding Command}" Height="22" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="5" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Padding="8,0" Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                               </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -428,7 +437,7 @@
                     <ItemsControl ItemsSource="{Binding AffFields}">
                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="sd:SetField">
                           <StackPanel Spacing="5" Margin="4">
                             <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
                             <Border Height="30" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="6" Background="{DynamicResource Surface0}" Padding="8,0">
@@ -488,7 +497,7 @@
                     <ItemsControl ItemsSource="{Binding RpcFields}" Margin="0,12,0,0">
                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="sd:SetField">
                           <StackPanel Spacing="5" Margin="4">
                             <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
                             <Border Height="30" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="6" Background="{DynamicResource Surface0}" Padding="8,0">
@@ -513,7 +522,7 @@
                     <TextBlock Text="EVM (Ethereum · BSC · Base · Polygon · Arbitrum)" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" Margin="0,12,0,6" />
                     <ItemsControl ItemsSource="{Binding EvmMevModes}">
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="sd:DexModeChip">
                           <Button Classes="FlatChrome" Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="9" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Padding="12" Margin="0,0,0,4">
                             <StackPanel>
                               <Grid ColumnDefinitions="Auto,9,Auto,*">
@@ -531,7 +540,7 @@
                     <TextBlock Text="SOLANA" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" Margin="0,10,0,6" />
                     <ItemsControl ItemsSource="{Binding SolMevModes}">
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="sd:DexModeChip">
                           <Button Classes="FlatChrome" Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="9" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Padding="12" Margin="0,0,0,4">
                             <StackPanel>
                               <Grid ColumnDefinitions="Auto,9,Auto,*">
@@ -550,7 +559,7 @@
                       <ItemsControl ItemsSource="{Binding JitoTips}">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="5" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="sd:DexModeChip">
                             <Button Classes="FlatChrome" Command="{Binding Command}" Height="26" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="6" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Padding="10,0" Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -565,7 +574,7 @@
                     <ItemsControl ItemsSource="{Binding DexSwapFields}">
                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="sd:SetField">
                           <StackPanel Spacing="5" Margin="4">
                             <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
                             <Border Height="30" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="6" Background="{DynamicResource Surface0}" Padding="8,0">
@@ -580,7 +589,7 @@
                     </ItemsControl>
                     <ItemsControl ItemsSource="{Binding DexFlags}" Margin="0,8,0,0">
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="bd:GuardToggle">
                           <Button Classes="FlatChrome" Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" BorderThickness="0" CornerRadius="6" Background="Transparent" Padding="8,8">
                             <Grid ColumnDefinitions="*,12,Auto">
                               <StackPanel Grid.Column="0" Spacing="2">
@@ -623,12 +632,12 @@
                                Text="Optional keys for everything the terminal reads outside the exchanges — wallet history, on-chain metrics, liquidations, news, DEX quotes. The terminal runs without them; a desk whose key is missing simply stays empty. Keys are encrypted with DPAPI on this PC and are never written into a configuration profile." />
                     <ItemsControl ItemsSource="{Binding IntGroups}" Margin="0,12,0,0">
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="sd:IntegrationGroupVM">
                           <StackPanel Margin="0,0,0,8">
                             <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" Margin="0,0,0,6" />
                             <ItemsControl ItemsSource="{Binding Items}">
                               <ItemsControl.ItemTemplate>
-                                <DataTemplate>
+                                <DataTemplate x:DataType="sd:IntegrationRowVM">
                                   <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="9" Background="{DynamicResource Surface0}" Padding="12" Margin="0,0,0,4">
                                     <StackPanel>
                                       <Grid ColumnDefinitions="Auto,9,Auto,9,Auto,*,Auto" Margin="0,0,0,8">
@@ -678,7 +687,7 @@
                     </Grid>
                     <ItemsControl ItemsSource="{Binding NtChannels}">
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="sd:NtChannelVM">
                           <Border BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="9" Background="{DynamicResource Surface0}" Margin="0,0,0,6" ClipToBounds="True">
                             <StackPanel>
                               <Button Classes="FlatChrome" Command="{Binding ToggleOpenCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" BorderThickness="0" Background="Transparent" Padding="12,10">
@@ -693,9 +702,9 @@
                               <StackPanel IsVisible="{Binding Open}" Margin="12,0,12,12">
                                 <TextBlock Text="{Binding Hint}" TextWrapping="Wrap" FontSize="{DynamicResource FsMicro}" LineHeight="16" Foreground="{DynamicResource TextDim}" Margin="0,0,0,10" />
                                 <ItemsControl ItemsSource="{Binding Fields}">
-                                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding Cols}" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid x:DataType="sd:NtChannelVM" Columns="{Binding Cols}" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                   <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
+                                    <DataTemplate x:DataType="sd:SetField">
                                       <StackPanel Spacing="5" Margin="4">
                                         <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
                                         <Border Height="29" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="6" Background="{DynamicResource Surface0}" Padding="8,0">
@@ -768,7 +777,7 @@
                       <TextBlock Text="PENDING SIGNALS" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" Margin="0,0,0,6" />
                       <ItemsControl ItemsSource="{Binding Pending}">
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="sd:PendingSignalVM">
                             <Border BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="7" Background="{DynamicResource Surface0}" Padding="10,8" Margin="0,0,0,4">
                               <Grid ColumnDefinitions="*,9,Auto,5,Auto">
                                 <StackPanel Grid.Column="0" Spacing="2">
@@ -808,7 +817,7 @@
                     <ItemsControl ItemsSource="{Binding Examples}" Margin="0,8,0,0">
                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="sd:ExampleChip">
                           <Button Classes="FlatChrome" Command="{Binding Command}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="5" Background="{DynamicResource Surface0}" Padding="8,4" Content="{Binding Label}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" Margin="0,0,6,0" />
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
@@ -841,7 +850,7 @@
                         <ItemsControl ItemsSource="{Binding NewChannels}">
                           <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="5" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                           <ItemsControl.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="sd:ChannelChip">
                               <Button Classes="FlatChrome" Command="{Binding Command}" Height="29" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="6" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Padding="10,0" Content="{Binding Label}" Foreground="{Binding Fg, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                             </DataTemplate>
                           </ItemsControl.ItemTemplate>
@@ -890,7 +899,7 @@
                     </Border>
                     <ItemsControl ItemsSource="{Binding Alerts}">
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="sd:AlertRowVM">
                           <Border Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Padding="12,8">
                             <Grid ColumnDefinitions="7,10,104,*,Auto,10,Auto,10,62,10,Auto,5,Auto">
                               <Border Grid.Column="0" Width="7" Height="7" CornerRadius="4" Background="{Binding Dot, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
@@ -900,7 +909,7 @@
                               <ItemsControl Grid.Column="6" ItemsSource="{Binding Channels}" VerticalAlignment="Center">
                                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
-                                  <DataTemplate>
+                                  <DataTemplate x:DataType="x:String">
                                     <Border BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="4" Background="{DynamicResource Surface0}" Padding="6,2">
                                       <TextBlock Text="{Binding}" Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                                     </Border>
@@ -930,7 +939,7 @@
                     <ScrollViewer MaxHeight="168" VerticalScrollBarVisibility="Auto" Padding="12,8">
                       <ItemsControl ItemsSource="{Binding History}">
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="sd:HistoryRow">
                             <Grid ColumnDefinitions="Auto,11,78,*" Margin="0,0,0,2">
                               <TextBlock Grid.Column="0" Text="{Binding Time}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}" />
                               <TextBlock Grid.Column="2" Text="{Binding Channel}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
@@ -954,7 +963,7 @@
                     <ItemsControl ItemsSource="{Binding ExecFields}">
                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="sd:SetField">
                           <StackPanel Spacing="5" Margin="6">
                             <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" />
                             <ComboBox IsVisible="{Binding IsSelect}" ItemsSource="{Binding Options}" SelectedItem="{Binding Value, Mode=TwoWay}" Height="29" Padding="6,0" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" HorizontalAlignment="Stretch" />
@@ -971,7 +980,7 @@
                     <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,1,0,0" Margin="0,12,0,0" Padding="0,12,0,0">
                       <ItemsControl ItemsSource="{Binding ExecFlags}">
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="bd:GuardToggle">
                             <Button Classes="FlatChrome" Command="{Binding Command}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" BorderThickness="0" CornerRadius="6" Background="Transparent" Padding="8,8">
                               <Grid ColumnDefinitions="*,12,Auto">
                                 <StackPanel Grid.Column="0" Spacing="2">
@@ -1000,7 +1009,7 @@
                                Text="Single-key shortcuts, active only when no input field is focused. Changes apply immediately." />
                     <ItemsControl ItemsSource="{Binding Hotkeys}">
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="sd:HotkeyRowVM">
                           <Border CornerRadius="6" Background="{Binding Bg, Converter={StaticResource StringToBrush}}" Padding="8,6" Margin="0,0,0,2">
                             <Grid ColumnDefinitions="*,10,52,10,112,10,Auto">
                               <TextBlock Grid.Column="0" Text="{Binding Label}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
@@ -1026,7 +1035,7 @@
       </DockPanel>
 
       <!-- ═══ confirm modal ═══ -->
-      <Border IsVisible="{Binding ModalConfirm}" Background="#BC02060A" ZIndex="95">
+      <Border IsVisible="{Binding ModalConfirm}" Background="#BC02060A" ZIndex="95" x:DataType="sd:SettingsDeskViewModel">
         <Border Width="460" VerticalAlignment="Center" HorizontalAlignment="Center" BorderBrush="{Binding ConfirmAccent, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="12" Background="{DynamicResource Surface1}" ClipToBounds="True">
           <StackPanel>
             <StackPanel Margin="16,14,16,14">
@@ -1057,7 +1066,7 @@
       </Border>
 
       <!-- ═══ toast ═══ -->
-      <Border IsVisible="{Binding HasToast}" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,40" ZIndex="99"
+      <Border x:DataType="sd:SettingsDeskViewModel" IsVisible="{Binding HasToast}" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,40" ZIndex="99"
               BorderBrush="{Binding ToastBorder, Converter={StaticResource StringToBrush}}" BorderThickness="1" CornerRadius="8" Background="{DynamicResource Surface1}" Padding="14,8">
         <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
           <TextBlock Text="{Binding ToastIcon}" Foreground="{Binding ToastColor, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsCaption}" VerticalAlignment="Center" />

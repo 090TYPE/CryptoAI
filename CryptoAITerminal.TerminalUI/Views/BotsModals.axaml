@@ -1,8 +1,10 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:CryptoAITerminal.TerminalUI.Converters"
+             xmlns:bd="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels.BotsDesk"
              x:Class="CryptoAITerminal.TerminalUI.Views.BotsModals"
-             x:CompileBindings="False"
+             x:DataType="bd:BotsDeskViewModel"
+             x:CompileBindings="True"
              FontFamily="{StaticResource FontDisplay}"
              IsHitTestVisible="True">
 
@@ -12,6 +14,8 @@
     <Style Selector="Slider"><Setter Property="Foreground" Value="{DynamicResource Accent}" /><Setter Property="MinHeight" Value="0" /></Style>
   </UserControl.Styles>
 
+  <!-- Hosted by BotsView inside its <Grid DataContext="{Binding BotsDesk}">, so the context inherited
+       here is the desk, not MainWindowViewModel — hence x:DataType="bd:BotsDeskViewModel" on the root. -->
   <Panel>
 
     <!-- ═══════════ COLUMNS MODAL ═══════════ -->
@@ -29,7 +33,7 @@
               <ItemsControl ItemsSource="{Binding ColumnToggles}">
                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
-                  <DataTemplate>
+                  <DataTemplate x:DataType="bd:ColumnToggle">
                     <Button Classes="FlatChrome" Command="{Binding Command}" Margin="0,0,4,4" Padding="8,6" CornerRadius="6" BorderThickness="1" HorizontalContentAlignment="Left"
                             Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}">
                       <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
@@ -46,7 +50,7 @@
               <ItemsControl ItemsSource="{Binding ActionToggles}">
                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
-                  <DataTemplate>
+                  <DataTemplate x:DataType="bd:ActionToggle">
                     <Button Classes="FlatChrome" Command="{Binding Command}" Margin="0,0,4,4" Padding="8,6" CornerRadius="6" BorderThickness="1" HorizontalContentAlignment="Left"
                             Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}">
                       <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
@@ -81,7 +85,7 @@
               <ItemsControl Grid.Column="1" ItemsSource="{Binding WizardSteps}" VerticalAlignment="Center">
                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="6" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
-                  <DataTemplate>
+                  <DataTemplate x:DataType="bd:WizardStep">
                     <Button Classes="FlatChrome" Command="{Binding Command}" Height="23" Padding="10,0" CornerRadius="11" BorderThickness="1"
                             Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}">
                       <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
@@ -110,7 +114,7 @@
               <ItemsControl IsVisible="{Binding WizStep1}" ItemsSource="{Binding Templates}">
                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
-                  <DataTemplate>
+                  <DataTemplate x:DataType="bd:TemplateCard">
                     <Button Classes="FlatChrome" Command="{Binding Pick}" Margin="4" Padding="12" CornerRadius="10" BorderThickness="1" HorizontalContentAlignment="Stretch"
                             Background="{Binding PickBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding PickBorder, Converter={StaticResource StringToBrush}}">
                       <StackPanel Spacing="7">
@@ -161,7 +165,7 @@
                       <TextBlock Text="{Binding WizParamsTitle}" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Margin="0,0,0,10" />
                       <ItemsControl ItemsSource="{Binding WizParams}">
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="bd:WizParamViewModel">
                             <StackPanel Margin="0,0,0,12" Spacing="6">
                               <Grid ColumnDefinitions="*,Auto">
                                 <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />
@@ -182,7 +186,7 @@
                       <ItemsControl ItemsSource="{Binding WizProjection}">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="bd:KvRow">
                             <StackPanel Spacing="3" Margin="0,0,0,10">
                               <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
                               <TextBlock Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsSubhead}" Foreground="{Binding Color, Converter={StaticResource StringToBrush}}" />
@@ -215,7 +219,7 @@
                       <ItemsControl ItemsSource="{Binding WizModes}">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="bd:WizardMode">
                             <Button Classes="FlatChrome" Command="{Binding Command}" Margin="0,0,8,0" Padding="10" CornerRadius="8" BorderThickness="1" HorizontalContentAlignment="Left"
                                     Background="{Binding Bg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding Border, Converter={StaticResource StringToBrush}}">
                               <StackPanel Spacing="5">
@@ -236,7 +240,7 @@
                       <TextBlock Text="GUARDS" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Margin="0,0,0,8" />
                       <ItemsControl ItemsSource="{Binding WizGuards}">
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate>
+                          <DataTemplate x:DataType="bd:GuardToggle">
                             <Button Classes="FlatChrome" Command="{Binding Command}" Background="Transparent" BorderThickness="0" Padding="8,6" CornerRadius="6" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch">
                               <Grid ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0" Spacing="2">
@@ -259,7 +263,7 @@
                     <TextBlock Text="REVIEW" Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Margin="0,0,0,10" />
                     <ItemsControl ItemsSource="{Binding WizReview}">
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate>
+                        <DataTemplate x:DataType="bd:KvRow">
                           <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Padding="0,8">
                             <Grid ColumnDefinitions="*,Auto">
                               <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextDim}" />
@@ -293,7 +297,7 @@
             <ItemsControl IsVisible="{Binding ConfirmHasChecks}" ItemsSource="{Binding ConfirmChecks}" Margin="0,12,0,0">
               <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
               <ItemsControl.ItemTemplate>
-                <DataTemplate>
+                <DataTemplate x:DataType="bd:ConfirmCheck">
                   <Button Classes="FlatChrome" Command="{Binding Command}" Padding="8,8" CornerRadius="6" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch">
                     <StackPanel Orientation="Horizontal" Spacing="9">
                       <Border Width="13" Height="13" CornerRadius="3" BorderThickness="1" Margin="0,1,0,0" VerticalAlignment="Top" Background="{Binding BoxBg, Converter={StaticResource StringToBrush}}" BorderBrush="{Binding BoxBorder, Converter={StaticResource StringToBrush}}">
@@ -345,7 +349,7 @@
             <StackPanel>
               <ItemsControl ItemsSource="{Binding PanelRows}">
                 <ItemsControl.ItemTemplate>
-                  <DataTemplate>
+                  <DataTemplate x:DataType="bd:KvRow">
                     <Border BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="0,0,0,1" Padding="0,8">
                       <Grid ColumnDefinitions="*,Auto">
                         <TextBlock Text="{Binding Label}" FontSize="{DynamicResource FsCaption}" Foreground="{DynamicResource TextMuted}" />

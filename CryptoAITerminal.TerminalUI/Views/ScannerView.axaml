@@ -391,11 +391,14 @@
                         <TextBlock Grid.Column="0" Classes="H2" Text="Price History" />
                         <WrapPanel Grid.Column="1" Orientation="Horizontal"
                                    VerticalAlignment="Center">
+                          <!-- Background was bound through IsNotNullOrEmpty, which yields a bool and
+                               never resolved to a brush; the view model already exposes the per-key
+                               hex string used for active-timeframe highlighting. -->
                           <Button Content="15M"
                                   Command="{Binding SelectChartRangeCommand}"
                                   CommandParameter="15M"
                                   Classes="GhostButton" Width="52" Margin="0,0,6,0"
-                                  Background="{Binding SelectedChartRange, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                  Background="{Binding DexTimeframe15MBackground, Converter={StaticResource StringToBrush}}" />
                           <Button Content="4H"
                                   Command="{Binding SelectChartRangeCommand}"
                                   CommandParameter="4H"

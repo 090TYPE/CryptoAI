@@ -59,12 +59,13 @@
         <ItemsControl.Styles>
           <!-- The setters bind the ContentPresenter's item (DashboardWidget), not this view's
                DataContext, and a Style carries no x:DataType — a compiled binding would resolve
-               Col/Row against DashboardLayoutViewModel and fail. -->
-          <Style Selector="ContentPresenter" x:CompileBindings="False">
-            <Setter Property="(ctrl:WidgetGridPanel.Col)"     Value="{Binding Col}" />
-            <Setter Property="(ctrl:WidgetGridPanel.Row)"     Value="{Binding Row}" />
-            <Setter Property="(ctrl:WidgetGridPanel.ColSpan)" Value="{Binding ColSpan}" />
-            <Setter Property="(ctrl:WidgetGridPanel.RowSpan)" Value="{Binding RowSpan}" />
+               Col/Row against DashboardLayoutViewModel and fail. Reflection binding per setter,
+               so the rest of the file stays compiled. -->
+          <Style Selector="ContentPresenter">
+            <Setter Property="(ctrl:WidgetGridPanel.Col)"     Value="{ReflectionBinding Col}" />
+            <Setter Property="(ctrl:WidgetGridPanel.Row)"     Value="{ReflectionBinding Row}" />
+            <Setter Property="(ctrl:WidgetGridPanel.ColSpan)" Value="{ReflectionBinding ColSpan}" />
+            <Setter Property="(ctrl:WidgetGridPanel.RowSpan)" Value="{ReflectionBinding RowSpan}" />
           </Style>
         </ItemsControl.Styles>
         <ItemsControl.ItemTemplate>

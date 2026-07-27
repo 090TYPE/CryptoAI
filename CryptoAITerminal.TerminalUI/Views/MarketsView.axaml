@@ -3,7 +3,7 @@
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
              x:Class="CryptoAITerminal.TerminalUI.Views.MarketsView"
-             x:DataType="vm:MainWindowViewModel"
+             x:DataType="vm:MarketFeedOwnerViewModel"
              x:CompileBindings="True"
              FontFamily="{StaticResource FontDisplay}">
 
@@ -166,13 +166,9 @@
     </Style>
   </UserControl.Styles>
 
-  <!-- The whole board runs on the market-feed owner, not on the shell. x:DataType cannot sit on the
-       node that switches DataContext: it would also retype that node's own {Binding MarketFeedVM},
-       which has to resolve against MainWindowViewModel. Hence this Panel switches the context and
-       the type is declared on its single child. -->
-  <Panel DataContext="{Binding MarketFeedVM}">
-  <Grid RowDefinitions="52,*" Background="{DynamicResource Surface0}"
-        x:DataType="vm:MarketFeedOwnerViewModel">
+  <!-- The whole board runs on the market-feed owner, which is handed in as this view's DataContext
+       at MainWindow.axaml:509 — the shell is not in the picture here at all. -->
+  <Grid RowDefinitions="52,*" Background="{DynamicResource Surface0}">
 
     <!-- ============================================================
          TOP STATS STRIP
@@ -544,7 +540,7 @@
                       Foreground="{Binding FavoriteBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold"
                       Padding="10,6" CornerRadius="7" MinHeight="0"
                       VerticalAlignment="Center"
-                      Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.ToggleMarketFavoriteCommand}"
+                      Command="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).ToggleMarketFavoriteCommand}"
                       CommandParameter="{Binding}" />
             </Grid>
 
@@ -622,25 +618,25 @@
                      whose context is the shell — one hop further than the buttons above it. -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
                   <Button Classes="tf" Content="15M"
-                          Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.SelectMarketTimeframeCommand}" CommandParameter="15M"
-                          Background="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.SelectedMarketTimeframe, Converter={StaticResource TfActiveBg}, ConverterParameter=15M}"
-                          BorderBrush="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.SelectedMarketTimeframe, Converter={StaticResource TfActiveBorder}, ConverterParameter=15M}"
-                          Foreground="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.SelectedMarketTimeframe, Converter={StaticResource TfActiveText}, ConverterParameter=15M}" />
+                          Command="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).SelectMarketTimeframeCommand}" CommandParameter="15M"
+                          Background="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).SelectedMarketTimeframe, Converter={StaticResource TfActiveBg}, ConverterParameter=15M}"
+                          BorderBrush="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).SelectedMarketTimeframe, Converter={StaticResource TfActiveBorder}, ConverterParameter=15M}"
+                          Foreground="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).SelectedMarketTimeframe, Converter={StaticResource TfActiveText}, ConverterParameter=15M}" />
                   <Button Classes="tf" Content="1H"
-                          Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.SelectMarketTimeframeCommand}" CommandParameter="1H"
-                          Background="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.SelectedMarketTimeframe, Converter={StaticResource TfActiveBg}, ConverterParameter=1H}"
-                          BorderBrush="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.SelectedMarketTimeframe, Converter={StaticResource TfActiveBorder}, ConverterParameter=1H}"
-                          Foreground="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.SelectedMarketTimeframe, Converter={StaticResource TfActiveText}, ConverterParameter=1H}" />
+                          Command="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).SelectMarketTimeframeCommand}" CommandParameter="1H"
+                          Background="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).SelectedMarketTimeframe, Converter={StaticResource TfActiveBg}, ConverterParameter=1H}"
+                          BorderBrush="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).SelectedMarketTimeframe, Converter={StaticResource TfActiveBorder}, ConverterParameter=1H}"
+                          Foreground="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).SelectedMarketTimeframe, Converter={StaticResource TfActiveText}, ConverterParameter=1H}" />
                   <Button Classes="tf" Content="4H"
-                          Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.SelectMarketTimeframeCommand}" CommandParameter="4H"
-                          Background="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.SelectedMarketTimeframe, Converter={StaticResource TfActiveBg}, ConverterParameter=4H}"
-                          BorderBrush="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.SelectedMarketTimeframe, Converter={StaticResource TfActiveBorder}, ConverterParameter=4H}"
-                          Foreground="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.SelectedMarketTimeframe, Converter={StaticResource TfActiveText}, ConverterParameter=4H}" />
+                          Command="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).SelectMarketTimeframeCommand}" CommandParameter="4H"
+                          Background="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).SelectedMarketTimeframe, Converter={StaticResource TfActiveBg}, ConverterParameter=4H}"
+                          BorderBrush="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).SelectedMarketTimeframe, Converter={StaticResource TfActiveBorder}, ConverterParameter=4H}"
+                          Foreground="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).SelectedMarketTimeframe, Converter={StaticResource TfActiveText}, ConverterParameter=4H}" />
                   <Button Classes="tf" Content="1D"
-                          Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.SelectMarketTimeframeCommand}" CommandParameter="1D"
-                          Background="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.SelectedMarketTimeframe, Converter={StaticResource TfActiveBg}, ConverterParameter=1D}"
-                          BorderBrush="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.SelectedMarketTimeframe, Converter={StaticResource TfActiveBorder}, ConverterParameter=1D}"
-                          Foreground="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.SelectedMarketTimeframe, Converter={StaticResource TfActiveText}, ConverterParameter=1D}" />
+                          Command="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).SelectMarketTimeframeCommand}" CommandParameter="1D"
+                          Background="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).SelectedMarketTimeframe, Converter={StaticResource TfActiveBg}, ConverterParameter=1D}"
+                          BorderBrush="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).SelectedMarketTimeframe, Converter={StaticResource TfActiveBorder}, ConverterParameter=1D}"
+                          Foreground="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).SelectedMarketTimeframe, Converter={StaticResource TfActiveText}, ConverterParameter=1D}" />
                 </StackPanel>
               </Grid>
               <Border Background="{DynamicResource Surface1}" CornerRadius="10" Padding="6" Height="120">
@@ -736,7 +732,7 @@
                     Background="Transparent" BorderBrush="{DynamicResource Accent}" BorderThickness="1"
                     Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsBody}" FontWeight="Bold"
                     Padding="0,12" CornerRadius="10"
-                    Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).MarketFeedVM.OpenMarketInTradingCommand}"
+                    Command="{Binding $parent[UserControl].((vm:MarketFeedOwnerViewModel)DataContext).OpenMarketInTradingCommand}"
                     CommandParameter="{Binding}" />
 
           </StackPanel>
@@ -745,5 +741,4 @@
 
     </Grid>
   </Grid>
-  </Panel>
 </UserControl>

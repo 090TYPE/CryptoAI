@@ -4,7 +4,7 @@
              xmlns:dash="clr-namespace:CryptoAITerminal.TerminalUI.Views.Dashboard"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.WidgetHost"
              x:DataType="vmd:DashboardWidget"
-             x:CompileBindings="False">
+             x:CompileBindings="True">
   <UserControl.Styles>
     <!-- shared placeholder for widgets whose list is empty; declared here so every widget
          hosted in the Body presenter picks it up without repeating the setters -->
@@ -28,29 +28,35 @@
         <Border Grid.Column="1" Width="3" Height="13" CornerRadius="2" Background="{DynamicResource Accent}"
                 Margin="0,0,8,0" VerticalAlignment="Center" />
         <TextBlock Grid.Column="2" Text="{Binding Title}" Classes="WidgetTitle" VerticalAlignment="Center" />
+        <!-- Size / remove buttons. $parent[ItemsControl] is the widget ItemsControl in
+             DashboardView (its ItemsPanel is a WidgetGridPanel and the item wrapper is a plain
+             ContentPresenter, so nothing closer matches) and that ItemsControl inherits
+             DashboardView's DataContext — hence the DashboardLayoutViewModel cast. Do not nest
+             these buttons inside another ItemsControl: the nearest ancestor would change and the
+             cast would then be a hard runtime failure instead of a silent one. -->
         <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="3" Margin="0,0,6,0"
                     IsVisible="{Binding $parent[dash:WidgetHost].IsEditMode}">
           <Button Content="W−" FontSize="{DynamicResource FsCaption}" Padding="6,2" ToolTip.Tip="Narrower"
                   AutomationProperties.Name="Make widget narrower"
-                  Command="{Binding $parent[ItemsControl].DataContext.NarrowCommand}"
+                  Command="{Binding $parent[ItemsControl].((vmd:DashboardLayoutViewModel)DataContext).NarrowCommand}"
                   CommandParameter="{Binding}" />
           <Button Content="W+" FontSize="{DynamicResource FsCaption}" Padding="6,2" ToolTip.Tip="Wider"
                   AutomationProperties.Name="Make widget wider"
-                  Command="{Binding $parent[ItemsControl].DataContext.WidenCommand}"
+                  Command="{Binding $parent[ItemsControl].((vmd:DashboardLayoutViewModel)DataContext).WidenCommand}"
                   CommandParameter="{Binding}" />
           <Button Content="H−" FontSize="{DynamicResource FsCaption}" Padding="6,2" ToolTip.Tip="Shorter"
                   AutomationProperties.Name="Make widget shorter"
-                  Command="{Binding $parent[ItemsControl].DataContext.ShorterCommand}"
+                  Command="{Binding $parent[ItemsControl].((vmd:DashboardLayoutViewModel)DataContext).ShorterCommand}"
                   CommandParameter="{Binding}" />
           <Button Content="H+" FontSize="{DynamicResource FsCaption}" Padding="6,2" ToolTip.Tip="Taller"
                   AutomationProperties.Name="Make widget taller"
-                  Command="{Binding $parent[ItemsControl].DataContext.TallerCommand}"
+                  Command="{Binding $parent[ItemsControl].((vmd:DashboardLayoutViewModel)DataContext).TallerCommand}"
                   CommandParameter="{Binding}" />
         </StackPanel>
         <Button Grid.Column="4" Content="✕" Classes="GhostButton"
                 ToolTip.Tip="Remove widget" AutomationProperties.Name="Remove widget"
                 IsVisible="{Binding $parent[dash:WidgetHost].IsEditMode}"
-                Command="{Binding $parent[ItemsControl].DataContext.RemoveWidgetCommand}"
+                Command="{Binding $parent[ItemsControl].((vmd:DashboardLayoutViewModel)DataContext).RemoveWidgetCommand}"
                 CommandParameter="{Binding}" />
       </Grid>
       <ContentControl Grid.Row="1" x:Name="Body" />

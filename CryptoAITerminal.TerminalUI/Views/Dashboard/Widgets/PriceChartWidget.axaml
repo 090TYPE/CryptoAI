@@ -2,9 +2,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
              xmlns:ctrl="clr-namespace:CryptoAITerminal.TerminalUI.Controls"
+             xmlns:conv="clr-namespace:CryptoAITerminal.TerminalUI.Converters"
              x:Class="CryptoAITerminal.TerminalUI.Views.Dashboard.Widgets.PriceChartWidget"
              x:DataType="vm:MainWindowViewModel"
              x:CompileBindings="True">
+  <UserControl.Resources>
+    <conv:StringEqualsConverter x:Key="StrEq" />
+  </UserControl.Resources>
   <Grid RowDefinitions="Auto,*,Auto" RowSpacing="10">
 
     <!-- Symbol + timeframe toolbar -->
@@ -19,18 +23,20 @@
                    FontWeight="SemiBold" VerticalAlignment="Center" />
       </StackPanel>
       <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+        <!-- Same mechanism as the trading desk: the .active class carries the accent, so the
+             widget no longer needs a dozen hard-coded hex chip properties on the shell. -->
         <Button Classes="TfButton" Content="1m"  Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="1M"
-                Background="{Binding Timeframe1MBackground, Converter={StaticResource StringToBrush}}"  Foreground="{Binding Timeframe1MForeground, Converter={StaticResource StringToBrush}}" />
+                Classes.active="{Binding ChartPanelVM.SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=1M}" />
         <Button Classes="TfButton" Content="5m"  Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="5M"
-                Background="{Binding Timeframe5MBackground, Converter={StaticResource StringToBrush}}"  Foreground="{Binding Timeframe5MForeground, Converter={StaticResource StringToBrush}}" />
+                Classes.active="{Binding ChartPanelVM.SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=5M}" />
         <Button Classes="TfButton" Content="15m" Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="15M"
-                Background="{Binding Timeframe15MBackground, Converter={StaticResource StringToBrush}}" Foreground="{Binding Timeframe15MForeground, Converter={StaticResource StringToBrush}}" />
+                Classes.active="{Binding ChartPanelVM.SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=15M}" />
         <Button Classes="TfButton" Content="1H"  Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="1H"
-                Background="{Binding Timeframe1HBackground, Converter={StaticResource StringToBrush}}"  Foreground="{Binding Timeframe1HForeground, Converter={StaticResource StringToBrush}}" />
+                Classes.active="{Binding ChartPanelVM.SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=1H}" />
         <Button Classes="TfButton" Content="4H"  Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="4H"
-                Background="{Binding Timeframe4HBackground, Converter={StaticResource StringToBrush}}"  Foreground="{Binding Timeframe4HForeground, Converter={StaticResource StringToBrush}}" />
+                Classes.active="{Binding ChartPanelVM.SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=4H}" />
         <Button Classes="TfButton" Content="1D"  Command="{Binding ChartPanelVM.SelectTradeTimeframeCommand}" CommandParameter="1D"
-                Background="{Binding Timeframe1DBackground, Converter={StaticResource StringToBrush}}"  Foreground="{Binding Timeframe1DForeground, Converter={StaticResource StringToBrush}}" />
+                Classes.active="{Binding ChartPanelVM.SelectedTradeTimeframe, Converter={StaticResource StrEq}, ConverterParameter=1D}" />
       </StackPanel>
     </Grid>
 
