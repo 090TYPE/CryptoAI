@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CryptoAITerminal.Server.Common;
 using CryptoAITerminal.Server.Data;
 using Microsoft.Extensions.Logging;
 
@@ -14,14 +15,28 @@ public abstract class AiDigestJob : IDataCollector
 {
     private readonly ProviderKeyStore _keys;
     private readonly AiProxy _ai;
+    private readonly SettingsStore _settings;
+    private readonly string? _envModel;
     private readonly ILogger _log;
     protected readonly AiDigestRepository Digests;
-    protected readonly string Model;
 
-    protected AiDigestJob(ProviderKeyStore keys, AiProxy ai, AiDigestRepository digests, string model, ILogger log)
+    protected AiDigestJob(ProviderKeyStore keys, AiProxy ai, AiDigestRepository digests,
+        SettingsStore settings, string? envModel, ILogger log)
     {
-        _keys = keys; _ai = ai; Digests = digests; Model = model; _log = log;
+        _keys = keys; _ai = ai; Digests = digests; _settings = settings; _envModel = envModel; _log = log;
     }
+
+    /// <summary>
+    /// The model to run this publication on, resolved per run rather than per process.
+    ///
+    /// This is the difference between an operator being able to move 31 digests onto a cheaper
+    /// model from an admin screen and having to edit .env and restart the worker. The old code
+    /// captured the value in the constructor, so a change could not take effect while the job
+    /// existed — and the job exists for as long as the process does.
+    /// </summary>
+    private async Task<string> ModelAsync(CancellationToken ct) =>
+        await _settings.GetAsync(SettingKeys.DigestModel, _envModel, ct).ConfigureAwait(false)
+        ?? SettingKeys.DefaultBackgroundModel;
 
     /// <summary>Stable id of this digest stream (also the ai_digests.kind).</summary>
     public abstract string Kind { get; }
@@ -40,6 +55,9 @@ public abstract class AiDigestJob : IDataCollector
 
     public async Task<int> CollectAsync(CancellationToken ct)
     {
+        // Checked before the due-date test so the kill switch stops spend on the next tick rather
+        // than at the next period boundary, which for the weekly recap is seven days away.
+        if (!await _settings.GetBoolAsync(SettingKeys.AiEnabled, true, ct)) return 0;
         if (string.IsNullOrWhiteSpace(await _keys.GetAsync("anthropic", ct))) return 0;
 
         var last = await Digests.LastAtAsync(Kind, ct);
@@ -48,25 +66,26 @@ public abstract class AiDigestJob : IDataCollector
         var facts = await BuildFactsAsync(ct);
         if (string.IsNullOrWhiteSpace(facts)) return 0;
 
-        var res = await _ai.ForwardAnthropicAsync(BuildRequest(facts), ct);
+        var model = await ModelAsync(ct);
+        var res = await _ai.ForwardAnthropicAsync(BuildRequest(facts, model), ct);
         if (res is null) return 0;
         if (res.Value.Status != 200)
         {
-            _log.LogWarning("{Kind}: upstream {Status}", Kind, res.Value.Status);
+            _log.LogWarning("{Kind}: upstream {Status} on {Model}", Kind, res.Value.Status, model);
             return 0;
         }
 
         var parsed = Parse(res.Value.Body);
         if (parsed is null) { _log.LogWarning("{Kind}: unparsable model output", Kind); return 0; }
 
-        await Digests.InsertAsync(Kind, parsed.Value.Title, parsed.Value.Body, Model, ct);
+        await Digests.InsertAsync(Kind, parsed.Value.Title, parsed.Value.Body, model, ct);
         _log.LogInformation("{Kind} published: {Title}", Kind, parsed.Value.Title);
         return 1;
     }
 
-    private string BuildRequest(string facts) => JsonSerializer.Serialize(new
+    private string BuildRequest(string facts, string model) => JsonSerializer.Serialize(new
     {
-        model = Model,
+        model,
         max_tokens = 900,
         system = SystemPrompt + " Reply with ONLY JSON: {\"title\":\"<=10 words\",\"body\":\"markdown, concise\"}. " +
                  "Ground every claim in the given facts; never invent numbers.",

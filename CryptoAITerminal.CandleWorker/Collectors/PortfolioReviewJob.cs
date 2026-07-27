@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CryptoAITerminal.Server.Common;
 using CryptoAITerminal.Server.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -17,18 +18,19 @@ public sealed class PortfolioReviewJob : IDataCollector
     private readonly PersonalAiRepository _personal;
     private readonly AiProxy _ai;
     private readonly INotifier _notifier;
+    private readonly SettingsStore _settings;
     private readonly ILogger<PortfolioReviewJob> _log;
-    private readonly string _model;
-    private readonly int _days;
-    private readonly int _batch;
+    private readonly string? _envModel;
+    private readonly string? _envDays;
+    private readonly string? _envBatch;
 
     public PortfolioReviewJob(ProviderKeyStore keys, PersonalAiRepository personal, AiProxy ai,
-        INotifier notifier, IConfiguration cfg, ILogger<PortfolioReviewJob> log)
+        INotifier notifier, SettingsStore settings, IConfiguration cfg, ILogger<PortfolioReviewJob> log)
     {
-        _keys = keys; _personal = personal; _ai = ai; _notifier = notifier; _log = log;
-        _model = cfg["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001";
-        _days = int.TryParse(cfg["AI_REVIEW_DAYS"], out var d) ? d : 7;
-        _batch = int.TryParse(cfg["AI_REVIEW_BATCH"], out var b) ? b : 3;
+        _keys = keys; _personal = personal; _ai = ai; _notifier = notifier; _settings = settings; _log = log;
+        _envModel = cfg["AI_DIGEST_MODEL"];
+        _envDays = cfg["AI_REVIEW_DAYS"];
+        _envBatch = cfg["AI_REVIEW_BATCH"];
     }
 
     public string Name => "portfolio_review";
@@ -36,17 +38,25 @@ public sealed class PortfolioReviewJob : IDataCollector
 
     public async Task<int> CollectAsync(CancellationToken ct)
     {
+        if (!await _settings.GetBoolAsync(SettingKeys.AiEnabled, true, ct)) return 0;
         if (string.IsNullOrWhiteSpace(await _keys.GetAsync("anthropic", ct))) return 0;
 
+        // Its own key rather than the digest one: this is the knob that turns weekly reviews into
+        // daily for the top tier, and it must move without dragging the 31 digests with it.
+        var model = await _settings.GetAsync(SettingKeys.ReviewModel, _envModel, ct)
+                    ?? SettingKeys.DefaultBackgroundModel;
+        var days = await _settings.GetIntAsync(SettingKeys.ReviewDays, SettingsStore.AsInt(_envDays, 7), ct);
+        var batch = await _settings.GetIntAsync(SettingKeys.ReviewBatch, SettingsStore.AsInt(_envBatch, 3), ct);
+
         var sent = 0;
-        foreach (var userId in await _personal.GetUsersDueForReviewAsync(_days, _batch, ct))
+        foreach (var userId in await _personal.GetUsersDueForReviewAsync(days, batch, ct))
         {
             try
             {
                 var facts = await _personal.GetUserPortfolioFactsAsync(userId, ct);
                 if (facts.Count == 0) continue;
 
-                var res = await _ai.ForwardAnthropicAsync(BuildRequest(facts), ct);
+                var res = await _ai.ForwardAnthropicAsync(BuildRequest(facts, model), ct);
                 if (res is null) return sent;
                 if (res.Value.Status != 200)
                 {
@@ -67,9 +77,9 @@ public sealed class PortfolioReviewJob : IDataCollector
         return sent;
     }
 
-    private string BuildRequest(IReadOnlyList<dynamic> facts) => JsonSerializer.Serialize(new
+    private static string BuildRequest(IReadOnlyList<dynamic> facts, string model) => JsonSerializer.Serialize(new
     {
-        model = _model,
+        model,
         max_tokens = 700,
         system = "Review this trader's watchlist: concentration, the riskiest names they follow, what looks " +
                  "structurally weak (thin liquidity, honeypot flags, whale-held supply), and what deserves a look. " +

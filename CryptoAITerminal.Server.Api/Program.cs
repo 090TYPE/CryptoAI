@@ -351,8 +351,14 @@ static async Task<string?> ReadBoundedBodyAsync(HttpContext ctx, int maxChars)
 }
 
 static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiProxy ai,
-    AiPolicyOptions policy, AiBudget budget)
+    AiPolicyOptions policy, AiBudget budget, SettingsStore settings)
 {
+    // Master switch, checked before anything is read or charged. Terminals already treat a refusal
+    // here as "fall back to the deterministic path", so flipping this degrades the product rather
+    // than breaking it — which is what makes it usable under time pressure.
+    if (!await settings.GetBoolAsync(SettingKeys.AiEnabled, true, ctx.RequestAborted))
+        return Results.Json(new { error = "ai_disabled" }, statusCode: 503);
+
     var license = LicenseKey(ctx);
     if (!budget.HasHeadroom(license))
         return Results.Json(new { error = "ai_daily_budget_exhausted", cap = budget.DailyCap }, statusCode: 429);
@@ -375,11 +381,11 @@ static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiPr
     return Results.Content(result.Value.Body, "application/json", Encoding.UTF8, result.Value.Status);
 }
 
-app.MapPost("/api/ai/message", (HttpContext ctx, AiProxy ai, AiPolicyOptions policy, AiBudget budget) =>
-    ForwardAiAsync(ctx, AiVendor.Anthropic, ai, policy, budget));
+app.MapPost("/api/ai/message", (HttpContext ctx, AiProxy ai, AiPolicyOptions policy, AiBudget budget, SettingsStore settings) =>
+    ForwardAiAsync(ctx, AiVendor.Anthropic, ai, policy, budget, settings));
 
-app.MapPost("/api/ai/openai", (HttpContext ctx, AiProxy ai, AiPolicyOptions policy, AiBudget budget) =>
-    ForwardAiAsync(ctx, AiVendor.OpenAi, ai, policy, budget));
+app.MapPost("/api/ai/openai", (HttpContext ctx, AiProxy ai, AiPolicyOptions policy, AiBudget budget, SettingsStore settings) =>
+    ForwardAiAsync(ctx, AiVendor.OpenAi, ai, policy, budget, settings));
 
 // So the terminal can show remaining allowance instead of discovering the cap via a 429.
 app.MapGet("/api/ai/budget", (HttpContext ctx, AiBudget budget) =>
@@ -395,10 +401,14 @@ app.MapGet("/api/ai/budget", (HttpContext ctx, AiBudget budget) =>
 
 // ── RAG: answer questions grounded in OUR collected data, not the model's memory ──
 app.MapPost("/api/ai/ask", async (HttpContext ctx, AskInput body, AiProxy ai,
-    PersonalAiRepository personal, AiDigestRepository digests, AiBudget budget, IConfiguration askCfg) =>
+    PersonalAiRepository personal, AiDigestRepository digests, AiBudget budget, SettingsStore settings,
+    IConfiguration askCfg) =>
 {
     if (string.IsNullOrWhiteSpace(body.Question))
         return Results.BadRequest(new { error = "question required" });
+
+    if (!await settings.GetBoolAsync(SettingKeys.AiEnabled, true, ctx.RequestAborted))
+        return Results.Json(new { error = "ai_disabled" }, statusCode: 503);
 
     // The server composes this request itself, so the model and length are already ours — but it
     // still spends the server key, so it draws on the same per-licence daily budget.
@@ -417,9 +427,10 @@ app.MapPost("/api/ai/ask", async (HttpContext ctx, AskInput body, AiProxy ai,
 
     var request = JsonSerializer.Serialize(new
     {
-        // Override with AI_ASK_MODEL. Default is the current Haiku — cheaper and better at the
-        // "answer strictly from this context, as JSON-ish prose" job than 3.5 Haiku was.
-        model = askCfg["AI_ASK_MODEL"] ?? "claude-haiku-4-5-20251001",
+        // Resolved per request: setting, then AI_ASK_MODEL, then the code default. Haiku-class —
+        // cheaper and better at the "answer strictly from this context" job than a bigger model.
+        model = await settings.GetAsync(SettingKeys.AskModel, askCfg["AI_ASK_MODEL"], ctx.RequestAborted)
+                ?? SettingKeys.DefaultBackgroundModel,
         max_tokens = 700,
         system = "Answer the trader's question using ONLY the provided context (their watchlist, our AI digests, " +
                  "recent headlines). Quote the numbers from it. If the context doesn't contain the answer, say so " +

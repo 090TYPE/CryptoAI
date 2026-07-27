@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CryptoAITerminal.Server.Common;
 using CryptoAITerminal.Server.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -17,18 +18,22 @@ public sealed class AiScoreCollector : IDataCollector
     private readonly AiScoreRepository _scores;
     private readonly ApiReadRepository _read;
     private readonly AiProxy _ai;
+    private readonly SettingsStore _settings;
     private readonly ILogger<AiScoreCollector> _log;
-    private readonly string _model;
-    private readonly int _batch;
-    private readonly int _maxAgeHours;
+    // Environment values are the middle of the resolution chain: setting, then env, then the code
+    // default. Captured once because an env var cannot change without a restart anyway; the
+    // setting on top of it is what makes the knob live.
+    private readonly string? _envModel;
+    private readonly string? _envBatch;
+    private readonly string? _envMaxAgeHours;
 
     public AiScoreCollector(ProviderKeyStore keys, AiScoreRepository scores, ApiReadRepository read,
-        AiProxy ai, IConfiguration cfg, ILogger<AiScoreCollector> log)
+        AiProxy ai, SettingsStore settings, IConfiguration cfg, ILogger<AiScoreCollector> log)
     {
-        _keys = keys; _scores = scores; _read = read; _ai = ai; _log = log;
-        _model = cfg["AI_SCORE_MODEL"] ?? "claude-haiku-4-5-20251001";
-        _batch = int.TryParse(cfg["AI_SCORE_BATCH"], out var b) ? b : 5;
-        _maxAgeHours = int.TryParse(cfg["AI_SCORE_MAX_AGE_HOURS"], out var h) ? h : 24;
+        _keys = keys; _scores = scores; _read = read; _ai = ai; _settings = settings; _log = log;
+        _envModel = cfg["AI_SCORE_MODEL"];
+        _envBatch = cfg["AI_SCORE_BATCH"];
+        _envMaxAgeHours = cfg["AI_SCORE_MAX_AGE_HOURS"];
     }
 
     public string Name => "ai_score";
@@ -36,18 +41,24 @@ public sealed class AiScoreCollector : IDataCollector
 
     public async Task<int> CollectAsync(CancellationToken ct)
     {
+        if (!await _settings.GetBoolAsync(SettingKeys.AiEnabled, true, ct)) return 0;
         if (string.IsNullOrWhiteSpace(await _keys.GetAsync("anthropic", ct)))
             return 0; // no server AI key → stay off
 
+        var model = await _settings.GetAsync(SettingKeys.ScoreModel, _envModel, ct)
+                    ?? SettingKeys.DefaultBackgroundModel;
+        var batch = await _settings.GetIntAsync(SettingKeys.ScoreBatch, SettingsStore.AsInt(_envBatch, 5), ct);
+        var maxAgeHours = await _settings.GetIntAsync(SettingKeys.ScoreMaxAgeHours, SettingsStore.AsInt(_envMaxAgeHours, 24), ct);
+
         var scored = 0;
-        foreach (var t in await _scores.GetStaleAsync(_maxAgeHours, _batch, ct))
+        foreach (var t in await _scores.GetStaleAsync(maxAgeHours, batch, ct))
         {
             try
             {
                 var detail = await _read.GetTokenDetailAsync(t.Chain, t.TokenAddress, ct);
                 if (detail is null) continue;
 
-                var request = BuildRequest(detail);
+                var request = BuildRequest(detail, model);
                 var res = await _ai.ForwardAnthropicAsync(request, ct);
                 if (res is null) return scored;                 // key vanished mid-run
                 if (res.Value.Status != 200)
@@ -60,7 +71,7 @@ public sealed class AiScoreCollector : IDataCollector
                 if (verdict is null) continue;
 
                 await _scores.UpsertAsync(t.Chain, t.TokenAddress, verdict.Value.Score,
-                    verdict.Value.Verdict, verdict.Value.Summary, _model, ct);
+                    verdict.Value.Verdict, verdict.Value.Summary, model, ct);
                 scored++;
                 _log.LogInformation("ai_score {Symbol}: {Score} — {Verdict}", detail.Symbol, verdict.Value.Score, verdict.Value.Verdict);
             }
@@ -71,7 +82,7 @@ public sealed class AiScoreCollector : IDataCollector
     }
 
     /// <summary>Anthropic Messages payload grounded in the data we already hold.</summary>
-    private string BuildRequest(TokenDetail d)
+    private static string BuildRequest(TokenDetail d, string model)
     {
         var facts = JsonSerializer.Serialize(new
         {
@@ -82,7 +93,7 @@ public sealed class AiScoreCollector : IDataCollector
 
         var payload = new
         {
-            model = _model,
+            model,
             max_tokens = 300,
             system = "You are a crypto risk analyst. Judge a DEX token from the given on-chain facts. " +
                      "Reply with ONLY a JSON object: {\"score\":0-100 (higher = safer),\"verdict\":\"<=6 words\",\"summary\":\"1-2 sentences\"}. " +

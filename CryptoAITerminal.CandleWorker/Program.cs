@@ -42,6 +42,9 @@ builder.Services.AddSingleton<INotifier, Notifier>();
 builder.Services.AddSingleton<AuditRepository>();
 builder.Services.AddSingleton<CollectorRunsRepository>();
 builder.Services.AddSingleton<ProviderKeyStore>();
+// One shared snapshot for the whole worker: the collectors read settings on every run, and the
+// point of the store is one refresh per TTL rather than one query per collector per tick.
+builder.Services.AddSingleton<SettingsStore>();
 
 // Reusable DEX clients (net8.0, shared from Gateway.DEX)
 builder.Services.AddSingleton(new GeckoTerminalClient());

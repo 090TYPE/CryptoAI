@@ -1,3 +1,4 @@
+using CryptoAITerminal.Server.Common;
 using CryptoAITerminal.Server.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -7,8 +8,8 @@ namespace CryptoAITerminal.CandleWorker.Collectors;
 /// <summary>Daily market overview across everything we track — published to all users.</summary>
 public sealed class DailyDigestJob : AiDigestJob
 {
-    public DailyDigestJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, ILogger<DailyDigestJob> log)
-        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", log) { }
+    public DailyDigestJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, SettingsStore s, ILogger<DailyDigestJob> log)
+        : base(k, ai, d, s, cfg["AI_DIGEST_MODEL"], log) { }
 
     public override string Kind => "daily";
     public override TimeSpan Period => TimeSpan.FromHours(24);
@@ -35,8 +36,8 @@ public sealed class DailyDigestJob : AiDigestJob
 /// <summary>Why the biggest gainers/losers moved — data + news, explained.</summary>
 public sealed class MoversDigestJob : AiDigestJob
 {
-    public MoversDigestJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, ILogger<MoversDigestJob> log)
-        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", log) { }
+    public MoversDigestJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, SettingsStore s, ILogger<MoversDigestJob> log)
+        : base(k, ai, d, s, cfg["AI_DIGEST_MODEL"], log) { }
 
     public override string Kind => "movers";
     public override TimeSpan Period => TimeSpan.FromHours(6);
@@ -56,8 +57,8 @@ public sealed class MoversDigestJob : AiDigestJob
 /// <summary>Clusters what we track into narratives (AI agents, memes, RWA, L2s…).</summary>
 public sealed class NarrativeDigestJob : AiDigestJob
 {
-    public NarrativeDigestJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, ILogger<NarrativeDigestJob> log)
-        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", log) { }
+    public NarrativeDigestJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, SettingsStore s, ILogger<NarrativeDigestJob> log)
+        : base(k, ai, d, s, cfg["AI_DIGEST_MODEL"], log) { }
 
     public override string Kind => "narratives";
     public override TimeSpan Period => TimeSpan.FromHours(12);
@@ -76,8 +77,8 @@ public sealed class NarrativeDigestJob : AiDigestJob
 /// <summary>Reads the news feed and maps it onto the tokens we track.</summary>
 public sealed class NewsImpactDigestJob : AiDigestJob
 {
-    public NewsImpactDigestJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, ILogger<NewsImpactDigestJob> log)
-        : base(k, ai, d, cfg["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", log) { }
+    public NewsImpactDigestJob(ProviderKeyStore k, AiProxy ai, AiDigestRepository d, IConfiguration cfg, SettingsStore s, ILogger<NewsImpactDigestJob> log)
+        : base(k, ai, d, s, cfg["AI_DIGEST_MODEL"], log) { }
 
     public override string Kind => "news_impact";
     public override TimeSpan Period => TimeSpan.FromHours(3);

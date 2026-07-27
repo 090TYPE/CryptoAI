@@ -1,3 +1,4 @@
+using CryptoAITerminal.Server.Common;
 using CryptoAITerminal.Server.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -9,8 +10,8 @@ namespace CryptoAITerminal.CandleWorker.Collectors;
 /// <summary>Thin or shrinking liquidity — where you can't get out.</summary>
 public sealed class LiquidityWatchJob : AiDigestJob
 {
-    public LiquidityWatchJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<LiquidityWatchJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
+    public LiquidityWatchJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, SettingsStore s, ILogger<LiquidityWatchJob> l)
+        : base(k, a, d, s, c["AI_DIGEST_MODEL"], l) { }
     public override string Kind => "liquidity_watch";
     public override TimeSpan Period => TimeSpan.FromHours(6);
     protected override string SystemPrompt =>
@@ -23,8 +24,8 @@ public sealed class LiquidityWatchJob : AiDigestJob
 /// <summary>Volume/liquidity churn outliers — real interest or wash?</summary>
 public sealed class VolumeAnomalyJob : AiDigestJob
 {
-    public VolumeAnomalyJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<VolumeAnomalyJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
+    public VolumeAnomalyJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, SettingsStore s, ILogger<VolumeAnomalyJob> l)
+        : base(k, a, d, s, c["AI_DIGEST_MODEL"], l) { }
     public override string Kind => "volume_anomaly";
     public override TimeSpan Period => TimeSpan.FromHours(6);
     protected override string SystemPrompt =>
@@ -37,8 +38,8 @@ public sealed class VolumeAnomalyJob : AiDigestJob
 /// <summary>Supply concentration — how few wallets can dump it.</summary>
 public sealed class HolderConcentrationJob : AiDigestJob
 {
-    public HolderConcentrationJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<HolderConcentrationJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
+    public HolderConcentrationJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, SettingsStore s, ILogger<HolderConcentrationJob> l)
+        : base(k, a, d, s, c["AI_DIGEST_MODEL"], l) { }
     public override string Kind => "holder_concentration";
     public override TimeSpan Period => TimeSpan.FromHours(12);
     protected override string SystemPrompt =>
@@ -50,8 +51,8 @@ public sealed class HolderConcentrationJob : AiDigestJob
 /// <summary>Honeypots and tax traps found today.</summary>
 public sealed class SecurityRoundupJob : AiDigestJob
 {
-    public SecurityRoundupJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<SecurityRoundupJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
+    public SecurityRoundupJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, SettingsStore s, ILogger<SecurityRoundupJob> l)
+        : base(k, a, d, s, c["AI_DIGEST_MODEL"], l) { }
     public override string Kind => "security_roundup";
     public override TimeSpan Period => TimeSpan.FromHours(12);
     protected override string SystemPrompt =>
@@ -64,8 +65,8 @@ public sealed class SecurityRoundupJob : AiDigestJob
 /// <summary>Serial rug deployers.</summary>
 public sealed class DeployerBlacklistJob : AiDigestJob
 {
-    public DeployerBlacklistJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<DeployerBlacklistJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
+    public DeployerBlacklistJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, SettingsStore s, ILogger<DeployerBlacklistJob> l)
+        : base(k, a, d, s, c["AI_DIGEST_MODEL"], l) { }
     public override string Kind => "deployer_blacklist";
     public override TimeSpan Period => TimeSpan.FromHours(12);
     protected override string SystemPrompt =>
@@ -78,8 +79,8 @@ public sealed class DeployerBlacklistJob : AiDigestJob
 /// <summary>Riskiest tokens by our cached AI score.</summary>
 public sealed class WorstScoredJob : AiDigestJob
 {
-    public WorstScoredJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<WorstScoredJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
+    public WorstScoredJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, SettingsStore s, ILogger<WorstScoredJob> l)
+        : base(k, a, d, s, c["AI_DIGEST_MODEL"], l) { }
     public override string Kind => "worst_scored";
     public override TimeSpan Period => TimeSpan.FromHours(12);
     protected override string SystemPrompt => "List the riskiest tracked tokens by score and why, as an avoid-list.";
@@ -90,8 +91,8 @@ public sealed class WorstScoredJob : AiDigestJob
 /// <summary>Best-scoring tokens leaderboard.</summary>
 public sealed class TopScoredJob : AiDigestJob
 {
-    public TopScoredJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<TopScoredJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
+    public TopScoredJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, SettingsStore s, ILogger<TopScoredJob> l)
+        : base(k, a, d, s, c["AI_DIGEST_MODEL"], l) { }
     public override string Kind => "top_scored";
     public override TimeSpan Period => TimeSpan.FromHours(12);
     protected override string SystemPrompt =>
@@ -103,8 +104,8 @@ public sealed class TopScoredJob : AiDigestJob
 /// <summary>Tokens that went quiet.</summary>
 public sealed class DeadTokensJob : AiDigestJob
 {
-    public DeadTokensJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<DeadTokensJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
+    public DeadTokensJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, SettingsStore s, ILogger<DeadTokensJob> l)
+        : base(k, a, d, s, c["AI_DIGEST_MODEL"], l) { }
     public override string Kind => "dead_tokens";
     public override TimeSpan Period => TimeSpan.FromHours(24);
     protected override string SystemPrompt =>
@@ -116,8 +117,8 @@ public sealed class DeadTokensJob : AiDigestJob
 /// <summary>Overall market risk read across every signal we hold.</summary>
 public sealed class RiskDashboardJob : AiDigestJob
 {
-    public RiskDashboardJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, ILogger<RiskDashboardJob> l)
-        : base(k, a, d, c["AI_DIGEST_MODEL"] ?? "claude-haiku-4-5-20251001", l) { }
+    public RiskDashboardJob(ProviderKeyStore k, AiProxy a, AiDigestRepository d, IConfiguration c, SettingsStore s, ILogger<RiskDashboardJob> l)
+        : base(k, a, d, s, c["AI_DIGEST_MODEL"], l) { }
     public override string Kind => "risk_dashboard";
     public override TimeSpan Period => TimeSpan.FromHours(12);
     protected override string SystemPrompt =>

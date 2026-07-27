@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CryptoAITerminal.Server.Common;
 using CryptoAITerminal.Server.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -17,20 +18,21 @@ public sealed class AiAnomalyCollector : IDataCollector
     private readonly AiAnomalyRepository _anomalies;
     private readonly AiProxy _ai;
     private readonly INotifier _notifier;
+    private readonly SettingsStore _settings;
     private readonly ILogger<AiAnomalyCollector> _log;
-    private readonly string _model;
-    private readonly decimal _minMovePct;
-    private readonly int _cooldownHours;
-    private readonly int _batch;
+    private readonly string? _envModel;
+    private readonly string? _envMinMovePct;
+    private readonly string? _envCooldownHours;
+    private readonly string? _envBatch;
 
     public AiAnomalyCollector(ProviderKeyStore keys, AiAnomalyRepository anomalies, AiProxy ai,
-        INotifier notifier, IConfiguration cfg, ILogger<AiAnomalyCollector> log)
+        INotifier notifier, SettingsStore settings, IConfiguration cfg, ILogger<AiAnomalyCollector> log)
     {
-        _keys = keys; _anomalies = anomalies; _ai = ai; _notifier = notifier; _log = log;
-        _model = cfg["AI_ANOMALY_MODEL"] ?? "claude-haiku-4-5-20251001";
-        _minMovePct = decimal.TryParse(cfg["AI_ANOMALY_MIN_MOVE_PCT"], out var m) ? m : 15m;
-        _cooldownHours = int.TryParse(cfg["AI_ANOMALY_COOLDOWN_HOURS"], out var c) ? c : 6;
-        _batch = int.TryParse(cfg["AI_ANOMALY_BATCH"], out var b) ? b : 5;
+        _keys = keys; _anomalies = anomalies; _ai = ai; _notifier = notifier; _settings = settings; _log = log;
+        _envModel = cfg["AI_ANOMALY_MODEL"];
+        _envMinMovePct = cfg["AI_ANOMALY_MIN_MOVE_PCT"];
+        _envCooldownHours = cfg["AI_ANOMALY_COOLDOWN_HOURS"];
+        _envBatch = cfg["AI_ANOMALY_BATCH"];
     }
 
     public string Name => "ai_anomaly";
@@ -38,15 +40,24 @@ public sealed class AiAnomalyCollector : IDataCollector
 
     public async Task<int> CollectAsync(CancellationToken ct)
     {
+        if (!await _settings.GetBoolAsync(SettingKeys.AiEnabled, true, ct)) return 0;
         if (string.IsNullOrWhiteSpace(await _keys.GetAsync("anthropic", ct)))
             return 0; // no server AI key → stay off
 
+        var model = await _settings.GetAsync(SettingKeys.AnomalyModel, _envModel, ct)
+                    ?? SettingKeys.DefaultBackgroundModel;
+        // The pre-filter is the real cost control — it decides how many candidates ever reach the
+        // model — so it is the knob most likely to be turned during a volatile session.
+        var minMovePct = await _settings.GetDecimalAsync(SettingKeys.AnomalyMinMovePct, SettingsStore.AsDecimal(_envMinMovePct, 15m), ct);
+        var cooldownHours = await _settings.GetIntAsync(SettingKeys.AnomalyCooldownHours, SettingsStore.AsInt(_envCooldownHours, 6), ct);
+        var batch = await _settings.GetIntAsync(SettingKeys.AnomalyBatch, SettingsStore.AsInt(_envBatch, 5), ct);
+
         var fired = 0;
-        foreach (var c in await _anomalies.GetCandidatesAsync(_minMovePct, _cooldownHours, _batch, ct))
+        foreach (var c in await _anomalies.GetCandidatesAsync(minMovePct, cooldownHours, batch, ct))
         {
             try
             {
-                var res = await _ai.ForwardAnthropicAsync(BuildRequest(c), ct);
+                var res = await _ai.ForwardAnthropicAsync(BuildRequest(c, model), ct);
                 if (res is null) return fired;
                 if (res.Value.Status != 200)
                 {
@@ -72,7 +83,7 @@ public sealed class AiAnomalyCollector : IDataCollector
         return fired;
     }
 
-    private string BuildRequest(AnomalyCandidate c)
+    private static string BuildRequest(AnomalyCandidate c, string model)
     {
         var facts = JsonSerializer.Serialize(new
         {
@@ -81,7 +92,7 @@ public sealed class AiAnomalyCollector : IDataCollector
 
         var payload = new
         {
-            model = _model,
+            model,
             max_tokens = 250,
             system = "You watch DEX tokens a trader follows. Decide if the move is genuinely worth a push " +
                      "notification (real signal, not routine noise). Reply with ONLY JSON: " +
