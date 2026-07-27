@@ -301,6 +301,37 @@
                       </Border>
                       <TextBlock Grid.Column="4" Text="{Binding LicDetail}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
                     </Grid>
+
+                    <!-- ══ Подписка ══
+                         Срок, дневной лимит и кнопка продления в одном месте. На недельном тарифе
+                         это не справочная информация: платить придётся 52 раза в год, автосписания
+                         нет ни на одном канале, и о конце срока клиент должен узнать заранее. -->
+                    <Border Margin="0,0,0,12" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1" CornerRadius="8" Background="{DynamicResource Surface0}" Padding="12" IsVisible="{Binding IsServerBound}">
+                      <StackPanel Spacing="9">
+                        <Grid ColumnDefinitions="Auto,10,Auto,*,Auto">
+                          <TextBlock Grid.Column="0" Text="ПОДПИСКА" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="2" Text="{Binding SubDaysText}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsCaption}" Foreground="{Binding SubExpiryColor, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center" />
+                          <Button Classes="FlatChrome" Grid.Column="4" Command="{Binding RenewCommand}" Height="28" BorderBrush="{DynamicResource Accent}" BorderThickness="1" CornerRadius="6" Background="{DynamicResource AccentSoft}" Padding="12,0" Content="ПРОДЛИТЬ" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                        </Grid>
+
+                        <!-- Появляется за три дня. Раньше — шум, позже — поздно: на недельном
+                             тарифе три дня это почти половина срока. -->
+                        <TextBlock Text="{Binding SubExpiryNotice}" TextWrapping="Wrap" MaxWidth="700" HorizontalAlignment="Left"
+                                   FontSize="{DynamicResource FsMicro}" LineHeight="16"
+                                   Foreground="{Binding SubExpiryColor, Converter={StaticResource StringToBrush}}"
+                                   IsVisible="{Binding SubExpiringSoon}" />
+
+                        <Grid ColumnDefinitions="Auto,10,*">
+                          <TextBlock Grid.Column="0" Text="ЛИМИТ AI" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="2" Text="{Binding SubUsage}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" />
+                        </Grid>
+                        <Border Width="320" Height="8" CornerRadius="4" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" HorizontalAlignment="Left">
+                          <Border Width="{Binding SubBarWidth}" Height="6" CornerRadius="3" HorizontalAlignment="Left" Background="{Binding SubBarColor, Converter={StaticResource StringToBrush}}" />
+                        </Border>
+                        <TextBlock Text="{Binding SubRemaining}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
+                      </StackPanel>
+                    </Border>
+
                     <TextBlock Text="MACHINE ID — SEND THIS TO THE BOT BEFORE PAYING" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" Margin="0,0,0,4" />
                     <StackPanel Orientation="Horizontal" Spacing="7">
                       <Border Width="620" Height="30" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" CornerRadius="6" Background="{DynamicResource Surface0}" Padding="8,0">

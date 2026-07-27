@@ -98,6 +98,7 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         SaveAllCommand = new RelayCommand(SaveAll);
         RevealCommand = new RelayCommand(() => { _aiRevealed = !_aiRevealed; RaiseAi(); });
         AiConsoleCommand = new RelayCommand(OpenAiConsole);
+        RenewCommand = new RelayCommand(OpenLicenseBot);
         AiSaveCommand = new RelayCommand(AiSave);
         AiTestCommand = new RelayCommand(() =>
             Toast("This build has no AI test call — press SAVE PROVIDER, the status line reports the result", "info"));
@@ -400,7 +401,9 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         foreach (var n in new[]
                  {
                      nameof(SubTier), nameof(SubUsage), nameof(SubRemaining), nameof(SubBarWidth),
-                     nameof(SubBarColor), nameof(SubStatusText), nameof(SubStatusColor)
+                     nameof(SubBarColor), nameof(SubStatusText), nameof(SubStatusColor),
+                     nameof(SubDaysText), nameof(SubExpiringSoon), nameof(SubExpiryNotice),
+                     nameof(SubExpiryColor), nameof(LicBadge)
                  })
             this.RaisePropertyChanged(n);
     }
@@ -441,9 +444,11 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     // ── license ──────────────────────────────────────────────────────────────
     private LicenseViewModel? Lic => _host?.LicenseVM;
 
+    // The real tier, not a hardcoded "PRO". Now that Lite, Pro and Max are served differently, a
+    // badge reading PRO to a Lite customer is a support ticket waiting to happen.
     public string LicBadge => Lic?.Snapshot.State switch
     {
-        LicenseState.Licensed => "PRO",
+        LicenseState.Licensed => (Lic?.Snapshot.Edition is { Length: > 0 } e ? e : "PRO").ToUpperInvariant(),
         LicenseState.Trial => "TRIAL",
         LicenseState.Expired => "DEMO",
         _ => Dash,
@@ -453,6 +458,53 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     public string LicBorder => LicOk ? "#14302e" : "#3a2a12";
     public string LicBg => LicOk ? "#061615" : "#150f04";
     public string LicDetail => Lic?.DetailLabel ?? NotConfigured;
+
+    // ── Подписка ─────────────────────────────────────────────────────────────
+    //
+    // Три вещи, которых раньше не было нигде: сколько дней осталось, что будет, когда они
+    // кончатся, и куда нажать, чтобы продлить. На недельном тарифе это не украшение — платить
+    // придётся 52 раза в год, и автосписания нет ни на одном канале оплаты.
+
+    private const string LicenseBotUrl = "https://t.me/CryptoAIT_Bot";
+
+    /// <summary>Days left, or null when there is no expiry (trial or no licence).</summary>
+    private int? DaysLeft => Lic?.Snapshot.Expires is { } exp
+        ? (int)Math.Ceiling((exp - DateTime.UtcNow).TotalDays)
+        : null;
+
+    public string SubDaysText => SubscriptionText.DaysLeft(DaysLeft);
+
+    /// <summary>
+    /// Shown from three days out. Earlier than that it is noise; later is too late to act on a
+    /// weekly plan, where three days is nearly half the term.
+    /// </summary>
+    public bool SubExpiringSoon => DaysLeft is { } d && d <= 3;
+
+    public string SubExpiryNotice => SubscriptionText.ExpiryNotice(DaysLeft);
+
+    public string SubExpiryColor => DaysLeft switch
+    {
+        <= 0 => SettingsData.Red,
+        <= 3 => SettingsData.Amber,
+        _ => SettingsData.Green
+    };
+
+    public ICommand RenewCommand { get; }
+
+    private void OpenLicenseBot()
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo(LicenseBotUrl) { UseShellExecute = true });
+        }
+        catch
+        {
+            // A machine with no default browser or a locked-down shell. The address is short and
+            // typed easily, so telling the customer beats swallowing it.
+            Toast($"Не удалось открыть браузер. Бот: {LicenseBotUrl}", "warn");
+        }
+    }
     public string LicStatus => Lic is null ? NotConfigured : OrNotConfigured(
         string.IsNullOrWhiteSpace(Lic.StatusMessage) ? Lic.StateLabel : Lic.StatusMessage);
     public string LicStatusColor => Lic?.StateBrush ?? SettingsData.Faint;
