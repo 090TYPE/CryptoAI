@@ -92,11 +92,18 @@ public static class AiRequestPolicy
     /// fault: it must leave here as a 400 from <see cref="AiPolicyResult"/>, never as an exception
     /// escaping into the request pipeline.
     /// </summary>
-    public static AiPolicyResult Apply(string requestJson, AiPolicyOptions options, AiVendor vendor)
+    /// <param name="overrideModel">
+    /// Model the server has assigned to this feature, replacing whatever the client asked for.
+    /// Null means no override is configured and the client's choice stands — which is what keeps
+    /// terminals shipped before per-feature control existed working unchanged.
+    /// </param>
+    /// <param name="overrideMaxTokens">Output cap for this feature, still clamped to the global cap.</param>
+    public static AiPolicyResult Apply(string requestJson, AiPolicyOptions options, AiVendor vendor,
+        string? overrideModel = null, int? overrideMaxTokens = null)
     {
         try
         {
-            return ApplyCore(requestJson, options, vendor);
+            return ApplyCore(requestJson, options, vendor, overrideModel, overrideMaxTokens);
         }
         catch (JsonException)
         {
@@ -108,7 +115,8 @@ public static class AiRequestPolicy
         }
     }
 
-    private static AiPolicyResult ApplyCore(string requestJson, AiPolicyOptions options, AiVendor vendor)
+    private static AiPolicyResult ApplyCore(string requestJson, AiPolicyOptions options, AiVendor vendor,
+        string? overrideModel, int? overrideMaxTokens)
     {
         JsonNode? root;
         try
@@ -128,8 +136,17 @@ public static class AiRequestPolicy
         string? model = null;
         if (obj["model"] is JsonValue modelNode && modelNode.TryGetValue<string>(out var parsedModel))
             model = parsedModel;
+
+        // The server's assignment wins over the client's. Applied before the allow-list check on
+        // purpose: an operator who configures a model that is not permitted should see the request
+        // refused here with a clear reason, rather than have it silently fall back to whatever the
+        // terminal happened to send — that would look like the setting had been ignored.
+        if (!string.IsNullOrWhiteSpace(overrideModel))
+            model = overrideModel;
+
         if (string.IsNullOrWhiteSpace(model))
             return new AiPolicyResult(false, null, "model is required", null);
+        obj["model"] = model;
 
         var allowed = vendor == AiVendor.Anthropic
             ? options.AllowedAnthropicModels
@@ -148,6 +165,9 @@ public static class AiRequestPolicy
         var requested = options.MaxTokensCap;
         if (obj[tokenField] is JsonValue tokenNode && !tokenNode.TryGetValue<int>(out requested))
             return new AiPolicyResult(false, null, $"{tokenField} must be a whole number", model);
+        // A per-feature cap replaces the client's request, then the global cap still bounds it —
+        // the operator can shorten an answer but not lift the ceiling the server set for itself.
+        if (overrideMaxTokens is { } capped) requested = capped;
         obj[tokenField] = Math.Clamp(requested, 1, options.MaxTokensCap);
 
         // The proxy buffers the upstream body into a string, so a streaming response would be

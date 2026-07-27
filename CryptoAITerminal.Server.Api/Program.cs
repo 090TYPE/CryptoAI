@@ -372,7 +372,20 @@ static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiPr
     if (raw is null)
         return Results.Json(new { error = "request_too_large", maxBytes = policy.MaxRequestBytes }, statusCode: 413);
 
-    var gated = AiRequestPolicy.Apply(raw, policy, vendor);
+    // Per-feature assignment. A terminal that predates this sends no header and gets today's
+    // behaviour; a terminal newer than the server sends a feature the server has never heard of,
+    // finds no override, and also gets today's behaviour. Both directions degrade, neither breaks.
+    var feature = ctx.Request.Headers["X-AI-Feature"].ToString();
+    string? overrideModel = null;
+    int? overrideMaxTokens = null;
+    if (AiFeatures.IsWellFormed(feature))
+    {
+        overrideModel = await settings.GetAsync(SettingKeys.FeatureModel(feature), null, ctx.RequestAborted);
+        var cap = await settings.GetIntAsync(SettingKeys.FeatureMaxTokens(feature), 0, ctx.RequestAborted);
+        if (cap > 0) overrideMaxTokens = cap;
+    }
+
+    var gated = AiRequestPolicy.Apply(raw, policy, vendor, overrideModel, overrideMaxTokens);
     if (!gated.Ok)
         return Results.BadRequest(new { error = gated.Error });
 
@@ -383,6 +396,9 @@ static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiPr
     if (result is null) return Results.Json(new { error = "ai_key_not_configured" }, statusCode: 503);
 
     budget.Charge(license, AiRequestPolicy.CountUsage(result.Value.Body, vendor));
+    // What actually ran, so the terminal can label the result with the truth instead of with what
+    // it asked for — and so an operator can confirm from the client side that a switch took effect.
+    if (gated.Model is { } used) ctx.Response.Headers["X-AI-Model"] = used;
     return Results.Content(result.Value.Body, "application/json", Encoding.UTF8, result.Value.Status);
 }
 
@@ -695,12 +711,27 @@ app.MapPut("/api/keys/{provider}", async (string provider, KeyUpdate body, Provi
 // live on the next request rather than at the next deploy.
 app.MapGet("/api/admin/settings", async (SettingsStore settings, CancellationToken ct) =>
 {
-    var all = await settings.ListAsync(ct);
+    // The listing reads the table directly rather than the cache, so an unreachable database
+    // throws here. Reported as a state the panel can render — an admin tool answering 500 when
+    // the database is down tells the operator less than one that says the database is down.
+    IReadOnlyList<ServerSetting> all;
+    try
+    {
+        all = await settings.ListAsync(ct);
+    }
+    catch (Exception ex) when (ex is System.Data.Common.DbException or TimeoutException or InvalidOperationException)
+    {
+        return Results.Ok(new { migrated = !settings.TableMissing, degraded = true, ttlSeconds = (int)SettingsStore.Ttl.TotalSeconds, settings = Array.Empty<ServerSetting>() });
+    }
+
     return Results.Ok(new
     {
         // Surfaced so the admin screen can say "migration 021 not applied" instead of showing an
         // empty list that looks like "nothing configured".
         migrated = !settings.TableMissing,
+        // And so "I changed it and nothing happened" has a visible cause when the database is the
+        // thing that is broken.
+        degraded = settings.Degraded,
         ttlSeconds = (int)SettingsStore.Ttl.TotalSeconds,
         settings = all
     });
@@ -725,6 +756,25 @@ app.MapDelete("/api/admin/settings/{key}", async (string key, SettingsStore sett
 
 app.MapGet("/api/admin/settings/history", async (string? key, int? limit, SettingsStore settings, CancellationToken ct) =>
     Results.Ok(await settings.HistoryAsync(key, limit ?? 100, ct)));
+
+// The feature catalogue with what each one currently resolves to, so the panel can render the
+// list without knowing the ids itself and an operator can see the effective model at a glance.
+app.MapGet("/api/admin/ai-features", async (SettingsStore settings, CancellationToken ct) =>
+{
+    var rows = new List<object>();
+    foreach (var f in AiFeatures.All)
+    {
+        rows.Add(new
+        {
+            f.Id,
+            f.Title,
+            f.DefaultMaxTokens,
+            model = await settings.GetAsync(SettingKeys.FeatureModel(f.Id), null, ct),
+            maxTokens = await settings.GetIntAsync(SettingKeys.FeatureMaxTokens(f.Id), 0, ct)
+        });
+    }
+    return Results.Ok(rows);
+});
 
 // The panel itself. Served outside the /api/admin prefix because a browser navigating to a page
 // cannot send X-Admin — the operator types the token into the page, which then sends it on every

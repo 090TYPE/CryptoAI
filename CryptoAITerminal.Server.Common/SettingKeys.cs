@@ -36,6 +36,13 @@ public static class SettingKeys
     public const string ReviewBatch         = "ai.review.batch";
     public const string ReviewDays          = "ai.review.days";
 
+    // ── Per-feature overrides for calls that originate in the terminal ────────
+    // Built from the X-AI-Feature header. Absent = the client's own request stands, which is what
+    // keeps terminals shipped before this existed working unchanged.
+
+    public static string FeatureModel(string feature) => $"ai.feature.{feature}.model";
+    public static string FeatureMaxTokens(string feature) => $"ai.feature.{feature}.max_tokens";
+
     /// <summary>
     /// Master switch for every paid model call the server makes. False stops the background jobs
     /// and makes the AI proxy decline, which the terminals already handle by falling back to their

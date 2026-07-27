@@ -42,6 +42,7 @@ public sealed class SettingsStore
     private Dictionary<string, string> _cache = new(StringComparer.OrdinalIgnoreCase);
     private DateTime _loadedUtc = DateTime.MinValue;
     private volatile bool _tableMissing;
+    private volatile bool _degraded;
 
     public SettingsStore(Db db, Func<DateTime>? clock = null)
     {
@@ -213,19 +214,45 @@ public sealed class SettingsStore
             foreach (var (k, v) in rows) next[k] = v;
             _cache = next;
             _tableMissing = false;
+            _degraded = false;
         }
         catch (Npgsql.PostgresException ex) when (ex.SqlState == "42P01")
         {
             // Table not there yet: a box that has not run migration 021. Every caller supplies a
             // fallback, so the correct behaviour is to serve defaults quietly rather than fail
-            // the request that happened to be first after a deploy. Logged once by the caller
-            // through _tableMissing rather than on every read.
-            if (!_tableMissing) _tableMissing = true;
+            // the request that happened to be first after a deploy. This state is permanent until
+            // someone applies the migration, so an empty cache is the honest answer.
+            _tableMissing = true;
+            _degraded = false;
             _cache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
+        catch (Exception ex) when (ex is System.Data.Common.DbException or TimeoutException or InvalidOperationException)
+        {
+            // The database is unreachable or slow. Keep the previous snapshot rather than clearing
+            // it, and do not let the exception escape.
+            //
+            // Clearing would be actively dangerous: settings are overrides on top of code
+            // defaults, so an empty cache silently restores every default in the middle of an
+            // outage. The kill switch is the case that matters — ai.enabled=false would flip back
+            // to enabled and the server would resume paying for calls precisely when nobody is
+            // watching. Serving a slightly stale value is the safe failure.
+            //
+            // Letting it escape would be almost as bad: a settings read sits in front of the AI
+            // proxy, which otherwise needs no database at all (licences are verified by signature),
+            // so a blip would turn working calls into 500s.
+            _degraded = true;
+        }
+        // Stamped even on failure, so a database that is down is retried once per TTL instead of
+        // on every single read.
         _loadedUtc = _clock();
     }
 
     /// <summary>True when the settings table is absent — migration 021 has not been applied.</summary>
     public bool TableMissing => _tableMissing;
+
+    /// <summary>
+    /// True when the last refresh failed and the snapshot being served is stale. Surfaced to the
+    /// admin panel so "my change did not apply" has an visible explanation.
+    /// </summary>
+    public bool Degraded => _degraded;
 }

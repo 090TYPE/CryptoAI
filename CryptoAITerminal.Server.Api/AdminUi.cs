@@ -101,6 +101,14 @@ public static class AdminUi
   </section>
 
   <section>
+    <h2>Модели по функциям терминала</h2>
+    <div class="body">
+      <p class="note">Что клиент прислал — не важно: модель выбирает сервер. Пустое поле = запрос терминала проходит как есть. Ограничение длины ответа не может превысить общий потолок сервера.</p>
+      <table id="features"></table>
+    </div>
+  </section>
+
+  <section>
     <h2>Пороги и объёмы фоновых задач</h2>
     <div class="body"><table id="bounds"></table></div>
   </section>
@@ -217,9 +225,12 @@ async function loadAll() {
     current = {};
     (s.settings || []).forEach(x => current[x.key] = x);
     document.getElementById('ttl').textContent = s.ttlSeconds ?? 15;
-    document.getElementById('migrated').innerHTML = s.migrated
-      ? `Ключей в базе: ${(s.settings || []).length}. Отсутствующий ключ означает значение по умолчанию из кода.`
-      : '<span class="err">Миграция 021 не применена — сервер работает на значениях по умолчанию, сохранение не сработает. См. раздел 5b в docs/DEPLOY.md.</span>';
+    document.getElementById('migrated').innerHTML =
+      !s.migrated
+        ? '<span class="err">Миграция 021 не применена — сервер работает на значениях по умолчанию, сохранение не сработает. См. раздел 5b в docs/DEPLOY.md.</span>'
+        : s.degraded
+          ? '<span class="err">База недоступна. Сервер отдаёт последний известный снимок настроек — изменения сейчас не сохранятся и не применятся.</span>'
+          : `Ключей в базе: ${(s.settings || []).length}. Отсутствующий ключ означает значение по умолчанию из кода.`;
 
     document.getElementById('models').innerHTML = editableRows(MODELS);
     document.getElementById('bounds').innerHTML = editableRows(BOUNDS);
@@ -240,7 +251,7 @@ async function loadAll() {
     document.getElementById('killBtn').className = killOn ? 'danger' : 'primary';
     document.getElementById('killBtn').textContent = killOn ? 'Остановить все вызовы' : 'Включить обратно';
 
-    await Promise.all([loadKeys(), loadCollectors(), loadHistory()]);
+    await Promise.all([loadFeatures(), loadKeys(), loadCollectors(), loadHistory()]);
   } catch (e) {
     conn.className = 'pill off'; conn.textContent = 'ошибка';
     toast(e.message, true);
@@ -283,6 +294,55 @@ async function toggleKill() {
     await api('/api/admin/settings/ai.enabled', { method: 'PUT', body: JSON.stringify({ value: on ? 'false' : 'true' }) });
     toast(on ? 'AI остановлен' : 'AI включён');
     loadAll();
+  } catch (e) { toast(e.message, true); }
+}
+
+// Rendered from the server's own catalogue, so a feature added there appears here without an edit.
+async function loadFeatures() {
+  const el = document.getElementById('features');
+  try {
+    const rows = await api('/api/admin/ai-features');
+    el.innerHTML =
+      '<tr><th>Функция</th><th>Модель</th><th>Длина ответа</th><th></th></tr>' +
+      rows.map(f => `<tr>
+        <td style="width:38%">${esc(f.title)}<div class="desc"><span class="k">${esc(f.id)}</span> · клиент просит ${f.defaultMaxTokens}</div></td>
+        <td><input id="fm_${esc(f.id)}" value="${esc(f.model || '')}" placeholder="как просит клиент"></td>
+        <td><input id="ft_${esc(f.id)}" value="${f.maxTokens ? f.maxTokens : ''}" placeholder="${f.defaultMaxTokens}" style="min-width:110px"></td>
+        <td style="width:1%;white-space:nowrap"><button onclick="saveFeature('${esc(f.id)}')">Сохранить</button></td>
+      </tr>`).join('') +
+      `<tr><td colspan="4" style="padding-top:12px">
+         <button onclick="bulkFeatures('claude-haiku-4-5-20251001')">Все на экономичную модель</button>
+         <button onclick="bulkFeatures('')" class="danger">Снять все переопределения</button>
+       </td></tr>`;
+  } catch (e) { el.innerHTML = `<tr><td class="err">${esc(e.message)}</td></tr>`; }
+}
+
+async function saveFeature(id) {
+  const m = document.getElementById('fm_' + id).value.trim();
+  const t = document.getElementById('ft_' + id).value.trim();
+  try {
+    await putOrDelete('ai.feature.' + id + '.model', m);
+    await putOrDelete('ai.feature.' + id + '.max_tokens', t);
+    toast(id + ' сохранено');
+    loadAll();
+  } catch (e) { toast(e.message, true); }
+}
+
+// Empty value means "no override", which is a delete rather than an empty string - an empty model
+// name would fail the allow-list check on every call instead of falling through to the client's.
+async function putOrDelete(key, value) {
+  const path = '/api/admin/settings/' + encodeURIComponent(key);
+  if (value) return api(path, { method: 'PUT', body: JSON.stringify({ value }) });
+  try { await api(path, { method: 'DELETE' }); } catch (e) { if (!/404|HTTP 404/.test(e.message)) throw e; }
+}
+
+async function bulkFeatures(model) {
+  const what = model ? `перевести ВСЕ функции на ${model}` : 'снять переопределения со ВСЕХ функций';
+  if (!confirm('Точно ' + what + '?')) return;
+  try {
+    const rows = await api('/api/admin/ai-features');
+    for (const f of rows) await putOrDelete('ai.feature.' + f.id + '.model', model);
+    toast('готово'); loadAll();
   } catch (e) { toast(e.message, true); }
 }
 
