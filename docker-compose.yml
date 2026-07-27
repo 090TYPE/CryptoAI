@@ -175,6 +175,11 @@ services:
       AI_ANOMALY_MIN_MOVE_PCT:
       AI_REVIEW_BATCH:
       AI_REVIEW_DAYS:
+      # Collector watchdog: where to report a broken collector. Both also settable from the
+      # admin panel (alerts.telegram.token / alerts.telegram.chat_id), which wins.
+      ALERT_BOT_TOKEN:
+      ALERT_CHAT_ID:
+      COLLECTOR_STALE_MINUTES:
     depends_on:
       db:
         condition: service_healthy

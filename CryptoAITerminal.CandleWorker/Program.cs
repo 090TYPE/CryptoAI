@@ -120,5 +120,9 @@ builder.Services.AddSingleton<IDataCollector, NewsPriceGapJob>();
 builder.Services.AddSingleton<IDataCollector, GasVsActivityJob>();
 builder.Services.AddSingleton<IDataCollector, TokenOfTheDayJob>();
 builder.Services.AddHostedService<CollectorRunner>();
+// Watches the collectors and reports a break to Telegram. Everything it needs was already
+// recorded; nothing read it, which is how a broken collector stayed broken until a customer
+// noticed stale data.
+builder.Services.AddHostedService<CollectorWatchdog>();
 
 builder.Build().Run();

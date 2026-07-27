@@ -70,6 +70,14 @@ public static class SettingKeys
             ["max"] = 105_000,
         };
 
+    // ── Оповещения о состоянии сборщиков ──────────────────────────────────────
+    // Env fallbacks: ALERT_BOT_TOKEN, ALERT_CHAT_ID, COLLECTOR_STALE_MINUTES.
+
+    public const string AlertsEnabled       = "alerts.enabled";
+    public const string AlertsTelegramToken = "alerts.telegram.token";
+    public const string AlertsTelegramChat  = "alerts.telegram.chat_id";
+    public const string AlertsStaleMinutes  = "alerts.stale_minutes";
+
     /// <summary>
     /// Master switch for every paid model call the server makes. False stops the background jobs
     /// and makes the AI proxy decline, which the terminals already handle by falling back to their
