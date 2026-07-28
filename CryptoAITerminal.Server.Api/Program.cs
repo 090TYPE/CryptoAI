@@ -406,14 +406,20 @@ static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiPr
     // behaviour; a terminal newer than the server sends a feature the server has never heard of,
     // finds no override, and also gets today's behaviour. Both directions degrade, neither breaks.
     var feature = ctx.Request.Headers["X-AI-Feature"].ToString();
-    string? overrideModel = null;
     int? overrideMaxTokens = null;
     if (AiFeatures.IsWellFormed(feature))
     {
-        overrideModel = await settings.GetAsync(SettingKeys.FeatureModel(feature), null, ctx.RequestAborted);
         var cap = await settings.GetIntAsync(SettingKeys.FeatureMaxTokens(feature), 0, ctx.RequestAborted);
         if (cap > 0) overrideMaxTokens = cap;
     }
+
+    // Which model serves this call is entirely the server's business — deliberately resolved even
+    // when the client sent no feature header at all, because those are the builds already in
+    // customers' hands. Null means nothing is configured and no list could be read, and only then
+    // does the client's own choice stand.
+    var overrideModel = await ai.ModelForAsync(
+        AiFeatures.IsWellFormed(feature) ? SettingKeys.FeatureModel(feature) : null,
+        AiModelRole.Foreground, null, ctx.RequestAborted);
 
     // The allow-list can be replaced at runtime, because it has to move together with the upstream:
     // a router names models with a vendor prefix, and a switch that changed only the URL would turn
@@ -422,7 +428,8 @@ static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiPr
         await settings.GetAsync(SettingKeys.AllowedAnthropicModels, null, ctx.RequestAborted),
         await settings.GetAsync(SettingKeys.AllowedOpenAiModels, null, ctx.RequestAborted));
 
-    var gated = AiRequestPolicy.Apply(raw, effective, vendor, overrideModel, overrideMaxTokens);
+    var gated = AiRequestPolicy.Apply(raw, effective, vendor, overrideModel, overrideMaxTokens,
+        modelIsServerChosen: overrideModel is not null);
     if (!gated.Ok)
         return Results.BadRequest(new { error = gated.Error });
 
@@ -832,6 +839,35 @@ app.MapGet("/api/admin/ai-features", async (SettingsStore settings, Cancellation
         });
     }
     return Results.Ok(rows);
+});
+
+// Что провайдер реально отдаёт и что из этого выбрал бы сервер.
+//
+// Единственная часть настройки, которую нельзя узнать со стороны сервера — имена моделей: они
+// видны только в личном кабинете провайдера, у роутеров идут с префиксом вендора, и ошибка в имени
+// возвращается как «model is not allowed» или 404, ни один из которых не подсказывает правильное
+// имя. Поэтому админка не просит его набрать, а показывает список и выбор, который на нём сделан.
+app.MapGet("/api/admin/upstream-models", async (AiProxy ai, SettingsStore settings, string? family,
+    CancellationToken ct) =>
+{
+    var chosen = family is null
+        ? await ai.FamilyAsync(ct)
+        : AiModelCatalog.ParseFamily(family);
+
+    var listed = await ai.ListModelsAsync(
+        chosen == AiFamily.Claude ? AiVendor.Anthropic : AiVendor.OpenAi, ct);
+
+    return Results.Ok(new
+    {
+        family = AiModelCatalog.FamilyName(chosen),
+        auto = await settings.GetBoolAsync(SettingKeys.ModelAuto, true, ct),
+        listed.Ok,
+        listed.Url,
+        listed.Error,
+        models = listed.Models,
+        foreground = AiModelCatalog.Pick(listed.Models, chosen, AiModelRole.Foreground),
+        background = AiModelCatalog.Pick(listed.Models, chosen, AiModelRole.Background),
+    });
 });
 
 // The panel itself. Served outside the /api/admin prefix because a browser navigating to a page

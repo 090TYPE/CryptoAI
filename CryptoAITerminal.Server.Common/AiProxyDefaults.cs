@@ -21,4 +21,28 @@ public static class AiProxyDefaults
     /// </summary>
     public static bool LooksLikeRouter(string url, string vendorUrl) =>
         !string.Equals(url, vendorUrl, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Where to ask an upstream what it actually serves, derived from the address already
+    /// configured for it. Anthropic, OpenAI and every router in between expose the same
+    /// <c>/v1/models</c> and answer in the same shape.
+    ///
+    /// This exists because the model names are the one part of a provider switch that cannot be
+    /// guessed: they are visible only inside the provider's own dashboard, and a wrong guess fails
+    /// as "model is not allowed" or a 404 from upstream — neither of which says what the right name
+    /// would have been. Asking the provider turns that into a list to pick from.
+    /// </summary>
+    public static string ModelsUrl(string baseUrl)
+    {
+        if (string.IsNullOrWhiteSpace(baseUrl)) return baseUrl;
+
+        // Anchor on the version segment rather than the last one: the OpenAI path has two segments
+        // after it (/v1/chat/completions), so trimming a single segment would ask for
+        // /v1/chat/models.
+        var version = baseUrl.LastIndexOf("/v1/", StringComparison.OrdinalIgnoreCase);
+        if (version >= 0) return string.Concat(baseUrl.AsSpan(0, version + 4), "models");
+
+        var slash = baseUrl.LastIndexOf('/');
+        return slash > 0 ? string.Concat(baseUrl.AsSpan(0, slash + 1), "models") : baseUrl;
+    }
 }

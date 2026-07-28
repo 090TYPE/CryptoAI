@@ -45,7 +45,7 @@ public sealed class AiScoreCollector : IDataCollector
         if (string.IsNullOrWhiteSpace(await _keys.GetAsync("anthropic", ct)))
             return 0; // no server AI key → stay off
 
-        var model = await _settings.GetAsync(SettingKeys.ScoreModel, _envModel, ct)
+        var model = await _ai.ModelForAsync(SettingKeys.ScoreModel, AiModelRole.Background, _envModel, ct)
                     ?? SettingKeys.DefaultBackgroundModel;
         var batch = await _settings.GetIntAsync(SettingKeys.ScoreBatch, SettingsStore.AsInt(_envBatch, 5), ct);
         var maxAgeHours = await _settings.GetIntAsync(SettingKeys.ScoreMaxAgeHours, SettingsStore.AsInt(_envMaxAgeHours, 24), ct);

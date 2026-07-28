@@ -20,6 +20,9 @@ public static class SettingKeys
     /// </summary>
     public const string DefaultBackgroundModel = "claude-haiku-4-5-20251001";
 
+    /// <summary>То же для семейства ChatGPT, когда автоподбор недоступен и ничего не настроено.</summary>
+    public const string DefaultBackgroundChatGptModel = "gpt-4o-mini";
+
     // ── Models for the server's own jobs ──────────────────────────────────────
     public const string DigestModel  = "ai.digest.model";   // env: AI_DIGEST_MODEL
     public const string ScoreModel   = "ai.score.model";    // env: AI_SCORE_MODEL
@@ -96,6 +99,40 @@ public static class SettingKeys
     /// </summary>
     public const string AllowedAnthropicModels = "ai.allowed_models.anthropic";
     public const string AllowedOpenAiModels    = "ai.allowed_models.openai";
+
+    /// <summary>
+    /// Имя модели, которое подставляется, когда у конкретного вызова нет своего.
+    ///
+    /// Без этого смена провайдера не работала в принципе, хотя выглядела законченной: адрес и белый
+    /// список переезжали, а имя модели по-прежнему приходило от клиента — <c>claude-sonnet-4-6</c>
+    /// против списка из <c>anthropic/…</c>, то есть 400 «model is not allowed» на каждом вызове.
+    /// Заполнить руками 19 функций терминала и четыре фоновые задачи — не выход: забытая строка
+    /// отключает функцию молча.
+    ///
+    /// Действует и для терминалов, выпущенных до появления заголовка функции: им тоже надо
+    /// переписать модель, иначе после переключения перестают работать все уже разосланные сборки.
+    /// </summary>
+    public const string AnthropicDefaultModel = "ai.anthropic.model.default";
+    public const string OpenAiDefaultModel    = "ai.openai.model.default";
+
+    /// <summary>Ключ модели по умолчанию для вендора, к которому идёт запрос.</summary>
+    public static string DefaultModel(bool anthropic) =>
+        anthropic ? AnthropicDefaultModel : OpenAiDefaultModel;
+
+    /// <summary>
+    /// Семейство моделей: <c>claude</c> или <c>chatgpt</c>. Единственное решение, которое остаётся
+    /// человеку — конкретную модель сервер подбирает сам из того, что провайдер реально отдаёт.
+    ///
+    /// Терминал в этом не участвует вовсе: он присылает имя функции, а чем её обслуживать, знает
+    /// только сервер. Поэтому смена семейства действует сразу на все выпущенные сборки.
+    /// </summary>
+    public const string Family = "ai.family";
+
+    /// <summary>
+    /// Подбирать модель автоматически по списку провайдера. Выключается, когда нужно прибить
+    /// конкретную версию — тогда действуют <see cref="AnthropicDefaultModel"/> и настройки функций.
+    /// </summary>
+    public const string ModelAuto = "ai.model.auto";
 
     // ── Оповещения о состоянии сборщиков ──────────────────────────────────────
     // Env fallbacks: ALERT_BOT_TOKEN, ALERT_CHAT_ID, COLLECTOR_STALE_MINUTES.

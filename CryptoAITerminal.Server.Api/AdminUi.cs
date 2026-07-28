@@ -101,9 +101,27 @@ public static class AdminUi
   </section>
 
   <section>
+    <h2>Чем обслуживать AI</h2>
+    <div class="body">
+      <p class="note">Выбирается только семейство. Конкретную модель сервер подбирает сам из того, что провайдер реально отдаёт: сильную — для вызовов из терминала, дешёвую — для фоновых задач. В терминале настраивать нечего, решение приходит с сервера и действует на все выпущенные сборки сразу.</p>
+      <div class="row">
+        <button id="famClaude" onclick="setFamily('claude')">Claude</button>
+        <button id="famGpt" onclick="setFamily('chatgpt')">ChatGPT</button>
+        <span class="pill n" id="famNow">—</span>
+      </div>
+      <table id="picked" style="margin-top:12px"></table>
+      <details style="margin-top:10px">
+        <summary class="desc">Что провайдер отдаёт целиком</summary>
+        <div id="upstreamModels" style="margin-top:8px"></div>
+      </details>
+    </div>
+  </section>
+
+  <section>
     <h2>Провайдер моделей</h2>
     <div class="body">
-      <p class="note">Все поля пустые = напрямую к Anthropic и OpenAI. Чтобы перейти на роутер, укажите его адреса и разрешённые имена моделей — формат запросов тот же, перезапуск не нужен. Ключ кладётся ниже, в «Ключи провайдеров», под именем <span class="k">anthropic</span> или <span class="k">openai</span>.</p>
+      <p class="note">Адреса пустые = напрямую к Anthropic и OpenAI. Формат запросов у роутеров тот же, перезапуск не нужен. Ключ кладётся ниже, в «Ключи провайдеров», под именем <span class="k">anthropic</span> или <span class="k">openai</span> — на роутере это один и тот же ключ.</p>
+      <p class="note">Поля с именами моделей нужны только чтобы отменить автоподбор и прибить конкретную версию. Пока они пустые, действует выбор из раздела выше.</p>
       <table id="upstream"></table>
       <div class="row" style="margin-top:12px">
         <button onclick="preset('nordrouter')">Заполнить для NordRouter</button>
@@ -188,6 +206,8 @@ const UPSTREAM = [
   ['ai.openai.base_url',         'Адрес для запросов формата OpenAI. Пусто = api.openai.com'],
   ['ai.allowed_models.anthropic','Разрешённые модели через запятую. У роутеров имена с префиксом: anthropic/claude-sonnet-4.6'],
   ['ai.allowed_models.openai',   'То же для формата OpenAI. Пусто = список из переменных окружения'],
+  ['ai.anthropic.model.default', 'Чем подменять модель, если у вызова нет своей. Обязательно при переходе на роутер: иначе терминалы шлют вендорское имя и получают «model is not allowed»'],
+  ['ai.openai.model.default',    'То же для формата OpenAI'],
 ];
 const BOUNDS = [
   ['ai.score.batch',            'Сколько токенов оценивать за один проход'],
@@ -264,7 +284,8 @@ async function loadAll() {
     document.getElementById('models').innerHTML = editableRows(MODELS);
     document.getElementById('bounds').innerHTML = editableRows(BOUNDS);
 
-    const known = new Set([...MODELS, ...BOUNDS, ...UPSTREAM].map(x => x[0]).concat(['ai.enabled', 'ai.anthropic.auth_bearer']));
+    const known = new Set([...MODELS, ...BOUNDS, ...UPSTREAM].map(x => x[0])
+      .concat(['ai.enabled', 'ai.anthropic.auth_bearer', 'ai.family', 'ai.model.auto']));
     const rest = (s.settings || []).filter(x => !known.has(x.key));
     document.getElementById('raw').innerHTML = rest.length
       ? '<tr><th>Ключ</th><th>Значение</th><th>Изменено</th><th></th></tr>' + rest.map(x => `
@@ -280,7 +301,7 @@ async function loadAll() {
     document.getElementById('killBtn').className = killOn ? 'danger' : 'primary';
     document.getElementById('killBtn').textContent = killOn ? 'Остановить все вызовы' : 'Включить обратно';
 
-    await Promise.all([loadFeatures(), loadUsage(), loadKeys(), loadCollectors(), loadHistory()]);
+    await Promise.all([loadUpstream(), loadFeatures(), loadUsage(), loadKeys(), loadCollectors(), loadHistory()]);
   } catch (e) {
     conn.className = 'pill off'; conn.textContent = 'ошибка';
     toast(e.message, true);
@@ -330,12 +351,14 @@ async function toggleKill() {
 // Both fields must move together: a router names models with a vendor prefix, so changing only the
 // URL leaves every call rejected as "model is not allowed" — which reads like a client bug.
 async function preset(which) {
+  // Имена моделей пресет не пишет: их подбирает сервер по живому списку провайдера. Раньше он их
+  // писал — и именно угаданные имена были причиной того, что переключение выглядело сделанным, а
+  // каждый вызов отвечал «model is not allowed». Старые значения чистятся по той же причине.
   const values = which === 'nordrouter'
     ? {
         'ai.anthropic.base_url': 'https://nordrouter.com/v1/messages',
         'ai.openai.base_url': 'https://nordrouter.com/v1/chat/completions',
-        'ai.allowed_models.anthropic': 'anthropic/claude-sonnet-4.6,anthropic/claude-haiku-4.5,anthropic/claude-sonnet-4.5',
-        'ai.allowed_models.openai': 'openai/gpt-4o,openai/gpt-4o-mini'
+        'ai.allowed_models.anthropic': '', 'ai.allowed_models.openai': ''
       }
     : { 'ai.anthropic.base_url': '', 'ai.openai.base_url': '', 'ai.allowed_models.anthropic': '', 'ai.allowed_models.openai': '' };
 
@@ -347,6 +370,49 @@ async function preset(which) {
     toast(which === 'nordrouter' ? 'Переключено на NordRouter' : 'Возвращено к вендорам');
     loadAll();
   } catch (e) { toast(e.message, true); }
+}
+
+async function setFamily(f) {
+  const name = f === 'chatgpt' ? 'ChatGPT' : 'Claude';
+  if (!confirm('Перевести все AI-вызовы на ' + name + '?\n\nПодействует на терминалы и на фоновые задачи в течение ' +
+    (document.getElementById('ttl').textContent || 15) + ' секунд.')) return;
+  try {
+    await putOrDelete('ai.family', f);
+    toast('Семейство: ' + name);
+    loadAll();
+  } catch (e) { toast(e.message, true); }
+}
+
+// Показывает не то, что настроено, а то, что сервер выберет прямо сейчас. Разница существенная:
+// настройка может быть сделана правильно, а провайдер при этом не отдавать ни одной подходящей
+// модели — и увидеть это надо здесь, а не по молчащим дайджестам через сутки.
+async function loadUpstream() {
+  const picked = document.getElementById('picked');
+  const all = document.getElementById('upstreamModels');
+  try {
+    const r = await api('/api/admin/upstream-models');
+    const gpt = r.family === 'chatgpt';
+    document.getElementById('famNow').textContent = gpt ? 'сейчас ChatGPT' : 'сейчас Claude';
+    document.getElementById('famClaude').className = gpt ? '' : 'primary';
+    document.getElementById('famGpt').className = gpt ? 'primary' : '';
+
+    picked.innerHTML = !r.auto
+      ? '<tr><td class="desc">Автоподбор выключен (ai.model.auto). Действуют имена, заданные вручную ниже.</td></tr>'
+      : r.ok
+        ? '<tr><th>Роль</th><th>Модель, выбранная сервером</th></tr>' +
+          '<tr><td>Вызовы из терминала</td><td class="k">' + esc(r.foreground || '—') + '</td></tr>' +
+          '<tr><td>Фоновые задачи</td><td class="k">' + esc(r.background || '—') + '</td></tr>' +
+          (r.foreground && r.background ? '' :
+            '<tr><td colspan="2" class="err">Подходящей модели нет в списке провайдера — вызовы пойдут на значения из полей ниже.</td></tr>')
+        : '<tr><td class="err">Список моделей не получен: ' + esc(r.error || '') + '. Запрашивали ' + esc(r.url || '') +
+          '. Проверьте ключ и адрес провайдера.</td></tr>';
+
+    all.innerHTML = (r.models || []).length
+      ? (r.models || []).map(m => '<span class="k" style="display:inline-block;margin:0 10px 6px 0">' + esc(m) + '</span>').join('')
+      : '<span class="desc">Провайдер не вернул ни одной модели.</span>';
+  } catch (e) {
+    picked.innerHTML = '<tr><td class="err">' + esc(e.message) + '</td></tr>';
+  }
 }
 
 async function loadFeatures() {

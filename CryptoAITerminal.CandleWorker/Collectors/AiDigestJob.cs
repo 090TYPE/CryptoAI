@@ -35,7 +35,7 @@ public abstract class AiDigestJob : IDataCollector
     /// existed — and the job exists for as long as the process does.
     /// </summary>
     private async Task<string> ModelAsync(CancellationToken ct) =>
-        await _settings.GetAsync(SettingKeys.DigestModel, _envModel, ct).ConfigureAwait(false)
+        await _ai.ModelForAsync(SettingKeys.DigestModel, AiModelRole.Background, _envModel, ct).ConfigureAwait(false)
         ?? SettingKeys.DefaultBackgroundModel;
 
     /// <summary>Stable id of this digest stream (also the ai_digests.kind).</summary>

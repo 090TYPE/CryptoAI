@@ -1,4 +1,5 @@
 using System.Globalization;
+using CryptoAITerminal.Server.Common;
 using Dapper;
 
 namespace CryptoAITerminal.Server.Data;
@@ -80,6 +81,7 @@ public sealed class SettingsStore
     /// </summary>
     public async Task<bool> GetBoolAsync(string key, bool fallback, CancellationToken ct = default) =>
         AsBool(await GetAsync(key, null, ct).ConfigureAwait(false), fallback);
+
 
     // ── Coercion ─────────────────────────────────────────────────────────────
     // Static and public so the rules are testable without a database. Everything a human can type

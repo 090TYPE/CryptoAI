@@ -66,6 +66,33 @@ public class AiUpstreamTests
     }
 
     [Fact]
+    public void A_model_the_server_chose_itself_is_not_checked_against_the_list()
+    {
+        // Список существует, чтобы клиент не назначил дорогую модель за счёт серверного ключа.
+        // Когда имя пришло из живого списка провайдера, сверять его не с чем: автоподбор работал бы
+        // только на моделях, известных на момент сборки, то есть ровно до следующего релиза вендора.
+        var body = """{"model":"claude-sonnet-4-6","max_tokens":100,"messages":[]}""";
+
+        var chosen = AiRequestPolicy.Apply(body, Options(), AiVendor.Anthropic,
+            overrideModel: "anthropic/claude-sonnet-9.9", modelIsServerChosen: true);
+
+        Assert.True(chosen.Ok);
+        Assert.Equal("anthropic/claude-sonnet-9.9", chosen.Model);
+    }
+
+    [Fact]
+    public void What_the_client_asked_for_is_still_checked()
+    {
+        // Ослабление предыдущего теста не должно распространяться на имя, пришедшее снаружи.
+        var body = """{"model":"claude-opus-4-1","max_tokens":100,"messages":[]}""";
+
+        var fromClient = AiRequestPolicy.Apply(body, Options(), AiVendor.Anthropic);
+
+        Assert.False(fromClient.Ok);
+        Assert.Contains("not allowed", fromClient.Error);
+    }
+
+    [Fact]
     public void Vendor_defaults_are_the_real_endpoints()
     {
         // Guards against a stray edit to the constants: a wrong default here would send every

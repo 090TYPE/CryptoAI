@@ -130,12 +130,20 @@ public static class AiRequestPolicy
     /// terminals shipped before per-feature control existed working unchanged.
     /// </param>
     /// <param name="overrideMaxTokens">Output cap for this feature, still clamped to the global cap.</param>
+    /// <param name="modelIsServerChosen">
+    /// Модель выбрана сервером, а не прислана клиентом — тогда белый список не проверяется.
+    ///
+    /// Список существует, чтобы клиент не мог назначить дорогую модель за счёт серверного ключа.
+    /// Когда имя пришло из живого списка провайдера или из настройки, которую набрал оператор,
+    /// проверять его не по чему: он и есть источник истины, а совпадение с заранее выписанным
+    /// перечнем означало бы, что автоподбор работает только на моделях, известных на момент сборки.
+    /// </param>
     public static AiPolicyResult Apply(string requestJson, AiPolicyOptions options, AiVendor vendor,
-        string? overrideModel = null, int? overrideMaxTokens = null)
+        string? overrideModel = null, int? overrideMaxTokens = null, bool modelIsServerChosen = false)
     {
         try
         {
-            return ApplyCore(requestJson, options, vendor, overrideModel, overrideMaxTokens);
+            return ApplyCore(requestJson, options, vendor, overrideModel, overrideMaxTokens, modelIsServerChosen);
         }
         catch (JsonException)
         {
@@ -148,7 +156,7 @@ public static class AiRequestPolicy
     }
 
     private static AiPolicyResult ApplyCore(string requestJson, AiPolicyOptions options, AiVendor vendor,
-        string? overrideModel, int? overrideMaxTokens)
+        string? overrideModel, int? overrideMaxTokens, bool modelIsServerChosen = false)
     {
         JsonNode? root;
         try
@@ -183,7 +191,7 @@ public static class AiRequestPolicy
         var allowed = vendor == AiVendor.Anthropic
             ? options.AllowedAnthropicModels
             : options.AllowedOpenAiModels;
-        if (!allowed.Contains(model))
+        if (!modelIsServerChosen && !allowed.Contains(model))
             return new AiPolicyResult(false, null, $"model '{model}' is not allowed", model);
 
         if (obj["messages"] is JsonArray messages && messages.Count > options.MaxMessages)
