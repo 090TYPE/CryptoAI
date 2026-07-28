@@ -102,7 +102,12 @@ public sealed class AiSignalDeskProvider
             userContent: BuildUserContent(ctx), AiFeatureIds.SignalDesk,
             _http, ct).ConfigureAwait(false);
 
-        return Parse(text, $"{AiRuntime.VendorLabel} {_model}");
+        // Что действительно отработало, а не что попросил терминал. После того как модель стал
+        // выбирать сервер, это разные вещи: подпись «ChatGPT gpt-4o» держалась на локальной
+        // настройке клиента, пока ответ на самом деле приходил от той модели, которую сервер подобрал
+        // сам. Такая подпись не просто неточна — она уводит диагностику не туда.
+        var served = ChatClient.LastServerModel(AiFeatureIds.SignalDesk);
+        return Parse(text, served ?? $"{AiRuntime.VendorLabel} {_model}");
     }
 
     private static string BuildUserContent(AiSignalDeskContext ctx)
