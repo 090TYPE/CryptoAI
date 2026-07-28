@@ -150,7 +150,15 @@ public sealed class CopilotViewModel : ReactiveObject
         }
     }
 
-    public string ModeLabel => _service.UsesLiveModel ? $"Claude · {_service.Model}" : "Offline assistant";
+    // Не "Claude · {_service.Model}": вендор был зашит словом, а имя модели бралось из локальной
+    // настройки — на привязанном к серверу терминале это константа из кода, то есть модель,
+    // которую никто не выбирал и которая не отвечала. Показывается то, что сервер сообщил о
+    // последнем вызове, иначе — только семейство.
+    public string ModeLabel => _service.UsesLiveModel
+        ? (CryptoAITerminal.AIEngine.ChatClient.LastServerModel(CryptoAITerminal.AIEngine.AiFeatureIds.Agent)
+           ?? CryptoAITerminal.AIEngine.ChatClient.LastServerModelAny()
+           ?? CryptoAITerminal.AIEngine.AiRuntime.VendorLabel)
+        : "Offline assistant";
     public string ModeBrush => _service.UsesLiveModel ? SemanticColor.Accent : SemanticColor.Muted;
     public string StatusLabel => IsBusy ? "Thinking…" : "Ready";
 

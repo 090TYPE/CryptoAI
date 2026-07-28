@@ -162,7 +162,11 @@ public partial class BotsDeskViewModel : ReactiveObject
     public string AiProvider =>
         !ChatClient.CanCallModel(_host?.AIBotVM?.ClaudeApiKey) ? "OFFLINE"
         : (ChatClient.LastServerModel(AiFeatureIds.BotParameters)
-           ?? AiRuntime.ActiveSourceLabel).ToUpperInvariant();
+           ?? ChatClient.LastServerModelAny()
+           // Ни одного ответа сервера ещё не было — тогда только семейство. Дописывать сюда
+           // локальное имя модели значит называть ту, которую никто не выбирал: при пустом
+           // окружении оно берётся из константы в коде.
+           ?? AiRuntime.VendorLabel).ToUpperInvariant();
 
     // ── commands ────────────────────────────────────────────────────────────
     public ICommand RefreshCommand { get; }

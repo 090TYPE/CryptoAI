@@ -117,6 +117,16 @@ public static class ChatClient
     public static string SourceLabel(string feature, string? requestedModel) =>
         LastServerModel(feature) ?? $"{AiRuntime.VendorLabel} {requestedModel}";
 
+    /// <summary>
+    /// Последняя модель, о которой сообщил сервер, по любой функции.
+    ///
+    /// Для мест, где подпись описывает не один вызов, а «чем сейчас обслуживает сервер»: бейдж на
+    /// панели, заголовок раздела. Своя функция там может ещё ни разу не вызываться, а брать в этом
+    /// случае локальную настройку клиента нельзя — при пустом окружении это зашитая константа, то
+    /// есть имя модели, которую никто не выбирал и которая, возможно, вообще не отвечала.
+    /// </summary>
+    public static string? LastServerModelAny() => LastModels.Values.FirstOrDefault();
+
     public static string? LastServerModel(string feature) =>
         LastModels.TryGetValue(feature, out var m) ? m : null;
 
