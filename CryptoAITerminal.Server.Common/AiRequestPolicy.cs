@@ -60,10 +60,16 @@ public sealed record AiPolicyOptions(
                 "gpt-4o-mini",
                 "gpt-4o",
             }),
-            // Above the largest legitimate client request — AiSignalDeskProvider asks for 2000,
+            // Above the largest legitimate client request — AiSignalDeskProvider asks for 3200,
             // the agent runners for 1024. Clamping is silent, so a cap below the real ceiling
             // would truncate answers instead of reporting a problem.
-            MaxTokensCap: Int(cfg("AI_MAX_TOKENS_CAP"), 2048),
+            //
+            // Поднято с 2048 после того, как это ровно и произошло: панель сигналов просила 2000,
+            // упиралась в них на 14 символах и получала оборванный JSON. Потолок в 2048 не давал
+            // клиенту попросить больше, то есть починить это со стороны терминала было нельзя.
+            // Обрезанный ответ оплачивается целиком и не используется вовсе, так что низкий
+            // потолок здесь не экономил, а гарантировал стопроцентные потери на таких вызовах.
+            MaxTokensCap: Int(cfg("AI_MAX_TOKENS_CAP"), 4096),
             MaxRequestBytes: Int(cfg("AI_MAX_REQUEST_BYTES"), 128 * 1024),
             // Must clear a full agent run, not just a single-turn chat: ClaudeAgentRunner /
             // OpenAiAgentRunner append an assistant turn plus a tool_result turn per iteration and

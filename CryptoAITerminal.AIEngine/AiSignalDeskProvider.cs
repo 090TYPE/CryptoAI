@@ -91,8 +91,13 @@ public sealed class AiSignalDeskProvider
             "\"coach\":{\"summary\":string,\"strengths\":[string],\"leaks\":[string],\"suggestions\":[string]}}. " +
             "Use the exact symbol tokens from the data for \"sym\". Keep every string terse.";
 
+        // 3200, а не 2000: схема требует сигнал на каждый из 14 символов плюс режим, дайджест,
+        // возможности, инсайты и разбор журнала. На 2000 ответ обрывался на середине строки, JSON не
+        // закрывался, и разбор выбрасывал целиком всё — включая десяток сигналов, которые уже
+        // пришли и за которые уже заплачено. Видно это было только как «ответ не удалось
+        // использовать», то есть неотличимо от плохой модели.
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 2000, temperature: 0.4,
+            _apiKey, _model, maxTokens: 3200, temperature: 0.4,
             system: system,
             userContent: BuildUserContent(ctx), AiFeatureIds.SignalDesk,
             _http, ct).ConfigureAwait(false);
@@ -154,8 +159,103 @@ public sealed class AiSignalDeskProvider
         }
         catch (JsonException)
         {
+            return Salvage(text, source);
+        }
+    }
+
+    /// <summary>
+    /// Спасает сигналы из оборванного ответа.
+    ///
+    /// Ответ, упёршийся в лимит длины, оплачен целиком, и в нём обычно уже лежит десяток готовых
+    /// сигналов — а выбрасывался он весь, потому что последняя строка не закрыта. Пользователь при
+    /// этом видел «ответ не удалось использовать», то есть неотличимо от неудачного вызова.
+    ///
+    /// Собирается только то, что заведомо целое: объекты внутри "signals", закрытые своей скобкой.
+    /// Остальные разделы берутся по умолчанию, а источник помечается, чтобы частичный ответ не
+    /// выдавался за полный.
+    /// </summary>
+    private static AiSignalDeskResult? Salvage(string text, string source)
+    {
+        var objects = CompleteObjectsInSignals(text);
+        if (objects.Count == 0) return null;
+
+        try
+        {
+            var rebuilt = "{\"signals\":[" + string.Join(",", objects) + "]}";
+            using var doc = JsonDocument.Parse(rebuilt);
+            var signals = ParseSignals(doc.RootElement);
+            if (signals.Count == 0) return null;
+
+            return new AiSignalDeskResult(
+                new AiDeskRegime("NEUTRAL", "neutral", "", ""),
+                new AiDeskNews("NEUTRAL", "", []),
+                signals,
+                [], [],
+                new AiDeskCoach("", [], [], []),
+                source + " · partial");
+        }
+        catch (JsonException)
+        {
             return null;
         }
+    }
+
+    /// <summary>
+    /// Целые объекты внутри массива "signals". Скобки считаются вручную, потому что документ
+    /// разобрать нельзя — он и оборвался. Кавычки и экранирование учитываются: скобка внутри
+    /// текста причины иначе сдвинула бы глубину и склеила два объекта в один.
+    /// </summary>
+    private static List<string> CompleteObjectsInSignals(string text)
+    {
+        var found = new List<string>();
+
+        var key = text.IndexOf("\"signals\"", StringComparison.Ordinal);
+        if (key < 0) return found;
+        var open = text.IndexOf('[', key);
+        if (open < 0) return found;
+
+        var depth = 0;
+        var start = -1;
+        var inString = false;
+        var escaped = false;
+
+        for (var i = open + 1; i < text.Length; i++)
+        {
+            var c = text[i];
+
+            if (inString)
+            {
+                if (escaped) escaped = false;
+                else if (c == '\\') escaped = true;
+                else if (c == '"') inString = false;
+                continue;
+            }
+
+            switch (c)
+            {
+                case '"':
+                    inString = true;
+                    break;
+                case '{':
+                    if (depth == 0) start = i;
+                    depth++;
+                    break;
+                case '}':
+                    depth--;
+                    if (depth == 0 && start >= 0)
+                    {
+                        found.Add(text[start..(i + 1)]);
+                        start = -1;
+                    }
+                    break;
+                case ']':
+                    // Массив закончился — дальше идут другие разделы, их объекты сюда не относятся.
+                    if (depth == 0) return found;
+                    break;
+            }
+        }
+
+        return found;
     }
 
     private static AiDeskRegime ParseRegime(JsonElement root)
