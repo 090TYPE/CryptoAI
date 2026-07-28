@@ -94,6 +94,36 @@ public static class ChatClient
     /// Used for the Source label under a result, so it names what produced the answer rather than
     /// what the terminal asked for — which after a server-side switch are different things.
     /// </summary>
+    private static DateTime _budgetExhaustedUntilUtc = DateTime.MinValue;
+
+    /// <summary>
+    /// Можно ли сейчас делать вызов, который пользователь не запрашивал.
+    ///
+    /// Существует потому, что фоновые обновления не умеют остановиться сами: дайджест новостей
+    /// перезапускался по таймеру, и после исчерпания суточной квоты продолжал ходить на сервер
+    /// каждые несколько минут до конца суток. Каждый такой поход — гарантированный отказ, но он всё
+    /// равно занимает соединение, пишет строку в лог расхода и мигает ошибкой в интерфейсе.
+    ///
+    /// Нажатие кнопки этим не ограничивается: если человек просит ответ явно, он должен получить
+    /// честное «лимит исчерпан», а не молчание.
+    /// </summary>
+    public static bool AutomaticCallsAllowed => DateTime.UtcNow >= _budgetExhaustedUntilUtc;
+
+    /// <summary>Когда квота восстановится, если она исчерпана. Null — не исчерпана.</summary>
+    public static DateTime? BudgetResetsUtc =>
+        AutomaticCallsAllowed ? null : _budgetExhaustedUntilUtc;
+
+    /// <summary>
+    /// Запоминает отказ и возвращает его же, чтобы вызывающий бросил как обычно.
+    /// Сервер считает сутки по UTC и сбрасывает квоту в полночь — до неё повторять бессмысленно.
+    /// </summary>
+    private static AiCallException Fail(AiCallException ex)
+    {
+        if (ex.ErrorCode == "ai_daily_budget_exhausted")
+            _budgetExhaustedUntilUtc = DateTime.UtcNow.Date.AddDays(1);
+        return ex;
+    }
+
     /// <summary>
     /// Семейство, выбранное пользователем, для сервера.
     ///
@@ -177,7 +207,7 @@ public static class ChatClient
         RecordServerModel(feature, res);
         var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
         if (!res.IsSuccessStatusCode)
-            throw AiCallException.FromResponse("Anthropic", (int)res.StatusCode, body);
+            throw Fail(AiCallException.FromResponse("Anthropic", (int)res.StatusCode, body));
 
         using var doc = JsonDocument.Parse(body);
         if (!doc.RootElement.TryGetProperty("content", out var contentArr) ||
@@ -234,7 +264,7 @@ public static class ChatClient
         RecordServerModel(feature, res);
         var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
         if (!res.IsSuccessStatusCode)
-            throw AiCallException.FromResponse("OpenAI", (int)res.StatusCode, body);
+            throw Fail(AiCallException.FromResponse("OpenAI", (int)res.StatusCode, body));
 
         using var doc = JsonDocument.Parse(body);
         if (!doc.RootElement.TryGetProperty("choices", out var choices) ||

@@ -31,6 +31,14 @@ public sealed class AiTradeAssistantViewModel : ReactiveObject
     private readonly MarketInsightAiService _ai = new();
     private readonly DispatcherTimer _watchTimer;
 
+    /// <summary>
+    /// Как часто режим наблюдения пересчитывает разбор.
+    ///
+    /// Публично, чтобы стоимость этого цикла проверялась тестом: шесть секунд означали 600
+    /// обращений к модели в час и съедали суточную квоту тарифа за минуты.
+    /// </summary>
+    public static readonly TimeSpan WatchInterval = TimeSpan.FromMinutes(5);
+
     private string _riskProfile = "Balanced";
     private string _horizon = "Swing";
     private string _biasMode = "Auto";
@@ -70,8 +78,17 @@ public sealed class AiTradeAssistantViewModel : ReactiveObject
         BacktestCommand = ReactiveCommand.Create(RunBacktest, outputScheduler: App.UiScheduler);
         ArmAlertsCommand = ReactiveCommand.Create(ArmAlerts, outputScheduler: App.UiScheduler);
 
-        _watchTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(6) };
-        _watchTimer.Tick += async (_, _) => await AnalyzeAsync();
+        // Шесть секунд означали 600 обращений к модели в час — включённый WATCH съедал суточную
+        // квоту тарифа за считанные минуты. Пять минут дают 12 в час: наблюдение остаётся
+        // наблюдением, но перестаёт быть самым дорогим действием в приложении. График за шесть
+        // секунд всё равно не меняется настолько, чтобы это стоило пересчёта.
+        _watchTimer = new DispatcherTimer { Interval = WatchInterval };
+        _watchTimer.Tick += async (_, _) =>
+        {
+            // Квота исчерпана — наблюдение молча ждёт полуночи вместо отказа раз в минуту.
+            if (!ChatClient.AutomaticCallsAllowed) return;
+            await AnalyzeAsync();
+        };
     }
 
     // ── Preferences (the "what do you want" the assistant asks) ───────────────

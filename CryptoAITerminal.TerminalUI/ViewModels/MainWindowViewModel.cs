@@ -4268,6 +4268,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         if (normalized == "funding") FundingRateVM?.Activate(); else FundingRateVM?.Deactivate();
         if (normalized == "liquidation") LiquidationHeatmapVM?.Activate(); else LiquidationHeatmapVM?.Deactivate();
 
+        // Дайджест новостей пересобирается только когда на него смотрят. Он висел на таймере лент
+        // и обновлялся в фоне независимо от открытого раздела — при опросе раз в 90 секунд это
+        // давало сотни вызовов модели в сутки у пользователя, который ничего не нажимал, и съедало
+        // суточную квоту тарифа за пару часов. Расход должен быть пропорционален чтению.
+        NewsFeedVM.SectionVisible = normalized == "news";
+
         // Generate the AI signal desk the first time it is opened (live if a key is set).
         if (normalized == "ai-signals")
             _ = AiSignalDeskVM.EnsureLoadedAsync();
