@@ -28,7 +28,8 @@ builder.Services.AddSingleton(sp => new AiProxy(
     new HttpClient { Timeout = TimeSpan.FromSeconds(120) },
     sp.GetRequiredService<ProviderKeyStore>(),
     builder.Configuration["ANTHROPIC_API_KEY"],
-    builder.Configuration["OPENAI_API_KEY"]));
+    builder.Configuration["OPENAI_API_KEY"],
+    sp.GetRequiredService<SettingsStore>()));
 builder.Services.AddSingleton<SecretsRepository>();
 builder.Services.AddSingleton<WithdrawalsRepository>();
 builder.Services.AddSingleton<BotConfigRepository>();
@@ -414,7 +415,14 @@ static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiPr
         if (cap > 0) overrideMaxTokens = cap;
     }
 
-    var gated = AiRequestPolicy.Apply(raw, policy, vendor, overrideModel, overrideMaxTokens);
+    // The allow-list can be replaced at runtime, because it has to move together with the upstream:
+    // a router names models with a vendor prefix, and a switch that changed only the URL would turn
+    // every call into "model is not allowed".
+    var effective = policy.WithAllowedModels(
+        await settings.GetAsync(SettingKeys.AllowedAnthropicModels, null, ctx.RequestAborted),
+        await settings.GetAsync(SettingKeys.AllowedOpenAiModels, null, ctx.RequestAborted));
+
+    var gated = AiRequestPolicy.Apply(raw, effective, vendor, overrideModel, overrideMaxTokens);
     if (!gated.Ok)
         return Results.BadRequest(new { error = gated.Error });
 

@@ -77,6 +77,38 @@ public sealed record AiPolicyOptions(
 
 public sealed record AiPolicyResult(bool Ok, string? Body, string? Error, string? Model);
 
+public static class AiPolicyOptionsExtensions
+{
+    /// <summary>
+    /// The same limits with a different allow-list, for when the upstream changes at runtime.
+    ///
+    /// A router names models with a vendor prefix — <c>anthropic/claude-sonnet-4.6</c> rather than
+    /// <c>claude-sonnet-4-6</c> — so pointing the proxy at one and forgetting this turns every AI
+    /// call into "model is not allowed". Building the replacement here keeps that a settings
+    /// change rather than a redeploy.
+    /// </summary>
+    public static AiPolicyOptions WithAllowedModels(this AiPolicyOptions options,
+        string? anthropicCsv, string? openAiCsv)
+    {
+        static IReadOnlySet<string>? Parse(string? csv) =>
+            string.IsNullOrWhiteSpace(csv)
+                ? null
+                : new HashSet<string>(
+                    csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+                    StringComparer.OrdinalIgnoreCase);
+
+        var anthropic = Parse(anthropicCsv);
+        var openAi = Parse(openAiCsv);
+        if (anthropic is null && openAi is null) return options;
+
+        return options with
+        {
+            AllowedAnthropicModels = anthropic ?? options.AllowedAnthropicModels,
+            AllowedOpenAiModels = openAi ?? options.AllowedOpenAiModels
+        };
+    }
+}
+
 /// <summary>
 /// Gate for the AI proxy endpoints. Without it <c>/api/ai/message</c> is an open relay for the
 /// server's Anthropic/OpenAI key: the request body was forwarded verbatim, so a client chose the

@@ -70,6 +70,33 @@ public static class SettingKeys
             ["max"] = 105_000,
         };
 
+    // ── Куда ходить за моделями ───────────────────────────────────────────────
+    // Позволяет заменить вендора на OpenAI-совместимый роутер, не трогая код. Роутер, отвечающий
+    // на /v1/messages, с этой стороны неотличим от Anthropic — меняется только адрес и способ
+    // авторизации.
+    //
+    // Пример для NordRouter:
+    //   ai.anthropic.base_url = https://nordrouter.com/v1/messages
+    //   ai.openai.base_url    = https://nordrouter.com/v1/chat/completions
+    // Ключ кладётся в «Ключи провайдеров» как anthropic / openai — тот же самый sk-nr-…
+
+    public const string AnthropicBaseUrl = "ai.anthropic.base_url";
+    public const string OpenAiBaseUrl    = "ai.openai.base_url";
+
+    /// <summary>
+    /// Авторизоваться bearer-токеном вместо x-api-key. Само выставляется в true, как только адрес
+    /// перестаёт быть вендорским, потому что роутеры используют bearer поголовно.
+    /// </summary>
+    public const string AnthropicAuthBearer = "ai.anthropic.auth_bearer";
+
+    /// <summary>
+    /// Разрешённые имена моделей, через запятую. Задаются вместе с адресом роутера: у роутера
+    /// имена с префиксом вендора, и без этого каждый вызов упрётся в «model is not allowed».
+    /// Пусто — действует список из переменных окружения.
+    /// </summary>
+    public const string AllowedAnthropicModels = "ai.allowed_models.anthropic";
+    public const string AllowedOpenAiModels    = "ai.allowed_models.openai";
+
     // ── Оповещения о состоянии сборщиков ──────────────────────────────────────
     // Env fallbacks: ALERT_BOT_TOKEN, ALERT_CHAT_ID, COLLECTOR_STALE_MINUTES.
 

@@ -35,7 +35,11 @@ builder.Services.AddSingleton(sp => new AiProxy(
     new HttpClient { Timeout = TimeSpan.FromSeconds(120) },
     sp.GetRequiredService<ProviderKeyStore>(),
     builder.Configuration["ANTHROPIC_API_KEY"],
-    builder.Configuration["OPENAI_API_KEY"]));
+    builder.Configuration["OPENAI_API_KEY"],
+    // So the background jobs follow the same upstream as the proxy. Without this a switch to a
+    // router would move the terminals and leave the 31 digests calling the vendor directly — two
+    // bills, and only one of them expected.
+    sp.GetRequiredService<SettingsStore>()));
 builder.Services.AddSingleton<NotificationRepository>();
 builder.Services.AddSingleton<InboxRepository>();
 builder.Services.AddSingleton<INotifier, Notifier>();

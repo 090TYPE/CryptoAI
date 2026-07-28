@@ -101,6 +101,18 @@ public static class AdminUi
   </section>
 
   <section>
+    <h2>Провайдер моделей</h2>
+    <div class="body">
+      <p class="note">Все поля пустые = напрямую к Anthropic и OpenAI. Чтобы перейти на роутер, укажите его адреса и разрешённые имена моделей — формат запросов тот же, перезапуск не нужен. Ключ кладётся ниже, в «Ключи провайдеров», под именем <span class="k">anthropic</span> или <span class="k">openai</span>.</p>
+      <table id="upstream"></table>
+      <div class="row" style="margin-top:12px">
+        <button onclick="preset('nordrouter')">Заполнить для NordRouter</button>
+        <button class="danger" onclick="preset('vendor')">Вернуть напрямую к вендорам</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
     <h2>Модели по функциям терминала</h2>
     <div class="body">
       <p class="note">Что клиент прислал — не важно: модель выбирает сервер. Пустое поле = запрос терминала проходит как есть. Ограничение длины ответа не может превысить общий потолок сервера.</p>
@@ -168,6 +180,14 @@ const MODELS = [
   ['ai.anomaly.model', 'Модель для детектора аномалий'],
   ['ai.ask.model',     'Модель для вопросов к базе знаний'],
   ['ai.review.model',  'Модель для персональных портфельных ревью'],
+];
+// Where requests go. A router that speaks /v1/messages is indistinguishable from Anthropic on the
+// wire, so switching to one is these four fields and a key — no deploy.
+const UPSTREAM = [
+  ['ai.anthropic.base_url',      'Адрес для запросов формата Anthropic. Пусто = api.anthropic.com'],
+  ['ai.openai.base_url',         'Адрес для запросов формата OpenAI. Пусто = api.openai.com'],
+  ['ai.allowed_models.anthropic','Разрешённые модели через запятую. У роутеров имена с префиксом: anthropic/claude-sonnet-4.6'],
+  ['ai.allowed_models.openai',   'То же для формата OpenAI. Пусто = список из переменных окружения'],
 ];
 const BOUNDS = [
   ['ai.score.batch',            'Сколько токенов оценивать за один проход'],
@@ -240,10 +260,11 @@ async function loadAll() {
           ? '<span class="err">База недоступна. Сервер отдаёт последний известный снимок настроек — изменения сейчас не сохранятся и не применятся.</span>'
           : `Ключей в базе: ${(s.settings || []).length}. Отсутствующий ключ означает значение по умолчанию из кода.`;
 
+    document.getElementById('upstream').innerHTML = editableRows(UPSTREAM);
     document.getElementById('models').innerHTML = editableRows(MODELS);
     document.getElementById('bounds').innerHTML = editableRows(BOUNDS);
 
-    const known = new Set([...MODELS, ...BOUNDS].map(x => x[0]).concat(['ai.enabled']));
+    const known = new Set([...MODELS, ...BOUNDS, ...UPSTREAM].map(x => x[0]).concat(['ai.enabled', 'ai.anthropic.auth_bearer']));
     const rest = (s.settings || []).filter(x => !known.has(x.key));
     document.getElementById('raw').innerHTML = rest.length
       ? '<tr><th>Ключ</th><th>Значение</th><th>Изменено</th><th></th></tr>' + rest.map(x => `
@@ -306,6 +327,28 @@ async function toggleKill() {
 }
 
 // Rendered from the server's own catalogue, so a feature added there appears here without an edit.
+// Both fields must move together: a router names models with a vendor prefix, so changing only the
+// URL leaves every call rejected as "model is not allowed" — which reads like a client bug.
+async function preset(which) {
+  const values = which === 'nordrouter'
+    ? {
+        'ai.anthropic.base_url': 'https://nordrouter.com/v1/messages',
+        'ai.openai.base_url': 'https://nordrouter.com/v1/chat/completions',
+        'ai.allowed_models.anthropic': 'anthropic/claude-sonnet-4.6,anthropic/claude-haiku-4.5,anthropic/claude-sonnet-4.5',
+        'ai.allowed_models.openai': 'openai/gpt-4o,openai/gpt-4o-mini'
+      }
+    : { 'ai.anthropic.base_url': '', 'ai.openai.base_url': '', 'ai.allowed_models.anthropic': '', 'ai.allowed_models.openai': '' };
+
+  const label = which === 'nordrouter' ? 'перевести все AI-вызовы на NordRouter' : 'вернуть вызовы напрямую к вендорам';
+  if (!confirm('Точно ' + label + '?\n\nКлюч в разделе «Ключи провайдеров» должен соответствовать выбранному адресу, иначе все вызовы начнут отвечать 401.')) return;
+
+  try {
+    for (const [k, v] of Object.entries(values)) await putOrDelete(k, v);
+    toast(which === 'nordrouter' ? 'Переключено на NordRouter' : 'Возвращено к вендорам');
+    loadAll();
+  } catch (e) { toast(e.message, true); }
+}
+
 async function loadFeatures() {
   const el = document.getElementById('features');
   try {
