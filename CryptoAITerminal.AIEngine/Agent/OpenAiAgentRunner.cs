@@ -83,6 +83,7 @@ public sealed class OpenAiAgentRunner : IAgentRunner
                 var token = ChatClient.LicenseTokenProvider?.Invoke();
                 if (!string.IsNullOrWhiteSpace(token)) req.Headers.Add("X-License", token);
                 req.Headers.Add("X-AI-Feature", AiFeatureIds.Agent);
+                req.Headers.Add("X-AI-Family", ChatClient.FamilyHeader);
             }
             else
             {

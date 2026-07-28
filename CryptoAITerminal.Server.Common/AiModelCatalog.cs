@@ -90,6 +90,17 @@ public static class AiModelCatalog
         : a.Major != b.Major ? a.Major.CompareTo(b.Major)
         : a.Minor.CompareTo(b.Minor);
 
+    /// <summary>
+    /// Относится ли имя модели к семейству.
+    ///
+    /// Публично, потому что этим проверяются не только кандидаты из списка провайдера, но и имена,
+    /// заданные руками: прибитое <c>claude-sonnet-4-6</c>, оставшееся от прежней настройки, не
+    /// должно переживать переключение на ChatGPT. Иначе переключатель срабатывал бы для одних
+    /// функций и молча не срабатывал для других — худший из возможных исходов.
+    /// </summary>
+    public static bool BelongsTo(string? id, AiFamily family) =>
+        !string.IsNullOrWhiteSpace(id) && Belongs(id.ToLowerInvariant(), family);
+
     private static bool Belongs(string low, AiFamily family) => family == AiFamily.Claude
         ? low.Contains("claude")
         : low.Contains("gpt") || low.Contains("o1-") || low.Contains("o3-");
@@ -141,6 +152,29 @@ public static class AiModelCatalog
     /// <summary>Разбор значения настройки <c>ai.family</c>. Незнакомое значение — Claude.</summary>
     public static AiFamily ParseFamily(string? raw) =>
         raw?.Trim().ToLowerInvariant() is "chatgpt" or "openai" or "gpt" ? AiFamily.ChatGpt : AiFamily.Claude;
+
+    /// <summary>
+    /// Строгий разбор: распознано или нет, без подстановки Claude по умолчанию.
+    ///
+    /// Нужен там, где значение приходит из заголовка запроса. Мягкий разбор в этом месте означал бы,
+    /// что пустой или искажённый заголовок молча перебивает выбор, сделанный на сервере, — то есть
+    /// одна опечатка в клиенте переводит пользователя на другое семейство без единого следа.
+    /// </summary>
+    public static bool TryParseFamily(string? raw, out AiFamily family)
+    {
+        switch (raw?.Trim().ToLowerInvariant())
+        {
+            case "claude" or "anthropic":
+                family = AiFamily.Claude;
+                return true;
+            case "chatgpt" or "openai" or "gpt":
+                family = AiFamily.ChatGpt;
+                return true;
+            default:
+                family = AiFamily.Claude;
+                return false;
+        }
+    }
 
     public static string FamilyName(AiFamily family) => family == AiFamily.ChatGpt ? "chatgpt" : "claude";
 }

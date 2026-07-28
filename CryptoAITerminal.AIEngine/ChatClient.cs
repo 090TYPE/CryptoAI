@@ -94,6 +94,16 @@ public static class ChatClient
     /// Used for the Source label under a result, so it names what produced the answer rather than
     /// what the terminal asked for — which after a server-side switch are different things.
     /// </summary>
+    /// <summary>
+    /// Семейство, выбранное пользователем, для сервера.
+    ///
+    /// В серверном режиме терминал не знает и не должен знать, какой именно моделью его обслужат —
+    /// это решает сервер по живому списку провайдера. Но выбор между Claude и ChatGPT принадлежит
+    /// пользователю: разницу в манере ответа он чувствует, а разницу между версиями одной линейки
+    /// оценить не по чему. Заголовок передаёт первое и не трогает второе.
+    /// </summary>
+    public static string FamilyHeader => AiRuntime.Vendor == AiVendor.OpenAi ? "chatgpt" : "claude";
+
     public static string? LastServerModel(string feature) =>
         LastModels.TryGetValue(feature, out var m) ? m : null;
 
@@ -132,6 +142,7 @@ public static class ChatClient
             if (!string.IsNullOrWhiteSpace(token)) req.Headers.Add("X-License", token);
             // Only in server mode: on a customer's own key there is nobody to interpret it.
             if (!string.IsNullOrEmpty(feature)) req.Headers.Add("X-AI-Feature", feature);
+            req.Headers.Add("X-AI-Family", FamilyHeader);
         }
         else
         {

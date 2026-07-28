@@ -134,6 +134,17 @@ public static class SettingKeys
     /// </summary>
     public const string ModelAuto = "ai.model.auto";
 
+    /// <summary>
+    /// Разрешено ли пользователю выбирать семейство в терминале. По умолчанию да: это его вкус, а
+    /// не вопрос стоимости — цена Claude и ChatGPT одного класса сопоставима, а суточную квоту
+    /// ограничивает тариф, а не выбор семейства.
+    ///
+    /// Выключается, когда семейство надо зафиксировать для всех — например, если у одного из
+    /// провайдеров перебои и оператор уводит с него всех разом. Тогда заголовок терминала
+    /// игнорируется и действует <see cref="Family"/>.
+    /// </summary>
+    public const string FamilyUserChoice = "ai.family.user_choice";
+
     // ── Оповещения о состоянии сборщиков ──────────────────────────────────────
     // Env fallbacks: ALERT_BOT_TOKEN, ALERT_CHAT_ID, COLLECTOR_STALE_MINUTES.
 

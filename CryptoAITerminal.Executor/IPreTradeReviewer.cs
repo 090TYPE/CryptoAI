@@ -45,7 +45,7 @@ public sealed class AiPreTradeReviewer : IPreTradeReviewer
 
         try
         {
-            var res = await _ai.ForwardAnthropicAsync(await BuildRequestAsync(side, asset, amountUsd, ct), ct);
+            var res = await _ai.ForwardAnthropicAsync(await BuildRequestAsync(side, asset, amountUsd, ct), ct: ct);
             if (res is null || res.Value.Status != 200)
             {
                 _log.LogWarning("pre-trade review unavailable (status {Status})", res?.Status);

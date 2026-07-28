@@ -91,13 +91,8 @@ public sealed class AiSignalDeskProvider
             "\"coach\":{\"summary\":string,\"strengths\":[string],\"leaks\":[string],\"suggestions\":[string]}}. " +
             "Use the exact symbol tokens from the data for \"sym\". Keep every string terse.";
 
-        // 3200, а не 2000: схема требует сигнал на каждый из 14 символов плюс режим, дайджест,
-        // возможности, инсайты и разбор журнала. На 2000 ответ обрывался на середине строки, JSON не
-        // закрывался, и разбор выбрасывал целиком всё — включая десяток сигналов, которые уже
-        // пришли и за которые уже заплачено. Видно это было только как «ответ не удалось
-        // использовать», то есть неотличимо от плохой модели.
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 3200, temperature: 0.4,
+            _apiKey, _model, maxTokens: MaxTokensFor(ctx.Markets.Count), temperature: 0.4,
             system: system,
             userContent: BuildUserContent(ctx), AiFeatureIds.SignalDesk,
             _http, ct).ConfigureAwait(false);
@@ -110,11 +105,34 @@ public sealed class AiSignalDeskProvider
         return Parse(text, served ?? $"{AiRuntime.VendorLabel} {_model}");
     }
 
+    /// <summary>Сколько символов панель отдаёт модели за один проход.</summary>
+    public const int MaxSymbols = 14;
+
+    /// <summary>
+    /// Длина ответа под размер задачи, а не одно число на все случаи.
+    ///
+    /// Ответ обязан вместить сигнал на каждый символ плюс режим, дайджест, возможности, инсайты и
+    /// разбор журнала. Фиксированное значение здесь уже стоило дважды: на 2000 ответ обрывался на
+    /// середине строки при полном списке, а на коротком списке то же число было впустую широким.
+    ///
+    /// Измерено на живых ответах: 7 символов — около 1350 токенов, 14 — около 1900. Заложено с
+    /// запасом почти втрое, потому что многословность модели гуляет от прогона к прогону, а цена
+    /// ошибки несимметрична: неиспользованный потолок не стоит ничего (модель останавливается сама
+    /// по end_turn), а нехватка портит весь ответ целиком.
+    /// </summary>
+    public static int MaxTokensFor(int symbolCount)
+    {
+        var symbols = Math.Clamp(symbolCount, 1, MaxSymbols);
+        return Math.Min(1600 + symbols * 260, 8000);
+    }
+
     private static string BuildUserContent(AiSignalDeskContext ctx)
     {
         var sb = new StringBuilder();
         sb.AppendLine("LIVE MARKETS (symbol | last | 24h% | spread% | activity | exchange):");
-        foreach (var m in ctx.Markets.Take(14))
+        // Одна константа с расчётом длины ответа: разойдясь, они дают ровно ту поломку, из-за
+        // которой ответ обрывался — больше символов на входе, чем заложено в потолок.
+        foreach (var m in ctx.Markets.Take(MaxSymbols))
             sb.AppendLine(
                 $"{m.Sym} | {m.Price} | {m.ChangePct:+0.##;-0.##;0}% | {m.SpreadPct:0.###}% | {m.Activity:0.#} | {m.Exch}");
 

@@ -413,13 +413,27 @@ static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiPr
         if (cap > 0) overrideMaxTokens = cap;
     }
 
+    // Семейство выбирает пользователь в терминале, конкретную модель — сервер. Разделение
+    // намеренное: Claude против ChatGPT это вкус, и человек чувствует разницу; какая именно версия
+    // модели за этим стоит — вопрос, на который у пользователя нет данных, а у сервера есть живой
+    // список провайдера.
+    //
+    // Заголовок уважается только когда это разрешено настройкой, и только если разобран строго:
+    // искажённое значение обязано означать «выбора не было», а не молча увести на другое семейство.
+    var family = await ai.FamilyAsync(ctx.RequestAborted);
+    if (await settings.GetBoolAsync(SettingKeys.FamilyUserChoice, true, ctx.RequestAborted) &&
+        AiModelCatalog.TryParseFamily(ctx.Request.Headers["X-AI-Family"].ToString(), out var chosen))
+    {
+        family = chosen;
+    }
+
     // Which model serves this call is entirely the server's business — deliberately resolved even
     // when the client sent no feature header at all, because those are the builds already in
     // customers' hands. Null means nothing is configured and no list could be read, and only then
     // does the client's own choice stand.
     var overrideModel = await ai.ModelForAsync(
         AiFeatures.IsWellFormed(feature) ? SettingKeys.FeatureModel(feature) : null,
-        AiModelRole.Foreground, null, ctx.RequestAborted);
+        AiModelRole.Foreground, null, family, ctx.RequestAborted);
 
     // The allow-list can be replaced at runtime, because it has to move together with the upstream:
     // a router names models with a vendor prefix, and a switch that changed only the URL would turn
@@ -434,8 +448,8 @@ static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiPr
         return Results.BadRequest(new { error = gated.Error });
 
     var result = vendor == AiVendor.Anthropic
-        ? await ai.ForwardAnthropicAsync(gated.Body!, ctx.RequestAborted)
-        : await ai.ForwardOpenAiAsync(gated.Body!, ctx.RequestAborted);
+        ? await ai.ForwardAnthropicAsync(gated.Body!, family, ctx.RequestAborted)
+        : await ai.ForwardOpenAiAsync(gated.Body!, family, ctx.RequestAborted);
 
     if (result is null) return Results.Json(new { error = "ai_key_not_configured" }, statusCode: 503);
 
@@ -512,7 +526,7 @@ app.MapPost("/api/ai/ask", async (HttpContext ctx, AskInput body, AiProxy ai,
         messages = new[] { new { role = "user", content = $"Context:\n{context}\n\nQuestion: {body.Question}" } }
     });
 
-    var res = await ai.ForwardAnthropicAsync(request, ctx.RequestAborted);
+    var res = await ai.ForwardAnthropicAsync(request, ct: ctx.RequestAborted);
     if (res is null) return Results.Json(new { error = "ai_key_not_configured" }, statusCode: 503);
     budget.Charge(askLicense, AiRequestPolicy.CountUsage(res.Value.Body, AiVendor.Anthropic));
     if (res.Value.Status != 200) return Results.Json(new { error = "upstream", status = res.Value.Status }, statusCode: 502);

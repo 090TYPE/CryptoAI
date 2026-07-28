@@ -201,7 +201,20 @@
                                  Foreground="{Binding SubStatusColor, Converter={StaticResource StringToBrush}}" />
                     </StackPanel>
 
-                    <ItemsControl ItemsSource="{Binding Providers}" Margin="0,12,0,0" IsVisible="{Binding IsOwnKey}">
+                    <!-- ══ Выбор семейства ══
+                         Единственное решение об AI, которое осталось у пользователя, и оно
+                         действительно его: разницу в манере ответа между Claude и ChatGPT человек
+                         чувствует, а разницу между версиями одной линейки оценить не по чему —
+                         поэтому конкретную модель подбирает сервер по живому списку провайдера.
+                         Выбор уходит на сервер заголовком и применяется к следующему же вызову. -->
+                    <TextBlock Text="ЧЕМ ОТВЕЧАЕТ AI" Margin="0,14,0,0" FontSize="{DynamicResource FsMicro}" FontWeight="Bold"
+                               Foreground="{DynamicResource TextDim}" IsVisible="{Binding IsServerBound}" />
+                    <TextBlock TextWrapping="Wrap" MaxWidth="760" HorizontalAlignment="Left" Margin="0,4,0,0"
+                               FontSize="{DynamicResource FsMicro}" LineHeight="16" Foreground="{DynamicResource TextDim}"
+                               Text="Выберите семейство — оно применится ко всем панелям сразу. Какая именно модель внутри семейства обслужит вызов, решает сервер: он видит актуальный список и берёт сильную для ответов, которые читаете вы, и дешёвую для фоновых расчётов."
+                               IsVisible="{Binding IsServerBound}" />
+
+                    <ItemsControl ItemsSource="{Binding Providers}" Margin="0,12,0,0">
                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="sd:ProviderCard">

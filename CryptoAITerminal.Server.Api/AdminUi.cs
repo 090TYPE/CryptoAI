@@ -109,6 +109,10 @@ public static class AdminUi
         <button id="famGpt" onclick="setFamily('chatgpt')">ChatGPT</button>
         <span class="pill n" id="famNow">—</span>
       </div>
+      <div class="row" style="margin-top:10px">
+        <button id="famChoiceBtn" onclick="toggleFamilyChoice()">—</button>
+        <span class="note" style="margin:0">Выбранное здесь семейство действует для тех, кто не выбрал своё в терминале. Запрет нужен, когда у одного из провайдеров перебои и увести надо всех разом.</span>
+      </div>
       <table id="picked" style="margin-top:12px"></table>
       <details style="margin-top:10px">
         <summary class="desc">Что провайдер отдаёт целиком</summary>
@@ -285,7 +289,7 @@ async function loadAll() {
     document.getElementById('bounds').innerHTML = editableRows(BOUNDS);
 
     const known = new Set([...MODELS, ...BOUNDS, ...UPSTREAM].map(x => x[0])
-      .concat(['ai.enabled', 'ai.anthropic.auth_bearer', 'ai.family', 'ai.model.auto']));
+      .concat(['ai.enabled', 'ai.anthropic.auth_bearer', 'ai.family', 'ai.model.auto', 'ai.family.user_choice']));
     const rest = (s.settings || []).filter(x => !known.has(x.key));
     document.getElementById('raw').innerHTML = rest.length
       ? '<tr><th>Ключ</th><th>Значение</th><th>Изменено</th><th></th></tr>' + rest.map(x => `
@@ -383,6 +387,18 @@ async function setFamily(f) {
   } catch (e) { toast(e.message, true); }
 }
 
+async function toggleFamilyChoice() {
+  const allowed = (current['ai.family.user_choice']?.value ?? 'true').toLowerCase() !== 'false';
+  if (!confirm(allowed
+    ? 'Запретить пользователям выбирать семейство?\n\nВсе терминалы перейдут на выбранное здесь.'
+    : 'Вернуть пользователям выбор семейства?')) return;
+  try {
+    await putOrDelete('ai.family.user_choice', allowed ? 'false' : 'true');
+    toast(allowed ? 'Выбор в терминале запрещён' : 'Выбор в терминале разрешён');
+    loadAll();
+  } catch (e) { toast(e.message, true); }
+}
+
 // Показывает не то, что настроено, а то, что сервер выберет прямо сейчас. Разница существенная:
 // настройка может быть сделана правильно, а провайдер при этом не отдавать ни одной подходящей
 // модели — и увидеть это надо здесь, а не по молчащим дайджестам через сутки.
@@ -395,6 +411,11 @@ async function loadUpstream() {
     document.getElementById('famNow').textContent = gpt ? 'сейчас ChatGPT' : 'сейчас Claude';
     document.getElementById('famClaude').className = gpt ? '' : 'primary';
     document.getElementById('famGpt').className = gpt ? 'primary' : '';
+
+    const choice = (current['ai.family.user_choice']?.value ?? 'true').toLowerCase() !== 'false';
+    const btn = document.getElementById('famChoiceBtn');
+    btn.textContent = choice ? 'Запретить выбор в терминале' : 'Разрешить выбор в терминале';
+    btn.className = choice ? '' : 'danger';
 
     picked.innerHTML = !r.auto
       ? '<tr><td class="desc">Автоподбор выключен (ai.model.auto). Действуют имена, заданные вручную ниже.</td></tr>'

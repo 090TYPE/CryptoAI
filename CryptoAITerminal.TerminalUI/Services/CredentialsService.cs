@@ -504,6 +504,24 @@ public static class CredentialsService
         AiRuntime.Vendor = s.Provider;
     }
 
+    /// <summary>
+    /// Сохраняет только выбор семейства — Claude или ChatGPT — не трогая ключи и модели.
+    ///
+    /// Нужно отдельно от <see cref="SaveAiSettings"/> потому, что у клиента, работающего через
+    /// сервер, ключей и моделей нет вовсе: их держит сервер, а поля ввода для них убраны. Полное
+    /// сохранение в этом случае записало бы пустые ключи поверх тех, что могли остаться с прежнего
+    /// режима работы на собственном ключе.
+    /// </summary>
+    public static void SaveAiProvider(AiVendor provider)
+    {
+        var current = ReadFromDisk();
+        current.AiProvider = AiRuntime.ToToken(provider);
+        WriteToDisk(current);
+
+        Environment.SetEnvironmentVariable("CRYPTOAI_AI_PROVIDER", current.AiProvider, EnvironmentVariableTarget.Process);
+        AiRuntime.Vendor = provider;
+    }
+
     /// <summary>Persists Binance API key and secret to disk.</summary>
     public static void SaveBinance(string key, string secret)
     {

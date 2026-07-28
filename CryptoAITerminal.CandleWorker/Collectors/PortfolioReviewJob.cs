@@ -43,7 +43,7 @@ public sealed class PortfolioReviewJob : IDataCollector
 
         // Its own key rather than the digest one: this is the knob that turns weekly reviews into
         // daily for the top tier, and it must move without dragging the 31 digests with it.
-        var model = await _ai.ModelForAsync(SettingKeys.ReviewModel, AiModelRole.Background, _envModel, ct)
+        var model = await _ai.ModelForAsync(SettingKeys.ReviewModel, AiModelRole.Background, _envModel, ct: ct)
                     ?? SettingKeys.DefaultBackgroundModel;
         var days = await _settings.GetIntAsync(SettingKeys.ReviewDays, SettingsStore.AsInt(_envDays, 7), ct);
         var batch = await _settings.GetIntAsync(SettingKeys.ReviewBatch, SettingsStore.AsInt(_envBatch, 3), ct);
@@ -56,7 +56,7 @@ public sealed class PortfolioReviewJob : IDataCollector
                 var facts = await _personal.GetUserPortfolioFactsAsync(userId, ct);
                 if (facts.Count == 0) continue;
 
-                var res = await _ai.ForwardAnthropicAsync(BuildRequest(facts, model), ct);
+                var res = await _ai.ForwardAnthropicAsync(BuildRequest(facts, model), ct: ct);
                 if (res is null) return sent;
                 if (res.Value.Status != 200)
                 {

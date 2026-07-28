@@ -44,7 +44,7 @@ public sealed class AiAnomalyCollector : IDataCollector
         if (string.IsNullOrWhiteSpace(await _keys.GetAsync("anthropic", ct)))
             return 0; // no server AI key → stay off
 
-        var model = await _ai.ModelForAsync(SettingKeys.AnomalyModel, AiModelRole.Background, _envModel, ct)
+        var model = await _ai.ModelForAsync(SettingKeys.AnomalyModel, AiModelRole.Background, _envModel, ct: ct)
                     ?? SettingKeys.DefaultBackgroundModel;
         // The pre-filter is the real cost control — it decides how many candidates ever reach the
         // model — so it is the knob most likely to be turned during a volatile session.
@@ -57,7 +57,7 @@ public sealed class AiAnomalyCollector : IDataCollector
         {
             try
             {
-                var res = await _ai.ForwardAnthropicAsync(BuildRequest(c, model), ct);
+                var res = await _ai.ForwardAnthropicAsync(BuildRequest(c, model), ct: ct);
                 if (res is null) return fired;
                 if (res.Value.Status != 200)
                 {

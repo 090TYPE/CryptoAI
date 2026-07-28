@@ -35,7 +35,7 @@ public abstract class AiDigestJob : IDataCollector
     /// existed — and the job exists for as long as the process does.
     /// </summary>
     private async Task<string> ModelAsync(CancellationToken ct) =>
-        await _ai.ModelForAsync(SettingKeys.DigestModel, AiModelRole.Background, _envModel, ct).ConfigureAwait(false)
+        await _ai.ModelForAsync(SettingKeys.DigestModel, AiModelRole.Background, _envModel, ct: ct).ConfigureAwait(false)
         ?? SettingKeys.DefaultBackgroundModel;
 
     /// <summary>Stable id of this digest stream (also the ai_digests.kind).</summary>
@@ -67,7 +67,7 @@ public abstract class AiDigestJob : IDataCollector
         if (string.IsNullOrWhiteSpace(facts)) return 0;
 
         var model = await ModelAsync(ct);
-        var res = await _ai.ForwardAnthropicAsync(BuildRequest(facts, model), ct);
+        var res = await _ai.ForwardAnthropicAsync(BuildRequest(facts, model), ct: ct);
         if (res is null) return 0;
         if (res.Value.Status != 200)
         {

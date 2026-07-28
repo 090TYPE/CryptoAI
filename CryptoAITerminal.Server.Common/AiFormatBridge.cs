@@ -192,6 +192,190 @@ public static class AiFormatBridge
         }.ToJsonString();
     }
 
+    /// <summary>
+    /// Запрос Chat Completions → запрос Anthropic Messages. Зеркало <see cref="RequestToOpenAi"/>.
+    ///
+    /// Нужно ровно затем же: семейство выбирает человек, а формат запроса определяется тем, какой
+    /// провайдер внутри терминала сработал. Без обратного перевода выбор «Claude» не действовал бы
+    /// на вызовы, ушедшие в формате OpenAI, — и работал бы через раз, что хуже, чем не работать.
+    /// </summary>
+    public static string? RequestToAnthropic(string openAiJson, string model)
+    {
+        if (Parse(openAiJson) is not JsonObject src) return null;
+
+        var system = new List<string>();
+        var messages = new JsonArray();
+
+        if (src["messages"] is JsonArray srcMessages)
+            foreach (var m in srcMessages)
+            {
+                if (m is not JsonObject message) continue;
+                var role = message["role"]?.GetValue<string>() ?? "user";
+
+                // system у Anthropic — отдельное поле, а не сообщение.
+                if (role == "system")
+                {
+                    var s = TextOf(message["content"]);
+                    if (!string.IsNullOrWhiteSpace(s)) system.Add(s);
+                    continue;
+                }
+
+                if (role == "tool")
+                {
+                    Append(messages, "user", new JsonObject
+                    {
+                        ["type"] = "tool_result",
+                        ["tool_use_id"] = message["tool_call_id"]?.GetValue<string>() ?? "",
+                        ["content"] = TextOf(message["content"]),
+                    });
+                    continue;
+                }
+
+                var text = TextOf(message["content"]);
+                if (!string.IsNullOrWhiteSpace(text))
+                    Append(messages, role, new JsonObject { ["type"] = "text", ["text"] = text });
+
+                if (message["tool_calls"] is JsonArray calls)
+                    foreach (var c in calls)
+                    {
+                        if (c is not JsonObject call) continue;
+                        var fn = call["function"] as JsonObject;
+                        Append(messages, role, new JsonObject
+                        {
+                            ["type"] = "tool_use",
+                            ["id"] = call["id"]?.GetValue<string>() ?? "",
+                            ["name"] = fn?["name"]?.GetValue<string>() ?? "",
+                            ["input"] = ParseObject(fn?["arguments"]?.GetValue<string>()),
+                        });
+                    }
+            }
+
+        var dst = new JsonObject
+        {
+            ["model"] = model,
+            ["messages"] = messages,
+            ["stream"] = false,
+            // Anthropic требует max_tokens. К этому месту политика его уже проставила, но значение
+            // может лежать под именем max_completion_tokens — у OpenAI это то же самое поле.
+            ["max_tokens"] = Int32(src["max_tokens"]) ?? Int32(src["max_completion_tokens"]) ?? 1024,
+        };
+
+        if (system.Count > 0) dst["system"] = string.Join("\n", system);
+        if (src["temperature"] is JsonValue tv && tv.TryGetValue<double>(out var temperature))
+            dst["temperature"] = temperature;
+
+        if (src["tools"] is JsonArray tools && tools.Count > 0)
+        {
+            var converted = new JsonArray();
+            foreach (var t in tools)
+            {
+                var fn = (t as JsonObject)?["function"] as JsonObject;
+                if (fn?["name"]?.GetValue<string>() is not { Length: > 0 } name) continue;
+                converted.Add(new JsonObject
+                {
+                    ["name"] = name,
+                    ["description"] = fn["description"]?.GetValue<string>() ?? "",
+                    ["input_schema"] = fn["parameters"]?.DeepClone() ?? new JsonObject(),
+                });
+            }
+            if (converted.Count > 0) dst["tools"] = converted;
+        }
+
+        return dst.ToJsonString();
+    }
+
+    /// <summary>
+    /// Кладёт блок в сообщение, сливая его с предыдущим той же роли.
+    ///
+    /// Anthropic требует чередования ролей, а у OpenAI подряд идущие ответы инструментов — обычное
+    /// дело: агентский виток возвращает их отдельными сообщениями. Без слияния получился бы запрос,
+    /// который отвергается по формату, то есть выбор «Claude» ломал бы именно агента.
+    /// </summary>
+    private static void Append(JsonArray messages, string role, JsonObject block)
+    {
+        if (messages.Count > 0 && messages[^1] is JsonObject last &&
+            last["role"]?.GetValue<string>() == role && last["content"] is JsonArray blocks)
+        {
+            blocks.Add(block);
+            return;
+        }
+
+        messages.Add(new JsonObject { ["role"] = role, ["content"] = new JsonArray { block } });
+    }
+
+    /// <summary>
+    /// Ответ Anthropic → ответ в форме Chat Completions, для клиента, который ждёт choices.
+    /// </summary>
+    public static string ResponseToOpenAi(string anthropicJson)
+    {
+        if (Parse(anthropicJson) is not JsonObject src) return anthropicJson;
+        if (src["content"] is not JsonArray content) return anthropicJson;
+
+        var text = new List<string>();
+        var toolCalls = new JsonArray();
+
+        foreach (var b in content)
+        {
+            if (b is not JsonObject block) continue;
+            switch (block["type"]?.GetValue<string>())
+            {
+                case "text":
+                    if (block["text"]?.GetValue<string>() is { Length: > 0 } t) text.Add(t);
+                    break;
+                case "tool_use":
+                    toolCalls.Add(new JsonObject
+                    {
+                        ["id"] = block["id"]?.GetValue<string>() ?? "",
+                        ["type"] = "function",
+                        ["function"] = new JsonObject
+                        {
+                            ["name"] = block["name"]?.GetValue<string>() ?? "",
+                            ["arguments"] = (block["input"] ?? new JsonObject()).ToJsonString(),
+                        },
+                    });
+                    break;
+            }
+        }
+
+        var message = new JsonObject { ["role"] = "assistant" };
+        message["content"] = text.Count > 0 ? string.Join("\n", text) : null;
+        if (toolCalls.Count > 0) message["tool_calls"] = toolCalls;
+
+        var usage = src["usage"] as JsonObject;
+
+        return new JsonObject
+        {
+            ["id"] = src["id"]?.GetValue<string>() ?? "",
+            ["object"] = "chat.completion",
+            ["model"] = src["model"]?.GetValue<string>() ?? "",
+            ["choices"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["index"] = 0,
+                    ["message"] = message,
+                    ["finish_reason"] = FinishReason(src["stop_reason"]?.GetValue<string>()),
+                },
+            },
+            ["usage"] = new JsonObject
+            {
+                ["prompt_tokens"] = Int(usage?["input_tokens"]),
+                ["completion_tokens"] = Int(usage?["output_tokens"]),
+            },
+        }.ToJsonString();
+    }
+
+    private static string? FinishReason(string? stop) => stop switch
+    {
+        "end_turn" or "stop_sequence" => "stop",
+        "max_tokens" => "length",
+        "tool_use" => "tool_calls",
+        _ => stop,
+    };
+
+    private static int? Int32(JsonNode? node) =>
+        node is JsonValue v && v.TryGetValue<int>(out var n) ? n : null;
+
     /// <summary>Имя модели из тела запроса, чтобы перевод не терял выбор, уже сделанный сервером.</summary>
     public static string? ModelOf(string json) =>
         Parse(json) is JsonObject o && o["model"] is JsonValue v && v.TryGetValue<string>(out var s)

@@ -60,15 +60,18 @@ public sealed class AiProxy
     /// только имя модели и получал 400: формат запроса зашит в клиенте, и все ~20 провайдеров
     /// терминала вместе с фоновыми задачами говорят в формате Anthropic.
     /// </summary>
-    public async Task<(int Status, string Body)?> ForwardAnthropicAsync(string requestJson, CancellationToken ct = default)
+    public async Task<(int Status, string Body)?> ForwardAnthropicAsync(string requestJson,
+        AiFamily? family = null, CancellationToken ct = default)
     {
-        if (await FamilyAsync(ct) == AiFamily.ChatGpt)
+        var serving = family ?? await FamilyAsync(ct);
+        if (serving == AiFamily.ChatGpt)
         {
             var translated = AiFormatBridge.RequestToOpenAi(requestJson, AiFormatBridge.ModelOf(requestJson) ?? "");
             if (translated is null)
                 return (400, """{"error":{"message":"request could not be translated"}}""");
 
-            var relayed = await ForwardOpenAiAsync(translated, ct);
+            // Семейство передаётся явно, иначе вызов вернулся бы сюда же и зациклился.
+            var relayed = await ForwardOpenAiAsync(translated, AiFamily.ChatGpt, ct);
             if (relayed is null) return null;
 
             // Переводится только успешный ответ. Тело ошибки уходит наверх как есть: оно попадает в
@@ -105,9 +108,31 @@ public sealed class AiProxy
         return ((int)resp.StatusCode, await resp.Content.ReadAsStringAsync(ct));
     }
 
-    /// <summary>Forward a Chat-Completions request. Returns null when no key is configured.</summary>
-    public async Task<(int Status, string Body)?> ForwardOpenAiAsync(string requestJson, CancellationToken ct = default)
+    /// <summary>
+    /// Forward a Chat-Completions request. Returns null when no key is configured.
+    ///
+    /// Зеркально предыдущему: когда обслуживает Claude, запрос переводится в формат Messages и
+    /// уходит на anthropic-адрес. Без этого выбор семейства действовал бы только на часть вызовов —
+    /// формат определяется тем, какой провайдер внутри терминала сработал, а не решением человека.
+    /// </summary>
+    public async Task<(int Status, string Body)?> ForwardOpenAiAsync(string requestJson,
+        AiFamily? family = null, CancellationToken ct = default)
     {
+        var serving = family ?? await FamilyAsync(ct);
+        if (serving == AiFamily.Claude)
+        {
+            var translated = AiFormatBridge.RequestToAnthropic(requestJson, AiFormatBridge.ModelOf(requestJson) ?? "");
+            if (translated is null)
+                return (400, """{"error":{"message":"request could not be translated"}}""");
+
+            var relayed = await ForwardAnthropicAsync(translated, AiFamily.Claude, ct);
+            if (relayed is null) return null;
+
+            return relayed.Value.Status == 200
+                ? (200, AiFormatBridge.ResponseToOpenAi(relayed.Value.Body))
+                : relayed.Value;
+        }
+
         var url = await SettingAsync(SettingKeys.OpenAiBaseUrl, DefaultOpenAiUrl, ct);
 
         var key = await _keys.GetAsync("openai", ct) ?? _openAiEnv;
@@ -153,15 +178,18 @@ public sealed class AiProxy
     /// перевести весь терминал на самую дешёвую.
     /// </summary>
     public async Task<string?> ModelForAsync(string? ownKey, AiModelRole role, string? envModel,
-        CancellationToken ct = default)
+        AiFamily? requested = null, CancellationToken ct = default)
     {
+        var family = requested ?? await FamilyAsync(ct);
+
+        // Своя настройка вызова стоит выше автоподбора, но НЕ выше выбранного семейства: прибитое
+        // имя claude-модели, оставшееся от прежней настройки, иначе перебивало бы переключение на
+        // ChatGPT — и переключатель работал бы для одних функций и молчал для других.
         if (_settings is not null && !string.IsNullOrWhiteSpace(ownKey))
         {
             var pinned = await _settings.GetAsync(ownKey, null, ct);
-            if (!string.IsNullOrWhiteSpace(pinned)) return pinned;
+            if (!string.IsNullOrWhiteSpace(pinned) && BelongsTo(pinned, family)) return pinned;
         }
-
-        var family = await FamilyAsync(ct);
 
         if (_settings is null || await _settings.GetBoolAsync(SettingKeys.ModelAuto, true, ct))
         {
@@ -173,7 +201,7 @@ public sealed class AiProxy
         {
             var configured = await _settings.GetAsync(
                 SettingKeys.DefaultModel(family == AiFamily.Claude), null, ct);
-            if (!string.IsNullOrWhiteSpace(configured)) return configured;
+            if (!string.IsNullOrWhiteSpace(configured) && BelongsTo(configured, family)) return configured;
         }
 
         if (role != AiModelRole.Background) return null;
@@ -281,6 +309,9 @@ public sealed class AiProxy
             return (false, url, Array.Empty<string>(), e.GetType().Name);
         }
     }
+
+    private static bool BelongsTo(string model, AiFamily family) =>
+        AiModelCatalog.BelongsTo(model, family);
 
     private async Task<string> SettingAsync(string key, string fallback, CancellationToken ct) =>
         _settings is null ? fallback : await _settings.GetAsync(key, fallback, ct) ?? fallback;

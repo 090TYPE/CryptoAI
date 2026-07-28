@@ -779,6 +779,12 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         Providers.Clear();
         if (_host is not { } h) return;
 
+        // Через сервер выбор действует иначе, и подпись обязана это отражать: ключа у клиента нет,
+        // «key set / no key» здесь означало бы неправду. Выбирается только семейство — конкретную
+        // модель внутри него подбирает сервер, и выбор применяется сразу, без кнопки сохранения,
+        // которой в серверном режиме на экране нет.
+        var server = IsServerBound;
+
         void P(bool claude, string name, string hint)
         {
             var on = AiClaude == claude;
@@ -789,18 +795,30 @@ public sealed class SettingsDeskViewModel : ReactiveObject
                 Border = on ? "#14302e" : SemanticColor.Stroke, Bg = on ? "#061615" : "#050f14",
                 Fg = on ? SettingsData.Text : SettingsData.Text3,
                 DotBorder = on ? SettingsData.Accent : "#2a3f54", DotBg = on ? SettingsData.Accent : "transparent",
-                Status = hasKey ? "key set" : "no key",
-                StatusColor = hasKey ? SettingsData.Green : SettingsData.Faint,
+                Status = server ? (on ? "выбрано" : "переключить") : (hasKey ? "key set" : "no key"),
+                StatusColor = server
+                    ? (on ? SettingsData.Green : SettingsData.Faint)
+                    : (hasKey ? SettingsData.Green : SettingsData.Faint),
                 Command = new RelayCommand(() =>
                 {
                     if (claude) h.AiIsClaude = true; else h.AiIsChatGpt = true;
+                    // Сохранение только в серверном режиме: на собственном ключе выбор применяет
+                    // кнопка SAVE PROVIDER вместе с ключом и моделью, и записывать провайдера
+                    // раньше неё значило бы менять поведение до того, как пользователь подтвердил.
+                    if (server)
+                        CredentialsService.SaveAiProvider(
+                            claude ? AIEngine.AiVendor.Anthropic : AIEngine.AiVendor.OpenAi);
                     Touch(); Refresh(); RaiseAi();
                 }),
             });
         }
 
-        P(true, "Claude (Anthropic)", "Best at tool use and long reasoning chains — the default for bots and copilot.");
-        P(false, "ChatGPT (OpenAI)", "Cheaper per call, faster on short prompts like alert parsing and ranking.");
+        P(true, "Claude (Anthropic)", server
+            ? "Развёрнутые ответы, лучше держит длинную цепочку рассуждений. По умолчанию."
+            : "Best at tool use and long reasoning chains — the default for bots and copilot.");
+        P(false, "ChatGPT (OpenAI)", server
+            ? "Короче и быстрее на сжатых задачах — разбор алертов, ранжирование."
+            : "Cheaper per call, faster on short prompts like alert parsing and ranking.");
         // Features stays empty: this build has no per-feature AI switches to read.
     }
 
