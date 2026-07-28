@@ -103,8 +103,13 @@ public class WhaleTrackerViewModel : ReactiveObject, IDisposable
                 "You are an on-chain whale-flow analyst. Coins moving TO exchanges hint at sell pressure; coins moving OFF hint at accumulation.",
                 lines, ["ACCUMULATION", "DISTRIBUTION", "NEUTRAL"], offline).ConfigureAwait(true);
             ApplyInsight(result);
+            // Причина отказа ведёт сводку: без неё оффлайн-результат неотличим от случая, когда
+            // модель вообще не вызывалась.
+            if (_insight.LastError is { } insightError)
+                InsightSummary = $"⚠ {insightError}\n{InsightSummary}";
         }
-        catch (Exception ex) { InsightSummary = $"AI failed: {ex.Message}"; HasInsight = true; }
+        // Никогда не ex.Message: он может нести сырое тело ответа модели.
+        catch (Exception ex) { InsightSummary = CryptoAITerminal.AIEngine.AiFailure.Describe(ex); HasInsight = true; }
         finally { InsightRunning = false; }
     }
 

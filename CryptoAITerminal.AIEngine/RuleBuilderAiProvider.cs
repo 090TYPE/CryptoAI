@@ -51,7 +51,7 @@ public sealed class RuleBuilderAiProvider
             "\"actions\":[{\"type\":string,\"symbol\":string,\"amount\":number,\"message\":string}]}.";
 
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 600, temperature: 0.1,
+            _apiKey, _model, maxTokens: 1800, temperature: 0.1,
             system: system,
             userContent: "Instruction: " + instruction + "\n\nReturn the JSON rule.", AiFeatureIds.RuleBuilder,
             _http, ct).ConfigureAwait(false);

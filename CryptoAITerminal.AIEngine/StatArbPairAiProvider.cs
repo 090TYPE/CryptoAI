@@ -33,7 +33,7 @@ public sealed class StatArbPairAiProvider
             "Is this pair tradeable now, and which leg? Return the JSON.";
 
         var raw = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 320, temperature: 0.2,
+            _apiKey, _model, maxTokens: 800, temperature: 0.2,
             system:
                 "You are a stat-arb quant. A pair is tradeable when it is well-correlated and mean-reverting " +
                 "(reasonable half-life) and the z-score is stretched beyond the entry threshold. " +

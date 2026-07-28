@@ -28,7 +28,7 @@ public sealed class BacktestReviewAiProvider
         var prompt = BuildPrompt(m);
 
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 400, temperature: 0.2,
+            _apiKey, _model, maxTokens: 1500, temperature: 0.2,
             system:
                 "You are a quantitative strategy reviewer. Judge whether a backtest result is " +
                 "trustworthy or likely overfit. Watch for: too few trades, returns that only beat " +

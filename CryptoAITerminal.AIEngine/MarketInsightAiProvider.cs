@@ -43,14 +43,29 @@ public sealed class MarketInsightAiProvider
             "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
             "Schema: {\"summary\":string,\"signal\":\"" + vocab + "\",\"bullets\":[string]}.";
 
+        var lines = Math.Min(dataLines.Count, MaxDataLines);
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 400, temperature: 0.3,
+            _apiKey, _model, maxTokens: MaxTokensFor(lines), temperature: 0.3,
             system: system,
-            userContent: string.Join('\n', dataLines.Take(40)) + "\n\nReturn the JSON.",
+            userContent: string.Join('\n', dataLines.Take(MaxDataLines)) + "\n\nReturn the JSON.",
             AiFeatureIds.MarketInsight, _http, ct).ConfigureAwait(false);
 
         return ParseResponse(text, _model, signalVocabulary);
     }
+
+    /// <summary>Сколько строк данных уходит модели за один проход.</summary>
+    public const int MaxDataLines = 40;
+
+    /// <summary>
+    /// Длина ответа по объёму входа.
+    ///
+    /// Стояло 400 — и не хватало даже на пять строк данных: измеренная потребность 525, ответ
+    /// обрывался на середине строки, разбор возвращал null, панель уходила на собственный расчёт.
+    /// Молча: причина отказа никуда не попадала. Провайдер обслуживает четыре панели сразу —
+    /// потоки китов, on-chain, настроение и ликвидации, — так что не работали все четыре.
+    /// </summary>
+    public static int MaxTokensFor(int dataLineCount) =>
+        Math.Clamp(700 + Math.Clamp(dataLineCount, 1, MaxDataLines) * 45, 900, 2500);
 
     private static InsightResult? ParseResponse(string text, string model, IReadOnlyList<string> vocab)
     {

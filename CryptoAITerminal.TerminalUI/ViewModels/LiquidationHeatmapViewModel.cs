@@ -328,7 +328,10 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
             var result = await _insight.InterpretAsync(
                 "You are a liquidation-liquidity analyst. Large clusters of opposing-side liquidations act as price magnets (price tends to move toward resting liquidity).",
                 lines, ["MAGNET_ABOVE", "MAGNET_BELOW", "BALANCED"], offline).ConfigureAwait(true);
-            InsightSummary = result.Summary; InsightSignal = result.Signal;
+            // Причина отказа ведёт сводку — см. тот же приём в панели настроения.
+            var insightError = _insight.LastError;
+            InsightSummary = insightError is null ? result.Summary : $"⚠ {insightError}\n{result.Summary}";
+            InsightSignal = result.Signal;
             InsightBullets = result.Bullets.Length > 0 ? "• " + string.Join("\n• ", result.Bullets) : "";
             InsightSource = result.Source; HasInsight = true;
             this.RaisePropertyChanged(nameof(InsightSignalBrush));

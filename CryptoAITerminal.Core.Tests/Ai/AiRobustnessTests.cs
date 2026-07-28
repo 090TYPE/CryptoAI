@@ -99,6 +99,30 @@ public class AiRobustnessTests
     }
 
     [Fact]
+    public void The_insight_request_covers_what_the_answer_actually_costs()
+    {
+        // Измерено на живом вызове: пять строк данных стоили 525 токенов при запросе в 400 — ответ
+        // обрывался, и все четыре панели на этом провайдере молча уходили на свой расчёт.
+        Assert.True(MarketInsightAiProvider.MaxTokensFor(5) >= 900,
+            $"на пяти строках запрошено {MarketInsightAiProvider.MaxTokensFor(5)}, измеренная потребность 525");
+
+        Assert.True(MarketInsightAiProvider.MaxTokensFor(MarketInsightAiProvider.MaxDataLines)
+                    > MarketInsightAiProvider.MaxTokensFor(5));
+
+        var cap = CryptoAITerminal.Server.Common.AiPolicyOptions.FromConfig(_ => null).MaxTokensCap;
+        Assert.True(MarketInsightAiProvider.MaxTokensFor(MarketInsightAiProvider.MaxDataLines) <= cap);
+    }
+
+    [Fact]
+    public void The_catalogue_covers_market_insight_too()
+    {
+        var byId = CryptoAITerminal.Server.Common.AiFeatures.All.ToDictionary(f => f.Id);
+
+        Assert.True(byId["market_insight"].DefaultMaxTokens
+                    >= MarketInsightAiProvider.MaxTokensFor(MarketInsightAiProvider.MaxDataLines));
+    }
+
+    [Fact]
     public void Every_client_feature_id_exists_in_the_server_catalogue()
     {
         // Незнакомый серверу идентификатор не фатален — вызов проходит как есть, — но означает

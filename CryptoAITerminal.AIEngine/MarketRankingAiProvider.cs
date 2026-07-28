@@ -33,7 +33,9 @@ public sealed class MarketRankingAiProvider
         var prompt = BuildPrompt(rows, topN);
 
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 700, temperature: 0.2,
+            // По числу запрошенных позиций: у каждой своя причина словами, и на topN=10 фикс в 700
+            // упирался в потолок — а обрезанный JSON здесь выбрасывается целиком.
+            _apiKey, _model, maxTokens: Math.Clamp(400 + topN * 110, 800, 1800), temperature: 0.2,
             system:
                 "You are a crypto market analyst. From a live scanner snapshot, pick the strongest " +
                 $"trade candidates RIGHT NOW (at most {topN}). Consider momentum (24h change), liquidity " +

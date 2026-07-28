@@ -42,7 +42,7 @@ public sealed class AlertSpecAiProvider
             "Schema: {\"symbol\":string,\"condition\":string,\"threshold\":number}.";
 
         var raw = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 200, temperature: 0.0,
+            _apiKey, _model, maxTokens: 800, temperature: 0.0,
             system: system,
             userContent: "Request: " + instruction + "\n\nReturn the JSON alert.", AiFeatureIds.AlertSpec,
             _http, ct).ConfigureAwait(false);

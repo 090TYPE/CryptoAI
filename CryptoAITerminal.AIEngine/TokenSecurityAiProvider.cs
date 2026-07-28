@@ -38,7 +38,7 @@ public sealed class TokenSecurityAiProvider
         var prompt = BuildPrompt(token, securitySummary);
 
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 320, temperature: 0.2,
+            _apiKey, _model, maxTokens: 1200, temperature: 0.2,
             system:
                 "You are a crypto due-diligence analyst screening freshly-listed DEX/CEX tokens for rug-pull and honeypot risk. " +
                 "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +

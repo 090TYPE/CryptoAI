@@ -33,7 +33,7 @@ public sealed class TradeJournalCoachAiProvider
             + "\n\nGive concise, actionable coaching. Return the JSON.";
 
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 600, temperature: 0.3,
+            _apiKey, _model, maxTokens: 1800, temperature: 0.3,
             system:
                 "You are a trading-performance coach. From the statistics, identify what the trader " +
                 "does well, the recurring leaks (where they lose money), and concrete, specific " +

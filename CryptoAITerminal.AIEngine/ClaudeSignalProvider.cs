@@ -33,7 +33,7 @@ public sealed class ClaudeSignalProvider
         var prompt = BuildPrompt(symbol, recentCandles);
 
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 256,
+            _apiKey, _model, maxTokens: 800,
             // Keep determinism reasonable вЂ” we want a verdict, not creative writing.
             temperature: 0.2,
             system:

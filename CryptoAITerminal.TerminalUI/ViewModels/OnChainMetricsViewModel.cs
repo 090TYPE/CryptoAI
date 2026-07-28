@@ -108,12 +108,18 @@ public sealed class OnChainMetricsViewModel : ReactiveObject, IDisposable
             var result = await _insight.InterpretAsync(
                 "You are an on-chain valuation analyst. High MVRV/NUPL = overvalued (bearish), low = undervalued (bullish); net outflows from exchanges are bullish.",
                 lines, ["BULLISH", "BEARISH", "NEUTRAL"], offline).ConfigureAwait(true);
-            InsightSummary = result.Summary; InsightSignal = result.Signal;
+            // Причина отказа ведёт сводку: отдельного места под ошибку у этой ячейки нет, а без
+            // неё оффлайн-результат неотличим от случая, когда модель вообще не вызывалась —
+            // именно так эта панель и прожила незамеченной.
+            var insightError = _insight.LastError;
+            InsightSummary = insightError is null ? result.Summary : $"⚠ {insightError}\n{result.Summary}";
+            InsightSignal = result.Signal;
             InsightBullets = result.Bullets.Length > 0 ? "• " + string.Join("\n• ", result.Bullets) : "";
             InsightSource = result.Source; HasInsight = true;
             this.RaisePropertyChanged(nameof(InsightSignalBrush));
         }
-        catch (Exception ex) { InsightSummary = $"AI failed: {ex.Message}"; HasInsight = true; }
+        // Никогда не ex.Message: он может нести сырое тело ответа модели.
+        catch (Exception ex) { InsightSummary = CryptoAITerminal.AIEngine.AiFailure.Describe(ex); HasInsight = true; }
         finally { InsightRunning = false; }
     }
 

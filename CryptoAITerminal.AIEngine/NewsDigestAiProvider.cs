@@ -34,7 +34,7 @@ public sealed class NewsDigestAiProvider
             + "\n\nSummarize the current market narrative in ONE or TWO sentences and give an overall bias. Return the JSON.";
 
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 256, temperature: 0.3,
+            _apiKey, _model, maxTokens: 800, temperature: 0.3,
             system:
                 "You are a crypto market analyst. Read the headlines and write a concise market-pulse digest. " +
                 "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +
