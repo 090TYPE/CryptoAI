@@ -33,7 +33,7 @@ public static class AiFeatures
         new("ui_translate",        "Перевод интерфейса",                          6000),
         new("agent",               "Агент (одна итерация)",                       4096),
         new("market_ranking",      "Ранжирование рынка",                          1800),
-        new("dex_trending",        "Тренды DEX",                                  2000),
+        new("dex_trending",        "Тренды DEX",                                  4000),
         new("rule_builder",        "Конструктор правил",                          1800),
         new("portfolio_rebalance", "Ребалансировка портфеля",                     2200),
         new("trade_journal_coach", "Разбор торгового журнала",                    1800),

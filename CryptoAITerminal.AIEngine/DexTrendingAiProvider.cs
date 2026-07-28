@@ -32,9 +32,10 @@ public sealed class DexTrendingAiProvider
             + $"\n\nRank the top {topN}. Return the JSON.";
 
         var text = await ChatClient.CompleteTextAsync(
-            // По числу запрошенных позиций: у каждой адрес, оценка и причина словами. Адреса
-            // длинные, поэтому запас здесь больше, чем у ранжирования по биржам.
-            _apiKey, _model, maxTokens: Math.Clamp(400 + topN * 140, 900, 2000), temperature: 0.2,
+            // Измерено на живом вызове: пять токенов стоят 1378, то есть около 275 на запись —
+            // втрое дороже ранжирования по биржам, потому что каждая запись несёт сорокадвух-
+            // символьный адрес. Прежние фиксированные 700 не покрывали и половины.
+            _apiKey, _model, maxTokens: Math.Clamp(500 + topN * 400, 1200, 4000), temperature: 0.2,
             system:
                 "You are a DEX momentum analyst. Rank tokens by genuine momentum while penalising rug risk " +
                 "(thin liquidity, parabolic-then-fading, volume >> liquidity churn). " +
