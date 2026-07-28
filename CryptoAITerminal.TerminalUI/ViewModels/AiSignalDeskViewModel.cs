@@ -207,9 +207,22 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
             if (cts.Token.IsCancellationRequested) return;
             if (result is not null)
             {
-                ApplyResult(result, ctx);
-                SourceLabel = result.Source;
-                AiError = string.Empty;
+                // Отрисовка ответа обёрнута намеренно. Этот метод выполняется внутри реактивного
+                // конвейера, а поведение ReactiveUI по умолчанию на неперехваченном исключении —
+                // не показать ошибку, а завершить процесс. Терминал закрывался целиком из-за
+                // повторяющегося тикера в списке рынков; цена такой ошибки не должна быть
+                // «приложение исчезло с экрана вместе с открытыми позициями».
+                try
+                {
+                    ApplyResult(result, ctx);
+                    SourceLabel = result.Source;
+                    AiError = string.Empty;
+                }
+                catch (Exception ex)
+                {
+                    SourceLabel = OfflineLabel;
+                    AiError = "Не удалось показать ответ модели: " + ex.Message;
+                }
             }
             else
             {
@@ -272,9 +285,34 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
             now.AddSeconds(-idx * 37).ToString("HH:mm:ss"), FormatPrice(m.Price), chgStr);
     }
 
+    /// <summary>
+    /// Поиск рынка по символу для подстановки цены, логотипа и биржи в ответ модели.
+    ///
+    /// Первое вхождение выигрывает, и дубликаты допустимы. Раньше здесь стоял ToDictionary, который
+    /// на повторе бросает — а повтор нормален: один и тот же тикер приходит и из вотчлиста, и из
+    /// списка трендовых DEX-токенов. Исключение возникало внутри реактивного конвейера, а его
+    /// поведение по умолчанию — не показать ошибку, а завершить процесс: терминал закрывался
+    /// целиком в момент прихода ответа. Достижимо это стало только сейчас, когда ответы от модели
+    /// наконец начали доходить.
+    ///
+    /// Первое вхождение, а не последнее, потому что вотчлист идёт раньше: у биржевой строки есть
+    /// настоящие цена и объём, у трендовой записи — не всегда.
+    /// </summary>
+    public static Dictionary<string, AiSignalMarketRow> BuildSymbolLookup(IReadOnlyList<AiSignalMarketRow> markets)
+    {
+        var bySym = new Dictionary<string, AiSignalMarketRow>(StringComparer.OrdinalIgnoreCase);
+        foreach (var m in markets)
+        {
+            if (string.IsNullOrWhiteSpace(m.Sym)) continue;
+            var key = m.Sym.ToUpperInvariant();
+            if (!bySym.ContainsKey(key)) bySym[key] = m;
+        }
+        return bySym;
+    }
+
     private void ApplyResult(AiSignalDeskResult result, AiSignalDeskContext ctx)
     {
-        var bySym = ctx.Markets.ToDictionary(m => m.Sym.ToUpperInvariant(), m => m);
+        var bySym = BuildSymbolLookup(ctx.Markets);
 
         // Signals — reasoning/direction/confidence from AI, price/logo from real markets.
         var now = DateTime.Now;
