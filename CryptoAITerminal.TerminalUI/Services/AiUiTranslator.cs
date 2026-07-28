@@ -39,11 +39,7 @@ public static class AiUiTranslator
         {
             raw = await ChatClient.CompleteTextAsync(
                 AiRuntime.ActiveApiKey, AiRuntime.ActiveModel,
-                // 2000, not 4000: the server clamps to AI_MAX_TOKENS_CAP (2048) SILENTLY, and a
-                // truncated JSON array fails the length check below and returns null — i.e. the
-                // whole batch vanishes with no error. Keep the request under the cap and keep
-                // batches small enough to fit.
-                maxTokens: 2000, temperature: 0.0,
+                maxTokens: MaxTokensFor(english), temperature: 0.0,
                 system: System, userContent: user,
                 feature: AiFeatureIds.UiTranslate, ct: ct).ConfigureAwait(false);
         }
@@ -67,6 +63,28 @@ public static class AiUiTranslator
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Длина ответа по объёму самой пачки.
+    ///
+    /// Здесь стояло фиксированное 2000 с объяснением «серверный потолок 2048». Потолок с тех пор
+    /// поднят, а число осталось — и превратилось из защиты в единственное ограничение. Ответ
+    /// линеен по входу: столько же строк, но по-русски, а кириллица в обоих токенизаторах стоит
+    /// примерно вдвое дороже латиницы. Пачка из двадцати строк по паре сотен символов упиралась в
+    /// потолок, проверка на совпадение количества строк не проходила, и вся оплаченная пачка
+    /// выбрасывалась — молча, оставляя интерфейс английским.
+    ///
+    /// Считается по символам, а не по числу строк: пачка из двух абзацев дороже двадцати подписей
+    /// к кнопкам.
+    /// </summary>
+    public static int MaxTokensFor(IReadOnlyList<string> english)
+    {
+        var chars = 0;
+        foreach (var s in english) chars += s?.Length ?? 0;
+        // Примерно токен на латинский символ после перевода в кириллицу, плюс кавычки и запятые
+        // JSON, плюс запас на разброс.
+        return Math.Clamp(300 + chars * 2, 600, 6000);
     }
 
     // Strip a leading ```json / ``` fence and trailing ``` if the model wrapped the array.

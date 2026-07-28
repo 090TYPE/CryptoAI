@@ -43,6 +43,13 @@ public sealed class DexTrendingAiService
     public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
     public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
+    /// <summary>
+    /// Почему последний вызов ушёл на собственный расчёт. Раньше исключение выбрасывалось целиком,
+    /// и причина отказа была невосстановима: панель показывала оффлайн-результат, неотличимый от
+    /// случая, когда модель вообще не вызывалась.
+    /// </summary>
+    public string? LastError { get; private set; }
+
     public Task<DexTrendingResult> RankAsync(IReadOnlyList<DexTokenInfo> tokens, int topN = 5, CancellationToken ct = default)
     {
         var rows = (tokens ?? [])
@@ -67,7 +74,7 @@ public sealed class DexTrendingAiService
                 if (ranked is not null && ranked.Tokens.Count > 0) return ranked;
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception) { /* offline */ }
+            catch (Exception ex) { LastError = AiFailure.Describe(ex); }
         }
         return BuildOffline(rows, topN);
     }
@@ -113,6 +120,13 @@ public sealed class DynamicTpSlAiService
     public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
     public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
+    /// <summary>
+    /// Почему последний вызов ушёл на собственный расчёт. Раньше исключение выбрасывалось целиком,
+    /// и причина отказа была невосстановима: панель показывала оффлайн-результат, неотличимый от
+    /// случая, когда модель вообще не вызывалась.
+    /// </summary>
+    public string? LastError { get; private set; }
+
     public async Task<TpSlSuggestion> SuggestAsync(TpSlContext ctx, CancellationToken ct = default)
     {
         if (UsesLiveModel)
@@ -124,7 +138,7 @@ public sealed class DynamicTpSlAiService
                 if (s is not null) return s;
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception) { /* offline */ }
+            catch (Exception ex) { LastError = AiFailure.Describe(ex); }
         }
         return BuildOffline(ctx);
     }
@@ -153,6 +167,13 @@ public sealed class StatArbPairAiService
     public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
     public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
+    /// <summary>
+    /// Почему последний вызов ушёл на собственный расчёт. Раньше исключение выбрасывалось целиком,
+    /// и причина отказа была невосстановима: панель показывала оффлайн-результат, неотличимый от
+    /// случая, когда модель вообще не вызывалась.
+    /// </summary>
+    public string? LastError { get; private set; }
+
     public async Task<StatArbPairVerdict> EvaluateAsync(StatArbPairStats s, CancellationToken ct = default)
     {
         if (UsesLiveModel)
@@ -164,7 +185,7 @@ public sealed class StatArbPairAiService
                 if (v is not null) return v;
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception) { /* offline */ }
+            catch (Exception ex) { LastError = AiFailure.Describe(ex); }
         }
         return BuildOffline(s);
     }
@@ -206,6 +227,13 @@ public sealed class ExecutionScheduleAiService
     public string Model { get => _model ?? AiRuntime.ActiveModel; set => _model = value; }
     public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
+    /// <summary>
+    /// Почему последний вызов ушёл на собственный расчёт. Раньше исключение выбрасывалось целиком,
+    /// и причина отказа была невосстановима: панель показывала оффлайн-результат, неотличимый от
+    /// случая, когда модель вообще не вызывалась.
+    /// </summary>
+    public string? LastError { get; private set; }
+
     public async Task<ExecutionPlan> PlanAsync(OrderExecutionContext ctx, CancellationToken ct = default)
     {
         if (UsesLiveModel && ctx.TotalUsd > 0)
@@ -217,7 +245,7 @@ public sealed class ExecutionScheduleAiService
                 if (p is not null) return p;
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception) { /* offline */ }
+            catch (Exception ex) { LastError = AiFailure.Describe(ex); }
         }
         return BuildOffline(ctx);
     }

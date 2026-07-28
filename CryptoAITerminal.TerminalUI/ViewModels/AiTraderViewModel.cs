@@ -1,3 +1,4 @@
+using CryptoAITerminal.AIEngine;
 using System;
 using System.Collections.Generic;
 using System.Reactive;
@@ -322,9 +323,13 @@ public sealed class AiTraderViewModel : ReactiveObject
 
     private async Task RunOnceAsync()
     {
-        if (string.IsNullOrWhiteSpace(ClaudeApiKey))
+        // Не «есть ли ключ», а «можно ли вообще позвать модель». У терминала, привязанного к
+        // серверу, своего ключа нет по замыслу — его держит сервер, — и проверка на пустой ключ
+        // делала весь раздел недоступным ровно в той конфигурации, в которой он и поставляется.
+        // Сам агент это уже учитывает: он отказывается, только когда нет ни ключа, ни привязки.
+        if (!ChatClient.CanCallModel(ClaudeApiKey))
         {
-            Append("[error] Claude API key is empty — set it on the AI Bot tab.");
+            Append("[error] AI недоступен: нет ни ключа, ни привязки к серверу.");
             return;
         }
         Append($"── Run once · {ModeLabel} · {SelectedExchange} ──");
@@ -342,9 +347,13 @@ public sealed class AiTraderViewModel : ReactiveObject
     private Task StartLoopAsync()
     {
         if (IsRunning) return Task.CompletedTask;
-        if (string.IsNullOrWhiteSpace(ClaudeApiKey))
+        // Не «есть ли ключ», а «можно ли вообще позвать модель». У терминала, привязанного к
+        // серверу, своего ключа нет по замыслу — его держит сервер, — и проверка на пустой ключ
+        // делала весь раздел недоступным ровно в той конфигурации, в которой он и поставляется.
+        // Сам агент это уже учитывает: он отказывается, только когда нет ни ключа, ни привязки.
+        if (!ChatClient.CanCallModel(ClaudeApiKey))
         {
-            Append("[error] Claude API key is empty — set it on the AI Bot tab.");
+            Append("[error] AI недоступен: нет ни ключа, ни привязки к серверу.");
             return Task.CompletedTask;
         }
 

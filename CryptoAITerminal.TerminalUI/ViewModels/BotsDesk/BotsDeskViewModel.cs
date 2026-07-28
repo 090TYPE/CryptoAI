@@ -1,3 +1,4 @@
+using CryptoAITerminal.AIEngine;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -147,10 +148,21 @@ public partial class BotsDeskViewModel : ReactiveObject
     private string _detailTab = "overview";
     private string? _menuForId;
 
-    /// <summary>Model badge for the AI rail — the key/model shared from the AI Bot tab.</summary>
-    public string AiProvider => _host?.AIBotVM is { } b && !string.IsNullOrWhiteSpace(b.ClaudeApiKey)
-        ? b.ClaudeModel.ToUpperInvariant()
-        : "OFFLINE";
+    /// <summary>
+    /// Что отвечает на панели ботов.
+    ///
+    /// Проверялось наличие клиентского ключа — которого у привязанного к серверу терминала нет по
+    /// замыслу, — и бейдж писал OFFLINE при полностью рабочем AI. Это один из немногих мест вне
+    /// настроек, где пользователь вообще видит, кто ему отвечает, и врать здесь дороже всего:
+    /// человек делает вывод, что AI не работает, и не пытается им пользоваться.
+    ///
+    /// Сначала берётся то, что сервер реально отработал на последнем вызове, и лишь потом —
+    /// собственная догадка терминала.
+    /// </summary>
+    public string AiProvider =>
+        !ChatClient.CanCallModel(_host?.AIBotVM?.ClaudeApiKey) ? "OFFLINE"
+        : (ChatClient.LastServerModel(AiFeatureIds.BotParameters)
+           ?? AiRuntime.ActiveSourceLabel).ToUpperInvariant();
 
     // ── commands ────────────────────────────────────────────────────────────
     public ICommand RefreshCommand { get; }

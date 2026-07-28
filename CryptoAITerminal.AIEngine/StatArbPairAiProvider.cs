@@ -55,7 +55,7 @@ public sealed class StatArbPairAiProvider
                 AiJson.Bool(r, "tradeable"),
                 (int)Math.Clamp(AiJson.Num(r, "score", 50m), 0m, 100m),
                 NormalizeSignal(AiJson.Str(r, "signal")),
-                reason, $"{AiRuntime.VendorLabel} {_model}", false);
+                reason, ChatClient.SourceLabel(AiFeatureIds.StatArbPair, _model), false);
         }
         catch (JsonException) { return null; }
     }

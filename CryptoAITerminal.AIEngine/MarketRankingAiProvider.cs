@@ -84,15 +84,17 @@ public sealed class MarketRankingAiProvider
             {
                 var symbol = o.TryGetProperty("symbol", out var s) ? s.GetString() ?? "" : "";
                 if (string.IsNullOrWhiteSpace(symbol)) continue;
-                var score = o.TryGetProperty("score", out var sc) && sc.ValueKind == JsonValueKind.Number
-                    ? Math.Clamp(sc.GetInt32(), 0, 100) : 50;
+                // GetInt32() бросает FormatException на дробном числе — 87.5 это тоже Number, — а
+                // FormatException не JsonException и уходит мимо catch ниже, уничтожая весь
+                // ранжированный список. В схеме «0..100» дробь ничем не запрещена.
+                var score = (int)Math.Clamp(AiJson.Num(o, "score", 50m), 0m, 100m);
                 var bias = NormalizeBias(o.TryGetProperty("bias", out var b) ? b.GetString() : null);
                 var reason = o.TryGetProperty("reason", out var r) ? r.GetString() ?? "" : "";
                 list.Add(new RankedOpportunity(symbol.Trim(), score, bias, reason.Trim()));
             }
 
             if (list.Count == 0) return null;
-            return new MarketRankingResult(list, $"{AiRuntime.VendorLabel} {model}", false);
+            return new MarketRankingResult(list, ChatClient.SourceLabel(AiFeatureIds.MarketRanking, model), false);
         }
         catch (JsonException)
         {

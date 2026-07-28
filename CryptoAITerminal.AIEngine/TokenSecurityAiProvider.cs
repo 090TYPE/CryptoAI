@@ -93,9 +93,9 @@ public sealed class TokenSecurityAiProvider
             using var parsed = JsonDocument.Parse(text);
             var root = parsed.RootElement;
 
-            var risk = root.TryGetProperty("risk", out var rk) && rk.ValueKind == JsonValueKind.Number
-                ? Math.Clamp(rk.GetInt32(), 0, 100)
-                : 50;
+            // Через AiJson: GetInt32() бросает FormatException на дробной оценке, а это не
+            // JsonException — уходит мимо catch ниже и уничтожает весь вердикт по токену.
+            var risk = (int)Math.Clamp(AiJson.Num(root, "risk", 50m), 0m, 100m);
 
             var verdict = root.TryGetProperty("verdict", out var vd) ? vd.GetString() : null;
             verdict = NormalizeVerdict(verdict);
@@ -107,7 +107,7 @@ public sealed class TokenSecurityAiProvider
             {
                 foreach (var f in rf.EnumerateArray())
                 {
-                    var s = f.GetString();
+                    var s = AiJson.Text(f);
                     if (!string.IsNullOrWhiteSpace(s)) flags.Add(s.Trim());
                 }
             }
@@ -118,7 +118,7 @@ public sealed class TokenSecurityAiProvider
                 Verdict   = verdict,
                 RedFlags  = flags.ToArray(),
                 Reason    = reason,
-                Source    = $"{AiRuntime.VendorLabel} {model}",
+                Source    = ChatClient.SourceLabel(AiFeatureIds.TokenSecurity, model),
                 IsFallback = false
             };
         }

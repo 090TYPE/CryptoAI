@@ -88,7 +88,7 @@ public sealed class ClaudeAgentRunner : IAgentRunner
             var payload = new
             {
                 model = _model,
-                max_tokens = 1024,
+                max_tokens = AgentLimits.MaxTokensPerTurn,
                 system = new object[]
                 {
                     new
@@ -186,7 +186,16 @@ public sealed class ClaudeAgentRunner : IAgentRunner
 
             if (toolUses.Count == 0 || stopReason != "tool_use")
             {
-                onEvent?.Invoke(new AgentEvent(AgentEventKind.Done, "done", finalText));
+                // Обрыв по длине — не завершение. Он приходит тем же путём, что и нормальный конец
+                // хода, и хост показывал оборванную на полуслове фразу как готовый ответ. Хуже:
+                // если обрыв пришёлся на вызов инструмента, инструмент не выполнится вовсе, а
+                // прогон закончится так, будто модель сама решила остановиться.
+                if (stopReason == "max_tokens")
+                    onEvent?.Invoke(new AgentEvent(AgentEventKind.Error, "truncated",
+                        "Ответ модели оборван по длине — показано только начало."));
+                else
+                    onEvent?.Invoke(new AgentEvent(AgentEventKind.Done, "done", finalText));
+
                 return new AgentRunResult(finalText, toolCalls, iteration, stopReason ?? "end_turn");
             }
 

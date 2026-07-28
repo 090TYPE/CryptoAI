@@ -54,8 +54,17 @@ public sealed class TokenSecurityAiService
             try
             {
                 var provider = new TokenSecurityAiProvider(ApiKey, Model);
-                verdict = await provider.AssessAsync(token, securitySummary, ct).ConfigureAwait(false)
-                          ?? BuildHeuristic(token, securitySummary);
+                var live = await provider.AssessAsync(token, securitySummary, ct).ConfigureAwait(false);
+                if (live is null)
+                {
+                    // Ровно та же логика, что и в ветке с исключением ниже: неразобранный ответ —
+                    // такой же временный сбой, как таймаут. Кэшируя расчёт по нему, мы прибивали
+                    // оффлайн-вердикт к токену на всю сессию — даже после того, как AI снова
+                    // заработал, — и молча: LastError оставался пустым.
+                    LastError = "Ответ модели не удалось разобрать — показан собственный расчёт.";
+                    return BuildHeuristic(token, securitySummary);
+                }
+                verdict = live;
             }
             catch (OperationCanceledException)
             {

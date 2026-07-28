@@ -65,7 +65,7 @@ public sealed class OpenAiAgentRunner : IAgentRunner
             var payload = new
             {
                 model = _model,
-                max_tokens = 1024,
+                max_tokens = AgentLimits.MaxTokensPerTurn,
                 messages,
                 tools = toolDefs,
                 tool_choice = "auto"
@@ -160,7 +160,14 @@ public sealed class OpenAiAgentRunner : IAgentRunner
 
             if (toolUses.Count == 0 || finishReason != "tool_calls")
             {
-                onEvent?.Invoke(new AgentEvent(AgentEventKind.Done, "done", finalText));
+                // Как и в claude-цикле: обрыв по длине приходит тем же путём, что и нормальное
+                // завершение, и без этой ветки оборванная фраза выдаётся хосту за готовый ответ.
+                if (finishReason == "length")
+                    onEvent?.Invoke(new AgentEvent(AgentEventKind.Error, "truncated",
+                        "Ответ модели оборван по длине — показано только начало."));
+                else
+                    onEvent?.Invoke(new AgentEvent(AgentEventKind.Done, "done", finalText));
+
                 return new AgentRunResult(finalText, toolCalls, iteration, finishReason ?? "stop");
             }
 

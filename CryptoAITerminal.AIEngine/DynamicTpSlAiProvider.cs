@@ -49,7 +49,7 @@ public sealed class DynamicTpSlAiProvider
             var tp = Math.Clamp(AiJson.Num(r, "tp_percent", 0m), 0.1m, 100m);
             var sl = Math.Clamp(AiJson.Num(r, "sl_percent", 0m), 0.1m, 100m);
             if (tp <= 0m || sl <= 0m) return null;
-            return new TpSlSuggestion(tp, sl, AiJson.Bool(r, "trailing"), AiJson.Str(r, "rationale"), $"{AiRuntime.VendorLabel} {_model}", false);
+            return new TpSlSuggestion(tp, sl, AiJson.Bool(r, "trailing"), AiJson.Str(r, "rationale"), ChatClient.SourceLabel(AiFeatureIds.DynamicTpSl, _model), false);
         }
         catch (JsonException) { return null; }
     }

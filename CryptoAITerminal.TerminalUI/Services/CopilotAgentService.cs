@@ -1,3 +1,4 @@
+using CryptoAITerminal.AIEngine;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -78,6 +79,12 @@ public sealed class CopilotAgentService
     /// </summary>
     public bool UsesLiveModel => CryptoAITerminal.AIEngine.ChatClient.CanCallModel(ApiKey);
 
+    /// <summary>
+    /// Почему последний вопрос ушёл на встроенного помощника. Без этого причина отказа была
+    /// невосстановима: ответ оффлайн-помощника неотличим от случая, когда модель не вызывалась.
+    /// </summary>
+    public string? LastError { get; private set; }
+
     /// <summary>Streams every agent step (thinking, tool call, result) for a live UI log.</summary>
     public event Action<AgentEvent>? OnEvent;
 
@@ -106,7 +113,7 @@ public sealed class CopilotAgentService
                     return new CopilotAnswer(result.FinalText, CryptoAITerminal.AIEngine.AiRuntime.ActiveSourceLabel, false, result.ToolCallCount);
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception) { /* degrade to offline */ }
+            catch (Exception ex) { LastError = AiFailure.Describe(ex); }
         }
 
         var offline = await AnswerOfflineAsync(question, ct).ConfigureAwait(false);

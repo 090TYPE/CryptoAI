@@ -500,9 +500,15 @@ app.MapPost("/api/ai/ask", async (HttpContext ctx, AskInput body, AiProxy ai,
 
     // The server composes this request itself, so the model and length are already ours — but it
     // still spends the server key, so it draws on the same per-licence daily budget.
+    //
+    // Квота берётся по тарифу, как и везде. Здесь стояла плоская величина по умолчанию, и вопросы
+    // к базе знаний считались по ней всем одинаково: тариф Лайт получал по этому каналу лимит
+    // старшего, а старший — урезанный. Тариф, который не действует на части функций, — это не
+    // тариф, а обещание.
     var askLicense = LicenseKey(ctx);
-    if (!budget.HasHeadroom(askLicense))
-        return Results.Json(new { error = "ai_daily_budget_exhausted", cap = budget.DailyCap }, statusCode: 429);
+    var askCap = await DailyCapAsync(ctx, budget, settings);
+    if (!budget.HasHeadroom(askLicense, askCap))
+        return Results.Json(new { error = "ai_daily_budget_exhausted", cap = askCap }, statusCode: 429);
 
     // Context = what the server actually knows: this user's watchlist, the latest AI
     // digests and recent headlines. The model must answer from this or admit it can't.

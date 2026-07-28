@@ -72,7 +72,7 @@ public sealed class NewsDigestAiProvider
                 _         => "NEUTRAL"
             };
 
-            return new NewsDigest(summary.Trim(), bias, $"{AiRuntime.VendorLabel} {model}", false);
+            return new NewsDigest(summary.Trim(), bias, ChatClient.SourceLabel(AiFeatureIds.NewsDigest, model), false);
         }
         catch (JsonException)
         {

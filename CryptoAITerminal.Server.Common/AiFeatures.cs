@@ -25,13 +25,17 @@ public static class AiFeatures
 {
     public static readonly IReadOnlyList<AiFeature> All =
     [
-        new("signal_desk",         "AI Signal Desk — полный разбор рынка",        2000),
-        new("ui_translate",        "Перевод интерфейса",                          2000),
-        new("agent",               "Агент (одна итерация)",                       1024),
+        // Значения обязаны совпадать с тем, сколько клиент реально просит: админка показывает их
+        // как ориентир, и оператор, набравший показанное число, своими руками воссоздаёт обрыв
+        // ответа. Здесь это уже случилось — 2000 у signal_desk были ровно тем числом, на котором
+        // панель обрывалась.
+        new("signal_desk",         "AI Signal Desk — полный разбор рынка",        5240),
+        new("ui_translate",        "Перевод интерфейса",                          6000),
+        new("agent",               "Агент (одна итерация)",                       4096),
         new("market_ranking",      "Ранжирование рынка",                           700),
         new("dex_trending",        "Тренды DEX",                                   700),
         new("rule_builder",        "Конструктор правил",                           600),
-        new("portfolio_rebalance", "Ребалансировка портфеля",                      600),
+        new("portfolio_rebalance", "Ребалансировка портфеля",                     2200),
         new("trade_journal_coach", "Разбор торгового журнала",                     600),
         new("signal_desk_stream",  "Signal Desk — поток сигналов",                 500),
         new("market_insight",      "Обзор рынка",                                  400),

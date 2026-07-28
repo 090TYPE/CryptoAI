@@ -104,6 +104,19 @@ public static class ChatClient
     /// </summary>
     public static string FamilyHeader => AiRuntime.Vendor == AiVendor.OpenAi ? "chatgpt" : "claude";
 
+    /// <summary>
+    /// Подпись под результатом: что реально отработало, а если сервер не сказал — что просил сам
+    /// терминал.
+    ///
+    /// Помощник, а не две строки в каждом провайдере, потому что провайдеров четырнадцать: один
+    /// пропущенный вызов означает панель, которая показывает выдуманное имя модели, и именно такая
+    /// подпись однажды увела поиск неработающего AI совсем в другую сторону. Имя, которое «просил
+    /// терминал», к тому же почти всегда неправда — при пустом окружении это зашитая в код
+    /// константа, а не чей-либо выбор.
+    /// </summary>
+    public static string SourceLabel(string feature, string? requestedModel) =>
+        LastServerModel(feature) ?? $"{AiRuntime.VendorLabel} {requestedModel}";
+
     public static string? LastServerModel(string feature) =>
         LastModels.TryGetValue(feature, out var m) ? m : null;
 
@@ -197,6 +210,10 @@ public static class ChatClient
             var token = LicenseToken;
             if (!string.IsNullOrWhiteSpace(token)) req.Headers.Add("X-License", token);
             if (!string.IsNullOrEmpty(feature)) req.Headers.Add("X-AI-Feature", feature);
+            // Оба пути обязаны сообщать выбор пользователя. Пропущенный здесь заголовок означал бы,
+            // что выбор действует для панелей, ушедших одним форматом, и молча не действует для
+            // ушедших другим, — а какой формат сработал, пользователю не видно вовсе.
+            req.Headers.Add("X-AI-Family", FamilyHeader);
         }
         else
         {

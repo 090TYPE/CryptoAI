@@ -30,12 +30,13 @@ public sealed class PortfolioRebalanceAiProvider
     {
         if (holdings is null || holdings.Count == 0) return null;
 
+        var fed = Math.Min(holdings.Count, MaxHoldings);
         var prompt = $"Risk profile: {riskProfile}\nCurrent holdings:\n"
-            + string.Join('\n', holdings.Take(30).Select(h => $"- {h.Symbol}: ${h.ValueUsd:0} ({h.CurrentPct:0.0}%)"))
+            + string.Join('\n', holdings.Take(MaxHoldings).Select(h => $"- {h.Symbol}: ${h.ValueUsd:0} ({h.CurrentPct:0.0}%)"))
             + "\n\nPropose target weights that sum to ~100%. Return the JSON.";
 
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 600, temperature: 0.2,
+            _apiKey, _model, maxTokens: MaxTokensFor(fed), temperature: 0.2,
             system:
                 "You are a crypto portfolio strategist. Propose target weights for the stated risk " +
                 "profile: Conservative leans to BTC/ETH and stablecoins; Aggressive allows more alt " +
@@ -47,6 +48,21 @@ public sealed class PortfolioRebalanceAiProvider
 
         return ParseResponse(text, _model);
     }
+
+    /// <summary>Сколько позиций отдаётся модели за один проход.</summary>
+    public const int MaxHoldings = 30;
+
+    /// <summary>
+    /// Длина ответа под число позиций, а не одно число на все случаи.
+    ///
+    /// Схема требует запись на каждую поданную позицию — символ, вес и причину, — то есть примерно
+    /// 40 токенов на штуку плюс общий комментарий. Фиксированные 600 покрывали около пятнадцати:
+    /// на портфеле шире ответ обрывался на середине строки, разбор выбрасывал его целиком, и
+    /// пользователь видел «модель не вернула пригодных весов» — ровно тот же текст, что и если бы
+    /// модель вообще не вызывалась.
+    /// </summary>
+    public static int MaxTokensFor(int holdingCount) =>
+        Math.Min(400 + Math.Clamp(holdingCount, 1, MaxHoldings) * 60, 4000);
 
     private static RebalancePlan? ParseResponse(string text, string model)
     {
@@ -81,7 +97,7 @@ public sealed class PortfolioRebalanceAiProvider
             if (targets.Count == 0) return null;
 
             var commentary = root.TryGetProperty("commentary", out var c) ? c.GetString() ?? "" : "";
-            return new RebalancePlan(targets, commentary.Trim(), $"{AiRuntime.VendorLabel} {model}", false);
+            return new RebalancePlan(targets, commentary.Trim(), ChatClient.SourceLabel(AiFeatureIds.PortfolioRebalance, model), false);
         }
         catch (JsonException)
         {

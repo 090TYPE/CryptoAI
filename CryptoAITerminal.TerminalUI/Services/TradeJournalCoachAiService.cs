@@ -22,6 +22,13 @@ public sealed class TradeJournalCoachAiService
 
     public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
+    /// <summary>
+    /// Почему последний вызов ушёл на собственный расчёт. Без этого причина отказа была
+    /// невосстановима: панель показывала оффлайн-результат, неотличимый от случая, когда модель
+    /// вообще не вызывалась, — и именно так неработающий AI прожил незамеченным целые сутки.
+    /// </summary>
+    public string? LastError { get; private set; }
+
     public async Task<JournalReview> ReviewAsync(IReadOnlyList<TradeRecord> trades, CancellationToken ct = default)
     {
         var closed = (trades ?? []).Where(t => t.ClosedAtUtc > t.OpenedAtUtc).ToList();
@@ -41,7 +48,7 @@ public sealed class TradeJournalCoachAiService
                 if (review is not null) return review;
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception) { /* degrade to offline */ }
+            catch (Exception ex) { LastError = AiFailure.Describe(ex); }
         }
 
         return BuildOffline(agg);

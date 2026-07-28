@@ -24,6 +24,13 @@ public sealed class MarketRankingAiService
 
     public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
+    /// <summary>
+    /// Почему последний вызов ушёл на собственный расчёт. Без этого причина отказа была
+    /// невосстановима: панель показывала оффлайн-результат, неотличимый от случая, когда модель
+    /// вообще не вызывалась, — и именно так неработающий AI прожил незамеченным целые сутки.
+    /// </summary>
+    public string? LastError { get; private set; }
+
     public async Task<MarketRankingResult> RankAsync(
         IReadOnlyList<ScanResult> results,
         int topN = 5,
@@ -48,7 +55,7 @@ public sealed class MarketRankingAiService
                 if (ranked is not null && ranked.Opportunities.Count > 0) return ranked;
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception) { /* degrade to offline */ }
+            catch (Exception ex) { LastError = AiFailure.Describe(ex); }
         }
 
         return BuildOffline(rows, topN);

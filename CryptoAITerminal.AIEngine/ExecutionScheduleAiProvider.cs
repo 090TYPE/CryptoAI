@@ -51,7 +51,7 @@ public sealed class ExecutionScheduleAiProvider
             if (slices <= 0) return null;
             var sliceUsd = AiJson.Num(r, "slice_usd", 0m);
             if (sliceUsd <= 0m && slices > 0) sliceUsd = Math.Round(ctx.TotalUsd / slices, 2);
-            return new ExecutionPlan(slices, interval, sliceUsd, AiJson.Str(r, "rationale"), $"{AiRuntime.VendorLabel} {_model}", false);
+            return new ExecutionPlan(slices, interval, sliceUsd, AiJson.Str(r, "rationale"), ChatClient.SourceLabel(AiFeatureIds.ExecutionSchedule, _model), false);
         }
         catch (JsonException) { return null; }
     }

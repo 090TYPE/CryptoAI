@@ -755,7 +755,14 @@ public partial class SniperViewModel
 
     private async Task<int> RefreshTrackedPositionsAsync(IReadOnlyList<DexTokenInfo> pairs)
     {
-        var byAddress = pairs.ToDictionary(token => token.TokenAddress, StringComparer.OrdinalIgnoreCase);
+        // Первое вхождение выигрывает. Сканер тянет пары сразу с нескольких сетей, а один и тот же
+        // адрес существует в BSC, Ethereum и Base одновременно — это норма для EVM, а не сбой
+        // данных. ToDictionary на таком совпадении бросал, и падал он в обновлении позиций: вместе
+        // с ним умирал поток сигналов и все автоматические выходы по открытым сделкам.
+        var byAddress = new Dictionary<string, DexTokenInfo>(StringComparer.OrdinalIgnoreCase);
+        foreach (var token in pairs)
+            if (!string.IsNullOrWhiteSpace(token.TokenAddress) && !byAddress.ContainsKey(token.TokenAddress))
+                byAddress[token.TokenAddress] = token;
         var updatedCount = 0;
         foreach (var position in OpenPositions.Concat(PaperPositions).ToList())
         {

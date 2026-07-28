@@ -21,6 +21,13 @@ public sealed class BacktestReviewAiService
 
     public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
+    /// <summary>
+    /// Почему последний вызов ушёл на собственный расчёт. Без этого причина отказа была
+    /// невосстановима: панель показывала оффлайн-результат, неотличимый от случая, когда модель
+    /// вообще не вызывалась, — и именно так неработающий AI прожил незамеченным целые сутки.
+    /// </summary>
+    public string? LastError { get; private set; }
+
     public async Task<BacktestReview> ReviewAsync(BacktestMetrics m, CancellationToken ct = default)
     {
         if (UsesLiveModel)
@@ -32,7 +39,7 @@ public sealed class BacktestReviewAiService
                 if (review is not null) return review;
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception) { /* degrade to offline */ }
+            catch (Exception ex) { LastError = AiFailure.Describe(ex); }
         }
 
         return BuildOffline(m);

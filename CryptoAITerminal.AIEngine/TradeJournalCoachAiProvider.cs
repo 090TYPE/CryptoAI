@@ -70,7 +70,7 @@ public sealed class TradeJournalCoachAiProvider
                 ReadArray(root, "strengths"),
                 ReadArray(root, "leaks"),
                 ReadArray(root, "suggestions"),
-                $"{AiRuntime.VendorLabel} {model}", false);
+                ChatClient.SourceLabel(AiFeatureIds.TradeJournalCoach, model), false);
         }
         catch (JsonException)
         {
@@ -84,7 +84,7 @@ public sealed class TradeJournalCoachAiProvider
         if (root.TryGetProperty(name, out var arr) && arr.ValueKind == JsonValueKind.Array)
             foreach (var e in arr.EnumerateArray())
             {
-                var s = e.GetString();
+                var s = AiJson.Text(e);
                 if (!string.IsNullOrWhiteSpace(s)) list.Add(s.Trim());
             }
         return list.ToArray();

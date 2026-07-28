@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace CryptoAITerminal.AIEngine;
 
@@ -80,11 +80,15 @@ public sealed class MarketInsightAiProvider
             if (root.TryGetProperty("bullets", out var arr) && arr.ValueKind == JsonValueKind.Array)
                 foreach (var e in arr.EnumerateArray())
                 {
-                    var b = e.GetString();
+                    // Через AiJson: голый GetString() бросает InvalidOperationException на пункте,
+                    // пришедшем объектом, а это не JsonException — уходит мимо catch ниже и рушит
+                    // весь ответ. Провайдер переиспользуется четырьмя панелями сразу, так что один
+                    // пункт не той формы гасил бы их все.
+                    var b = AiJson.Text(e);
                     if (!string.IsNullOrWhiteSpace(b)) bullets.Add(b.Trim());
                 }
 
-            return new InsightResult(summary.Trim(), signal, bullets.ToArray(), $"{AiRuntime.VendorLabel} {model}", false);
+            return new InsightResult(summary.Trim(), signal, bullets.ToArray(), ChatClient.SourceLabel(AiFeatureIds.MarketInsight, model), false);
         }
         catch (JsonException)
         {

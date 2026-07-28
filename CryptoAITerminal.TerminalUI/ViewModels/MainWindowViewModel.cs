@@ -601,13 +601,13 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         // previously-saved key works without reopening Settings. (The generic AI services
         // already fall back to AiRuntime, so they need no seeding.)
         {
+            // Модель засеивается и без ключа. У терминала, привязанного к серверу, своего ключа
+            // нет по замыслу, и условие на непустой ключ оставляло автономного трейдера и
+            // сигнального бота без имени модели вовсе — то есть неотличимо от «AI выключен».
             var startupKey = CryptoAITerminal.AIEngine.AiRuntime.ActiveApiKey;
-            if (!string.IsNullOrWhiteSpace(startupKey))
-            {
-                AIBotVM.ClaudeApiKey = startupKey;
-                AIBotVM.ClaudeModel  = CryptoAITerminal.AIEngine.AiRuntime.ActiveModel;
-                AiTraderVM.Configure(startupKey, CryptoAITerminal.AIEngine.AiRuntime.ActiveModel);
-            }
+            AIBotVM.ClaudeApiKey = startupKey;
+            AIBotVM.ClaudeModel  = CryptoAITerminal.AIEngine.AiRuntime.ActiveModel;
+            AiTraderVM.Configure(startupKey, CryptoAITerminal.AIEngine.AiRuntime.ActiveModel);
         }
 
         // ── Global AI command bar (Ctrl+K) ───────────────────────────────────────

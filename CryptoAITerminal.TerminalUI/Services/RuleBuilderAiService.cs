@@ -24,6 +24,9 @@ public sealed class RuleBuilderAiService
 
     public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
+    /// <summary>Почему ушли на оффлайн-разбор, если модель вообще была доступна.</summary>
+    public string? LastError { get; private set; }
+
     public sealed record Result(CompositeRule? Rule, string Source, bool IsFallback, string Note);
 
     public async Task<Result> BuildAsync(string instruction, CancellationToken ct = default)
@@ -52,10 +55,10 @@ public sealed class RuleBuilderAiService
                 }
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception) { /* degrade to offline */ }
+            catch (Exception ex) { LastError = AiFailure.Describe(ex); }
         }
 
-        return BuildOffline(instruction);
+        return BuildOffline(instruction, UsesLiveModel ? LastError : null);
     }
 
     // ── Map AI spec (string enums) → CompositeRule ─────────────────────────────
@@ -100,7 +103,12 @@ public sealed class RuleBuilderAiService
     private static readonly Regex DropRx = new(@"(drops?|falls?|down|loses?)\D{0,8}?(\d{1,3}(?:\.\d+)?)\s*%", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex RiseRx = new(@"(rises?|gains?|up|pumps?)\D{0,8}?(\d{1,3}(?:\.\d+)?)\s*%", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-    private static Result BuildOffline(string text)
+    /// <param name="liveFailure">
+    /// Почему не сработала живая модель, если она была доступна. Нужно, чтобы не советовать
+    /// «добавьте API-ключ» тому, у кого ключ на сервере: совет и неверен, и уводит от настоящей
+    /// причины — человек идёт искать поле для ключа, которого в его сборке нет.
+    /// </param>
+    private static Result BuildOffline(string text, string? liveFailure = null)
     {
         var symbol = SymbolRx.Match(text) is { Success: true } sm ? sm.Groups[1].Value.ToUpperInvariant() : "BTCUSDT";
         var rule = new CompositeRule { Name = "AI Rule (offline)" };
@@ -158,7 +166,7 @@ public sealed class RuleBuilderAiService
 
         if (rule.Conditions.Count == 0)
             return new Result(null, "Heuristic (offline)", true,
-                "Couldn't parse a condition offline — add an API key for full natural-language rules.");
+                liveFailure ?? "Couldn't parse a condition offline — add an API key for full natural-language rules.");
 
         return new Result(rule, "Heuristic (offline)", true, "Parsed: " + string.Join(", ", notes) + ".");
     }

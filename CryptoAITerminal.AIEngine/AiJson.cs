@@ -73,15 +73,34 @@ internal static class AiJson
         (v.ValueKind == JsonValueKind.True || v.ValueKind == JsonValueKind.False)
             ? v.GetBoolean() : fallback;
 
+    /// <summary>
+    /// Массив строк, терпимый к тому, что модель прислала объекты вместо строк.
+    ///
+    /// Голый <c>GetString()</c> бросает InvalidOperationException, а не JsonException, поэтому он
+    /// пролетал мимо <c>catch (JsonException)</c> у вызывающих и уничтожал весь ответ целиком —
+    /// сводку, сигнал и всё остальное — из-за одного пункта не той формы. Форма же плавает
+    /// закономерно: соседняя схема в этом же коде объявляет пункты как
+    /// <c>{"text":…,"tone":…}</c>, и модель переносит эту привычку.
+    ///
+    /// Элемент не той формы пропускается, а не роняет разбор: половина списка полезнее пустой панели.
+    /// </summary>
     public static string[] StrArray(JsonElement root, string name)
     {
         var list = new List<string>();
         if (root.TryGetProperty(name, out var arr) && arr.ValueKind == JsonValueKind.Array)
             foreach (var e in arr.EnumerateArray())
             {
-                var s = e.GetString();
+                var s = Text(e);
                 if (!string.IsNullOrWhiteSpace(s)) list.Add(s.Trim());
             }
         return list.ToArray();
     }
+
+    /// <summary>Текст из элемента, который может быть строкой или объектом с полем text.</summary>
+    public static string? Text(JsonElement e) => e.ValueKind switch
+    {
+        JsonValueKind.String => e.GetString(),
+        JsonValueKind.Object => Str(e, "text", Str(e, "label", Str(e, "summary"))),
+        _ => null,
+    };
 }

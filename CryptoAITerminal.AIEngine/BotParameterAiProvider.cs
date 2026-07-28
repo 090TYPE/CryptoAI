@@ -77,7 +77,7 @@ public sealed class BotParameterAiProvider
 
             if (map.Count == 0) return null;
             var rationale = root.TryGetProperty("rationale", out var r) ? r.GetString() ?? "" : "";
-            return new BotParamSuggestion(map, rationale.Trim(), $"{AiRuntime.VendorLabel} {model}", false);
+            return new BotParamSuggestion(map, rationale.Trim(), ChatClient.SourceLabel(AiFeatureIds.BotParameters, model), false);
         }
         catch (JsonException)
         {

@@ -62,7 +62,7 @@ public sealed class DexTrendingAiProvider
                 var signal = NormalizeSignal(AiJson.Str(o, "signal"));
                 list.Add(new DexTrendPick(sym, AiJson.Str(o, "address"), score, signal, AiJson.Str(o, "reason")));
             }
-            return list.Count == 0 ? null : new DexTrendingResult(list, $"{AiRuntime.VendorLabel} {model}", false);
+            return list.Count == 0 ? null : new DexTrendingResult(list, ChatClient.SourceLabel(AiFeatureIds.DexTrending, model), false);
         }
         catch (JsonException) { return null; }
     }

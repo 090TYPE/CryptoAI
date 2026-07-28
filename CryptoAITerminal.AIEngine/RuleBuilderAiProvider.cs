@@ -102,7 +102,7 @@ public sealed class RuleBuilderAiProvider
             if (conditions.Count == 0 && actions.Count == 0) return null;
 
             return new AiRuleSpec(name.Trim(), logic.Trim(), cooldown.Trim(),
-                conditions.ToArray(), actions.ToArray(), $"{AiRuntime.VendorLabel} {model}", false);
+                conditions.ToArray(), actions.ToArray(), ChatClient.SourceLabel(AiFeatureIds.RuleBuilder, model), false);
         }
         catch (JsonException)
         {

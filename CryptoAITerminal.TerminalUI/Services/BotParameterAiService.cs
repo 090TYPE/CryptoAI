@@ -21,6 +21,13 @@ public sealed class BotParameterAiService
 
     public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
+    /// <summary>
+    /// Почему последний вызов ушёл на собственный расчёт. Без этого причина отказа была
+    /// невосстановима: панель показывала оффлайн-результат, неотличимый от случая, когда модель
+    /// вообще не вызывалась, — и именно так неработающий AI прожил незамеченным целые сутки.
+    /// </summary>
+    public string? LastError { get; private set; }
+
     public const string Grid = "Grid";
     public const string Dca  = "DCA";
 
@@ -53,7 +60,7 @@ public sealed class BotParameterAiService
                 if (s is not null && s.Params.Count == keys.Length) return s;
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception) { /* degrade to offline */ }
+            catch (Exception ex) { LastError = AiFailure.Describe(ex); }
         }
 
         return BuildOffline(botType, price, high24h, low24h, changePct24h);

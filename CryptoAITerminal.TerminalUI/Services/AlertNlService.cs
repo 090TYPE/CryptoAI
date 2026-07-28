@@ -33,6 +33,13 @@ public sealed class AlertNlService
 
     public bool UsesLiveModel => ChatClient.CanCallModel(ApiKey);
 
+    /// <summary>
+    /// Почему последний вызов ушёл на собственный расчёт. Без этого причина отказа была
+    /// невосстановима: панель показывала оффлайн-результат, неотличимый от случая, когда модель
+    /// вообще не вызывалась, — и именно так неработающий AI прожил незамеченным целые сутки.
+    /// </summary>
+    public string? LastError { get; private set; }
+
     public async Task<AlertParseResult> ParseAsync(string text, CancellationToken ct = default)
     {
         text = (text ?? "").Trim();
@@ -55,7 +62,7 @@ public sealed class AlertNlService
                 }
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception) { /* degrade to offline */ }
+            catch (Exception ex) { LastError = AiFailure.Describe(ex); }
         }
 
         return ParseOffline(text);

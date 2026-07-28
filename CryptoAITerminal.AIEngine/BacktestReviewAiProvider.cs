@@ -81,11 +81,11 @@ public sealed class BacktestReviewAiProvider
             if (root.TryGetProperty("risks", out var rf) && rf.ValueKind == JsonValueKind.Array)
                 foreach (var f in rf.EnumerateArray())
                 {
-                    var rs = f.GetString();
+                    var rs = AiJson.Text(f);
                     if (!string.IsNullOrWhiteSpace(rs)) risks.Add(rs.Trim());
                 }
 
-            return new BacktestReview(verdict, summary.Trim(), risks.ToArray(), $"{AiRuntime.VendorLabel} {model}", false);
+            return new BacktestReview(verdict, summary.Trim(), risks.ToArray(), ChatClient.SourceLabel(AiFeatureIds.BacktestReview, model), false);
         }
         catch (JsonException)
         {

@@ -58,7 +58,7 @@ public sealed class AlertSpecAiProvider
             var condition = AiJson.Str(root, "condition").Trim();
             var threshold = AiJson.Num(root, "threshold");
             if (string.IsNullOrWhiteSpace(symbol) || string.IsNullOrWhiteSpace(condition)) return null;
-            return new AlertAiSpec(symbol, condition, threshold, $"{AiRuntime.VendorLabel} {_model}", false);
+            return new AlertAiSpec(symbol, condition, threshold, ChatClient.SourceLabel(AiFeatureIds.AlertSpec, _model), false);
         }
         catch (JsonException)
         {

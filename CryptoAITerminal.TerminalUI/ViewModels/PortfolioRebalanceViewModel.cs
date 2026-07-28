@@ -316,25 +316,43 @@ public class PortfolioRebalanceViewModel : ReactiveObject, IDisposable
             var snapshots   = await _svc.FetchSnapshotAsync(allocations, ct).ConfigureAwait(false);
             if (ct.IsCancellationRequested) return;
 
-            // Apply results on the UI thread
+            // Отрисовка на UI-потоке. Собственный try внутри обязателен: этот делегат выполняется
+            // на следующем обороте диспетчера, то есть за пределами try снаружи — тот защищает
+            // только сам факт постановки в очередь. Всё, что бросит здесь, не ловит никто, и
+            // приложение закрывается целиком. Плюс IsLoading сбрасывается ниже по коду: без
+            // перехвата панель ещё и оставалась бы навсегда в состоянии загрузки.
             Dispatcher.UIThread.Post(() =>
             {
-                var snapshotMap = snapshots.ToDictionary(
-                    s => s.Symbol, StringComparer.OrdinalIgnoreCase);
-
-                foreach (var row in Allocations)
+                try
                 {
-                    if (snapshotMap.TryGetValue(row.Symbol, out var snap))
-                        row.ApplySnapshot(snap);
+                    // Первое вхождение выигрывает: файл распределения читается с диска и может
+                    // содержать один символ дважды — ToDictionary на этом бросал.
+                    var snapshotMap = new Dictionary<string, PortfolioAssetSnapshot>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var s in snapshots)
+                        if (!string.IsNullOrWhiteSpace(s.Symbol) && !snapshotMap.ContainsKey(s.Symbol))
+                            snapshotMap[s.Symbol] = s;
+
+                    foreach (var row in Allocations)
+                    {
+                        if (snapshotMap.TryGetValue(row.Symbol, out var snap))
+                            row.ApplySnapshot(snap);
+                    }
+
+                    TotalValueUsd = snapshots.Sum(s => s.ValueUsd);
+                    RecalcTargetSum();
+                    RefreshAlertState();
+                    StatusLabel = $"Updated {DateTime.Now:HH:mm:ss}  ·  Total: {TotalValueLabel}";
+
+                    SaveAllocations();
                 }
-
-                TotalValueUsd = snapshots.Sum(s => s.ValueUsd);
-                RecalcTargetSum();
-                RefreshAlertState();
-                StatusLabel = $"Updated {DateTime.Now:HH:mm:ss}  ·  Total: {TotalValueLabel}";
-                IsLoading   = false;
-
-                SaveAllocations();
+                catch (Exception ex)
+                {
+                    StatusLabel = $"Не удалось показать данные: {ex.Message}";
+                }
+                finally
+                {
+                    IsLoading = false;
+                }
             });
         }
         catch (OperationCanceledException)
@@ -422,9 +440,15 @@ public class PortfolioRebalanceViewModel : ReactiveObject, IDisposable
 
             _globalAlertThresholdPct = Math.Max(0.5, wrapper.GlobalAlertThresholdPct);
 
+            // Дубли отсеиваются здесь, а не только ниже по потоку: файл читается с диска, то есть
+            // это недоверенный вход, и дубль символа проходит разбор чисто, а взрывается позже —
+            // на отрисовке, где раньше его никто не ловил. Добавление через интерфейс такую же
+            // проверку уже делает; загрузка была единственным путём без неё.
             foreach (var alloc in wrapper.Allocations)
             {
                 if (string.IsNullOrWhiteSpace(alloc.Symbol)) continue;
+                if (Allocations.Any(r => string.Equals(r.Symbol, alloc.Symbol, StringComparison.OrdinalIgnoreCase)))
+                    continue;
                 Allocations.Add(new PortfolioAllocationRowViewModel(
                     alloc.Symbol, alloc.TargetPct, alloc.IncludeCex, alloc.IncludeDex,
                     _globalAlertThresholdPct));

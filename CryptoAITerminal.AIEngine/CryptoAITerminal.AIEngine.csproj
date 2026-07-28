@@ -10,4 +10,11 @@
     <ProjectReference Include="..\CryptoAITerminal.Core\CryptoAITerminal.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Так же, как у TerminalUI. Нужен, чтобы проверять AiJson напрямую: его обещание — не
+         бросать мимо catch(JsonException) у вызывающего — и есть та гарантия, нарушение которой
+         уничтожало целые ответы модели. Через провайдеры это проверяется косвенно и хуже. -->
+    <InternalsVisibleTo Include="CryptoAITerminal.Core.Tests" />
+  </ItemGroup>
+
 </Project>

@@ -806,9 +806,19 @@ public sealed class SettingsDeskViewModel : ReactiveObject
                     // кнопка SAVE PROVIDER вместе с ключом и моделью, и записывать провайдера
                     // раньше неё значило бы менять поведение до того, как пользователь подтвердил.
                     if (server)
+                    {
                         CredentialsService.SaveAiProvider(
                             claude ? AIEngine.AiVendor.Anthropic : AIEngine.AiVendor.OpenAi);
-                    Touch(); Refresh(); RaiseAi();
+                    }
+                    else
+                    {
+                        // Помечать рабочее пространство изменённым только там, где изменение и
+                        // правда ждёт кнопки. В серверном режиме выбор уже лёг на диск и уже
+                        // действует, а надпись «есть несохранённые изменения» обещала бы, что
+                        // REVERT его отменит — он не отменит.
+                        Touch();
+                    }
+                    Refresh(); RaiseAi();
                 }),
             });
         }
