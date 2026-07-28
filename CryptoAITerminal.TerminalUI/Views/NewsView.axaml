@@ -484,7 +484,10 @@
                 <Border Grid.Column="1" CornerRadius="9" Padding="8,2" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource AccentTintStroke}" BorderThickness="1">
                   <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
                     <Ellipse Width="5" Height="5" Fill="{DynamicResource Accent}" />
-                    <TextBlock Text="CLAUDE 4.5" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
+                    <!-- Было зашито "CLAUDE 4.5" — имя модели, которой в проекте нет ни в одном
+                         списке, поверх ответа, который дала совсем другая. Теперь показывается то,
+                         чем сводку действительно сделали: сервер сообщает это заголовком. -->
+                    <TextBlock Text="{Binding AiDigestSource}" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" />
                   </StackPanel>
                 </Border>
               </Grid>
