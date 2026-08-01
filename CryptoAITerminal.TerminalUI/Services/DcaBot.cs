@@ -1,6 +1,7 @@
 using CryptoAITerminal.Core.Enums;
 using CryptoAITerminal.Core.Interfaces;
 using CryptoAITerminal.Core.Models;
+using CryptoAITerminal.Gateway.Base;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +23,10 @@ public sealed class DcaBot : IDisposable
     private DateTime _nextExecutionUtc;
     private volatile bool _isStopped;
     private readonly SemaphoreSlim _executeLock = new(1, 1);
+
+    // Правила площадки по каждой паре — один запрос за сеанс. Цикл всегда идёт под _executeLock,
+    // так что обычного словаря достаточно.
+    private readonly Dictionary<string, SymbolFilters?> _filters = new(StringComparer.OrdinalIgnoreCase);
 
     public DateTime NextExecutionUtc => _nextExecutionUtc;
     public TimeSpan TimeUntilNext => _nextExecutionUtc > DateTime.UtcNow
@@ -137,10 +142,34 @@ public sealed class DcaBot : IDisposable
             return;
         }
 
-        decimal quantity = Math.Round(allocationUsdt / currentPrice, 6, MidpointRounding.ToZero);
+        // Правила площадки по этой паре. GridBot спрашивает их на том же шлюзе с первого дня,
+        // а DCA слал Math.Round(..., 6) вслепую: на паре с шагом лота грубее 1e-6 (у большинства
+        // альтов шаг 1, 0.1 или 0.01) каждый ордер возвращался с -1013 LOT_SIZE, а закупка на
+        // сумму ниже minNotional отбивалась вся целиком. Пользователь видел «Order failed» в логе
+        // и пустую таблицу закупок — при том что расписание считалось отработавшим.
+        var filters = await GetFiltersAsync(coin.Symbol);
+
+        decimal quantity = SymbolFilterMath.NormalizeQuantity(allocationUsdt / currentPrice, filters);
+        // Шага площадка не публикует (или шлюз не умеет его отдавать) — остаётся прежний потолок
+        // точности, он безопаснее сырого деления.
+        if (filters is not { StepSize: > 0m })
+            quantity = Math.Round(quantity, 6, MidpointRounding.ToZero);
+
         if (quantity <= 0)
         {
-            OnLog?.Invoke($"[{coin.Symbol}] Allocation {allocationUsdt:N2} USDT too small");
+            // NormalizeQuantity отдаёт 0 и когда объём меньше минимального лота — это не то же
+            // самое, что «денег на один шаг не хватило», и человеку стоит видеть разницу.
+            var why = filters is { MinQuantity: > 0m } mq
+                ? $"Allocation {allocationUsdt:N2} USDT is below the {mq.MinQuantity} {BaseAssetOf(coin.Symbol)} minimum lot"
+                : $"Allocation {allocationUsdt:N2} USDT too small";
+            ReportSkipped(coin.Symbol, currentPrice, why);
+            return;
+        }
+
+        if (!SymbolFilterMath.MeetsMinNotional(currentPrice, quantity, filters))
+        {
+            ReportSkipped(coin.Symbol, currentPrice,
+                $"Order {quantity * currentPrice:N2} USDT is below the venue minimum of {filters!.MinNotional:N2}");
             return;
         }
 
@@ -173,6 +202,60 @@ public sealed class DcaBot : IDisposable
         {
             OnLog?.Invoke($"[{coin.Symbol}] Order failed: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Правила площадки по паре, один раз за сеанс. Ответ не меняется месяцами, а цикл DCA
+    /// проходит по всему списку монет — спрашивать заново на каждом круге незачем. Отсутствие
+    /// ответа кэшируем тоже: шлюз, который их не отдаёт (дефолт интерфейса — null), иначе
+    /// опрашивался бы вечно.
+    /// </summary>
+    private async Task<SymbolFilters?> GetFiltersAsync(string symbol)
+    {
+        if (_filters.TryGetValue(symbol, out var cached)) return cached;
+
+        SymbolFilters? filters = null;
+        try
+        {
+            filters = await _gateway.GetSymbolFiltersAsync(symbol);
+        }
+        catch (Exception ex)
+        {
+            // Закупку из-за этого не отменяем: считать по прежним правилам хуже, чем точно, но
+            // куда лучше, чем пропустить цикл из-за икнувшего справочного эндпоинта.
+            OnLog?.Invoke($"[{symbol}] Could not read venue filters ({ex.Message}) — using inferred precision.");
+        }
+
+        _filters[symbol] = filters;
+        return filters;
+    }
+
+    /// <summary>
+    /// Непроведённая закупка попадает и в лог, и в таблицу исполнений — ровно как пропуск по MA.
+    /// Иначе отказ площадки виден только в логе, а таблица молчит, будто цикла и не было.
+    /// </summary>
+    private void ReportSkipped(string symbol, decimal price, string reason)
+    {
+        OnLog?.Invoke($"[{symbol}] Skipped — {reason}");
+        OnExecution?.Invoke(new DcaExecution
+        {
+            Symbol = symbol,
+            ExecutedAt = DateTime.UtcNow,
+            Price = price,
+            Quantity = 0,
+            TotalUsdt = 0,
+            Executed = false,
+            Reason = reason
+        });
+    }
+
+    /// <summary>Базовый актив пары, для сообщений — BTCUSDT → BTC.</summary>
+    private static string BaseAssetOf(string symbol)
+    {
+        foreach (var quote in new[] { "USDT", "USDC", "BUSD", "FDUSD", "USD" })
+            if (symbol.EndsWith(quote, StringComparison.OrdinalIgnoreCase))
+                return symbol[..^quote.Length];
+        return symbol;
     }
 
     private async Task<decimal?> CalculateMaAsync(string symbol, int period)

@@ -112,6 +112,13 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
     private bool _loadedOnce;
     private CancellationTokenSource? _refreshCts;
 
+    /// <summary>
+    /// Пауза перед повторной АВТОматической генерацией после прохода, не давшего живого ответа.
+    /// Ручной REFRESH её не касается.
+    /// </summary>
+    private static readonly TimeSpan RetryAfterFailedPass = TimeSpan.FromSeconds(60);
+    private DateTime _lastAttemptUtc = DateTime.MinValue;
+
     private readonly Func<AiSignalDeskContext>? _contextProvider;
     private readonly AiSignalDeskService? _service;
 
@@ -154,7 +161,7 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
         SetDetailTabCommand = ReactiveCommand.Create<string>(SetDetailTab);
         UseSuggestionCommand = ReactiveCommand.Create<string>(text => ChatInput = text);
         SendChatCommand = ReactiveCommand.CreateFromTask(SendChatAsync);
-        RefreshCommand = ReactiveCommand.CreateFromTask(RefreshAsync);
+        RefreshCommand = ReactiveCommand.CreateFromTask(() => RefreshAsync(auto: false));
 
         BuildStaticContent();
         BuildFilters();
@@ -171,10 +178,14 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
     public async Task EnsureLoadedAsync()
     {
         if (_loadedOnce) return;
-        await RefreshAsync().ConfigureAwait(true);
+        await RefreshAsync(auto: true).ConfigureAwait(true);
     }
 
-    private async Task RefreshAsync()
+    /// <param name="auto">
+    /// True when the tab merely got opened, false when the human pressed REFRESH. Only the
+    /// automatic path is rate-limited: a person asking again is always answered.
+    /// </param>
+    private async Task RefreshAsync(bool auto = false)
     {
         AiSignalDeskContext? ctx = null;
         try { ctx = _contextProvider?.Invoke(); }
@@ -183,10 +194,7 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
         // Always mirror the real tracked markets in the feed — even offline. The AI
         // pass below refines direction/confidence/reasoning on the same symbols.
         if (ctx?.Markets is { Count: > 0 })
-        {
             SeedFeedFromMarkets(ctx);
-            _loadedOnce = true; // markets were available — don't auto-reload on every tab open
-        }
 
         if (_service is null || ctx?.Markets is not { Count: > 0 } || !_service.IsConfigured)
         {
@@ -196,6 +204,14 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
             AiError = string.Empty;
             return;
         }
+
+        // Приход рынков раньше означал «страница загружена» — флаг ставился ДО обращения к модели.
+        // Проход, не доведший живой ответ до экрана, запирал флагманскую AI-страницу на эвристике
+        // до конца сеанса: EnsureLoadedAsync выходил по _loadedOnce, и человек видел «offline ·
+        // heuristic», пока не догадывался нажать REFRESH. Теперь автогенерация повторяется, а от
+        // долбёжки при каждом переключении вкладки защищает пауза.
+        if (auto && DateTime.UtcNow - _lastAttemptUtc < RetryAfterFailedPass) return;
+        _lastAttemptUtc = DateTime.UtcNow;
 
         _refreshCts?.Cancel();
         var cts = _refreshCts = new CancellationTokenSource();
@@ -217,6 +233,7 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
                     ApplyResult(result, ctx);
                     SourceLabel = result.Source;
                     AiError = string.Empty;
+                    _loadedOnce = true; // живой ответ на экране — больше платить за открытие вкладки не за что
                 }
                 catch (Exception ex)
                 {

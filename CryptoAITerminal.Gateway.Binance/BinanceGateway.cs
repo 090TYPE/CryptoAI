@@ -341,17 +341,7 @@ public class BinanceGateway : IExchangeGateway
         _orderSymbols.Remember(order.Id, order.Symbol);
         order.ClientOrderId = result.Data.ClientOrderId ?? order.ClientOrderId;
         order.FilledQuantity = result.Data.QuantityFilled;
-        order.Status = result.Data.Status switch
-        {
-            global::Binance.Net.Enums.OrderStatus.Filled => CryptoAITerminal.Core.Enums.OrderStatus.Filled,
-            global::Binance.Net.Enums.OrderStatus.PartiallyFilled => CryptoAITerminal.Core.Enums.OrderStatus.PartiallyFilled,
-            global::Binance.Net.Enums.OrderStatus.Canceled or
-            global::Binance.Net.Enums.OrderStatus.PendingCancel => CryptoAITerminal.Core.Enums.OrderStatus.Canceled,
-            global::Binance.Net.Enums.OrderStatus.Rejected or
-            global::Binance.Net.Enums.OrderStatus.Expired or
-            global::Binance.Net.Enums.OrderStatus.ExpiredInMatch => CryptoAITerminal.Core.Enums.OrderStatus.Rejected,
-            _ => CryptoAITerminal.Core.Enums.OrderStatus.New,
-        };
+        order.Status = MapStatus(result.Data.Status);
 
         // A market order comes back already terminal and can never be cancelled, so the symbol it
         // was placed for is dead weight. Only cancels used to drop entries, which meant every
@@ -359,6 +349,68 @@ public class BinanceGateway : IExchangeGateway
         if (IsTerminal(order.Status)) _orderSymbols.Forget(order.Id);
         return order;
     }
+
+    /// <summary>
+    /// Живые лимитки по символу. Раньше этого метода здесь не было вовсе — работала заглушка
+    /// интерфейса, возвращающая пустой список, а это спотовый шлюз по умолчанию и в терминале, и в
+    /// серверном исполнителе. Для GridBot последствия расходились по двум веткам, и обе плохие:
+    /// при нескольких живых ордерах каждый опрос упирался в защиту «пустой снимок недостоверен» и
+    /// сетка навсегда переставала замечать филлы, а при одном отслеживаемом ордере та же пустота
+    /// проходила подтверждение <c>_missingOnce</c> за два тика и давала ФАНТОМНЫЙ филл — бот ставил
+    /// встречный ордер против позиции, которой нет.
+    ///
+    /// При сбое запроса бросаем, а не возвращаем пустоту: вызывающая сторона ловит исключение и
+    /// пропускает тик, тогда как пустой список она обязана трактовать как «ордеров нет».
+    /// </summary>
+    public async Task<IReadOnlyList<Order>> GetOpenOrdersAsync(string? symbol = null)
+    {
+        EnsurePrivateApiConfigured();
+
+        var result = await _restClient.SpotApi.Trading.GetOpenOrdersAsync(
+            string.IsNullOrWhiteSpace(symbol) ? null : symbol.Trim().ToUpperInvariant());
+        if (!result.Success)
+            throw new Exception($"Failed to get open spot orders: {result.Error}");
+
+        return result.Data.Select(o =>
+        {
+            var id = o.Id.ToString();
+            // Отмена приходит сюда с одним лишь id, поэтому символ каждого живого ордера надо
+            // помнить — иначе ордер, увиденный после перезапуска, отменить уже нечем.
+            _orderSymbols.Remember(id, o.Symbol);
+            return new Order
+            {
+                Id = id,
+                ClientOrderId = o.ClientOrderId ?? string.Empty,
+                Symbol = o.Symbol,
+                Side = o.Side == global::Binance.Net.Enums.OrderSide.Buy
+                    ? CryptoAITerminal.Core.Enums.OrderSide.Buy
+                    : CryptoAITerminal.Core.Enums.OrderSide.Sell,
+                Type = o.Type == SpotOrderType.Market
+                    ? CryptoAITerminal.Core.Enums.OrderType.Market
+                    : CryptoAITerminal.Core.Enums.OrderType.Limit,
+                MarketType = TradingMarketType.Spot,
+                Quantity = o.Quantity,
+                FilledQuantity = o.QuantityFilled,
+                Price = o.Price,
+                Status = MapStatus(o.Status),
+                ExchangeType = o.Type.ToString(),
+                CreatedAt = o.CreateTime,
+            };
+        }).ToList();
+    }
+
+    private static CryptoAITerminal.Core.Enums.OrderStatus MapStatus(
+        global::Binance.Net.Enums.OrderStatus status) => status switch
+    {
+        global::Binance.Net.Enums.OrderStatus.Filled => CryptoAITerminal.Core.Enums.OrderStatus.Filled,
+        global::Binance.Net.Enums.OrderStatus.PartiallyFilled => CryptoAITerminal.Core.Enums.OrderStatus.PartiallyFilled,
+        global::Binance.Net.Enums.OrderStatus.Canceled or
+        global::Binance.Net.Enums.OrderStatus.PendingCancel => CryptoAITerminal.Core.Enums.OrderStatus.Canceled,
+        global::Binance.Net.Enums.OrderStatus.Rejected or
+        global::Binance.Net.Enums.OrderStatus.Expired or
+        global::Binance.Net.Enums.OrderStatus.ExpiredInMatch => CryptoAITerminal.Core.Enums.OrderStatus.Rejected,
+        _ => CryptoAITerminal.Core.Enums.OrderStatus.New,
+    };
 
     private static bool IsTerminal(CryptoAITerminal.Core.Enums.OrderStatus status) =>
         status is CryptoAITerminal.Core.Enums.OrderStatus.Filled

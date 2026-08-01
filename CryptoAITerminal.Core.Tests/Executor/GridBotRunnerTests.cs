@@ -74,4 +74,45 @@ public class GridBotRunnerTests
         Assert.Contains(gw.Placed, o => o.Side == OrderSide.Sell && o.Price == 150m);
         Assert.Contains(store.Orders, o => o.Side == "sell" && o.Price == 150m && o.Status == "open");
     }
+
+    /// <summary>Шлюз, который на сбой запроса отвечает пустым списком вместо ошибки.</summary>
+    private sealed class BlindGateway : IExchangeGateway
+    {
+        public bool HasPrivateApiCredentials => true;
+        public readonly List<Order> Placed = new();
+        private int _seq;
+        public Task ConnectAsync() => Task.CompletedTask;
+        public Task DisconnectAsync() => Task.CompletedTask;
+        public Task<Order> PlaceOrderAsync(Order o) { o.Id = "G" + (++_seq); Placed.Add(o); return Task.FromResult(o); }
+        public Task CancelOrderAsync(string id) => Task.CompletedTask;
+        public Task<decimal> GetBalanceAsync(string a) => Task.FromResult(0m);
+        public Task<OrderBook> GetOrderBookAsync(string s, int d = 10) => Task.FromResult<OrderBook>(null!);
+        public Task<IReadOnlyList<Order>> GetOpenOrdersAsync(string? symbol = null) =>
+            throw new InvalidOperationException("Failed to get open spot orders: -1021 timestamp");
+        public IObservable<MarketData> MarketDataStream => Observable.Empty<MarketData>();
+    }
+
+    /// <summary>
+    /// Раннер не защищается от пустого снимка — исчез ордер, значит исполнился, встречный сразу в
+    /// биржу. Это верно только пока пустой список означает буквально «живых ордеров нет», поэтому
+    /// биржевые шлюзы на сбое обязаны БРОСАТЬ. Ошибку раннер должен пропустить наверх, где
+    /// BotExecutorService пропустит тик, а не проглотить её и не решить, что сетка исполнилась.
+    ///
+    /// Раньше проглатывали: спотовые Binance и KuCoin вообще не реализовывали метод, работала
+    /// заглушка интерфейса с пустым списком — и живой грид на сервере каждый опрос помечал ВСЮ
+    /// сетку исполненной и выставлял встречные ордера настоящим ключом пользователя.
+    /// </summary>
+    [Fact]
+    public async Task A_failed_snapshot_stops_the_tick_instead_of_filling_the_whole_grid()
+    {
+        var gw = new BlindGateway(); var store = new FakeStore();
+        var runner = new GridBotRunner(gw, store);
+        await runner.StartAsync(Cfg(), 150m, default);
+        int placedAtStart = gw.Placed.Count;
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => runner.PollAsync(Cfg(), default));
+
+        Assert.Equal(placedAtStart, gw.Placed.Count);                       // встречных не появилось
+        Assert.All(store.Orders, o => Assert.Equal("open", o.Status));      // исполненным не помечен никто
+    }
 }

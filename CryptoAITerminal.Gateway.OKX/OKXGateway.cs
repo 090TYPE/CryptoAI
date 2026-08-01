@@ -173,7 +173,8 @@ public class OKXGateway : IExchangeGateway
         var okxSymbol = symbol is not null ? OKXSymbolHelper.ToSpotSymbol(symbol) : null;
         var result = await _restClient.UnifiedApi.Trading.GetOrdersAsync(
             InstrumentType.Spot, okxSymbol);
-        if (!result.Success) return [];
+        // См. BybitGateway: проглоченная ошибка неотличима от «ордеров нет» и даёт фантомный филл.
+        if (!result.Success) throw new Exception($"Failed to get open spot orders: {result.Error}");
 
         return result.Data.Select(o => new Order
         {

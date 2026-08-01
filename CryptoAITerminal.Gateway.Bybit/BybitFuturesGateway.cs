@@ -211,7 +211,8 @@ public class BybitFuturesGateway : IExchangeGateway
     public async Task<IReadOnlyList<Order>> GetOpenOrdersAsync(string? symbol = null)
     {
         var result = await _restClient.V5Api.Trading.GetOrdersAsync(Category.Linear, symbol);
-        if (!result.Success) return [];
+        // См. BybitGateway: проглоченная ошибка неотличима от «ордеров нет» и даёт фантомный филл.
+        if (!result.Success) throw new Exception($"Failed to get open futures orders: {result.Error}");
 
         return result.Data.List.Select(o => new Order
         {

@@ -224,7 +224,8 @@ public class OKXFuturesGateway : IExchangeGateway
         var okxSymbol = symbol is not null ? OKXSymbolHelper.ToSwapSymbol(symbol) : null;
         var result = await _restClient.UnifiedApi.Trading.GetOrdersAsync(
             InstrumentType.Swap, okxSymbol);
-        if (!result.Success) return [];
+        // См. BybitGateway: проглоченная ошибка неотличима от «ордеров нет» и даёт фантомный филл.
+        if (!result.Success) throw new Exception($"Failed to get open futures orders: {result.Error}");
 
         return result.Data.Select(o => new Order
         {

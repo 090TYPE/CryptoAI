@@ -196,7 +196,10 @@ public class BybitGateway : IExchangeGateway
     public async Task<IReadOnlyList<Order>> GetOpenOrdersAsync(string? symbol = null)
     {
         var result = await _restClient.V5Api.Trading.GetOrdersAsync(Category.Spot, symbol);
-        if (!result.Success) return [];
+        // Сбой запроса — не «ордеров нет». Пустой список вызывающая сторона обязана понимать
+        // буквально: GridBot по исчезновению лимитки решает, что она исполнилась, и ставит
+        // встречный ордер. Один отслеживаемый ордер + проглоченная ошибка = фантомный филл.
+        if (!result.Success) throw new Exception($"Failed to get open spot orders: {result.Error}");
 
         return result.Data.List.Select(o => new Order
         {

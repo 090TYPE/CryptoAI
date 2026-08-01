@@ -224,7 +224,8 @@ public class KucoinFuturesGateway : IExchangeGateway, IDisposable
         var result = await _restClient.FuturesApi.Trading.GetOrdersAsync(
             symbol: kucoinSymbol,
             status: Kucoin.Net.Enums.OrderStatus.Active);
-        if (!result.Success) return [];
+        // См. BybitGateway: проглоченная ошибка неотличима от «ордеров нет» и даёт фантомный филл.
+        if (!result.Success) throw new Exception($"Failed to get open futures orders: {result.Error}");
 
         return result.Data.Items.Select(o => new Order
         {

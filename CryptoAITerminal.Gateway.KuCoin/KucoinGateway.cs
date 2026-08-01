@@ -183,6 +183,35 @@ public class KucoinGateway : IExchangeGateway, IDisposable
         await _restClient.SpotApi.Trading.CancelOrderAsync(orderId);
     }
 
+    /// <summary>
+    /// Живые лимитки по символу. Метода здесь не было: шлюз размещал и отменял настоящие ордера,
+    /// но перечислить их не умел — работала заглушка интерфейса с пустым списком, а по ней
+    /// GridBot решает, исполнилась лимитка или нет. Та же дыра, что была на спотовом Binance.
+    /// </summary>
+    public async Task<IReadOnlyList<Order>> GetOpenOrdersAsync(string? symbol = null)
+    {
+        var kucoinSymbol = symbol is not null ? KucoinSymbolHelper.ToSpotSymbol(symbol) : null;
+        var result = await _restClient.SpotApi.Trading.GetOrdersAsync(
+            symbol: kucoinSymbol,
+            status: Kucoin.Net.Enums.OrderStatus.Active);
+        // См. BybitGateway: проглоченная ошибка неотличима от «ордеров нет» и даёт фантомный филл.
+        if (!result.Success) throw new Exception($"Failed to get open spot orders: {result.Error}");
+
+        return result.Data.Items.Select(o => new Order
+        {
+            Id = o.Id ?? string.Empty,
+            ClientOrderId = o.ClientOrderId ?? string.Empty,
+            Symbol = KucoinSymbolHelper.FromKucoinSymbol(o.Symbol ?? string.Empty),
+            Side = o.Side == KucoinOrderSide.Buy ? CoreOrderSide.Buy : CoreOrderSide.Sell,
+            Type = o.Type == Kucoin.Net.Enums.OrderType.Market ? CoreOrderType.Market : CoreOrderType.Limit,
+            Quantity = o.Quantity ?? 0m,
+            FilledQuantity = o.QuantityFilled,
+            Price = o.Price ?? 0m,
+            Status = CryptoAITerminal.Core.Enums.OrderStatus.New,
+            MarketType = TradingMarketType.Spot,
+        }).ToList();
+    }
+
     public async Task<IReadOnlyList<DexOhlcvPoint>> GetCandlesAsync(string symbol, string timeframe, int limit = 180)
     {
         var interval = KucoinSpotTimeframeMap.Parse(timeframe);
