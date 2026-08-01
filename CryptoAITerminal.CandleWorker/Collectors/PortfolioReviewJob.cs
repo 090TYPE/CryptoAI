@@ -39,7 +39,9 @@ public sealed class PortfolioReviewJob : IDataCollector
     public async Task<int> CollectAsync(CancellationToken ct)
     {
         if (!await _settings.GetBoolAsync(SettingKeys.AiEnabled, true, ct)) return 0;
-        if (string.IsNullOrWhiteSpace(await _keys.GetAsync("anthropic", ct))) return 0;
+        // Ключ спрашивается у того провайдера, который сейчас обслуживает вызовы: раньше здесь стоял
+        // жёсткий "anthropic", и перевод сервера на ChatGPT молча выключал это задание.
+        if (!await _ai.HasKeyForServingFamilyAsync(ct)) return 0;
 
         // Its own key rather than the digest one: this is the knob that turns weekly reviews into
         // daily for the top tier, and it must move without dragging the 31 digests with it.

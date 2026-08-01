@@ -55,7 +55,7 @@ public static class AiFormatBridge
             var converted = new JsonArray();
             foreach (var t in tools)
             {
-                if (t is not JsonObject tool || tool["name"]?.GetValue<string>() is not { Length: > 0 } name)
+                if (t is not JsonObject tool || Str(tool["name"]) is not { Length: > 0 } name)
                     continue;
 
                 converted.Add(new JsonObject
@@ -64,7 +64,7 @@ public static class AiFormatBridge
                     ["function"] = new JsonObject
                     {
                         ["name"] = name,
-                        ["description"] = tool["description"]?.GetValue<string>() ?? "",
+                        ["description"] = Str(tool["description"]) ?? "",
                         // input_schema и parameters — один и тот же JSON Schema под разными именами.
                         ["parameters"] = tool["input_schema"]?.DeepClone() ?? new JsonObject(),
                     },
@@ -80,7 +80,7 @@ public static class AiFormatBridge
     private static void AppendMessage(JsonArray into, JsonObject? message)
     {
         if (message is null) return;
-        var role = message["role"]?.GetValue<string>() ?? "user";
+        var role = Str(message["role"]) ?? "user";
 
         // Простой случай: content — строка.
         if (message["content"] is JsonValue simple && simple.TryGetValue<string>(out var plain))
@@ -98,20 +98,20 @@ public static class AiFormatBridge
         foreach (var b in blocks)
         {
             if (b is not JsonObject block) continue;
-            switch (block["type"]?.GetValue<string>())
+            switch (Str(block["type"]))
             {
                 case "text":
-                    if (block["text"]?.GetValue<string>() is { Length: > 0 } t) text.Add(t);
+                    if (Str(block["text"]) is { Length: > 0 } t) text.Add(t);
                     break;
 
                 case "tool_use":
                     toolCalls.Add(new JsonObject
                     {
-                        ["id"] = block["id"]?.GetValue<string>() ?? "",
+                        ["id"] = Str(block["id"]) ?? "",
                         ["type"] = "function",
                         ["function"] = new JsonObject
                         {
-                            ["name"] = block["name"]?.GetValue<string>() ?? "",
+                            ["name"] = Str(block["name"]) ?? "",
                             // Аргументы у OpenAI — строка с JSON внутри, а не объект.
                             ["arguments"] = (block["input"] ?? new JsonObject()).ToJsonString(),
                         },
@@ -124,7 +124,7 @@ public static class AiFormatBridge
                     into.Add(new JsonObject
                     {
                         ["role"] = "tool",
-                        ["tool_call_id"] = block["tool_use_id"]?.GetValue<string>() ?? "",
+                        ["tool_call_id"] = Str(block["tool_use_id"]) ?? "",
                         ["content"] = TextOf(block["content"]),
                     });
                     break;
@@ -161,16 +161,21 @@ public static class AiFormatBridge
             {
                 if (c is not JsonObject call) continue;
                 var fn = call["function"] as JsonObject;
-                var args = fn?["arguments"]?.GetValue<string>();
+                var args = Str(fn?["arguments"]);
 
                 content.Add(new JsonObject
                 {
                     ["type"] = "tool_use",
-                    ["id"] = call["id"]?.GetValue<string>() ?? "",
-                    ["name"] = fn?["name"]?.GetValue<string>() ?? "",
+                    ["id"] = Str(call["id"]) ?? "",
+                    ["name"] = Str(fn?["name"]) ?? "",
                     // Строка с JSON внутри разворачивается обратно в объект; если провайдер прислал
                     // невалидный JSON, пустой объект честнее, чем строка там, где ждут структуру.
-                    ["input"] = ParseObject(args),
+                    //
+                    // Объект принимается и как объект: по спецификации OpenAI здесь строка, но
+                    // роутеры — ради которых этот мост и написан — присылают и структуру. Раньше
+                    // такой ответ ронял перевод; отдать пустые аргументы вместо настоящих значило
+                    // бы вызвать инструмент агента не с теми параметрами.
+                    ["input"] = fn?["arguments"] is JsonObject direct ? direct.DeepClone() : ParseObject(args),
                 });
             }
 
@@ -178,12 +183,12 @@ public static class AiFormatBridge
 
         return new JsonObject
         {
-            ["id"] = src["id"]?.GetValue<string>() ?? "",
+            ["id"] = Str(src["id"]) ?? "",
             ["type"] = "message",
             ["role"] = "assistant",
-            ["model"] = src["model"]?.GetValue<string>() ?? "",
+            ["model"] = Str(src["model"]) ?? "",
             ["content"] = content,
-            ["stop_reason"] = StopReason(choice["finish_reason"]?.GetValue<string>()),
+            ["stop_reason"] = StopReason(Str(choice["finish_reason"])),
             ["usage"] = new JsonObject
             {
                 ["input_tokens"] = Int(usage?["prompt_tokens"]),
@@ -210,7 +215,7 @@ public static class AiFormatBridge
             foreach (var m in srcMessages)
             {
                 if (m is not JsonObject message) continue;
-                var role = message["role"]?.GetValue<string>() ?? "user";
+                var role = Str(message["role"]) ?? "user";
 
                 // system у Anthropic — отдельное поле, а не сообщение.
                 if (role == "system")
@@ -225,7 +230,7 @@ public static class AiFormatBridge
                     Append(messages, "user", new JsonObject
                     {
                         ["type"] = "tool_result",
-                        ["tool_use_id"] = message["tool_call_id"]?.GetValue<string>() ?? "",
+                        ["tool_use_id"] = Str(message["tool_call_id"]) ?? "",
                         ["content"] = TextOf(message["content"]),
                     });
                     continue;
@@ -243,9 +248,12 @@ public static class AiFormatBridge
                         Append(messages, role, new JsonObject
                         {
                             ["type"] = "tool_use",
-                            ["id"] = call["id"]?.GetValue<string>() ?? "",
-                            ["name"] = fn?["name"]?.GetValue<string>() ?? "",
-                            ["input"] = ParseObject(fn?["arguments"]?.GetValue<string>()),
+                            ["id"] = Str(call["id"]) ?? "",
+                            ["name"] = Str(fn?["name"]) ?? "",
+                            // Как и в обратную сторону: аргументы приходят и строкой, и объектом.
+                            ["input"] = fn?["arguments"] is JsonObject argObj
+                                ? argObj.DeepClone()
+                                : ParseObject(Str(fn?["arguments"])),
                         });
                     }
             }
@@ -270,12 +278,14 @@ public static class AiFormatBridge
             foreach (var t in tools)
             {
                 var fn = (t as JsonObject)?["function"] as JsonObject;
-                if (fn?["name"]?.GetValue<string>() is not { Length: > 0 } name) continue;
+                if (Str(fn?["name"]) is not { Length: > 0 } name) continue;
                 converted.Add(new JsonObject
                 {
                     ["name"] = name,
-                    ["description"] = fn["description"]?.GetValue<string>() ?? "",
-                    ["input_schema"] = fn["parameters"]?.DeepClone() ?? new JsonObject(),
+                    // Через fn?[...]: проверка выше сужала fn по старому выражению, а Str такого
+                    // сужения не даёт — компилятор прав, что здесь возможен null.
+                    ["description"] = Str(fn?["description"]) ?? "",
+                    ["input_schema"] = fn?["parameters"]?.DeepClone() ?? new JsonObject(),
                 });
             }
             if (converted.Count > 0) dst["tools"] = converted;
@@ -294,7 +304,7 @@ public static class AiFormatBridge
     private static void Append(JsonArray messages, string role, JsonObject block)
     {
         if (messages.Count > 0 && messages[^1] is JsonObject last &&
-            last["role"]?.GetValue<string>() == role && last["content"] is JsonArray blocks)
+            Str(last["role"]) == role && last["content"] is JsonArray blocks)
         {
             blocks.Add(block);
             return;
@@ -317,19 +327,19 @@ public static class AiFormatBridge
         foreach (var b in content)
         {
             if (b is not JsonObject block) continue;
-            switch (block["type"]?.GetValue<string>())
+            switch (Str(block["type"]))
             {
                 case "text":
-                    if (block["text"]?.GetValue<string>() is { Length: > 0 } t) text.Add(t);
+                    if (Str(block["text"]) is { Length: > 0 } t) text.Add(t);
                     break;
                 case "tool_use":
                     toolCalls.Add(new JsonObject
                     {
-                        ["id"] = block["id"]?.GetValue<string>() ?? "",
+                        ["id"] = Str(block["id"]) ?? "",
                         ["type"] = "function",
                         ["function"] = new JsonObject
                         {
-                            ["name"] = block["name"]?.GetValue<string>() ?? "",
+                            ["name"] = Str(block["name"]) ?? "",
                             ["arguments"] = (block["input"] ?? new JsonObject()).ToJsonString(),
                         },
                     });
@@ -345,16 +355,16 @@ public static class AiFormatBridge
 
         return new JsonObject
         {
-            ["id"] = src["id"]?.GetValue<string>() ?? "",
+            ["id"] = Str(src["id"]) ?? "",
             ["object"] = "chat.completion",
-            ["model"] = src["model"]?.GetValue<string>() ?? "",
+            ["model"] = Str(src["model"]) ?? "",
             ["choices"] = new JsonArray
             {
                 new JsonObject
                 {
                     ["index"] = 0,
                     ["message"] = message,
-                    ["finish_reason"] = FinishReason(src["stop_reason"]?.GetValue<string>()),
+                    ["finish_reason"] = FinishReason(Str(src["stop_reason"])),
                 },
             },
             ["usage"] = new JsonObject
@@ -423,13 +433,31 @@ public static class AiFormatBridge
                 foreach (var item in arr)
                 {
                     if (item is JsonValue iv && iv.TryGetValue<string>(out var istr)) parts.Add(istr);
-                    else if (item is JsonObject o && o["text"]?.GetValue<string>() is { Length: > 0 } t) parts.Add(t);
+                    else if (item is JsonObject o && Str(o["text"]) is { Length: > 0 } t) parts.Add(t);
                 }
                 return string.Join("\n", parts);
             default:
                 return "";
         }
     }
+
+    /// <summary>
+    /// Строка из узла, или null, если там что угодно другое.
+    ///
+    /// Существует потому, что <c>GetValue&lt;string&gt;()</c> на числе бросает
+    /// <see cref="InvalidOperationException"/>, а не <see cref="JsonException"/> — то есть мимо
+    /// единственного catch в <see cref="Parse"/>. Тело <c>{"messages":[{"role":1}]}</c> проходит
+    /// проверку политики (она форму сообщений не смотрит) и роняет перевод формата: клиент получает
+    /// 500 вместо 400, а повтор в терминале считает 500 возвратным отказом и шлёт то же тело ещё
+    /// раз. На стороне ОТВЕТА хуже: падение случается после вызова вендора, но до
+    /// <c>budget.Charge</c> и записи в <c>ai_usage</c> — оплаченные токены не попадают никуда,
+    /// а именно из этих строк потом считается тариф.
+    ///
+    /// Ровно этот же класс отказа соседний <c>AiRequestPolicy.Apply</c> уже ловит отдельным
+    /// <c>catch (InvalidOperationException)</c>; сюда это просто не распространили.
+    /// </summary>
+    private static string? Str(JsonNode? node) =>
+        node is JsonValue v && v.TryGetValue<string>(out var s) ? s : null;
 
     /// <summary>
     /// Мусор на входе обязан стать null, а не исключением: сюда приходит тело запроса от клиента и

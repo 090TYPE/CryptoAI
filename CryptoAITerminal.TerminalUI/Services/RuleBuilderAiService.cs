@@ -31,6 +31,10 @@ public sealed class RuleBuilderAiService
 
     public async Task<Result> BuildAsync(string instruction, CancellationToken ct = default)
     {
+        // Сбрасывается в начале вызова, а не только пишется в catch: иначе один сбой за сеанс
+        // навсегда помечал бы все последующие ЖИВЫЕ ответы как собранные без модели.
+        LastError = null;
+
         if (string.IsNullOrWhiteSpace(instruction))
             return new Result(null, "—", true, "Empty instruction.");
 

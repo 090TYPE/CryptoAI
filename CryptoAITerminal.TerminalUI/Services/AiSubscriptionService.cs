@@ -17,7 +17,13 @@ namespace CryptoAITerminal.TerminalUI.Services;
 /// <c>Cap == 0</c>: ноль здесь уже означал «сервер не ответил», и без флага снятая квота выглядела
 /// бы в настройках ровно как обрыв связи.
 /// </param>
-public sealed record AiSubscription(string? Edition, long Used, long Cap, DateTime ResetsUtc, bool Unlimited = false)
+/// <param name="Tiered">
+/// Действует предел ТАРИФА, а не общий предохранитель. Пока тарифы не применяются, число в
+/// <paramref name="Cap"/> — страховка от разгона, одна на всех, и называть её тарифной квотой
+/// значит обещать клиенту, что за деньги дадут больше.
+/// </param>
+public sealed record AiSubscription(string? Edition, long Used, long Cap, DateTime ResetsUtc,
+    bool Unlimited = false, bool Tiered = false)
 {
     public long Remaining => Unlimited ? 0 : Math.Max(0, Cap - Used);
 
@@ -77,7 +83,9 @@ public static class AiSubscriptionService
                     : DateTime.UtcNow.Date.AddDays(1),
                 // Поле появилось вместе со снятием квот. Сервер постарше его не пришлёт, и тогда
                 // false — прежнее поведение, а не «без лимита» по умолчанию.
-                root.TryGetProperty("unlimited", out var un) && un.ValueKind == JsonValueKind.True);
+                root.TryGetProperty("unlimited", out var un) && un.ValueKind == JsonValueKind.True,
+                // То же правило: сервер, не знающий про тестовый период, тарифы применяет.
+                !root.TryGetProperty("tiered", out var t) || t.ValueKind != JsonValueKind.False);
         }
         catch
         {

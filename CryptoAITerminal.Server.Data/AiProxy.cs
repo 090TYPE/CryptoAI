@@ -34,18 +34,29 @@ public sealed class AiProxy
     /// <summary>Пауза перед повтором после неудачи — короче, чтобы починка провайдера подхватилась быстро.</summary>
     public static readonly TimeSpan CatalogRetryTtl = TimeSpan.FromMinutes(1);
 
+    /// <summary>
+    /// Сколько ждать список моделей. Своё, короткое: это оптимизация выбора модели, а не то, ради
+    /// чего оплаченный запрос должен ждать общий таймаут HttpClient в две минуты. Не дождавшись,
+    /// сервер просто не переопределит модель — вызов уйдёт с тем именем, что прислал клиент.
+    /// </summary>
+    public static readonly TimeSpan CatalogTimeout = TimeSpan.FromSeconds(5);
+
     private readonly HttpClient _http;
     private readonly ProviderKeyStore _keys;
     private readonly SettingsStore? _settings;
     private readonly string? _anthropicEnv;
     private readonly string? _openAiEnv;
-    private readonly SemaphoreSlim _catalogLock = new(1, 1);
-
     // По записи на семейство, а не одна на всех. Одна была верна, пока семейство выбирал только
     // оператор: оно менялось раз в месяц. Теперь его выбирает каждый пользователь, и две записи в
     // одном слоте вытесняли бы друг друга на каждом чередующемся запросе — то есть обращение к
     // /v1/models на КАЖДЫЙ вызов терминала, ровно тот расход, ради которого кэш и написан.
-    private readonly Dictionary<AiFamily, (DateTime At, IReadOnlyList<string> Ids, TimeSpan Ttl)> _catalog = new();
+    //
+    // Хранится ЗАДАЧА, а не результат. Раньше здесь был один общий семафор, и его держали через
+    // исходящий HTTP-запрос: подвисший апстрим останавливал каждый проксируемый вызов, включая
+    // трафик здорового семейства, потому что замок — в отличие от кэша — на семейства разделён не
+    // был. Задача в словаре даёт то же схлопывание одновременных запросов в один поход к
+    // провайдеру, но ждут её только те, кому нужно это семейство, и никто никого не блокирует.
+    private readonly Dictionary<AiFamily, (DateTime At, Task<IReadOnlyList<string>> Ids, TimeSpan Ttl)> _catalog = new();
 
     public AiProxy(HttpClient http, ProviderKeyStore keys, string? anthropicEnv = null,
         string? openAiEnv = null, SettingsStore? settings = null)
@@ -163,6 +174,33 @@ public sealed class AiProxy
         return ((int)resp.StatusCode, await resp.Content.ReadAsStringAsync(ct));
     }
 
+    /// <summary>
+    /// Есть ли ключ у того провайдера, которым сервер сейчас обслуживает вызовы.
+    ///
+    /// Фоновые задания спрашивали ключ <c>anthropic</c> напрямую, а тратят ключ семейства: после
+    /// перевода сервера на ChatGPT и удаления ненужного anthropic-ключа все они молча выключались —
+    /// без лога, без ошибки, при том что админка показывала строку ChatGPT здоровой. Проверка
+    /// должна спрашивать про тот же ключ, который потом спишется.
+    /// </summary>
+    public async Task<bool> HasKeyForServingFamilyAsync(CancellationToken ct = default)
+    {
+        var family = await FamilyAsync(ct).ConfigureAwait(false);
+        var provider = family == AiFamily.Claude ? "anthropic" : "openai";
+        var key = await _keys.GetAsync(provider, ct).ConfigureAwait(false)
+                  ?? (family == AiFamily.Claude ? _anthropicEnv : _openAiEnv);
+
+        // Тот же один-ключ-на-два-формата, что и при пересылке: на роутере ключ лежит под одним
+        // именем и обслуживает оба формата.
+        if (string.IsNullOrWhiteSpace(key) && family == AiFamily.ChatGpt)
+        {
+            var url = await SettingAsync(SettingKeys.OpenAiBaseUrl, DefaultOpenAiUrl, ct).ConfigureAwait(false);
+            if (AiProxyDefaults.LooksLikeRouter(url, DefaultOpenAiUrl))
+                key = await _keys.GetAsync("anthropic", ct).ConfigureAwait(false) ?? _anthropicEnv;
+        }
+
+        return !string.IsNullOrWhiteSpace(key);
+    }
+
     /// <summary>Семейство, которое обслуживает сервер. Единственный выбор, оставленный человеку.</summary>
     public async Task<AiFamily> FamilyAsync(CancellationToken ct = default) =>
         AiModelCatalog.ParseFamily(_settings is null
@@ -205,7 +243,9 @@ public sealed class AiProxy
 
         if (_settings is null || await _settings.GetBoolAsync(SettingKeys.ModelAuto, true, ct))
         {
-            var picked = AiModelCatalog.Pick(await CatalogAsync(family, ct), family, role);
+            // Отменяется ОЖИДАНИЕ, а не сам поход за списком: задача общая, и отвалившийся клиент
+            // не должен забирать её у остальных.
+            var picked = AiModelCatalog.Pick(await CatalogAsync(family).WaitAsync(ct), family, role);
             if (picked is not null) return picked;
         }
 
@@ -233,32 +273,43 @@ public sealed class AiProxy
     /// Список моделей провайдера с коротким кэшем. Кэшируется и неудача — иначе недоступный
     /// провайдер означал бы обращение к нему на каждый вызов терминала.
     /// </summary>
-    private async Task<IReadOnlyList<string>> CatalogAsync(AiFamily family, CancellationToken ct)
-    {
-        if (Fresh(family) is { } hit) return hit;
-
-        await _catalogLock.WaitAsync(ct);
-        try
-        {
-            if (Fresh(family) is { } again) return again;
-
-            var vendor = family == AiFamily.Claude ? AiVendor.Anthropic : AiVendor.OpenAi;
-            var listed = await ListModelsAsync(vendor, ct);
-            lock (_catalog)
-                _catalog[family] = (DateTime.UtcNow, listed.Models, listed.Ok ? CatalogTtl : CatalogRetryTtl);
-            return listed.Models;
-        }
-        finally
-        {
-            _catalogLock.Release();
-        }
-    }
-
-    private IReadOnlyList<string>? Fresh(AiFamily family)
+    private Task<IReadOnlyList<string>> CatalogAsync(AiFamily family)
     {
         lock (_catalog)
-            return _catalog.TryGetValue(family, out var c) && DateTime.UtcNow - c.At < c.Ttl ? c.Ids : null;
+        {
+            if (Fresh(family) is { } hit) return hit;
+
+            // Запуск под замком, ожидание — вне его. Токен отмены сюда НЕ передаётся намеренно:
+            // задача общая для всех ждущих, и отмена одного запроса не должна отменять список,
+            // которого ждут остальные. Свой ct каждый ждущий применяет к ожиданию ниже.
+            var vendor = family == AiFamily.Claude ? AiVendor.Anthropic : AiVendor.OpenAi;
+            var started = FetchCatalogAsync(family, vendor);
+            _catalog[family] = (DateTime.UtcNow, started, CatalogTtl);
+            return started;
+        }
     }
+
+    /// <summary>
+    /// Один поход за списком. Неудача кэшируется на укороченный срок — иначе недоступный провайдер
+    /// означал бы обращение к нему на каждый вызов терминала.
+    /// </summary>
+    private async Task<IReadOnlyList<string>> FetchCatalogAsync(AiFamily family, AiVendor vendor)
+    {
+        // Свой таймаут: список моделей — это оптимизация выбора, а не то, ради чего платный запрос
+        // должен ждать общий стодвадцатисекундный таймаут HttpClient.
+        using var timeout = new CancellationTokenSource(CatalogTimeout);
+        var listed = await ListModelsAsync(vendor, timeout.Token).ConfigureAwait(false);
+
+        lock (_catalog)
+            if (_catalog.TryGetValue(family, out var entry) && !listed.Ok)
+                _catalog[family] = (entry.At, entry.Ids, CatalogRetryTtl);
+
+        return listed.Models;
+    }
+
+    /// <summary>Свежая запись, если есть. Вызывается уже под <c>lock(_catalog)</c>.</summary>
+    private Task<IReadOnlyList<string>>? Fresh(AiFamily family) =>
+        _catalog.TryGetValue(family, out var c) && DateTime.UtcNow - c.At < c.Ttl ? c.Ids : null;
 
     /// <summary>
     /// What the configured upstream says it serves. Used by the admin screen, because the model

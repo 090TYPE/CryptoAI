@@ -40,6 +40,10 @@ public sealed class BotParameterAiService
         decimal changePct24h,
         CancellationToken ct = default)
     {
+        // Сбрасывается в начале вызова: иначе один сбой за сеанс навсегда помечал бы все
+        // последующие ЖИВЫЕ подборы как сделанные без модели.
+        LastError = null;
+
         var keys = string.Equals(botType, Grid, StringComparison.OrdinalIgnoreCase)
             ? new[] { "LowerPrice", "UpperPrice", "GridCount" }
             : new[] { "AmountUsd", "IntervalHours", "DipBuyPercent" };

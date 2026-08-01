@@ -42,6 +42,10 @@ public sealed class AlertNlService
 
     public async Task<AlertParseResult> ParseAsync(string text, CancellationToken ct = default)
     {
+        // Сбрасывается в начале вызова: иначе один сбой за сеанс навсегда помечал бы все
+        // последующие ЖИВЫЕ разборы как сделанные без модели.
+        LastError = null;
+
         text = (text ?? "").Trim();
         if (text.Length == 0)
             return Fail("Type what you want to be alerted about.");

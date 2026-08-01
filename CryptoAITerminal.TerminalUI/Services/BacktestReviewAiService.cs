@@ -30,6 +30,10 @@ public sealed class BacktestReviewAiService
 
     public async Task<BacktestReview> ReviewAsync(BacktestMetrics m, CancellationToken ct = default)
     {
+        // Сбрасывается в начале вызова: иначе один сбой за сеанс навсегда помечал бы все
+        // последующие ЖИВЫЕ разборы как сделанные без модели.
+        LastError = null;
+
         if (UsesLiveModel)
         {
             try

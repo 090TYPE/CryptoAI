@@ -97,7 +97,12 @@ public static class AdminUi
     <div class="body kill">
       <span class="state" id="budgetState">—</span>
       <button id="budgetBtn" onclick="toggleBudget()">переключить</button>
-      <span class="note" style="margin:0">Пока идёт тестовый период — выключены. Расход при этом считается и попадает в «Расход за 7 дней»: включать квоты надо по измеренной цене, а не по оценке. Числа ниже остались с прежнего прайса и на живом использовании кончались за минуты — перед включением их надо пересчитать.</span>
+      <span class="note" style="margin:0">Предохранитель от разгона. Выключать не следует: без него держателя валидной лицензии ограничивает только рейт-лимит в 120 запросов в минуту, а это тысячи долларов в час на общий вендорский ключ.</span>
+    </div>
+    <div class="body kill">
+      <span class="state" id="tiersState">—</span>
+      <button id="tiersBtn" onclick="toggleTiers()">переключить</button>
+      <span class="note" style="margin:0">Пока тарифы выключены, все лицензии делят один общий предел (<span class="k">plan.default.daily_tokens</span>) — страховка, а не прайс. Включать по измеренному расходу: числа по тарифам ниже остались с прежнего прайса и на живом использовании кончались за минуты.</span>
     </div>
     <div class="body"><table id="plans"></table></div>
   </section>
@@ -229,7 +234,7 @@ const PLANS = [
   ['plan.lite.daily_tokens',    'Суточный предел тарифа Lite. Пусто = 35 000 из кода'],
   ['plan.pro.daily_tokens',     'Суточный предел тарифа Pro. Пусто = 70 000 из кода'],
   ['plan.max.daily_tokens',     'Суточный предел тарифа Max. Пусто = 105 000 из кода'],
-  ['plan.default.daily_tokens', 'Для лицензии с незнакомым тарифом. Пусто = общий предел сервера (AI_DAILY_TOKENS_PER_LICENSE)'],
+  ['plan.default.daily_tokens', 'Общий предел, пока тарифы не применяются, и запасной для незнакомого тарифа. Пусто = 2 000 000 токенов в сутки'],
 ];
 const BOUNDS = [
   ['ai.score.batch',            'Сколько токенов оценивать за один проход'],
@@ -309,7 +314,7 @@ async function loadAll() {
 
     const known = new Set([...MODELS, ...BOUNDS, ...UPSTREAM, ...PLANS].map(x => x[0])
       .concat(['ai.enabled', 'ai.anthropic.auth_bearer', 'ai.family', 'ai.model.auto',
-               'ai.family.user_choice', 'ai.budget.enforced']));
+               'ai.family.user_choice', 'ai.budget.enforced', 'plan.tiers.enforced']));
     const rest = (s.settings || []).filter(x => !known.has(x.key));
     document.getElementById('raw').innerHTML = rest.length
       ? '<tr><th>Ключ</th><th>Значение</th><th>Изменено</th><th></th></tr>' + rest.map(x => `
@@ -325,13 +330,21 @@ async function loadAll() {
     document.getElementById('killBtn').className = killOn ? 'danger' : 'primary';
     document.getElementById('killBtn').textContent = killOn ? 'Остановить все вызовы' : 'Включить обратно';
 
-    // Значение по умолчанию — 'false', и это не описка: см. SettingKeys.DefaultAiBudgetEnforced.
-    const budgetOn = (current['ai.budget.enforced']?.value ?? 'false').toLowerCase() === 'true';
+    // Предел действует по умолчанию: см. SettingKeys.DefaultAiBudgetEnforced.
+    const budgetOn = (current['ai.budget.enforced']?.value ?? 'true').toLowerCase() !== 'false';
     document.getElementById('budgetState').innerHTML = budgetOn
-      ? '<span class="pill on">квоты действуют</span>'
-      : '<span class="pill off">тестовый период — без лимита</span>';
+      ? '<span class="pill on">предел действует</span>'
+      : '<span class="pill off">ПРЕДЕЛА НЕТ</span>';
     document.getElementById('budgetBtn').className = budgetOn ? 'danger' : 'primary';
-    document.getElementById('budgetBtn').textContent = budgetOn ? 'Снять суточный лимит' : 'Включить суточные квоты';
+    document.getElementById('budgetBtn').textContent = budgetOn ? 'Снять предел совсем' : 'Вернуть предел';
+
+    // Тарифы по умолчанию не применяются: идёт тестовый период.
+    const tiersOn = (current['plan.tiers.enforced']?.value ?? 'false').toLowerCase() === 'true';
+    document.getElementById('tiersState').innerHTML = tiersOn
+      ? '<span class="pill on">тарифы применяются</span>'
+      : '<span class="pill n">тестовый период — один предел на всех</span>';
+    document.getElementById('tiersBtn').className = tiersOn ? 'danger' : 'primary';
+    document.getElementById('tiersBtn').textContent = tiersOn ? 'Вернуть общий предел' : 'Включить тарифы';
 
     await Promise.all([loadUpstream(), loadFeatures(), loadUsage(), loadKeys(), loadCollectors(), loadHistory()]);
   } catch (e) {
@@ -380,11 +393,23 @@ async function toggleKill() {
 }
 
 async function toggleBudget() {
-  const on = (current['ai.budget.enforced']?.value ?? 'false').toLowerCase() === 'true';
-  if (!on && !confirm('Включить суточные квоты по тарифам?\n\nПроверьте числа в полях ниже: они остались с прежнего прайса и на живом использовании кончались за минуты. Клиент, выбравший лимит, получит 429 и переключится на встроенные расчёты.')) return;
+  const on = (current['ai.budget.enforced']?.value ?? 'true').toLowerCase() !== 'false';
+  // Подтверждение стоит на ВЫКЛЮЧЕНИИ: включённый предел — норма, а снятый оставляет платный ключ
+  // сервера без единого потолка в токенах.
+  if (on && !confirm('Снять суточный предел совсем?\n\nПосле этого расход одной лицензии ограничивает только рейт-лимит — 120 запросов в минуту, то есть тысячи долларов в час на общий вендорский ключ. Если цель в том, чтобы тарифы не мешали тестировать, выключайте ТАРИФЫ, а не предел.')) return;
   try {
     await putOrDelete('ai.budget.enforced', on ? 'false' : 'true');
-    toast(on ? 'Суточный лимит снят' : 'Суточные квоты включены');
+    toast(on ? 'Предел снят — сервер без потолка трат' : 'Предел возвращён');
+    loadAll();
+  } catch (e) { toast(e.message, true); }
+}
+
+async function toggleTiers() {
+  const on = (current['plan.tiers.enforced']?.value ?? 'false').toLowerCase() === 'true';
+  if (!on && !confirm('Включить пределы по тарифам?\n\nПроверьте числа в полях ниже: они остались с прежнего прайса и на живом использовании кончались за минуты. Клиент, упёршийся в свой тариф, получит 429 и переключится на встроенные расчёты.')) return;
+  try {
+    await putOrDelete('plan.tiers.enforced', on ? 'false' : 'true');
+    toast(on ? 'Тарифы выключены — один предел на всех' : 'Тарифы применяются');
     loadAll();
   } catch (e) { toast(e.message, true); }
 }

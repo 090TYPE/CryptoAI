@@ -19,17 +19,38 @@ public class AiBudgetTierTests
     private static AiBudget Budget(long defaultCap = 200_000) => new(defaultCap);
 
     [Fact]
-    public void The_test_period_ships_with_no_daily_limit()
+    public void The_test_period_has_one_ceiling_for_everyone_rather_than_none()
     {
-        Assert.False(SettingKeys.DefaultAiBudgetEnforced);
+        // Тестовый период — это «тарифы не применяются», а не «предела нет». Сняв предел целиком,
+        // сервер оставил держателя валидной лицензии наедине с рейт-лимитом: 120 запросов в минуту
+        // по 6000 токенов — это тысячи долларов в час на общий вендорский ключ.
+        Assert.True(SettingKeys.DefaultAiBudgetEnforced);
+        Assert.False(SettingKeys.DefaultPlanTiersEnforced);
 
+        // Тариф не спрашивается, пока PlanTiersEnforced выключен: сервер передаёт нули вместо
+        // тарифных чисел и один общий предел.
         var allowance = AiAllowance.Pick(SettingKeys.DefaultAiBudgetEnforced,
-            configuredForTier: 35_000, shippedForTier: 35_000, defaultCap: 200_000);
+            configuredForTier: 0, shippedForTier: 0,
+            defaultCap: SettingKeys.DefaultTestPeriodDailyTokens);
 
-        Assert.False(allowance.Enforced);
-        // Ключевое: расход в разы больше любого прежнего тарифа не закрывает доступ.
-        Assert.True(allowance.Allows(50_000_000));
-        Assert.Equal(0, allowance.Remaining(50_000_000));
+        Assert.True(allowance.Enforced);
+        Assert.Equal(SettingKeys.DefaultTestPeriodDailyTokens, allowance.DailyTokens);
+        // Разгон упирается в потолок.
+        Assert.False(allowance.Allows(50_000_000));
+    }
+
+    [Fact]
+    public void Honest_use_does_not_reach_the_test_period_ceiling()
+    {
+        // Смысл числа: честная работа не должна в него упираться, иначе это снова тариф, из-за
+        // которого квоту и снимали. Самый длинный законный ответ — 6000 токенов; даже если КАЖДЫЙ
+        // вызов за сутки будет таким, до потолка нужно больше трёхсот подряд.
+        var cap = SettingKeys.DefaultTestPeriodDailyTokens;
+        var heaviestCall = AiPolicyOptions.FromConfig(_ => null).MaxTokensCap;
+
+        Assert.True(cap / heaviestCall > 300, $"{cap} / {heaviestCall} — это уже тариф, а не предохранитель");
+        // И при этом это в разы меньше того, что выжимает разгон на рейт-лимите за сутки.
+        Assert.True(cap < 120L * 60 * 24 * heaviestCall);
     }
 
     [Fact]

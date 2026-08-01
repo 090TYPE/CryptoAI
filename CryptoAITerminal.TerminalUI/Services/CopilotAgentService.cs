@@ -95,6 +95,10 @@ public sealed class CopilotAgentService
     /// </summary>
     public async Task<CopilotAnswer> AskAsync(string question, CancellationToken ct = default)
     {
+        // Сбрасывается в начале вызова: иначе один сбой за сеанс навсегда подписывал бы все
+        // последующие ЖИВЫЕ ответы как офлайновые.
+        LastError = null;
+
         question = (question ?? string.Empty).Trim();
         if (question.Length == 0)
             return new CopilotAnswer("Ask me about your balance, positions, P&L, risk or the market.",

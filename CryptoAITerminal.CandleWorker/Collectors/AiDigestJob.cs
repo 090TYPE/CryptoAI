@@ -58,7 +58,9 @@ public abstract class AiDigestJob : IDataCollector
         // Checked before the due-date test so the kill switch stops spend on the next tick rather
         // than at the next period boundary, which for the weekly recap is seven days away.
         if (!await _settings.GetBoolAsync(SettingKeys.AiEnabled, true, ct)) return 0;
-        if (string.IsNullOrWhiteSpace(await _keys.GetAsync("anthropic", ct))) return 0;
+        // Ключ спрашивается у того провайдера, который сейчас обслуживает вызовы: раньше здесь стоял
+        // жёсткий "anthropic", и перевод сервера на ChatGPT молча выключал это задание.
+        if (!await _ai.HasKeyForServingFamilyAsync(ct)) return 0;
 
         var last = await Digests.LastAtAsync(Kind, ct);
         if (last is { } l && DateTime.UtcNow - l < Period) return 0; // not due

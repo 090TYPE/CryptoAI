@@ -36,6 +36,10 @@ public sealed class MarketRankingAiService
         int topN = 5,
         CancellationToken ct = default)
     {
+        // Сбрасывается в начале вызова: иначе один сбой за сеанс навсегда помечал бы все
+        // последующие ЖИВЫЕ рейтинги как построенные без модели.
+        LastError = null;
+
         var rows = (results ?? [])
             .Where(r => !string.IsNullOrWhiteSpace(r.Symbol))
             .Select(r => new MarketScanRow(

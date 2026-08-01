@@ -31,6 +31,10 @@ public sealed class TradeJournalCoachAiService
 
     public async Task<JournalReview> ReviewAsync(IReadOnlyList<TradeRecord> trades, CancellationToken ct = default)
     {
+        // Сбрасывается в начале вызова: иначе один сбой за сеанс навсегда помечал бы все
+        // последующие ЖИВЫЕ разборы как сделанные без модели.
+        LastError = null;
+
         var closed = (trades ?? []).Where(t => t.ClosedAtUtc > t.OpenedAtUtc).ToList();
         if (closed.Count < 3)
             return new JournalReview(

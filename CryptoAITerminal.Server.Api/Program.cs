@@ -369,13 +369,21 @@ static async Task<string?> ReadBoundedBodyAsync(HttpContext ctx, int maxChars)
 /// <see cref="AiAllowance.Unlimited"/>. Ветка с тарифами оставлена рабочей намеренно: включение
 /// квот обратно должно быть значением в админке, а не восстановлением удалённого кода.
 /// </summary>
-static async Task<AiAllowance> AllowanceAsync(HttpContext ctx, AiBudget budget, SettingsStore settings)
+static async Task<AiAllowance> AllowanceAsync(HttpContext ctx, SettingsStore settings)
 {
+    // Полное снятие предела оставлено как аварийный рычаг, но по умолчанию его нет: без потолка
+    // держателя валидной лицензии удерживает только рейт-лимит, а 120 запросов в минуту по 8k
+    // токенов — это тысячи долларов в час на общий вендорский ключ.
     if (!await settings.GetBoolAsync(SettingKeys.AiBudgetEnforced,
             SettingKeys.DefaultAiBudgetEnforced, ctx.RequestAborted))
         return AiAllowance.Unlimited;
 
-    var edition = (ctx.Items[LicenseCtx.Check] as LicenseCheckResult)?.Payload?.Edition;
+    // Тарифы на тестовом периоде не применяются: цена вызова ещё не измерена. Пока так, действует
+    // один общий предел — предохранитель от разгона, а не прайс.
+    var tiered = await settings.GetBoolAsync(SettingKeys.PlanTiersEnforced,
+        SettingKeys.DefaultPlanTiersEnforced, ctx.RequestAborted);
+
+    var edition = tiered ? (ctx.Items[LicenseCtx.Check] as LicenseCheckResult)?.Payload?.Edition : null;
 
     var configured = string.IsNullOrWhiteSpace(edition)
         ? 0
@@ -386,7 +394,8 @@ static async Task<AiAllowance> AllowanceAsync(HttpContext ctx, AiBudget budget, 
 
     // Unrecognised or absent tier. Generous by design — an unknown edition means a plan was added
     // and never configured, and the customer should not be the one who discovers that.
-    var fallback = await settings.GetLongAsync(SettingKeys.PlanDefaultDailyTokens, budget.DailyCap, ctx.RequestAborted);
+    var fallback = await settings.GetLongAsync(SettingKeys.PlanDefaultDailyTokens,
+        SettingKeys.DefaultTestPeriodDailyTokens, ctx.RequestAborted);
 
     return AiAllowance.Pick(true, configured, shipped, fallback);
 }
@@ -426,7 +435,7 @@ static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiPr
         return Results.Json(new { error = "ai_disabled" }, statusCode: 503);
 
     var license = LicenseKey(ctx);
-    var allowance = await AllowanceAsync(ctx, budget, settings);
+    var allowance = await AllowanceAsync(ctx, settings);
     // Субъект лицензии проверяется отдельно, потому что раньше это делала квота: HasHeadroom("")
     // всегда возвращал false, и вызов без опознанного владельца отсекался побочным эффектом.
     // Сняв квоту, этот эффект надо было заменить явной проверкой — иначе расход лёг бы в ai_usage
@@ -507,16 +516,21 @@ app.MapPost("/api/ai/openai", (HttpContext ctx, AiProxy ai, AiPolicyOptions poli
 app.MapGet("/api/ai/budget", async (HttpContext ctx, AiBudget budget, SettingsStore settings) =>
 {
     var license = LicenseKey(ctx);
-    var allowance = await AllowanceAsync(ctx, budget, settings);
+    var allowance = await AllowanceAsync(ctx, settings);
     var used = budget.Used(license);
+    var tiered = await settings.GetBoolAsync(SettingKeys.PlanTiersEnforced,
+        SettingKeys.DefaultPlanTiersEnforced, ctx.RequestAborted);
     return Results.Ok(new
     {
         used,
         remaining = allowance.Remaining(used),
         cap = allowance.Enforced ? allowance.DailyTokens : 0,
-        // Явный признак, а не «cap = 0»: ноль в этом поле терминал уже трактовал как «данных нет»,
-        // и без отдельного флага снятая квота выглядела бы в интерфейсе как неисправность.
+        // Явный признак, а не «cap = 0»: ноль в этом поле терминал уже трактовал как «данных нет».
         unlimited = !allowance.Enforced,
+        // Действует ли предел ТАРИФА или общий предохранитель. Без этого различия терминал называл
+        // бы предохранитель тарифной квотой — то есть обещал бы клиенту, что за деньги дадут
+        // больше, хотя тарифы ещё не применяются.
+        tiered,
         // The tier the allowance came from, so the terminal can say "Pro: 12k of 70k" rather than
         // showing a bare number the customer has no way to interpret.
         edition = (ctx.Items[LicenseCtx.Check] as LicenseCheckResult)?.Payload?.Edition,
@@ -543,7 +557,7 @@ app.MapPost("/api/ai/ask", async (HttpContext ctx, AskInput body, AiProxy ai,
     // старшего, а старший — урезанный. Тариф, который не действует на части функций, — это не
     // тариф, а обещание. На время тестового периода предел снят, но путь остался общий.
     var askLicense = LicenseKey(ctx);
-    var askAllowance = await AllowanceAsync(ctx, budget, settings);
+    var askAllowance = await AllowanceAsync(ctx, settings);
     if (!askAllowance.Allows(budget.Used(askLicense)))
         return Results.Json(new { error = "ai_daily_budget_exhausted", cap = askAllowance.DailyTokens }, statusCode: 429);
 

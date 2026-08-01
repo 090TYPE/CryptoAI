@@ -81,6 +81,21 @@ public class AiFeatureCatalogueTests
     }
 
     [Fact]
+    public void The_server_ceiling_is_no_higher_than_the_hungriest_feature()
+    {
+        // Запас сверх самого длинного законного запроса ничего не даёт честному клиенту, а
+        // разогнавшемуся даёт ровно столько же лишних оплаченных токенов на каждый вызов. Так
+        // потолок и дорос до 8192: его подняли, опираясь на суточную квоту как на настоящий
+        // ограничитель трат, а квоту потом сняли — послабления расцепились.
+        var cap = AiPolicyOptions.FromConfig(_ => null).MaxTokensCap;
+        var hungriest = ClientCeilings.Values.Max();
+
+        Assert.True(cap == hungriest,
+            $"потолок сервера {cap} при самом длинном законном запросе {hungriest} — " +
+            "лишнее оплачивается только при разгоне");
+    }
+
+    [Fact]
     public void Every_feature_id_is_safe_to_build_a_settings_key_from()
     {
         // Идентификатор приходит заголовком и превращается в ключ настройки. Наши собственные

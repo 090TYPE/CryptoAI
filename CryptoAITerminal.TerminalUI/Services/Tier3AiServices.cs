@@ -63,6 +63,10 @@ public sealed class DexTrendingAiService
     /// <summary>Rank pre-built rows (used by the DEX trending panel, which already has rich token data).</summary>
     public async Task<DexTrendingResult> RankRowsAsync(IReadOnlyList<DexTrendRow> rows, int topN = 5, CancellationToken ct = default)
     {
+        // Сбрасывается в начале вызова: иначе один сбой за сеанс навсегда помечал бы все
+        // последующие ЖИВЫЕ ответы как собранные без модели.
+        LastError = null;
+
         if (rows is null || rows.Count == 0) return new DexTrendingResult([], "Heuristic (offline)", true);
 
         if (UsesLiveModel)
@@ -129,6 +133,10 @@ public sealed class DynamicTpSlAiService
 
     public async Task<TpSlSuggestion> SuggestAsync(TpSlContext ctx, CancellationToken ct = default)
     {
+        // Сбрасывается в начале вызова: иначе один сбой за сеанс навсегда помечал бы все
+        // последующие ЖИВЫЕ ответы как собранные без модели.
+        LastError = null;
+
         if (UsesLiveModel)
         {
             try
@@ -176,6 +184,10 @@ public sealed class StatArbPairAiService
 
     public async Task<StatArbPairVerdict> EvaluateAsync(StatArbPairStats s, CancellationToken ct = default)
     {
+        // Сбрасывается в начале вызова: иначе один сбой за сеанс навсегда помечал бы все
+        // последующие ЖИВЫЕ вердикты как собранные без модели.
+        LastError = null;
+
         if (UsesLiveModel)
         {
             try
@@ -236,6 +248,10 @@ public sealed class ExecutionScheduleAiService
 
     public async Task<ExecutionPlan> PlanAsync(OrderExecutionContext ctx, CancellationToken ct = default)
     {
+        // Сбрасывается в начале вызова: иначе один сбой за сеанс навсегда помечал бы все
+        // последующие ЖИВЫЕ планы как собранные без модели.
+        LastError = null;
+
         if (UsesLiveModel && ctx.TotalUsd > 0)
         {
             try

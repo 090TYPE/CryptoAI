@@ -144,13 +144,26 @@ client choose the model, the output length and the context size while we paid. E
   `AI_DAILY_TOKENS_PER_LICENSE` (default 200 000); clients can read their allowance from
   `/api/ai/budget` instead of discovering it as a 429
 
-**The daily cap is currently off.** `ai.budget.enforced` ships as `false` (`SettingKeys.DefaultAiBudgetEnforced`)
-because the per-call cost has not been measured: the old tier numbers predate the agent and the
-long-context panels and were spent in minutes. What stays on is the *accounting* — `AiBudget.Charge`
-and the `ai_usage` row per call — because that is what the price list will be derived from.
-`/api/ai/budget` answers `unlimited: true` while this holds, and the terminal labels the figure as
-spend rather than as a remaining allowance. Re-enabling is one toggle in `/admin`, and the per-tier
-numbers must be recomputed from `ai_usage` first rather than taken from the code defaults.
+**The daily cap is on; the per-tier numbers are not.** Two separate switches, and the difference
+cost real exposure once: `ai.budget.enforced` was briefly shipped as `false` to free the test period,
+and in the same range `AI_MAX_TOKENS_CAP` had been raised 2048 → 8192 with the justification that
+"the real spend limiter is the daily quota, not one answer's length". With both loosened, one valid
+licence looping the proxy at the 120 req/min limiter was bounded by nothing — roughly $1.6k/hour on
+the shared vendor key.
+
+The correct shape of a test period is *one generous ceiling for everyone*, not *no ceiling*:
+
+- `ai.budget.enforced` — default **true**. A safety fuse, not a tariff. Turning it off leaves the
+  rate limiter as the only bound; the admin panel says so and asks for confirmation.
+- `plan.tiers.enforced` — default **false**. While off, every licence shares
+  `plan.default.daily_tokens` (2,000,000/day — about 300 full-length calls, far beyond honest use,
+  but reached by a runaway loop in about a quarter of an hour).
+- Accounting is unconditional: `AiBudget.Charge` and one `ai_usage` row per call. That is what the
+  price list will be derived from, and the per-tier numbers must be recomputed from it rather than
+  taken from the code defaults.
+
+`/api/ai/budget` returns `tiered` so the terminal can call the ceiling a fuse rather than a tariff —
+promising a customer that paying more would lift a limit that is not a tariff would be a lie.
 
 ## D — Server holds, never returns
 
