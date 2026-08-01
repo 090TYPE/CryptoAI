@@ -306,6 +306,28 @@ public partial class MainWindowViewModel
         GridQtyPerLevel    = GridBotVM.QuantityPerGrid,
         // DCA
         DcaExchange        = DcaBotVM.SelectedExchange,
+        DcaBudgetPerCycle  = DcaBotVM.TotalBudget,
+        DcaIntervalType    = DcaBotVM.SelectedIntervalType,
+        DcaIntervalValue   = DcaBotVM.IntervalValue,
+
+        // AI trader / автономный агент / трейлинг-стоп — раньше не сохранялись вовсе, и первые
+        // два несут риск-лимиты, под которыми ходят настоящие деньги.
+        AiTraderMaxOrderUsd      = AiTraderVM.MaxOrderUsd,
+        AiTraderMaxExposureUsd   = AiTraderVM.MaxTotalExposureUsd,
+        AiTraderMaxOpenPositions = AiTraderVM.MaxOpenPositions,
+        AiTraderMaxDailyLossUsd  = AiTraderVM.MaxDailyLossUsd,
+        AiTraderExchange         = AiTraderVM.SelectedExchange,
+        AiTraderMarketMode       = AiTraderVM.SelectedMarketMode,
+        AiTraderLeverage         = AiTraderVM.Leverage,
+
+        AgentSessionBudgetUsd = AutonomousVM.SessionBudgetUsd,
+        AgentMaxTrades        = AutonomousVM.MaxTrades,
+        AgentAllowlist        = AutonomousVM.AllowlistText,
+
+        TrailTypeIndex     = AdvancedTrailingVM.SelectedTypeIndex,
+        TrailPctDistance   = AdvancedTrailingVM.PctDistance,
+        TrailAtrPeriod     = AdvancedTrailingVM.AtrPeriod,
+        TrailAtrMultiplier = AdvancedTrailingVM.AtrMultiplier,
     };
 
     private void ApplyProfile(TradingProfile p)
@@ -352,5 +374,31 @@ public partial class MainWindowViewModel
         GridBotVM.QuantityPerGrid = p.GridQtyPerLevel;
         // DCA
         DcaBotVM.SelectedExchange = p.DcaExchange;
+        if (p.DcaBudgetPerCycle > 0m) DcaBotVM.TotalBudget = p.DcaBudgetPerCycle;
+        if (!string.IsNullOrWhiteSpace(p.DcaIntervalType)) DcaBotVM.SelectedIntervalType = p.DcaIntervalType;
+        if (p.DcaIntervalValue > 0) DcaBotVM.IntervalValue = p.DcaIntervalValue;
+
+        // AI trader / автономный агент / трейлинг-стоп.
+        //
+        // Ноль (и пустая строка, и −1) значит «профиль этого не знает» — так выглядит любой файл,
+        // сохранённый до появления этих полей. Применять такое значение нельзя: загрузка старого
+        // профиля обнулила бы лимит, а ноль в потолке экспозиции читается как «без потолка».
+        // Молчаливое РАСШИРЕНИЕ лимита — ровно та беда, которую эта правка и убирает.
+        if (p.AiTraderMaxOrderUsd > 0m) AiTraderVM.MaxOrderUsd = p.AiTraderMaxOrderUsd;
+        if (p.AiTraderMaxExposureUsd > 0m) AiTraderVM.MaxTotalExposureUsd = p.AiTraderMaxExposureUsd;
+        if (p.AiTraderMaxOpenPositions > 0) AiTraderVM.MaxOpenPositions = p.AiTraderMaxOpenPositions;
+        if (p.AiTraderMaxDailyLossUsd > 0m) AiTraderVM.MaxDailyLossUsd = p.AiTraderMaxDailyLossUsd;
+        if (!string.IsNullOrWhiteSpace(p.AiTraderExchange)) AiTraderVM.SelectedExchange = p.AiTraderExchange;
+        if (!string.IsNullOrWhiteSpace(p.AiTraderMarketMode)) AiTraderVM.SelectedMarketMode = p.AiTraderMarketMode;
+        if (p.AiTraderLeverage > 0) AiTraderVM.Leverage = p.AiTraderLeverage;
+
+        if (p.AgentSessionBudgetUsd > 0m) AutonomousVM.SessionBudgetUsd = p.AgentSessionBudgetUsd;
+        if (p.AgentMaxTrades > 0) AutonomousVM.MaxTrades = p.AgentMaxTrades;
+        AutonomousVM.AllowlistText = p.AgentAllowlist ?? string.Empty;
+
+        if (p.TrailTypeIndex >= 0) AdvancedTrailingVM.SelectedTypeIndex = p.TrailTypeIndex;
+        if (p.TrailPctDistance > 0m) AdvancedTrailingVM.PctDistance = p.TrailPctDistance;
+        if (p.TrailAtrPeriod > 0) AdvancedTrailingVM.AtrPeriod = p.TrailAtrPeriod;
+        if (p.TrailAtrMultiplier > 0m) AdvancedTrailingVM.AtrMultiplier = p.TrailAtrMultiplier;
     }
 }

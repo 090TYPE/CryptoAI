@@ -222,6 +222,37 @@ public sealed class TradingProfile
 
     // ── DCA Bot ───────────────────────────────────────────────────────────────
     public string  DcaExchange         { get; set; } = "Binance";
+    public decimal DcaBudgetPerCycle   { get; set; }
+    public string  DcaIntervalType     { get; set; } = string.Empty;
+    public int     DcaIntervalValue    { get; set; }
+
+    // ── AI trader / autonomous agent / trailing stop ──────────────────────────
+    //
+    // Профиль этих трёх движков не сохранял ВООБЩЕ, а первые два — это риск-лимиты, под которыми
+    // ходят настоящие деньги. Человек ставил на вкладке «Боты» свои $10 за ордер и $100 общей
+    // экспозиции, сохранял профиль, получал «stored», а после перезапуска и загрузки профиля
+    // движки молча поднимались с заводскими значениями — то есть лимиты РАСШИРЯЛИСЬ, и это
+    // сопровождалось подтверждением «loaded».
+    //
+    // Ноль здесь означает «профиль этого не знает» (в том числе все профили, сохранённые старой
+    // версией): такое значение применять нельзя, иначе загрузка старого файла обнулила бы лимит.
+    public decimal AiTraderMaxOrderUsd      { get; set; }
+    public decimal AiTraderMaxExposureUsd   { get; set; }
+    public int     AiTraderMaxOpenPositions { get; set; }
+    public decimal AiTraderMaxDailyLossUsd  { get; set; }
+    public string  AiTraderExchange         { get; set; } = string.Empty;
+    public string  AiTraderMarketMode       { get; set; } = string.Empty;
+    public int     AiTraderLeverage         { get; set; }
+
+    public decimal AgentSessionBudgetUsd { get; set; }
+    public int     AgentMaxTrades        { get; set; }
+    public string  AgentAllowlist        { get; set; } = string.Empty;
+
+    /// <summary>Индекс режима трейлинга; −1 — «профиль этого не знает».</summary>
+    public int     TrailTypeIndex        { get; set; } = -1;
+    public decimal TrailPctDistance      { get; set; }
+    public int     TrailAtrPeriod        { get; set; }
+    public decimal TrailAtrMultiplier    { get; set; }
 
     // ── Risk ──────────────────────────────────────────────────────────────────
     public decimal RiskMaxDailyLossUsd { get; set; } = 200m;
