@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace CryptoAITerminal.TerminalUI.ViewModels.BotsDesk;
@@ -740,7 +741,15 @@ public partial class BotsDeskViewModel
             {
                 Kind = "closePos", BotId = b.Id, Accent = "#3a1620", IconColor = BotsDeskData.Red, Icon = "⛔",
                 Title = "Close position · " + pos.Symbol,
-                Body = "Market-closes the open " + pos.Side.ToLowerInvariant() + " on " + pos.Exchange + ". The engine keeps running.",
+                // Этот путь СОЗНАТЕЛЬНО не закрыт заслоном живой торговли: закрытие снижает риск,
+                // и отнимать аварийный выход опаснее, чем оставить его открытым. Но молчать о том,
+                // что при выключенной живой торговле отсюда всё равно уйдёт настоящий ордер, —
+                // нельзя: человек читает бейдж PAPER ONLY и делает вывод обо всём экране.
+                Body = "Market-closes the open " + pos.Side.ToLowerInvariant() + " on " + pos.Exchange
+                       + ". The engine keeps running."
+                       + (Wallet is { } w && !w.TryApproveLiveExecution("close position", out _)
+                           ? "\n\n⚠ Это НАСТОЯЩИЙ ордер на бирже вашим ключом — закрытие позиции работает даже при выключенной живой торговле."
+                           : ""),
                 Cta = "CLOSE AT MARKET", BtnBg = "#14060a", BtnFg = BotsDeskData.Red, BtnBorder = BotsDeskData.Red
             }))
             : null;
@@ -749,7 +758,7 @@ public partial class BotsDeskViewModel
         HedgeCommand = null;
         HedgeVenue = BotsDeskData.Dash;
 
-        SaveParamsCommand = new RelayCommand(() => RestartEngine(b));
+        SaveParamsCommand = new RelayCommand(() => _ = RestartEngineAsync(b));
         DryRunCommand = null;                       // no dry-run/backtest runner is wired here
         ResetParamsCommand = new RelayCommand(() =>
         {
@@ -783,15 +792,31 @@ public partial class BotsDeskViewModel
     }
 
     /// <summary>Parameter edits are already on the engine — a restart makes a running engine pick them up.</summary>
-    private void RestartEngine(BotRowViewModel b)
+    /// <summary>
+    /// Перезапуск движка под новые параметры.
+    ///
+    /// Остановку ОБЯЗАТЕЛЬНО ждать. Раньше здесь стояли два синхронных вызова подряд, а движки
+    /// снимают флаг «работаю» только в конце своей асинхронной остановки: GridBotViewModel.StopAsync
+    /// сначала отменяет на бирже все выставленные лимитки и лишь потом ставит IsRunning = false.
+    /// То есть StartEngine вызывался, когда CanStart ещё false, молча возвращал false — и грид
+    /// оставался остановленным: вся сетка снята с биржи, набранная позиция без встречных ордеров,
+    /// а пользователю показывалось «перезапущен с новыми параметрами». Он нажал «сохранить
+    /// параметры», а получил тихую ликвидацию сетки.
+    /// </summary>
+    private async Task RestartEngineAsync(BotRowViewModel b)
     {
         if (!CanStop(b.Id)) { Toast("Parameters stored · " + b.Name + " will use them on start", "ok"); _dirty = false; RaiseDirty(); return; }
-        StopEngine(b.Id);
-        StartEngine(b.Id);
+
+        await StopEngineAsync(b.Id);
+        var restarted = StartEngine(b.Id);
+
         _dirty = false;
         RaiseDirty();
         AfterEngineAction(b.Id);
-        Toast(b.Name + " restarted with the new parameters", "ok");
+        Toast(restarted
+                ? b.Name + " restarted with the new parameters"
+                : b.Name + " остановлен, но не запустился обратно — параметры сохранены, запустите вручную",
+            restarted ? "ok" : "warn");
     }
 
     private void InitDetail()

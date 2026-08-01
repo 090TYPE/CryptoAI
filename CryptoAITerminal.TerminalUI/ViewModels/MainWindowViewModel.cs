@@ -290,8 +290,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
                 ["KuCoin"]  = kucoinFutures,
             },
             dexGatewayAccessor: () => WalletVM.ActiveDexGateway,
-            dexLiveAllowed: () => WalletVM.GlobalLiveExecutionEnabled,
-            cexLiveAllowed: () => WalletVM.GlobalLiveExecutionEnabled);
+            // Тот же заслон, что у AIBotVM / GridBotVM / DcaBotVM двенадцатью строками ниже.
+            // GlobalLiveExecutionEnabled — это всего лишь !GlobalPaperOnlyMode: лицензию оно не
+            // смотрит, поэтому AI-трейдер оставался единственным движком, готовым отправить
+            // реальный ордер на истёкшем триале, пока остальные три честно отказывались.
+            dexLiveAllowed: () => WalletVM.TryApproveLiveExecution("AI trader (DEX)", out _),
+            cexLiveAllowed: () => WalletVM.TryApproveLiveExecution("AI trader (CEX)", out _));
         GridBotVM = new GridBotViewModel(_gateway, _futuresGateway);
         DcaBotVM = new DcaBotViewModel(_gateway, _bybitSpotGateway, _okxSpotGateway, _kucoinSpotGateway);
 

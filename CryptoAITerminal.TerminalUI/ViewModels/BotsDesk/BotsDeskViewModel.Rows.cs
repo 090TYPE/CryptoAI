@@ -2,6 +2,7 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace CryptoAITerminal.TerminalUI.ViewModels.BotsDesk;
 
@@ -97,27 +98,66 @@ public partial class BotsDeskViewModel
         BulkActions.Add(new BulkAction { Label = "⛔ KILL", Color = BotsDeskData.Red, Command = new RelayCommand(BulkKill) });
     }
 
-    private void Bulk(string action)
+    private void Bulk(string action) => _ = BulkAsync(action);
+
+    /// <summary>
+    /// Групповое действие. Запуск ждём и засчитываем только те движки, которые ДЕЙСТВИТЕЛЬНО
+    /// поднялись: раньше StartEngine отвечал «да» на сам факт отправки команды, и молчаливый
+    /// отказ (живой автономный агент без подтверждения, старт без ключа модели) попадал в
+    /// счётчик как успех — «3 engines started» про движки, не отработавшие ни одного круга.
+    /// </summary>
+    private async Task BulkAsync(string action)
     {
         var ids = Bots.Where(b => Selected.Contains(b.Id)).Select(b => b.Id).ToList();
-        int done = 0;
+        int done = 0, refused = 0;
         foreach (var id in ids)
         {
-            var ok = action switch
+            bool ok;
+            if (action == "start")
             {
-                "start" => StartEngine(id),
-                "pause" => PauseEngine(id),
-                "stop" => StopEngine(id),
-                _ => false
-            };
+                var couldStart = CanStart(id);
+                ok = await StartEngineAsync(id);
+                if (!ok && couldStart) refused++;
+            }
+            else
+            {
+                ok = action switch
+                {
+                    "pause" => PauseEngine(id),
+                    "stop" => StopEngine(id),
+                    _ => false
+                };
+            }
             if (ok) done++;
         }
+
         AfterEngineAction();
         var verb = action switch { "start" => "started", "pause" => "paused", _ => "stopped" };
         Toast(done == 0
             ? "No selected engine accepts " + action + " right now"
-            : done + " engine" + (done == 1 ? "" : "s") + " " + verb,
-            done == 0 ? "warn" : "ok");
+            : done + " engine" + (done == 1 ? "" : "s") + " " + verb
+              + (refused > 0 ? $" · {refused} отказал" + (refused == 1 ? "" : "и") : ""),
+            done == 0 || refused > 0 ? "warn" : "ok");
+    }
+
+    /// <summary>Пауза одной строки: тост называет состояние ПОСЛЕ действия, а не до него.</summary>
+    private async Task PauseRowAsync(BotRowViewModel b)
+    {
+        var isPaused = false;
+        var ok = await PauseEngineAsync(b.Id, p => isPaused = p);
+        if (!ok) { Toast("This engine has no pause — use stop", "warn"); return; }
+
+        AfterEngineAction(b.Id);
+        Toast(b.Name + (isPaused ? " paused" : " resumed"), "warn");
+    }
+
+    /// <summary>Запуск одной строки: сообщаем ровно то, что произошло на самом деле.</summary>
+    private async Task StartRowAsync(BotRowViewModel b)
+    {
+        var started = await StartEngineAsync(b.Id);
+        AfterEngineAction(b.Id);
+        Toast(started ? b.Name + " started" : b.Name + ": " + StartRefusalReason(b.Id),
+            started ? "ok" : "warn");
     }
 
     private void BulkKill()
@@ -210,13 +250,13 @@ public partial class BotsDeskViewModel
         {
             case "start":
                 if (CanResume(b.Id)) { PauseEngine(b.Id); AfterEngineAction(b.Id); Toast(b.Name + " resumed", "ok"); }
-                else if (StartEngine(b.Id)) { AfterEngineAction(b.Id); Toast(b.Name + " started", "ok"); }
-                else Toast(b.Name + " cannot start right now", "warn");
+                else if (!CanStart(b.Id)) Toast(b.Name + " cannot start right now", "warn");
+                else _ = StartRowAsync(b);
                 break;
 
             case "pause":
-                if (PauseEngine(b.Id)) { AfterEngineAction(b.Id); Toast(b.Name + (CanResume(b.Id) ? " paused" : " resumed"), "warn"); }
-                else Toast("This engine has no pause — use stop", "warn");
+                if (!CanPause(b.Id) && !CanResume(b.Id)) Toast("This engine has no pause — use stop", "warn");
+                else _ = PauseRowAsync(b);
                 break;
 
             case "stop":
@@ -286,7 +326,7 @@ public partial class BotsDeskViewModel
 
         ApplyWizardConfig(engineId, o);
 
-        var started = CanStart(engineId) && StartEngine(engineId);
+        var wasStopped = CanStart(engineId);
         _modal = null;
         _wizStep = 1;
         _wizTemplate = null;
@@ -295,9 +335,25 @@ public partial class BotsDeskViewModel
         OpenDetail(row, "overview");
         RaiseModalFlags();
 
+        if (!wasStopped)
+        {
+            Toast(row.Name + " configured — it is already running", "ok");
+            return;
+        }
+
+        // Мастер рапортует о запуске только после того, как движок действительно поднялся:
+        // «configured and started» про молча отказавшийся живой агент — самое дорогое враньё на
+        // этой вкладке, потому что человек уходит с экрана уверенным, что риск под присмотром.
+        _ = FinishWizardStartAsync(row);
+    }
+
+    private async Task FinishWizardStartAsync(BotRowViewModel row)
+    {
+        var started = await StartEngineAsync(row.Id);
+        AfterEngineAction(row.Id);
         Toast(started
             ? row.Name + " configured and started"
-            : row.Name + " configured — it is already running",
-            "ok");
+            : row.Name + " настроен, но не запустился: " + StartRefusalReason(row.Id),
+            started ? "ok" : "warn");
     }
 }

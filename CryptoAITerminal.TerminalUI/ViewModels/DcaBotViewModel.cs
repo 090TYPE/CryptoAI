@@ -89,6 +89,16 @@ public class DcaExecutionRowViewModel
     public string StatusLabel { get; }
     public string StatusColor { get; }
 
+    /// <summary>
+    /// Сумма закупки числом. Существует потому, что вкладка «Боты» считала «использовано бюджета»,
+    /// разбирая обратно <see cref="TotalLabel"/>: тот форматируется ТЕКУЩЕЙ культурой, а разбирался
+    /// инвариантной. На локали с запятой в качестве десятичного разделителя (в том числе русской)
+    /// «123,45» инвариантно читается как 123 45 — сто двадцать три тысячи, — то есть ровно в сто раз
+    /// больше, а суммы с разделителем разрядов не читались вовсе. Показания «использовано» врали.
+    /// Текст — для человека; для расчётов есть это поле.
+    /// </summary>
+    public decimal TotalUsdt { get; }
+
     public DcaExecutionRowViewModel(DcaExecution e)
     {
         TimeLabel = e.ExecutedAt.ToLocalTime().ToString("dd.MM HH:mm");
@@ -96,6 +106,7 @@ public class DcaExecutionRowViewModel
         PriceLabel = e.Price > 0 ? $"{e.Price:N4}" : "—";
         QtyLabel = e.Quantity > 0 ? $"{e.Quantity:N6}" : "—";
         TotalLabel = e.TotalUsdt > 0 ? $"{e.TotalUsdt:N2}" : "—";
+        TotalUsdt = e.TotalUsdt;
         StatusLabel = e.Executed ? "Executed" : "Skipped";
         StatusColor = e.Executed ? SemanticColor.Positive : SemanticColor.Warning;
     }

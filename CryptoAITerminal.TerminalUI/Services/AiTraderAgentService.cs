@@ -77,6 +77,22 @@ public sealed class AiTraderAgentService
 
     // Virtual paper book — symbol → (qty, avgEntryUsd). Cash is the remaining USDT.
     private readonly Dictionary<string, (decimal Qty, decimal Avg)> _paperPositions = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Живые СПОТОВЫЕ покупки агента: сколько он купил сам и по какой средней.
+    ///
+    /// На фьючерсах позицию отдаёт биржа, а на споте позиции нет — есть баланс базового актива, и
+    /// он общий со всем, что пользователь держит по своим причинам. Поэтому агент ведёт свой
+    /// инвентарь: только он определяет, сколько агенту позволено продать, и только он попадает в
+    /// его портфельные потолки.
+    ///
+    /// До этого на живом споте <c>GetOpenPositionsAsync</c> отдавала заглушку интерфейса — пустой
+    /// список, — и это был режим ПО УМОЛЧАНИЮ (AiTraderViewModel: Spot). Последствия: лимит числа
+    /// позиций не срабатывал ни разу, суммарная экспозиция всегда считалась нулевой (упирало
+    /// только в баланс), а close_position на каждый вызов отвечал «нет открытой позиции» — то
+    /// есть агент умел покупать и не умел выходить, пока экран показывал «3 позиции / $250».
+    /// </summary>
+    private readonly Dictionary<string, (decimal Qty, decimal Avg)> _liveSpotInventory = new(StringComparer.OrdinalIgnoreCase);
     private decimal _paperCash;
     private decimal _paperRealizedPnl;
     private readonly object _bookLock = new();
@@ -154,6 +170,63 @@ public sealed class AiTraderAgentService
         // для чужой честнее оценить в ноль, чем в цену другой монеты — недооценка хотя бы не
         // выдаёт себя за точный расчёт.
         return string.Equals(p.Symbol, tradedSymbol, StringComparison.OrdinalIgnoreCase) ? mid : 0m;
+    }
+
+    /// <summary>
+    /// Стоимость бумажной книги в USD. Торгуемый символ оценивается текущей ценой, остальные —
+    /// своей средней ценой входа: другой цены у бумажной книги нет, а брать чужую нельзя по той
+    /// же причине, по которой это чинили на живом пути (см. <see cref="TotalExposureUsd"/>).
+    /// Вызывается под _bookLock.
+    /// </summary>
+    private decimal PaperExposureUsd(string tradedSymbol, decimal mid)
+    {
+        decimal sum = 0m;
+        foreach (var (sym, p) in _paperPositions)
+        {
+            if (p.Qty == 0) continue;
+            var px = string.Equals(sym, tradedSymbol, StringComparison.OrdinalIgnoreCase) ? mid : p.Avg;
+            sum += Math.Abs(p.Qty) * px;
+        }
+        return sum;
+    }
+
+    /// <summary>Спотовый инвентарь агента в виде книги позиций — для тех же потолков, что у фьючерсов.</summary>
+    private List<FuturesPosition> LiveSpotBook()
+    {
+        lock (_bookLock)
+        {
+            return _liveSpotInventory
+                .Where(kv => kv.Value.Qty > 0m)
+                .Select(kv => new FuturesPosition
+                {
+                    Symbol = kv.Key,
+                    Quantity = kv.Value.Qty,
+                    EntryPrice = kv.Value.Avg,
+                })
+                .ToList();
+        }
+    }
+
+    /// <summary>
+    /// Обновляет спотовый инвентарь после состоявшегося живого исполнения. Продажа только
+    /// уменьшает — уйти в минус агент не может, потому что коротких позиций на споте не бывает.
+    /// </summary>
+    private void RecordLiveSpotFill(string symbol, OrderSide side, decimal qty, decimal price)
+    {
+        lock (_bookLock)
+        {
+            _liveSpotInventory.TryGetValue(symbol, out var pos);
+            if (side == OrderSide.Buy)
+            {
+                var newQty = pos.Qty + qty;
+                _liveSpotInventory[symbol] = (newQty, newQty <= 0m ? price : ((pos.Avg * pos.Qty) + (price * qty)) / newQty);
+                return;
+            }
+
+            var left = pos.Qty - qty;
+            if (left <= 0m) _liveSpotInventory.Remove(symbol);
+            else _liveSpotInventory[symbol] = (left, pos.Avg);
+        }
     }
 
     /// <summary>Instantly stop trading; pending orders are not placed and the loop ends.</summary>
@@ -634,6 +707,19 @@ public sealed class AiTraderAgentService
         if (usd <= 0) usd = qty * mid;
         if (qty <= 0) qty = usd / mid;
 
+        // В биржу уходит qty (см. сборку Order ниже), поэтому потолок обязан проверяться по нему.
+        // Раньше две строки выше молча расходились: если модель прислала И usd, И quantity, ни
+        // одна из них не срабатывала, потолок сверялся с присланным usd, а размещалось присланное
+        // quantity. {"usd":40,"quantity":2} по биткоину — это $128 000 сквозь лимит в $50 за ордер,
+        // причём никакой злонамеренности не нужно: модели свойственно заполнять оба поля, и
+        // достаточно одной арифметической ошибки в её рассуждении.
+        var declaredUsd = usd;
+        usd = qty * mid;
+        if (declaredUsd > 0 && Math.Abs(declaredUsd - usd) > usd * 0.01m)
+            OnEvent?.Invoke(new AgentEvent(AgentEventKind.Error, "order-size",
+                $"модель назвала {declaredUsd:0.##} USD при количестве {qty:0.########} " +
+                $"(это {usd:0.##} USD по цене {mid:0.##}) — считаем по количеству"));
+
         // ── Hard caps (apply in both paper and live) ──
         if (usd > _limits.MaxOrderUsd)
             return Err($"order {usd:0} USD exceeds max {_limits.MaxOrderUsd:0} USD per order");
@@ -647,12 +733,28 @@ public sealed class AiTraderAgentService
         try
         {
             var balance = await _gateway.GetBalanceAsync("USDT").ConfigureAwait(false);
-            var positions = await _gateway.GetOpenPositionsAsync().ConfigureAwait(false);
-            var open = positions.Where(p => p.Quantity != 0).ToList();
+
+            // На фьючерсах книгу отдаёт биржа; на споте позиций не существует, поэтому берём
+            // собственный инвентарь агента — см. _liveSpotInventory. Раньше спот молча получал
+            // пустой список из заглушки интерфейса, и обе проверки ниже становились холостыми.
+            var open = IsFutures
+                ? (await _gateway.GetOpenPositionsAsync().ConfigureAwait(false)).Where(p => p.Quantity != 0).ToList()
+                : LiveSpotBook();
+
             var exposure = TotalExposureUsd(open, symbol, mid);
             var isNewSymbol = !open.Any(p => string.Equals(p.Symbol, symbol, StringComparison.OrdinalIgnoreCase));
             if (isNewSymbol && open.Count >= _limits.MaxOpenPositions)
                 return Err($"max {_limits.MaxOpenPositions} open positions reached");
+
+            // Спот в шорт не умеет: продать можно только то, что агент сам и купил. Бумажная
+            // ветка это правило соблюдает с самого начала (см. PaperFill), живая — не соблюдала.
+            if (!IsFutures && side == OrderSide.Sell)
+            {
+                var held = open.FirstOrDefault(p => string.Equals(p.Symbol, symbol, StringComparison.OrdinalIgnoreCase))?.Quantity ?? 0m;
+                if (held <= 0m)
+                    return Err($"spot: agent holds no {symbol} of its own to sell");
+                if (qty > held) qty = held;
+            }
 
             var order = IsFutures
                 ? new Order
@@ -680,6 +782,7 @@ public sealed class AiTraderAgentService
                     $"mismatch — switched to {(_isHedgeMode ? "hedge" : "one-way")} and retrying"));
                 await _gateway.PlaceOrderAsync(order).ConfigureAwait(false);
             }
+            if (!IsFutures) RecordLiveSpotFill(symbol, side, qty, mid);
             OnFill?.Invoke(symbol, sideRaw, qty, mid, usd, "live");
             OnEvent?.Invoke(new AgentEvent(AgentEventKind.ToolResult, "FILL (live)", $"{sideRaw} {qty:0.######} {symbol} @ {mid:0.####} (~{usd:0} USD)"));
             return Json(new { ok = true, mode = "live", market = IsFutures ? "futures" : "spot", symbol, side = sideRaw, qty = Round(qty), price = Round(mid), usd = Round(usd), leverage = IsFutures ? _leverage : 1 });
@@ -714,9 +817,19 @@ public sealed class AiTraderAgentService
 
         try
         {
-            var positions = await _gateway.GetOpenPositionsAsync().ConfigureAwait(false);
+            // На споте позиции не существует — есть баланс базового актива, и он общий со всем,
+            // что пользователь держит по своим причинам. Продавать его целиком было бы распродажей
+            // чужих монет, поэтому закрываем ровно то, что агент купил сам (_liveSpotInventory).
+            // Раньше сюда попадал пустой список из заглушки интерфейса, и на споте этот инструмент
+            // на каждый вызов отвечал «нет открытой позиции»: агент умел покупать и не умел выйти.
+            var positions = IsFutures
+                ? await _gateway.GetOpenPositionsAsync().ConfigureAwait(false)
+                : LiveSpotBook();
             var pos = positions.FirstOrDefault(p => string.Equals(p.Symbol, symbol, StringComparison.OrdinalIgnoreCase) && p.Quantity != 0);
-            if (pos is null) return Err($"no open live position for {symbol}");
+            if (pos is null)
+                return Err(IsFutures
+                    ? $"no open live position for {symbol}"
+                    : $"agent holds no {symbol} of its own to sell (spot balances bought outside this session are left alone)");
             var side = pos.Quantity > 0 ? OrderSide.Sell : OrderSide.Buy;
             var closeOrder = new Order
             {
@@ -729,6 +842,7 @@ public sealed class AiTraderAgentService
                 PositionSide = IsFutures ? pos.PositionSide : FuturesPositionSide.Both
             };
             await _gateway.PlaceOrderAsync(closeOrder).ConfigureAwait(false);
+            if (!IsFutures) RecordLiveSpotFill(symbol, OrderSide.Sell, Math.Abs(pos.Quantity), mid);
             OnFill?.Invoke(symbol, "close", Math.Abs(pos.Quantity), mid, Math.Abs(pos.Quantity) * mid, "live");
 
             // Реализованный PnL считаем и в живой ветке: без RecordLoss здесь _dailyLoss
@@ -748,6 +862,33 @@ public sealed class AiTraderAgentService
         {
             var signed = side == OrderSide.Buy ? qty : -qty;
             _paperPositions.TryGetValue(symbol, out var pos);
+
+            // ── Портфельные потолки — те же, что на живом пути ────────────────────────
+            // Раньше их здесь не было вовсе: `if (!LiveEnabled) return PaperFill(...)` стоит ВЫШЕ
+            // всех портфельных проверок, поэтому бумажный прогон набирал книгу, которую живой
+            // режим с теми же настройками не собрал бы никогда — больше позиций, больше
+            // экспозиции, и касса свободно уходила в минус. Человек смотрит на такую кривую
+            // доходности и заводит под неё настоящие деньги. Соседний бумажный DEX-путь
+            // (см. _dexPaper) эти же проверки делает — то есть здесь это упущение, а не замысел.
+            //
+            // Только на увеличение позиции: сокращение и закрытие обязаны проходить всегда,
+            // иначе бумажную книгу нельзя будет разгрузить после смены лимитов.
+            var isIncrease = pos.Qty == 0 || Math.Sign(signed) == Math.Sign(pos.Qty);
+            if (isIncrease)
+            {
+                if (pos.Qty == 0 && _paperPositions.Count(kv => kv.Value.Qty != 0) >= _limits.MaxOpenPositions)
+                    return Err($"paper: max {_limits.MaxOpenPositions} open positions reached");
+
+                var projected = PaperExposureUsd(symbol, price) + qty * price;
+                if (_limits.MaxTotalExposureUsd > 0m && projected > _limits.MaxTotalExposureUsd)
+                    return Err($"paper: projected exposure {projected:0} USD exceeds max {_limits.MaxTotalExposureUsd:0} USD");
+
+                if (side == OrderSide.Buy && qty * price > _paperCash)
+                    return Err($"paper: insufficient virtual cash — need {qty * price:0.##} USD, have {_paperCash:0.##}");
+
+                if (_limits.MaxDailyLossUsd > 0m && _paperRealizedPnl <= -_limits.MaxDailyLossUsd)
+                    return Err($"paper: daily loss {-_paperRealizedPnl:0.##} USD reached the {_limits.MaxDailyLossUsd:0} USD limit");
+            }
 
             // Spot is long-only: a sell can only reduce an existing holding, never go net-short.
             if (!IsFutures && side == OrderSide.Sell)

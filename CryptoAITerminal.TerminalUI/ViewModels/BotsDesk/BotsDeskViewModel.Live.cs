@@ -155,11 +155,21 @@ public partial class BotsDeskViewModel
     private DateTime _lastPositionsPull = DateTime.MinValue;
     private bool _positionsRefreshing;
 
-    /// <summary>Structural state only — metric values refresh every tick without a rebuild.</summary>
+    /// <summary>
+    /// Structural state only — metric values refresh every tick without a rebuild.
+    ///
+    /// Трейлинг-стоп сюда добавлен намеренно: его уровень и статус — это НЕ метрика в строке,
+    /// а содержимое раскрытой панели, которое перерисовывается только через RebuildDetail. Пока
+    /// сигнатура состояла из Id/Status/Mode/Market/Venue, у работающего стопа не менялось ничего:
+    /// храповик поднимал стоп, а «Current stop» и «State» в панели стояли на значениях момента
+    /// раскрытия — до следующего переключения вкладки или нажатия REFRESH. Оператор видел
+    /// защиту ниже, чем она есть, и перевзводил стоп, сбрасывая накопленный пик.
+    /// </summary>
     private string RowSignature()
         => string.Join("|", Bots.Select(b => b.Id + b.Status + b.Mode + b.Market + b.Venue))
            + "|" + _records.Count
-           + "|" + (_host?.BriefingVM?.GeneratedAt ?? "");
+           + "|" + (_host?.BriefingVM?.GeneratedAt ?? "")
+           + "|" + (Trail is { } t ? t.StopLabel + t.StatusLabel : "");
 
     /// <summary>
     /// Re-reads the realized-trade store (same file the P&amp;L dashboard uses). The timer path
@@ -386,9 +396,12 @@ public partial class BotsDeskViewModel
 
     /// <summary>
     /// USD the DCA engine actually bought on its most recent cycle — <see cref="DcaBotViewModel.TotalBudget"/>
-    /// is a per-cycle budget, so only the newest execution batch counts. The engine's history rows
-    /// expose formatted text only, so the printed total is parsed back; rows it skipped are ignored.
+    /// is a per-cycle budget, so only the newest execution batch counts. Rows it skipped are ignored.
     /// Null when it has never executed a buy. Recomputed only when the history grew.
+    ///
+    /// Сумма берётся из числового поля строки. Раньше разбирался её ПЕЧАТНЫЙ вид, а печатается он
+    /// текущей культурой и читался инвариантной: на локали с запятой «123,45» превращалось в
+    /// 12 345 — стократное завышение, — а суммы с разделителем разрядов не читались вовсе.
     /// </summary>
     private double? DcaDeployedUsd(DcaBotViewModel d)
     {
@@ -405,7 +418,7 @@ public partial class BotsDeskViewModel
         {
             if (!string.Equals(e.TimeLabel, cycle, StringComparison.Ordinal)) break;
             if (!string.Equals(e.StatusLabel, "Executed", StringComparison.Ordinal)) continue;
-            if (double.TryParse(e.TotalLabel, NumberStyles.Any, Inv, out var v)) { sum += v; any = true; }
+            if (e.TotalUsdt > 0m) { sum += (double)e.TotalUsdt; any = true; }
         }
 
         _dcaDeployed = any ? (double?)sum : null;
@@ -469,6 +482,34 @@ public partial class BotsDeskViewModel
         catch { /* command refused (CanExecute) — the caller already gated on the engine flags */ }
     }
 
+    /// <summary>
+    /// То же самое, но с ожиданием конца команды. Нужно там, где следующий шаг зависит от
+    /// состояния, которое движок выставляет ПОСЛЕ своей асинхронной работы: остановка грида,
+    /// например, снимает флаг IsRunning только после того, как отменит на бирже все лимитки.
+    /// </summary>
+    private static async Task RunAsync(ReactiveCommand<Unit, Unit>? cmd)
+    {
+        if (cmd is null) return;
+        try { await cmd.Execute(); }
+        catch { /* command refused (CanExecute) — the caller already gated on the engine flags */ }
+    }
+
+    /// <summary>Остановка с ожиданием — см. <see cref="RunAsync"/>.</summary>
+    private async Task<bool> StopEngineAsync(string id)
+    {
+        if (!CanStop(id)) return false;
+        switch (id)
+        {
+            case IdGrid: await RunAsync(Grid?.StopCommand); return true;
+            case IdDca: await RunAsync(Dca?.StopCommand); return true;
+            case IdRule: Rule?.StopBot(); return true;
+            case IdAi: await RunAsync(Trader?.StopCommand); return true;
+            case IdAgent: await RunAsync(AgentVm?.StopCommand); return true;
+            case IdTrail: await RunAsync(Trail?.ToggleArmCommand); return true;
+        }
+        return false;
+    }
+
     internal bool CanStart(string id) => id switch
     {
         IdGrid => Grid?.CanStart ?? false,
@@ -518,6 +559,41 @@ public partial class BotsDeskViewModel
         return false;
     }
 
+    /// <summary>
+    /// Запуск с ожиданием и с ЧЕСТНЫМ ответом: true только если движок действительно работает.
+    ///
+    /// Синхронный <see cref="StartEngine"/> отвечал true, как только отправил команду, и ни разу не
+    /// спрашивал движок, запустился ли тот. А движки умеют молча отказываться. Автономный агент,
+    /// например, при живом режиме без согласия выставляет ShowLiveConsent и выходит; диалог
+    /// согласия рисует его собственная панель, а не строка на этой вкладке — то есть с вкладки
+    /// «Боты» он не появится вообще. Пользователю показывалось «agent started», он считал, что
+    /// живой автономный агент ведёт его риск, а тот не отработал ни одного круга и не поставил ни
+    /// одного стопа. Тем же путём молча отказывает старт без ключа модели.
+    /// </summary>
+    private async Task<bool> StartEngineAsync(string id)
+    {
+        if (!CanStart(id)) return false;
+        switch (id)
+        {
+            case IdGrid: await RunAsync(Grid?.StartCommand); break;
+            case IdDca: await RunAsync(Dca?.StartCommand); break;
+            case IdRule: await RunAsync(Rule?.StartBotCommand); break;
+            case IdAi: await RunAsync(Trader?.StartLoopCommand); break;
+            case IdAgent: await RunAsync(AgentVm?.ArmCommand); break;
+            case IdTrail: await RunAsync(Trail?.ToggleArmCommand); break;
+            default: return false;
+        }
+
+        // CanStop — это и есть «движок сейчас работает», по его собственному флагу.
+        return CanStop(id);
+    }
+
+    /// <summary>Почему движок не поднялся — настолько конкретно, насколько он сам сообщает.</summary>
+    private string StartRefusalReason(string id) =>
+        id == IdAgent && AgentVm is { ShowLiveConsent: true }
+            ? "требуется подтверждение живой торговли — откройте панель агента и подтвердите"
+            : "движок отказался стартовать, смотрите его лог";
+
     private bool StopEngine(string id)
     {
         if (!CanStop(id)) return false;
@@ -538,6 +614,23 @@ public partial class BotsDeskViewModel
         if (CanResume(id)) { Run(Grid?.ResumeCommand); return true; }
         if (!CanPause(id)) return false;
         Run(Grid?.PauseCommand);
+        return true;
+    }
+
+    /// <summary>
+    /// Пауза/возобновление с ожиданием. Возвращает true, если действие выполнено, и через
+    /// <paramref name="paused"/> — итоговое состояние.
+    ///
+    /// GridBotViewModel ставит IsPaused только ПОСЛЕ своего await, поэтому вызывающая сторона,
+    /// прочитавшая CanResume сразу после синхронного PauseEngine, всегда видела состояние ДО
+    /// нажатия — и тост показывал ровно обратное тому, что произошло, в ста процентах нажатий.
+    /// </summary>
+    private async Task<bool> PauseEngineAsync(string id, Action<bool> paused)
+    {
+        if (CanResume(id)) { await RunAsync(Grid?.ResumeCommand); paused(CanResume(id)); return true; }
+        if (!CanPause(id)) return false;
+        await RunAsync(Grid?.PauseCommand);
+        paused(CanResume(id));
         return true;
     }
 

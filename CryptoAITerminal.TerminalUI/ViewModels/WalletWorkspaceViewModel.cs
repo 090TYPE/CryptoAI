@@ -343,6 +343,17 @@ public class WalletWorkspaceViewModel : ReactiveObject, IDisposable
         get => _globalPaperOnlyMode;
         set
         {
+            // Без лицензии режим приколочен к PAPER ONLY, и приколочен ЗДЕСЬ, а не только в
+            // ApplyGlobalExecutionMode. Проверка там закрывает лишь свой путь: снять флаг может
+            // любой, кто присвоит свойство, и вкладка «Боты» именно так и делала
+            // (BotsDeskViewModel.PaperOnly), минуя и лицензию, и двухшаговое взведение. Это была
+            // единственная запись во всём приложении, способная дать «live разрешён» при
+            // LicenseAllowsLive == false — а AI-трейдер смотрит ровно на этот флаг.
+            if (!value && !LicenseAllowsLive)
+            {
+                value = true;
+            }
+
             if (_globalPaperOnlyMode == value)
             {
                 return;
