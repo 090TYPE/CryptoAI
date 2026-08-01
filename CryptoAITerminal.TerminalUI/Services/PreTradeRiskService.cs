@@ -45,11 +45,23 @@ public sealed record PreTradeRiskResult(
 /// </summary>
 public sealed class PreTradeRiskService
 {
-    private static readonly string[] Vocabulary = ["APPROVE", "CAUTION", "BLOCK"];
+    /// <summary>
+    /// Слова, которыми отвечает эта проверка. Публично, потому что от них зависит цвет плашки на
+    /// двух экранах, и разойтись они уже расходились: рельс Bots-деска красил ALLOW/REJECT, каких
+    /// в этом списке нет, и оба главных исхода выходили серыми. Тест читает список отсюда.
+    /// </summary>
+    public static readonly string[] Vocabulary = ["APPROVE", "CAUTION", "BLOCK"];
 
     private readonly MarketInsightAiService _ai = new();
 
     public bool UsesLiveModel => _ai.UsesLiveModel;
+
+    /// <summary>
+    /// Почему последний вызов ушёл на собственный расчёт. Пробрасывается наружу, потому что
+    /// обёртка — единственное, что видит панель: без этого отказ модели здесь неотличим от случая,
+    /// когда её и не звали.
+    /// </summary>
+    public string? LastError => _ai.LastError;
 
     public void ConfigureAi(string? apiKey, string? model = null)
     {

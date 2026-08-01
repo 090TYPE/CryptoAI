@@ -207,8 +207,12 @@ public class GridBotViewModel : ReactiveObject
             if (s.Params.TryGetValue("GridCount", out var gc) && gc >= 2) GridLevels = (int)gc;
             AiParamsRationale = s.Rationale;
             AiParamsSource = s.Source;
+            // Служба сама откатывается на собственный подбор и не бросает — без этой строки числа
+            // выглядели бы подобранными моделью, а причина отказа пропадала бы вовсе.
+            if (_aiParams.LastError is { } reason) BotLog += $"\n[AI] {reason}";
         }
-        catch (Exception ex) { BotLog += $"\n[AI] {ex.Message}"; }
+        // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора.
+        catch (Exception ex) { BotLog += "\n[AI] " + CryptoAITerminal.AIEngine.AiFailure.Describe(ex); }
         finally { AiParamsRunning = false; }
     }
 

@@ -469,10 +469,11 @@ public class BacktestViewModel : ReactiveObject
     public string AiReviewSummary { get => _aiReviewSummary; private set => this.RaiseAndSetIfChanged(ref _aiReviewSummary, value); }
     public string AiReviewRisks { get => _aiReviewRisks; private set => this.RaiseAndSetIfChanged(ref _aiReviewRisks, value); }
     public string AiReviewSource { get => _aiReviewSource; private set => this.RaiseAndSetIfChanged(ref _aiReviewSource, value); }
-    public string AiVerdictBrush => _aiReviewVerdict switch
-    {
-        "ROBUST" => SemanticColor.Positive, "PROMISING" => SemanticColor.Accent, "OVERFIT" => SemanticColor.Negative, "WEAK" => SemanticColor.Warning, _ => SemanticColor.Muted
-    };
+    /// <summary>Разбор в форме общей карточки вердикта. Строки выше остаются для экспорта отчёта.</summary>
+    public AiVerdictVM ReviewVerdict { get; } = new();
+
+    /// <summary>Цвет из общей палитры вердиктов — один и тот же на всех экранах.</summary>
+    public string AiVerdictBrush => AiVerdictPalette.ColorOf(_aiReviewVerdict);
 
     public void ConfigureAi(string apiKey, string model)
     {
@@ -505,8 +506,23 @@ public class BacktestViewModel : ReactiveObject
             AiReviewSource = review.Source;
             HasAiReview = true;
             this.RaisePropertyChanged(nameof(AiVerdictBrush));
+            // Служба сама откатывается на собственный разбор и не бросает — без этой строки разбор
+            // выглядел бы обычным, а причина отказа модели пропадала бы вовсе.
+            var reason = _aiReview.LastError;
+            if (reason is not null) ExportStatus = $"AI: {reason}";
+            // Риски — доводами карточки: раньше это был один янтарный абзац, в котором три разных
+            // риска весили столько же, сколько один.
+            ReviewVerdict.Fill(review.Verdict, review.Summary, review.Risks,
+                review.Source, review.IsFallback, reason);
         }
-        catch (Exception ex) { ExportStatus = $"AI review failed: {ex.Message}"; }
+        // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора.
+        catch (Exception ex)
+        {
+            var failure = CryptoAITerminal.AIEngine.AiFailure.Describe(ex);
+            ExportStatus = "AI review failed: " + failure;
+            ReviewVerdict.Fill("", failure, null, "", isFallback: true, reason: failure);
+            HasAiReview = true;
+        }
         finally { AiReviewRunning = false; }
     }
 

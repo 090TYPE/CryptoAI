@@ -12,6 +12,15 @@ public sealed class MarketRankingAiProvider
     private readonly string _apiKey;
     private readonly string _model;
 
+    /// <summary>
+    /// Длина ответа по числу мест в рейтинге: на каждое идёт строка с обоснованием.
+    /// Верхняя граница обязана совпадать с каталогом сервера (AiFeatures.All) — это держит тест.
+    /// </summary>
+    public static int MaxTokensFor(int topN) => Math.Clamp(400 + Math.Max(0, topN) * 110, 800, MaxTokens);
+
+    /// <summary>Самый длинный ответ, который панель может запросить.</summary>
+    public const int MaxTokens = 1800;
+
     public MarketRankingAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         // Only fatal when unbound — a bound terminal has no local key and the server holds it.
@@ -35,7 +44,7 @@ public sealed class MarketRankingAiProvider
         var text = await ChatClient.CompleteTextAsync(
             // По числу запрошенных позиций: у каждой своя причина словами, и на topN=10 фикс в 700
             // упирался в потолок — а обрезанный JSON здесь выбрасывается целиком.
-            _apiKey, _model, maxTokens: Math.Clamp(400 + topN * 110, 800, 1800), temperature: 0.2,
+            _apiKey, _model, maxTokens: MaxTokensFor(topN), temperature: 0.2,
             system:
                 "You are a crypto market analyst. From a live scanner snapshot, pick the strongest " +
                 $"trade candidates RIGHT NOW (at most {topN}). Consider momentum (24h change), liquidity " +

@@ -45,6 +45,43 @@ public class AiFamilyChoiceTests
     }
 
     [Fact]
+    public void A_name_from_the_chosen_family_is_left_alone()
+    {
+        // Обычный случай: терминал прислал имя своего семейства. Переписывать его не за чем, и
+        // подстановка здесь молча перевела бы весь терминал на одну зашитую модель.
+        Assert.Null(AiModelCatalog.ForegroundFallback("claude-sonnet-4-6", AiFamily.Claude));
+        Assert.Null(AiModelCatalog.ForegroundFallback("gpt-4o", AiFamily.ChatGpt));
+        Assert.Null(AiModelCatalog.ForegroundFallback("anthropic/claude-sonnet-9.9", AiFamily.Claude));
+        // Имени нет — решает клиент, как и до появления семейств.
+        Assert.Null(AiModelCatalog.ForegroundFallback("", AiFamily.ChatGpt));
+        Assert.Null(AiModelCatalog.ForegroundFallback(null, AiFamily.ChatGpt));
+    }
+
+    [Fact]
+    public void A_name_from_the_other_family_is_replaced_rather_than_forwarded()
+    {
+        // Формат запроса и семейство расходятся, когда оператор запретил выбор в терминале или
+        // когда сборка на руках старше заголовка семейства. Отправить claude-имя на OpenAI —
+        // гарантированный 404 на КАЖДОМ вызове из терминала, то есть «переключили — всё умерло».
+        Assert.Equal(SettingKeys.DefaultForegroundChatGptModel,
+            AiModelCatalog.ForegroundFallback("claude-sonnet-4-6", AiFamily.ChatGpt));
+        Assert.Equal(SettingKeys.DefaultForegroundModel,
+            AiModelCatalog.ForegroundFallback("gpt-4o", AiFamily.Claude));
+    }
+
+    [Fact]
+    public void The_substituted_names_are_ones_the_default_allowlist_accepts()
+    {
+        // Подстановка, которую отвергает собственный белый список сервера, меняла бы 404 у
+        // провайдера на 400 у себя — то же самое молчание, только с другим кодом.
+        var options = AiPolicyOptions.FromConfig(_ => null);
+        Assert.Contains(SettingKeys.DefaultForegroundModel, options.AllowedAnthropicModels);
+        Assert.Contains(SettingKeys.DefaultForegroundChatGptModel, options.AllowedOpenAiModels);
+        Assert.Contains(SettingKeys.DefaultBackgroundModel, options.AllowedAnthropicModels);
+        Assert.Contains(SettingKeys.DefaultBackgroundChatGptModel, options.AllowedOpenAiModels);
+    }
+
+    [Fact]
     public void An_openai_request_becomes_a_messages_request()
     {
         var src = """

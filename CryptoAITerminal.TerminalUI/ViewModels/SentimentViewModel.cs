@@ -200,7 +200,8 @@ public class SentimentViewModel : ReactiveObject, IDisposable
     public string InsightSignal { get => _insightSignal; private set => this.RaiseAndSetIfChanged(ref _insightSignal, value); }
     public string InsightBullets { get => _insightBullets; private set => this.RaiseAndSetIfChanged(ref _insightBullets, value); }
     public string InsightSource { get => _insightSource; private set => this.RaiseAndSetIfChanged(ref _insightSource, value); }
-    public string InsightSignalBrush => _insightSignal switch { "BULLISH" => SemanticColor.Positive, "BEARISH" => SemanticColor.Negative, _ => SemanticColor.Muted };
+    /// <summary>Цвет из общей палитры вердиктов — один и тот же на всех экранах.</summary>
+    public string InsightSignalBrush => AiVerdictPalette.ColorOf(_insightSignal);
 
     public void ConfigureAi(string apiKey, string model)
     {

@@ -42,9 +42,13 @@ public sealed class BotConfig
     public decimal UsdRubRate { get; init; } = 80m;
 
     /// <summary>
-    /// Weekly tiers. Price and AI allowance both scale 1 : 2 : 3, which is the whole explanation a
-    /// customer needs for what separates them. The daily token allowances behind these live on the
-    /// server (SettingKeys.DefaultPlanDailyTokens) and must stay in step: 35k / 70k / 105k.
+    /// Weekly tiers. Что их разделяет — набор функций: биржи, DEX-снайпер, режим агента.
+    ///
+    /// Суточный лимит токенов в описаниях НЕ упоминается намеренно: на время тестового периода он
+    /// снят (<c>SettingKeys.AiBudgetEnforced</c>), и продавать число, которое сервер не проверяет,
+    /// значит писать в прайсе неправду. Прежние 35k / 70k / 105k были взяты до появления агента и
+    /// панелей с длинным контекстом; когда квоты вернутся, числа придут из накопленного
+    /// <c>ai_usage</c>, и описания надо будет дополнить вместе с ними.
     ///
     /// No perpetual plan. A lifetime licence bought by an active trader paid for itself in about
     /// thirteen months of AI spend and cost money every month after that, with no way to stop.

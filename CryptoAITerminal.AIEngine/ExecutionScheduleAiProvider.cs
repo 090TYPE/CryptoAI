@@ -12,6 +12,9 @@ public sealed class ExecutionScheduleAiProvider
     private readonly string _apiKey;
     private readonly string _model;
 
+    /// <summary>Потолок ответа. Обязан совпадать с каталогом сервера (AiFeatures.All) — это держит тест.</summary>
+    public const int MaxTokens = 900;
+
     public ExecutionScheduleAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         // Only fatal when unbound — a bound terminal has no local key and the server holds it.
@@ -31,7 +34,7 @@ public sealed class ExecutionScheduleAiProvider
             "Plan a slice schedule that limits market impact. Return the JSON.";
 
         var raw = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 900, temperature: 0.2,
+            _apiKey, _model, maxTokens: MaxTokens, temperature: 0.2,
             system:
                 "You are an execution trader. Slice a large order to keep each child small vs available " +
                 "liquidity (rule of thumb: a child should be a small fraction of top-of-book depth). More " +

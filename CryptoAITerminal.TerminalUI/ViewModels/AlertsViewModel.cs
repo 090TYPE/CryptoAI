@@ -413,9 +413,14 @@ public class AlertsViewModel : ReactiveObject
             NewAlertSymbol = r.Symbol;
             SelectedCondition = r.Condition.ToString();
             NewAlertThreshold = r.Threshold;
-            NlStatus = $"✓ {r.Explanation}  Review and press Add.  ({r.Source})";
+            // Разбор без модели даёт тот же результат по виду, поэтому причина отказа идёт впереди:
+            // иначе непонятно, почему источник вдруг стал «Heuristic (offline)».
+            NlStatus = _nl.LastError is { } reason
+                ? $"⚠ AI: {reason} — разобрано без модели. Проверьте и нажмите Add."
+                : $"✓ {r.Explanation}  Review and press Add.  ({r.Source})";
         }
-        catch (Exception ex) { NlStatus = $"⚠ {ex.Message}"; }
+        // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора.
+        catch (Exception ex) { NlStatus = "⚠ " + CryptoAITerminal.AIEngine.AiFailure.Describe(ex); }
         finally { NlRunning = false; }
     }
 

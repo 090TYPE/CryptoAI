@@ -14,6 +14,9 @@ public sealed class ClaudeSignalProvider
     private readonly string _apiKey;
     private readonly string _model;
 
+    /// <summary>Потолок ответа. Обязан совпадать с каталогом сервера (AiFeatures.All) — это держит тест.</summary>
+    public const int MaxTokens = 800;
+
     public ClaudeSignalProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         // Only fatal when unbound — a bound terminal has no local key and the server holds it.
@@ -33,7 +36,7 @@ public sealed class ClaudeSignalProvider
         var prompt = BuildPrompt(symbol, recentCandles);
 
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 800,
+            _apiKey, _model, maxTokens: MaxTokens,
             // Keep determinism reasonable вЂ” we want a verdict, not creative writing.
             temperature: 0.2,
             system:

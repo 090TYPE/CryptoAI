@@ -13,6 +13,9 @@ public sealed class BacktestReviewAiProvider
     private readonly string _apiKey;
     private readonly string _model;
 
+    /// <summary>Потолок ответа. Обязан совпадать с каталогом сервера (AiFeatures.All) — это держит тест.</summary>
+    public const int MaxTokens = 1500;
+
     public BacktestReviewAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         // Only fatal when unbound — a bound terminal has no local key and the server holds it.
@@ -28,7 +31,7 @@ public sealed class BacktestReviewAiProvider
         var prompt = BuildPrompt(m);
 
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 1500, temperature: 0.2,
+            _apiKey, _model, maxTokens: MaxTokens, temperature: 0.2,
             system:
                 "You are a quantitative strategy reviewer. Judge whether a backtest result is " +
                 "trustworthy or likely overfit. Watch for: too few trades, returns that only beat " +

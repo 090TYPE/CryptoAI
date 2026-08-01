@@ -13,6 +13,9 @@ public sealed class NewsDigestAiProvider
     private readonly string _apiKey;
     private readonly string _model;
 
+    /// <summary>Потолок ответа. Обязан совпадать с каталогом сервера (AiFeatures.All) — это держит тест.</summary>
+    public const int MaxTokens = 800;
+
     public NewsDigestAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         // Only fatal when unbound — a bound terminal has no local key and the server holds it.
@@ -34,7 +37,7 @@ public sealed class NewsDigestAiProvider
             + "\n\nSummarize the current market narrative in ONE or TWO sentences and give an overall bias. Return the JSON.";
 
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 800, temperature: 0.3,
+            _apiKey, _model, maxTokens: MaxTokens, temperature: 0.3,
             system:
                 "You are a crypto market analyst. Read the headlines and write a concise market-pulse digest. " +
                 "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +

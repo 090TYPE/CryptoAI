@@ -214,14 +214,22 @@ public sealed class CopilotViewModel : ReactiveObject
                 Messages.Add(new CopilotMessageVM
                 {
                     IsUser = false,
+                    // Причина отказа в подписи под ответом: «Offline assistant» сам по себе не
+                    // отличает «ключа нет» от «сервер не ответил», а ответ при этом заметно беднее.
                     Text = answer.Text,
-                    Source = answer.Source + (answer.ToolCalls > 0 ? $" · {answer.ToolCalls} tool call(s)" : "")
+                    Source = (_service.LastError is { } reason ? $"Offline · {reason}" : answer.Source)
+                             + (answer.ToolCalls > 0 ? $" · {answer.ToolCalls} tool call(s)" : "")
                 });
             }
         }
         catch (Exception ex)
         {
-            Messages.Add(new CopilotMessageVM { IsUser = false, Source = "error", Text = $"Sorry — {ex.Message}" });
+            // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора.
+            Messages.Add(new CopilotMessageVM
+            {
+                IsUser = false, Source = "error",
+                Text = "Sorry — " + CryptoAITerminal.AIEngine.AiFailure.Describe(ex)
+            });
         }
         finally
         {

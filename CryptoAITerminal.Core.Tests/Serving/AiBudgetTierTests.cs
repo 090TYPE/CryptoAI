@@ -9,14 +9,56 @@ namespace CryptoAITerminal.Core.Tests.Serving;
 /// Both halves are money-shaped. A cap that resets on restart is not a cap, and a tier lookup that
 /// silently hands everyone the same number turns the price list into a claim the server does not
 /// implement — which is exactly the state this replaces.
+///
+/// Сейчас предел не применяется (тестовый период), поэтому первым здесь проверяется именно это:
+/// «выключено» должно означать «без лимита», а не «нулевой лимит» — разница между работающим
+/// продуктом и продуктом, который отказывает на каждом вызове.
 /// </summary>
 public class AiBudgetTierTests
 {
     private static AiBudget Budget(long defaultCap = 200_000) => new(defaultCap);
 
     [Fact]
-    public void Tiers_get_the_allowance_the_price_list_promises()
+    public void The_test_period_ships_with_no_daily_limit()
     {
+        Assert.False(SettingKeys.DefaultAiBudgetEnforced);
+
+        var allowance = AiAllowance.Pick(SettingKeys.DefaultAiBudgetEnforced,
+            configuredForTier: 35_000, shippedForTier: 35_000, defaultCap: 200_000);
+
+        Assert.False(allowance.Enforced);
+        // Ключевое: расход в разы больше любого прежнего тарифа не закрывает доступ.
+        Assert.True(allowance.Allows(50_000_000));
+        Assert.Equal(0, allowance.Remaining(50_000_000));
+    }
+
+    [Fact]
+    public void Switching_quotas_back_on_uses_the_tier_before_the_fallback()
+    {
+        // Настройка тарифа важнее числа из кода, число из кода важнее общего предела сервера.
+        Assert.Equal(50_000, AiAllowance.Pick(true, 50_000, 35_000, 200_000).DailyTokens);
+        Assert.Equal(35_000, AiAllowance.Pick(true, 0, 35_000, 200_000).DailyTokens);
+        Assert.Equal(200_000, AiAllowance.Pick(true, 0, 0, 200_000).DailyTokens);
+    }
+
+    [Fact]
+    public void An_enforced_allowance_blocks_at_the_cap_and_not_before()
+    {
+        var allowance = AiAllowance.Pick(true, 0, 35_000, 200_000);
+
+        Assert.True(allowance.Allows(34_999));
+        Assert.False(allowance.Allows(35_000));
+        Assert.Equal(1, allowance.Remaining(34_999));
+        // Перерасход возможен — стоимость вызова известна только после него, — но остаток не уходит
+        // в минус.
+        Assert.Equal(0, allowance.Remaining(90_000));
+    }
+
+    [Fact]
+    public void Tiers_keep_the_shape_the_price_list_used()
+    {
+        // Числа дремлют, пока квоты выключены, но соотношение 1 : 2 : 3 — это то, чем тарифы
+        // описаны покупателю, и менять его молча нельзя.
         Assert.Equal(35_000, SettingKeys.DefaultPlanDailyTokens["lite"]);
         Assert.Equal(70_000, SettingKeys.DefaultPlanDailyTokens["pro"]);
         Assert.Equal(105_000, SettingKeys.DefaultPlanDailyTokens["max"]);

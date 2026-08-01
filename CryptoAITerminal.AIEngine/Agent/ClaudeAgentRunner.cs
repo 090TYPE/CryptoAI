@@ -132,9 +132,15 @@ public sealed class ClaudeAgentRunner : IAgentRunner
                 body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
                 if (!res.IsSuccessStatusCode)
                 {
+                    // Цикл шлёт запрос сам, минуя ChatClient.CompleteTextAsync, поэтому об отказе
+                    // сообщает явно — иначе общий индикатор состояния AI молчал бы именно про
+                    // агента, у которого отказ заметнее всего.
+                    ChatClient.NoteFailure(AiFeatureIds.Agent,
+                        AiFailure.Describe(AiCallException.FromResponse("Anthropic", (int)res.StatusCode, body)));
                     onEvent?.Invoke(new AgentEvent(AgentEventKind.Error, "api", $"Anthropic API {(int)res.StatusCode}: {Truncate(body, 300)}"));
                     return new AgentRunResult(finalText, toolCalls, iteration, "error");
                 }
+                ChatClient.NoteOk(AiFeatureIds.Agent);
             }
             catch (OperationCanceledException)
             {
@@ -143,6 +149,7 @@ public sealed class ClaudeAgentRunner : IAgentRunner
             }
             catch (Exception ex)
             {
+                ChatClient.NoteFailure(AiFeatureIds.Agent, AiFailure.Describe(ex));
                 onEvent?.Invoke(new AgentEvent(AgentEventKind.Error, "http", ex.Message));
                 return new AgentRunResult(finalText, toolCalls, iteration, "error");
             }

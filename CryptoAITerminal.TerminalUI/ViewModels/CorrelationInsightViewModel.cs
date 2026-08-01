@@ -72,12 +72,8 @@ public sealed class CorrelationInsightViewModel : ReactiveObject
         ""             => "",
         _              => "BALANCED"
     };
-    public string SignalBrush => _signal switch
-    {
-        "DIVERSIFIED"  => SemanticColor.Accent,
-        "CONCENTRATED" => SemanticColor.Negative,
-        _              => SemanticColor.Warning
-    };
+    /// <summary>Цвет из общей палитры вердиктов — один и тот же на всех экранах.</summary>
+    public string SignalBrush => AiVerdictPalette.ColorOf(_signal);
 
     public ReactiveCommand<Unit, Unit> AnalyzeCommand { get; }
 
@@ -125,7 +121,9 @@ public sealed class CorrelationInsightViewModel : ReactiveObject
             var held = _heldSymbols();
             var result = await _service.AnalyzeAsync(matrix, held, CancellationToken.None);
 
-            Summary = result.Summary;
+            // Причина отказа впереди текста: разбор, собранный собственным расчётом, читается как
+            // обычный, и по одной подписи «Heuristic (offline)» непонятно, почему модель молчала.
+            Summary = _service.LastError is { } reason ? $"⚠ {reason}\n{result.Summary}" : result.Summary;
             Signal = result.Signal;
             Source = result.Source;
             Bullets.Clear();
@@ -133,7 +131,8 @@ public sealed class CorrelationInsightViewModel : ReactiveObject
         }
         catch (Exception ex)
         {
-            Summary = $"Couldn't analyze correlations: {ex.Message}";
+            // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора.
+            Summary = "Couldn't analyze correlations: " + CryptoAITerminal.AIEngine.AiFailure.Describe(ex);
             Signal = "";
         }
         finally

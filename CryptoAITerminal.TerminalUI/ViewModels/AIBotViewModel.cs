@@ -154,8 +154,13 @@ public class AIBotViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _maSlowPeriod, Math.Max(_maFastPeriod + 1, value));
     }
 
+    // "AI", а не "AI (Claude)": сигнал идёт через ChatClient и обслуживается тем семейством,
+    // которое выбрал пользователь. Вендор в названии стратегии называл бы одного из двух наугад.
     public IReadOnlyList<string> AvailableStrategies { get; } =
-        ["MA Cross", "RSI", "Bollinger Bands", "Breakout", "MACD", "VWAP", "AI (Claude)"];
+        ["MA Cross", "RSI", "Bollinger Bands", "Breakout", "MACD", "VWAP", AiStrategyName];
+
+    /// <summary>Имя AI-стратегии в списке. Константа, потому что по нему же идёт выбор в switch.</summary>
+    public const string AiStrategyName = "AI";
 
     public string ClaudeApiKey
     {
@@ -253,7 +258,9 @@ public class AIBotViewModel : ReactiveObject
         "Breakout"        => $"Breakout({_breakoutPeriod})",
         "MACD"            => $"MACD({_macdFast}/{_macdSlow}/{_macdSignal})",
         "VWAP"            => $"VWAP(band={_vwapBandPct:0.##}%)",
-        "AI (Claude)"     => $"Claude {_claudeModel} · poll every {_claudePollSeconds}s",
+        // Подпись берётся из того, что реально ответило: в серверном режиме модель выбирает сервер,
+        // и имя из локальной настройки здесь — выдумка клиента.
+        AiStrategyName    => $"{CryptoAITerminal.AIEngine.ChatClient.SourceLabel(CryptoAITerminal.AIEngine.AiFeatureIds.Signal, _claudeModel)} · poll every {_claudePollSeconds}s",
         _                 => $"SMA({_maFastPeriod}/{_maSlowPeriod})"
     };
 
@@ -266,11 +273,15 @@ public class AIBotViewModel : ReactiveObject
             case "Breakout":        return new BreakoutStrategy(_breakoutPeriod);
             case "MACD":            return new MacdStrategy(_macdFast, _macdSlow, _macdSignal);
             case "VWAP":            return new VwapStrategy(_vwapBandPct);
-            case "AI (Claude)":
+            case AiStrategyName:
             {
-                if (string.IsNullOrWhiteSpace(_claudeApiKey))
+                // Проверяется возможность вызова, а не наличие ключа у клиента. На терминале,
+                // привязанном к серверу, ключа нет и не должно быть — он на сервере, — и проверка
+                // «пустой ключ» молча превращала единственную AI-стратегию в скользящие средние
+                // у каждого платящего пользователя.
+                if (!CryptoAITerminal.AIEngine.ChatClient.CanCallModel(_claudeApiKey))
                 {
-                    BotLog += "\n[Claude] API key is empty — falling back to MA Cross.";
+                    BotLog += "\n[AI] No provider key and no server binding — falling back to MA Cross.";
                     return new SimpleMaStrategy(_maFastPeriod, _maSlowPeriod);
                 }
                 var provider = new CryptoAITerminal.AIEngine.ClaudeSignalProvider(_claudeApiKey, _claudeModel);
@@ -398,9 +409,14 @@ public class AIBotViewModel : ReactiveObject
             TpPercent = s.TpPercent;
             SlPercent = s.SlPercent;
             TrailingStop = s.Trailing;
-            TpSlSuggestNote = $"{s.Source}: {s.Rationale}";
+            // Причина отказа впереди: числа TP/SL, посчитанные по волатильности локально, выглядят
+            // ровно так же, как подобранные моделью.
+            TpSlSuggestNote = _aiTpSl.LastError is { } reason
+                ? $"AI: {reason} — {s.Rationale}"
+                : $"{s.Source}: {s.Rationale}";
         }
-        catch (Exception ex) { TpSlSuggestNote = $"AI failed: {ex.Message}"; }
+        // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора.
+        catch (Exception ex) { TpSlSuggestNote = "AI failed: " + CryptoAITerminal.AIEngine.AiFailure.Describe(ex); }
         finally { TpSlSuggestRunning = false; }
     }
 

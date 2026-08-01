@@ -193,8 +193,12 @@ public sealed class BestExecutionViewModel : ReactiveObject, IDisposable
             PlanRationale = plan.Rationale;
             PlanSource = plan.Source;
             HasSlicePlan = true;
+            // Служба сама откатывается на собственный расчёт и не бросает — без этой строки план
+            // выглядел бы обычным, а причина отказа модели пропадала бы вовсе.
+            StatusText = _aiSched.LastError is { } reason ? $"AI: {reason}" : StatusText;
         }
-        catch (Exception ex) { StatusText = $"AI plan failed: {ex.Message}"; }
+        // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора.
+        catch (Exception ex) { StatusText = "AI plan failed: " + CryptoAITerminal.AIEngine.AiFailure.Describe(ex); }
         finally { PlanRunning = false; }
     }
 

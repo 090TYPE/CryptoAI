@@ -14,6 +14,9 @@ public sealed class RuleBuilderAiProvider
     private readonly string _apiKey;
     private readonly string _model;
 
+    /// <summary>Потолок ответа. Обязан совпадать с каталогом сервера (AiFeatures.All) — это держит тест.</summary>
+    public const int MaxTokens = 1800;
+
     public RuleBuilderAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         // Only fatal when unbound — a bound terminal has no local key and the server holds it.
@@ -51,7 +54,7 @@ public sealed class RuleBuilderAiProvider
             "\"actions\":[{\"type\":string,\"symbol\":string,\"amount\":number,\"message\":string}]}.";
 
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 1800, temperature: 0.1,
+            _apiKey, _model, maxTokens: MaxTokens, temperature: 0.1,
             system: system,
             userContent: "Instruction: " + instruction + "\n\nReturn the JSON rule.", AiFeatureIds.RuleBuilder,
             _http, ct).ConfigureAwait(false);

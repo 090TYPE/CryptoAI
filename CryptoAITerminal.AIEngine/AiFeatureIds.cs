@@ -36,4 +36,37 @@ public static class AiFeatureIds
     public const string Signal             = "signal";
     public const string NewsDigest         = "news_digest";
     public const string AlertSpec          = "alert_spec";
+
+    /// <summary>
+    /// Название раздела для человека. Нужно там, где сбой показывается не внутри своей панели, а
+    /// одной общей строкой: «ai_signal_desk» в интерфейсе покупателя — это идентификатор для
+    /// разработчика, а не объяснение.
+    ///
+    /// Незнакомый идентификатор возвращается как есть: сборка клиента может оказаться новее этого
+    /// списка, и показать сырое имя честнее, чем «неизвестно».
+    /// </summary>
+    public static string Title(string? feature) => feature switch
+    {
+        SignalDesk         => "AI Signal Desk",
+        SignalDeskStream   => "вопрос к Signal Desk",
+        UiTranslate        => "перевод интерфейса",
+        Agent              => "агент",
+        MarketRanking      => "ранжирование рынка",
+        DexTrending        => "тренды DEX",
+        RuleBuilder        => "конструктор правил",
+        PortfolioRebalance => "ребалансировка портфеля",
+        TradeJournalCoach  => "разбор журнала сделок",
+        MarketInsight      => "обзор рынка",
+        BotParameters      => "подбор параметров бота",
+        BacktestReview     => "разбор бэктеста",
+        TokenSecurity      => "проверка токена",
+        StatArbPair        => "пара для статарбитража",
+        ExecutionSchedule  => "план исполнения заявки",
+        DynamicTpSl        => "TP/SL по волатильности",
+        Signal             => "торговый сигнал",
+        NewsDigest         => "сводка новостей",
+        AlertSpec          => "разбор условия алерта",
+        null or ""         => "AI",
+        _                  => feature,
+    };
 }

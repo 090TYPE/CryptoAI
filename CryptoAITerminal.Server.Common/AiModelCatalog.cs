@@ -149,6 +149,25 @@ public static class AiModelCatalog
         return (major, minor);
     }
 
+    /// <summary>
+    /// Чем заменить имя модели, присланное клиентом, когда сервер ничего не выбрал сам.
+    ///
+    /// Null означает «оставить как есть» — обычный случай: терминал прислал имя своего семейства, и
+    /// переписывать его не за чем. Не-null появляется только при расхождении формата и семейства:
+    /// оператор запретил выбор в терминале, или сборка на руках старше заголовка семейства. Тогда
+    /// присланное имя гарантированно чужое (<c>claude-sonnet-4-6</c> у OpenAI — это 404), и вопрос
+    /// не в том, подставлять ли, а в том, отвечать ли вообще.
+    ///
+    /// Здесь, а не в прокси, потому что это правило про имена моделей и семейства, а не про HTTP —
+    /// и потому что проверить его надо тестом, а не развёрнутым сервером.
+    /// </summary>
+    public static string? ForegroundFallback(string? clientModel, AiFamily family) =>
+        string.IsNullOrWhiteSpace(clientModel) || BelongsTo(clientModel, family)
+            ? null
+            : family == AiFamily.Claude
+                ? SettingKeys.DefaultForegroundModel
+                : SettingKeys.DefaultForegroundChatGptModel;
+
     /// <summary>Разбор значения настройки <c>ai.family</c>. Незнакомое значение — Claude.</summary>
     public static AiFamily ParseFamily(string? raw) =>
         raw?.Trim().ToLowerInvariant() is "chatgpt" or "openai" or "gpt" ? AiFamily.ChatGpt : AiFamily.Claude;

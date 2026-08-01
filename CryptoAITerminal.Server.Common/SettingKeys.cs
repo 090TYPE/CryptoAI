@@ -23,12 +23,27 @@ public static class SettingKeys
     /// <summary>То же для семейства ChatGPT, когда автоподбор недоступен и ничего не настроено.</summary>
     public const string DefaultBackgroundChatGptModel = "gpt-4o-mini";
 
+    /// <summary>
+    /// Модель для вызовов из терминала, когда подставить своё имя всё-таки приходится.
+    ///
+    /// Обычно сервер оставляет имя, присланное клиентом. Но формат запроса и выбранное семейство
+    /// могут разойтись — оператор запретил выбор в терминале, или сборка на руках старше заголовка
+    /// семейства, — и тогда присланное имя заведомо чужое: <c>claude-sonnet-4-6</c> у OpenAI это
+    /// 404. Совпадает с тем, что шлют выпущенные сборки (<c>AiRuntime</c>) и что стоит в белом
+    /// списке по умолчанию, чтобы подстановка не упёрлась в собственную же проверку.
+    /// </summary>
+    public const string DefaultForegroundModel = "claude-sonnet-4-6";
+
+    /// <summary>То же для семейства ChatGPT.</summary>
+    public const string DefaultForegroundChatGptModel = "gpt-4o";
+
     // ── Models for the server's own jobs ──────────────────────────────────────
     public const string DigestModel  = "ai.digest.model";   // env: AI_DIGEST_MODEL
     public const string ScoreModel   = "ai.score.model";    // env: AI_SCORE_MODEL
     public const string AnomalyModel = "ai.anomaly.model";  // env: AI_ANOMALY_MODEL
     public const string AskModel     = "ai.ask.model";      // env: AI_ASK_MODEL
     public const string ReviewModel  = "ai.review.model";   // env: AI_DIGEST_MODEL (shared today)
+    public const string PretradeModel = "ai.pretrade.model"; // env: AI_PRETRADE_MODEL
 
     // ── Cost bounds on those jobs ─────────────────────────────────────────────
     public const string ScoreBatch          = "ai.score.batch";
@@ -62,8 +77,13 @@ public static class SettingKeys
     public const string PlanDefaultDailyTokens = "plan.default.daily_tokens";
 
     /// <summary>
-    /// Shipped tiers and what they get per day, matching the price list: $5 / $10 / $15 a week.
-    /// Overridable per tier from the admin panel without a deploy.
+    /// Заготовки суточных пределов по тарифам, 1 : 2 : 3 вслед за ценой $5 / $10 / $15 в неделю.
+    /// Переопределяются из админки без выкладки.
+    ///
+    /// Сейчас НЕ ДЕЙСТВУЮТ: см. <see cref="AiBudgetEnforced"/>. Числа выбирались до того, как
+    /// появились агент и панели с длинным контекстом, и на живом использовании кончались за минуты.
+    /// Оставлены как форма, а не как решение — при включении квот их надо пересчитать по
+    /// накопленному <c>ai_usage</c>, а не взять отсюда.
     /// </summary>
     public static readonly IReadOnlyDictionary<string, long> DefaultPlanDailyTokens =
         new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase)
@@ -72,6 +92,22 @@ public static class SettingKeys
             ["pro"] = 70_000,
             ["max"] = 105_000,
         };
+
+    /// <summary>
+    /// Проверять ли суточный предел токенов. По умолчанию НЕТ — идёт тестовый период, стоимость
+    /// вызова ещё не измерена, и ограничивать по числу, взятому до появления агента, значит
+    /// отключать функции у тех, кто как раз и должен их проверить.
+    ///
+    /// Выключен именно предел, а не учёт: <c>AiBudget.Charge</c> и запись в <c>ai_usage</c>
+    /// продолжают работать. Без этого включить квоты обратно было бы не на чем — прайс нужно
+    /// считать по реальному расходу, а не по оценке.
+    ///
+    /// Обратное включение — одно значение в админке, без сборки.
+    /// </summary>
+    public const string AiBudgetEnforced = "ai.budget.enforced";
+
+    /// <summary>Значение <see cref="AiBudgetEnforced"/> по умолчанию. Одно место, чтобы сервер и тесты не разошлись.</summary>
+    public const bool DefaultAiBudgetEnforced = false;
 
     // ── Куда ходить за моделями ───────────────────────────────────────────────
     // Позволяет заменить вендора на OpenAI-совместимый роутер, не трогая код. Роутер, отвечающий

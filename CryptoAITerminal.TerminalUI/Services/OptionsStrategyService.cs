@@ -35,11 +35,19 @@ public sealed record OptionsStrategyResult(
 public sealed class OptionsStrategyService
 {
     // Vol stance vocabulary handed to the model for the signal field.
-    private static readonly string[] Vocabulary = ["BUY_PREMIUM", "NEUTRAL", "SELL_PREMIUM"];
+    /// <summary>Слова этого разбора. Публично: от них зависит цвет вердикта, и тест читает список отсюда.</summary>
+    public static readonly string[] Vocabulary = ["BUY_PREMIUM", "NEUTRAL", "SELL_PREMIUM"];
 
     private readonly MarketInsightAiService _ai = new();
 
     public bool UsesLiveModel => _ai.UsesLiveModel;
+
+    /// <summary>
+    /// Почему последний вызов ушёл на собственный расчёт. Пробрасывается наружу, потому что
+    /// обёртка — единственное, что видит панель: без этого отказ модели здесь неотличим от случая,
+    /// когда её и не звали.
+    /// </summary>
+    public string? LastError => _ai.LastError;
 
     public void ConfigureAi(string? apiKey, string? model = null)
     {

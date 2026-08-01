@@ -4256,6 +4256,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         if (normalized == "analytics" && PnlDashboardVM is not null)
             PnlDashboardVM.Refresh();
 
+        // Настройки перечитывают состояние AI и подписку при каждом открытии. Раздел собирается
+        // один раз при запуске, а расход и последний сбой меняются, пока человек работает: без
+        // этого строка состояния появлялась только после переключения подраздела внутри настроек,
+        // то есть ровно тогда, когда её уже никто не ищет.
+        if (normalized == "settings") SettingsDesk.OnShown();
+
         // Only poll the live tape while its section is on screen.
         if (normalized == "tape")
             MarketTapeVM?.Start();

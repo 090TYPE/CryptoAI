@@ -88,6 +88,9 @@ public sealed class StatArbViewModel : ReactiveObject, IDisposable
         "LONG_A_SHORT_B" => SemanticColor.Positive, "SHORT_A_LONG_B" => SemanticColor.Positive, "WAIT" => SemanticColor.Warning, _ => SemanticColor.Negative
     };
 
+    /// <summary>Вердикт по паре в форме общей карточки.</summary>
+    public AiVerdictVM PairVerdict { get; } = new();
+
     public void ConfigureAi(string apiKey, string model)
     {
         _aiPair.ApiKey = apiKey ?? "";
@@ -108,8 +111,22 @@ public sealed class StatArbViewModel : ReactiveObject, IDisposable
             PairSignal = v.Signal; PairScore = v.Score; PairReason = v.Reason; PairSource = v.Source;
             HasPairVerdict = true;
             this.RaisePropertyChanged(nameof(PairSignalBrush));
+            // Служба сама откатывается на собственный расчёт и не бросает — без этой строки вердикт
+            // выглядел бы обычным, а причина отказа модели пропадала бы вовсе.
+            var reason = _aiPair.LastError;
+            if (reason is not null) StatusLabel = $"AI: {reason}";
+            // Счёт уходит в карточку шкалой: «score 72/100» текстом не показывает, много это или мало.
+            PairVerdict.Fill(v.Signal, v.Reason, null, v.Source, v.IsFallback, reason,
+                score: v.Score, scoreCaption: "пригодность");
         }
-        catch (Exception ex) { StatusLabel = $"AI eval failed: {ex.Message}"; }
+        // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора.
+        catch (Exception ex)
+        {
+            var failure = CryptoAITerminal.AIEngine.AiFailure.Describe(ex);
+            StatusLabel = "AI eval failed: " + failure;
+            PairVerdict.Fill("", failure, null, "", isFallback: true, reason: failure);
+            HasPairVerdict = true;
+        }
         finally { PairRunning = false; }
     }
 

@@ -18,11 +18,19 @@ namespace CryptoAITerminal.TerminalUI.Services;
 /// </summary>
 public sealed class CorrelationInsightService
 {
-    private static readonly string[] Vocabulary = ["DIVERSIFIED", "BALANCED", "CONCENTRATED"];
+    /// <summary>Слова этого разбора. Публично: от них зависит цвет вердикта, и тест читает список отсюда.</summary>
+    public static readonly string[] Vocabulary = ["DIVERSIFIED", "BALANCED", "CONCENTRATED"];
 
     private readonly MarketInsightAiService _ai = new();
 
     public bool UsesLiveModel => _ai.UsesLiveModel;
+
+    /// <summary>
+    /// Почему последний вызов ушёл на собственный расчёт. Пробрасывается наружу, потому что
+    /// обёртка — единственное, что видит панель: без этого отказ модели здесь неотличим от случая,
+    /// когда её и не звали.
+    /// </summary>
+    public string? LastError => _ai.LastError;
 
     public void ConfigureAi(string? apiKey, string? model = null)
     {

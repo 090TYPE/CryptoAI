@@ -97,9 +97,14 @@ public sealed class OpenAiAgentRunner : IAgentRunner
                 body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
                 if (!res.IsSuccessStatusCode)
                 {
+                    // Зеркально claude-циклу: он тоже шлёт запрос сам и обязан сообщить об отказе,
+                    // иначе общий индикатор состояния AI молчит про половину пользователей.
+                    ChatClient.NoteFailure(AiFeatureIds.Agent,
+                        AiFailure.Describe(AiCallException.FromResponse("OpenAI", (int)res.StatusCode, body)));
                     onEvent?.Invoke(new AgentEvent(AgentEventKind.Error, "api", $"OpenAI API {(int)res.StatusCode}: {Truncate(body, 300)}"));
                     return new AgentRunResult(finalText, toolCalls, iteration, "error");
                 }
+                ChatClient.NoteOk(AiFeatureIds.Agent);
             }
             catch (OperationCanceledException)
             {
@@ -108,6 +113,7 @@ public sealed class OpenAiAgentRunner : IAgentRunner
             }
             catch (Exception ex)
             {
+                ChatClient.NoteFailure(AiFeatureIds.Agent, AiFailure.Describe(ex));
                 onEvent?.Invoke(new AgentEvent(AgentEventKind.Error, "http", ex.Message));
                 return new AgentRunResult(finalText, toolCalls, iteration, "error");
             }

@@ -534,13 +534,23 @@
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:AiPickVM">
                       <Border Background="{DynamicResource Surface1}" CornerRadius="8" Padding="8,6" Margin="0,0,8,8" Width="250">
+                        <!-- Вердикт красится смыслом, а не всегда янтарным: раньше AVOID и
+                             MOMENTUM выглядели одинаково, а по этому списку решают, что покупать. -->
                         <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
-                          <Border Background="{DynamicResource Surface0}" CornerRadius="6" Padding="8,4" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding ScoreLabel}" FontWeight="Bold" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsBody}" />
+                          <Border CornerRadius="6" Padding="8,4" VerticalAlignment="Center" BorderThickness="1"
+                                  Background="{Binding BiasTint, Converter={StaticResource StringToBrush}}"
+                                  BorderBrush="{Binding BiasStroke, Converter={StaticResource StringToBrush}}">
+                            <TextBlock Text="{Binding ScoreLabel}" FontWeight="Bold" FontSize="{DynamicResource FsBody}"
+                                       Foreground="{Binding ScoreBrush, Converter={StaticResource StringToBrush}}" />
                           </Border>
-                          <StackPanel Spacing="0" VerticalAlignment="Center" MinWidth="60">
+                          <StackPanel Spacing="2" VerticalAlignment="Center" MinWidth="60">
                             <TextBlock Text="{Binding Symbol}" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" Foreground="{DynamicResource TextPrimary}" />
-                            <TextBlock Text="{Binding Bias}" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource Warning}" />
+                            <TextBlock Text="{Binding Bias}" FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold"
+                                       Foreground="{Binding BiasBrush, Converter={StaticResource StringToBrush}}" />
+                            <Border Width="60" Height="3" CornerRadius="2" Background="{DynamicResource Surface0}" HorizontalAlignment="Left">
+                              <Border Width="{Binding ScoreBarWidth}" Height="3" CornerRadius="2" HorizontalAlignment="Left"
+                                      Background="{Binding ScoreBrush, Converter={StaticResource StringToBrush}}" />
+                            </Border>
                           </StackPanel>
                           <TextBlock Text="{Binding Reason}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" MaxWidth="130" VerticalAlignment="Center" />
                         </StackPanel>

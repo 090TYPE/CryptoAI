@@ -130,12 +130,8 @@ public sealed class DailyBriefingViewModel : ReactiveObject
         ""         => "",
         _          => "NEUTRAL"
     };
-    public string SignalBrush => _signal switch
-    {
-        "RISK_ON"  => SemanticColor.Accent,
-        "RISK_OFF" => SemanticColor.Negative,
-        _          => SemanticColor.Muted
-    };
+    /// <summary>Цвет из общей палитры вердиктов — один и тот же на всех экранах.</summary>
+    public string SignalBrush => AiVerdictPalette.ColorOf(_signal);
 
     public ReactiveCommand<Unit, Unit> RefreshCommand { get; }
 
@@ -148,7 +144,9 @@ public sealed class DailyBriefingViewModel : ReactiveObject
             var input = _gather();
             var result = await _service.BuildAsync(input, CancellationToken.None);
 
-            Summary = result.Summary;
+            // Причина отказа впереди текста: брифинг, собранный собственным расчётом, читается как
+            // обычный, и по одной подписи «Heuristic (offline)» непонятно, почему модель молчала.
+            Summary = _service.LastError is { } reason ? $"⚠ {reason}\n{result.Summary}" : result.Summary;
             Signal = result.Signal;
             Source = result.Source;
             GeneratedAt = DateTime.Now.ToString("HH:mm");
@@ -161,7 +159,8 @@ public sealed class DailyBriefingViewModel : ReactiveObject
         }
         catch (Exception ex)
         {
-            Summary = $"Couldn't build the briefing: {ex.Message}";
+            // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора.
+            Summary = "Couldn't build the briefing: " + CryptoAITerminal.AIEngine.AiFailure.Describe(ex);
             Signal = "";
         }
         finally

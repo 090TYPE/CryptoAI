@@ -66,10 +66,13 @@ public class WhaleTrackerViewModel : ReactiveObject, IDisposable
     public string InsightSignal { get => _insightSignal; private set => this.RaiseAndSetIfChanged(ref _insightSignal, value); }
     public string InsightBullets { get => _insightBullets; private set => this.RaiseAndSetIfChanged(ref _insightBullets, value); }
     public string InsightSource { get => _insightSource; private set => this.RaiseAndSetIfChanged(ref _insightSource, value); }
-    public string InsightSignalBrush => _insightSignal switch
-    {
-        "ACCUMULATION" => SemanticColor.Positive, "DISTRIBUTION" => SemanticColor.Negative, _ => SemanticColor.Muted
-    };
+    public string InsightSignalBrush => AiVerdictPalette.ColorOf(_insightSignal);
+
+    /// <summary>
+    /// Тот же ответ, разложенный для общей карточки вердикта. Строки выше остаются: их читают
+    /// сжатые поверхности, где карточке места нет.
+    /// </summary>
+    public AiVerdictVM InsightVerdict { get; } = new();
 
     public void ConfigureAi(string apiKey, string model)
     {
@@ -105,11 +108,17 @@ public class WhaleTrackerViewModel : ReactiveObject, IDisposable
             ApplyInsight(result);
             // Причина отказа ведёт сводку: без неё оффлайн-результат неотличим от случая, когда
             // модель вообще не вызывалась.
-            if (_insight.LastError is { } insightError)
-                InsightSummary = $"⚠ {insightError}\n{InsightSummary}";
+            var insightError = _insight.LastError;
+            if (insightError is not null) InsightSummary = $"⚠ {insightError}\n{InsightSummary}";
+            InsightVerdict.Set(result, insightError);
         }
         // Никогда не ex.Message: он может нести сырое тело ответа модели.
-        catch (Exception ex) { InsightSummary = CryptoAITerminal.AIEngine.AiFailure.Describe(ex); HasInsight = true; }
+        catch (Exception ex)
+        {
+            var failure = CryptoAITerminal.AIEngine.AiFailure.Describe(ex);
+            InsightSummary = failure; HasInsight = true;
+            InsightVerdict.Fill("", failure, null, "", isFallback: true, reason: failure);
+        }
         finally { InsightRunning = false; }
     }
 

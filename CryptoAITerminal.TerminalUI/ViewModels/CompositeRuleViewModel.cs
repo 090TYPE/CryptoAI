@@ -559,9 +559,15 @@ public sealed class CompositeRuleViewModel : ReactiveObject
             foreach (var a in result.Rule.Actions)
                 EditingActions.Add(RuleActionEditorVM.FromModel(a, RemoveAction));
             IsEditing = true;
-            AiRuleStatus = $"{result.Source}: {result.Note} Review and Save.";
+            // Причина отказа впереди источника: правило, собранное собственным разбором, выглядит
+            // ровно так же, как собранное моделью, и по одному «Heuristic (offline)» непонятно,
+            // почему модель не участвовала.
+            AiRuleStatus = _aiRuleBuilder.LastError is { } reason
+                ? $"AI: {reason} — правило собрано без модели. Проверьте и сохраните."
+                : $"{result.Source}: {result.Note} Review and Save.";
         }
-        catch (Exception ex) { AiRuleStatus = $"AI failed: {ex.Message}"; }
+        // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора.
+        catch (Exception ex) { AiRuleStatus = "AI failed: " + CryptoAITerminal.AIEngine.AiFailure.Describe(ex); }
         finally { AiRuleRunning = false; }
     }
 

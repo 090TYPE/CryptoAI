@@ -12,6 +12,9 @@ public sealed class DynamicTpSlAiProvider
     private readonly string _apiKey;
     private readonly string _model;
 
+    /// <summary>Потолок ответа. Обязан совпадать с каталогом сервера (AiFeatures.All) — это держит тест.</summary>
+    public const int MaxTokens = 800;
+
     public DynamicTpSlAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         // Only fatal when unbound — a bound terminal has no local key and the server holds it.
@@ -32,7 +35,7 @@ public sealed class DynamicTpSlAiProvider
             "Suggest TP%, SL% (both positive, as % from entry) and whether to trail. Return the JSON.";
 
         var raw = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 800, temperature: 0.2,
+            _apiKey, _model, maxTokens: MaxTokens, temperature: 0.2,
             system:
                 "You are a risk manager. Set TP/SL adapted to volatility: wider stops in choppy/high-ATR " +
                 "markets, tighter in calm ones; keep reward:risk в‰Ґ 1.3. Both values are positive percentages " +

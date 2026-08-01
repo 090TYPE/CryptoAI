@@ -74,7 +74,16 @@ public sealed class OnChainMetricsViewModel : ReactiveObject, IDisposable
     public string InsightSignal { get => _insightSignal; private set => this.RaiseAndSetIfChanged(ref _insightSignal, value); }
     public string InsightBullets { get => _insightBullets; private set => this.RaiseAndSetIfChanged(ref _insightBullets, value); }
     public string InsightSource { get => _insightSource; private set => this.RaiseAndSetIfChanged(ref _insightSource, value); }
-    public string InsightSignalBrush => _insightSignal switch { "BULLISH" => SemanticColor.Positive, "BEARISH" => SemanticColor.Negative, _ => SemanticColor.Muted };
+    public string InsightSignalBrush => AiVerdictPalette.ColorOf(_insightSignal);
+
+    /// <summary>
+    /// Тот же ответ, разложенный для общей карточки вердикта.
+    ///
+    /// Строки выше остаются: их читают сжатые поверхности — виджет на дашборде и бегущая строка
+    /// рыночного деска, — где карточке места нет. Источник у них один и тот же, расходиться им
+    /// негде: оба заполняются из одного <c>result</c> в одном месте.
+    /// </summary>
+    public AiVerdictVM InsightVerdict { get; } = new();
 
     public void ConfigureAi(string apiKey, string model)
     {
@@ -116,10 +125,16 @@ public sealed class OnChainMetricsViewModel : ReactiveObject, IDisposable
             InsightSignal = result.Signal;
             InsightBullets = result.Bullets.Length > 0 ? "• " + string.Join("\n• ", result.Bullets) : "";
             InsightSource = result.Source; HasInsight = true;
+            InsightVerdict.Set(result, insightError);
             this.RaisePropertyChanged(nameof(InsightSignalBrush));
         }
         // Никогда не ex.Message: он может нести сырое тело ответа модели.
-        catch (Exception ex) { InsightSummary = CryptoAITerminal.AIEngine.AiFailure.Describe(ex); HasInsight = true; }
+        catch (Exception ex)
+        {
+            var failure = CryptoAITerminal.AIEngine.AiFailure.Describe(ex);
+            InsightSummary = failure; HasInsight = true;
+            InsightVerdict.Fill("", failure, null, "", isFallback: true, reason: failure);
+        }
         finally { InsightRunning = false; }
     }
 

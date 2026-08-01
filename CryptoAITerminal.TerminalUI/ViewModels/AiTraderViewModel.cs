@@ -339,7 +339,9 @@ public sealed class AiTraderViewModel : ReactiveObject
             var result = await _service.RunOnceAsync(ClaudeApiKey, ClaudeModel);
             Append($"✔ done · {result.StoppedReason} · {result.ToolCallCount} tool calls");
         }
-        catch (Exception ex) { Append($"[error] {ex.Message}"); }
+        // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора, а этот
+        // лог человек читает и копирует в поддержку.
+        catch (Exception ex) { Append("[error] " + AiFailure.Describe(ex)); }
     }
 
     // Not async: the loop deliberately runs detached on a background task and this method only
@@ -368,7 +370,7 @@ public sealed class AiTraderViewModel : ReactiveObject
         _ = Task.Run(async () =>
         {
             try { await svc.StartLoopAsync(ClaudeApiKey, ClaudeModel, TimeSpan.FromSeconds(IntervalSeconds), token); }
-            catch (Exception ex) { Append($"[loop error] {ex.Message}"); }
+            catch (Exception ex) { Append("[loop error] " + AiFailure.Describe(ex)); }
             finally { Dispatcher.UIThread.Post(() => IsRunning = false); }
         });
 

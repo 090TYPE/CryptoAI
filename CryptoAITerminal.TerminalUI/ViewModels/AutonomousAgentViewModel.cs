@@ -171,7 +171,9 @@ public sealed class AutonomousAgentViewModel : ReactiveObject
     {
         if (!_agent.UsesLiveModel)
         {
-            AppendStatus("Add a Claude/OpenAI API key in the AI Bot panel before arming the autonomous agent.");
+            // Ключ ИЛИ привязка к серверу — у покупателя с подпиской своего ключа нет по замыслу,
+            // и совет «добавьте ключ» отправлял бы его настраивать то, чего в его сборке нет.
+            AppendStatus("AI недоступен: нужен ключ провайдера в разделе AI Bot либо привязка к серверу CryptoAI.");
             _liveConsented = false; // reset so a later LIVE arm re-consents
             return;
         }

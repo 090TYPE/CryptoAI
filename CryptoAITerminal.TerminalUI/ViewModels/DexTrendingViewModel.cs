@@ -150,8 +150,13 @@ public class DexTrendingViewModel : ReactiveObject, IDisposable
                 AiPicks.Add(new AiPickVM { Symbol = p.Symbol, Score = p.Score, Bias = p.Signal, Reason = p.Reason });
             AiSource = result.Source;
             this.RaisePropertyChanged(nameof(HasAiPicks));
+            // Служба сама откатывается на собственный рейтинг и не бросает. Здесь это весомо:
+            // список ранжирует свежие токены по «моментум против риска рага», и чем он посчитан —
+            // часть цены вердикта.
+            if (_aiTrending.LastError is { } reason) StatusLabel = $"AI: {reason}";
         }
-        catch (Exception ex) { StatusLabel = $"AI ranking failed: {ex.Message}"; }
+        // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора.
+        catch (Exception ex) { StatusLabel = "AI ranking failed: " + CryptoAITerminal.AIEngine.AiFailure.Describe(ex); }
         finally { AiRunning = false; }
     }
 

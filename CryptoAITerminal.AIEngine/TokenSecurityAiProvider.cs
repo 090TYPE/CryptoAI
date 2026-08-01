@@ -14,6 +14,9 @@ public sealed class TokenSecurityAiProvider
     private readonly string _apiKey;
     private readonly string _model;
 
+    /// <summary>Потолок ответа. Обязан совпадать с каталогом сервера (AiFeatures.All) — это держит тест.</summary>
+    public const int MaxTokens = 1200;
+
     public TokenSecurityAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         // Only fatal when unbound — a bound terminal has no local key and the server holds it.
@@ -38,7 +41,7 @@ public sealed class TokenSecurityAiProvider
         var prompt = BuildPrompt(token, securitySummary);
 
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 1200, temperature: 0.2,
+            _apiKey, _model, maxTokens: MaxTokens, temperature: 0.2,
             system:
                 "You are a crypto due-diligence analyst screening freshly-listed DEX/CEX tokens for rug-pull and honeypot risk. " +
                 "Reply ONLY with a single compact JSON object вЂ” no prose, no markdown. " +

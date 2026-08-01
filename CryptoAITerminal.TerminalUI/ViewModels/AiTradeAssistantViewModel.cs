@@ -361,7 +361,7 @@ public sealed class AiTradeAssistantViewModel : ReactiveObject
 
     public bool HasSetup => _setup is not null;
     public string BiasLabel => _setup?.Bias ?? "—";
-    public string BiasBrush => _setup?.Bias == "LONG" ? SemanticColor.Positive : _setup?.Bias == "SHORT" ? SemanticColor.Negative : "#5a7a94";
+    public string BiasBrush => AiVerdictPalette.ColorOf(_setup?.Bias);
     public string EntryLabel => _setup is null ? "--" : Num(_setup.Entry);
     public string TakeProfitLabel => _setup is null ? "--" : Num(_setup.TakeProfit);
     public string StopLossLabel => _setup is null ? "--" : Num(_setup.StopLoss);
@@ -385,7 +385,8 @@ public sealed class AiTradeAssistantViewModel : ReactiveObject
 
     public bool HasRisk => _risk is not null;
     public string RiskVerdictLabel => _risk is null ? "--" : $"{_risk.Verdict} · {_risk.Score}/100";
-    public string RiskVerdictBrush => _risk?.Verdict switch { "BLOCK" => SemanticColor.Negative, "CAUTION" => SemanticColor.Warning, "APPROVE" => SemanticColor.Positive, _ => "#5a7a94" };
+    /// <summary>Цвет из общей палитры вердиктов — один и тот же на всех экранах.</summary>
+    public string RiskVerdictBrush => AiVerdictPalette.ColorOf(_risk?.Verdict);
     public string RiskReasonsText => _risk is null ? string.Empty : string.Join("  •  ", _risk.Reasons);
 
     public string StatusMessage { get => _statusMessage; private set => this.RaiseAndSetIfChanged(ref _statusMessage, value); }

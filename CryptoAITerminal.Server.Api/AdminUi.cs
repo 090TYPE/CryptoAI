@@ -93,6 +93,16 @@ public static class AdminUi
   </section>
 
   <section>
+    <h2>Суточные квоты</h2>
+    <div class="body kill">
+      <span class="state" id="budgetState">—</span>
+      <button id="budgetBtn" onclick="toggleBudget()">переключить</button>
+      <span class="note" style="margin:0">Пока идёт тестовый период — выключены. Расход при этом считается и попадает в «Расход за 7 дней»: включать квоты надо по измеренной цене, а не по оценке. Числа ниже остались с прежнего прайса и на живом использовании кончались за минуты — перед включением их надо пересчитать.</span>
+    </div>
+    <div class="body"><table id="plans"></table></div>
+  </section>
+
+  <section>
     <h2>Модели по задачам</h2>
     <div class="body">
       <p class="note">Пусто = значение по умолчанию из кода. Изменение применяется в течение <span id="ttl">15</span> секунд, перезапуск не нужен.</p>
@@ -213,6 +223,14 @@ const UPSTREAM = [
   ['ai.anthropic.model.default', 'Чем подменять модель, если у вызова нет своей. Обязательно при переходе на роутер: иначе терминалы шлют вендорское имя и получают «model is not allowed»'],
   ['ai.openai.model.default',    'То же для формата OpenAI'],
 ];
+// Действуют только когда включён ai.budget.enforced. Пустое поле = число из кода, которое там
+// стоит как форма, а не как решение: пересчитывать его надо по ai_usage.
+const PLANS = [
+  ['plan.lite.daily_tokens',    'Суточный предел тарифа Lite. Пусто = 35 000 из кода'],
+  ['plan.pro.daily_tokens',     'Суточный предел тарифа Pro. Пусто = 70 000 из кода'],
+  ['plan.max.daily_tokens',     'Суточный предел тарифа Max. Пусто = 105 000 из кода'],
+  ['plan.default.daily_tokens', 'Для лицензии с незнакомым тарифом. Пусто = общий предел сервера (AI_DAILY_TOKENS_PER_LICENSE)'],
+];
 const BOUNDS = [
   ['ai.score.batch',            'Сколько токенов оценивать за один проход'],
   ['ai.score.max_age_hours',    'Через сколько часов оценка считается устаревшей'],
@@ -287,9 +305,11 @@ async function loadAll() {
     document.getElementById('upstream').innerHTML = editableRows(UPSTREAM);
     document.getElementById('models').innerHTML = editableRows(MODELS);
     document.getElementById('bounds').innerHTML = editableRows(BOUNDS);
+    document.getElementById('plans').innerHTML = editableRows(PLANS);
 
-    const known = new Set([...MODELS, ...BOUNDS, ...UPSTREAM].map(x => x[0])
-      .concat(['ai.enabled', 'ai.anthropic.auth_bearer', 'ai.family', 'ai.model.auto', 'ai.family.user_choice']));
+    const known = new Set([...MODELS, ...BOUNDS, ...UPSTREAM, ...PLANS].map(x => x[0])
+      .concat(['ai.enabled', 'ai.anthropic.auth_bearer', 'ai.family', 'ai.model.auto',
+               'ai.family.user_choice', 'ai.budget.enforced']));
     const rest = (s.settings || []).filter(x => !known.has(x.key));
     document.getElementById('raw').innerHTML = rest.length
       ? '<tr><th>Ключ</th><th>Значение</th><th>Изменено</th><th></th></tr>' + rest.map(x => `
@@ -304,6 +324,14 @@ async function loadAll() {
       : '<span class="pill off">AI остановлен</span>';
     document.getElementById('killBtn').className = killOn ? 'danger' : 'primary';
     document.getElementById('killBtn').textContent = killOn ? 'Остановить все вызовы' : 'Включить обратно';
+
+    // Значение по умолчанию — 'false', и это не описка: см. SettingKeys.DefaultAiBudgetEnforced.
+    const budgetOn = (current['ai.budget.enforced']?.value ?? 'false').toLowerCase() === 'true';
+    document.getElementById('budgetState').innerHTML = budgetOn
+      ? '<span class="pill on">квоты действуют</span>'
+      : '<span class="pill off">тестовый период — без лимита</span>';
+    document.getElementById('budgetBtn').className = budgetOn ? 'danger' : 'primary';
+    document.getElementById('budgetBtn').textContent = budgetOn ? 'Снять суточный лимит' : 'Включить суточные квоты';
 
     await Promise.all([loadUpstream(), loadFeatures(), loadUsage(), loadKeys(), loadCollectors(), loadHistory()]);
   } catch (e) {
@@ -347,6 +375,16 @@ async function toggleKill() {
   try {
     await api('/api/admin/settings/ai.enabled', { method: 'PUT', body: JSON.stringify({ value: on ? 'false' : 'true' }) });
     toast(on ? 'AI остановлен' : 'AI включён');
+    loadAll();
+  } catch (e) { toast(e.message, true); }
+}
+
+async function toggleBudget() {
+  const on = (current['ai.budget.enforced']?.value ?? 'false').toLowerCase() === 'true';
+  if (!on && !confirm('Включить суточные квоты по тарифам?\n\nПроверьте числа в полях ниже: они остались с прежнего прайса и на живом использовании кончались за минуты. Клиент, выбравший лимит, получит 429 и переключится на встроенные расчёты.')) return;
+  try {
+    await putOrDelete('ai.budget.enforced', on ? 'false' : 'true');
+    toast(on ? 'Суточный лимит снят' : 'Суточные квоты включены');
     loadAll();
   } catch (e) { toast(e.message, true); }
 }
@@ -402,12 +440,22 @@ async function toggleFamilyChoice() {
 // Показывает не то, что настроено, а то, что сервер выберет прямо сейчас. Разница существенная:
 // настройка может быть сделана правильно, а провайдер при этом не отдавать ни одной подходящей
 // модели — и увидеть это надо здесь, а не по молчащим дайджестам через сутки.
+//
+// Спрашиваются ОБА семейства, а не только выбранное здесь. Пока выбор разрешён в терминале,
+// половина пользователей может сидеть на другом семействе, и его неработающий ключ не был бы виден
+// в админке ничем: раздел показывал бы «всё хорошо» ровно про то семейство, которым эти люди не
+// пользуются.
 async function loadUpstream() {
   const picked = document.getElementById('picked');
   const all = document.getElementById('upstreamModels');
   try {
-    const r = await api('/api/admin/upstream-models');
-    const gpt = r.family === 'chatgpt';
+    const [claude, gptFam] = await Promise.all([
+      api('/api/admin/upstream-models?family=claude'),
+      api('/api/admin/upstream-models?family=chatgpt'),
+    ]);
+
+    const serverFamily = (current['ai.family']?.value ?? 'claude').toLowerCase();
+    const gpt = serverFamily === 'chatgpt' || serverFamily === 'openai' || serverFamily === 'gpt';
     document.getElementById('famNow').textContent = gpt ? 'сейчас ChatGPT' : 'сейчас Claude';
     document.getElementById('famClaude').className = gpt ? '' : 'primary';
     document.getElementById('famGpt').className = gpt ? 'primary' : '';
@@ -417,20 +465,30 @@ async function loadUpstream() {
     btn.textContent = choice ? 'Запретить выбор в терминале' : 'Разрешить выбор в терминале';
     btn.className = choice ? '' : 'danger';
 
-    picked.innerHTML = !r.auto
-      ? '<tr><td class="desc">Автоподбор выключен (ai.model.auto). Действуют имена, заданные вручную ниже.</td></tr>'
-      : r.ok
-        ? '<tr><th>Роль</th><th>Модель, выбранная сервером</th></tr>' +
-          '<tr><td>Вызовы из терминала</td><td class="k">' + esc(r.foreground || '—') + '</td></tr>' +
-          '<tr><td>Фоновые задачи</td><td class="k">' + esc(r.background || '—') + '</td></tr>' +
-          (r.foreground && r.background ? '' :
-            '<tr><td colspan="2" class="err">Подходящей модели нет в списке провайдера — вызовы пойдут на значения из полей ниже.</td></tr>')
-        : '<tr><td class="err">Список моделей не получен: ' + esc(r.error || '') + '. Запрашивали ' + esc(r.url || '') +
-          '. Проверьте ключ и адрес провайдера.</td></tr>';
+    const auto = claude.auto !== false;
+    const row = (label, r, isDefault) => {
+      const tag = isDefault ? ' <span class="pill on">по умолчанию</span>' : '';
+      if (!r.ok)
+        return '<tr><td>' + label + tag + '</td><td colspan="2" class="err">' + esc(r.error || 'нет ответа') +
+               ' — запрашивали ' + esc(r.url || '') + '. Проверьте ключ и адрес.</td></tr>';
+      if (!r.foreground || !r.background)
+        return '<tr><td>' + label + tag + '</td><td colspan="2" class="err">Подходящей модели нет в списке провайдера' +
+               ' — вызовы пойдут на значения из полей ниже.</td></tr>';
+      return '<tr><td>' + label + tag + '</td><td class="k">' + esc(r.foreground) + '</td><td class="k">' + esc(r.background) + '</td></tr>';
+    };
 
-    all.innerHTML = (r.models || []).length
-      ? (r.models || []).map(m => '<span class="k" style="display:inline-block;margin:0 10px 6px 0">' + esc(m) + '</span>').join('')
-      : '<span class="desc">Провайдер не вернул ни одной модели.</span>';
+    picked.innerHTML = !auto
+      ? '<tr><td class="desc">Автоподбор выключен (ai.model.auto). Действуют имена, заданные вручную ниже.</td></tr>'
+      : '<tr><th>Семейство</th><th>Вызовы из терминала</th><th>Фоновые задачи</th></tr>' +
+        row('Claude', claude, !gpt) + row('ChatGPT', gptFam, gpt) +
+        (choice ? '<tr><td colspan="3" class="desc">Выбор разрешён в терминале, поэтому рабочими должны быть обе строки: пользователь может сидеть на любой из них.</td></tr>' : '');
+
+    const listing = (label, r) =>
+      '<div style="margin-bottom:10px"><div class="desc">' + label + '</div>' +
+      ((r.models || []).length
+        ? (r.models || []).map(m => '<span class="k" style="display:inline-block;margin:0 10px 6px 0">' + esc(m) + '</span>').join('')
+        : '<span class="desc">Провайдер не вернул ни одной модели.</span>') + '</div>';
+    all.innerHTML = listing('Claude', claude) + listing('ChatGPT', gptFam);
   } catch (e) {
     picked.innerHTML = '<tr><td class="err">' + esc(e.message) + '</td></tr>';
   }

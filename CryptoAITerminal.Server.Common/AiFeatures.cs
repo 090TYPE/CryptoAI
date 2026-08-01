@@ -37,7 +37,7 @@ public static class AiFeatures
         new("rule_builder",        "Конструктор правил",                          1800),
         new("portfolio_rebalance", "Ребалансировка портфеля",                     2200),
         new("trade_journal_coach", "Разбор торгового журнала",                    1800),
-        new("signal_desk_stream",  "Signal Desk — поток сигналов",                 800),
+        new("signal_desk_stream",  "Signal Desk — вопрос к деску",                1200),
         new("market_insight",      "Обзор рынка",                                 2500),
         new("bot_parameters",      "Подбор параметров бота",                      1500),
         new("backtest_review",     "Разбор бэктеста",                             1500),

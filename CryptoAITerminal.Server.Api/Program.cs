@@ -362,26 +362,58 @@ static async Task<string?> ReadBoundedBodyAsync(HttpContext ctx, int maxChars)
 }
 
 /// <summary>
-/// The daily token allowance this request's licence is entitled to.
+/// Суточная норма токенов для лицензии этого запроса — и действует ли она вообще.
 ///
-/// The licence has always carried an Edition and nothing read it, so a Lite licence and a Pro
-/// licence were served identically — the price list described a difference the server did not
-/// implement. This is where that stops being true.
+/// Тариф из подписанной лицензии читается по-прежнему, но на время тестового периода
+/// <see cref="SettingKeys.AiBudgetEnforced"/> выключен, и весь расчёт сводится к
+/// <see cref="AiAllowance.Unlimited"/>. Ветка с тарифами оставлена рабочей намеренно: включение
+/// квот обратно должно быть значением в админке, а не восстановлением удалённого кода.
 /// </summary>
-static async Task<long> DailyCapAsync(HttpContext ctx, AiBudget budget, SettingsStore settings)
+static async Task<AiAllowance> AllowanceAsync(HttpContext ctx, AiBudget budget, SettingsStore settings)
 {
+    if (!await settings.GetBoolAsync(SettingKeys.AiBudgetEnforced,
+            SettingKeys.DefaultAiBudgetEnforced, ctx.RequestAborted))
+        return AiAllowance.Unlimited;
+
     var edition = (ctx.Items[LicenseCtx.Check] as LicenseCheckResult)?.Payload?.Edition;
 
-    if (!string.IsNullOrWhiteSpace(edition))
-    {
-        var configured = await settings.GetLongAsync(SettingKeys.PlanDailyTokens(edition), 0, ctx.RequestAborted);
-        if (configured > 0) return configured;
-        if (SettingKeys.DefaultPlanDailyTokens.TryGetValue(edition, out var shipped)) return shipped;
-    }
+    var configured = string.IsNullOrWhiteSpace(edition)
+        ? 0
+        : await settings.GetLongAsync(SettingKeys.PlanDailyTokens(edition), 0, ctx.RequestAborted);
+
+    var shipped = !string.IsNullOrWhiteSpace(edition) &&
+                  SettingKeys.DefaultPlanDailyTokens.TryGetValue(edition, out var s) ? s : 0;
 
     // Unrecognised or absent tier. Generous by design — an unknown edition means a plan was added
     // and never configured, and the customer should not be the one who discovers that.
-    return await settings.GetLongAsync(SettingKeys.PlanDefaultDailyTokens, budget.DailyCap, ctx.RequestAborted);
+    var fallback = await settings.GetLongAsync(SettingKeys.PlanDefaultDailyTokens, budget.DailyCap, ctx.RequestAborted);
+
+    return AiAllowance.Pick(true, configured, shipped, fallback);
+}
+
+/// <summary>
+/// Какое семейство обслуживает ЭТОТ запрос: выбор пользователя из заголовка, иначе настройка сервера.
+///
+/// Семейство выбирает пользователь в терминале, конкретную модель — сервер. Разделение намеренное:
+/// Claude против ChatGPT это вкус, и человек чувствует разницу; какая именно версия модели за этим
+/// стоит — вопрос, на который у пользователя нет данных, а у сервера есть живой список провайдера.
+///
+/// Заголовок уважается только когда это разрешено настройкой, и только если разобран строго:
+/// искажённое значение обязано означать «выбора не было», а не молча увести на другое семейство.
+///
+/// Общая функция, а не две копии, потому что копий и было две с половиной: прокси семейство
+/// учитывал, а вопросы к базе знаний — нет, и на выбранном ChatGPT они уходили с claude-именем
+/// модели, то есть отвечали 404 у любого провайдера.
+/// </summary>
+static async Task<AiFamily> ChosenFamilyAsync(HttpContext ctx, AiProxy ai, SettingsStore settings)
+{
+    var family = await ai.FamilyAsync(ctx.RequestAborted);
+    if (await settings.GetBoolAsync(SettingKeys.FamilyUserChoice, true, ctx.RequestAborted) &&
+        AiModelCatalog.TryParseFamily(ctx.Request.Headers["X-AI-Family"].ToString(), out var chosen))
+    {
+        family = chosen;
+    }
+    return family;
 }
 
 static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiProxy ai,
@@ -394,9 +426,15 @@ static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiPr
         return Results.Json(new { error = "ai_disabled" }, statusCode: 503);
 
     var license = LicenseKey(ctx);
-    var dailyCap = await DailyCapAsync(ctx, budget, settings);
-    if (!budget.HasHeadroom(license, dailyCap))
-        return Results.Json(new { error = "ai_daily_budget_exhausted", cap = dailyCap }, statusCode: 429);
+    var allowance = await AllowanceAsync(ctx, budget, settings);
+    // Субъект лицензии проверяется отдельно, потому что раньше это делала квота: HasHeadroom("")
+    // всегда возвращал false, и вызов без опознанного владельца отсекался побочным эффектом.
+    // Сняв квоту, этот эффект надо было заменить явной проверкой — иначе расход лёг бы в ai_usage
+    // без владельца, то есть выпал бы из данных, ради которых квота и снималась.
+    if (string.IsNullOrEmpty(license))
+        return Results.Json(new { error = "license_required" }, statusCode: 401);
+    if (!allowance.Allows(budget.Used(license)))
+        return Results.Json(new { error = "ai_daily_budget_exhausted", cap = allowance.DailyTokens }, statusCode: 429);
 
     var raw = await ReadBoundedBodyAsync(ctx, policy.MaxRequestBytes);
     if (raw is null)
@@ -413,19 +451,14 @@ static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiPr
         if (cap > 0) overrideMaxTokens = cap;
     }
 
-    // Семейство выбирает пользователь в терминале, конкретную модель — сервер. Разделение
-    // намеренное: Claude против ChatGPT это вкус, и человек чувствует разницу; какая именно версия
-    // модели за этим стоит — вопрос, на который у пользователя нет данных, а у сервера есть живой
-    // список провайдера.
-    //
-    // Заголовок уважается только когда это разрешено настройкой, и только если разобран строго:
-    // искажённое значение обязано означать «выбора не было», а не молча увести на другое семейство.
-    var family = await ai.FamilyAsync(ctx.RequestAborted);
-    if (await settings.GetBoolAsync(SettingKeys.FamilyUserChoice, true, ctx.RequestAborted) &&
-        AiModelCatalog.TryParseFamily(ctx.Request.Headers["X-AI-Family"].ToString(), out var chosen))
-    {
-        family = chosen;
-    }
+    var family = await ChosenFamilyAsync(ctx, ai, settings);
+
+    // Тело разбирается ради имени модели только когда формат запроса и выбранное семейство
+    // разошлись — иначе это лишний разбор запроса на горячем пути, а ответ заведомо «оставить как
+    // есть». Разойтись они могут двумя способами: оператор запретил выбор в терминале, или сборка
+    // на руках старше заголовка семейства.
+    var vendorFamily = vendor == AiVendor.Anthropic ? AiFamily.Claude : AiFamily.ChatGpt;
+    var clientModel = family == vendorFamily ? null : AiFormatBridge.ModelOf(raw);
 
     // Which model serves this call is entirely the server's business — deliberately resolved even
     // when the client sent no feature header at all, because those are the builds already in
@@ -433,7 +466,7 @@ static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiPr
     // does the client's own choice stand.
     var overrideModel = await ai.ModelForAsync(
         AiFeatures.IsWellFormed(feature) ? SettingKeys.FeatureModel(feature) : null,
-        AiModelRole.Foreground, null, family, ctx.RequestAborted);
+        AiModelRole.Foreground, null, family, clientModel, ctx.RequestAborted);
 
     // The allow-list can be replaced at runtime, because it has to move together with the upstream:
     // a router names models with a vendor prefix, and a switch that changed only the URL would turn
@@ -474,12 +507,16 @@ app.MapPost("/api/ai/openai", (HttpContext ctx, AiProxy ai, AiPolicyOptions poli
 app.MapGet("/api/ai/budget", async (HttpContext ctx, AiBudget budget, SettingsStore settings) =>
 {
     var license = LicenseKey(ctx);
-    var dailyCap = await DailyCapAsync(ctx, budget, settings);
+    var allowance = await AllowanceAsync(ctx, budget, settings);
+    var used = budget.Used(license);
     return Results.Ok(new
     {
-        used = budget.Used(license),
-        remaining = budget.Remaining(license, dailyCap),
-        cap = dailyCap,
+        used,
+        remaining = allowance.Remaining(used),
+        cap = allowance.Enforced ? allowance.DailyTokens : 0,
+        // Явный признак, а не «cap = 0»: ноль в этом поле терминал уже трактовал как «данных нет»,
+        // и без отдельного флага снятая квота выглядела бы в интерфейсе как неисправность.
+        unlimited = !allowance.Enforced,
         // The tier the allowance came from, so the terminal can say "Pro: 12k of 70k" rather than
         // showing a bare number the customer has no way to interpret.
         edition = (ctx.Items[LicenseCtx.Check] as LicenseCheckResult)?.Payload?.Edition,
@@ -499,16 +536,16 @@ app.MapPost("/api/ai/ask", async (HttpContext ctx, AskInput body, AiProxy ai,
         return Results.Json(new { error = "ai_disabled" }, statusCode: 503);
 
     // The server composes this request itself, so the model and length are already ours — but it
-    // still spends the server key, so it draws on the same per-licence daily budget.
+    // still spends the server key, so it draws on the same per-licence accounting.
     //
     // Квота берётся по тарифу, как и везде. Здесь стояла плоская величина по умолчанию, и вопросы
     // к базе знаний считались по ней всем одинаково: тариф Лайт получал по этому каналу лимит
     // старшего, а старший — урезанный. Тариф, который не действует на части функций, — это не
-    // тариф, а обещание.
+    // тариф, а обещание. На время тестового периода предел снят, но путь остался общий.
     var askLicense = LicenseKey(ctx);
-    var askCap = await DailyCapAsync(ctx, budget, settings);
-    if (!budget.HasHeadroom(askLicense, askCap))
-        return Results.Json(new { error = "ai_daily_budget_exhausted", cap = askCap }, statusCode: 429);
+    var askAllowance = await AllowanceAsync(ctx, budget, settings);
+    if (!askAllowance.Allows(budget.Used(askLicense)))
+        return Results.Json(new { error = "ai_daily_budget_exhausted", cap = askAllowance.DailyTokens }, statusCode: 429);
 
     // Context = what the server actually knows: this user's watchlist, the latest AI
     // digests and recent headlines. The model must answer from this or admit it can't.
@@ -519,12 +556,19 @@ app.MapPost("/api/ai/ask", async (HttpContext ctx, AskInput body, AiProxy ai,
         headlines = await digests.GetNewsHeadlinesAsync(15, ctx.RequestAborted)
     });
 
+    // Семейство — то же, что у остальных вызовов этого терминала, и модель подбирается под него.
+    // Раньше здесь стояло имя claude-модели напрямую: на выбранном ChatGPT запрос переводился в
+    // чужой формат, но с этим именем внутри, и провайдер отвечал 404. То есть единственная функция,
+    // которая отвечает по НАШИМ данным, молча ломалась ровно у тех, кто переключил семейство.
+    var askFamily = await ChosenFamilyAsync(ctx, ai, settings);
+    var askModel = await ai.ModelForAsync(SettingKeys.AskModel, AiModelRole.Background,
+        askCfg["AI_ASK_MODEL"], askFamily, ct: ctx.RequestAborted);
+
     var request = JsonSerializer.Serialize(new
     {
-        // Resolved per request: setting, then AI_ASK_MODEL, then the code default. Haiku-class —
-        // cheaper and better at the "answer strictly from this context" job than a bigger model.
-        model = await settings.GetAsync(SettingKeys.AskModel, askCfg["AI_ASK_MODEL"], ctx.RequestAborted)
-                ?? SettingKeys.DefaultBackgroundModel,
+        // Haiku-class на стороне Claude и mini на стороне ChatGPT — дёшево и лучше подходит задаче
+        // «ответь строго по этому контексту», чем модель посильнее.
+        model = askModel ?? SettingKeys.DefaultBackgroundModel,
         max_tokens = 700,
         system = "Answer the trader's question using ONLY the provided context (their watchlist, our AI digests, " +
                  "recent headlines). Quote the numbers from it. If the context doesn't contain the answer, say so " +
@@ -532,8 +576,10 @@ app.MapPost("/api/ai/ask", async (HttpContext ctx, AskInput body, AiProxy ai,
         messages = new[] { new { role = "user", content = $"Context:\n{context}\n\nQuestion: {body.Question}" } }
     });
 
-    var res = await ai.ForwardAnthropicAsync(request, ct: ctx.RequestAborted);
+    var res = await ai.ForwardAnthropicAsync(request, askFamily, ctx.RequestAborted);
     if (res is null) return Results.Json(new { error = "ai_key_not_configured" }, statusCode: 503);
+    // Ответ приходит в формате Anthropic независимо от семейства — мост переводит его обратно, —
+    // поэтому расход и здесь считается по anthropic-блоку usage.
     budget.Charge(askLicense, AiRequestPolicy.CountUsage(res.Value.Body, AiVendor.Anthropic));
     if (res.Value.Status != 200) return Results.Json(new { error = "upstream", status = res.Value.Status }, statusCode: 502);
 

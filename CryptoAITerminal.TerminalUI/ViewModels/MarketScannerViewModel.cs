@@ -144,7 +144,26 @@ public sealed class AiPickVM
     public string Bias   { get; init; } = "WATCH";
     public string Reason { get; init; } = "";
     public string ScoreLabel => $"{Score}";
-    public string BiasBrush => Bias switch { "LONG" => SemanticColor.Positive, "SHORT" => SemanticColor.Negative, _ => SemanticColor.Muted };
+
+    /// <summary>
+    /// Цвет вердикта берётся из общей палитры, а не из своего <c>switch</c>.
+    ///
+    /// Свой список знал только LONG и SHORT, а этим же классом рисуются тренды DEX, где словарь
+    /// другой: MOMENTUM, EARLY, FADING, AVOID. Все четыре попадали в «прочее» и выходили одним
+    /// цветом — то есть «избегать» выглядел ровно как «моментум», а именно по этому списку и
+    /// решают, что покупать.
+    /// </summary>
+    public string BiasBrush => AiVerdictPalette.ColorOf(Bias);
+
+    /// <summary>Подложка и рамка плашки вердикта — тот же цвет, что и текст, но прозрачный.</summary>
+    public string BiasTint => AiVerdictPalette.TintOf(Bias);
+    public string BiasStroke => AiVerdictPalette.StrokeOf(Bias);
+
+    /// <summary>Счёт красится смыслом вердикта: 80 у «избегать» и 80 у «моментум» — разные вещи.</summary>
+    public string ScoreBrush => AiVerdictPalette.ColorOf(Bias);
+
+    /// <summary>Ширина заполненной части шкалы в дорожке 60px, которую рисуют списки подборок.</summary>
+    public double ScoreBarWidth => Math.Clamp(Score, 0, 100) / 100.0 * 60.0;
 }
 
 public sealed class MarketScannerViewModel : ReactiveObject, IDisposable
@@ -298,8 +317,12 @@ public sealed class MarketScannerViewModel : ReactiveObject, IDisposable
                 AiPicks.Add(new AiPickVM { Symbol = o.Symbol, Score = o.Score, Bias = o.Bias, Reason = o.Reason });
             AiSource = result.Source;
             this.RaisePropertyChanged(nameof(HasAiPicks));
+            // Служба сама откатывается на собственный рейтинг и не бросает — без этого список
+            // выглядел бы ранжированным моделью, а причина отказа пропадала бы вовсе.
+            if (_aiRanker.LastError is { } reason) ToastRequested?.Invoke($"AI: {reason}");
         }
-        catch (Exception ex) { ToastRequested?.Invoke($"AI ranking failed: {ex.Message}"); }
+        // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора.
+        catch (Exception ex) { ToastRequested?.Invoke("AI ranking failed: " + CryptoAITerminal.AIEngine.AiFailure.Describe(ex)); }
         finally { AiRunning = false; }
     }
 

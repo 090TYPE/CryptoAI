@@ -10,14 +10,19 @@ namespace CryptoAITerminal.TerminalUI.Services;
 /// <summary>What the server says this licence is entitled to today.</summary>
 /// <param name="Edition">Tier name from the licence, e.g. Lite / Pro / Max.</param>
 /// <param name="Used">Tokens spent today.</param>
-/// <param name="Cap">Daily allowance for this tier.</param>
+/// <param name="Cap">Daily allowance for this tier. Meaningless when <paramref name="Unlimited"/>.</param>
 /// <param name="ResetsUtc">When the counter rolls over.</param>
-public sealed record AiSubscription(string? Edition, long Used, long Cap, DateTime ResetsUtc)
+/// <param name="Unlimited">
+/// Сервер расход считает, но предел не применяет — идёт тестовый период. Отдельное поле, а не
+/// <c>Cap == 0</c>: ноль здесь уже означал «сервер не ответил», и без флага снятая квота выглядела
+/// бы в настройках ровно как обрыв связи.
+/// </param>
+public sealed record AiSubscription(string? Edition, long Used, long Cap, DateTime ResetsUtc, bool Unlimited = false)
 {
-    public long Remaining => Math.Max(0, Cap - Used);
+    public long Remaining => Unlimited ? 0 : Math.Max(0, Cap - Used);
 
     /// <summary>0..1 of the allowance consumed. Clamped so a cap change mid-day cannot exceed 1.</summary>
-    public double Fraction => Cap <= 0 ? 0 : Math.Clamp((double)Used / Cap, 0, 1);
+    public double Fraction => Unlimited || Cap <= 0 ? 0 : Math.Clamp((double)Used / Cap, 0, 1);
 }
 
 /// <summary>
@@ -69,7 +74,10 @@ public static class AiSubscriptionService
                 root.TryGetProperty("cap", out var c) && c.TryGetInt64(out var cv) ? cv : 0,
                 root.TryGetProperty("resetsUtc", out var r) && r.TryGetDateTime(out var rv)
                     ? rv
-                    : DateTime.UtcNow.Date.AddDays(1));
+                    : DateTime.UtcNow.Date.AddDays(1),
+                // Поле появилось вместе со снятием квот. Сервер постарше его не пришлёт, и тогда
+                // false — прежнее поведение, а не «без лимита» по умолчанию.
+                root.TryGetProperty("unlimited", out var un) && un.ValueKind == JsonValueKind.True);
         }
         catch
         {

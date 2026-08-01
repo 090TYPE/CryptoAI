@@ -101,14 +101,17 @@ public sealed class OptionsStrategyViewModel : ReactiveObject
 
             Strategy = r.Strategy;
             IvRegime = r.IvRegime;
-            Rationale = r.Rationale;
+            // Причина отказа впереди текста: рекомендация, собранная собственным расчётом, читается
+            // как обычная, и по одной подписи «Heuristic (offline)» непонятно, почему модель молчала.
+            Rationale = _service.LastError is { } reason ? $"⚠ {reason}\n{r.Rationale}" : r.Rationale;
             Source = r.Source;
             Considerations.Clear();
             foreach (var c in r.Considerations) Considerations.Add(c);
         }
         catch (Exception ex)
         {
-            Rationale = $"Couldn't build a suggestion: {ex.Message}";
+            // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора.
+            Rationale = "Couldn't build a suggestion: " + CryptoAITerminal.AIEngine.AiFailure.Describe(ex);
             Strategy = "";
         }
         finally

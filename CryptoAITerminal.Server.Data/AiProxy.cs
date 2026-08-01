@@ -40,7 +40,12 @@ public sealed class AiProxy
     private readonly string? _anthropicEnv;
     private readonly string? _openAiEnv;
     private readonly SemaphoreSlim _catalogLock = new(1, 1);
-    private (DateTime At, AiFamily Family, IReadOnlyList<string> Ids, TimeSpan Ttl)? _catalog;
+
+    // По записи на семейство, а не одна на всех. Одна была верна, пока семейство выбирал только
+    // оператор: оно менялось раз в месяц. Теперь его выбирает каждый пользователь, и две записи в
+    // одном слоте вытесняли бы друг друга на каждом чередующемся запросе — то есть обращение к
+    // /v1/models на КАЖДЫЙ вызов терминала, ровно тот расход, ради которого кэш и написан.
+    private readonly Dictionary<AiFamily, (DateTime At, IReadOnlyList<string> Ids, TimeSpan Ttl)> _catalog = new();
 
     public AiProxy(HttpClient http, ProviderKeyStore keys, string? anthropicEnv = null,
         string? openAiEnv = null, SettingsStore? settings = null)
@@ -177,8 +182,15 @@ public sealed class AiProxy
     /// «оставить то, что прислал клиент». Подставить сюда фоновую модель значило бы незаметно
     /// перевести весь терминал на самую дешёвую.
     /// </summary>
+    /// <param name="clientModel">
+    /// Имя модели, которое прислал клиент, если оно есть. Нужно ровно для одной проверки: «оставить
+    /// как есть» законно только пока присланное имя принадлежит выбранному семейству. Когда формат
+    /// запроса и семейство разошлись — оператор запретил выбор в терминале, или сборка на руках
+    /// старше заголовка семейства — присланное имя гарантированно чужое, и передать его дальше
+    /// значит получить 404 у провайдера на каждом вызове из терминала.
+    /// </param>
     public async Task<string?> ModelForAsync(string? ownKey, AiModelRole role, string? envModel,
-        AiFamily? requested = null, CancellationToken ct = default)
+        AiFamily? requested = null, string? clientModel = null, CancellationToken ct = default)
     {
         var family = requested ?? await FamilyAsync(ct);
 
@@ -204,7 +216,8 @@ public sealed class AiProxy
             if (!string.IsNullOrWhiteSpace(configured) && BelongsTo(configured, family)) return configured;
         }
 
-        if (role != AiModelRole.Background) return null;
+        if (role != AiModelRole.Background)
+            return AiModelCatalog.ForegroundFallback(clientModel, family);
 
         // Переменная окружения относится к claude-задачам: она писалась при развёртывании, когда
         // другого семейства не было. Для ChatGPT она бессмысленна, и вендорское имя оттуда — прямой
@@ -222,27 +235,29 @@ public sealed class AiProxy
     /// </summary>
     private async Task<IReadOnlyList<string>> CatalogAsync(AiFamily family, CancellationToken ct)
     {
-        var cached = _catalog;
-        if (cached is { } c && c.Family == family && DateTime.UtcNow - c.At < c.Ttl)
-            return c.Ids;
+        if (Fresh(family) is { } hit) return hit;
 
         await _catalogLock.WaitAsync(ct);
         try
         {
-            cached = _catalog;
-            if (cached is { } again && again.Family == family && DateTime.UtcNow - again.At < again.Ttl)
-                return again.Ids;
+            if (Fresh(family) is { } again) return again;
 
             var vendor = family == AiFamily.Claude ? AiVendor.Anthropic : AiVendor.OpenAi;
             var listed = await ListModelsAsync(vendor, ct);
-            _catalog = (DateTime.UtcNow, family, listed.Models,
-                listed.Ok ? CatalogTtl : CatalogRetryTtl);
+            lock (_catalog)
+                _catalog[family] = (DateTime.UtcNow, listed.Models, listed.Ok ? CatalogTtl : CatalogRetryTtl);
             return listed.Models;
         }
         finally
         {
             _catalogLock.Release();
         }
+    }
+
+    private IReadOnlyList<string>? Fresh(AiFamily family)
+    {
+        lock (_catalog)
+            return _catalog.TryGetValue(family, out var c) && DateTime.UtcNow - c.At < c.Ttl ? c.Ids : null;
     }
 
     /// <summary>

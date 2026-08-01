@@ -1,0 +1,95 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CryptoAITerminal.TerminalUI.ViewModels"
+             x:Class="CryptoAITerminal.TerminalUI.Controls.AiVerdictCard"
+             x:DataType="vm:AiVerdictVM"
+             x:CompileBindings="True">
+
+  <!--
+    Один вид вердикта AI на все страницы терминала.
+
+    До этого каждая панель рисовала ответ модели по-своему: слово вердикта — обычным жирным
+    текстом, доводы — одной склеенной строкой через "• ", счёт риска — просто числом, а признак
+    «ответ собран без модели» не показывался нигде, хотя приходил в каждом ответе. Читалось это
+    абзацем, в котором главное и второстепенное весят одинаково, — а вердикты в терминале нужны
+    затем, чтобы схватываться взглядом.
+
+    Здесь: плашка вердикта цветом смысла, шкала счёта тем же цветом, доводы отдельными строками с
+    точками, подпись «чем отвечено» и отдельная янтарная полоса, когда отвечала не модель.
+
+    Карточка рисует только РЕЗУЛЬТАТ. Заголовок раздела и кнопку «Analyze» оставляет хозяину:
+    они у панелей разные, а у некоторых вызов идёт вообще не по кнопке.
+  -->
+
+  <StackPanel Spacing="9" IsVisible="{Binding HasContent}">
+
+    <!-- Вердикт и счёт в одной строке: это то, что читают первым. -->
+    <Grid ColumnDefinitions="Auto,12,*,10,Auto">
+      <Border Grid.Column="0" IsVisible="{Binding HasVerdict}"
+              CornerRadius="5" Padding="9,3" VerticalAlignment="Center"
+              BorderThickness="1"
+              Background="{Binding VerdictTint, Converter={StaticResource StringToBrush}}"
+              BorderBrush="{Binding VerdictStroke, Converter={StaticResource StringToBrush}}">
+        <TextBlock Text="{Binding VerdictText}"
+                   Foreground="{Binding VerdictColor, Converter={StaticResource StringToBrush}}"
+                   FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
+      </Border>
+
+      <!-- Шкала красится тоном вердикта: другой цвет рядом читался бы как второй смысл. -->
+      <Border Grid.Column="2" IsVisible="{Binding HasScore}"
+              Width="220" Height="6" CornerRadius="3" HorizontalAlignment="Left" VerticalAlignment="Center"
+              Background="{DynamicResource Surface0}"
+              BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1">
+        <Border Width="{Binding ScoreBarWidth}" Height="4" CornerRadius="2" HorizontalAlignment="Left"
+                Background="{Binding ScoreColor, Converter={StaticResource StringToBrush}}" />
+      </Border>
+
+      <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"
+                  IsVisible="{Binding HasScore}">
+        <TextBlock Text="{Binding ScoreCaption}" Foreground="{DynamicResource TextDim}"
+                   FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" />
+        <TextBlock Text="{Binding ScoreText}" FontFamily="{StaticResource FontMono}"
+                   Foreground="{Binding ScoreColor, Converter={StaticResource StringToBrush}}"
+                   FontSize="{DynamicResource FsCaption}" FontWeight="Bold" VerticalAlignment="Center" />
+      </StackPanel>
+    </Grid>
+
+    <TextBlock Text="{Binding Summary}" TextWrapping="Wrap"
+               Foreground="{DynamicResource TextSecondary}"
+               FontSize="{DynamicResource FsSmall}" LineHeight="18"
+               IsVisible="{Binding Summary, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+    <!-- Доводы строками, а не абзацем: их сравнивают между собой, а не читают подряд. -->
+    <ItemsControl ItemsSource="{Binding Bullets}" IsVisible="{Binding HasBullets}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:AiBulletVM">
+          <Grid ColumnDefinitions="Auto,8,*" Margin="0,0,0,4">
+            <Border Grid.Column="0" Width="5" Height="5" CornerRadius="3" VerticalAlignment="Top" Margin="0,6,0,0"
+                    Background="{Binding Dot, Converter={StaticResource StringToBrush}}" />
+            <TextBlock Grid.Column="2" Text="{Binding Text}" TextWrapping="Wrap"
+                       Foreground="{DynamicResource TextMuted}"
+                       FontSize="{DynamicResource FsCaption}" LineHeight="16" />
+          </Grid>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <!--
+      Полоса «отвечено без модели». Отдельно от текста вердикта намеренно: причина отказа — не
+      вывод о рынке, и, вписанная в тот же абзац, она читается как часть анализа.
+    -->
+    <Border IsVisible="{Binding IsFallback}"
+            CornerRadius="5" Padding="9,6" BorderThickness="1"
+            Background="{Binding FallbackTint, Converter={StaticResource StringToBrush}}"
+            BorderBrush="{Binding FallbackStroke, Converter={StaticResource StringToBrush}}">
+      <TextBlock Text="{Binding FallbackText}" TextWrapping="Wrap"
+                 Foreground="{DynamicResource Warning}"
+                 FontSize="{DynamicResource FsMicro}" LineHeight="15" />
+    </Border>
+
+    <TextBlock Text="{Binding Source}" FontFamily="{StaticResource FontMono}"
+               Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}"
+               HorizontalAlignment="Right"
+               IsVisible="{Binding Source, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+  </StackPanel>
+</UserControl>

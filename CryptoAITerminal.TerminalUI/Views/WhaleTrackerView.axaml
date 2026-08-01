@@ -52,19 +52,14 @@
                     <TextBlock Text="Accumulation or distribution? AI reads recent whale flows."
                                Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsCaption}" />
                   </StackPanel>
-                  <TextBlock Grid.Column="1" Text="{Binding InsightSource}"
-                             Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <!-- Подпись «чем отвечено» рисует карточка ниже, рядом с самим ответом. -->
                   <Button Grid.Column="2" Content="Analyze with AI"
                           Command="{Binding AnalyzeWithAiCommand}"
                           IsEnabled="{Binding !InsightRunning}" Foreground="{DynamicResource Accent}" />
                 </Grid>
-                <StackPanel Spacing="5" IsVisible="{Binding HasInsight}">
-                  <TextBlock Text="{Binding InsightSignal}"
-                             Foreground="{Binding InsightSignalBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
-                  <TextBlock Text="{Binding InsightSummary}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding InsightBullets}" Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap"
-                             IsVisible="{Binding InsightBullets, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                </StackPanel>
+                <!-- Общая карточка вердикта: плашка сигнала, доводы строками, отдельная полоса,
+                     когда ответ собран без модели. Видимостью управляет сама. -->
+                <ctrl:AiVerdictCard DataContext="{Binding InsightVerdict}" />
               </StackPanel>
             </Border>
 

@@ -198,6 +198,9 @@ public sealed class TradeJournalViewModel : ReactiveObject
     public string CoachSuggestions { get => _coachSuggestions; private set => this.RaiseAndSetIfChanged(ref _coachSuggestions, value); }
     public string CoachSource { get => _coachSource; private set => this.RaiseAndSetIfChanged(ref _coachSource, value); }
 
+    /// <summary>Разбор в форме общей карточки. Строки выше остаются для экспорта отчёта.</summary>
+    public AiVerdictVM CoachVerdict { get; } = new();
+
     public void ConfigureAi(string apiKey, string model)
     {
         _coach.ApiKey = apiKey ?? "";
@@ -218,8 +221,27 @@ public sealed class TradeJournalViewModel : ReactiveObject
             CoachSuggestions = review.Suggestions.Length > 0 ? "→ " + string.Join("\n→ ", review.Suggestions) : "";
             CoachSource = review.Source;
             HasCoachReview = true;
+            // Служба сама откатывается на собственный разбор и не бросает — без этой строки разбор
+            // выглядел бы обычным, а причина отказа модели пропадала бы вовсе.
+            var reason = _coach.LastError;
+            if (reason is not null) ExportStatus = $"AI: {reason}";
+
+            // Тон у каждой группы свой: сильные стороны, утечки и советы — три разных сообщения,
+            // и одинаковым цветом они читаются как один длинный список замечаний.
+            CoachVerdict.Fill("", review.Summary, null, review.Source, review.IsFallback, reason);
+            CoachVerdict.SetBullets(
+                review.Strengths.Select(s => new AiBulletVM { Text = s, Tone = AiVerdictPalette.Tone.Good })
+                .Concat(review.Leaks.Select(l => new AiBulletVM { Text = l, Tone = AiVerdictPalette.Tone.Bad }))
+                .Concat(review.Suggestions.Select(s => new AiBulletVM { Text = s, Tone = AiVerdictPalette.Tone.Notable })));
         }
-        catch (System.Exception ex) { ExportStatus = $"AI coach failed: {ex.Message}"; }
+        // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора.
+        catch (System.Exception ex)
+        {
+            var failure = CryptoAITerminal.AIEngine.AiFailure.Describe(ex);
+            ExportStatus = "AI coach failed: " + failure;
+            CoachVerdict.Fill("", failure, null, "", isFallback: true, reason: failure);
+            HasCoachReview = true;
+        }
         finally { CoachRunning = false; }
     }
 

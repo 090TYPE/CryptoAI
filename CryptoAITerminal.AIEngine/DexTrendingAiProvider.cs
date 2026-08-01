@@ -12,6 +12,15 @@ public sealed class DexTrendingAiProvider
     private readonly string _apiKey;
     private readonly string _model;
 
+    /// <summary>
+    /// Длина ответа по числу токенов в выдаче: на каждый идёт вердикт со своим обоснованием.
+    /// Верхняя граница обязана совпадать с каталогом сервера (AiFeatures.All) — это держит тест.
+    /// </summary>
+    public static int MaxTokensFor(int topN) => Math.Clamp(500 + Math.Max(0, topN) * 400, 1200, MaxTokens);
+
+    /// <summary>Самый длинный ответ, который панель может запросить.</summary>
+    public const int MaxTokens = 4000;
+
     public DexTrendingAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         // Only fatal when unbound — a bound terminal has no local key and the server holds it.
@@ -35,7 +44,7 @@ public sealed class DexTrendingAiProvider
             // Измерено на живом вызове: пять токенов стоят 1378, то есть около 275 на запись —
             // втрое дороже ранжирования по биржам, потому что каждая запись несёт сорокадвух-
             // символьный адрес. Прежние фиксированные 700 не покрывали и половины.
-            _apiKey, _model, maxTokens: Math.Clamp(500 + topN * 400, 1200, 4000), temperature: 0.2,
+            _apiKey, _model, maxTokens: MaxTokensFor(topN), temperature: 0.2,
             system:
                 "You are a DEX momentum analyst. Rank tokens by genuine momentum while penalising rug risk " +
                 "(thin liquidity, parabolic-then-fading, volume >> liquidity churn). " +

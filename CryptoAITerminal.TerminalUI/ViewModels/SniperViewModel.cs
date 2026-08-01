@@ -2553,6 +2553,12 @@ public partial class SniperViewModel : ReactiveObject, IDisposable
             PushLog(
                 $"AI verdict for {candidate.DisplayName}: {verdict.Verdict} (risk {verdict.RiskScore}/100) — {verdict.Source}",
                 verdict.Verdict is not ("AVOID" or "RISKY"));
+
+            // Служба сама откатывается на детерминированный вердикт и не бросает. Здесь это важнее,
+            // чем в других панелях: вердикт решает, покупать ли только что созданный токен, и
+            // «модель не участвовала» — часть его цены.
+            if (_tokenAiService.LastError is { } reason)
+                PushLog($"AI verdict for {candidate.DisplayName} came from the offline check: {reason}", false);
         }
         catch (Exception)
         {

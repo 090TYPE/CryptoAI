@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Input;
 using Avalonia.Threading;
+using CryptoAITerminal.AIEngine;
 using CryptoAITerminal.Gateway.DEX;
 using CryptoAITerminal.TerminalUI.Services;
 using CryptoAITerminal.TerminalUI.ViewModels.BotsDesk;
@@ -350,6 +351,37 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         && !_host.AiSettingsStatus.StartsWith("Error", StringComparison.OrdinalIgnoreCase)
         ? SettingsData.Green : SettingsData.Amber;
 
+    // ── Общее состояние AI ───────────────────────────────────────────────────
+    //
+    // Одна строка на весь продукт. Каждая панель уже откатывается на собственный расчёт и
+    // большинство пишет причину у себя, но панелей девятнадцать, а причина почти всегда общая:
+    // не задан ключ на сервере, истекла лицензия, провайдер не отвечает. Без этого места человек
+    // видит девятнадцать одинаковых «Heuristic (offline)» и делает вывод, что сломан именно тот
+    // раздел, который он открыл.
+
+    /// <summary>Есть ли что сказать: либо непогашенный сбой, либо подтверждение, что модель отвечала.</summary>
+    public bool AiHealthVisible => ChatClient.LastFailure is not null || ChatClient.LastSuccessUtc is not null;
+
+    public string AiHealthText => ChatClient.LastFailure is { } f
+        ? $"⚠ Последний сбой AI ({AiFeatureIds.Title(f.Feature)}, {f.WhenUtc.ToLocalTime():HH:mm}): {f.Reason}"
+        : ChatClient.LastSuccessUtc is { } ok
+            ? $"AI отвечает · последний ответ в {ok.ToLocalTime():HH:mm}"
+            : "";
+
+    public string AiHealthColor =>
+        ChatClient.LastFailure is not null ? SettingsData.Amber : SettingsData.Green;
+
+    /// <summary>
+    /// Пересобирает строку состояния. Отдельный метод, потому что читаемое состояние живёт в
+    /// статике <see cref="ChatClient"/> и меняется без уведомлений — обновляется по открытию
+    /// раздела и по любому обновлению настроек, а не по подписке.
+    /// </summary>
+    private void RaiseAiHealth()
+    {
+        foreach (var n in new[] { nameof(AiHealthVisible), nameof(AiHealthText), nameof(AiHealthColor) })
+            this.RaisePropertyChanged(n);
+    }
+
     // ── Subscription (bound to a CryptoAI server) ────────────────────────────
     //
     // When the terminal is bound to a server, the customer has no AI provider to configure: the
@@ -366,13 +398,30 @@ public sealed class SettingsDeskViewModel : ReactiveObject
 
     public string SubTier => _sub?.Edition is { Length: > 0 } e ? e.ToUpperInvariant() : "—";
 
-    public string SubUsage => _sub is not { } s || s.Cap <= 0
-        ? "нет данных"
-        : $"{s.Used / 1000.0:0.#}k из {s.Cap / 1000.0:0.#}k токенов";
+    /// <summary>
+    /// Идёт ли тестовый период без суточного предела. Отдельное свойство, потому что от него
+    /// зависит не только текст, но и то, рисуется ли шкала: полоса «0 из 0» читается как поломка.
+    /// </summary>
+    public bool SubUnlimited => _sub?.Unlimited == true;
 
-    public string SubRemaining => _sub is not { } s || s.Cap <= 0
-        ? ""
-        : $"осталось {s.Remaining / 1000.0:0.#}k · обновится в {s.ResetsUtc.ToLocalTime():HH:mm}";
+    /// <summary>Шкала расхода. Прячется на тестовом периоде — заполнять её нечем.</summary>
+    public bool SubBarVisible => _sub is { Unlimited: false, Cap: > 0 };
+
+    public string SubUsage => _sub switch
+    {
+        // Расход показывается и без лимита: это единственное место, где пользователь видит, во что
+        // обходятся его AI-панели, и именно по этим числам потом будет считаться тариф.
+        { Unlimited: true } s => $"{s.Used / 1000.0:0.#}k токенов за сегодня",
+        { Cap: > 0 } s => $"{s.Used / 1000.0:0.#}k из {s.Cap / 1000.0:0.#}k токенов",
+        _ => "нет данных",
+    };
+
+    public string SubRemaining => _sub switch
+    {
+        { Unlimited: true } s => $"без суточного лимита · счётчик обнулится в {s.ResetsUtc.ToLocalTime():HH:mm}",
+        { Cap: > 0 } s => $"осталось {s.Remaining / 1000.0:0.#}k · обновится в {s.ResetsUtc.ToLocalTime():HH:mm}",
+        _ => "",
+    };
 
     /// <summary>Width of the filled part of the allowance bar, in the 320px track the view draws.</summary>
     public double SubBarWidth => (_sub?.Fraction ?? 0) * 320;
@@ -385,14 +434,17 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         _ => SettingsData.Green
     };
 
-    public string SubStatusText => _sub is null
-        ? "Не удалось получить данные подписки — проверьте лицензию и связь с сервером."
-        : _sub.Fraction >= 1.0
-            ? "Дневной лимит исчерпан. AI-панели работают на встроенных расчётах до обновления лимита."
-            : "AI работает через сервер CryptoAI: ключ, модель и лимит — на стороне сервиса.";
+    public string SubStatusText => _sub switch
+    {
+        null => "Не удалось получить данные подписки — проверьте лицензию и связь с сервером.",
+        { Unlimited: true } => "Тестовый период: AI работает через сервер CryptoAI без суточного лимита. " +
+                               "Ключ и модель — на стороне сервиса. Расход считается, чтобы посчитать по нему тариф.",
+        { Fraction: >= 1.0 } => "Дневной лимит исчерпан. AI-панели работают на встроенных расчётах до обновления лимита.",
+        _ => "AI работает через сервер CryptoAI: ключ, модель и лимит — на стороне сервиса.",
+    };
 
     public string SubStatusColor => _sub is null ? SettingsData.Amber
-        : _sub.Fraction >= 1.0 ? SettingsData.Red : SettingsData.Green;
+        : !_sub.Unlimited && _sub.Fraction >= 1.0 ? SettingsData.Red : SettingsData.Green;
 
     /// <summary>Pulls the allowance and repaints. Safe to call when unbound — it just clears.</summary>
     public async void RefreshSubscription()
@@ -402,6 +454,8 @@ public sealed class SettingsDeskViewModel : ReactiveObject
                  {
                      nameof(SubTier), nameof(SubUsage), nameof(SubRemaining), nameof(SubBarWidth),
                      nameof(SubBarColor), nameof(SubStatusText), nameof(SubStatusColor),
+                     nameof(SubUnlimited), nameof(SubBarVisible),
+                     nameof(AiHealthVisible), nameof(AiHealthText), nameof(AiHealthColor),
                      nameof(SubDaysText), nameof(SubExpiringSoon), nameof(SubExpiryNotice),
                      nameof(SubExpiryColor), nameof(LicBadge)
                  })
@@ -613,6 +667,12 @@ public sealed class SettingsDeskViewModel : ReactiveObject
     };
 
     // ── refresh orchestration ────────────────────────────────────────────────
+    /// <summary>
+    /// Раздел открыли. Состояние AI и подписка живут вне этой вью-модели и меняются, пока человек
+    /// работает, — поэтому перечитываются на каждом показе, а не один раз при сборке раздела.
+    /// </summary>
+    public void OnShown() => Refresh();
+
     private void Refresh()
     {
         // Raised unconditionally: the binding to a server is established during startup, which can
@@ -625,6 +685,10 @@ public sealed class SettingsDeskViewModel : ReactiveObject
         // Fetched on every section switch rather than once at startup: the number moves while the
         // terminal is open, and a stale allowance is the one figure a customer will act on.
         if (IsServerBound) RefreshSubscription();
+        // Читается из статики ChatClient, которая меняется без уведомлений: строка обновляется по
+        // открытию раздела, а не по подписке. Для диагностики этого достаточно — человек приходит
+        // сюда именно тогда, когда AI повёл себя не так.
+        RaiseAiHealth();
         SyncFields();
         RebuildNav();
         RebuildProviders();

@@ -282,7 +282,13 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
     public string InsightSignal { get => _insightSignal; private set => this.RaiseAndSetIfChanged(ref _insightSignal, value); }
     public string InsightBullets { get => _insightBullets; private set => this.RaiseAndSetIfChanged(ref _insightBullets, value); }
     public string InsightSource { get => _insightSource; private set => this.RaiseAndSetIfChanged(ref _insightSource, value); }
-    public string InsightSignalBrush => _insightSignal switch { "MAGNET_ABOVE" => SemanticColor.Positive, "MAGNET_BELOW" => SemanticColor.Negative, _ => SemanticColor.Muted };
+    public string InsightSignalBrush => AiVerdictPalette.ColorOf(_insightSignal);
+
+    /// <summary>
+    /// Тот же ответ, разложенный для общей карточки вердикта. Строки выше остаются: их читает
+    /// рыночный деск, где карточке места нет.
+    /// </summary>
+    public AiVerdictVM InsightVerdict { get; } = new();
 
     public void ConfigureAi(string apiKey, string model)
     {
@@ -334,9 +340,16 @@ public class LiquidationHeatmapViewModel : ReactiveObject, IDisposable
             InsightSignal = result.Signal;
             InsightBullets = result.Bullets.Length > 0 ? "• " + string.Join("\n• ", result.Bullets) : "";
             InsightSource = result.Source; HasInsight = true;
+            InsightVerdict.Set(result, insightError);
             this.RaisePropertyChanged(nameof(InsightSignalBrush));
         }
-        catch (Exception ex) { InsightSummary = $"AI failed: {ex.Message}"; HasInsight = true; }
+        // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора.
+        catch (Exception ex)
+        {
+            var failure = CryptoAITerminal.AIEngine.AiFailure.Describe(ex);
+            InsightSummary = "AI failed: " + failure; HasInsight = true;
+            InsightVerdict.Fill("", failure, null, "", isFallback: true, reason: failure);
+        }
         finally { InsightRunning = false; }
     }
 

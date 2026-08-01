@@ -13,6 +13,9 @@ public sealed class BotParameterAiProvider
     private readonly string _apiKey;
     private readonly string _model;
 
+    /// <summary>Потолок ответа. Обязан совпадать с каталогом сервера (AiFeatures.All) — это держит тест.</summary>
+    public const int MaxTokens = 1500;
+
     public BotParameterAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         // Only fatal when unbound — a bound terminal has no local key and the server holds it.
@@ -37,7 +40,7 @@ public sealed class BotParameterAiProvider
             + $"\n\nSuggest numeric values for these keys: {keysCsv}. Return the JSON.";
 
         var text = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 1500, temperature: 0.2,
+            _apiKey, _model, maxTokens: MaxTokens, temperature: 0.2,
             system:
                 $"You are a trading-bot configurator. Suggest safe, sensible starting parameters for a {botType} bot " +
                 "given the market context (price, volatility, 24h range, trend). " +

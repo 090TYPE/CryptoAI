@@ -12,6 +12,9 @@ public sealed class StatArbPairAiProvider
     private readonly string _apiKey;
     private readonly string _model;
 
+    /// <summary>Потолок ответа. Обязан совпадать с каталогом сервера (AiFeatures.All) — это держит тест.</summary>
+    public const int MaxTokens = 800;
+
     public StatArbPairAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         // Only fatal when unbound — a bound terminal has no local key and the server holds it.
@@ -33,7 +36,7 @@ public sealed class StatArbPairAiProvider
             "Is this pair tradeable now, and which leg? Return the JSON.";
 
         var raw = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 800, temperature: 0.2,
+            _apiKey, _model, maxTokens: MaxTokens, temperature: 0.2,
             system:
                 "You are a stat-arb quant. A pair is tradeable when it is well-correlated and mean-reverting " +
                 "(reasonable half-life) and the z-score is stretched beyond the entry threshold. " +

@@ -110,7 +110,13 @@ public sealed class CopilotAgentService
 
                 if (result.StoppedReason is not ("error" or "cancelled") &&
                     !string.IsNullOrWhiteSpace(result.FinalText))
-                    return new CopilotAnswer(result.FinalText, CryptoAITerminal.AIEngine.AiRuntime.ActiveSourceLabel, false, result.ToolCallCount);
+                    // Подпись под ответом — из того, что сообщил сервер. Значок режима над окном это
+                    // уже делает; строка под каждым сообщением продолжала называть локальную
+                    // константу, и две подписи рядом противоречили друг другу.
+                    return new CopilotAnswer(result.FinalText,
+                        CryptoAITerminal.AIEngine.ChatClient.SourceLabel(
+                            CryptoAITerminal.AIEngine.AiFeatureIds.Agent, Model),
+                        false, result.ToolCallCount);
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception ex) { LastError = AiFailure.Describe(ex); }

@@ -29,21 +29,14 @@
                   <StackPanel Grid.Column="0">
                     <TextBlock Text="🧠 AI Pair Verdict" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsBody}" />
                   </StackPanel>
-                  <TextBlock Grid.Column="1" Text="{Binding PairSource}"
-                             Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <!-- Подпись «чем отвечено» рисует карточка ниже, рядом с самим ответом. -->
                   <Button Grid.Column="2" Content="Evaluate with AI"
                           Command="{Binding EvaluatePairCommand}"
                           IsEnabled="{Binding !PairRunning}" Foreground="{DynamicResource Accent}" />
                 </Grid>
-                <StackPanel Spacing="5" IsVisible="{Binding HasPairVerdict}">
-                  <StackPanel Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="{Binding PairSignal}"
-                               Foreground="{Binding PairSignalBrush, Converter={StaticResource StringToBrush}}" FontWeight="Bold" FontSize="{DynamicResource FsBody}" />
-                    <TextBlock Text="{Binding PairScore, StringFormat='score {0}/100'}"
-                               Foreground="{DynamicResource TextMuted}" FontSize="{DynamicResource FsSmall}" VerticalAlignment="Center" />
-                  </StackPanel>
-                  <TextBlock Text="{Binding PairReason}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
-                </StackPanel>
+                <!-- Общая карточка вердикта: сигнал плашкой, счёт — шкалой того же цвета,
+                     а не числом в скобках. Видимостью управляет сама. -->
+                <ctrl:AiVerdictCard DataContext="{Binding PairVerdict}" />
               </StackPanel>
             </Border>
 

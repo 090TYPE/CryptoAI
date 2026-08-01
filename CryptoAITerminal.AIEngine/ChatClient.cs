@@ -76,10 +76,56 @@ public static class ChatClient
             throw new ArgumentException("AI API key is required.", nameof(apiKey));
 
         var client = http ?? SharedHttp;
-        return AiRuntime.Vendor == AiVendor.OpenAi
-            ? await OpenAiAsync(client, apiKey, model, maxTokens, temperature, system, userContent, feature, ct).ConfigureAwait(false)
-            : await AnthropicAsync(client, apiKey, model, maxTokens, temperature, system, userContent, feature, ct).ConfigureAwait(false);
+
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                var text = AiRuntime.Vendor == AiVendor.OpenAi
+                    ? await OpenAiAsync(client, apiKey, model, maxTokens, temperature, system, userContent, feature, ct).ConfigureAwait(false)
+                    : await AnthropicAsync(client, apiKey, model, maxTokens, temperature, system, userContent, feature, ct).ConfigureAwait(false);
+                NoteOk(feature);
+                return text;
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // Отмена пользователем — не отказ AI. Записав её как сбой, панель показала бы «AI
+                // недоступен» ровно там, где человек сам закрыл раздел.
+                throw;
+            }
+            catch (Exception ex) when (attempt < Attempts && AiFailure.IsTransient(ex))
+            {
+                // Заминка — не повод отдавать встроенный расчёт.
+                //
+                // Модель здесь основной источник, а собственная эвристика — запас, но раньше
+                // разница между ними стиралась при первом же таймауте: каждая панель ловила
+                // исключение и молча показывала арифметику. Одна секунда неответа сервера — и
+                // человек весь сеанс читает не то, за что платит, причём внешне неотличимое.
+                //
+                // Повтор ровно один и только на возвратных отказах (таймаут, 429, 5xx). Отказ по
+                // лицензии, модели или размеру запроса повторять бессмысленно — он воспроизведётся.
+                //
+                // Цена: на таймауте модель могла успеть ответить на той стороне, и тогда повтор
+                // оплачивается дважды. Это сознательный размен — вероятность редкая, а потеря от
+                // подменённого ответа постоянная.
+                await Task.Delay(RetryDelay, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                NoteFailure(feature, AiFailure.Describe(ex));
+                throw;
+            }
+        }
     }
+
+    /// <summary>Сколько раз пробовать вызов: основной и один повтор на возвратном отказе.</summary>
+    internal const int Attempts = 2;
+
+    /// <summary>
+    /// Пауза перед повтором. Коротко: человек ждёт ответа на экране, а при 429 очередь на
+    /// стороне сервера всё равно разгружается быстрее, чем стоит держать пустую панель.
+    /// </summary>
+    internal static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(700);
 
     private static readonly HttpClient SharedHttp = new() { Timeout = TimeSpan.FromSeconds(30) };
 
@@ -159,6 +205,63 @@ public static class ChatClient
 
     public static string? LastServerModel(string feature) =>
         LastModels.TryGetValue(feature, out var m) ? m : null;
+
+    // ── Общее состояние AI ────────────────────────────────────────────────────
+    //
+    // Каждая панель уже умеет откатиться на собственный расчёт, и большинство из них сообщает
+    // причину у себя. Но панелей девятнадцать, а причина у отказа почти всегда одна на все: не
+    // задан ключ на сервере, истекла лицензия, провайдер не отвечает. Без одного места, где это
+    // видно, пользователь читает девятнадцать «Heuristic (offline)» и не знает, что произошло —
+    // и первым делом решает, что сломан именно тот раздел, который открыл.
+    //
+    // Здесь, в ChatClient, потому что это единственный шов, через который проходят все одношаговые
+    // вызовы; агентские циклы сообщают о себе явным вызовом NoteFailure.
+
+    /// <summary>Чем закончился вызов модели: какая функция, когда и почему не получилось.</summary>
+    /// <param name="Feature">Идентификатор из <see cref="AiFeatureIds"/>.</param>
+    /// <param name="Reason">Причина, безопасная для показа. Null — вызов удался.</param>
+    /// <param name="WhenUtc">Момент вызова.</param>
+    public readonly record struct AiOutcome(string Feature, string? Reason, DateTime WhenUtc)
+    {
+        public bool Ok => Reason is null;
+    }
+
+    private static AiOutcome? _lastFailure;
+    private static DateTime _lastOkUtc = DateTime.MinValue;
+
+    /// <summary>
+    /// Последний неудавшийся вызов, или null, если после него уже был удачный.
+    ///
+    /// Гасится успехом ЛЮБОЙ функции намеренно: причины здесь общие для всех панелей, и
+    /// показывать «не задан ключ» в тот момент, когда соседний раздел только что получил ответ, —
+    /// значит держать на экране заведомо устаревшую тревогу.
+    /// </summary>
+    public static AiOutcome? LastFailure =>
+        _lastFailure is { } f && f.WhenUtc > _lastOkUtc ? f : null;
+
+    /// <summary>Когда модель в последний раз ответила. Null — ни одного удачного вызова за сеанс.</summary>
+    public static DateTime? LastSuccessUtc => _lastOkUtc == DateTime.MinValue ? null : _lastOkUtc;
+
+    /// <summary>Записать отказ. Публично, потому что агентские циклы шлют запрос сами, минуя <see cref="CompleteTextAsync"/>.</summary>
+    public static void NoteFailure(string? feature, string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason)) return;
+        _lastFailure = new AiOutcome(feature ?? "", reason, DateTime.UtcNow);
+    }
+
+    /// <summary>Записать удачный вызов — он и снимает предыдущую тревогу.</summary>
+    public static void NoteOk(string? feature)
+    {
+        _ = feature;
+        _lastOkUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>Сброс для тестов: состояние статическое и иначе протекает между ними.</summary>
+    internal static void ResetHealth()
+    {
+        _lastFailure = null;
+        _lastOkUtc = DateTime.MinValue;
+    }
 
     private static void RecordServerModel(string? feature, HttpResponseMessage res)
     {

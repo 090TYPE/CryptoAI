@@ -115,8 +115,10 @@ public static class BotsDeskData
     {
         ("grid", "GRID", "Grid bot", "Ladder of buy/sell orders inside a price range on Binance spot or USD-M futures."),
         ("dca", "DCA", "DCA bot", "Weighted spot basket bought on a fixed schedule, with an optional MA filter per coin."),
-        ("rule", "RULE", "Rule bot", "Indicator strategy engine: MA cross, RSI, Bollinger, Breakout, MACD, VWAP or Claude."),
-        ("ai", "AI", "AI trader", "Claude drives a tool-use loop and places its own orders inside hard caps. Paper by default."),
+        // Ни здесь, ни ниже вендор не назван: обслуживает то семейство, которое выбрал пользователь,
+        // и слово "Claude" в карточке движка было верным ровно для половины пользователей.
+        ("rule", "RULE", "Rule bot", "Indicator strategy engine: MA cross, RSI, Bollinger, Breakout, MACD, VWAP or AI."),
+        ("ai", "AI", "AI trader", "The model drives a tool-use loop and places its own orders inside hard caps. Paper by default."),
         ("agent", "AGENT", "Autonomous agent", "Runs one agent turn per interval through the action guard: allowlist, trade and budget caps."),
         ("trail", "TRAIL", "Trailing stop", "Ratchets a stop level on every tick: %, ATR, Chandelier, break-even or swing low."),
     };

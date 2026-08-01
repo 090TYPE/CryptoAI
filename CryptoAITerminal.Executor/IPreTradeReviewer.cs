@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CryptoAITerminal.Server.Common;
 using CryptoAITerminal.Server.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -12,43 +13,49 @@ public interface IPreTradeReviewer
 }
 
 /// <summary>
-/// Asks Claude to sanity-check a bot trade against the market context we collect.
+/// Asks the model to sanity-check a bot trade against the market context we collect.
 ///
 /// Availability policy matters here, so it's explicit:
-///   • no 'anthropic' key  → the gate is simply off, the trade proceeds
-///   • model unreachable   → proceed (fail-open) and log — an Anthropic blip must not freeze
+///   • no provider key     → the gate is simply off, the trade proceeds
+///   • model unreachable   → proceed (fail-open) and log — a provider blip must not freeze
 ///                           a user's bots... unless AI_PRETRADE_REQUIRED=true, then block
 ///   • model says reject   → always block
+///
+/// Семейство здесь не выбирается и не проверяется: этим занимается <see cref="AiProxy"/>, и
+/// решение у него одно на сервер. Раньше класс сам спрашивал ключ <c>anthropic</c> и подставлял
+/// имя claude-модели — то есть на выбранном ChatGPT гейт либо считал себя ненастроенным и
+/// пропускал сделки, либо уходил с чужим именем модели и получал 404.
 /// </summary>
 public sealed class AiPreTradeReviewer : IPreTradeReviewer
 {
-    private readonly ProviderKeyStore _keys;
     private readonly AiProxy _ai;
     private readonly AiDigestRepository _facts;
     private readonly ILogger<AiPreTradeReviewer> _log;
-    private readonly string _model;
+    private readonly string? _envModel;
     private readonly bool _required;
 
-    public AiPreTradeReviewer(ProviderKeyStore keys, AiProxy ai, AiDigestRepository facts,
+    public AiPreTradeReviewer(AiProxy ai, AiDigestRepository facts,
         IConfiguration cfg, ILogger<AiPreTradeReviewer> log)
     {
-        _keys = keys; _ai = ai; _facts = facts; _log = log;
-        _model = cfg["AI_PRETRADE_MODEL"] ?? "claude-haiku-4-5-20251001";
+        _ai = ai; _facts = facts; _log = log;
+        _envModel = cfg["AI_PRETRADE_MODEL"];
         _required = bool.TryParse(cfg["AI_PRETRADE_REQUIRED"], out var r) && r;
     }
 
     public async Task<(bool Approved, string? Reason)> ReviewAsync(string side, string asset, decimal amountUsd, CancellationToken ct)
     {
-        var key = await _keys.GetAsync("anthropic", ct);
-        if (string.IsNullOrWhiteSpace(key))
-            return _required ? (false, "AI pre-trade review required but no AI key configured") : (true, null);
-
         try
         {
             var res = await _ai.ForwardAnthropicAsync(await BuildRequestAsync(side, asset, amountUsd, ct), ct: ct);
-            if (res is null || res.Value.Status != 200)
+            // null — ключа провайдера нет вовсе. Это «гейт выключен», а не «провайдер упал», и
+            // отличать одно от другого надо здесь: без ключа сообщение про сбой сети увело бы
+            // диагностику в сторону.
+            if (res is null)
+                return _required ? (false, "AI pre-trade review required but no AI key configured") : (true, null);
+
+            if (res.Value.Status != 200)
             {
-                _log.LogWarning("pre-trade review unavailable (status {Status})", res?.Status);
+                _log.LogWarning("pre-trade review unavailable (status {Status})", res.Value.Status);
                 return _required ? (false, "AI pre-trade review unavailable") : (true, null);
             }
 
@@ -78,9 +85,14 @@ public sealed class AiPreTradeReviewer : IPreTradeReviewer
             headlines = await _facts.GetNewsHeadlinesAsync(10, ct)
         });
 
+        // Модель подбирает сервер под выбранное семейство; переменная окружения остаётся последним
+        // словом только для claude-стороны, где её и писали при развёртывании.
+        var model = await _ai.ModelForAsync(SettingKeys.PretradeModel, AiModelRole.Background, _envModel, ct: ct)
+                    ?? SettingKeys.DefaultBackgroundModel;
+
         return JsonSerializer.Serialize(new
         {
-            model = _model,
+            model,
             max_tokens = 200,
             system = "You are a risk check on an automated trade that is about to execute. Approve unless the context " +
                      "shows a concrete reason not to (clear danger, obviously broken market). Default to approve when " +

@@ -159,7 +159,7 @@ CryptoAI/
 | **Breakout** | Period | Пробой максимума/минимума за N свечей |
 | **MACD** | Fast / Slow / Signal | Classic MACD-crossover |
 | **VWAP** | Band % | Торговля от VWAP ±band |
-| **AI (Claude)** | API key, model, poll interval | Сигнал генерирует Claude API на основе последних свечей |
+| **AI** | API key, model, poll interval | Сигнал генерирует выбранное семейство (Claude или ChatGPT) по последним свечам |
 
 Для каждой стратегии настраиваются: TP, SL, Trailing Stop, Partial TP (частичное закрытие), Leverage, Margin mode.
 
@@ -347,6 +347,8 @@ RSS от CoinTelegraph, CoinDesk, Decrypt, The Block, Bitcoin Magazine. Авто
 - **Веб-вход** — кнопка «🌐 Log in / get key» открывает консоль провайдера ([console.anthropic.com](https://console.anthropic.com/settings/keys) / [platform.openai.com](https://platform.openai.com/api-keys)) для входа и создания ключа.
 - Переключение применяется **сразу, без перезапуска**: общий слой `AiRuntime` + `ChatClient` маршрутизирует каждый вызов в нужный API (Anthropic Messages / OpenAI Chat Completions), а агентный цикл — в `ClaudeAgentRunner` или `OpenAiAgentRunner` (function calling).
 - Ключи хранятся зашифрованно (DPAPI) и уходят только выбранному провайдеру.
+- **С подпиской (терминал привязан к серверу CryptoAI)** полей ключа и модели нет: ключ держит сервер, а конкретную модель внутри семейства он подбирает сам по живому списку провайдера — сильную для того, что читает человек, дешёвую для фоновых задач. Пользователю остаётся выбор семейства, и он уходит на сервер заголовком `X-AI-Family`, применяясь к следующему же вызову. На сервере реализованы **оба** пути, включая перевод формата: панель, ушедшая в формате Anthropic, будет обслужена ChatGPT (и наоборот), если выбрано другое семейство.
+- **Суточный лимит токенов на время тестового периода снят** (`ai.budget.enforced = false`). Расход по-прежнему считается и виден в разделе подписки — по нему потом будут посчитаны тарифы; включается лимит одним переключателем в админке сервера.
 
 ### ⚡ Глобальная AI-командная строка (`Ctrl+K`)
 
@@ -358,7 +360,7 @@ RSS от CoinTelegraph, CoinDesk, Decrypt, The Block, Bitcoin Magazine. Авто
 
 ### 🤖 Автономный AI-трейдер (сам торгует)
 
-Не просто сигнал, а **агент с tool use**: Claude сам осматривает рынок и сам ставит ордера в цикле. Раздел **Bots → AI Trader (Autonomous)**.
+Не просто сигнал, а **агент с tool use**: модель сама осматривает рынок и сама ставит ордера в цикле — циклом управляет `ClaudeAgentRunner` или `OpenAiAgentRunner`, в зависимости от выбранного семейства. Раздел **Bots → AI Trader (Autonomous)**.
 
 - **Инструменты агента** (CEX): `get_price`, `get_balance`, `get_positions`, `place_order`, `close_position`. Модель сама решает, что запросить и когда торговать.
 - **Spot, Futures и DEX** — переключатель Venue (CEX/DEX) и Market (Spot/Futures, плечо, Cross/Isolated). На фьючерсах — long **и** short с авто-определением hedge/one-way. На DEX — торговля по адресу токена за нативную монету (SOL/ETH) с **обязательной honeypot-пробой** перед покупкой.
@@ -367,7 +369,7 @@ RSS от CoinTelegraph, CoinDesk, Decrypt, The Block, Bitcoin Magazine. Авто
 
 ### 🧠 AI-помощники по разделам (13)
 
-С ключом — Claude, без ключа — офлайн-эвристика (помечается «Heuristic (offline)»).
+Со своим ключом или с привязкой к серверу CryptoAI — выбранное семейство (Claude или ChatGPT); без того и другого — офлайн-эвристика (помечается «Heuristic (offline)»).
 
 | Раздел | AI-функция |
 |--------|-----------|
@@ -390,7 +392,7 @@ RSS от CoinTelegraph, CoinDesk, Decrypt, The Block, Bitcoin Magazine. Авто
 - **AI-вердикт токена (снайпер)** — `AVOID / RISKY / NEUTRAL / FAVORABLE`, risk 0–100, red flags.
 - **AI Market Pulse (новости)** — агрегированный sentiment за час + AI-дайджест рынка.
 - **AI-объяснение сделок бота** — строка «почему» к каждой сделке AI-стратегии.
-- **AI-стратегия (Claude)** — генерация buy/sell сигналов по свечам в Rule Bot.
+- **AI-стратегия** — генерация buy/sell сигналов по свечам в Rule Bot.
 
 > Архитектура: провайдеры в `CryptoAITerminal.AIEngine` обращаются к LLM через единый `ChatClient` (hand-rolled вызов, без лишних NuGet), который по `AiRuntime.Vendor` маршрутизирует в Anthropic **или** OpenAI; сервисы-обёртки с офлайн-фолбэком в `TerminalUI/Services`. Покрыто юнит-тестами (агент, провайдер-свитч, командная строка, все офлайн-эвристики).
 

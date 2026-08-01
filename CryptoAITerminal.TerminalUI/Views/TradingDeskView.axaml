@@ -2063,25 +2063,16 @@
                 </Grid>
                 <Border Classes="TdCard" IsVisible="{Binding DexTradingVM.HasSelectedToken}">
                   <StackPanel Spacing="8">
-                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                      <Border Grid.Column="0" Background="{Binding DexTradingVM.TokenVerdict.AccentHex, Converter={StaticResource StringToBrush}}" CornerRadius="4" Padding="8,2" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding DexTradingVM.TokenVerdict.Badge}" Foreground="White" FontWeight="Bold" FontSize="{DynamicResource FsSmall}" />
-                      </Border>
-                      <!-- Nested grid so the scanning hint gets its own cell: both are visible at
-                           once (IsScanning is true while the previous verdict still shows), and two
-                           siblings in one cell overlap on a narrow panel instead of sharing it. -->
-                      <Grid Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="6">
-                        <TextBlock Grid.Column="0" VerticalAlignment="Center" Classes="TdSub" Text="{Binding DexTradingVM.TokenVerdict.ScoreLabel, StringFormat=risk {0}}" />
-                        <TextBlock Grid.Column="1" VerticalAlignment="Center" Classes="TdSub" FontSize="{DynamicResource FsMicro}"
-                                   Text="scanning…" IsVisible="{Binding DexTradingVM.TokenVerdict.IsScanning}" />
-                      </Grid>
-                      <Button Grid.Column="2" Content="Deep scan" Classes="TdSeg dex" FontSize="{DynamicResource FsCaption}" Padding="8,2"
+                    <!-- Заголовок только с действием: сам вердикт, шкалу риска, красные флаги и
+                         подпись «чем отвечено» рисует общая карточка ниже. Плашка вердикта была и
+                         здесь, и там — два одинаковых бейджа подряд читаются как два разных. -->
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBlock Grid.Column="0" VerticalAlignment="Center" Classes="TdSub" FontSize="{DynamicResource FsMicro}"
+                                 Text="scanning…" IsVisible="{Binding DexTradingVM.TokenVerdict.IsScanning}" />
+                      <Button Grid.Column="1" Content="Deep scan" Classes="TdSeg dex" FontSize="{DynamicResource FsCaption}" Padding="8,2"
                               Command="{Binding DexTradingVM.DeepScanTokenCommand}" IsEnabled="{Binding !DexTradingVM.TokenVerdict.DeepScanBusy}" />
                     </Grid>
-                    <TextBlock Text="{Binding DexTradingVM.TokenVerdict.RedFlagsText}" Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" />
-                    <TextBlock Classes="TdSub" Text="{Binding DexTradingVM.TokenVerdict.Reason}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" />
-                    <TextBlock Text="{Binding DexTradingVM.TokenVerdict.SourceLabel}" Foreground="{Binding DexTradingVM.TokenVerdict.SourceHex, Converter={StaticResource StringToBrush}}"
-                               FontSize="{DynamicResource FsMicro}" FontWeight="Bold" IsVisible="{Binding DexTradingVM.TokenVerdict.HasSourceLabel}" />
+                    <ctrl:AiVerdictCard DataContext="{Binding DexTradingVM.TokenVerdict.Card}" />
                     <TextBlock Text="{Binding DexTradingVM.TokenVerdict.DeepScanNote}" Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsMicro}" TextWrapping="Wrap"
                                IsVisible="{Binding DexTradingVM.TokenVerdict.HasDeepScanNote}" />
                   </StackPanel>

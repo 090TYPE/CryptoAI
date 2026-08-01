@@ -144,6 +144,14 @@ client choose the model, the output length and the context size while we paid. E
   `AI_DAILY_TOKENS_PER_LICENSE` (default 200 000); clients can read their allowance from
   `/api/ai/budget` instead of discovering it as a 429
 
+**The daily cap is currently off.** `ai.budget.enforced` ships as `false` (`SettingKeys.DefaultAiBudgetEnforced`)
+because the per-call cost has not been measured: the old tier numbers predate the agent and the
+long-context panels and were spent in minutes. What stays on is the *accounting* — `AiBudget.Charge`
+and the `ai_usage` row per call — because that is what the price list will be derived from.
+`/api/ai/budget` answers `unlimited: true` while this holds, and the terminal labels the figure as
+spend rather than as a remaining allowance. Re-enabling is one toggle in `/admin`, and the per-tier
+numbers must be recomputed from `ai_usage` first rather than taken from the code defaults.
+
 ## D — Server holds, never returns
 
 | Secret | Guard |

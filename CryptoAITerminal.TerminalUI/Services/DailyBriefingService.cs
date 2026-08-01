@@ -35,11 +35,19 @@ public sealed record BriefingInput(
 /// </summary>
 public sealed class DailyBriefingService
 {
-    private static readonly string[] Vocabulary = ["RISK_ON", "NEUTRAL", "RISK_OFF"];
+    /// <summary>Слова этого разбора. Публично: от них зависит цвет вердикта, и тест читает список отсюда.</summary>
+    public static readonly string[] Vocabulary = ["RISK_ON", "NEUTRAL", "RISK_OFF"];
 
     private readonly MarketInsightAiService _ai = new();
 
     public bool UsesLiveModel => _ai.UsesLiveModel;
+
+    /// <summary>
+    /// Почему последний вызов ушёл на собственный расчёт. Пробрасывается наружу, потому что
+    /// обёртка — единственное, что видит панель: без этого отказ модели здесь неотличим от случая,
+    /// когда её и не звали.
+    /// </summary>
+    public string? LastError => _ai.LastError;
 
     /// <summary>Share the Claude key/model from the AI Bot tab (like every other AI service).</summary>
     public void ConfigureAi(string? apiKey, string? model = null)

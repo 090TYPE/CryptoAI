@@ -92,13 +92,11 @@ public sealed class PreTradeRiskViewModel : ReactiveObject
 
     public bool   HasVerdict  => !string.IsNullOrEmpty(_verdict);
     public string ScoreLabel  => $"{_score}/100";
-    public string VerdictBrush => _verdict switch
-    {
-        "APPROVE" => SemanticColor.Accent,
-        "CAUTION" => SemanticColor.Warning,
-        "BLOCK"   => SemanticColor.Negative,
-        _         => SemanticColor.Muted
-    };
+    /// <summary>
+    /// Цвет из общей палитры вердиктов. Свой список здесь красил APPROVE акцентом, а на рельсе
+    /// Bots-деска тот же вердикт был зелёным — один ответ двух цветов на соседних экранах.
+    /// </summary>
+    public string VerdictBrush => AiVerdictPalette.ColorOf(_verdict);
 
     public ReactiveCommand<Unit, Unit> CheckCommand { get; }
 
@@ -113,7 +111,9 @@ public sealed class PreTradeRiskViewModel : ReactiveObject
 
             Verdict = r.Verdict;
             Score = r.Score;
-            Rationale = r.Rationale;
+            // Причина отказа впереди текста. Здесь это весомее, чем в остальных панелях: вердикт
+            // читают перед отправкой заявки, и «модель не участвовала» — часть его цены.
+            Rationale = _service.LastError is { } why ? $"⚠ {why}\n{r.Rationale}" : r.Rationale;
             Source = r.Source;
 
             Reasons.Clear();
@@ -121,7 +121,8 @@ public sealed class PreTradeRiskViewModel : ReactiveObject
         }
         catch (Exception ex)
         {
-            Rationale = $"Couldn't evaluate: {ex.Message}";
+            // Никогда ex.Message: в AiCallException он несёт тело ответа сервера или вендора.
+            Rationale = "Couldn't evaluate: " + CryptoAITerminal.AIEngine.AiFailure.Describe(ex);
             Verdict = "";
         }
         finally

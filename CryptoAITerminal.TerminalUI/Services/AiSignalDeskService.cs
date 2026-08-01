@@ -28,8 +28,15 @@ public sealed class AiSignalDeskService
     /// </summary>
     public bool IsConfigured => ChatClient.CanCallModel(ApiKey);
 
-    /// <summary>"Claude {model}" / "ChatGPT {model}" when live, else the offline label.</summary>
-    public string SourceLabel => IsConfigured ? AiRuntime.ActiveSourceLabel : "offline · heuristic";
+    /// <summary>
+    /// Что реально отработало, а не что просил терминал. В серверном режиме имя модели из локальной
+    /// настройки — зашитая в код константа: модель, которую никто не выбирал и которая, возможно,
+    /// вообще не отвечала. <see cref="ChatClient.SourceLabel"/> берёт то, что сообщил сервер, и
+    /// откатывается к «{семейство} {модель}» только на собственном ключе.
+    /// </summary>
+    public string SourceLabel => IsConfigured
+        ? ChatClient.SourceLabel(AiFeatureIds.SignalDesk, Model)
+        : "offline · heuristic";
 
     /// <summary>User-safe reason the last call fell back to the offline path, or null on success.</summary>
     public string? LastError { get; private set; }
@@ -55,6 +62,9 @@ public sealed class AiSignalDeskService
         }
     }
 
+    /// <summary>Потолок ответа на вопрос к деску. Публичный — на нём держится тест соответствия каталогу.</summary>
+    public const int AskMaxTokens = 1200;
+
     /// <summary>One-shot Ask-AI reply, or null to fall back to the canned heuristic.</summary>
     public async Task<string?> AskAsync(string system, string question, CancellationToken ct = default)
     {
@@ -63,8 +73,14 @@ public sealed class AiSignalDeskService
         if (!IsConfigured || string.IsNullOrWhiteSpace(question)) return null;
         try
         {
+            // 1200, а не 500: ответ свободной формы, и он приходит на языке вопроса — кириллица
+            // стоит вдвое-втрое дороже латиницы, поэтому русский ответ упирался в потолок и
+            // обрывался на полуслове, приходя тем же путём, что и нормальное завершение. Потолок
+            // не оплачивается: модель останавливается сама. Оплачивается обрезанный ответ, который
+            // нельзя использовать. Число обязано совпадать с AiFeatures.All — админка показывает
+            // его оператору как ориентир, и тест это удерживает.
             var reply = await ChatClient.CompleteTextAsync(
-                ApiKey, Model, maxTokens: 500, temperature: 0.5,
+                ApiKey, Model, maxTokens: AskMaxTokens, temperature: 0.5,
                 system: system, userContent: question,
                 feature: AiFeatureIds.SignalDeskStream, ct: ct).ConfigureAwait(false);
             return string.IsNullOrWhiteSpace(reply) ? null : reply.Trim();

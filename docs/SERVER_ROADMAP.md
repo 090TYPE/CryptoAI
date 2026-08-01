@@ -23,8 +23,13 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
   inbound firewall rule. **In the compose contour**: own network, no published port, signing key
   bind-mounted read-only from `.license-signing/`, order history on the `licensebot_data` volume
   and backed up alongside Postgres.
-- 🔴 **Plan limits** (rate limit, #bots, feature gating) per tier — the licence token carries
-  `Edition`, and **no server endpoint reads it**. Every paying tier gets the same thing.
+- 🟡 **Plan limits** per tier — the `Edition` in the licence IS read now: the terminal gates
+  features on it, and the server resolves a per-tier daily token allowance
+  (`SettingKeys.PlanDailyTokens`). The token allowance is **deliberately not enforced** during the
+  test period (`ai.budget.enforced = false`) — the per-call cost has not been measured and the
+  shipped numbers predate the agent and the long-context panels. What is still open is recomputing
+  those numbers from `ai_usage` and flipping the toggle in `/admin`; rate limit and #bots are still
+  tier-blind.
 - 🔴 **MPC / threshold signer** for withdrawals (replace StubWithdrawalSigner) — before real funds
 - 🟡 **Deploy** — one VPS, not the old 2-node Amsterdam plan: trading and bots run on the customer's
   machine, so no node here ever holds `CRYPTOAI_KEK_B64` and there is nothing to isolate. Contour is
@@ -98,7 +103,8 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
 ## Recommended order
 1. Deploy what exists (one VPS + domain + Cloudflare + the licence bot) — `docs/DEPLOY.md`
 2. Turn backups on and **test a restore** — before the first sale
-3. Plan limits per `Edition` ← the bot sells four priced tiers and the server serves them identically
+3. Price the tiers from measured spend (`ai_usage`), then re-enable the daily allowance ← today the
+   tiers differ by features only, and the token quota is off on purpose until the numbers exist
 4. Server-side bots 24/7 + price alerts ← "works with PC off"
 5. MPC + 2FA (before real money)
 6. AI alerts, streaming, web dashboard

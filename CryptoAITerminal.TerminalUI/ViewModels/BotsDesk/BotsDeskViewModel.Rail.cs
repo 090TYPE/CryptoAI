@@ -217,20 +217,19 @@ public partial class BotsDeskViewModel
         : RiskVm.Running ? "checking…"
         : RiskVm.HasVerdict ? RiskVm.Verdict.ToUpperInvariant() : "idle";
     public string RiskVerdictColor => RiskVm is { HasVerdict: true } r ? r.VerdictBrush : BotsDeskData.Faint;
-    public string RiskVerdictBg => (RiskVm?.Verdict ?? "").ToUpperInvariant() switch
-    {
-        "ALLOW" => "#061615",
-        "CAUTION" => "#150f04",
-        "REJECT" => "#14060a",
-        _ => "transparent"
-    };
-    public string RiskVerdictBorder => (RiskVm?.Verdict ?? "").ToUpperInvariant() switch
-    {
-        "ALLOW" => "#14302e",
-        "CAUTION" => "#3a2a12",
-        "REJECT" => "#3a1620",
-        _ => SemanticColor.Stroke
-    };
+    // Подложка и рамка плашки берутся из общей палитры вердиктов.
+    //
+    // Здесь стоял свой список из ALLOW/CAUTION/REJECT, а сервис возвращает APPROVE/CAUTION/BLOCK
+    // (PreTradeRiskService.Vocabulary). Совпадало только CAUTION — то есть «разрешено» и
+    // «заблокировано», два исхода, ради которых проверку и запускают, выходили одинаково серыми,
+    // и отличить их можно было только по цвету самого слова.
+    public string RiskVerdictBg => RiskVm is { HasVerdict: true } r
+        ? AiVerdictPalette.TintOf(r.Verdict)
+        : "transparent";
+
+    public string RiskVerdictBorder => RiskVm is { HasVerdict: true } r
+        ? AiVerdictPalette.StrokeOf(r.Verdict)
+        : SemanticColor.Stroke;
     public string RiskScore => RiskVm is { HasVerdict: true } r ? r.ScoreLabel : BotsDeskData.Dash;
     public string RiskRationale => RiskVm is { HasVerdict: true } r ? r.Rationale : "";
 

@@ -177,7 +177,7 @@
                          в них игнорируется. -->
                     <StackPanel Spacing="10" Margin="0,10,0,0" IsVisible="{Binding IsServerBound}">
                       <TextBlock TextWrapping="Wrap" MaxWidth="760" HorizontalAlignment="Left" FontSize="{DynamicResource FsCaption}" LineHeight="18" Foreground="{DynamicResource TextDim}"
-                                 Text="AI работает через сервис CryptoAI. Ключ, выбор модели и дневной лимит — на стороне сервера, настраивать в терминале нечего. Когда лимит исчерпан, панели продолжают работать на встроенных расчётах." />
+                                 Text="AI работает через сервис CryptoAI. Ключ и выбор модели — на стороне сервера, настраивать в терминале нечего. На время тестового периода суточный лимит не применяется: показанный ниже расход нужен, чтобы посчитать по нему тариф." />
 
                       <Grid ColumnDefinitions="Auto,10,Auto,*,Auto" Margin="0,2,0,0">
                         <TextBlock Grid.Column="0" Text="ТАРИФ" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
@@ -188,9 +188,12 @@
                       </Grid>
 
                       <!-- Дневной лимит. Полоса заполняется по мере расхода: янтарь с 80%, красный
-                           на исчерпании — чтобы конец лимита не оказался неожиданностью. -->
+                           на исчерпании — чтобы конец лимита не оказался неожиданностью. На
+                           тестовом периоде полоса скрыта: пустая шкала «0 из 0» читается как
+                           неисправность, а не как отсутствие ограничения. -->
                       <StackPanel Spacing="5">
-                        <Border Width="320" Height="8" CornerRadius="4" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" HorizontalAlignment="Left">
+                        <Border Width="320" Height="8" CornerRadius="4" Background="{DynamicResource Surface0}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" HorizontalAlignment="Left"
+                                IsVisible="{Binding SubBarVisible}">
                           <Border Width="{Binding SubBarWidth}" Height="6" CornerRadius="3" HorizontalAlignment="Left" Background="{Binding SubBarColor, Converter={StaticResource StringToBrush}}" />
                         </Border>
                         <TextBlock Text="{Binding SubRemaining}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />
@@ -200,6 +203,20 @@
                                  FontSize="{DynamicResource FsMicro}" LineHeight="16"
                                  Foreground="{Binding SubStatusColor, Converter={StaticResource StringToBrush}}" />
                     </StackPanel>
+
+                    <!-- ══ Состояние AI ══
+                         Одна строка на весь продукт. Панелей с AI девятнадцать, каждая умеет
+                         откатиться на собственный расчёт, но причина отказа почти всегда общая:
+                         не задан ключ на сервере, истекла лицензия, провайдер не отвечает. Без
+                         этой строки человек видит девятнадцать одинаковых «Heuristic (offline)»
+                         и решает, что сломан именно тот раздел, который открыл. -->
+                    <Border Margin="0,12,0,0" BorderBrush="{DynamicResource PanelStrokeSubtle}" BorderThickness="1"
+                            CornerRadius="8" Background="{DynamicResource Surface0}" Padding="10,7"
+                            IsVisible="{Binding AiHealthVisible}">
+                      <TextBlock Text="{Binding AiHealthText}" TextWrapping="Wrap" MaxWidth="760" HorizontalAlignment="Left"
+                                 FontSize="{DynamicResource FsMicro}" LineHeight="16"
+                                 Foreground="{Binding AiHealthColor, Converter={StaticResource StringToBrush}}" />
+                    </Border>
 
                     <!-- ══ Выбор семейства ══
                          Единственное решение об AI, которое осталось у пользователя, и оно
@@ -334,11 +351,18 @@
                                    Foreground="{Binding SubExpiryColor, Converter={StaticResource StringToBrush}}"
                                    IsVisible="{Binding SubExpiringSoon}" />
 
+                        <!-- Заголовок строки меняется вместе со смыслом числа: на тестовом периоде
+                             это расход, а не остаток лимита, и подписать его «ЛИМИТ AI» значило бы
+                             обещать ограничение, которого сейчас нет. -->
                         <Grid ColumnDefinitions="Auto,10,*">
-                          <TextBlock Grid.Column="0" Text="ЛИМИТ AI" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="0" Text="ЛИМИТ AI" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center"
+                                     IsVisible="{Binding !SubUnlimited}" />
+                          <TextBlock Grid.Column="0" Text="РАСХОД AI" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center"
+                                     IsVisible="{Binding SubUnlimited}" />
                           <TextBlock Grid.Column="2" Text="{Binding SubUsage}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" />
                         </Grid>
-                        <Border Width="320" Height="8" CornerRadius="4" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" HorizontalAlignment="Left">
+                        <Border Width="320" Height="8" CornerRadius="4" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource PanelStroke}" BorderThickness="1" HorizontalAlignment="Left"
+                                IsVisible="{Binding SubBarVisible}">
                           <Border Width="{Binding SubBarWidth}" Height="6" CornerRadius="3" HorizontalAlignment="Left" Background="{Binding SubBarColor, Converter={StaticResource StringToBrush}}" />
                         </Border>
                         <TextBlock Text="{Binding SubRemaining}" FontFamily="{StaticResource FontMono}" FontSize="{DynamicResource FsMicro}" Foreground="{DynamicResource TextDim}" />

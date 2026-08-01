@@ -1,3 +1,4 @@
+using System.Linq;
 using CryptoAITerminal.Core.Models;
 using ReactiveUI;
 
@@ -69,10 +70,26 @@ public sealed class DexTokenAiVerdictViewModel : ReactiveObject
     /// <summary>Amber for the offline heuristic, muted for a live model — a buyer must tell the two apart at a glance.</summary>
     public string SourceHex => _verdict.IsFallback ? SemanticColor.Warning : "#5a7a94";
 
+    /// <summary>
+    /// Тот же вердикт в форме общей карточки: плашка, шкала риска и красные флаги отдельными
+    /// строками. Раньше флаги склеивались через « · » в одну строку — три разные причины отказа
+    /// читались как одна фраза, хотя по ним решают, покупать ли только что созданный токен.
+    /// </summary>
+    public AiVerdictVM Card { get; } = new();
+
     public void ApplyVerdict(TokenAiVerdict verdict)
     {
         _verdict = verdict ?? TokenAiVerdict.Pending();
         HasVerdict = true;
+        // Красные флаги — всегда тревожным тоном, независимо от вердикта: у FAVORABLE с одним
+        // флагом флаг и есть то, ради чего этот список читают.
+        Card.Fill(_verdict.Verdict, _verdict.Reason, null, _verdict.Source, _verdict.IsFallback,
+            score: _verdict.RiskScore, scoreCaption: "риск");
+        Card.SetBullets(_verdict.RedFlags.Select(f => new AiBulletVM
+        {
+            Text = f,
+            Tone = AiVerdictPalette.Tone.Bad,
+        }));
         RaisePassThroughs();
     }
 
@@ -81,6 +98,7 @@ public sealed class DexTokenAiVerdictViewModel : ReactiveObject
         _verdict = TokenAiVerdict.Pending();
         HasVerdict = false;
         DeepScanNote = null;
+        Card.Clear();
         RaisePassThroughs();
     }
 

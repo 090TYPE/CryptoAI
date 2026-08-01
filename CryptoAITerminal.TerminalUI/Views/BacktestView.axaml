@@ -387,25 +387,14 @@
                     <TextBlock Text="Robust or overfit? An AI read of this backtest."
                                Foreground="{DynamicResource TextSoft}" FontSize="{DynamicResource FsCaption}" />
                   </StackPanel>
-                  <TextBlock Grid.Column="1" Text="{Binding AiReviewSource}"
-                             Foreground="{DynamicResource TextDim}" FontSize="{DynamicResource FsMicro}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <!-- Подпись «чем отвечено» рисует карточка ниже, рядом с самим ответом. -->
                   <Button Grid.Column="2" Content="Review with AI"
                           Command="{Binding ReviewWithAiCommand}"
                           IsEnabled="{Binding !AiReviewRunning}" />
                 </Grid>
-                <StackPanel Spacing="8" IsVisible="{Binding HasAiReview}">
-                  <Border CornerRadius="6" Padding="10,6" Background="{DynamicResource Surface1}">
-                    <StackPanel Spacing="4">
-                      <TextBlock Text="{Binding AiReviewVerdict}"
-                                 Foreground="{Binding AiVerdictBrush, Converter={StaticResource StringToBrush}}"
-                                 FontWeight="Bold" FontSize="{DynamicResource FsSubhead}" />
-                      <TextBlock Text="{Binding AiReviewSummary}"
-                                 Foreground="{DynamicResource TextSecondary}" FontSize="{DynamicResource FsSmall}" TextWrapping="Wrap" />
-                    </StackPanel>
-                  </Border>
-                  <TextBlock Text="{Binding AiReviewRisks}"
-                             Foreground="{DynamicResource Warning}" FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" />
-                </StackPanel>
+                <!-- Общая карточка вердикта: ROBUST/OVERFIT плашкой, риски — отдельными строками,
+                     а не одним янтарным абзацем. Видимостью управляет сама. -->
+                <ctrl:AiVerdictCard DataContext="{Binding ReviewVerdict}" />
               </StackPanel>
             </Border>
 

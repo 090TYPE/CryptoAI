@@ -14,6 +14,9 @@ public sealed class AlertSpecAiProvider
     private readonly string _apiKey;
     private readonly string _model;
 
+    /// <summary>Потолок ответа. Обязан совпадать с каталогом сервера (AiFeatures.All) — это держит тест.</summary>
+    public const int MaxTokens = 800;
+
     public AlertSpecAiProvider(string apiKey, string? model = null, HttpClient? http = null)
     {
         // Only fatal when unbound — a bound terminal has no local key and the server holds it.
@@ -42,7 +45,7 @@ public sealed class AlertSpecAiProvider
             "Schema: {\"symbol\":string,\"condition\":string,\"threshold\":number}.";
 
         var raw = await ChatClient.CompleteTextAsync(
-            _apiKey, _model, maxTokens: 800, temperature: 0.0,
+            _apiKey, _model, maxTokens: MaxTokens, temperature: 0.0,
             system: system,
             userContent: "Request: " + instruction + "\n\nReturn the JSON alert.", AiFeatureIds.AlertSpec,
             _http, ct).ConfigureAwait(false);

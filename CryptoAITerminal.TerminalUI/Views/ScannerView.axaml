@@ -65,13 +65,29 @@
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:AiPickVM">
                       <Border Background="{DynamicResource Surface2}" CornerRadius="6" Padding="10,6" Margin="0,2">
-                        <Grid ColumnDefinitions="Auto,90,*">
-                          <Border Grid.Column="0" CornerRadius="4" Padding="6,2" Background="{DynamicResource Surface1}" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding ScoreLabel}" FontWeight="Bold" Foreground="{DynamicResource Accent}" FontSize="{DynamicResource FsBody}" />
-                          </Border>
-                          <StackPanel Grid.Column="1" Spacing="0" Margin="8,0" VerticalAlignment="Center">
+                        <!-- Счёт и вердикт красятся одним смыслом: 80 у «избегать» и 80 у
+                             «моментум» — разные вещи, а раньше оба были акцентными. -->
+                        <Grid ColumnDefinitions="Auto,104,*">
+                          <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                            <Border CornerRadius="4" Padding="6,2" HorizontalAlignment="Center"
+                                    Background="{Binding BiasTint, Converter={StaticResource StringToBrush}}"
+                                    BorderBrush="{Binding BiasStroke, Converter={StaticResource StringToBrush}}" BorderThickness="1">
+                              <TextBlock Text="{Binding ScoreLabel}" FontWeight="Bold" FontSize="{DynamicResource FsBody}"
+                                         Foreground="{Binding ScoreBrush, Converter={StaticResource StringToBrush}}" />
+                            </Border>
+                            <Border Width="60" Height="4" CornerRadius="2" Background="{DynamicResource Surface0}">
+                              <Border Width="{Binding ScoreBarWidth}" Height="4" CornerRadius="2" HorizontalAlignment="Left"
+                                      Background="{Binding ScoreBrush, Converter={StaticResource StringToBrush}}" />
+                            </Border>
+                          </StackPanel>
+                          <StackPanel Grid.Column="1" Spacing="3" Margin="8,0" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Symbol}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" FontSize="{DynamicResource FsBody}" />
-                            <TextBlock Text="{Binding Bias}" Foreground="{Binding BiasBrush, Converter={StaticResource StringToBrush}}" FontSize="{DynamicResource FsCaption}" FontWeight="Bold" />
+                            <Border CornerRadius="4" Padding="6,1" HorizontalAlignment="Left" BorderThickness="1"
+                                    Background="{Binding BiasTint, Converter={StaticResource StringToBrush}}"
+                                    BorderBrush="{Binding BiasStroke, Converter={StaticResource StringToBrush}}">
+                              <TextBlock Text="{Binding Bias}" Foreground="{Binding BiasBrush, Converter={StaticResource StringToBrush}}"
+                                         FontSize="{DynamicResource FsMicro}" FontWeight="ExtraBold" />
+                            </Border>
                           </StackPanel>
                           <TextBlock Grid.Column="2" Text="{Binding Reason}" Foreground="{DynamicResource TextMuted}"
                                      FontSize="{DynamicResource FsCaption}" TextWrapping="Wrap" VerticalAlignment="Center" />

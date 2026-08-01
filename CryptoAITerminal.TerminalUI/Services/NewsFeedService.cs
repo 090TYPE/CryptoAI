@@ -112,7 +112,10 @@ public sealed class NewsFeedService : IDisposable
         }
         catch (Exception ex)
         {
-            LastError = ex.Message;
+            // Не ex.Message: строка попадает в интерфейс, а сюда доходят и ответы чужих сервисов
+            // целиком. AiFailure разбирает те же классы отказов (таймаут, недоступность, отказ
+            // сервера) и отдаёт одну строку, которую можно показать.
+            LastError = AiFailure.Describe(ex);
             NewsReceived?.Invoke([]);
         }
     }
