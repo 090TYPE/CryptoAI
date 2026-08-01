@@ -361,13 +361,17 @@ static async Task<string?> ReadBoundedBodyAsync(HttpContext ctx, int maxChars)
     return sb.ToString();
 }
 
+/// <summary>Максимальная длина вопроса к базе знаний. Он целиком уходит в промпт.</summary>
+const int MaxAskQuestionChars = 8000;
+
 /// <summary>
 /// Суточная норма токенов для лицензии этого запроса — и действует ли она вообще.
 ///
-/// Тариф из подписанной лицензии читается по-прежнему, но на время тестового периода
-/// <see cref="SettingKeys.AiBudgetEnforced"/> выключен, и весь расчёт сводится к
-/// <see cref="AiAllowance.Unlimited"/>. Ветка с тарифами оставлена рабочей намеренно: включение
-/// квот обратно должно быть значением в админке, а не восстановлением удалённого кода.
+/// Предел действует по умолчанию (<see cref="SettingKeys.AiBudgetEnforced"/>): без него держателя
+/// валидной лицензии ограничивает только рейт-лимит. На тестовый период выключены ТАРИФЫ
+/// (<see cref="SettingKeys.PlanTiersEnforced"/>) — все лицензии делят один общий предел, то есть
+/// предохранитель от разгона, а не прайс. Ветка с тарифами оставлена рабочей намеренно: включение
+/// должно быть значением в админке, а не восстановлением удалённого кода.
 /// </summary>
 static async Task<AiAllowance> AllowanceAsync(HttpContext ctx, SettingsStore settings)
 {
@@ -489,22 +493,52 @@ static async Task<IResult> ForwardAiAsync(HttpContext ctx, AiVendor vendor, AiPr
     if (!gated.Ok)
         return Results.BadRequest(new { error = gated.Error });
 
-    var result = vendor == AiVendor.Anthropic
-        ? await ai.ForwardAnthropicAsync(gated.Body!, family, ctx.RequestAborted)
-        : await ai.ForwardOpenAiAsync(gated.Body!, family, ctx.RequestAborted);
+    // Резерв до вызова, расчёт после.
+    //
+    // Гейт выше читает счётчик, а списание происходило только по ответу — между этими точками
+    // помещался весь залп, успевший прийти. Сто двадцать одновременных запросов при нулевом
+    // счётчике проходили все и перепрыгивали суточный потолок втрое за один раз. Резерв закрывает
+    // именно это окно: параллельные запросы видят счётчик уже занятым.
+    //
+    // Оценка сверху, а не точная: длина ответа известна только после него. Неизрасходованное
+    // возвращается ниже, поэтому завышение живёт ровно время вызова.
+    var reserve = EstimateCost(raw, effective);
+    budget.Adjust(license, reserve);
+    long spent = 0;
+    try
+    {
+        var result = vendor == AiVendor.Anthropic
+            ? await ai.ForwardAnthropicAsync(gated.Body!, family, ctx.RequestAborted)
+            : await ai.ForwardOpenAiAsync(gated.Body!, family, ctx.RequestAborted);
 
-    if (result is null) return Results.Json(new { error = "ai_key_not_configured" }, statusCode: 503);
+        if (result is null) return Results.Json(new { error = "ai_key_not_configured" }, statusCode: 503);
 
-    var (inputTokens, outputTokens) = AiRequestPolicy.SplitUsage(result.Value.Body, vendor);
-    budget.Charge(license, inputTokens + outputTokens);
-    await usage.LogAsync(license, AiFeatures.IsWellFormed(feature) ? feature : null,
-        gated.Model, vendor.ToString(), inputTokens, outputTokens, ctx.RequestAborted);
+        var (inputTokens, outputTokens) = AiRequestPolicy.SplitUsage(result.Value.Body, vendor);
+        spent = inputTokens + outputTokens;
+        await usage.LogAsync(license, AiFeatures.IsWellFormed(feature) ? feature : null,
+            gated.Model, vendor.ToString(), inputTokens, outputTokens, ctx.RequestAborted);
 
-    // What actually ran, so the terminal can label the result with the truth instead of with what
-    // it asked for — and so an operator can confirm from the client side that a switch took effect.
-    if (gated.Model is { } used) ctx.Response.Headers["X-AI-Model"] = used;
-    return Results.Content(result.Value.Body, "application/json", Encoding.UTF8, result.Value.Status);
+        // What actually ran, so the terminal can label the result with the truth instead of with what
+        // it asked for — and so an operator can confirm from the client side that a switch took effect.
+        if (gated.Model is { } used) ctx.Response.Headers["X-AI-Model"] = used;
+        return Results.Content(result.Value.Body, "application/json", Encoding.UTF8, result.Value.Status);
+    }
+    finally
+    {
+        // В finally, а не после вызова: оборванное соединение и любое исключение иначе оставили бы
+        // резерв висеть до полуночи, то есть отняли бы у клиента квоту за вызов, которого не было.
+        budget.Adjust(license, spent - reserve);
+    }
 }
+
+/// <summary>Сколько токенов вызов может стоить в худшем случае — для резерва до ответа.</summary>
+/// <remarks>
+/// Вход считается по длине тела: четыре символа на токен для латиницы и около двух для кириллицы,
+/// поэтому берётся деление на два — оценка должна быть сверху, иначе резерв не закрывает окно, ради
+/// которого он и нужен. Выход — потолок сервера: больше него не отдадут.
+/// </remarks>
+static long EstimateCost(string body, AiPolicyOptions policy) =>
+    body.Length / 2 + policy.MaxTokensCap;
 
 app.MapPost("/api/ai/message", (HttpContext ctx, AiProxy ai, AiPolicyOptions policy, AiBudget budget, SettingsStore settings, AiUsageRepository usage) =>
     ForwardAiAsync(ctx, AiVendor.Anthropic, ai, policy, budget, settings, usage));
@@ -541,10 +575,17 @@ app.MapGet("/api/ai/budget", async (HttpContext ctx, AiBudget budget, SettingsSt
 // ── RAG: answer questions grounded in OUR collected data, not the model's memory ──
 app.MapPost("/api/ai/ask", async (HttpContext ctx, AskInput body, AiProxy ai,
     PersonalAiRepository personal, AiDigestRepository digests, AiBudget budget, SettingsStore settings,
-    IConfiguration askCfg) =>
+    AiUsageRepository usage, IConfiguration askCfg) =>
 {
     if (string.IsNullOrWhiteSpace(body.Question))
         return Results.BadRequest(new { error = "question required" });
+
+    // Вопрос ограничен по длине. Соседний прокси читает тело через ReadBoundedBodyAsync, а сюда
+    // тело приезжает через привязку модели — то есть с дефолтом Kestrel в 30 МБ, которого нигде не
+    // меняли. Вопрос целиком уходит в промпт (ниже), так что без этой проверки одна лицензия
+    // отправляла бы наверх контекстное окно вендора за раз.
+    if (body.Question.Length > MaxAskQuestionChars)
+        return Results.Json(new { error = "request_too_large", maxChars = MaxAskQuestionChars }, statusCode: 413);
 
     if (!await settings.GetBoolAsync(SettingKeys.AiEnabled, true, ctx.RequestAborted))
         return Results.Json(new { error = "ai_disabled" }, statusCode: 503);
@@ -594,7 +635,12 @@ app.MapPost("/api/ai/ask", async (HttpContext ctx, AskInput body, AiProxy ai,
     if (res is null) return Results.Json(new { error = "ai_key_not_configured" }, statusCode: 503);
     // Ответ приходит в формате Anthropic независимо от семейства — мост переводит его обратно, —
     // поэтому расход и здесь считается по anthropic-блоку usage.
-    budget.Charge(askLicense, AiRequestPolicy.CountUsage(res.Value.Body, AiVendor.Anthropic));
+    var (askIn, askOut) = AiRequestPolicy.SplitUsage(res.Value.Body, AiVendor.Anthropic);
+    budget.Charge(askLicense, askIn + askOut);
+    // Строка в ai_usage, как у прокси. Без неё этот канал тратил серверный ключ и не попадал в
+    // «Расход за 7 дней» — то есть выпадал ровно из тех данных, ради которых тарифы и считают.
+    await usage.LogAsync(askLicense, "ask", askModel, AiVendor.Anthropic.ToString(),
+        askIn, askOut, ctx.RequestAborted);
     if (res.Value.Status != 200) return Results.Json(new { error = "upstream", status = res.Value.Status }, statusCode: 502);
 
     // Unwrap the model envelope so the terminal just gets the answer text.

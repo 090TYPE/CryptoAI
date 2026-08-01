@@ -177,7 +177,7 @@
                          в них игнорируется. -->
                     <StackPanel Spacing="10" Margin="0,10,0,0" IsVisible="{Binding IsServerBound}">
                       <TextBlock TextWrapping="Wrap" MaxWidth="760" HorizontalAlignment="Left" FontSize="{DynamicResource FsCaption}" LineHeight="18" Foreground="{DynamicResource TextDim}"
-                                 Text="AI работает через сервис CryptoAI. Ключ и выбор модели — на стороне сервера, настраивать в терминале нечего. На время тестового периода суточный лимит не применяется: показанный ниже расход нужен, чтобы посчитать по нему тариф." />
+                                 Text="AI работает через сервис CryptoAI. Ключ и выбор модели — на стороне сервера, настраивать в терминале нечего. На время тестового периода тарифные квоты не применяются: все лицензии делят один общий предел, до которого обычная работа не доходит, а показанный ниже расход нужен, чтобы посчитать по нему тариф." />
 
                       <Grid ColumnDefinitions="Auto,10,Auto,*,Auto" Margin="0,2,0,0">
                         <TextBlock Grid.Column="0" Text="ТАРИФ" FontSize="{DynamicResource FsMicro}" FontWeight="Bold" Foreground="{DynamicResource TextDim}" VerticalAlignment="Center" />

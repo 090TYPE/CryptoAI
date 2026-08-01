@@ -25,11 +25,16 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
   and backed up alongside Postgres.
 - 🟡 **Plan limits** per tier — the `Edition` in the licence IS read now: the terminal gates
   features on it, and the server resolves a per-tier daily token allowance
-  (`SettingKeys.PlanDailyTokens`). The token allowance is **deliberately not enforced** during the
-  test period (`ai.budget.enforced = false`) — the per-call cost has not been measured and the
-  shipped numbers predate the agent and the long-context panels. What is still open is recomputing
-  those numbers from `ai_usage` and flipping the toggle in `/admin`; rate limit and #bots are still
-  tier-blind.
+  (`SettingKeys.PlanDailyTokens`). A daily ceiling IS enforced (`ai.budget.enforced` defaults true);
+  what is deliberately off during the test period is the **per-tier** differentiation
+  (`plan.tiers.enforced = false`), so every licence shares `plan.default.daily_tokens` — 2,000,000
+  a day, a fuse rather than a tariff. The shipped tier numbers predate the agent and the
+  long-context panels and were spent in minutes, so what is still open is recomputing them from
+  `ai_usage` and turning tiers on in `/admin`. Rate limit and #bots are still tier-blind.
+
+  Do not switch `ai.budget.enforced` off to relieve the test period — that was tried, and combined
+  with an `AI_MAX_TOKENS_CAP` that had been raised on the assumption the quota existed, it left one
+  licence able to bill four figures an hour against the shared vendor key.
 - 🔴 **MPC / threshold signer** for withdrawals (replace StubWithdrawalSigner) — before real funds
 - 🟡 **Deploy** — one VPS, not the old 2-node Amsterdam plan: trading and bots run on the customer's
   machine, so no node here ever holds `CRYPTOAI_KEK_B64` and there is nothing to isolate. Contour is
@@ -103,8 +108,8 @@ Status: ✅ done · 🟡 partial · 🔴 todo. Server backend lives in `CryptoAI
 ## Recommended order
 1. Deploy what exists (one VPS + domain + Cloudflare + the licence bot) — `docs/DEPLOY.md`
 2. Turn backups on and **test a restore** — before the first sale
-3. Price the tiers from measured spend (`ai_usage`), then re-enable the daily allowance ← today the
-   tiers differ by features only, and the token quota is off on purpose until the numbers exist
+3. Price the tiers from measured spend (`ai_usage`), then turn `plan.tiers.enforced` on ← today the
+   tiers differ by features only; the daily ceiling exists but is one flat fuse for everyone
 4. Server-side bots 24/7 + price alerts ← "works with PC off"
 5. MPC + 2FA (before real money)
 6. AI alerts, streaming, web dashboard

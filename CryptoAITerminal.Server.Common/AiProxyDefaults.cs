@@ -19,8 +19,19 @@ public static class AiProxyDefaults
     /// the default so that changing the URL is enough on its own; getting it wrong produces a 401
     /// that reads like a bad key.
     /// </summary>
-    public static bool LooksLikeRouter(string url, string vendorUrl) =>
-        !string.Equals(url, vendorUrl, StringComparison.OrdinalIgnoreCase);
+    public static bool LooksLikeRouter(string url, string vendorUrl)
+    {
+        // Сравнивается ХОСТ, а не строка целиком. Со строкой лишний слэш в конце адреса — а его
+        // ставят руками в поле админки — делал api.openai.com «роутером», и дальше по цепочке
+        // AiProxy подставлял ключ anthropic и отправлял его bearer-заголовком настоящему OpenAI.
+        // То есть опечатка раскрывала ключ одного вендора другому, а ответ 401 читался как «плохой
+        // ключ».
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var parsed) ||
+            !Uri.TryCreate(vendorUrl, UriKind.Absolute, out var vendor))
+            return !string.Equals(url, vendorUrl, StringComparison.OrdinalIgnoreCase);
+
+        return !string.Equals(parsed.Host, vendor.Host, StringComparison.OrdinalIgnoreCase);
+    }
 
     /// <summary>
     /// Where to ask an upstream what it actually serves, derived from the address already

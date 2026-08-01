@@ -117,6 +117,16 @@ public class AiOpenAiParameterTests
     }
 
     [Fact]
+    public void Auto_pick_never_selects_the_pro_class_either()
+    {
+        // -pro стоит рядом с opus по цене, и решение о нём принимает человек. В фильтр
+        // рассуждающих он не попадает намеренно: обычные параметры запроса он принимает, поэтому
+        // RejectsLegacyParameters его касаться не должен — а вот автоподбор должен.
+        Assert.Equal("gpt-4o", AiModelCatalog.Pick(["gpt-5-pro", "gpt-4o"], AiFamily.ChatGpt, AiModelRole.Foreground));
+        Assert.False(AiModelCatalog.RejectsLegacyParameters("gpt-4o-pro"));
+    }
+
+    [Fact]
     public void A_pinned_reasoning_model_still_works_when_a_human_chose_it()
     {
         // Запрет касается только АВТОподбора. Оператор, вписавший имя руками, получает его — и

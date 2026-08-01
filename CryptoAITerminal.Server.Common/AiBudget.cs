@@ -92,6 +92,35 @@ public sealed class AiBudget
         return list;
     }
 
+    /// <summary>
+    /// Сдвинуть счётчик на произвольную величину, в том числе отрицательную.
+    ///
+    /// Нужно для резервирования: предел проверяется ДО вызова, а списывается ПОСЛЕ, и между этими
+    /// точками помещается весь залп, который успел прийти. Сто двадцать одновременных запросов при
+    /// нулевом счётчике проходили гейт все до одного и перепрыгивали суточный потолок втрое за один
+    /// раз. Поэтому вызов резервирует оценку сверху заранее, а после ответа возвращает
+    /// неизрасходованное — уже отрицательной величиной.
+    ///
+    /// Счётчик не уходит ниже нуля: возврат резерва, пришедший после смены суток, иначе выдал бы
+    /// новому дню отрицательный расход, то есть бесплатную фору.
+    /// </summary>
+    public void Adjust(string license, long delta)
+    {
+        if (string.IsNullOrEmpty(license) || delta == 0) return;
+
+        var today = DateOnly.FromDateTime(_clock());
+        var counter = _counters.GetOrAdd(license, _ => new Counter { Day = today });
+        lock (counter)
+        {
+            if (counter.Day != today)
+            {
+                counter.Day = today;
+                counter.Tokens = 0;
+            }
+            counter.Tokens = Math.Max(0, counter.Tokens + delta);
+        }
+    }
+
     /// <summary>Charge real usage. A day boundary resets the counter rather than accumulating forever.</summary>
     public void Charge(string license, long tokens)
     {

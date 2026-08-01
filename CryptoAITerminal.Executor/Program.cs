@@ -15,10 +15,17 @@ builder.Services.AddSingleton<AuditRepository>();
 builder.Services.AddSingleton<InboxRepository>();
 builder.Services.AddSingleton<ProviderKeyStore>();
 builder.Services.AddSingleton<AiDigestRepository>();
+// SettingsStore передаётся пятым аргументом, как в Server.Api и CandleWorker. Без него AiProxy не
+// видит ни ai.anthropic.base_url, ни ai.family: на развёрнутом роутере пред-торговый ревьюер слал
+// бы роутерный ключ прямо на api.anthropic.com, получал 401 и — при незаданном
+// AI_PRETRADE_REQUIRED — пропускал КАЖДУЮ покупку как «проверка недоступна». Сейчас сервис в
+// контур не поднимается, но три конструктора из трёх должны выглядеть одинаково.
+builder.Services.AddSingleton<SettingsStore>();
 builder.Services.AddSingleton(sp => new AiProxy(
     new HttpClient { Timeout = TimeSpan.FromSeconds(60) },
     sp.GetRequiredService<ProviderKeyStore>(),
-    cfg["ANTHROPIC_API_KEY"], cfg["OPENAI_API_KEY"]));
+    cfg["ANTHROPIC_API_KEY"], cfg["OPENAI_API_KEY"],
+    sp.GetRequiredService<SettingsStore>()));
 builder.Services.AddSingleton<IPreTradeReviewer, AiPreTradeReviewer>();
 
 // Envelope cipher: Vault Transit in production, local AES for dev/tests.

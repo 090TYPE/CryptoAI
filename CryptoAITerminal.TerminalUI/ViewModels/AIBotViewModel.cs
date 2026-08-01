@@ -185,7 +185,18 @@ public class AIBotViewModel : ReactiveObject
         get => _selectedStrategy;
         set
         {
-            var normalized = AvailableStrategies.Contains(value) ? value : "MA Cross";
+            // Профиль, сохранённый прежней сборкой, хранит "AI (Claude)" — имя, которое эта версия
+            // переименовала в "AI". Без переноса setter не находил строку в списке и молча ставил
+            // "MA Cross": бот, купленный ради AI-сигналов, начинал торговать пересечением средних,
+            // а пересохранение профиля затирало выбор навсегда. Форма "AI (…)" ловится целиком,
+            // потому что в ходу была и "AI (ChatGPT)".
+            if (value?.StartsWith("AI (", StringComparison.Ordinal) == true) value = AiStrategyName;
+
+            var normalized = value is not null && AvailableStrategies.Contains(value) ? value : "MA Cross";
+            // Подмена больше не молчит: этот бот выставляет живые заявки, и «выбрали одно, поедет
+            // другое» человек должен видеть, а не обнаруживать по сделкам.
+            if (!string.IsNullOrWhiteSpace(value) && normalized != value)
+                BotLog += $"\n[Strategy] Профиль просил «{value}» — такой стратегии нет, поставлена {normalized}.";
             this.RaiseAndSetIfChanged(ref _selectedStrategy, normalized);
             this.RaisePropertyChanged(nameof(StrategySummary));
         }

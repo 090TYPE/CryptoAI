@@ -132,6 +132,12 @@ public static class AiModelCatalog
         // параметров запроса.
         if (Reasoning(low)) return -1;
 
+        // Класс -pro отсекается здесь, а не в Reasoning: параметры запроса он принимает обычные,
+        // так что RejectsLegacyParameters его касаться не должно, а вот в автоподбор он попадать не
+        // должен — цена у него того же порядка, что у opus, и решение принимает человек. Без этой
+        // строки достаточно было провайдеру показать gpt-5-pro, чтобы сервер назначил его всем.
+        if (low.Contains("-pro")) return -1;
+
         // У OpenAI роль класса несёт суффикс: mini и nano — дешёвые, без суффикса — основная модель.
         var small = low.Contains("mini") || low.Contains("nano");
         return role == AiModelRole.Background

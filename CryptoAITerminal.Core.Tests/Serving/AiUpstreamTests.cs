@@ -93,6 +93,27 @@ public class AiUpstreamTests
     }
 
     [Fact]
+    public void A_typo_in_the_vendor_url_does_not_turn_it_into_a_router()
+    {
+        // Сравнение строк целиком делало «роутером» адрес вендора с лишним слэшем — а его ставят
+        // руками в поле админки. Дальше по цепочке AiProxy подставлял ключ anthropic и отправлял
+        // его bearer-заголовком настоящему OpenAI: опечатка раскрывала ключ одного вендора другому,
+        // а ответ 401 читался как «плохой ключ».
+        Assert.False(AiProxyDefaults.LooksLikeRouter(AiProxyDefaults.OpenAi + "/", AiProxyDefaults.OpenAi));
+        Assert.False(AiProxyDefaults.LooksLikeRouter(AiProxyDefaults.OpenAi.ToUpperInvariant(), AiProxyDefaults.OpenAi));
+        Assert.False(AiProxyDefaults.LooksLikeRouter("https://api.openai.com/v1/chat/completions?x=1", AiProxyDefaults.OpenAi));
+        Assert.False(AiProxyDefaults.LooksLikeRouter(AiProxyDefaults.Anthropic, AiProxyDefaults.Anthropic));
+
+        // Настоящий роутер по-прежнему опознаётся — ради этого проверка и существует.
+        Assert.True(AiProxyDefaults.LooksLikeRouter("https://nordrouter.com/v1/chat/completions", AiProxyDefaults.OpenAi));
+        Assert.True(AiProxyDefaults.LooksLikeRouter("https://nordrouter.com/v1/messages", AiProxyDefaults.Anthropic));
+
+        // Неразбираемый адрес не должен считаться вендорским: иначе мусор в поле молча уводил бы
+        // на x-api-key там, где нужен bearer.
+        Assert.True(AiProxyDefaults.LooksLikeRouter("не адрес", AiProxyDefaults.OpenAi));
+    }
+
+    [Fact]
     public void Vendor_defaults_are_the_real_endpoints()
     {
         // Guards against a stray edit to the constants: a wrong default here would send every
