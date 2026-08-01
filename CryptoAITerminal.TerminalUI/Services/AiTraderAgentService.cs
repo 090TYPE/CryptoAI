@@ -128,6 +128,34 @@ public sealed class AiTraderAgentService
             maxDailyLossUsd: _limits.MaxDailyLossUsd);
     }
 
+    /// <summary>
+    /// Суммарная стоимость открытых позиций в USD — число, против которого проверяется потолок
+    /// экспозиции перед отправкой РЕАЛЬНОГО ордера.
+    ///
+    /// Раньше здесь стояло <c>open.Sum(p => Math.Abs(p.Quantity) * mid)</c>, где mid — цена
+    /// символа, который агент торгует прямо сейчас. Ею оценивались ВСЕ позиции разом, и потолок
+    /// отключался в обе стороны: держим 1 BTC (~64 000 USD), торгуем DOGE по 0.37 — экспозиция
+    /// выходит 1 × 0.37 = 0.37 USD, и потолок в 500 USD пропускает что угодно. Наоборот, 10 000
+    /// DOGE при торговле биткоином дают 10 000 × 64 000 = 640 млн, и агент блокируется навсегда.
+    /// У позиции есть своя цена, чужая ей не нужна.
+    /// </summary>
+    /// <param name="open">Открытые позиции с ненулевым количеством.</param>
+    /// <param name="tradedSymbol">Символ, по которому идёт текущая заявка.</param>
+    /// <param name="mid">Средняя цена этого символа — годится только для него самого.</param>
+    public static decimal TotalExposureUsd(
+        IReadOnlyList<FuturesPosition> open, string tradedSymbol, decimal mid)
+        => open.Sum(p => Math.Abs(p.Quantity) * PositionPriceUsd(p, tradedSymbol, mid));
+
+    private static decimal PositionPriceUsd(FuturesPosition p, string tradedSymbol, decimal mid)
+    {
+        if (p.MarkPrice > 0m) return p.MarkPrice;
+        if (p.EntryPrice > 0m) return p.EntryPrice;
+        // Площадка не прислала ни того, ни другого. Взять mid можно только для той же самой пары;
+        // для чужой честнее оценить в ноль, чем в цену другой монеты — недооценка хотя бы не
+        // выдаёт себя за точный расчёт.
+        return string.Equals(p.Symbol, tradedSymbol, StringComparison.OrdinalIgnoreCase) ? mid : 0m;
+    }
+
     /// <summary>Instantly stop trading; pending orders are not placed and the loop ends.</summary>
     public void Kill()
     {
@@ -621,7 +649,7 @@ public sealed class AiTraderAgentService
             var balance = await _gateway.GetBalanceAsync("USDT").ConfigureAwait(false);
             var positions = await _gateway.GetOpenPositionsAsync().ConfigureAwait(false);
             var open = positions.Where(p => p.Quantity != 0).ToList();
-            var exposure = open.Sum(p => Math.Abs(p.Quantity) * mid);
+            var exposure = TotalExposureUsd(open, symbol, mid);
             var isNewSymbol = !open.Any(p => string.Equals(p.Symbol, symbol, StringComparison.OrdinalIgnoreCase));
             if (isNewSymbol && open.Count >= _limits.MaxOpenPositions)
                 return Err($"max {_limits.MaxOpenPositions} open positions reached");

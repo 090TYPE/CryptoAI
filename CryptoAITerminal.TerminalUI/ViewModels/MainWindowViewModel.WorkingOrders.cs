@@ -43,6 +43,9 @@ public partial class MainWindowViewModel
     // keeps protecting it while the desk is viewing a different symbol. Exchange-managed
     // orders rest on the venue and are left untouched here.
 
+    // Чтобы объяснение «стоп ждёт свой символ» попало в лог один раз, а не на каждом тике.
+    private bool _trailingSymbolMismatchLogged;
+
     private readonly Dictionary<string, (decimal Qty, DateTime AtUtc)> _softwarePositionCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly TimeSpan SoftwarePositionCacheTtl = TimeSpan.FromSeconds(15);
 
@@ -50,12 +53,28 @@ public partial class MainWindowViewModel
     {
         var lastPriceActive = CurrentTradePrice;
 
-        // ── Advanced Trailing Stop tick (active symbol only) ──────────────────
+        // ── Advanced Trailing Stop tick ──────────────────────────────────────
+        // Цена и свечи здесь всегда от символа, открытого на торговой вкладке. Раньше стоп кормили
+        // ими без разбора: после переключения графика он трейлил уже другую монету от чужого пика,
+        // а сработав — рыночно закрывал позицию по ней (ExecuteClosePosition работает с активным
+        // символом). Сегодня стоп охраняет ту монету, на которой его вооружили, и только её.
         if (AdvancedTrailingVM.IsArmed && lastPriceActive > 0)
         {
-            var candleSnap = TradingCandles.ToList();
-            AdvancedTrailingVM.OnPriceTick(lastPriceActive, candleSnap);
+            if (AdvancedTrailingVM.Guards(SelectedTradingSymbol))
+            {
+                var candleSnap = TradingCandles.ToList();
+                AdvancedTrailingVM.OnPriceTick(lastPriceActive, candleSnap);
+            }
+            else if (!_trailingSymbolMismatchLogged)
+            {
+                // Один раз за уход с символа, а не на каждом тике таймера.
+                _trailingSymbolMismatchLogged = true;
+                AddLog($"[Trailing Stop] Ждёт {AdvancedTrailingVM.ArmedSymbol}: на графике сейчас " +
+                       $"{SelectedTradingSymbol}, чужую монету стоп не ведёт и не закрывает.");
+            }
         }
+
+        if (AdvancedTrailingVM.Guards(SelectedTradingSymbol)) _trailingSymbolMismatchLogged = false;
 
         if (TradeBlotterVM.WorkingOrders.Count == 0)
             return;

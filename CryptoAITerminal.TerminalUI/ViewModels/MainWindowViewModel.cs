@@ -1167,8 +1167,27 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
         // ── Advanced Trailing Stop ─────────────────────────────────────────
         // (already initialised via property initialiser; wire events)
+        // Символ запоминается в момент вооружения — иначе стоп охраняет не позицию, а торговую
+        // вкладку: переключение графика уводило бы его на другую монету вместе с правом её закрыть.
         AdvancedTrailingVM.ArmRequested += () =>
-            AdvancedTrailingVM.Arm(StrategyEntryPrice > 0 ? StrategyEntryPrice : CurrentTradePrice);
+        {
+            // Все пять режимов трейлинга — лонговые: пик ползёт храповиком ВВЕРХ, стоп идёт под
+            // ним, срабатывание на price <= stop. На шорте это переворачивается: рост цены (убыток)
+            // только двигает пик, а сработает стоп на падении — то есть закроет шорт ровно тогда,
+            // когда тот зарабатывает, и не защитит, когда теряет. Закрытие при этом шорт закрывать
+            // умеет, так что молча получалась защита наоборот.
+            if (PositionQuantity < 0)
+            {
+                AddLog("[Trailing Stop] Режимы трейлинга рассчитаны на длинную позицию: пик ведётся " +
+                       "вверх, стоп — под ним. На короткой позиции защита работала бы наоборот, " +
+                       "поэтому вооружение отменено. Для шорта используйте стоп-лосс в тикете.");
+                ShowToast("★ Трейлинг-стоп не поддерживает короткую позицию");
+                return;
+            }
+
+            AdvancedTrailingVM.Arm(StrategyEntryPrice > 0 ? StrategyEntryPrice : CurrentTradePrice,
+                SelectedTradingSymbol);
+        };
 
         AdvancedTrailingVM.StopLevelChanged += newStop =>
         {
@@ -1181,6 +1200,30 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
         AdvancedTrailingVM.StopTriggered += triggerPrice =>
         {
+            // ExecuteClosePosition закрывает позицию по АКТИВНОМУ символу. Тик до сюда доходит
+            // только на своём символе, но проверка стоит и здесь: цена этой ошибки — рыночное
+            // закрытие чужой позиции, и одного заслона для неё мало.
+            var armed = AdvancedTrailingVM.ArmedSymbol;
+
+            // Позицию могли перевернуть в шорт уже после вооружения — тогда срабатывание пришлось
+            // бы на выигрышную сторону движения (см. отказ вооружаться на шорте выше).
+            if (PositionQuantity < 0)
+            {
+                AddLog("[Trailing Stop] Позиция стала короткой — закрытие отменено: лонговый трейлинг " +
+                       "сработал бы на прибыльном для шорта движении.");
+                ShowToast("★ Трейлинг-стоп снят: позиция перевёрнута в шорт");
+                AdvancedTrailingVM.Disarm("Снят: позиция стала короткой");
+                return;
+            }
+
+            if (!AdvancedTrailingVM.Guards(SelectedTradingSymbol))
+            {
+                AddLog($"[Trailing Stop] Сработал по {armed}, но на графике {SelectedTradingSymbol} — " +
+                       "закрытие отменено, чужую позицию стоп не трогает.");
+                ShowToast($"★ Стоп {armed} не закрыл {SelectedTradingSymbol}");
+                return;
+            }
+
             AddLog($"[Trailing Stop] Triggered at {triggerPrice:N2} — closing position");
             ShowToast($"★ Trailing stop triggered at {triggerPrice:N2}");
             _ = ExecuteClosePosition();

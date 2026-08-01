@@ -109,24 +109,45 @@ public sealed class AdvancedTrailingStopViewModel : ReactiveObject
 
     // ── public API ───────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Символ, на котором стоп вооружили. Пустая строка — вооружение без привязки (так вызывали
+    /// раньше, поведение сохранено).
+    ///
+    /// Движок сам цен не запрашивает: и тик, и закрытие ему даёт хозяин, а тот работает с
+    /// символом, ОТКРЫТЫМ НА ТОРГОВОЙ ВКЛАДКЕ СЕЙЧАС. Пока трейлинг-стоп был частью торговой
+    /// вкладки, это совпадало с ожиданием человека. Со строкой TRAIL на вкладке «Боты» перестало:
+    /// вооружил на BTC, переключил график на ETH — стоп продолжает тикать, трейля цену ETH от
+    /// пика, набранного на BTC, и при срабатывании рыночно закрывает позицию по ETH.
+    /// </summary>
+    public string ArmedSymbol { get; private set; } = string.Empty;
+
+    /// <summary>Тот ли это символ, который стоп охраняет.</summary>
+    public bool Guards(string? symbol) =>
+        ArmedSymbol.Length == 0
+        || string.Equals(ArmedSymbol, symbol?.Trim(), StringComparison.OrdinalIgnoreCase);
+
     /// <summary>Arm the trailing stop with a known entry price.</summary>
-    public void Arm(decimal entryPrice)
+    public void Arm(decimal entryPrice, string? symbol = null)
     {
         _entryPrice     = entryPrice;
         _peakPrice      = entryPrice;
         _currentStop    = 0m;
         _breakEvenMoved = false;
+        ArmedSymbol     = symbol?.Trim() ?? string.Empty;
         IsArmed         = true;
-        StatusLabel     = $"Armed  entry {entryPrice:N2}";
+        StatusLabel     = ArmedSymbol.Length > 0
+            ? $"Armed  {ArmedSymbol}  entry {entryPrice:N2}"
+            : $"Armed  entry {entryPrice:N2}";
         RaiseArmDisplayProperties();
     }
 
     /// <summary>Disarm and reset stop level.</summary>
-    public void Disarm()
+    public void Disarm(string? reason = null)
     {
         IsArmed     = false;
         CurrentStop = 0m;
-        StatusLabel = "Disarmed";
+        ArmedSymbol = string.Empty;
+        StatusLabel = reason ?? "Disarmed";
         RaiseArmDisplayProperties();
     }
 
