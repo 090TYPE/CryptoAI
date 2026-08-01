@@ -45,9 +45,13 @@ public static class AiFormatBridge
             ["stream"] = false,
         };
 
+        // Имя поля и температура зависят от модели, а не от того, что было в исходном теле: новые
+        // линейки OpenAI max_tokens не принимают вовсе, а температуру принимают только равной
+        // единице. Терминал шлёт и то и другое всегда, поэтому решение принимается здесь.
+        var legacyRejected = AiModelCatalog.RejectsLegacyParameters(model);
         if (src["max_tokens"] is JsonValue mt && mt.TryGetValue<int>(out var maxTokens))
-            dst["max_tokens"] = maxTokens;
-        if (src["temperature"] is JsonValue tv && tv.TryGetValue<double>(out var temperature))
+            dst[legacyRejected ? "max_completion_tokens" : "max_tokens"] = maxTokens;
+        if (!legacyRejected && src["temperature"] is JsonValue tv && tv.TryGetValue<double>(out var temperature))
             dst["temperature"] = temperature;
 
         if (src["tools"] is JsonArray tools && tools.Count > 0)

@@ -206,16 +206,31 @@ public static class AiRequestPolicy
 
         // Clamp the output length. Anthropic requires max_tokens; OpenAI treats it as optional,
         // so an absent value there would mean "model default" — we pin it either way.
-        var tokenField = vendor == AiVendor.OpenAi && obj.ContainsKey("max_completion_tokens")
+        //
+        // Имя поля выбирается по МОДЕЛИ, а не по тому, что прислал клиент. Все провайдеры терминала
+        // шлют max_tokens, а новые линейки OpenAI его не принимают вовсе — то есть при переходе с
+        // роутера прямо на вендора каждый вызов возвращал бы 400, и панель молча уходила бы в
+        // собственный расчёт.
+        var legacyRejected = vendor == AiVendor.OpenAi && AiModelCatalog.RejectsLegacyParameters(model);
+        var tokenField = vendor == AiVendor.OpenAi && (legacyRejected || obj.ContainsKey("max_completion_tokens"))
             ? "max_completion_tokens"
             : "max_tokens";
         var requested = options.MaxTokensCap;
-        if (obj[tokenField] is JsonValue tokenNode && !tokenNode.TryGetValue<int>(out requested))
+        // Значение может лежать под любым из двух имён — берётся то, что прислали.
+        var sent = obj[tokenField] ?? (vendor == AiVendor.OpenAi ? obj["max_tokens"] : null);
+        if (sent is JsonValue tokenNode && !tokenNode.TryGetValue<int>(out requested))
             return new AiPolicyResult(false, null, $"{tokenField} must be a whole number", model);
         // A per-feature cap replaces the client's request, then the global cap still bounds it —
         // the operator can shorten an answer but not lift the ceiling the server set for itself.
         if (overrideMaxTokens is { } capped) requested = capped;
         obj[tokenField] = Math.Clamp(requested, 1, options.MaxTokensCap);
+        // Старое имя убирается, иначе вендор увидит оба и откажет по неподдерживаемому.
+        if (tokenField == "max_completion_tokens") obj.Remove("max_tokens");
+
+        // Та же линейка не принимает температуру, отличную от единицы, а провайдеры терминала
+        // ставят 0.0–0.4 ради воспроизводимости. Поле убирается, а не подменяется: единица — это
+        // другое поведение модели, и тихо переключить его хуже, чем не просить ничего.
+        if (legacyRejected) obj.Remove("temperature");
 
         // The proxy buffers the upstream body into a string, so a streaming response would be
         // returned as an unusable SSE blob. Force it off rather than fail late.

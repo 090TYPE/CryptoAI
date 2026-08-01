@@ -125,11 +125,45 @@ public static class AiModelCatalog
                 : (sonnet ? 2 : 1);
         }
 
+        // Рассуждающие модели не берутся автоподбором — ровно по той же причине, что и opus выше.
+        // Это и было написано в комментарии, но не сделано в коде: Belongs пускает o1-/o3-, Tier
+        // давал им высший разряд для терминала, и достаточно было провайдеру показать такую модель,
+        // чтобы сервер начал назначать её всем — с ценой на порядок выше и другим набором
+        // параметров запроса.
+        if (Reasoning(low)) return -1;
+
         // У OpenAI роль класса несёт суффикс: mini и nano — дешёвые, без суффикса — основная модель.
         var small = low.Contains("mini") || low.Contains("nano");
         return role == AiModelRole.Background
             ? (small ? 2 : 1)
             : (small ? 1 : 2);
+    }
+
+    private static bool Reasoning(string low) =>
+        low.Contains("o1-") || low.Contains("o3-") || low.Contains("o4-") ||
+        low.StartsWith("o1") || low.StartsWith("o3") || low.StartsWith("o4");
+
+    /// <summary>
+    /// Отвергает ли модель параметры, которые терминал шлёт всем: <c>max_tokens</c> и
+    /// <c>temperature</c> не равную единице.
+    ///
+    /// Нужно потому, что у OpenAI новые линейки их не принимают: <c>max_tokens</c> отвечает
+    /// «Unsupported parameter … use max_completion_tokens», температура — «does not support 0.4
+    /// with this model». Все ~16 провайдеров терминала шлют и то и другое, поэтому без переписи
+    /// параметра каждый вызов на такой модели возвращает 400, а панель молча уходит в собственный
+    /// расчёт.
+    ///
+    /// Сегодня это не срабатывает: сервер смотрит на роутер, который старые имена параметров
+    /// принимает. Сработает ровно в тот момент, когда в админке нажмут «Вернуть напрямую к
+    /// вендорам» — то есть когда роутер и так уже подвёл и разбираться будет некогда.
+    ///
+    /// По подстроке, а не по списку: имена новых линеек выходят чаще, чем выкладывается сервер.
+    /// </summary>
+    public static bool RejectsLegacyParameters(string? model)
+    {
+        if (string.IsNullOrWhiteSpace(model)) return false;
+        var low = model.ToLowerInvariant();
+        return Reasoning(low) || low.Contains("gpt-5");
     }
 
     /// <summary>
