@@ -1422,7 +1422,12 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
         };
         _orderBookTimer.Tick += async (_, _) => await RefreshSelectedOrderBookAsync();
 
-        AiSignalDeskVM = new AiSignalDeskViewModel(BuildAiSignalDeskContext, new Services.AiSignalDeskService());
+        // Третий аргумент — свечи для тепловой карты. Публичный эндпоинт биржи, ключей не требует,
+        // поэтому карта считается по настоящим данным даже без AI и без подключённого аккаунта.
+        AiSignalDeskVM = new AiSignalDeskViewModel(
+            BuildAiSignalDeskContext,
+            new Services.AiSignalDeskService(),
+            (symbol, timeframe, limit, ct) => _gateway.GetCandlesAsync(symbol, timeframe, limit));
 
         InitializeTradingDesk();
         SelectedMarket = Markets.FirstOrDefault();
@@ -3910,6 +3915,16 @@ public partial class MainWindowViewModel : ReactiveObject, IDisposable
 
             _orderBookTimer.Start();
             AddLog("Autonomous market parser is live.");
+
+            // Прогреваем AI Signals сразу при запуске, не дожидаясь, пока человек откроет вкладку:
+            // раздел должен встречать его готовой картиной по монетам, а не пустой эвристикой.
+            // Пауза — чтобы список рынков успел наполниться: без рынков проход ушёл бы вхолостую.
+            // Повторов это не даёт — EnsureLoadedAsync генерирует один раз за календарный день.
+            RunLoggedAsync(async () =>
+            {
+                await Task.Delay(TimeSpan.FromSeconds(6));
+                await Dispatcher.UIThread.InvokeAsync(async () => await AiSignalDeskVM.EnsureLoadedAsync());
+            }, "AI signals warm-up");
         }
         catch (Exception ex)
         {

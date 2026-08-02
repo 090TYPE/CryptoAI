@@ -7,6 +7,7 @@ using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
 using CryptoAITerminal.AIEngine;
+using CryptoAITerminal.Core.Models;
 using CryptoAITerminal.TerminalUI.Services;
 using ReactiveUI;
 
@@ -111,6 +112,7 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
     private string _aiError = string.Empty;
     private bool _loadedOnce;
     private CancellationTokenSource? _refreshCts;
+    private CancellationTokenSource? _heatCts;
 
     /// <summary>
     /// Пауза перед повторной АВТОматической генерацией после прохода, не давшего живого ответа.
@@ -121,6 +123,19 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
 
     private readonly Func<AiSignalDeskContext>? _contextProvider;
     private readonly AiSignalDeskService? _service;
+
+    /// <summary>
+    /// Свечи по паре и таймфрейму — источник настоящих данных для тепловой карты. Без него карта
+    /// работает по-старому, от одного сигнала на монету.
+    /// </summary>
+    private readonly Func<string, string, int, CancellationToken, Task<IReadOnlyList<DexOhlcvPoint>>>? _candles;
+
+    /// <summary>
+    /// Календарный день последнего живого ответа. Терминал часто не закрывают сутками, и без этого
+    /// на экране висели бы вчерашние сигналы: <see cref="_loadedOnce"/> один раз выключал
+    /// автогенерацию навсегда.
+    /// </summary>
+    private DateOnly _loadedOnDay;
 
     // ── Collections ─────────────────────────────────────────────────────
     public ObservableCollection<AiSignalTickerViewModel> Ticker { get; } = [];
@@ -151,10 +166,14 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
     /// <summary>Design-time / offline-only ctor (demo desk, no AI).</summary>
     public AiSignalDeskViewModel() : this(null, null) { }
 
-    public AiSignalDeskViewModel(Func<AiSignalDeskContext>? contextProvider, AiSignalDeskService? service)
+    public AiSignalDeskViewModel(
+        Func<AiSignalDeskContext>? contextProvider,
+        AiSignalDeskService? service,
+        Func<string, string, int, CancellationToken, Task<IReadOnlyList<DexOhlcvPoint>>>? candles = null)
     {
         _contextProvider = contextProvider;
         _service = service;
+        _candles = candles;
 
         SetFilterCommand = ReactiveCommand.Create<string>(SetFilter);
         SelectSignalCommand = ReactiveCommand.Create<AiSignalCardViewModel>(SelectSignal);
@@ -174,10 +193,17 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
 
     // ── Live generation ─────────────────────────────────────────────────
 
-    /// <summary>Called when the AI Signals tab is first opened; generates once if configured.</summary>
+    /// <summary>
+    /// Автогенерация: один раз за календарный день. Вызывается при старте приложения и при каждом
+    /// открытии вкладки.
+    ///
+    /// День проверяется, а не только флаг «уже загружено»: терминал держат открытым сутками, и без
+    /// этого человек, открывший вкладку в четверг, смотрел бы на сигналы, посчитанные во вторник,
+    /// без единого признака, что они несвежие.
+    /// </summary>
     public async Task EnsureLoadedAsync()
     {
-        if (_loadedOnce) return;
+        if (_loadedOnce && _loadedOnDay == DateOnly.FromDateTime(DateTime.Now)) return;
         await RefreshAsync(auto: true).ConfigureAwait(true);
     }
 
@@ -202,6 +228,7 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
             // so there is no reason to report — but the badge must name the heuristic, not a model.
             SourceLabel = OfflineLabel;
             AiError = string.Empty;
+            KickHeatmapRefresh();   // свечи — данные площадки, модель для них не нужна
             return;
         }
 
@@ -234,6 +261,7 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
                     SourceLabel = result.Source;
                     AiError = string.Empty;
                     _loadedOnce = true; // живой ответ на экране — больше платить за открытие вкладки не за что
+                    _loadedOnDay = DateOnly.FromDateTime(DateTime.Now);
                 }
                 catch (Exception ex)
                 {
@@ -254,6 +282,32 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
         {
             if (ReferenceEquals(cts, _refreshCts)) IsGenerating = false;
         }
+
+        KickHeatmapRefresh();
+    }
+
+    /// <summary>
+    /// Запускает пересчёт тепловой карты по свечам, не задерживая открытие вкладки: 42 запроса
+    /// (7 монет × 6 таймфреймов) идут в фоне, карта дорисовывается на месте. Предыдущий пересчёт
+    /// отменяется — иначе два нажатия REFRESH подряд наперегонки писали бы в одни коллекции.
+    /// </summary>
+    private void KickHeatmapRefresh()
+    {
+        if (_candles is null) return;
+
+        _heatCts?.Cancel();
+        var cts = _heatCts = new CancellationTokenSource();
+        _ = SafeHeatmapRefreshAsync(cts.Token);
+    }
+
+    private async Task SafeHeatmapRefreshAsync(CancellationToken ct)
+    {
+        // Обёртка намеренная: этот метод запускается без await, а неперехваченное исключение в
+        // «забытой» задаче под ReactiveUI завершает процесс. Цена ошибки в раскраске таблицы не
+        // должна быть «терминал исчез с экрана вместе с открытыми позициями».
+        try { await RefreshHeatmapFromCandlesAsync(ct).ConfigureAwait(true); }
+        catch (OperationCanceledException) { }
+        catch { /* карта осталась на сигнальных значениях — это рабочее состояние */ }
     }
 
     /// <summary>
@@ -812,46 +866,136 @@ public sealed class AiSignalDeskViewModel : ReactiveObject
     /// </summary>
     private void BuildHeatmapFromSignals()
     {
-        static string CellBg(string dir, double c) => dir switch
-        {
-            "buy"  => Rgba(61, 220, 132, 0.1 + c * 0.5),
-            "sell" => Rgba(255, 107, 107, 0.1 + c * 0.5),
-            _      => Rgba(244, 184, 96, 0.08 + c * 0.32),
-        };
-        static string CellFg(string dir) => dir == "buy" ? SemanticColor.Positive : dir == "sell" ? SemanticColor.Negative : SemanticColor.Warning;
-        static string CellBr(string dir) => dir == "buy" ? Rgba(61, 220, 132, 0.18) : dir == "sell" ? Rgba(255, 107, 107, 0.18) : Rgba(244, 184, 96, 0.12);
-
-        // Deterministic per-timeframe jitter so lower/higher TFs read slightly differently.
+        // Deterministic per-timeframe softening: короткий сигнал на дальнем таймфрейме значит меньше.
         double[] tfWeight = [0.92, 1.0, 1.0, 0.96, 0.78, 0.72];
 
-        _hmSyms = _all.Take(7).Select(s => s.Sym).ToList();
+        var rows = _all.Take(HeatmapSymbols).ToList();
+        var cells = new AiHeatCell[rows.Count][];
+        for (var ri = 0; ri < rows.Count; ri++)
+        {
+            cells[ri] = new AiHeatCell[HmTfs.Length];
+            for (var ti = 0; ti < HmTfs.Length; ti++)
+                cells[ri][ti] = AiHeatScore.FromSignal(rows[ri].Dir, rows[ri].Conf, tfWeight[ti]);
+        }
+
+        ApplyHeatmap(rows.Select(s => s.Sym).ToList(), cells);
+    }
+
+    /// <summary>Сколько монет показывает карта.</summary>
+    private const int HeatmapSymbols = 7;
+
+    private static string CellBg(string dir, double c) => dir switch
+    {
+        "buy"  => Rgba(61, 220, 132, 0.1 + c * 0.5),
+        "sell" => Rgba(255, 107, 107, 0.1 + c * 0.5),
+        _      => Rgba(244, 184, 96, 0.08 + c * 0.32),
+    };
+
+    private static string CellFg(string dir) =>
+        dir == "buy" ? SemanticColor.Positive : dir == "sell" ? SemanticColor.Negative : SemanticColor.Warning;
+
+    private static string CellBr(string dir) =>
+        dir == "buy" ? Rgba(61, 220, 132, 0.18) : dir == "sell" ? Rgba(255, 107, 107, 0.18) : Rgba(244, 184, 96, 0.12);
+
+    /// <summary>Раскладывает посчитанные ячейки в коллекции, из которых рисуется карта.</summary>
+    private void ApplyHeatmap(List<string> syms, AiHeatCell[][] cells)
+    {
+        _hmSyms = syms;
         _hmDir = [];
         _hmConf = [];
         HeatmapRows.Clear();
 
-        foreach (var s in _all.Take(7))
+        for (var ri = 0; ri < syms.Count; ri++)
         {
-            var baseDir = s.Dir == "BUY" ? "buy" : s.Dir == "SELL" ? "sell" : "hold";
             var dirs = new string[HmTfs.Length];
             var confs = new double[HmTfs.Length];
-            var cells = new ObservableCollection<AiSignalHeatmapCellViewModel>();
+            var row = new ObservableCollection<AiSignalHeatmapCellViewModel>();
 
             for (var ti = 0; ti < HmTfs.Length; ti++)
             {
-                var c = Math.Clamp(s.Conf * tfWeight[ti], 0.35, 0.98);
-                // On the weakest/longest frames a mid-confidence signal softens to HOLD.
-                var dir = c < 0.5 && baseDir != "hold" ? "hold" : baseDir;
-                dirs[ti] = dir;
-                confs[ti] = c;
-                cells.Add(new AiSignalHeatmapCellViewModel(
-                    CellBg(dir, c), CellBr(dir), CellFg(dir),
-                    ((int)Math.Round(c * 100)).ToString(CultureInfo.InvariantCulture)));
+                var cell = cells[ri][ti];
+                dirs[ti] = cell.Dir;
+                confs[ti] = cell.Conf;
+                row.Add(new AiSignalHeatmapCellViewModel(
+                    CellBg(cell.Dir, cell.Conf), CellBr(cell.Dir), CellFg(cell.Dir),
+                    ((int)Math.Round(cell.Conf * 100)).ToString(CultureInfo.InvariantCulture)));
             }
+
             _hmDir.Add(dirs);
             _hmConf.Add(confs);
-            HeatmapRows.Add(new AiSignalHeatmapRowViewModel(s.Sym, cells));
+            HeatmapRows.Add(new AiSignalHeatmapRowViewModel(syms[ri], row));
         }
     }
+
+    /// <summary>
+    /// Пересчитывает карту по НАСТОЯЩИМ свечам каждого таймфрейма.
+    ///
+    /// До этого карта таймфреймы не считала: брала один сигнал по монете и умножала его уверенность
+    /// на фиксированный вектор весов, а всё, что оказалось ниже 0.5, объявляла «hold». На спокойном
+    /// рынке уверенность держится в районе 0.35–0.40, поэтому карта целиком становилась янтарной, и
+    /// в каждой клетке стояло одно и то же число — нижняя граница clamp'а. Зелёного и красного на
+    /// экране не появлялось никогда, хотя минутный и дневной таймфреймы в это же время могли
+    /// смотреть в разные стороны — ровно то, ради чего карта и нужна.
+    ///
+    /// Ошибку одной клетки глотаем молча и оставляем её сигнальное значение: карта из шести
+    /// таймфреймов не должна пропадать целиком из-за одного не отдавшего свечи запроса.
+    /// </summary>
+    private async Task RefreshHeatmapFromCandlesAsync(CancellationToken ct)
+    {
+        if (_candles is null || _hmSyms.Count == 0) return;
+
+        var syms = _hmSyms.ToList();
+        var cells = new AiHeatCell[syms.Count][];
+        for (var ri = 0; ri < syms.Count; ri++)
+        {
+            cells[ri] = new AiHeatCell[HmTfs.Length];
+            for (var ti = 0; ti < HmTfs.Length; ti++)
+                cells[ri][ti] = new AiHeatCell(_hmDir[ri][ti], _hmConf[ri][ti]);
+        }
+
+        var jobs = new List<Task>();
+        var gate = new SemaphoreSlim(HeatmapFetchConcurrency);
+
+        for (var ri = 0; ri < syms.Count; ri++)
+        {
+            for (var ti = 0; ti < HmTfs.Length; ti++)
+            {
+                int r = ri, t = ti;
+                jobs.Add(Task.Run(async () =>
+                {
+                    await gate.WaitAsync(ct).ConfigureAwait(false);
+                    try
+                    {
+                        var window = await _candles(PairOf(syms[r]), HmTfs[t], HeatmapWindow, ct).ConfigureAwait(false);
+                        var read = AiHeatScore.Read(window);
+                        // Свечей не хватило — оставляем то, что дал сигнал, это лучше пустой клетки.
+                        if (read.Conf > 0d || read.Dir != "hold") cells[r][t] = read;
+                    }
+                    catch (OperationCanceledException) { }
+                    catch { /* одна клетка не сложилась — карта остаётся */ }
+                    finally { gate.Release(); }
+                }, ct));
+            }
+        }
+
+        try { await Task.WhenAll(jobs).ConfigureAwait(true); }
+        catch (OperationCanceledException) { return; }
+        finally { gate.Dispose(); }
+
+        if (ct.IsCancellationRequested) return;
+        ApplyHeatmap(syms, cells);
+        RefreshSelected();
+    }
+
+    /// <summary>Свечей на одно окно: хватает на устойчивую оценку и не грузит площадку.</summary>
+    private const int HeatmapWindow = 40;
+
+    /// <summary>Сколько запросов свечей держим в воздухе разом (7 монет × 6 таймфреймов = 42).</summary>
+    private const int HeatmapFetchConcurrency = 6;
+
+    /// <summary>Лента показывает базовый актив (BTC), а площадке нужна пара (BTCUSDT).</summary>
+    private static string PairOf(string sym) =>
+        sym.Contains("USD", StringComparison.OrdinalIgnoreCase) ? sym : sym + "USDT";
 
     // ── Helpers ──────────────────────────────────────────────────────────
     private static string FormatPrice(double v) => v >= 10000

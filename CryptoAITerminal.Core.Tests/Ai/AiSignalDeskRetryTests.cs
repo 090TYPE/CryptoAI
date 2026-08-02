@@ -61,6 +61,20 @@ public class AiSignalDeskRetryTests
     }
 
     [Fact]
+    public async Task The_heatmap_is_built_even_without_a_model()
+    {
+        // Свечи — данные площадки, модель для них не нужна. Карта обязана быть осмысленной и
+        // на эвристике, иначе нижний блок страницы не несёт информации вообще.
+        var vm = new AiSignalDeskViewModel(Context, service: null);
+
+        await vm.EnsureLoadedAsync();
+
+        Assert.NotEmpty(vm.HeatmapRows);
+        Assert.NotEmpty(vm.HeatmapTimeframes);
+        Assert.All(vm.HeatmapRows, r => Assert.Equal(vm.HeatmapTimeframes.Count, r.Cells.Count));
+    }
+
+    [Fact]
     public async Task A_context_provider_that_throws_does_not_take_the_page_down()
     {
         // Провайдер контекста живёт в чужой вьюмодели и может упасть на любой мелочи; страница
