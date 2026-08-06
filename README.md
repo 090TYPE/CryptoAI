@@ -8,580 +8,220 @@
   <img src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet" alt=".NET 8"/>
   <img src="https://img.shields.io/badge/Avalonia-12.0-883EFF" alt="Avalonia"/>
   <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11%20x64-0078D6?logo=windows" alt="Platform"/>
-  <img src="https://img.shields.io/badge/Version-v1.4-21E6C1" alt="v1.4"/>
+  <img src="https://img.shields.io/badge/Version-v1.8.11-21E6C1" alt="v1.8.11"/>
   <img src="https://img.shields.io/badge/License-Source--available-lightgrey" alt="License: source-available"/>
   <a href="https://github.com/090TYPE/CryptoAI/actions/workflows/ci.yml"><img src="https://github.com/090TYPE/CryptoAI/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
 </p>
 
-<p align="center">
-  <b>English</b> · <a href="#содержание">Русская версия ниже ↓</a>
-</p>
-
-> **A professional desktop terminal for crypto trading.** CEX + DEX in one window —
-> Binance, Bybit, OKX, KuCoin, Uniswap, Jupiter, SunSwap. Algorithmic bots, a new-listing
-> sniper, on-chain analytics, and **AI throughout**: pick **Claude or ChatGPT** with a single
-> switch, a global **AI command bar (`Ctrl+K`)**, an autonomous AI trader that trades by
-> itself via tool use (CEX and DEX), plus AI assistants across 13 sections. Runs in demo
-> mode without API keys. Fully bilingual UI — instant **RU ⇄ EN** switching.
->
-> **Stack:** C# · .NET 8 · Avalonia · MVVM · SQLite · Claude API / OpenAI API · Docker
-> (server side: ASP.NET Core, PostgreSQL/TimescaleDB, Vault).
+> **A desktop terminal for crypto trading — centralised exchanges and on-chain DEX in one window.**
+> Manual trading, algorithmic bots, a new-listing sniper, portfolio and risk tooling, and AI
+> assistance throughout. Runs on Windows as a self-contained app; an optional server component
+> collects market data and proxies AI requests. Paper trading is the default — live execution is
+> behind an explicit switch.
 >
 > ⚠️ **Not financial advice.** Trading crypto carries substantial risk of loss.
-> Live trading is gated behind explicit confirmation; paper trading is the default.
->
 > 📄 Source-available for review — see [LICENSE](LICENSE). Commercial use requires permission.
 
 ---
-> **Профессиональный десктоп-терминал для торговли криптовалютами.** CEX + DEX в одном окне: Binance, Bybit, OKX, KuCoin, Uniswap, Jupiter, SunSwap. Алгоритмические боты, снайпер новых листингов, on-chain аналитика и **AI везде**: на выбор **Claude или ChatGPT** (один переключатель на весь терминал), глобальная **AI-командная строка `Ctrl+K`** (навигация и вопросы из любого места), автономный AI-трейдер (сам торгует через tool use, CEX и DEX) плюс AI-помощники в 13 разделах. Демо-режим без ключей, лицензирование и Telegram-бот продажи лицензий с оплатой Stars/криптой. Интерфейс полностью двуязычный — мгновенное переключение **RU ⇄ EN** на лету.
+
+> **Десктоп-терминал для торговли криптовалютами — биржи и он-чейн DEX в одном окне.**
+> Ручная торговля, алгоритмические боты, снайпер новых листингов, портфель и риск-контроль,
+> AI-помощники по разделам. Работает на Windows как self-contained приложение; отдельный
+> серверный компонент собирает рыночные данные и проксирует запросы к моделям.
+> По умолчанию всё в бумажном режиме — живое исполнение включается отдельным переключателем.
 
 ---
 
 ## Содержание
 
-- [Скриншот](#скриншот)
-- [Что умеет терминал](#что-умеет-терминал)
-- [Архитектура проекта](#архитектура-проекта)
-- [Биржи и сети](#биржи-и-сети)
-- [Боты и автоматизация](#боты-и-автоматизация)
-- [DEX-трейдинг и снайпер](#dex-трейдинг-и-снайпер)
-- [Аналитика и сигналы](#аналитика-и-сигналы)
-- [Управление рисками](#управление-рисками)
-- [Уведомления](#уведомления)
-- [AI-функции](#ai-функции)
-- [Демо-режим, лицензирование и обновления](#демо-режим-лицензирование-и-обновления)
+- [Что это такое](#что-это-такое)
+- [Скриншоты](#скриншоты)
+- [Разделы терминала](#разделы-терминала)
+- [Как устроено](#как-устроено)
 - [Быстрый старт](#быстрый-старт)
-- [API-ключи](#api-ключи)
-- [Сборка релиза](#сборка-релиза)
-- [Безопасность](#безопасность)
-- [Стек технологий](#стек-технологий)
+- [Режимы и безопасность](#режимы-и-безопасность)
+- [Стек](#стек)
 
 ---
 
-## Скриншот
+## Что это такое
 
-> Терминал запускается в полноэкранном режиме без системной рамки. Переключение разделов — боковая навигационная панель.
+Терминал собирает в одном окне то, ради чего обычно держат три-четыре вкладки в браузере:
+стакан и график биржи, кошелёк и своп на DEX, состояние открытых позиций, ленту новостей
+и он-чейн метрики. Всё это дополнено автоматизацией — от простых правил «если цена выше,
+то уведомить» до ботов, которые ведут сетку или усредняют позицию без участия человека.
 
----
+Терминал работает с двумя мирами сразу:
 
-## Что умеет терминал
+- **Централизованные биржи** — Binance, Bybit, OKX, KuCoin; спот и бессрочные фьючерсы.
+  Ключи хранятся локально, зашифрованные средствами Windows, и никуда не отправляются.
+- **On-chain** — EVM-сети, Solana и Tron: свопы через агрегаторы и напрямую через роутеры,
+  плюс бессрочные контракты Hyperliquid.
 
-### Торговля (CEX)
+AI встроен не как отдельная вкладка, а как слой: разбор графика, сводка новостей, проверка
+токена перед покупкой, помощник в чате и автономный агент, который может сам выставлять
+ордера в рамках заданных лимитов. Модель выбирается переключателем — Claude или ChatGPT,
+на своём ключе или через сервер.
 
-- **Spot и USDT-M Futures** на Binance, Bybit, OKX, KuCoin одновременно
-- **Ордера**: Market, Limit, Stop-Limit, OCO; IOC / FOK / GTC
-- **Leverage 1–100×**, Cross / Isolated margin, Long-only / Short-only / Long&Short bias
-- **9 шаблонов ордеров** с горячими клавишами `Shift+1`…`Shift+9` — одним нажатием выставляется преднастроенный ордер
-- **Advanced Trailing Stop** — серверный трейлинг, partial TP (закрытие доли на первом уровне), multi-step exit с настройкой TP2
-- **TWAP и Iceberg** — разбивка крупного ордера во времени или скрытые объёмы для снижения market impact
-- **Условные ордера** (Conditional Orders) — триггерные цепочки «если цена выше X → купить Y»
-- **Best Execution Router** — сравнивает котировки на всех подключённых биржах и маршрутизирует ордер в наиболее выгодную
-
-### DEX-трейдинг
-
-- **EVM-сети**: Ethereum, BSC, Base, Polygon, Arbitrum — через Uniswap V2/V3, Aerodrome, PancakeSwap, SushiSwap, QuickSwap, Camelot
-- **Uniswap V3** — автоматический выбор лучшего fee-tier (0.01% / 0.05% / 0.3% / 1%) через QuoterV2
-- **Solana** — Jupiter (все DEX: Raydium, Orca, PumpSwap), с поддержкой Jito bundle для MEV-защиты
-- **Tron** — SunSwap V2, TRC-20 токены
-- **MEV-защита**: Flashbots Protect для ETH/Base, BloxRoute для BSC, Jito для Solana
-- **CEX-подобный интерфейс**: 3-колонный макет с live-графиком, таймфреймами, блоттером сделок
-- **История свечей** из 4 источников: GeckoTerminal → disk cache → on-chain Swap events → синтетика
-
-### Отображение данных
-
-- **Свечной график** с инструментами рисования: тренд-линии, горизонтальные уровни, прямоугольники, каналы
-- **Orderbook** — стакан с глубиной 8 уровней, best bid/ask, спред
-- **Real-time котировки** через WebSocket — нет задержки биржевого API
+Интерфейс двуязычный, русский и английский переключаются на лету.
 
 ---
 
-## Архитектура проекта
+## Скриншоты
 
-```
-CryptoAI/
-├── CryptoAITerminal.Core             ← модели, интерфейсы (IExchangeGateway, IStrategy)
-├── CryptoAITerminal.Core.Tests       ← 294 unit-теста (RiskManager, Strategies, BacktestEngine, AI-агент, AI-сервисы, провайдер-свитч, командная строка, локализация UI)
-├── CryptoAITerminal.Gateway.Base     ← общий код шлюзов
-├── CryptoAITerminal.Gateway.Binance  ← Binance Spot + USDT-M Futures (Binance.Net)
-├── CryptoAITerminal.Gateway.Bybit    ← Bybit v5 Spot + Linear Futures (Bybit.Net)
-├── CryptoAITerminal.Gateway.OKX      ← OKX Unified API Spot + Swap (OKX.Net)
-├── CryptoAITerminal.Gateway.KuCoin   ← KuCoin Spot + Futures (Kucoin.Net)
-├── CryptoAITerminal.Gateway.DEX      ← Web3 шлюзы (Nethereum, Jupiter, SunSwap)
-├── CryptoAITerminal.OrderRouter      ← Best Execution Router
-├── CryptoAITerminal.RiskManager      ← Pre-trade risk checks, дневные лимиты
-├── CryptoAITerminal.WhaleTracker     ← On-chain whale alerts
-├── CryptoAITerminal.AIEngine         ← AI-движок: единый ChatClient/AiRuntime (Claude ИЛИ ChatGPT), автономный агент (tool use), сигналы, AI-вердикт токена + 13 AI-провайдеров
-├── CryptoAITerminal.TerminalUI       ← Avalonia UI (главный проект; каждая страница вынесена в свой UserControl в Views/, локализация EN→RU через словарь)
-├── CryptoAITerminal.WebApi           ← REST API для мобильного мониторинга
-└── CryptoAITerminal.LicenseBot       ← Telegram-бот продажи лицензий (Stars + крипта, привязка к ПК)
-```
+<!-- Скриншоты будут добавлены: docs/screenshots/dashboard.png и docs/screenshots/trading.png -->
 
-Все биржевые шлюзы реализуют единый интерфейс `IExchangeGateway` — стратегия, написанная один раз, работает на любой бирже без изменений.
+*Раздел заполняется — актуальные снимки экрана готовятся.*
 
 ---
 
-## Биржи и сети
+## Разделы терминала
 
-### CEX
+Навигация — боковая панель слева, разделы сгруппированы по назначению.
 
-| Биржа | Spot | Futures | WebSocket | Статус |
-|-------|------|---------|-----------|--------|
-| **Binance** | ✅ | ✅ USDT-M | ✅ | Полностью |
-| **Bybit** | ✅ | ✅ Linear | ✅ | Полностью |
-| **OKX** | ✅ | ✅ Swap | ✅ | Полностью |
-| **KuCoin** | ✅ | ✅ Perp | REST poll | Полностью |
+### Торговля
 
-### DEX / Блокчейны
+| Раздел | Что на экране |
+|---|---|
+| **Dashboard** | Сводка из виджетов: цена и стакан выбранной пары, вотчлист, настроение рынка, лента AI-сигналов, монитор газа, карта ликвидаций. Раскладка настраивается перетаскиванием. |
+| **Markets** | Список торгуемых пар с ценой, изменением и объёмом; справа — карточка выбранного рынка со стаканом, лентой сделок и мини-графиком. Отсюда пара уходит на торговый стол. |
+| **Trading** | Основной торговый стол. Слева график и стакан, справа тикет ордера: сторона, тип, количество, цена, плечо и режим маржи для фьючерсов. Здесь же список рабочих ордеров и открытых позиций, кнопки постановки тейк-профита и стоп-лосса. Стол переключается между биржевым и DEX-режимом. |
+| **AI Signals** | Лента сигналов по отслеживаемым парам с направлением и уверенностью, тепловая карта по таймфреймам, разбор новостного фона и чат с моделью по конкретному инструменту. |
+| **Sniper** | Снайпер новых листингов: поток свежих пар с DEX, фильтры по ликвидности, объёму, возрасту и риск-скору, проверка токена на honeypot, автоматическая покупка и правила выхода — тейк, стоп, трейлинг, частичная фиксация. |
 
-| Сеть | DEX | Снайпер | MEV-защита |
-|------|-----|---------|-----------|
-| **Ethereum** | Uniswap V2/V3, SushiSwap | Factory monitor | Flashbots Protect |
-| **BSC** | PancakeSwap, SushiSwap | Factory monitor | BloxRoute |
-| **Base** | Aerodrome, Uniswap V2/V3 | Factory monitor | Flashbots Protect |
-| **Polygon** | QuickSwap, SushiSwap, Uniswap V3 | — | — |
-| **Arbitrum** | SushiSwap, Camelot, Uniswap V3 | — | — |
-| **Solana** | Jupiter (все DEX) | Program monitor | Jito bundles |
-| **Tron** | SunSwap V2 | — | — |
+### Портфель
 
----
+| Раздел | Что на экране |
+|---|---|
+| **Portfolio** | Активы по кошелькам и биржам, распределение по долям, ребалансировка к целевым весам, история транзакций и выданные разрешения токенов. |
+| **Positions** | Все открытые позиции со всех подключённых площадок в одной таблице: вход, текущая цена, цена ликвидации, нереализованный результат. Закрытие целиком или частями. |
+| **Risk** | Глобальные лимиты — размер позиции, максимальная трата на сделку, дневной лимит убытка, потолок открытой экспозиции. Здесь же переключатель бумажного и живого режима. |
 
-## Боты и автоматизация
+### Автоматизация
 
-### Rule Bot (AI Bot)
+| Раздел | Что на экране |
+|---|---|
+| **Bots** | Список движков с состоянием и результатом. Сеточный бот, DCA-бот, бот по правилам и автономный AI-трейдер. Раскрытая строка показывает параметры, лог и риск-панель конкретного бота. |
+| **Rules** | Конструктор правил «условие → действие» без кода: цена, RSI, изменение за период, ставка финансирования; действие — уведомить, выставить ордер, остановить движки. |
+| **Backtest** | Прогон стратегии по истории: доходность, число сделок, доля прибыльных, просадка, кривая капитала и сравнение с простым удержанием. Отдельно — прогон по окнам и симуляция Монте-Карло. |
+| **Journal** | Журнал закрытых сделок с заметками и тегами, разбивка результата по дням и источникам, выгрузка в CSV. |
 
-Стратегии, выбираемые из выпадающего списка:
+### Арбитраж и копирование
 
-| Стратегия | Параметры | Описание |
-|-----------|-----------|----------|
-| **MA Cross** | Fast / Slow period | Пересечение скользящих средних |
-| **RSI** | Period, Overbought, Oversold | Wilder's RSI (правильная формула, совпадает с TradingView) |
-| **Bollinger Bands** | Period, Deviation | Торговля от границ полос |
-| **Breakout** | Period | Пробой максимума/минимума за N свечей |
-| **MACD** | Fast / Slow / Signal | Classic MACD-crossover |
-| **VWAP** | Band % | Торговля от VWAP ±band |
-| **AI** | API key, model, poll interval | Сигнал генерирует выбранное семейство (Claude или ChatGPT) по последним свечам |
+| Раздел | Что на экране |
+|---|---|
+| **Funding** | Ставки финансирования по биржам и инструментам, поиск связок «спот плюс шорт перпетуала» и управление открытыми парами. |
+| **Arb** | Межбиржевой арбитраж: расхождение цен между площадками с учётом комиссий, ручное и автоматическое исполнение. |
+| **Copy** | Копирование сделок: режим лидера, публикующего свои сделки, и режим последователя, зеркалящего их с масштабированием. |
+| **Stat Arb** | Парный арбитраж: подбор коррелированных пар, спред и z-оценка, вход при расхождении и выход при возврате к среднему. |
 
-Для каждой стратегии настраиваются: TP, SL, Trailing Stop, Partial TP (частичное закрытие), Leverage, Margin mode.
+### Данные и аналитика
 
-### Grid Bot
+| Раздел | Что на экране |
+|---|---|
+| **News** | Лента новостей с фильтрами и оценкой тона, отметка важных заголовков. |
+| **On-Chain** | Он-чейн метрики по биткоину и эфиру: MVRV, NUPL, активные адреса и приток на биржи. |
+| **Whale** | Крупные переводы по отслеживаемым кошелькам и контрактам, с метками известных адресов. |
+| **Tape** | Лента сделок биржи и DEX-пула с подсветкой крупных печатей. |
+| **Liquidation** | Карта скоплений ликвидаций вокруг текущей цены и поток срабатываний с бирж. |
+| **Analytics** | Разбор собственной торговли: результат по дням и источникам, распределение сделок, риск-метрики. |
 
-- Автоматическая расстановка лимитных ордеров между `LowerPrice` и `UpperPrice` на N уровней
-- Spot и Futures (с леверджем)
-- Комиссии учтены в P&L (0.1% за сторону)
-- Pause / Resume без потери позиций
+### Инфраструктура
 
-### DCA Bot
+| Раздел | Что на экране |
+|---|---|
+| **Gas** | Стоимость газа по сетям, оценка времени подтверждения, алерты на снижение. |
+| **Router** | Подбор лучшего исполнения: сравнение цен площадок с учётом комиссий и дробление крупной заявки. |
+| **Scanner** | Сканер рынка по фильтрам — движение, объём, активность, RSI; отсюда пара уходит в торговлю. |
+| **Settings** | Ключи бирж и AI, выбор модели, лицензия, каналы уведомлений, параметры DEX, язык интерфейса. |
 
-- Периодические докупки по расписанию
-- Поддержка Binance, Bybit, OKX, KuCoin
-- Лестница TP-уровней для частичных продаж
-
-### DEX Sniper
-
-Снайпер для новых листингов. Принцип работы:
-
-1. **Обнаружение** — 8 параллельных источников сигналов:
-   - Factory события (PairCreated / PoolCreated) на BSC, ETH, Base
-   - Solana Program Activity (Raydium, Pump.fun, Orca)
-   - **EVM Mempool** — pending `addLiquidity` транзакции (за 1-3 блока до Factory)
-   - **Pump.fun Graduation** — переезд токена с pump.fun на Raydium
-   - DexScreener trending API
-2. **Фильтрация** — security scan (GoPlus + Honeypot.is + RugCheck), **Deployer Wallet Analysis** (история деплоев, % рагпуллов), liquidity / volume / age gates
-3. **Ранжирование** — SniperRankingModel (0-100), band S/A/B/C/D
-4. **Исполнение** — live buy через IDexTradeGateway, retry-логика, трейлинг-стоп
-5. **Управление позицией** — SniperTrailingStopService: активация, trail distance, multi-level TP (50%/100%/200%/500%), hard stop
-
-### Composite Rule Engine
-
-Конструктор сложных автоматических правил без написания кода:
-
-- **Условия**: RSI < X, цена > MA, цена выше/ниже уровня, cross above/below, volume spike, funding rate, P&L открытой позиции, 24h change
-- **Логика**: AND / OR
-- **Действия**: Market Buy/Sell, Limit Buy/Sell, запуск DCA, пауза Grid, уведомление, переход SL на breakeven
-- **Cooldown**: от 30 сек до 4 часов, один раз или повторяться
-- **Применение**: автоматическое управление портфелем без ручного вмешательства
-
-### TradingView Webhook
-
-```
-POST /api/webhook/tradingview
-{
-  "action": "buy",          // buy | sell | close
-  "symbol": "BTCUSDT",
-  "qty": 0.01,
-  "exchange": "Binance",    // Binance | Bybit | OKX | KuCoin
-  "market": "Spot",         // Spot | Futures
-  "secret": "your_secret"  // опционально, задаётся через CRYPTOAI_TV_SECRET
-}
-```
-
-TradingView Alert шлёт этот JSON → терминал получает и исполняет ордер. Лог вебхуков: `/api/webhook/tradingview/log`.
+Внизу панели — **Help** со справкой по разделам и горячим клавишам и **Logout**.
 
 ---
 
-## DEX-трейдинг и снайпер
+## Как устроено
 
-### Интерфейс DEX Trading
+Продукт состоит из двух частей, и вторая необязательна.
 
-Три колонки, идентичные CEX:
+**Десктоп-приложение** — то, что устанавливается пользователю. Self-contained сборка под
+Windows x64: .NET внутри, отдельно ставить ничего не нужно. Интерфейс на Avalonia, архитектура
+MVVM. Вся торговля выполняется здесь: ключи бирж и приватные ключи кошельков не покидают
+машину, ордера уходят на площадки напрямую с компьютера пользователя.
 
-- **Левая** — тикет: выбор токена, quote asset (ETH/BNB/USDT/USDC), сумма, пресеты 25/50/75/MAX, кнопки BUY/SELL
-- **Центральная** — график (GeckoTerminal OHLCV → disk cache → on-chain reconstruction → синтетика), таймфреймы 15M/1H/4H/1D/1W, блоттер сделок, вкладка Wallet, Chart Info
-- **Правая** — браузер токенов: поиск, quick cards с ценой и ликвидностью, листинг
+**Серверная часть** — необязательный общий бэкенд. Собирает свечи и рыночные данные по
+отслеживаемым токенам, отдаёт их клиентам вместо того, чтобы каждый бил по публичным API,
+и проксирует запросы к моделям, чтобы ключ вендора не лежал у каждого пользователя.
+Разворачивается через Docker Compose: ASP.NET Core, PostgreSQL с TimescaleDB, воркер сбора
+данных и Caddy для TLS. Без сервера терминал работает автономно — просто ходит к публичным
+источникам сам.
 
-### История свечей (4-уровневый fallback)
+Лицензии продаёт отдельный Telegram-бот с оплатой криптовалютой; терминал проверяет
+подписанный лицензионный токен офлайн.
 
-1. **GeckoTerminal OHLCV** — официальный API, свечи от создания пула
-2. **Disk cache** — локальное хранилище `%LocalAppData%/CryptoAITerminal/dex-price-cache/`, сохраняется между сессиями
-3. **On-chain reconstruction** (`EvmPoolSwapHistoryScanner`) — сканирует Swap-события пула прямо из блокчейна, восстанавливает историю с момента создания пула
-4. **Synthetic bootstrap** — экстраполяция из 5m/1h/24h изменений цены
-
-### LP Calculator
-
-Встроен в DEX Trading вкладку:
-- **V2 Impermanent Loss** = 2√k/(1+k) - 1, где k = currentPrice/entryPrice
-- **V3 IL** — с учётом tick range (concentrated liquidity)
-- On-chain запрос резервов пула через `getReserves()`
-
----
-
-## Аналитика и сигналы
-
-### On-Chain Metrics
-CoinMetrics Community API — MVRV Z-Score, NUPL, Exchange Net Flow для BTC/ETH.
-
-### Whale Tracker
-Алерты на крупные переводы (≥ $500K) через Etherscan/BSCScan/Solscan. Помеченные адреса (биржи, фонды, известные киты).
-
-### Correlation Matrix
-Матрица корреляций Пирсона между открытыми позициями на дневных log-returns. Предупреждение при |ρ| ≥ 0.7. Цветовая тепловая карта.
-
-### Deribit Options
-Данные опционов в реальном времени:
-- **ATM IV** для BTC и ETH
-- **Put/Call ratio** по открытому интересу
-- **25-delta skew** — разница IV пут/колл; положительный skew = страх рынка
-- **Sentiment**: Extreme Fear / Fear / Neutral / Greed / Extreme Greed
-
-### Market Scanner
-Поиск аномалий: пробои, сжатие волатильности, volume spike, RSI-дивергенции.
-
-### Liquidation Heatmap
-Карта концентрации ликвидаций по уровням цены. Алерты на proximity к кластеру.
-
-### Gas Monitor
-Текущая стоимость газа в Gwei (Ethereum), BNB (BSC), лампортах (Solana). Алерт при просадке ниже порога.
-
-### News Feed
-RSS от CoinTelegraph, CoinDesk, Decrypt, The Block, Bitcoin Magazine. Авто-классификация: bullish / bearish / neutral. Фильтр по монете и ключевым словам.
-
-### Funding Rate
-Текущие ставки фандинга Binance, Bybit, OKX с агрегированным view. **Funding Rate Arbitrage** — автоматический delta-neutral для сбора положительного фандинга.
-
----
-
-## Управление рисками
-
-### Risk Manager
-- Максимальный убыток за торговую сессию (USD)
-- Максимальный размер позиции (% от баланса)
-- Thread-safe накопление дневных убытков
-
-### Sniper Risk Policy
-- Лимит одновременных позиций
-- Максимальное количество покупок за сессию
-- Дневной cap убытков
-- Последовательные losing-стопы (emergency stop)
-- Cooldown между входами
-
-### Portfolio Correlation
-Предупреждение когда открытые позиции высококоррелированы (диверсификация иллюзорна).
-
-### Tax Report
-Кнопка «Export Tax Report» в Trade Journal → FIFO P&L расчёт → 2 CSV файла:
-- `{year}_trades.csv` — каждая сделка с cost basis, proceeds, holding period
-- `{year}_summary.csv` — итог по активу (gross profit, gross loss, win rate)
-
-Совместимо с Koinly, CoinTracker, ручной подачей в ФНС.
-
-### P&L Dashboard
-- Equity curve
-- Метрики: trades, win rate, avg win/loss, max drawdown, **аннуализированный Sharpe ratio** (×√252)
-- Группировка по периоду / бирже / стратегии
-- Экспорт в CSV
-
-### Backtest
-
-- MA Cross, RSI, Bollinger Bands, Breakout — на исторических свечах
-- Метрики: winrate, net return, max drawdown, Sharpe
-- **Walk-Forward Optimization** с визуализацией: синие полосы = in-sample, зелёные = out-of-sample
-- **Monte Carlo** — N симуляций на случайных подмножествах данных, доверительный интервал
-- Экспорт в 4 CSV: trades, equity, comparison, summary
-
----
-
-## Уведомления
-
-| Канал | Настройка | Когда срабатывает |
-|-------|-----------|-------------------|
-| **System Tray (Windows)** | Встроено | Закрытие сделки, ошибка бота, важный алерт |
-| **Telegram** | TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID | Любой алерт с флагом «Send Telegram» |
-| **Discord** | Discord Webhook URL | Любой алерт с флагом «Send Discord» |
-| **ntfy.sh** | ntfy.sh topic | Push на телефон, без приложения |
-| **Email (SMTP)** | SMTP-сервер + логин | Критические алерты |
-
-### Volume Spike Alert
-Реальный мониторинг объёма: `FeedVolume24h()` сравнивает текущий объём с 7-дневным rolling average. Срабатывает при превышении порога (настраивается, по умолчанию ×2).
-
----
-
-## AI-функции
-
-Один выбранный провайдер (**Claude** или **ChatGPT**) питает **все** AI-функции терминала. Ключ задаётся в **Settings → AI Assistant** (или в **AI Bot**) и автоматически раздаётся во все разделы. Без ключа терминал **работает** через детерминированную офлайн-эвристику — AI-результат виден даже в демо. Каждая кнопка помечена иконкой 🧠.
-
-### 🌐 Выбор AI-провайдера (Claude / ChatGPT)
-
-Единый переключатель в **Settings → AI Assistant** определяет, какой движок обслуживает весь терминал — от копайлота и брифинга до автономного трейдера и скоринга сканера:
-
-- **Claude (Anthropic)** или **ChatGPT (OpenAI)** — radio-переключатель, отдельные поля ключа и модели для каждого.
-- **Веб-вход** — кнопка «🌐 Log in / get key» открывает консоль провайдера ([console.anthropic.com](https://console.anthropic.com/settings/keys) / [platform.openai.com](https://platform.openai.com/api-keys)) для входа и создания ключа.
-- Переключение применяется **сразу, без перезапуска**: общий слой `AiRuntime` + `ChatClient` маршрутизирует каждый вызов в нужный API (Anthropic Messages / OpenAI Chat Completions), а агентный цикл — в `ClaudeAgentRunner` или `OpenAiAgentRunner` (function calling).
-- Ключи хранятся зашифрованно (DPAPI) и уходят только выбранному провайдеру.
-- **С подпиской (терминал привязан к серверу CryptoAI)** полей ключа и модели нет: ключ держит сервер, а конкретную модель внутри семейства он подбирает сам по живому списку провайдера — сильную для того, что читает человек, дешёвую для фоновых задач. Пользователю остаётся выбор семейства, и он уходит на сервер заголовком `X-AI-Family`, применяясь к следующему же вызову. На сервере реализованы **оба** пути, включая перевод формата: панель, ушедшая в формате Anthropic, будет обслужена ChatGPT (и наоборот), если выбрано другое семейство.
-- **Тарифные квоты на время тестового периода не применяются** (`plan.tiers.enforced = false`): все лицензии делят один общий суточный предел — предохранитель от разгона, до которого обычная работа не доходит. Расход считается всегда и виден в разделе подписки; по нему потом будут посчитаны тарифы.
-
-### ⚡ Глобальная AI-командная строка (`Ctrl+K`)
-
-Омнибокс поверх всего приложения — главная точка входа в AI:
-
-- **Навигация** — «open scanner», «go to settings», «покажи киты», «liquidations» → мгновенный переход в раздел (детерминированно, без обращения к AI: быстро, бесплатно, работает даже без квоты).
-- **Вопросы** — «what's my biggest risk?», «summarize my positions» → отвечает AI-копайлот (выбранный провайдер, без ключа — офлайн-ассистент).
-- `Enter` — выполнить, `Esc` — закрыть; поле автофокусируется при открытии. Строка **только советует и навигирует** — никогда не торгует.
-
-### 🤖 Автономный AI-трейдер (сам торгует)
-
-Не просто сигнал, а **агент с tool use**: модель сама осматривает рынок и сама ставит ордера в цикле — циклом управляет `ClaudeAgentRunner` или `OpenAiAgentRunner`, в зависимости от выбранного семейства. Раздел **Bots → AI Trader (Autonomous)**.
-
-- **Инструменты агента** (CEX): `get_price`, `get_balance`, `get_positions`, `place_order`, `close_position`. Модель сама решает, что запросить и когда торговать.
-- **Spot, Futures и DEX** — переключатель Venue (CEX/DEX) и Market (Spot/Futures, плечо, Cross/Isolated). На фьючерсах — long **и** short с авто-определением hedge/one-way. На DEX — торговля по адресу токена за нативную монету (SOL/ETH) с **обязательной honeypot-пробой** перед покупкой.
-- **Безопасность:** по умолчанию **Paper** (полная симуляция по реальным ценам, приватные эндпоинты биржи не трогаются). **Live** — opt-in, каждый ордер проходит `RiskManager` + жёсткие лимиты (max на ордер, max экспозиция, max позиций, дневной лосс) + мгновенный **Kill-switch**.
-- **Лог мыслей** — стрим `🧠 thinking → 🔧 tool → ← result → 💰 fill` в реальном времени.
-
-### 🧠 AI-помощники по разделам (13)
-
-Со своим ключом или с привязкой к серверу CryptoAI — выбранное семейство (Claude или ChatGPT); без того и другого — офлайн-эвристика (помечается «Heuristic (offline)»).
-
-| Раздел | AI-функция |
-|--------|-----------|
-| **Scanner** | Ранжирование топ-возможностей (score + LONG/SHORT + причина) |
-| **Backtest** | Вердикт `ROBUST / PROMISING / WEAK / OVERFIT` + риски (анти-оверфит) |
-| **Rules** | Текст → правило: «продай если RSI < 30 и упадёт 5%» собирается в CompositeRule |
-| **Journal** | Коуч сделок: сильные стороны, утечки (loss-aversion, R:R, стрики), советы |
-| **Portfolio** | Целевые веса под риск-профиль (Conservative / Balanced / Aggressive) |
-| **Whale Tracker** | Интерпретация потоков: `ACCUMULATION / DISTRIBUTION` по inflow/outflow бирж |
-| **On-Chain** | Режим оценки из MVRV / NUPL / exchange-flows: `BULLISH / BEARISH` |
-| **Sentiment** | Чтение Fear&Greed / long-short / Deribit (контрарный анализ) |
-| **Grid Bot** | Подбор границ сетки и числа уровней под волатильность |
-| **DEX Trending** | Ранжирование трендовых токенов: momentum vs rug-риск |
-| **AI Bot TP/SL** | Динамический TP/SL под текущую волатильность + трейлинг |
-| **Stat Arb** | Вердикт по паре: достаточно ли растянут спред и какая нога |
-| **Order Router** | TWAP-планировщик: разбивка крупного ордера на impact-aware слайсы |
-
-### Базовые AI-интеграции (с прошлых версий)
-
-- **AI-вердикт токена (снайпер)** — `AVOID / RISKY / NEUTRAL / FAVORABLE`, risk 0–100, red flags.
-- **AI Market Pulse (новости)** — агрегированный sentiment за час + AI-дайджест рынка.
-- **AI-объяснение сделок бота** — строка «почему» к каждой сделке AI-стратегии.
-- **AI-стратегия** — генерация buy/sell сигналов по свечам в Rule Bot.
-
-> Архитектура: провайдеры в `CryptoAITerminal.AIEngine` обращаются к LLM через единый `ChatClient` (hand-rolled вызов, без лишних NuGet), который по `AiRuntime.Vendor` маршрутизирует в Anthropic **или** OpenAI; сервисы-обёртки с офлайн-фолбэком в `TerminalUI/Services`. Покрыто юнит-тестами (агент, провайдер-свитч, командная строка, все офлайн-эвристики).
-
----
-
-## Демо-режим, лицензирование и обновления
-
-- **Demo / Paper режим** — при первом запуске приветственный экран: можно изучить весь терминал без API-ключей. Вся торговля симулируется (`GlobalPaperOnlyMode` по умолчанию), реальные ордера заблокированы.
-- **Onboarding-визард** — пошаговое подключение биржи (выбор → ключи → безопасное сохранение через DPAPI).
-- **Лицензирование** — офлайн-проверка по RSA-подписи (приложение содержит публичный ключ), 14-дневный триал, опциональная привязка к ПК. Без валидной лицензии после триала доступен только демо-режим. Активация: **Settings → License** или **Portfolio**, Machine ID показан там же.
-- **Авто-обновления** — проверка GitHub Releases на старте, ненавязчивый баннер с кнопкой загрузки.
-- **HTML-отчёт бэктеста** — кнопка «Export Report» рендерит самодостаточный отчёт (equity-кривая, метрики, сравнение стратегий, Monte Carlo); печатается в PDF из браузера.
-
-### Telegram-бот продажи лицензий
-
-Отдельный проект `CryptoAITerminal.LicenseBot`: продаёт лицензии за **Telegram Stars** или **криптовалюту** (Crypto Pay API, цена в ₽ — клиент платит крипто-эквивалент), подписывает ключ и мгновенно выдаёт его. Хранит базу клиентов и заказов (SQLite), привязывает ключ к Machine ID покупателя. Подробности — `CryptoAITerminal.LicenseBot/README.md`.
+Обновления — через Velopack: приложение проверяет наличие новой версии и обновляется по
+подтверждению пользователя.
 
 ---
 
 ## Быстрый старт
 
-### Требования
+**Пользователю.** Скачать `CryptoAITerminal-win-Setup.exe` из
+[Releases](https://github.com/090TYPE/CryptoAI/releases), запустить, дальше приложение
+обновляется само. Ключи бирж вводятся в настройках; без ключей терминал работает
+в бумажном режиме на публичных рыночных данных.
 
-- **Windows 10 / 11 x64**
-- **.NET 8.0 SDK** — [скачать](https://dotnet.microsoft.com/download/dotnet/8.0)
-- API-ключи бирж (опционально для просмотра данных, обязательно для торговли)
+**Из исходников.**
 
-### Запуск из исходников
-
-```powershell
+```bash
 git clone https://github.com/090TYPE/CryptoAI.git
 cd CryptoAI
-
-dotnet build CryptoAITerminal.TerminalUI
 dotnet run --project CryptoAITerminal.TerminalUI
 ```
 
-### Запуск готовой сборки
+Нужен .NET 8 SDK. Тесты — `dotnet test CryptoAITerminal.Core.Tests`.
+
+**Сборка релиза.**
 
 ```powershell
-# Создать релизный пакет
-.\build-release.ps1
-
-# Распаковать архив из ./release/ и запустить
-CryptoAITerminal.TerminalUI.exe
+.\build-release.ps1 -Version 1.8.11
 ```
 
-Установка не требуется. Self-contained build включает .NET runtime.
+Собирает self-contained сборку и пакует установщик в `release/`. Выгрузка в GitHub Releases —
+отдельный флаг `-PublishToGithub` и переменная `GITHUB_TOKEN`.
+
+**Сервер.** См. [docs/DEPLOY.md](docs/DEPLOY.md) — там полный порядок развёртывания
+и список переменных окружения.
 
 ---
 
-## API-ключи
+## Режимы и безопасность
 
-### Хранение
+**Бумажный режим включён по умолчанию.** Пока он активен, ни один ордер не уходит на биржу:
+движки, DEX-свопы, снайпер и переводы работают на симуляции. Живое исполнение включается
+осознанно, двухшаговым подтверждением, и требует действующей лицензии.
 
-```
-%LOCALAPPDATA%\CryptoAITerminal\api-credentials.json
-```
+**Ключи.** Ключи бирж, токены и приватные ключи кошельков хранятся локально в файле,
+зашифрованном средствами Windows под текущего пользователя. На сервер они не отправляются
+и в логи не пишутся. Ключ биржи стоит выдавать только с правом торговли, без права вывода,
+и по возможности ограничивать по IP.
 
-Файл создаётся автоматически. Можно редактировать вручную или через UI **Settings → API Keys**. Переменные окружения имеют приоритет над файлом.
+**Риск-лимиты.** Размер позиции, трата на сделку, дневной лимит убытка и потолок открытой
+экспозиции задаются в разделе Risk и проверяются перед постановкой ордера.
 
-### Биржевые ключи (личные, для торговли)
-
-| Переменная | Биржа |
-|-----------|-------|
-| `BINANCE_API_KEY` / `BINANCE_API_SECRET` | Binance |
-| `BYBIT_API_KEY` / `BYBIT_API_SECRET` | Bybit |
-| `OKX_API_KEY` / `OKX_API_SECRET` / `OKX_API_PASSPHRASE` | OKX |
-| `KUCOIN_API_KEY` / `KUCOIN_API_SECRET` / `KUCOIN_API_PASSPHRASE` | KuCoin |
-| `CRYPTOAI_DEX_PRIVATE_KEY` | Приватный ключ EVM-кошелька для DEX |
-
-### Системные ключи (опциональны — без них терминал работает)
-
-| Ключ | Провайдер | Что улучшает |
-|------|-----------|-------------|
-| `ETHERSCAN_API_KEY` | etherscan.io | Whale Tracker на Ethereum |
-| `BSCSCAN_API_KEY` | bscscan.com | Whale Tracker на BSC |
-| `ALCHEMY_API_KEY` | alchemy.com | Обогащение цен токенов |
-| `MORALIS_API_KEY` | moralis.io | DEX OHLCV-свечи |
-| `BIRDEYE_API_KEY` | birdeye.so | Solana DEX аналитика |
-| `COVALENT_API_KEY` | covalenthq.com | Балансы кошельков |
-| `COINGECKO_API_KEY` | coingecko.com | Pro-лимиты CoinGecko |
-| `CRYPTOPANIC_API_KEY` | cryptopanic.com | Дополнительный новостной поток |
-| `COINGLASS_API_KEY` | coinglass.com | Точная liquidation heatmap |
-
-### Уведомления
-
-| Ключ | Назначение |
-|------|-----------|
-| `TELEGRAM_BOT_TOKEN` | Telegram bot |
-| `TELEGRAM_CHAT_ID` | ID чата для уведомлений |
-| `CRYPTOAI_TV_SECRET` | Секрет для проверки TradingView webhook |
-| `CRYPTOAI_WEBAPI_TOKEN` | Bearer token для REST API (если выставить в публичный интернет) |
+Торговля криптовалютами сопряжена с риском потери средств. Терминал — инструмент, а не
+рекомендация; решения принимает пользователь.
 
 ---
 
-## REST API (WebApi)
+## Стек
 
-Запустите отдельно как локальный сервер для мониторинга с телефона:
-
-```bash
-cd CryptoAITerminal.WebApi
-dotnet run
-# Слушает на :5180
-```
-
-| Endpoint | Метод | Описание |
-|----------|-------|----------|
-| `/api/health` | GET | Статус и время последнего обновления снимка |
-| `/api/positions` | GET | Открытые позиции по всем биржам |
-| `/api/sniper/candidates` | GET | Кандидаты снайпера с RankScore |
-| `/api/pnl` | GET | Сводка P&L |
-| `/api/balances` | GET | Балансы по биржам |
-| `/api/snapshot` | GET | Полный снимок состояния |
-| `/api/orders/market` | POST | Отправить маркет-ордер |
-| `/api/orders/cancel` | POST | Отменить ордер |
-| `/api/webhook/tradingview` | POST | TradingView Alert webhook |
-| `/api/webhook/tradingview/log` | GET | Последние 50 вебхуков (диагностика) |
-
-Снимок состояния обновляется каждые 5 секунд (записывает TerminalUI в `%AppData%\CryptoAITerminal\webapi\snapshot.json`).
-
----
-
-## Конфигурационные профили
-
-Сохраните текущие настройки как именованный профиль:
-
-**Settings → Profiles → введите имя → Save Profile**
-
-Профиль содержит все настройки ботов, DEX, снайпера, Grid, DCA — **без API-ключей** (они хранятся отдельно в DPAPI).
-
-Для переключения между "скальпинг" и "свинг" конфигурациями достаточно одного клика.
-
----
-
-## Сборка релиза
-
-```powershell
-.\build-release.ps1
-```
-
-Скрипт создаёт self-contained publish для Windows x64 и упаковывает в `./release/CryptoAITerminal-<дата>.zip`. Архив можно передать заказчику — установка .NET не требуется.
-
----
-
-## Updating
-
-Starting with v1.6.0 the app updates itself. Existing users: download `Setup.exe`
-from the latest [release](https://github.com/090TYPE/CryptoAI/releases) and run it
-once — it installs to `%LocalAppData%\CryptoAITerminal`. After that, when an update
-is available the app shows an "Обновить сейчас" button that downloads only the
-changed parts and restarts on the new version. No more manual downloads.
-
----
-
-## Безопасность
-
-- **Локальное хранение** — ключи только в `%LOCALAPPDATA%`, никаких облаков
-- **DPAPI шифрование** — файл credentials зашифрован Windows Data Protection API
-- **Минимальные права API** — рекомендуется создавать ключи с правом только на торговлю, без вывода, с IP-привязкой
-- **Отдельный DEX-кошелёк** — используйте hot wallet с минимальным балансом, никогда не вставляйте seed основного кошелька
-- **Webhook secret** — защита TradingView endpoint от подделки запросов через `CRYPTOAI_TV_SECRET`
-- **WebApi token** — опциональный bearer token для REST API при публичном доступе
-
----
-
-## Стек технологий
-
-| Компонент | Технология |
-|-----------|-----------|
-| Runtime | .NET 8.0 Windows |
-| UI Framework | Avalonia 12, ReactiveUI |
-| Async | TPL, System.Reactive (Rx.NET) |
-| Binance | Binance.Net (CryptoExchange.Net) |
-| Bybit | Bybit.Net |
-| OKX | OKX.Net |
-| KuCoin | Kucoin.Net |
-| Web3 EVM | Nethereum |
-| Solana | Solana.Unity.SDK, Jupiter API |
-| Charts | Custom Avalonia DrawingContext (StreamGeometry) |
-| JSON | System.Text.Json |
-| AI | Claude (Anthropic Messages API) или ChatGPT (OpenAI Chat Completions), tool use — переключаемо |
-| Tests | xUnit, 294 unit tests |
-| Notifications | WinForms NotifyIcon, Telegram Bot API, Discord Webhook |
+**Клиент:** C# · .NET 8 · Avalonia 12 · MVVM · ReactiveUI · SQLite · DPAPI · Velopack
+**Сервер:** ASP.NET Core · PostgreSQL + TimescaleDB · Docker Compose · Caddy
+**Интеграции:** Binance, Bybit, OKX, KuCoin · Uniswap, Jupiter, SunSwap, Hyperliquid ·
+Anthropic API, OpenAI API · Telegram
 
 ---
 
 <p align="center">
-  <img src="design/logo-assets/icons/cryptoaiterminal-icon-variant-a-transparent.png" width="80" alt="icon"/>
-  <br/>
-  <sub>Crypto AI Terminal · v1.4 · 2026</sub>
+  <sub>Source-available. Коммерческое использование — по согласованию. См. <a href="LICENSE">LICENSE</a>.</sub>
 </p>
