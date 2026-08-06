@@ -5,9 +5,9 @@
     <!-- Держать в шаге с тем, что уходит в vpk pack: версия здесь застряла на 1.8.4, пока
          выпускались 1.8.8, и собранное приложение называло себя старым номером — в том числе в
          журнале сбоев Windows, то есть ровно там, где номер и нужен. -->
-    <Version>1.8.10</Version>
-    <FileVersion>1.8.10.0</FileVersion>
-    <AssemblyVersion>1.8.10.0</AssemblyVersion>
+    <Version>1.8.11</Version>
+    <FileVersion>1.8.11.0</FileVersion>
+    <AssemblyVersion>1.8.11.0</AssemblyVersion>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
